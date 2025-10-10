@@ -20,6 +20,7 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -238,14 +239,30 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             script.add("-v");
         }
         if (StringUtils.isNotBlank(extraParams)) {
-            script.add(extraParams);
+            addExtraParamsToScript(extraParams, script);
         }
 
         String logPrefix = String.format("(%s) virt-v2v ovf source: %s progress", originalVMName, sourceOVFDirPath);
         OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(logger, logPrefix);
-        script.execute(outputLogger, serverResource.getConvertInstanceEnv());
+        script.execute(outputLogger);
         int exitValue = script.getExitValue();
         return exitValue == 0;
+    }
+
+    protected void addExtraParamsToScript(String extraParams, Script script) {
+        List<String> separatedArgs = Arrays.asList(extraParams.split(" "));
+        int i = 0;
+        while (i < separatedArgs.size()) {
+            String current = separatedArgs.get(i);
+            String next = (i + 1) < separatedArgs.size() ? separatedArgs.get(i + 1) : null;
+            if (next == null || next.startsWith("-")) {
+                script.add(current);
+                i = i + 1;
+            } else {
+                script.add(current, next);
+                i = i + 2;
+            }
+        }
     }
 
     protected String encodeUsername(String username) {

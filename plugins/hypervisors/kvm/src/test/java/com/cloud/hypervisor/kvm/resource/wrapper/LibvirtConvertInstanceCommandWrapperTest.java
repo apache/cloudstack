@@ -171,4 +171,22 @@ public class LibvirtConvertInstanceCommandWrapperTest {
                     Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyBoolean(), Mockito.nullable(String.class), Mockito.any(LibvirtComputingResource.class));
         }
     }
+
+    @Test
+    public void testAddExtraParamsToScriptSameKeysAndValues() {
+        Script script = Mockito.mock(Script.class);
+        String extraParams = "--mac 00:0c:29:e6:3d:9d:ip:192.168.0.89,192.168.0.1,24,192.168.0.254";
+        convertInstanceCommandWrapper.addExtraParamsToScript(extraParams, script);
+        Mockito.verify(script).add("--mac", "00:0c:29:e6:3d:9d:ip:192.168.0.89,192.168.0.1,24,192.168.0.254");
+    }
+
+    @Test
+    public void testAddExtraParamsToScriptDifferentArgs() {
+        Script script = Mockito.mock(Script.class);
+        String extraParams = "--mac 00:0c:29:e6:3d:9d:ip:192.168.0.89,192.168.0.1,24,192.168.0.254 -x -v";
+        convertInstanceCommandWrapper.addExtraParamsToScript(extraParams, script);
+        Mockito.verify(script).add("--mac", "00:0c:29:e6:3d:9d:ip:192.168.0.89,192.168.0.1,24,192.168.0.254");
+        Mockito.verify(script).add("-x");
+        Mockito.verify(script).add("-v");
+    }
 }
