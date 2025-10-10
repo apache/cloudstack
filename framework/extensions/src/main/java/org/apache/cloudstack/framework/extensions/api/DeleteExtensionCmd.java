@@ -56,7 +56,8 @@ public class DeleteExtensionCmd extends BaseCmd {
     private Long id;
 
     @Parameter(name = ApiConstants.CLEANUP, type = CommandType.BOOLEAN,
-            entityType = ExtensionResponse.class, description = "Whether cleanup entry-point files for the extension")
+            entityType = ExtensionResponse.class,
+            description = "Whether to cleanup files for the extension. If true, the extension files will be deleted from all the management servers.")
     private Boolean cleanup;
 
     /////////////////////////////////////////////////////

@@ -54,6 +54,11 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     private DiskOfferingDao diskOfferingDao;
 
     @Override
+    public Boolean crossZoneInstanceCreationEnabled(BackupOffering backupOffering) {
+        return true;
+    }
+
+    @Override
     public String getName() {
         return "dummy";
     }
@@ -191,7 +196,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
 
     @Override
     public Pair<Long, Long> getBackupStorageStats(Long zoneId) {
-        return new Pair<>(8L * 1024 * 1024 * 1024, 10L * 1024 * 1024 * 1024);
+        return new Pair<>(0L, 0L);
     }
 
     @Override
@@ -199,7 +204,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     }
 
     @Override
-    public boolean restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid) {
-        return true;
+    public Pair<Boolean, String> restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid) {
+        return new Pair<>(true, null);
     }
 }

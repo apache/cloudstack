@@ -320,6 +320,9 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         pool = super.persist(pool);
         if (details != null) {
             for (Map.Entry<String, String> detail : details.entrySet()) {
+                if (detail.getKey().toLowerCase().contains("password") || detail.getKey().toLowerCase().contains("token")) {
+                    displayDetails = false;
+                }
                 StoragePoolDetailVO vo = new StoragePoolDetailVO(pool.getId(), detail.getKey(), detail.getValue(), displayDetails);
                 _detailsDao.persist(vo);
             }
@@ -913,6 +916,14 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         }
         SearchCriteria<StoragePoolVO> sc = IdsSearch.create();
         sc.setParameters("ids", ids.toArray());
+        return listBy(sc);
+    }
+
+    @Override
+    public List<StoragePoolVO> findPoolsByStorageTypeAndZone(Storage.StoragePoolType storageType, Long zoneId) {
+        SearchCriteria<StoragePoolVO> sc = AllFieldSearch.create();
+        sc.setParameters("poolType", storageType);
+        sc.addAnd("dataCenterId", Op.EQ, zoneId);
         return listBy(sc);
     }
 

@@ -23,9 +23,11 @@ public class ApiConstants {
     public static final String ACCOUNT_ID = "accountid";
     public static final String ACCOUNT_IDS = "accountids";
     public static final String ACCUMULATE = "accumulate";
+    public static final String ACQUIRED = "acquired";
     public static final String ACTIVATION_RULE = "activationrule";
     public static final String ACTIVITY = "activity";
     public static final String ADAPTER_TYPE = "adaptertype";
+    public static final String ADDITONAL_CONFIG_ENABLED = "additionalconfigenabled";
     public static final String ADDRESS = "address";
     public static final String ALGORITHM = "algorithm";
     public static final String ALIAS = "alias";
@@ -79,6 +81,7 @@ public class ApiConstants {
     public static final String BYTES_WRITE_RATE_MAX = "byteswriteratemax";
     public static final String BYTES_WRITE_RATE_MAX_LENGTH = "byteswriteratemaxlength";
     public static final String BYPASS_VLAN_OVERLAP_CHECK = "bypassvlanoverlapcheck";
+    public static final String CALLER = "caller";
     public static final String CAPACITY = "capacity";
     public static final String CATEGORY = "category";
     public static final String CAN_REVERT = "canrevert";
@@ -94,9 +97,11 @@ public class ApiConstants {
     public static final String CONVERT_INSTANCE_HOST_ID = "convertinstancehostid";
     public static final String CONVERT_INSTANCE_STORAGE_POOL_ID = "convertinstancepoolid";
     public static final String ENABLED_REVOCATION_CHECK = "enabledrevocationcheck";
+    public static final String CLIENT_ADDRESS = "clientaddress";
     public static final String COMBINED_CAPACITY_ORDERING = "COMBINED";
     public static final String CONTROLLER = "controller";
     public static final String CONTROLLER_UNIT = "controllerunit";
+    public static final String CONSOLE_ENDPOINT_CREATOR_ADDRESS = "consoleendpointcreatoraddress";
     public static final String COPY_IMAGE_TAGS = "copyimagetags";
     public static final String CPU_OVERCOMMIT_RATIO = "cpuOvercommitRatio";
     public static final String CSR = "csr";
@@ -136,6 +141,7 @@ public class ApiConstants {
     public static final String CPU_SPEED = "cpuspeed";
     public static final String CPU_LOAD_AVERAGE = "cpuloadaverage";
     public static final String CREATED = "created";
+    public static final String CROSS_ZONE_INSTANCE_CREATION = "crosszoneinstancecreation";
     public static final String CTX_ACCOUNT_ID = "ctxaccountid";
     public static final String CTX_DETAILS = "ctxDetails";
     public static final String CTX_USER_ID = "ctxuserid";
@@ -537,6 +543,9 @@ public class ApiConstants {
     public static final String SNAPSHOT_POLICY_ID = "snapshotpolicyid";
     public static final String SNAPSHOT_TYPE = "snapshottype";
     public static final String SNAPSHOT_QUIESCEVM = "quiescevm";
+
+    public static final String USE_STORAGE_REPLICATION = "usestoragereplication";
+
     public static final String SOURCE_CIDR_LIST = "sourcecidrlist";
     public static final String SOURCE_ZONE_ID = "sourcezoneid";
     public static final String SSL_VERIFICATION = "sslverification";
@@ -1157,6 +1166,7 @@ public class ApiConstants {
 
     public static final String ZONE_ID_LIST = "zoneids";
     public static final String DESTINATION_ZONE_ID_LIST = "destzoneids";
+    public static final String STORAGE_ID_LIST = "storageids";
     public static final String ADMIN = "admin";
     public static final String CHECKSUM_PARAMETER_PREFIX_DESCRIPTION = "The parameter containing the checksum will be considered a MD5sum if it is not prefixed\n"
             + " and just a plain ascii/utf8 representation of a hexadecimal string. If it is required to\n"
@@ -1270,6 +1280,7 @@ public class ApiConstants {
     public static final String NETRIS_DETAIL_KEY = "forNetris";
     public static final String NETRIS_TAG = "netristag";
     public static final String NETRIS_VXLAN_ID = "netrisvxlanid";
+    public static final String NETRIS_URL = "netrisurl";
     public static final String DISK_PATH = "diskpath";
     public static final String IMPORT_SOURCE = "importsource";
     public static final String TEMP_PATH = "temppath";

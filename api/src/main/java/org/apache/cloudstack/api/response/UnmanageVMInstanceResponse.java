@@ -32,6 +32,10 @@ public class UnmanageVMInstanceResponse extends BaseResponse {
     @Param(description = "details of the unmanage VM operation")
     private String details;
 
+    @SerializedName(ApiConstants.HOST_ID)
+    @Param(description = "The ID of the host used for unmanaged Instance")
+    private String hostId;
+
     public UnmanageVMInstanceResponse() {
     }
 
@@ -54,5 +58,13 @@ public class UnmanageVMInstanceResponse extends BaseResponse {
 
     public void setDetails(String details) {
         this.details = details;
+    }
+
+    public String getHostId() {
+        return hostId;
+    }
+
+    public void setHostId(String hostId) {
+        this.hostId = hostId;
     }
 }

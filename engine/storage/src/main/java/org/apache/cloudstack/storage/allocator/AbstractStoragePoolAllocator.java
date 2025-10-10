@@ -378,7 +378,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
                     return false;
                 }
             } catch (StorageUnavailableException e) {
-                logger.warn(String.format("Could not verify storage policy complaince against storage pool %s due to exception %s", pool.getUuid(), e.getMessage()));
+                logger.warn(String.format("Could not verify storage policy compliance against storage pool %s due to exception %s", pool.getUuid(), e.getMessage()));
                 return false;
             }
         }

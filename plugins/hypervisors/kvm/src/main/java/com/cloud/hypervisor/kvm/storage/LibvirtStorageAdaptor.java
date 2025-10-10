@@ -761,10 +761,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
     @Override
     public KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type, Map<String, String> details, boolean isPrimaryStorage) {
-        logger.info("Attempting to create storage pool " + name + " (" + type.toString() + ") in libvirt");
-
-        StoragePool sp = null;
-        Connect conn = null;
+        logger.info("Attempting to create storage pool {} ({}) in libvirt", name, type);
+        StoragePool sp;
+        Connect conn;
         try {
             conn = LibvirtConnection.getConnection();
         } catch (LibvirtException e) {
@@ -1117,7 +1116,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
                 // make room for encryption header on raw format, use LUKS
                 if (format == PhysicalDiskFormat.RAW) {
-                    destFile.setSize(destFile.getSize() - (16<<20));
+                    destFile.setSize(destFile.getSize() - (16 << 20));
                     destFile.setFormat(PhysicalDiskFormat.LUKS);
                 }
 
@@ -1594,7 +1593,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         String sourcePath = disk.getPath();
 
         KVMPhysicalDisk newDisk;
-        logger.debug("copyPhysicalDisk: disk size:" + toHumanReadableSize(disk.getSize()) + ", virtualsize:" + toHumanReadableSize(disk.getVirtualSize())+" format:"+disk.getFormat());
+        logger.debug("copyPhysicalDisk: disk size:{}, virtualsize:{} format:{}", toHumanReadableSize(disk.getSize()), toHumanReadableSize(disk.getVirtualSize()), disk.getFormat());
         if (destPool.getType() != StoragePoolType.RBD) {
             if (disk.getFormat() == PhysicalDiskFormat.TAR) {
                 newDisk = destPool.createPhysicalDisk(name, PhysicalDiskFormat.DIR, Storage.ProvisioningType.THIN, disk.getVirtualSize(), null);

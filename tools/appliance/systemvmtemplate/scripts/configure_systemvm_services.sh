@@ -78,7 +78,7 @@ function install_cloud_scripts() {
 function do_signature() {
   mkdir -p /var/cache/cloud/ /usr/share/cloud/
   (cd ./cloud_scripts/; tar -cvf - * | gzip > /usr/share/cloud/cloud-scripts.tgz)
-  md5sum /usr/share/cloud/cloud-scripts.tgz | awk '{print $1}' > /var/cache/cloud/cloud-scripts-signature
+  sha512sum /usr/share/cloud/cloud-scripts.tgz | awk '{print $1}' > /var/cache/cloud/cloud-scripts-signature
   echo "Cloudstack Release $CLOUDSTACK_RELEASE $(date)" > /etc/cloudstack-release
 }
 
@@ -133,7 +133,7 @@ function configure_services() {
   systemctl disable containerd
 
   # Disable cloud init by default
-cat <<EOF > /etc/cloud/cloud.cfg.d/cloudstack.cfg
+  cat <<EOF > /etc/cloud/cloud.cfg.d/cloudstack.cfg
 datasource_list: ['CloudStack']
 datasource:
   CloudStack:

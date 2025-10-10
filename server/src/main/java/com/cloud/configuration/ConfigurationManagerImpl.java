@@ -43,13 +43,16 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.Vector;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.consoleproxy.ConsoleProxyManager;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
+import com.cloud.vm.VirtualMachineManager;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -293,6 +296,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.UriUtils;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
@@ -573,7 +577,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add("event.purge.interval");
         configValuesForValidation.add("account.cleanup.interval");
         configValuesForValidation.add("alert.wait");
-        configValuesForValidation.add("consoleproxy.capacityscan.interval");
+        configValuesForValidation.add(ConsoleProxyManager.ConsoleProxyCapacityScanInterval.key());
         configValuesForValidation.add("expunge.interval");
         configValuesForValidation.add("host.stats.interval");
         configValuesForValidation.add("network.gc.interval");
@@ -637,6 +641,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     protected void populateConfigKeysAllowedOnlyForDefaultAdmin() {
         configKeysAllowedOnlyForDefaultAdmin.add(AccountManagerImpl.listOfRoleTypesAllowedForOperationsOfSameRoleType.key());
         configKeysAllowedOnlyForDefaultAdmin.add(AccountManagerImpl.allowOperationsOnUsersInSameAccount.key());
+
+        configKeysAllowedOnlyForDefaultAdmin.add(VirtualMachineManager.SystemVmEnableUserData.key());
+        configKeysAllowedOnlyForDefaultAdmin.add(ConsoleProxyManager.ConsoleProxyVmUserData.key());
+        configKeysAllowedOnlyForDefaultAdmin.add(SecondaryStorageVmManager.SecondaryStorageVmUserData.key());
+        configKeysAllowedOnlyForDefaultAdmin.add(VirtualNetworkApplianceManager.VirtualRouterUserData.key());
     }
 
     private void initMessageBusListener() {
@@ -3106,7 +3115,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         checkZoneParameters(zoneName, dns1, dns2, internalDns1, internalDns2, true, domainId, allocationStateStr, ip6Dns1, ip6Dns2);
 
         final byte[] bytes = (zoneName + System.currentTimeMillis()).getBytes();
-        final String zoneToken = UUID.nameUUIDFromBytes(bytes).toString();
+        final String zoneToken = UuidUtils.nameUUIDFromBytes(bytes).toString();
 
         // Create the new zone in the database
         final DataCenterVO zoneFinal = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, guestCidr, domain, domainId, zoneType, zoneToken, networkDomain,
@@ -5370,10 +5379,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                 vlan.getVlanTag()));
                     }
                 }
-                if (NetUtils.isSameIsolationId(vlanId, vlan.getVlanTag()) && !vlanIp6Gateway.equals(vlan.getIp6Gateway())) {
-                    throw new InvalidParameterValueException(String.format("The IP range with tag: %s has already been added with gateway %s. Please specify a different tag.",
-                            vlan.getVlanTag(), vlan.getIp6Gateway()));
-                }
             }
         }
 
@@ -6813,7 +6818,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (lbServiceCapabilityMap != null && !lbServiceCapabilityMap.isEmpty()) {
             maxconn = cmd.getMaxconnections();
             if (maxconn == null) {
-                maxconn = Integer.parseInt(_configDao.getValue(Config.NetworkLBHaproxyMaxConn.key()));
+                maxconn = NetworkOrchestrationService.NETWORK_LB_HAPROXY_MAX_CONN.value();
             }
         }
         if (cmd.getKeepAliveEnabled() != null && cmd.getKeepAliveEnabled()) {
@@ -8435,7 +8440,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 !Enums.getIfPresent(DiskOffering.DiskCacheMode.class,
                         cacheMode.toUpperCase()).isPresent()) {
             throw new InvalidParameterValueException(String.format("Invalid cache mode (%s). Please specify one of the following " +
-                    "valid cache mode parameters: none, writeback or writethrough", cacheMode));
+                    "valid cache mode parameters: none, writeback, writethrough or hypervisor_default.", cacheMode));
         }
     }
 

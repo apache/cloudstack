@@ -53,7 +53,7 @@ public class AddNetrisProviderCmd extends BaseCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Netris provider name")
     private String name;
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "Netris provider URL")
+    @Parameter(name = ApiConstants.NETRIS_URL, type = CommandType.STRING, required = true, description = "Netris provider URL")
     private String url;
 
     @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "Username to login into Netris")

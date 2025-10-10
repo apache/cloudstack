@@ -88,15 +88,16 @@ public class NoVncClient {
         setTunnelSocketStreams();
     }
 
-    public void connectTo(String host, int port) {
+    public void connectTo(String host, int port) throws IOException {
         // Connect to server
         logger.info("Connecting to VNC server {}:{} ...", host, port);
         try {
             NioSocket nioSocket = new NioSocket(host, port);
             this.nioSocketConnection = new NioSocketHandlerImpl(nioSocket);
-        } catch (Exception e) {
+        } catch (IOException e) {
             logger.error(String.format("Cannot create socket to host: %s and port %s: %s", host, port,
                     e.getMessage()), e);
+            throw e;
         }
     }
 
