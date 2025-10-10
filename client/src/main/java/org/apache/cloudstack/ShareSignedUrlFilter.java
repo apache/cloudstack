@@ -45,7 +45,8 @@ public class ShareSignedUrlFilter implements Filter {
         this.secret = secret;
     }
 
-    @Override public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
+    @Override
+    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
             throws IOException, ServletException {
         HttpServletRequest r = (HttpServletRequest) req;
         HttpServletResponse w = (HttpServletResponse) res;

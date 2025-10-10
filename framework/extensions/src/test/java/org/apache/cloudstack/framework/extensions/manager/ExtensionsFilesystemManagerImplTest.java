@@ -26,9 +26,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,9 +39,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.FileTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import javax.naming.ConfigurationException;
@@ -58,6 +69,7 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.cloud.utils.FileUtil;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
@@ -140,7 +152,7 @@ public class ExtensionsFilesystemManagerImplTest {
         testScript.setExecutable(false);
         String result = extensionsFilesystemManager.getExtensionCheckedPath("test-extension", "test-extension.sh");
         assertNull(result);
-        Mockito.verify(logger).error("{} is not executable", "Entry point [" + testScript.getAbsolutePath() + "] for extension: test-extension");
+        verify(logger).error("{} is not executable", "Entry point [" + testScript.getAbsolutePath() + "] for extension: test-extension");
     }
 
     @Test
@@ -150,7 +162,7 @@ public class ExtensionsFilesystemManagerImplTest {
         Assume.assumeFalse("Skipping test as file can not be marked unreadable", testScript.canRead());
         String result = extensionsFilesystemManager.getExtensionCheckedPath("test-extension", "test-extension.sh");
         assertNull(result);
-        Mockito.verify(logger).error("{} is not readable", "Entry point [" + testScript.getAbsolutePath() + "] for extension: test-extension");
+        verify(logger).error("{} is not readable", "Entry point [" + testScript.getAbsolutePath() + "] for extension: test-extension");
     }
 
     @Test
@@ -170,13 +182,13 @@ public class ExtensionsFilesystemManagerImplTest {
     @Test
     public void testCreateOrCheckExtensionsDataDirectory() throws ConfigurationException {
         extensionsFilesystemManager.createOrCheckExtensionsDataDirectory();
-        Mockito.verify(logger).info("Extensions data directory path: {}", tempDataDir.getAbsolutePath());
+        verify(logger).info("Extensions data directory path: {}", tempDataDir.getAbsolutePath());
     }
 
     @Test(expected = ConfigurationException.class)
     public void testCreateOrCheckExtensionsDataDirectoryCreateThrowsExceptionFail() throws ConfigurationException {
         ReflectionTestUtils.setField(extensionsFilesystemManager, "extensionsDataDirectory", "/nonexistent/path");
-        try(MockedStatic<Files> filesMock = Mockito.mockStatic(Files.class)) {
+        try (MockedStatic<Files> filesMock = Mockito.mockStatic(Files.class)) {
             filesMock.when(() -> Files.createDirectories(any())).thenThrow(new IOException("fail"));
             extensionsFilesystemManager.createOrCheckExtensionsDataDirectory();
         }
@@ -185,10 +197,103 @@ public class ExtensionsFilesystemManagerImplTest {
     @Test(expected = ConfigurationException.class)
     public void testCreateOrCheckExtensionsDataDirectoryNoCreateFail() throws ConfigurationException {
         ReflectionTestUtils.setField(extensionsFilesystemManager, "extensionsDataDirectory", "/nonexistent/path");
-        try(MockedStatic<Files> filesMock = Mockito.mockStatic(Files.class)) {
+        try (MockedStatic<Files> filesMock = Mockito.mockStatic(Files.class)) {
             filesMock.when(() -> Files.createDirectories(any())).thenReturn(mock(Path.class));
             extensionsFilesystemManager.createOrCheckExtensionsDataDirectory();
         }
+    }
+
+    @Test
+    public void schedulesCleanupTaskSuccessfully() {
+        String extensionName = "test-extension";
+        ExecutorService payloadCleanupExecutor = mock(ExecutorService.class);
+        ReflectionTestUtils.setField(extensionsFilesystemManager, "payloadCleanupExecutor", payloadCleanupExecutor);
+        ScheduledExecutorService payloadCleanupScheduler = mock(ScheduledExecutorService.class);
+        ReflectionTestUtils.setField(extensionsFilesystemManager, "payloadCleanupScheduler", payloadCleanupScheduler);
+        extensionsFilesystemManager.scheduleExtensionPayloadDirectoryCleanup(extensionName);
+
+        verify(payloadCleanupExecutor).submit(any(Runnable.class));
+        verify(payloadCleanupScheduler).schedule(any(Runnable.class), eq(3L), eq(TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void handlesRejectedExecutionExceptionGracefully() {
+        String extensionName = "test-extension";
+        ExecutorService payloadCleanupExecutor = mock(ExecutorService.class);
+        ReflectionTestUtils.setField(extensionsFilesystemManager, "payloadCleanupExecutor", payloadCleanupExecutor);
+        doThrow(new RejectedExecutionException("Task rejected"))
+                .when(payloadCleanupExecutor).submit(any(Runnable.class));
+
+        extensionsFilesystemManager.scheduleExtensionPayloadDirectoryCleanup(extensionName);
+
+        verify(logger).warn("Payload cleanup task for extension: {} was rejected due to: {}", extensionName, "Task rejected");
+    }
+
+    @Test
+    public void cancelsTaskIfNotCompletedWithinTimeout() {
+        String extensionName = "test-extension";
+        Future<?> mockFuture = mock(Future.class);
+        ExecutorService payloadCleanupExecutor = mock(ExecutorService.class);
+        ReflectionTestUtils.setField(extensionsFilesystemManager, "payloadCleanupExecutor", payloadCleanupExecutor);
+        ScheduledExecutorService payloadCleanupScheduler = mock(ScheduledExecutorService.class);
+        doAnswer(invocation -> {
+            Runnable runnable = invocation.getArgument(0);
+            runnable.run();
+            return mock(ScheduledFuture.class);
+        }).when(payloadCleanupScheduler).schedule(any(Runnable.class), anyLong(), any(TimeUnit.class));
+        ReflectionTestUtils.setField(extensionsFilesystemManager, "payloadCleanupScheduler", payloadCleanupScheduler);
+        doReturn(mockFuture).when(payloadCleanupExecutor).submit(any(Runnable.class));
+        Mockito.when(mockFuture.isDone()).thenReturn(false);
+
+        extensionsFilesystemManager.scheduleExtensionPayloadDirectoryCleanup(extensionName);
+
+        verify(mockFuture).cancel(true);
+        verify(logger).trace("Cancelled cleaning up payload directory for extension: {} as it running for more than 3 seconds", extensionName);
+    }
+
+    @Test
+    public void logsExceptionDuringCleanupTask() {
+        String extensionName = "test-extension";
+        doThrow(new RuntimeException("Cleanup error"))
+                .when(extensionsFilesystemManager).cleanupExtensionData(extensionName, 1, false);
+        ExecutorService payloadCleanupExecutor = mock(ExecutorService.class);
+        ReflectionTestUtils.setField(extensionsFilesystemManager, "payloadCleanupExecutor", payloadCleanupExecutor);
+        doAnswer(invocation -> {
+            Runnable runnable = invocation.getArgument(0);
+            runnable.run();
+            return mock(Future.class);
+        }).when(payloadCleanupExecutor).submit(any(Runnable.class));
+        ScheduledExecutorService payloadCleanupScheduler = mock(ScheduledExecutorService.class);
+        doAnswer(invocation -> {
+            Runnable runnable = invocation.getArgument(0);
+            runnable.run();
+            return mock(ScheduledFuture.class);
+        }).when(payloadCleanupScheduler).schedule(any(Runnable.class), anyLong(), any(TimeUnit.class));
+        ReflectionTestUtils.setField(extensionsFilesystemManager, "payloadCleanupScheduler", payloadCleanupScheduler);
+        extensionsFilesystemManager.scheduleExtensionPayloadDirectoryCleanup(extensionName);
+
+        verify(logger).warn("Exception during payload cleanup for extension: {} due to {}", extensionName, "Cleanup error");
+    }
+
+    @Test
+    public void logsExceptionWhenCancellingTaskFails() {
+        String extensionName = "test-extension";
+        Future<?> mockFuture = mock(Future.class);
+        ExecutorService payloadCleanupExecutor = mock(ExecutorService.class);
+        ReflectionTestUtils.setField(extensionsFilesystemManager, "payloadCleanupExecutor", payloadCleanupExecutor);
+        ScheduledExecutorService payloadCleanupScheduler = mock(ScheduledExecutorService.class);
+        doAnswer(invocation -> {
+            Runnable runnable = invocation.getArgument(0);
+            runnable.run();
+            return mock(ScheduledFuture.class);
+        }).when(payloadCleanupScheduler).schedule(any(Runnable.class), anyLong(), any(TimeUnit.class));
+        ReflectionTestUtils.setField(extensionsFilesystemManager, "payloadCleanupScheduler", payloadCleanupScheduler);
+        doReturn(mockFuture).when(payloadCleanupExecutor).submit(any(Runnable.class));
+        doThrow(new RuntimeException("Cancel error")).when(mockFuture).cancel(true);
+
+        extensionsFilesystemManager.scheduleExtensionPayloadDirectoryCleanup(extensionName);
+
+        verify(logger).warn("Failed to cancel payload cleanup task for extension: {} due to {}", extensionName, "Cancel error");
     }
 
     @Test
@@ -205,7 +310,7 @@ public class ExtensionsFilesystemManagerImplTest {
             digestHelperMock.when(() -> DigestHelper.calculateChecksum(file2.toFile())).thenReturn("checksum2");
             Map<String, String> result = extensionsFilesystemManager.getChecksumMapForExtension(extensionName, "");
             assertNotNull(result);
-            for(Map.Entry<String, String> entry : result.entrySet()) {
+            for (Map.Entry<String, String> entry : result.entrySet()) {
                 System.out.println(entry.getKey() + ": " + entry.getValue());
             }
             assertTrue(result.size() > 2);
@@ -346,28 +451,132 @@ public class ExtensionsFilesystemManagerImplTest {
     }
 
     @Test
-    public void testCleanupExtensionPath() throws IOException {
-        String extensionDirName = Extension.getDirectoryName("test-extension");
-        File extensionDir = new File(tempDir, extensionDirName);
-        extensionDir.mkdirs();
-        File testFile = new File(extensionDir, "test-file.txt");
-        testFile.createNewFile();
+    public void cleansUpFileWhenPathIsValid() throws IOException {
+        String extensionName = "test-extension";
+        String extensionRelativePath = "test-file.txt";
+        Path rootPath = Paths.get(tempDir.getAbsolutePath());
+        Path filePath = rootPath.resolve(extensionRelativePath);
+        Files.createFile(filePath);
 
-        extensionsFilesystemManager.cleanupExtensionPath("test-extension", extensionDirName + "/test-file.txt");
+        extensionsFilesystemManager.cleanupExtensionPath(extensionName, extensionRelativePath);
 
-        assertFalse(testFile.exists());
+        assertFalse(Files.exists(filePath));
     }
 
     @Test
-    public void testCleanupExtensionData() throws IOException {
-        File extensionDataDir = new File(tempDataDir, "test-extension");
-        extensionDataDir.mkdirs();
-        File testFile = new File(extensionDataDir, "test-file.txt");
-        testFile.createNewFile();
+    public void doesNothingWhenPathDoesNotExist() {
+        String extensionName = "test-extension";
+        String extensionRelativePath = "nonexistent-file.txt";
 
-        extensionsFilesystemManager.cleanupExtensionData("test-extension", 1, true);
+        extensionsFilesystemManager.cleanupExtensionPath(extensionName, extensionRelativePath);
 
-        assertFalse(extensionDataDir.exists());
+        Mockito.verifyNoInteractions(logger);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void throwsExceptionWhenPathIsNotFileOrDirectory() throws IOException {
+        String extensionName = "test-extension";
+        String extensionRelativePath = "invalid-path";
+        Path rootPath = Paths.get(tempDir.getAbsolutePath());
+        Path invalidPath = rootPath.resolve(extensionRelativePath);
+        Files.createSymbolicLink(invalidPath, rootPath);
+
+        extensionsFilesystemManager.cleanupExtensionPath(extensionName, extensionRelativePath);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void throwsExceptionWhenDeletionFails() throws IOException {
+        String extensionName = "test-extension";
+        String extensionRelativePath = "undeletable-file.txt";
+        Path rootPath = Paths.get(tempDir.getAbsolutePath());
+        Path filePath = rootPath.resolve(extensionRelativePath);
+        Files.createFile(filePath);
+        try (MockedStatic<FileUtil> fileUtilMock = Mockito.mockStatic(FileUtil.class)) {
+            fileUtilMock.when(() -> FileUtil.deleteRecursively(filePath)).thenReturn(false);
+
+            extensionsFilesystemManager.cleanupExtensionPath(extensionName, extensionRelativePath);
+        }
+    }
+
+    @Test
+    public void cleansUpDirectoryWhenPathIsValid() throws IOException {
+        String extensionName = "test-extension";
+        String extensionRelativePath = "test-dir";
+        Path rootPath = Paths.get(tempDir.getAbsolutePath());
+        Path dirPath = rootPath.resolve(extensionRelativePath);
+        Files.createDirectories(dirPath);
+
+        extensionsFilesystemManager.cleanupExtensionPath(extensionName, extensionRelativePath);
+
+        assertFalse(Files.exists(dirPath));
+    }
+
+    @Test
+    public void cleansUpEntireDirectoryWhenCleanupDirectoryIsTrue() throws IOException {
+        String extensionName = "test-extension";
+        Path extensionDataDir = Paths.get(tempDataDir.getAbsolutePath(), extensionName);
+        Files.createDirectories(extensionDataDir);
+        Files.createFile(extensionDataDir.resolve("file1.txt"));
+        Files.createFile(extensionDataDir.resolve("file2.txt"));
+
+        extensionsFilesystemManager.cleanupExtensionData(extensionName, 1, true);
+
+        assertFalse(Files.exists(extensionDataDir));
+    }
+
+    @Test
+    public void cleansUpOldFilesWhenOlderThanDaysIsSpecified() throws IOException {
+        String extensionName = "test-extension";
+        Path extensionDataDir = Paths.get(tempDataDir.getAbsolutePath(), extensionName);
+        Files.createDirectories(extensionDataDir);
+        Path oldFile = extensionDataDir.resolve("old-file.txt");
+        Path newFile = extensionDataDir.resolve("new-file.txt");
+        Files.createFile(oldFile);
+        Files.createFile(newFile);
+        Files.setLastModifiedTime(oldFile, FileTime.fromMillis(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(2)));
+        Files.setLastModifiedTime(newFile, FileTime.fromMillis(System.currentTimeMillis()));
+
+        extensionsFilesystemManager.cleanupExtensionData(extensionName, 1, false);
+
+        assertFalse(Files.exists(oldFile));
+        assertTrue(Files.exists(newFile));
+    }
+
+    @Test
+    public void doesNothingWhenDirectoryDoesNotExist() {
+        String extensionName = "nonexistent-extension";
+
+        extensionsFilesystemManager.cleanupExtensionData(extensionName, 1, true);
+
+        Mockito.verifyNoInteractions(logger);
+    }
+
+    @Test
+    public void handlesIOExceptionDuringFileWalkGracefully() throws IOException {
+        String extensionName = "test-extension";
+        Path extensionDataDir = Paths.get(tempDataDir.getAbsolutePath(), extensionName);
+        Files.createDirectories(extensionDataDir);
+        try (MockedStatic<Files> filesMock = Mockito.mockStatic(Files.class)) {
+            filesMock.when(() -> Files.walk(extensionDataDir)).thenThrow(new IOException("File walk error"));
+
+            extensionsFilesystemManager.cleanupExtensionData(extensionName, 1, false);
+        }
+
+        assertTrue(Files.exists(extensionDataDir));
+    }
+
+    @Test
+    public void skipsFilesNotOlderThanSpecifiedDays() throws IOException {
+        String extensionName = "test-extension";
+        Path extensionDataDir = Paths.get(tempDataDir.getAbsolutePath(), extensionName);
+        Files.createDirectories(extensionDataDir);
+        Path recentFile = extensionDataDir.resolve("recent-file.txt");
+        Files.createFile(recentFile);
+        Files.setLastModifiedTime(recentFile, FileTime.fromMillis(System.currentTimeMillis()));
+
+        extensionsFilesystemManager.cleanupExtensionData(extensionName, 1, false);
+
+        assertTrue(Files.exists(recentFile));
     }
 
     @Test
@@ -444,6 +653,53 @@ public class ExtensionsFilesystemManagerImplTest {
         Path stagingPath = Paths.get(tempDir.getAbsolutePath(), ".staging");
         stagingPath.toFile().createNewFile(); // Create a file with the same name to block directory creation
         extensionsFilesystemManager.getExtensionsStagingPath();
+    }
+
+    @Test
+    public void doesNothingWhenFileListIsEmpty() {
+        Extension extension = mock(Extension.class);
+        extensionsFilesystemManager.validateExtensionFiles(extension, null);
+        extensionsFilesystemManager.validateExtensionFiles(extension, List.of());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void throwsExceptionWhenExtensionDirectoryDoesNotExist() {
+        Extension extension = mock(Extension.class);
+        doReturn(Paths.get("/nonexistent/path")).when(extensionsFilesystemManager).getExtensionRootPath(extension);
+
+        extensionsFilesystemManager.validateExtensionFiles(extension, List.of("file1.txt"));
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void throwsExceptionWhenFileDoesNotExist() {
+        Extension extension = mock(Extension.class);
+        Path rootPath = tempDir.toPath();
+        doReturn(rootPath).when(extensionsFilesystemManager).getExtensionRootPath(extension);
+
+        extensionsFilesystemManager.validateExtensionFiles(extension, List.of("nonexistent-file.txt"));
+    }
+
+    @Test
+    public void validatesFilesWhenAllExist() throws IOException {
+        Extension extension = mock(Extension.class);
+        Path rootPath = tempDir.toPath();
+        Path file1 = Files.createFile(rootPath.resolve("file1.txt"));
+        Path file2 = Files.createFile(rootPath.resolve("file2.txt"));
+        doReturn(rootPath).when(extensionsFilesystemManager).getExtensionRootPath(extension);
+
+        extensionsFilesystemManager.validateExtensionFiles(extension, List.of("file1.txt", "file2.txt"));
+
+        assertTrue(Files.exists(file1));
+        assertTrue(Files.exists(file2));
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void throwsExceptionWhenRelativeFilePathIsInvalid() {
+        Extension extension = mock(Extension.class);
+        Path rootPath = tempDir.toPath();
+        doReturn(rootPath).when(extensionsFilesystemManager).getExtensionRootPath(extension);
+
+        extensionsFilesystemManager.validateExtensionFiles(extension, List.of("../invalid-path/file.txt"));
     }
 
     @Test
