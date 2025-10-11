@@ -49,6 +49,4 @@ public interface ExtensionsFilesystemManager {
     void deleteExtensionPayload(String extensionName, String payloadFileName);
 
     void validateExtensionFiles(Extension extension, List<String> files);
-
-    boolean packExtensionFilesAsTgz(Extension extension, Path extensionFilesPath, Path archivePath);
 }

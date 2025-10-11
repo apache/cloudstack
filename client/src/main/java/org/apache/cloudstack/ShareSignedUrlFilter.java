@@ -32,16 +32,15 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.cloudstack.utils.security.HMACSignUtil;
 import org.apache.commons.codec.DecoderException;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Optional HMAC token check: /share/...?...&exp=1699999999&sig=BASE64URL(HMACSHA256(path|exp))
  */
 public class ShareSignedUrlFilter implements Filter {
-    private final boolean requireToken;
     private final String secret;
 
-    public ShareSignedUrlFilter(boolean requireToken, String secret) {
-        this.requireToken = requireToken;
+    public ShareSignedUrlFilter(String secret) {
         this.secret = secret;
     }
 
@@ -54,10 +53,6 @@ public class ShareSignedUrlFilter implements Filter {
         String expStr = r.getParameter("exp");
         String sig = r.getParameter("sig");
 
-        if (!requireToken && (expStr == null || sig == null)) {
-            chain.doFilter(req, res);
-            return;
-        }
         if (expStr == null || sig == null) {
             w.sendError(HttpServletResponse.SC_FORBIDDEN, "Missing token");
             return;

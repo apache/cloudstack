@@ -355,7 +355,7 @@ public class ServerDaemon implements Daemon {
 
         // Optional signed-URL guard (path + "|" + exp => HMAC-SHA256, base64url)
         if (StringUtils.isNotBlank(shareSecret)) {
-            shareCtx.addFilter(new FilterHolder(new ShareSignedUrlFilter(true, shareSecret)),
+            shareCtx.addFilter(new FilterHolder(new ShareSignedUrlFilter(shareSecret)),
                     "/*", EnumSet.of(DispatcherType.REQUEST));
         }
 

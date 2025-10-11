@@ -248,17 +248,6 @@ public class ExtensionsFilesystemManagerImpl extends ManagerBase implements Exte
         }
     }
 
-    protected boolean packFilesAsTgz(Path sourcePath, Path archivePath) {
-        int result = Script.executeCommandForExitValue(
-                60 * 1000,
-                Script.getExecutableAbsolutePath("tar"),
-                "-czpf", archivePath.toAbsolutePath().toString(),
-                "-C", sourcePath.toAbsolutePath().toString(),
-                "."
-        );
-        return result == 0;
-    }
-
     @Override
     public void prepareExtensionPath(String extensionName, boolean userDefined, Extension.Type type, String extensionRelativePath) {
         logger.debug("Preparing entry point for Extension [name: {}, user-defined: {}]", extensionName, userDefined);
@@ -437,12 +426,5 @@ public class ExtensionsFilesystemManagerImpl extends ManagerBase implements Exte
                 throw new CloudRuntimeException("File does not exist: " + filePath);
             }
         }
-    }
-
-    @Override
-    public boolean packExtensionFilesAsTgz(Extension extension, Path extensionFilesPath, Path archivePath) {
-        logger.debug("Packing files for {} from: {} to archive: {}", extension,
-                extensionFilesPath.toAbsolutePath(), archivePath.toAbsolutePath());
-        return packFilesAsTgz(extensionFilesPath, archivePath);
     }
 }

@@ -44,6 +44,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.extensions.command.DownloadAndSyncExtensionFilesCommand;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.cloudstack.utils.filesystem.ArchiveUtil;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.cloudstack.utils.security.HMACSignUtil;
 import org.apache.cloudstack.utils.server.ServerPropertiesUtil;
@@ -126,13 +127,13 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
     }
 
     /**
-      * Creates a .tgz archive for the specified extension.
+      * Creates an archive for the specified extension.
       * If the files list is empty, the entire extension directory is archived.
       * If the files list is not empty, only the specified relative files are archived; throws if any file is missing.
       *
       * @return ArchiveInfo containing the archive path, size, SHA-256 checksum, and sync type.
       */
-    protected ArchiveInfo createArchive(Extension extension, List<String> files) throws IOException {
+    protected ArchiveInfo createArchiveForSync(Extension extension, List<String> files) throws IOException {
         final boolean isPartial = CollectionUtils.isNotEmpty(files);
         final DownloadAndSyncExtensionFilesCommand.SyncType syncType =
                 isPartial ? DownloadAndSyncExtensionFilesCommand.SyncType.Partial
@@ -161,7 +162,7 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
         }
         Path archivePath = getExtensionsSharePath().resolve(archiveName.toString());
 
-        if (!packAsTgz(extension, extensionRootPath, toPack, archivePath)) {
+        if (!packArchiveForSync(extension, extensionRootPath, toPack, archivePath)) {
             throw new IOException("Failed to create archive " + archivePath);
         }
 
@@ -227,7 +228,7 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
      * @return true if the archive was created successfully, false otherwise
      * @throws IOException if an I/O error occurs during packing
      */
-    protected boolean packAsTgz(Extension extension, Path extensionRootPath, List<Path> toPack, Path archivePath)
+    protected boolean packArchiveForSync(Extension extension, Path extensionRootPath, List<Path> toPack, Path archivePath)
             throws IOException {
         Files.createDirectories(archivePath.getParent());
         FileUtil.deletePath(archivePath.toAbsolutePath().toString());
@@ -244,24 +245,15 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
                 Files.copy(p, dest, StandardCopyOption.COPY_ATTRIBUTES);
             }
         }
-
-        boolean result = extensionsFilesystemManager.packExtensionFilesAsTgz(extension, sourceDir, archivePath);
+        logger.debug("Packing files for {} from: {} to archive: {}", extension, sourceDir,
+                archivePath.toAbsolutePath());
+        boolean result = ArchiveUtil.packPath(ArchiveUtil.ArchiveFormat.TGZ, sourceDir, archivePath, 60);
 
         if (!sourceDir.equals(extensionRootPath)) {
             FileUtil.deleteRecursively(sourceDir);
         }
 
         return result;
-    }
-
-    protected static boolean extractTgz(Path archive, Path destRoot) throws IOException {
-        int result = Script.executeCommandForExitValue(
-                60 * 1000,
-                Script.getExecutableAbsolutePath("tar"),
-                "-xpf", archive.toAbsolutePath().toString(),
-                "-C", destRoot.toAbsolutePath().toString()
-        );
-        return result == 0;
     }
 
     protected long downloadTo(String url, Path dest) throws IOException {
@@ -359,7 +351,7 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
         Path stagingDir = extensionsFilesystemManager.getExtensionsStagingPath();
         Path applyRoot = Files.createTempDirectory(stagingDir,
                 Extension.getDirectoryName(extension.getName()) + "-");
-        if (!extractTgz(tmpArchive, applyRoot)) {
+        if (!ArchiveUtil.extractToPath(ArchiveUtil.ArchiveFormat.TGZ, tmpArchive, applyRoot, 60)) {
             throw new IOException("Failed to extract archive " + tmpArchive);
         }
         if (DownloadAndSyncExtensionFilesCommand.SyncType.Complete.equals(syncType)) {
@@ -431,7 +423,7 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
         ArchiveInfo archiveInfo = null;
         try {
             try {
-                archiveInfo = createArchive(extension, files);
+                archiveInfo = createArchiveForSync(extension, files);
             } catch (IOException e) {
                 String msg = "Failed to create archive";
                 logger.error("{} for {}", extension, msg, e);

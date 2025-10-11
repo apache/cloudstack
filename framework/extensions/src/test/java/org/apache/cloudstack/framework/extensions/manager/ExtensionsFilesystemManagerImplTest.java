@@ -43,7 +43,6 @@ import java.nio.file.attribute.FileTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -369,49 +368,6 @@ public class ExtensionsFilesystemManagerImplTest {
     }
 
     @Test
-    public void packFilesAsTgzReturnsTrue() {
-        Path sourcePath = tempDir.toPath();
-        Path archivePath = Path.of("test-archive.tgz");
-        try (MockedStatic<Script> scriptMock = Mockito.mockStatic(Script.class)) {
-            scriptMock.when(() -> Script.executeCommandForExitValue(anyLong(), any(String[].class))).thenReturn(0);
-            boolean result = extensionsFilesystemManager.packFilesAsTgz(sourcePath, archivePath);
-            assertTrue(result);
-        }
-    }
-
-    @Test
-    public void packFilesAsTgzReturnsFalse() {
-        Path sourcePath = tempDir.toPath();
-        Path archivePath = Path.of("test-archive.tgz");
-        try (MockedStatic<Script> scriptMock = Mockito.mockStatic(Script.class)) {
-            scriptMock.when(() -> Script.executeCommandForExitValue(anyLong(), any(String[].class))).thenReturn(1);
-            boolean result = extensionsFilesystemManager.packFilesAsTgz(sourcePath, archivePath);
-            assertFalse(result);
-        }
-    }
-
-    @Test
-    public void packFilesAsTgzForValidInputs() {
-        if ("tar".equals(Script.getExecutableAbsolutePath("tar"))) {
-            System.out.println("Skipping test as tar command is not available");
-            // tar command not found; skipping test
-            return;
-        }
-        Path sourcePath = tempDir.toPath();
-        Path archivePath = Paths.get(System.getProperty("java.io.tmpdir"), "testarchive-" + UUID.randomUUID() + ".tgz");
-        try {
-            boolean result = extensionsFilesystemManager.packFilesAsTgz(sourcePath, archivePath);
-            assertTrue(result);
-        } finally {
-            try {
-                Files.deleteIfExists(archivePath);
-            } catch (IOException e) {
-                // ignore
-            }
-        }
-    }
-
-    @Test
     public void testPrepareExtensionPath() throws IOException {
         try (MockedStatic<Script> scriptMock = Mockito.mockStatic(Script.class)) {
             File mockScript = new File(tempDir, "extensionsFilesystemManager.sh");
@@ -700,25 +656,5 @@ public class ExtensionsFilesystemManagerImplTest {
         doReturn(rootPath).when(extensionsFilesystemManager).getExtensionRootPath(extension);
 
         extensionsFilesystemManager.validateExtensionFiles(extension, List.of("../invalid-path/file.txt"));
-    }
-
-    @Test
-    public void packExtensionFilesAsTgzReturnsTrue() {
-        Extension extension = mock(Extension.class);
-        Path sourcePath = tempDir.toPath();
-        Path archivePath = Path.of("test-archive.tgz");
-        doReturn(true).when(extensionsFilesystemManager).packFilesAsTgz(sourcePath, archivePath);
-        boolean result = extensionsFilesystemManager.packExtensionFilesAsTgz(extension, sourcePath, archivePath);
-        assertTrue(result);
-    }
-
-    @Test
-    public void packExtensionFilesAsTgzReturnsFalse() {
-        Extension extension = mock(Extension.class);
-        Path sourcePath = tempDir.toPath();
-        Path archivePath = Path.of("test-archive.tgz");
-        doReturn(false).when(extensionsFilesystemManager).packFilesAsTgz(sourcePath, archivePath);
-        boolean result = extensionsFilesystemManager.packExtensionFilesAsTgz(extension, sourcePath, archivePath);
-        assertFalse(result);
     }
 }
