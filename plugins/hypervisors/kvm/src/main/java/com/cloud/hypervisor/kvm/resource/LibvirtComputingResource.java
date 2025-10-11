@@ -6396,18 +6396,41 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         for (DisconnectHook hook : _disconnectHooks) {
             hook.start();
         }
+        // compute a shared deadline = now + max(timeout of hooks)
         long start = System.currentTimeMillis();
+        long maxTimeoutMs = 0;
+        for (DisconnectHook hook : _disconnectHooks) {
+            maxTimeoutMs = Math.max(maxTimeoutMs, hook.getTimeoutMs());
+        }
+        System.out.println("Max timeout for disconnect hooks is " + maxTimeoutMs + "ms");
+        final long globalDeadline = start + maxTimeoutMs;
+
+        // join each hook using remaining time until the shared deadline
         for (DisconnectHook hook : _disconnectHooks) {
             try {
-                long elapsed = System.currentTimeMillis() - start;
-                long remaining = hook.getTimeoutMs() - elapsed;
-                long joinWait = remaining > 0 ? remaining : 1;
-                hook.join(joinWait);
-                hook.interrupt();
+                long now = System.currentTimeMillis();
+                long hookDeadline = start + Math.max(0, hook.getTimeoutMs());
+                long effectiveDeadline = Math.min(globalDeadline, hookDeadline);
+                long remaining = effectiveDeadline - now;
+                System.out.println("Joining disconnect hook " + hook + ", remaining time is " + remaining + "ms");
+                if (remaining <= 0) {
+                    // overall timeout already expired
+                    if (hook.isAlive()) {
+                        System.out.println("Interrupting disconnect hook " + hook + " due to timeout");
+                        hook.interrupt();
+                    }
+                    continue;
+                }
+                hook.join(remaining);
+                if (hook.isAlive()) {
+                    hook.interrupt();
+                }
             } catch (InterruptedException ex) {
-                LOGGER.warn("Interrupted disconnect hook: " + ex.getMessage());
+                Thread.currentThread().interrupt();
+                LOGGER.warn("Interrupted while waiting for disconnect hook: " + ex.getMessage());
             }
         }
+
         _disconnectHooks.clear();
     }
 

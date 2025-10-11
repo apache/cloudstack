@@ -30,7 +30,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LazyCacheTest {
-    private final long expireSeconds = 1;
+    private final long expireSeconds = 2;
     private final String cacheValuePrefix = "ComputedValueFor:";
     private LazyCache<String, String> cache;
     private Function<String, String> mockLoader;
