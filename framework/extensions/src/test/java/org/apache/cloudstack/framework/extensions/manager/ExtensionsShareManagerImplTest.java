@@ -40,6 +40,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileTime;
 import java.security.NoSuchAlgorithmException;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.cloudstack.extension.Extension;
@@ -191,9 +192,11 @@ public class ExtensionsShareManagerImplTest {
     public void createArchiveCreatesCompleteArchiveForSyncSuccessfully() throws IOException {
         Extension extension = mock(Extension.class);
         String name = "testExtension";
-        String path = "extension" + File.separator + name;
+        String path = "extensions" + File.separator + name;
         when(extension.getName()).thenReturn(name);
+        when(extension.getRelativePath()).thenReturn(path);
         Path extensionRootPath = Path.of(path);
+        when(extensionsFilesystemManager.getExtensionCheckedPath(name, path)).thenReturn(path);
         when(extensionsFilesystemManager.getExtensionRootPath(extension)).thenReturn(extensionRootPath);
         try (MockedStatic<DigestHelper> ignored = mockStatic(DigestHelper.class);
              MockedStatic<Files> ignored1 = mockStatic(Files.class)) {
@@ -217,9 +220,11 @@ public class ExtensionsShareManagerImplTest {
     public void createArchiveCreatesPartialArchiveForSyncSuccessfully() throws IOException {
         Extension extension = mock(Extension.class);
         String name = "testExtension";
-        String path = "extension" + File.separator + name;
+        String path = "extensions" + File.separator + name;
         when(extension.getName()).thenReturn(name);
+        when(extension.getRelativePath()).thenReturn(path);
         Path extensionRootPath = Path.of(path);
+        when(extensionsFilesystemManager.getExtensionCheckedPath(name, path)).thenReturn(path);
         when(extensionsFilesystemManager.getExtensionRootPath(extension)).thenReturn(extensionRootPath);
         try (MockedStatic<DigestHelper> ignored = mockStatic(DigestHelper.class);
              MockedStatic<Files> ignored1 = mockStatic(Files.class)) {
@@ -239,10 +244,26 @@ public class ExtensionsShareManagerImplTest {
         }
     }
 
+    @Test(expected = IOException.class)
+    public void createArchiveForSyncThrowsExceptionForInvalidExtensionPath() throws IOException{
+        Extension extension = mock(Extension.class);
+        String name = "testExtension";
+        String path = "extensions" + File.separator + name;
+        when(extension.getName()).thenReturn(name);
+        when(extension.getRelativePath()).thenReturn(path);
+        when(extensionsFilesystemManager.getExtensionCheckedPath(name, path)).thenReturn(null);
+        extensionsShareManager.createArchiveForSync(extension, Collections.emptyList());
+    }
+
     @Test
     public void createArchiveForSyncThrowsExceptionForInvalidFilePath() {
         Extension extension = mock(Extension.class);
-        Path extensionRootPath = Path.of("/extensions/testExtension");
+        String name = "testExtension";
+        String path = "extensions" + File.separator + name;
+        when(extension.getName()).thenReturn(name);
+        when(extension.getRelativePath()).thenReturn(path);
+        Path extensionRootPath = Path.of(path);
+        when(extensionsFilesystemManager.getExtensionCheckedPath(name, path)).thenReturn(path);
         when(extensionsFilesystemManager.getExtensionRootPath(extension)).thenReturn(extensionRootPath);
         assertThrows(SecurityException.class, () -> extensionsShareManager.createArchiveForSync(extension, List.of("../invalid.txt")));
     }
@@ -250,7 +271,12 @@ public class ExtensionsShareManagerImplTest {
     @Test
     public void createArchiveForSyncThrowsExceptionForMissingFile() {
         Extension extension = mock(Extension.class);
-        Path extensionRootPath = Path.of("/extensions/testExtension");
+        String name = "testExtension";
+        String path = "extensions" + File.separator + name;
+        when(extension.getName()).thenReturn(name);
+        when(extension.getRelativePath()).thenReturn(path);
+        Path extensionRootPath = Path.of(path);
+        when(extensionsFilesystemManager.getExtensionCheckedPath(name, path)).thenReturn(path);
         when(extensionsFilesystemManager.getExtensionRootPath(extension)).thenReturn(extensionRootPath);
         assertThrows(NoSuchFileException.class, () -> extensionsShareManager.createArchiveForSync(extension, List.of("missing.txt")));
     }
@@ -258,8 +284,12 @@ public class ExtensionsShareManagerImplTest {
     @Test
     public void createArchiveForSyncThrowsIOExceptionWhenPackingFails() throws IOException {
         Extension extension = mock(Extension.class);
-        when(extension.getName()).thenReturn("testExtension");
-        Path extensionRootPath = Path.of("/extensions/testExtension");
+        String name = "testExtension";
+        String path = "extensions" + File.separator + name;
+        when(extension.getName()).thenReturn(name);
+        when(extension.getRelativePath()).thenReturn(path);
+        Path extensionRootPath = Path.of(path);
+        when(extensionsFilesystemManager.getExtensionCheckedPath(name, path)).thenReturn(path);
         when(extensionsFilesystemManager.getExtensionRootPath(extension)).thenReturn(extensionRootPath);
         doReturn(false).when(extensionsShareManager).packArchiveForSync(eq(extension), eq(extensionRootPath),
                 Mockito.anyList(), Mockito.any());

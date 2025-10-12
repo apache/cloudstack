@@ -31,6 +31,14 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.cloudstack.utils.security.HMACSignUtil;
 import org.junit.Test;
 
+/**
+ * Unit tests for {@link ShareSignedUrlFilter}.
+ *
+ * Tests cover:
+ * - invalid or missing `exp` parameter
+ * - expired tokens outside the allowed time delta
+ * - valid signatures when `exp` is within the allowed delta
+ */
 public class ShareSignedUrlFilterTest {
 
     @Test

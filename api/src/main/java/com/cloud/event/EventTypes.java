@@ -845,6 +845,7 @@ public class EventTypes {
     public static final String EVENT_EXTENSION_UPDATE = "EXTENSION.UPDATE";
     public static final String EVENT_EXTENSION_DELETE = "EXTENSION.DELETE";
     public static final String EVENT_EXTENSION_SYNC = "EXTENSION.SYNC";
+    public static final String EVENT_EXTENSION_DOWNLOAD = "EXTENSION.DOWNLOAD";
     public static final String EVENT_EXTENSION_RESOURCE_REGISTER = "EXTENSION.RESOURCE.REGISTER";
     public static final String EVENT_EXTENSION_RESOURCE_UNREGISTER = "EXTENSION.RESOURCE.UNREGISTER";
     public static final String EVENT_EXTENSION_CUSTOM_ACTION_ADD = "EXTENSION.CUSTOM.ACTION.ADD";

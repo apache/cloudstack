@@ -32,10 +32,9 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.cloudstack.utils.security.HMACSignUtil;
 import org.apache.commons.codec.DecoderException;
-import org.apache.commons.lang3.StringUtils;
 
 /**
- * Optional HMAC token check: /share/...?...&exp=1699999999&sig=BASE64URL(HMACSHA256(path|exp))
+ * HMAC token check: /share/...?...&exp=1699999999&sig=BASE64URL(HMACSHA256(path|exp))
  */
 public class ShareSignedUrlFilter implements Filter {
     private final String secret;

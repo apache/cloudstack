@@ -15,22 +15,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.framework.extensions.manager;
-
-
-import java.util.List;
+package org.apache.cloudstack.framework.extensions.command;
 
 import org.apache.cloudstack.extension.Extension;
-import org.apache.cloudstack.framework.extensions.command.DownloadAndSyncExtensionFilesCommand;
-import org.apache.cloudstack.management.ManagementServerHost;
 
-import com.cloud.utils.Pair;
+public class DownloadExtensionFilesCommand extends ExtensionServerActionBaseCommand {
 
-public interface ExtensionsShareManager {
-    Pair<Boolean, String> syncExtension(Extension extension, ManagementServerHost sourceManagementServer,
-                  List<ManagementServerHost> targetManagementServers, List<String> files);
-
-    Pair<Boolean, String> downloadAndApplyExtensionSync(Extension extension, DownloadAndSyncExtensionFilesCommand cmd);
-
-    Pair<Boolean, String> downloadExtension(Extension extension, ManagementServerHost managementServer);
+    public DownloadExtensionFilesCommand(long msId, Extension extension) {
+        super(msId, extension);
+    }
 }

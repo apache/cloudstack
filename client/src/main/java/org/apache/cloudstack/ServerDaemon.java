@@ -147,6 +147,14 @@ public class ServerDaemon implements Daemon {
         setShareCacheCtl(ServerPropertiesUtil.getShareCacheControl());
         setShareDirList(ServerPropertiesUtil.getShareDirAllowed());
         setShareSecret(ServerPropertiesUtil.getShareSecret());
+
+        logger.info(String.format("/%s static context enabled=%s, baseDir=%s, dirList=%s, cacheCtl=%s, secret=%s",
+                ServerPropertiesUtil.SHARE_DIR,
+                shareEnabled,
+                shareBaseDir,
+                shareDirList,
+                shareCacheCtl,
+                (StringUtils.isNotBlank(shareSecret) ? "configured" : "not configured")));
     }
 
     @Override

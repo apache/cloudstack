@@ -75,7 +75,7 @@ public class ServerPropertiesUtil {
     }
 
     public static boolean getShareEnabled() {
-        return Boolean.parseBoolean(getProperty(SHARE_ENABLED, "false"));
+        return Boolean.parseBoolean(getProperty(SHARE_ENABLED, "true"));
     }
 
     public static String getShareBaseDirectory() {

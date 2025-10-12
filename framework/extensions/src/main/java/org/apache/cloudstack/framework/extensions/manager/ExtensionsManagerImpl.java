@@ -68,6 +68,7 @@ import org.apache.cloudstack.framework.extensions.api.AddCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.CreateExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.DeleteCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.DeleteExtensionCmd;
+import org.apache.cloudstack.framework.extensions.api.DownloadExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.ListCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.ListExtensionsCmd;
 import org.apache.cloudstack.framework.extensions.api.RegisterExtensionCmd;
@@ -76,8 +77,10 @@ import org.apache.cloudstack.framework.extensions.api.SyncExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.UnregisterExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateExtensionCmd;
+import org.apache.cloudstack.framework.extensions.api.response.DownloadExtensionResponse;
 import org.apache.cloudstack.framework.extensions.command.CleanupExtensionFilesCommand;
 import org.apache.cloudstack.framework.extensions.command.DownloadAndSyncExtensionFilesCommand;
+import org.apache.cloudstack.framework.extensions.command.DownloadExtensionFilesCommand;
 import org.apache.cloudstack.framework.extensions.command.ExtensionRoutingUpdateCommand;
 import org.apache.cloudstack.framework.extensions.command.ExtensionServerActionBaseCommand;
 import org.apache.cloudstack.framework.extensions.command.GetExtensionPathChecksumCommand;
@@ -1569,6 +1572,10 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             final DownloadAndSyncExtensionFilesCommand cmd = (DownloadAndSyncExtensionFilesCommand)command;
             Pair<Boolean, String> result = downloadAndSyncExtensionFiles(cmd);
             answer = new Answer(cmd, result.first(), result.second());
+        } else if (command instanceof DownloadExtensionFilesCommand) {
+            final DownloadExtensionFilesCommand cmd = (DownloadExtensionFilesCommand)command;
+            Pair<Boolean, String> result = downloadExtensionFiles(cmd);
+            answer = new Answer(cmd, result.first(), result.second());
         }
         final Answer[] answers = new Answer[1];
         answers[0] = answer;
@@ -1742,13 +1749,72 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             result = extensionsShareManager.syncExtension(extension, sourceManagementServer, targetManagementServers,
                     files);
         }
-        if (!result.first()) {
+        if (result == null || !result.first()) {
+            String msg = result == null ? "Null result received for sync operation" : result.second();
             throw new CloudRuntimeException(String.format("Failed to sync extension '%s' via '%s': %s",
-                    extension.getName(), sourceManagementServer.getName(), result.second()));
+                    extension.getName(), sourceManagementServer.getName(), msg));
         }
 
         checkExtensionPathState(extension);
         return true;
+    }
+
+    protected Pair<Boolean, String> downloadExtensionUsingMSPeer(ExtensionVO extension,
+                 ManagementServerHostVO managementServer) {
+        logger.debug("Initiating download for {} using {}", extension, managementServer);
+        final String msPeer = Long.toString(managementServer.getMsid());
+        final Command[] cmds = new Command[1];
+        cmds[0] = new DownloadExtensionFilesCommand(
+                ManagementServerNode.getManagementServerId(), extension);
+        String answersStr = clusterManager.execute(msPeer, 0L, GsonHelper.getGson().toJson(cmds), true);
+        return getResultFromAnswersString(answersStr, extension, managementServer, "download");
+    }
+
+    protected Pair<Boolean, String> downloadExtensionFiles(DownloadExtensionFilesCommand cmd) {
+        final long extensionId = cmd.getExtensionId();
+        final ExtensionVO extension = extensionDao.findById(extensionId);
+        if (extension == null) {
+            String msg = String.format("Unable to find extension with id: %d for starting sync", extensionId);
+            logger.error(msg);
+            return new Pair<>(false, msg);
+        }
+        return extensionsShareManager.downloadExtension(extension,
+                managementServerHostDao.findByMsid(ManagementServerNode.getManagementServerId()));
+    }
+
+    @Override
+    public DownloadExtensionResponse downloadExtension(DownloadExtensionCmd cmd) {
+        final long extensionId = cmd.getId();
+        final Long managementServerId = cmd.getManagementServerId();
+        final ExtensionVO extension = extensionDao.findById(extensionId);
+        if (extension == null) {
+            throw new InvalidParameterValueException("Unable to find extension with the specified id");
+        }
+        final ManagementServerHostVO managementServer = managementServerId == null ?
+                managementServerHostDao.findByMsid(ManagementServerNode.getManagementServerId()) :
+                managementServerHostDao.findById(managementServerId);
+        if (managementServer == null || !ManagementServerHost.State.Up.equals(managementServer.getState())) {
+            throw new InvalidParameterValueException("Unable to find active source management server with the specified id");
+        }
+        Pair<Boolean, String> result;
+        if (ManagementServerNode.getManagementServerId() != managementServer.getMsid()) {
+            result = downloadExtensionUsingMSPeer(extension, managementServer);
+        } else {
+            result = extensionsShareManager.downloadExtension(extension, managementServer);
+        }
+        if (result == null || !result.first()) {
+            String msg = result == null ? "Null result received for download operation" : result.second();
+            throw new CloudRuntimeException(String.format("Failed to download extension '%s' via '%s': %s",
+                    extension.getName(), managementServer.getName(), msg));
+        }
+        DownloadExtensionResponse response = new DownloadExtensionResponse();
+        response.setId(extension.getUuid());
+        response.setName(extension.getName());
+        response.setManagementServerId(managementServer.getUuid());
+        response.setManagementServerName(managementServer.getName());
+        response.setUrl(result.second());
+        response.setObjectName("extension");
+        return response;
     }
 
     @Override
@@ -1821,6 +1887,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         cmds.add(RegisterExtensionCmd.class);
         cmds.add(UnregisterExtensionCmd.class);
         cmds.add(SyncExtensionCmd.class);
+        cmds.add(DownloadExtensionCmd.class);
         return cmds;
     }
 

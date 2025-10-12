@@ -18,21 +18,20 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
-import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class ExtractResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "the id of extracted object")
-    private String id;
+    protected String id;
 
     @SerializedName(ApiConstants.NAME)
     @Param(description = "the name of the extracted object")
-    private String name;
+    protected String name;
 
     @SerializedName("extractId")
     @Param(description = "the upload id of extracted object")
@@ -80,7 +79,7 @@ public class ExtractResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.URL)
     @Param(description = "if mode = upload then url of the uploaded entity. if mode = download the url from which the entity can be downloaded")
-    private String url;
+    protected String url;
 
     public ExtractResponse() {
     }

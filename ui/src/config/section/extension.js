@@ -134,8 +134,22 @@ export default {
       message: 'message.confirm.sync.extension',
       dataView: true,
       popup: true,
-      component: shallowRef(defineAsyncComponent(() => import('@/views/extension/SyncExtension.vue'))),
-      show: (record) => { return ['Enabled'].includes(record.state) }
+      component: shallowRef(defineAsyncComponent(() => import('@/views/extension/SyncExtension.vue')))
+    },
+    {
+      api: 'downloadExtension',
+      icon: 'cloud-download-outlined',
+      label: 'label.download.extension',
+      message: 'message.action.download.extension',
+      dataView: true,
+      popup: true,
+      args: ['id', 'managementserverid'],
+      mapping: {
+        id: {
+          value: (record, params) => { return record.id }
+        }
+      },
+      response: (result) => { console.log(result); return `Please click <a href="${result.extension.url}" target="_blank">${result.extension.name}</a> to download.` }
     },
     {
       api: 'deleteExtension',

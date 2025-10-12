@@ -62,7 +62,6 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.script.Script;
 
 public class ExtensionsShareManagerImpl extends ManagerBase implements ExtensionsShareManager {
 
@@ -134,6 +133,11 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
       * @return ArchiveInfo containing the archive path, size, SHA-256 checksum, and sync type.
       */
     protected ArchiveInfo createArchiveForSync(Extension extension, List<String> files) throws IOException {
+        final String extensionPath = extensionsFilesystemManager.getExtensionCheckedPath(extension.getName(),
+                extension.getRelativePath());
+        if (extensionPath == null) {
+            throw new IOException(String.format("Path not found %s", extension.getRelativePath()));
+        }
         final boolean isPartial = CollectionUtils.isNotEmpty(files);
         final DownloadAndSyncExtensionFilesCommand.SyncType syncType =
                 isPartial ? DownloadAndSyncExtensionFilesCommand.SyncType.Partial
@@ -145,7 +149,7 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
             for (String rel : files) {
                 Path p = extensionRootPath.resolve(rel).normalize();
                 if (!p.startsWith(extensionRootPath)) {
-                    throw new SecurityException("Path escapes version dir: " + rel);
+                    throw new SecurityException("File path escapes extension directory: " + rel);
                 }
                 if (!Files.exists(p)) {
                     throw new NoSuchFileException("File not found: " + p.toAbsolutePath().toString());
@@ -172,6 +176,29 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
         String checksum = DigestHelper.calculateChecksum(archivePath.toFile());
 
         return new ArchiveInfo(archivePath, size, checksum, syncType);
+    }
+
+    protected ArchiveInfo createArchiveForDownload(Extension extension) throws IOException {
+        final String extensionPath = extensionsFilesystemManager.getExtensionCheckedPath(extension.getName(),
+                extension.getRelativePath());
+        if (extensionPath == null) {
+            throw new IOException(String.format("Path not found %s", extension.getRelativePath()));
+        }
+        final Path extensionRootPath = extensionsFilesystemManager.getExtensionRootPath(extension);
+        String archiveName = Extension.getDirectoryName(extension.getName()) +
+                "-" + System.currentTimeMillis() + ".zip";
+        Path archivePath = getExtensionsSharePath().resolve(archiveName);
+
+        if (!packArchiveForDownload(extension, extensionRootPath, archivePath)) {
+            throw new IOException("Failed to create archive " + archivePath);
+        }
+
+        logger.info("Created archive {} from {}", archivePath, extensionRootPath);
+
+        long size = Files.size(archivePath);
+        String checksum = DigestHelper.calculateChecksum(archivePath.toFile());
+
+        return new ArchiveInfo(archivePath, size, checksum, DownloadAndSyncExtensionFilesCommand.SyncType.Complete);
     }
 
     /**
@@ -254,6 +281,15 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
         }
 
         return result;
+    }
+    protected boolean packArchiveForDownload(Extension extension, Path extensionRootPath, Path archivePath)
+            throws IOException {
+        Files.createDirectories(archivePath.getParent());
+        FileUtil.deletePath(archivePath.toAbsolutePath().toString());
+        logger.debug("Packing files for {} from: {} to archive: {}", extension, extensionRootPath,
+                archivePath.toAbsolutePath());
+
+        return ArchiveUtil.packPath(ArchiveUtil.ArchiveFormat.ZIP, extensionRootPath, archivePath, 60);
     }
 
     protected long downloadTo(String url, Path dest) throws IOException {
@@ -491,6 +527,26 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
             }
         }
         return new Pair<>(true, "");
+    }
+
+    @Override
+    public Pair<Boolean, String> downloadExtension(Extension extension, ManagementServerHost managementServer) {
+        ArchiveInfo archiveInfo;
+        try {
+            archiveInfo = createArchiveForDownload(extension);
+        } catch (IOException e) {
+            String msg = "Failed to create archive";
+            logger.error("{} for {}", extension, msg, e);
+            return new Pair<>(false, msg);
+        }
+        try {
+            String signedUrl = generateSignedArchiveUrl(managementServer, archiveInfo.getPath());
+            return new Pair<>(true, signedUrl);
+        } catch (DecoderException | NoSuchAlgorithmException | InvalidKeyException e) {
+            String msg = "Failed to generate signed URL";
+            logger.error("{} for {} using {}", msg, extension, managementServer, e);
+            return new Pair<>(false, msg);
+        }
     }
 
     protected static class ArchiveInfo {
