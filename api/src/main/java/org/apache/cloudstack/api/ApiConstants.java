@@ -27,6 +27,7 @@ public class ApiConstants {
     public static final String ACTIVATION_RULE = "activationrule";
     public static final String ACTIVITY = "activity";
     public static final String ADAPTER_TYPE = "adaptertype";
+    public static final String ADDITONAL_CONFIG_ENABLED = "additionalconfigenabled";
     public static final String ADDRESS = "address";
     public static final String ALGORITHM = "algorithm";
     public static final String ALIAS = "alias";
@@ -80,6 +81,7 @@ public class ApiConstants {
     public static final String BYTES_WRITE_RATE_MAX = "byteswriteratemax";
     public static final String BYTES_WRITE_RATE_MAX_LENGTH = "byteswriteratemaxlength";
     public static final String BYPASS_VLAN_OVERLAP_CHECK = "bypassvlanoverlapcheck";
+    public static final String CALLER = "caller";
     public static final String CAPACITY = "capacity";
     public static final String CATEGORY = "category";
     public static final String CAN_REVERT = "canrevert";
@@ -139,6 +141,7 @@ public class ApiConstants {
     public static final String CPU_SPEED = "cpuspeed";
     public static final String CPU_LOAD_AVERAGE = "cpuloadaverage";
     public static final String CREATED = "created";
+    public static final String CROSS_ZONE_INSTANCE_CREATION = "crosszoneinstancecreation";
     public static final String CTX_ACCOUNT_ID = "ctxaccountid";
     public static final String CTX_DETAILS = "ctxDetails";
     public static final String CTX_USER_ID = "ctxuserid";
@@ -222,6 +225,7 @@ public class ApiConstants {
     public static final String EVENT_TYPE = "eventtype";
     public static final String EXPIRES = "expires";
     public static final String EXTRA_CONFIG = "extraconfig";
+    public static final String EXTRA_PARAMS = "extraparams";
     public static final String EXTRA_DHCP_OPTION = "extradhcpoption";
     public static final String EXTRA_DHCP_OPTION_NAME = "extradhcpoptionname";
     public static final String EXTRA_DHCP_OPTION_CODE = "extradhcpoptioncode";
@@ -240,6 +244,8 @@ public class ApiConstants {
     public static final String FIRSTNAME = "firstname";
     public static final String FORCED = "forced";
     public static final String FORCED_DESTROY_LOCAL_STORAGE = "forcedestroylocalstorage";
+    public static final String FORCE_CONVERT_TO_POOL = "forceconverttopool";
+
     public static final String FORCE_DELETE_HOST = "forcedeletehost";
     public static final String FORCE_MS_TO_IMPORT_VM_FILES = "forcemstoimportvmfiles";
     public static final String FORCE_UPDATE_OS_TYPE = "forceupdateostype";
@@ -526,6 +532,7 @@ public class ApiConstants {
     public static final String SHOW_CAPACITIES = "showcapacities";
     public static final String SHOW_REMOVED = "showremoved";
     public static final String SHOW_RESOURCE_ICON = "showicon";
+    public static final String SHOW_COMPLETED = "showcompleted";
     public static final String SHOW_INACTIVE = "showinactive";
     public static final String SHOW_UNIQUE = "showunique";
     public static final String SIGNATURE = "signature";

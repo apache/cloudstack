@@ -36,7 +36,7 @@ public class NioSocket {
     private static final int CONNECTION_TIMEOUT_MILLIS = 3000;
     protected Logger logger = LogManager.getLogger(getClass());
 
-    private void initializeSocket() {
+    private void initializeSocket() throws IOException {
         try {
             socketChannel = SocketChannel.open();
             socketChannel.configureBlocking(false);
@@ -49,30 +49,27 @@ public class NioSocket {
             socketChannel.register(readSelector, SelectionKey.OP_READ);
         } catch (IOException e) {
             logger.error("Could not initialize NioSocket: " + e.getMessage(), e);
+            throw e;
         }
     }
 
-    private void waitForSocketSelectorConnected(Selector selector) {
-        try {
-            while (selector.select(CONNECTION_TIMEOUT_MILLIS) <= 0) {
-                logger.debug("Waiting for ready operations to connect to the socket");
-            }
-            Set<SelectionKey> keys = selector.selectedKeys();
-            for (SelectionKey selectionKey: keys) {
-                if (selectionKey.isConnectable()) {
-                    if (socketChannel.isConnectionPending()) {
-                        socketChannel.finishConnect();
-                    }
-                    logger.debug("Connected to the socket");
-                    break;
+    private void waitForSocketSelectorConnected(Selector selector) throws IOException {
+        while (selector.select(CONNECTION_TIMEOUT_MILLIS) <= 0) {
+            logger.debug("Waiting for ready operations to connect to the socket");
+        }
+        Set<SelectionKey> keys = selector.selectedKeys();
+        for (SelectionKey selectionKey: keys) {
+            if (selectionKey.isConnectable()) {
+                if (socketChannel.isConnectionPending()) {
+                    socketChannel.finishConnect();
                 }
+                logger.debug("Connected to the socket");
+                break;
             }
-        } catch (IOException e) {
-            logger.error(String.format("Error waiting for socket selector ready: %s", e.getMessage()), e);
         }
     }
 
-    private void connectSocket(String host, int port) {
+    private void connectSocket(String host, int port) throws IOException {
         try {
             socketChannel.connect(new InetSocketAddress(host, port));
             Selector selector = Selector.open();
@@ -80,11 +77,12 @@ public class NioSocket {
 
             waitForSocketSelectorConnected(selector);
         } catch (IOException e) {
-            logger.error(String.format("Error creating NioSocket to %s:%s: %s", host, port, e.getMessage()), e);
+            logger.error("Error connecting NioSocket to {}:{}: {}", host, port, e.getMessage(), e);
+            throw e;
         }
     }
 
-    public NioSocket(String host, int port) {
+    public NioSocket(String host, int port) throws IOException {
         initializeSocket();
         connectSocket(host, port);
     }
