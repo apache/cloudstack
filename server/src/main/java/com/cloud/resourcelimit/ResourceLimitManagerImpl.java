@@ -511,7 +511,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 String convCurrentResourceReservation = String.valueOf(currentResourceReservation);
                 String convNumResources = String.valueOf(numResources);
 
-                if (type == ResourceType.secondary_storage || type == ResourceType.primary_storage){
+                if (type == ResourceType.secondary_storage || type == ResourceType.primary_storage) {
                     convDomainResourceLimit = toHumanReadableSize(domainResourceLimit);
                     convCurrentDomainResourceCount = toHumanReadableSize(currentDomainResourceCount);
                     convCurrentResourceReservation = toHumanReadableSize(currentResourceReservation);
@@ -554,7 +554,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         String convertedCurrentResourceReservation = String.valueOf(currentResourceReservation);
         String convertedNumResources = String.valueOf(numResources);
 
-        if (type == ResourceType.secondary_storage || type == ResourceType.primary_storage){
+        if (type == ResourceType.secondary_storage || type == ResourceType.primary_storage) {
             convertedAccountResourceLimit = toHumanReadableSize(accountResourceLimit);
             convertedCurrentResourceCount = toHumanReadableSize(currentResourceCount);
             convertedCurrentResourceReservation = toHumanReadableSize(currentResourceReservation);
@@ -1137,7 +1137,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
         if (logger.isDebugEnabled()) {
             String convertedDelta = String.valueOf(delta);
-            if (type == ResourceType.secondary_storage || type == ResourceType.primary_storage){
+            if (type == ResourceType.secondary_storage || type == ResourceType.primary_storage) {
                 convertedDelta = toHumanReadableSize(delta);
             }
             String typeStr = StringUtils.isNotEmpty(tag) ? String.format("%s (tag: %s)", type, tag) : type.getName();

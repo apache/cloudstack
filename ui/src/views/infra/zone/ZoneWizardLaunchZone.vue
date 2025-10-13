@@ -1510,10 +1510,10 @@ export default {
         }
         path += '/' + this.prefillContent.primaryStorageVmfsDatastore
         if (protocol === 'vmfs') {
-          url = this.vmfsURL('dummy', path)
+          url = this.vmfsURL(server, path)
         }
         if (protocol === 'datastorecluster') {
-          url = this.datastoreclusterURL('dummy', path)
+          url = this.datastoreclusterURL(server, path)
         }
       } else if (protocol === 'iscsi') {
         let iqn = this.prefillContent?.primaryStorageTargetIQN || ''

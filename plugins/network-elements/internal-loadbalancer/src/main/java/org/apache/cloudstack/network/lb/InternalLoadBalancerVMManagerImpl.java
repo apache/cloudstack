@@ -32,6 +32,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -545,6 +547,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_INTERNAL_LB_VM_STOP, eventDescription = "stopping internal LB VM", async = true)
     public VirtualRouter stopInternalLbVm(final long vmId, final boolean forced, final Account caller, final long callerUserId) throws ConcurrentOperationException, ResourceUnavailableException {
         final DomainRouterVO internalLbVm = _internalLbVmDao.findById(vmId);
         if (internalLbVm == null || internalLbVm.getRole() != Role.INTERNAL_LB_VM) {
@@ -974,6 +977,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_INTERNAL_LB_VM_START, eventDescription = "starting internal LB VM", async = true)
     public VirtualRouter startInternalLbVm(final long internalLbVmId, final Account caller, final long callerUserId) throws StorageUnavailableException, InsufficientCapacityException,
     ConcurrentOperationException, ResourceUnavailableException {
 
