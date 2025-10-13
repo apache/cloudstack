@@ -23,28 +23,35 @@ import com.cloud.hypervisor.Hypervisor;
 public class ConvertInstanceCommand extends Command {
 
     private RemoteInstanceTO sourceInstance;
+    private String originalVMName;
     private Hypervisor.HypervisorType destinationHypervisorType;
     private DataStoreTO conversionTemporaryLocation;
     private String templateDirOnConversionLocation;
     private boolean checkConversionSupport;
     private boolean exportOvfToConversionLocation;
     private int threadsCountToExportOvf = 0;
+    private String extraParams;
 
     public ConvertInstanceCommand() {
     }
 
     public ConvertInstanceCommand(RemoteInstanceTO sourceInstance, Hypervisor.HypervisorType destinationHypervisorType, DataStoreTO conversionTemporaryLocation,
-                                  String templateDirOnConversionLocation, boolean checkConversionSupport, boolean exportOvfToConversionLocation) {
+                                  String templateDirOnConversionLocation, boolean checkConversionSupport, boolean exportOvfToConversionLocation, String sourceVMName) {
         this.sourceInstance = sourceInstance;
         this.destinationHypervisorType = destinationHypervisorType;
         this.conversionTemporaryLocation = conversionTemporaryLocation;
         this.templateDirOnConversionLocation = templateDirOnConversionLocation;
         this.checkConversionSupport = checkConversionSupport;
         this.exportOvfToConversionLocation = exportOvfToConversionLocation;
+        this.originalVMName = sourceVMName;
     }
 
     public RemoteInstanceTO getSourceInstance() {
         return sourceInstance;
+    }
+
+    public String getOriginalVMName() {
+        return originalVMName;
     }
 
     public Hypervisor.HypervisorType getDestinationHypervisorType() {
@@ -73,6 +80,14 @@ public class ConvertInstanceCommand extends Command {
 
     public void setThreadsCountToExportOvf(int threadsCountToExportOvf) {
         this.threadsCountToExportOvf = threadsCountToExportOvf;
+    }
+
+    public String getExtraParams() {
+        return extraParams;
+    }
+
+    public void setExtraParams(String extraParams) {
+        this.extraParams = extraParams;
     }
 
     @Override
