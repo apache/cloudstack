@@ -71,7 +71,6 @@ repos:
       - id: fix-byte-order-marker
       - id: forbid-submodules
       - id: mixed-line-ending
-        exclude: \.cs$
       - id: trailing-whitespace
         files: \.(bat|cfg|cs|css|gitignore|header|in|install|java|md|properties|py|rb|rc|sh|sql|te|template|txt|ucls|vue|xml|xsl|yaml|yml)$|^cloud-cli/bindir/cloud-tool$|^debian/changelog$
         args: [--markdown-linebreak-ext=md]
