@@ -795,6 +795,20 @@ public class AgentProperties{
     public static final Property<Boolean> VIRTV2V_VERBOSE_ENABLED = new Property<>("virtv2v.verbose.enabled", false);
 
     /**
+     * Set env TMPDIR var for virt-v2v Instance Conversion from VMware to KVM
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> CONVERT_ENV_TMPDIR = new Property<>("convert.instance.env.tmpdir", null, String.class);
+
+    /**
+     * Set env VIRT_V2V_TMPDIR var for virt-v2v Instance Conversion from VMware to KVM
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> CONVERT_ENV_VIRTV2V_TMPDIR = new Property<>("convert.instance.env.virtv2v.tmpdir", null, String.class);
+
+    /**
      * BGP controll CIDR
      * Data type: String.<br>
      * Default value: <code>169.254.0.0/16</code>

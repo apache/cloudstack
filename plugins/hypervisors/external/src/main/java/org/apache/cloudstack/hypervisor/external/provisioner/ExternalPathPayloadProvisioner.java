@@ -54,8 +54,11 @@ import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.GetExternalConsoleAnswer;
+import com.cloud.agent.api.GetExternalConsoleCommand;
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.PrepareExternalProvisioningAnswer;
 import com.cloud.agent.api.PrepareExternalProvisioningCommand;
@@ -85,13 +88,11 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.json.JsonMergeUtil;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -102,10 +103,11 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
             BASE_EXTERNAL_PROVISIONER_SCRIPTS_DIR + "/provisioner.sh";
 
     private static final String PROPERTIES_FILE = "server.properties";
+    private static final String EXTENSIONS = "extensions";
     private static final String EXTENSIONS_DEPLOYMENT_MODE_NAME = "extensions.deployment.mode";
     private static final String EXTENSIONS_DIRECTORY_PROD = "/usr/share/cloudstack-management/extensions";
-    private static final String EXTENSIONS_DATA_DIRECTORY_PROD = "/var/lib/cloudstack/management/extensions";
-    private static final String EXTENSIONS_DIRECTORY_DEV = "extensions";
+    private static final String EXTENSIONS_DATA_DIRECTORY_PROD = System.getProperty("user.home") + File.separator + EXTENSIONS;
+    private static final String EXTENSIONS_DIRECTORY_DEV = EXTENSIONS;
     private static final String EXTENSIONS_DATA_DIRECTORY_DEV = "client/target/extensions-data";
 
     @Inject
@@ -113,9 +115,6 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
 
     @Inject
     HostDao hostDao;
-
-    @Inject
-    VMInstanceDao vmInstanceDao;
 
     @Inject
     HypervisorGuruManager hypervisorGuruManager;
@@ -140,6 +139,10 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
     protected Map<String, Object> loadAccessDetails(Map<String, Map<String, String>> externalDetails,
                             VirtualMachineTO virtualMachineTO) {
         Map<String, Object> modifiedDetails = new HashMap<>();
+        if (MapUtils.isNotEmpty(externalDetails) && externalDetails.containsKey(ApiConstants.CALLER)) {
+            modifiedDetails.put(ApiConstants.CALLER, externalDetails.get(ApiConstants.CALLER));
+            externalDetails.remove(ApiConstants.CALLER);
+        }
         if (MapUtils.isNotEmpty(externalDetails)) {
             modifiedDetails.put(ApiConstants.EXTERNAL_DETAILS, externalDetails);
         }
@@ -206,6 +209,22 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
         }
         extensionsDataDirectory = dir.getAbsolutePath();
         logger.info("Extensions data directory path: {}", extensionsDataDirectory);
+    }
+
+    protected VirtualMachineTO getVirtualMachineTO(VirtualMachine vm) {
+        if (vm == null) {
+            return null;
+        }
+        final HypervisorGuru hvGuru = hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.External);
+        VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+        return hvGuru.implement(profile);
+    }
+
+    protected String getSanitizedJsonStringForLog(String json) {
+        if (StringUtils.isBlank(json)) {
+            return json;
+        }
+        return json.replaceAll("(\"password\"\\s*:\\s*\")([^\"]*)(\")", "$1****$3");
     }
 
     private String getServerProperty(String name) {
@@ -289,12 +308,20 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
         }
     }
 
+    protected String getExtensionConfigureError(String extensionName, String hostName) {
+        StringBuilder sb = new StringBuilder("Extension: ").append(extensionName).append(" not configured");
+        if (StringUtils.isNotBlank(hostName)) {
+            sb.append(" for host: ").append(hostName);
+        }
+        return sb.toString();
+    }
+
     @Override
-    public PrepareExternalProvisioningAnswer prepareExternalProvisioning(String hostGuid,
+    public PrepareExternalProvisioningAnswer prepareExternalProvisioning(String hostName,
                  String extensionName, String extensionRelativePath, PrepareExternalProvisioningCommand cmd) {
         String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
         if (StringUtils.isEmpty(extensionPath)) {
-            return new PrepareExternalProvisioningAnswer(cmd, false, "Extension not configured");
+            return new PrepareExternalProvisioningAnswer(cmd, false, getExtensionConfigureError(extensionName, hostName));
         }
         VirtualMachineTO vmTO = cmd.getVirtualMachineTO();
         String vmUUID = vmTO.getUuid();
@@ -322,11 +349,11 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
     }
 
     @Override
-    public StartAnswer startInstance(String hostGuid, String extensionName, String extensionRelativePath,
+    public StartAnswer startInstance(String hostName, String extensionName, String extensionRelativePath,
                              StartCommand cmd) {
         String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
         if (StringUtils.isEmpty(extensionPath)) {
-            return new StartAnswer(cmd, "Extension not configured");
+            return new StartAnswer(cmd, getExtensionConfigureError(extensionName, hostName));
         }
         VirtualMachineTO virtualMachineTO = cmd.getVirtualMachine();
         Map<String, Object> accessDetails = loadAccessDetails(cmd.getExternalDetails(), virtualMachineTO);
@@ -366,11 +393,11 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
     }
 
     @Override
-    public StopAnswer stopInstance(String hostGuid, String extensionName, String extensionRelativePath,
+    public StopAnswer stopInstance(String hostName, String extensionName, String extensionRelativePath,
                            StopCommand cmd) {
         String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
         if (StringUtils.isEmpty(extensionPath)) {
-            return new StopAnswer(cmd, "Extension not configured", false);
+            return new StopAnswer(cmd, getExtensionConfigureError(extensionName, hostName), false);
         }
         logger.debug("Executing stop command on the external provisioner");
         VirtualMachineTO virtualMachineTO = cmd.getVirtualMachine();
@@ -387,13 +414,12 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
     }
 
     @Override
-    public RebootAnswer rebootInstance(String hostGuid, String extensionName, String extensionRelativePath,
+    public RebootAnswer rebootInstance(String hostName, String extensionName, String extensionRelativePath,
                            RebootCommand cmd) {
         String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
         if (StringUtils.isEmpty(extensionPath)) {
-            return new RebootAnswer(cmd, "Extension not configured", false);
+            return new RebootAnswer(cmd, getExtensionConfigureError(extensionName, hostName), false);
         }
-        logger.debug("Executing reboot command using IPMI in the external provisioner");
         VirtualMachineTO virtualMachineTO = cmd.getVirtualMachine();
         String vmUUID = virtualMachineTO.getUuid();
         logger.debug("Executing reboot command in the external system for the VM {}", vmUUID);
@@ -408,11 +434,11 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
     }
 
     @Override
-    public StopAnswer expungeInstance(String hostGuid, String extensionName, String extensionRelativePath,
+    public StopAnswer expungeInstance(String hostName, String extensionName, String extensionRelativePath,
                           StopCommand cmd) {
         String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
         if (StringUtils.isEmpty(extensionPath)) {
-            return new StopAnswer(cmd, "Extension not configured", false);
+            return new StopAnswer(cmd, getExtensionConfigureError(extensionName, hostName), false);
         }
         VirtualMachineTO virtualMachineTO = cmd.getVirtualMachine();
         String vmUUID = virtualMachineTO.getUuid();
@@ -456,24 +482,65 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
     }
 
     @Override
-    public RunCustomActionAnswer runCustomAction(String hostGuid, String extensionName,
+    public GetExternalConsoleAnswer getInstanceConsole(String hostName, String extensionName,
+                           String extensionRelativePath, GetExternalConsoleCommand cmd) {
+        String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
+        if (StringUtils.isEmpty(extensionPath)) {
+            return new GetExternalConsoleAnswer(cmd, getExtensionConfigureError(extensionName, hostName));
+        }
+        VirtualMachineTO virtualMachineTO = cmd.getVirtualMachine();
+        String vmUUID = virtualMachineTO.getUuid();
+        logger.debug("Executing getconsole command in the external system for the VM {}", vmUUID);
+        Map<String, Object> accessDetails = loadAccessDetails(cmd.getExternalDetails(), virtualMachineTO);
+        Pair<Boolean, String> result = getInstanceConsoleOnExternalSystem(extensionName, extensionPath, vmUUID,
+                accessDetails, cmd.getWait());
+        if (result == null) {
+            return new GetExternalConsoleAnswer(cmd, "No response from external system");
+        }
+        String output = result.second();
+        if (!result.first()) {
+            return new GetExternalConsoleAnswer(cmd, output);
+        }
+        logger.debug("Received console details from the external system: {}",
+                getSanitizedJsonStringForLog(output));
+        try {
+            JsonObject jsonObj = JsonParser.parseString(output).getAsJsonObject();
+            JsonObject consoleObj = jsonObj.has("console") ? jsonObj.getAsJsonObject("console") : null;
+            if (consoleObj == null) {
+                logger.error("Missing console object in external console output: {}",
+                        getSanitizedJsonStringForLog(output));
+                return new GetExternalConsoleAnswer(cmd, "Missing console object in output");
+            }
+            String url = consoleObj.has("url") ? consoleObj.get("url").getAsString() : null;
+            String host = consoleObj.has("host") ? consoleObj.get("host").getAsString() : null;
+            Integer port = consoleObj.has("port") ? Integer.valueOf(consoleObj.get("port").getAsString()) : null;
+            String password = consoleObj.has("password") ? consoleObj.get("password").getAsString() : null;
+            boolean passwordOneTimeUseOnly = consoleObj.has("passwordonetimeuseonly") &&
+                    consoleObj.get("passwordonetimeuseonly").getAsBoolean();
+            String protocol = consoleObj.has("protocol") ? consoleObj.get("protocol").getAsString() : null;
+            if (url == null && ObjectUtils.anyNull(host, port)) {
+                logger.error("Missing required fields in external console output: {}",
+                        getSanitizedJsonStringForLog(output));
+                return new GetExternalConsoleAnswer(cmd, "Missing required fields in output");
+            }
+            return new GetExternalConsoleAnswer(cmd, url, host, port, password, passwordOneTimeUseOnly, protocol);
+        } catch (RuntimeException e) {
+            logger.error("Failed to parse output for getInstanceConsole: {}", e.getMessage(), e);
+            return new GetExternalConsoleAnswer(cmd, "Failed to parse output");
+        }
+    }
+
+    @Override
+    public RunCustomActionAnswer runCustomAction(String hostName, String extensionName,
                          String extensionRelativePath, RunCustomActionCommand cmd) {
         String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
         if (StringUtils.isEmpty(extensionPath)) {
-            return new RunCustomActionAnswer(cmd, false, "Extension not configured");
+            return new RunCustomActionAnswer(cmd, false, getExtensionConfigureError(extensionName, hostName));
         }
         final String actionName = cmd.getActionName();
         final Map<String, Object> parameters = cmd.getParameters();
-        logger.debug("Executing custom action '{}' in the external provisioner", actionName);
-        VirtualMachineTO virtualMachineTO = null;
-        if (cmd.getVmId() != null) {
-            VMInstanceVO vm = vmInstanceDao.findById(cmd.getVmId());
-            final HypervisorGuru hvGuru = hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.External);
-            VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
-            virtualMachineTO = hvGuru.implement(profile);
-        }
         logger.debug("Executing custom action '{}' in the external system", actionName);
-        Map<String, Object> accessDetails = loadAccessDetails(cmd.getExternalDetails(), virtualMachineTO);
+        Map<String, Object> accessDetails = loadAccessDetails(cmd.getExternalDetails(), cmd.getVmTO());
         accessDetails.put(ApiConstants.ACTION, actionName);
         if (MapUtils.isNotEmpty(parameters)) {
             accessDetails.put(ApiConstants.PARAMETERS, parameters);
@@ -564,18 +631,18 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
             }
             if (!Files.isDirectory(filePath) && !Files.isRegularFile(filePath)) {
                 throw new CloudRuntimeException(
-                        String.format("Failed to cleanup extension entry-point: %s for extension: %s as it either " +
+                        String.format("Failed to cleanup path: %s for extension: %s as it either " +
                                         "does not exist or is not a regular file/directory",
                                 extensionName, extensionRelativePath));
             }
             if (!FileUtil.deleteRecursively(filePath)) {
                 throw new CloudRuntimeException(
-                        String.format("Failed to delete extension entry-point: %s for extension: %s",
+                        String.format("Failed to delete path: %s for extension: %s",
                                 extensionName, filePath));
             }
         } catch (IOException e) {
             throw new CloudRuntimeException(
-                    String.format("Failed to cleanup extension entry-point: %s for extension: %s due to: %s",
+                    String.format("Failed to cleanup path: %s for extension: %s due to: %s",
                             extensionName, normalizedPath, e.getMessage()), e);
         }
     }
@@ -659,9 +726,7 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
 
     private VirtualMachine.PowerState getVmPowerState(UserVmVO userVmVO, Map<String, Map<String, String>> accessDetails,
                   String extensionName, String extensionPath) {
-        final HypervisorGuru hvGuru = hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.External);
-        VirtualMachineProfile profile = new VirtualMachineProfileImpl(userVmVO);
-        VirtualMachineTO virtualMachineTO = hvGuru.implement(profile);
+        VirtualMachineTO virtualMachineTO = getVirtualMachineTO(userVmVO);
         accessDetails.put(ApiConstants.VIRTUAL_MACHINE, virtualMachineTO.getExternalDetails());
         Map<String, Object> modifiedDetails = loadAccessDetails(accessDetails, virtualMachineTO);
         String vmUUID = userVmVO.getUuid();
@@ -716,6 +781,12 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
                                Map<String, Object> accessDetails, int wait) {
         return executeExternalCommand(extensionName, "status", accessDetails, wait,
                 String.format("Failed to get the instance power status %s on external system", vmUUID), filename);
+    }
+
+    public Pair<Boolean, String> getInstanceConsoleOnExternalSystem(String extensionName, String filename,
+                            String vmUUID, Map<String, Object> accessDetails, int wait) {
+        return executeExternalCommand(extensionName, "getconsole", accessDetails, wait,
+                String.format("Failed to get the instance console %s on external system", vmUUID), filename);
     }
 
     public Pair<Boolean, String> executeExternalCommand(String extensionName, String action,

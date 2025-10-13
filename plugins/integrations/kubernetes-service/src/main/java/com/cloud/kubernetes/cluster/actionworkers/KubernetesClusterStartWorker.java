@@ -198,16 +198,16 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         String initArgs = "";
         if (haSupported) {
             initArgs = String.format("--control-plane-endpoint %s:%d --upload-certs --certificate-key %s ",
-                    controlNodeIp,
+                    serverIp,
                     CLUSTER_API_PORT,
                     KubernetesClusterUtil.generateClusterHACertificateKey(kubernetesCluster));
         }
-        initArgs += String.format("--apiserver-cert-extra-sans=%s", controlNodeIp);
+        initArgs += String.format("--apiserver-cert-extra-sans=%s", serverIp);
         initArgs += String.format(" --kubernetes-version=%s", getKubernetesClusterVersion().getSemanticVersion());
         k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterInitArgsKey, initArgs);
         k8sControlNodeConfig = k8sControlNodeConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(etcdEndpointList, endpointList);
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(k8sServerIp, controlNodeIp);
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(k8sServerIp, serverIp);
         k8sControlNodeConfig = k8sControlNodeConfig.replace(k8sApiPort, String.valueOf(CLUSTER_API_PORT));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(certSans, String.format("- %s", serverIp));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(k8sCertificate, KubernetesClusterUtil.generateClusterHACertificateKey(kubernetesCluster));
