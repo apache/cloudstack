@@ -30,8 +30,8 @@ import com.cloud.utils.PropertiesUtil;
 
 public class ServerPropertiesUtil {
     private static final Logger logger = LoggerFactory.getLogger(ServerPropertiesUtil.class);
-    private static final String PROPERTIES_FILE = "server.properties";
-    private static final AtomicReference<Properties> propertiesRef = new AtomicReference<>();
+    protected static final String PROPERTIES_FILE = "server.properties";
+    protected static final AtomicReference<Properties> propertiesRef = new AtomicReference<>();
 
     public static String getProperty(String name) {
         Properties props = propertiesRef.get();

@@ -20,6 +20,7 @@ package org.apache.cloudstack.hypervisor.external.provisioner;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
@@ -50,7 +51,6 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.extension.Extension;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
-import org.apache.cloudstack.utils.server.ServerPropertiesUtil;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -80,6 +80,7 @@ import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
@@ -226,6 +227,29 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
         return json.replaceAll("(\"password\"\\s*:\\s*\")([^\"]*)(\")", "$1****$3");
     }
 
+    private String getServerProperty(String name) {
+        Properties props = propertiesRef.get();
+        if (props == null) {
+            File propsFile = PropertiesUtil.findConfigFile(PROPERTIES_FILE);
+            if (propsFile == null) {
+                logger.error("{} file not found", PROPERTIES_FILE);
+                return null;
+            }
+            Properties tempProps = new Properties();
+            try (FileInputStream is = new FileInputStream(propsFile)) {
+                tempProps.load(is);
+            } catch (IOException e) {
+                logger.error("Error loading {}: {}", PROPERTIES_FILE, e.getMessage(), e);
+                return null;
+            }
+            if (!propertiesRef.compareAndSet(null, tempProps)) {
+                tempProps = propertiesRef.get();
+            }
+            props = tempProps;
+        }
+        return props.getProperty(name);
+    }
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
@@ -237,7 +261,7 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
     }
 
     private void initializeExtensionDirectories() {
-        String deploymentMode = ServerPropertiesUtil.getProperty(EXTENSIONS_DEPLOYMENT_MODE_NAME);
+        String deploymentMode = getServerProperty(EXTENSIONS_DEPLOYMENT_MODE_NAME);
         if ("developer".equals(deploymentMode)) {
             extensionsDirectory = EXTENSIONS_DIRECTORY_DEV;
             extensionsDataDirectory = EXTENSIONS_DATA_DIRECTORY_DEV;

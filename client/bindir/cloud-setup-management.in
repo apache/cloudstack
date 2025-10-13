@@ -188,7 +188,6 @@ if __name__ == '__main__':
         print("CloudStack Management Server setup is Done!")
         print("Please ensure ports 8080, 8250, 8443, and 9090 are opened and not firewalled for the management server and not in use by other processes on this host.")
     except (CloudRuntimeException, CloudInternalException) as e:
-
         print(e)
         print("Try to restore your system:")
         try:
