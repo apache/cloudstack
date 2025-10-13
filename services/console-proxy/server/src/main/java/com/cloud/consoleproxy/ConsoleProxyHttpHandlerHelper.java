@@ -110,6 +110,9 @@ public class ConsoleProxyHttpHandlerHelper {
                 if (param.getExtraSecurityToken() != null) {
                     map.put("extraSecurityToken", param.getExtraSecurityToken());
                 }
+                if (param.isSessionRequiresNewViewer()) {
+                    map.put("sessionRequiresNewViewer", Boolean.TRUE.toString());
+                }
             } else {
                 LOGGER.error("Unable to decode token");
             }

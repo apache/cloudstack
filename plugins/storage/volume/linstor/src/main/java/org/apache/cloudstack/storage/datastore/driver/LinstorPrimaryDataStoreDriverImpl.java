@@ -868,6 +868,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                     devPath = createVolume(volumeInfo, storagePool);
                     volume.setFolder("/dev/");
                     volume.setPoolId(storagePool.getId());
+                    volume.setPoolType(storagePool.getPoolType());
                     volume.setUuid(vol.getUuid());
                     volume.setPath(vol.getUuid());
 

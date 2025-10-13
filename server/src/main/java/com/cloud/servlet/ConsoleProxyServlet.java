@@ -43,6 +43,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
 
+import com.cloud.hypervisor.Hypervisor;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -277,15 +278,19 @@ public class ConsoleProxyServlet extends HttpServlet {
 
         String sid = req.getParameter("sid");
         if (sid == null || !sid.equals(vm.getVncPassword())) {
-            if(sid != null) {
-                sid = sid.replaceAll(SANITIZATION_REGEX, "_");
-                LOGGER.warn(String.format("sid [%s] in url does not match stored sid.", sid));
+            if (Hypervisor.HypervisorType.External.equals(vm.getHypervisorType())) {
+                LOGGER.debug("{} is on External hypervisor, skip checking sid", vm.getHypervisorType());
             } else {
-                LOGGER.warn("Null sid in URL.");
-            }
+                if (sid != null) {
+                    sid = sid.replaceAll(SANITIZATION_REGEX, "_");
+                    LOGGER.warn(String.format("sid [%s] in url does not match stored sid.", sid));
+                } else {
+                    LOGGER.warn("Null sid in URL.");
+                }
 
-            sendResponse(resp, "failed");
-            return;
+                sendResponse(resp, "failed");
+                return;
+            }
         }
 
         sendResponse(resp, "success");

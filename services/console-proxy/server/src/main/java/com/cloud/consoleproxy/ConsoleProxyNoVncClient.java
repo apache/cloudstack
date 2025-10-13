@@ -109,7 +109,12 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                     String tunnelSession = param.getClientTunnelSession();
                     String websocketUrl = param.getWebsocketUrl();
 
-                    connectClientToVNCServer(tunnelUrl, tunnelSession, websocketUrl);
+                    if (!connectClientToVNCServer(tunnelUrl, tunnelSession, websocketUrl)) {
+                        logger.error("Failed to connect to VNC server, will close connection with client [{}] [IP: {}].", clientId, clientSourceIp);
+                        connectionAlive = false;
+                        session.close();
+                        return;
+                    }
                     authenticateToVNCServer(clientSourceIp);
 
                     // Track consecutive iterations with no data and sleep accordingly. Only used for NIO socket connections.
@@ -313,7 +318,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
      * - When websocketUrl is not empty -> connect to websocket
      * - Otherwise -> connect to TCP port on host directly
      */
-    private void connectClientToVNCServer(String tunnelUrl, String tunnelSession, String websocketUrl) {
+    private boolean connectClientToVNCServer(String tunnelUrl, String tunnelSession, String websocketUrl) {
         try {
             if (StringUtils.isNotBlank(websocketUrl)) {
                 logger.info(String.format("Connect to VNC over websocket URL: %s", websocketUrl));
@@ -337,7 +342,9 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
             logger.info("Connection to VNC server has been established successfully.");
         } catch (Throwable e) {
             logger.error("Unexpected exception while connecting to VNC server.", e);
+            return false;
         }
+        return true;
     }
 
     private void setClientParam(ConsoleProxyClientParam param) {
