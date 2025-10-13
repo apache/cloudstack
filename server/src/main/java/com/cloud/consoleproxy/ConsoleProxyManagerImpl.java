@@ -156,7 +156,7 @@ import com.google.gson.JsonParseException;
 import static com.cloud.vm.VirtualMachineManager.SystemVmEnableUserData;
 
 /**
- * Class to manage console proxys. <br><br>
+ * Class to manage console proxies. <br><br>
  * Possible console proxy state transition cases:<br>
  * - Stopped -> Starting -> Running <br>
  * - HA -> Stopped -> Starting -> Running <br>

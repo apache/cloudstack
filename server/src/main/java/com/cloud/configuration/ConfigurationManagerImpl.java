@@ -3034,7 +3034,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                             mgmtPhyNetwork = _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Management);
                             if (NetworkType.Advanced == zone.getNetworkType() && !zone.isSecurityGroupEnabled()) {
                                 // advanced zone without SG should have a physical
-                                // network with public Thpe
+                                // network with public Type
                                 _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Public);
                             }
 
