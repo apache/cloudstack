@@ -55,16 +55,4 @@ public class EnumUtils {
         }
         return null;
     }
-
-    public static <T extends Enum<T>> T getEnumIgnoreCase(Class<T> enumClass, String name) {
-        if (enumClass == null || name == null) {
-            return null;
-        }
-        for (T constant : enumClass.getEnumConstants()) {
-            if (constant.name().equalsIgnoreCase(name.trim())) {
-                return constant;
-            }
-        }
-        return null;
-    }
 }
