@@ -908,7 +908,6 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             throw new PermissionDeniedException("Your account does not have the right access level to update resource limits.");
         }
 
-
         if (max == null) {
             max = (long)Resource.RESOURCE_UNLIMITED;
         } else if (max < Resource.RESOURCE_UNLIMITED) {
