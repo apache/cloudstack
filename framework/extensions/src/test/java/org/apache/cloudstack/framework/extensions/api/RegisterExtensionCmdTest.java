@@ -37,22 +37,23 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ExtensionResponse;
 import org.apache.cloudstack.extension.Extension;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
-import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+@RunWith(MockitoJUnitRunner.class)
 public class RegisterExtensionCmdTest {
 
-    private RegisterExtensionCmd cmd;
+    @Mock
     private ExtensionsManager extensionsManager;
 
-    @Before
-    public void setUp() {
-        cmd = Mockito.spy(new RegisterExtensionCmd());
-        extensionsManager = mock(ExtensionsManager.class);
-        ReflectionTestUtils.setField(cmd, "extensionsManager", extensionsManager);
-    }
+    @Spy
+    @InjectMocks
+    private RegisterExtensionCmd cmd;
 
     @Test
     public void extensionIdReturnsNullWhenUnset() {

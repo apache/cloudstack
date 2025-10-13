@@ -31,6 +31,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 
 import java.io.File;
@@ -103,7 +104,7 @@ public class ExtensionsFilesystemManagerImplTest {
         ReflectionTestUtils.setField(extensionsFilesystemManager, "extensionsDirectory", tempDir.getAbsolutePath());
         ReflectionTestUtils.setField(extensionsFilesystemManager, "extensionsDataDirectory", tempDataDir.getAbsolutePath());
 
-        try (MockedStatic<PropertiesUtil> propertiesUtilMock = Mockito.mockStatic(PropertiesUtil.class)) {
+        try (MockedStatic<PropertiesUtil> propertiesUtilMock = mockStatic(PropertiesUtil.class)) {
             File mockPropsFile = mock(File.class);
             propertiesUtilMock.when(() -> PropertiesUtil.findConfigFile(anyString())).thenReturn(mockPropsFile);
         }
@@ -187,7 +188,7 @@ public class ExtensionsFilesystemManagerImplTest {
     @Test(expected = ConfigurationException.class)
     public void testCreateOrCheckExtensionsDataDirectoryCreateThrowsExceptionFail() throws ConfigurationException {
         ReflectionTestUtils.setField(extensionsFilesystemManager, "extensionsDataDirectory", "/nonexistent/path");
-        try (MockedStatic<Files> filesMock = Mockito.mockStatic(Files.class)) {
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
             filesMock.when(() -> Files.createDirectories(any())).thenThrow(new IOException("fail"));
             extensionsFilesystemManager.createOrCheckExtensionsDataDirectory();
         }
@@ -196,7 +197,7 @@ public class ExtensionsFilesystemManagerImplTest {
     @Test(expected = ConfigurationException.class)
     public void testCreateOrCheckExtensionsDataDirectoryNoCreateFail() throws ConfigurationException {
         ReflectionTestUtils.setField(extensionsFilesystemManager, "extensionsDataDirectory", "/nonexistent/path");
-        try (MockedStatic<Files> filesMock = Mockito.mockStatic(Files.class)) {
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
             filesMock.when(() -> Files.createDirectories(any())).thenReturn(mock(Path.class));
             extensionsFilesystemManager.createOrCheckExtensionsDataDirectory();
         }
@@ -304,7 +305,7 @@ public class ExtensionsFilesystemManagerImplTest {
         doReturn(rootPath).when(extensionsFilesystemManager).getExtensionRootPath(extensionName);
         doReturn(rootPath.toString()).when(extensionsFilesystemManager).getExtensionCheckedPath(extensionName, "");
 
-        try (MockedStatic<DigestHelper> digestHelperMock = Mockito.mockStatic(DigestHelper.class)) {
+        try (MockedStatic<DigestHelper> digestHelperMock = mockStatic(DigestHelper.class)) {
             digestHelperMock.when(() -> DigestHelper.calculateChecksum(file1.toFile())).thenReturn("checksum1");
             digestHelperMock.when(() -> DigestHelper.calculateChecksum(file2.toFile())).thenReturn("checksum2");
             Map<String, String> result = extensionsFilesystemManager.getChecksumMapForExtension(extensionName, "");
@@ -332,7 +333,7 @@ public class ExtensionsFilesystemManagerImplTest {
         Path rootPath = tempDir.toPath();
         doReturn(rootPath).when(extensionsFilesystemManager).getExtensionRootPath(extensionName);
         doReturn(rootPath.toString()).when(extensionsFilesystemManager).getExtensionCheckedPath(extensionName, "");
-        try (MockedStatic<Files> filesMock = Mockito.mockStatic(Files.class)) {
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
             filesMock.when(() -> Files.walk(rootPath)).thenThrow(new IOException("File walk error"));
             Map<String, String> result = extensionsFilesystemManager.getChecksumMapForExtension(extensionName, "");
             assertNull(result);
@@ -346,7 +347,7 @@ public class ExtensionsFilesystemManagerImplTest {
         Path file1 = Files.createFile(rootPath.resolve("file1.txt"));
         doReturn(rootPath).when(extensionsFilesystemManager).getExtensionRootPath(extensionName);
         doReturn(rootPath.toString()).when(extensionsFilesystemManager).getExtensionCheckedPath(extensionName, "");
-        try (MockedStatic<DigestHelper> digestHelperMock = Mockito.mockStatic(DigestHelper.class)) {
+        try (MockedStatic<DigestHelper> digestHelperMock = mockStatic(DigestHelper.class)) {
             digestHelperMock.when(() -> DigestHelper.calculateChecksum(file1.toFile())).thenThrow(new CloudRuntimeException("Checksum error"));
             Map<String, String> result = extensionsFilesystemManager.getChecksumMapForExtension(extensionName, "");
             assertNull(result);
@@ -359,7 +360,7 @@ public class ExtensionsFilesystemManagerImplTest {
         Path rootPath = tempDir.toPath();
         doReturn(rootPath).when(extensionsFilesystemManager).getExtensionRootPath(extensionName);
         doReturn(rootPath.toString()).when(extensionsFilesystemManager).getExtensionCheckedPath(extensionName, "");
-        try (MockedStatic<Files> filesMock = Mockito.mockStatic(Files.class)) {
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
             filesMock.when(() -> Files.walk(rootPath)).thenReturn(Stream.empty());
             Map<String, String> result = extensionsFilesystemManager.getChecksumMapForExtension(extensionName, "");
             assertNotNull(result);
@@ -369,7 +370,7 @@ public class ExtensionsFilesystemManagerImplTest {
 
     @Test
     public void testPrepareExtensionPath() throws IOException {
-        try (MockedStatic<Script> scriptMock = Mockito.mockStatic(Script.class)) {
+        try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
             File mockScript = new File(tempDir, "extensionsFilesystemManager.sh");
             mockScript.createNewFile();
             scriptMock.when(() -> Script.findScript(anyString(), anyString())).thenReturn(mockScript.getAbsolutePath());
@@ -447,7 +448,7 @@ public class ExtensionsFilesystemManagerImplTest {
         Path rootPath = Paths.get(tempDir.getAbsolutePath());
         Path filePath = rootPath.resolve(extensionRelativePath);
         Files.createFile(filePath);
-        try (MockedStatic<FileUtil> fileUtilMock = Mockito.mockStatic(FileUtil.class)) {
+        try (MockedStatic<FileUtil> fileUtilMock = mockStatic(FileUtil.class)) {
             fileUtilMock.when(() -> FileUtil.deleteRecursively(filePath)).thenReturn(false);
 
             extensionsFilesystemManager.cleanupExtensionPath(extensionName, extensionRelativePath);
@@ -512,7 +513,7 @@ public class ExtensionsFilesystemManagerImplTest {
         String extensionName = "test-extension";
         Path extensionDataDir = Paths.get(tempDataDir.getAbsolutePath(), extensionName);
         Files.createDirectories(extensionDataDir);
-        try (MockedStatic<Files> filesMock = Mockito.mockStatic(Files.class)) {
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
             filesMock.when(() -> Files.walk(extensionDataDir)).thenThrow(new IOException("File walk error"));
 
             extensionsFilesystemManager.cleanupExtensionData(extensionName, 1, false);
@@ -578,7 +579,7 @@ public class ExtensionsFilesystemManagerImplTest {
         Map<String, Object> details = Map.of("key", "value");
         Path existingDir = Paths.get(tempDataDir.getAbsolutePath(), extensionName);
         Files.createDirectories(existingDir);
-        try (MockedStatic<Files> filesMock = Mockito.mockStatic(Files.class)) {
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
             filesMock.when(() -> Files.writeString(any(Path.class), anyString(), eq(StandardOpenOption.CREATE_NEW))).thenThrow(IOException.class);
             extensionsFilesystemManager.prepareExternalPayload(extensionName, details);
         }
@@ -656,5 +657,14 @@ public class ExtensionsFilesystemManagerImplTest {
         doReturn(rootPath).when(extensionsFilesystemManager).getExtensionRootPath(extension);
 
         extensionsFilesystemManager.validateExtensionFiles(extension, List.of("../invalid-path/file.txt"));
+    }
+
+    @Test
+    public void deleteExtensionPayloadVerifyFileUtils() {
+        try (MockedStatic<FileUtil> mockedStatic = mockStatic(FileUtil.class)) {
+            String payloadFilePath = "payload.json";
+            extensionsFilesystemManager.deleteExtensionPayload("test-extension", payloadFilePath);
+            mockedStatic.verify(() -> FileUtil.deletePath(payloadFilePath), Mockito.times(1));
+        }
     }
 }

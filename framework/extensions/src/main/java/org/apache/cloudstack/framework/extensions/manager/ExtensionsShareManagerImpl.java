@@ -272,7 +272,7 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
                 Files.copy(p, dest, StandardCopyOption.COPY_ATTRIBUTES);
             }
         }
-        logger.debug("Packing files for {} from: {} to archive: {}", extension, sourceDir,
+        logger.debug("Packing files for sync for {} from: {} to archive: {}", extension, sourceDir,
                 archivePath.toAbsolutePath());
         boolean result = ArchiveUtil.packPath(ArchiveUtil.ArchiveFormat.TGZ, sourceDir, archivePath, 60);
 
@@ -286,7 +286,7 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
             throws IOException {
         Files.createDirectories(archivePath.getParent());
         FileUtil.deletePath(archivePath.toAbsolutePath().toString());
-        logger.debug("Packing files for {} from: {} to archive: {}", extension, extensionRootPath,
+        logger.debug("Packing files for download for {} from: {} to archive: {}", extension, extensionRootPath,
                 archivePath.toAbsolutePath());
 
         return ArchiveUtil.packPath(ArchiveUtil.ArchiveFormat.ZIP, extensionRootPath, archivePath, 60);

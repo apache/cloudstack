@@ -402,9 +402,9 @@ public class ExtensionsFilesystemManagerImpl extends ManagerBase implements Exte
     }
 
     @Override
-    public void deleteExtensionPayload(String extensionName, String payloadFileName) {
-        logger.trace("Deleting payload file: {} for extension: {}", payloadFileName, extensionName);
-        FileUtil.deletePath(payloadFileName);
+    public void deleteExtensionPayload(String extensionName, String payloadFilePath) {
+        logger.trace("Deleting payload file: {} for extension: {}", payloadFilePath, extensionName);
+        FileUtil.deletePath(payloadFilePath);
     }
 
     @Override

@@ -33,22 +33,24 @@ import java.util.List;
 import org.apache.cloudstack.api.response.ExtensionCustomActionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+@RunWith(MockitoJUnitRunner.class)
 public class ListCustomActionCmdTest {
 
-    private ListCustomActionCmd cmd;
+    @Mock
     private ExtensionsManager extensionsManager;
 
-    @Before
-    public void setUp() {
-        cmd = new ListCustomActionCmd();
-        extensionsManager = mock(ExtensionsManager.class);
-        ReflectionTestUtils.setField(cmd, "extensionsManager", extensionsManager);
-    }
+    @Spy
+    @InjectMocks
+    private ListCustomActionCmd cmd;
 
     private void setField(String fieldName, Object value) {
         ReflectionTestUtils.setField(cmd, fieldName, value);
@@ -140,14 +142,10 @@ public class ListCustomActionCmdTest {
     @Test
     public void executeSetsListResponse() {
         List<ExtensionCustomActionResponse> responses = Arrays.asList(mock(ExtensionCustomActionResponse.class));
-        when(extensionsManager.listCustomActions(cmd)).thenReturn(responses);
-
-        ListCustomActionCmd spyCmd = Mockito.spy(cmd);
-        doNothing().when(spyCmd).setResponseObject(any());
-
-        spyCmd.execute();
-
-        verify(extensionsManager).listCustomActions(spyCmd);
-        verify(spyCmd).setResponseObject(any(ListResponse.class));
+        when(extensionsManager.listCustomActions(any(ListCustomActionCmd.class))).thenReturn(responses);
+        doNothing().when(cmd).setResponseObject(any());
+        cmd.execute();
+        verify(extensionsManager).listCustomActions(cmd);
+        verify(cmd).setResponseObject(any(ListResponse.class));
     }
 }

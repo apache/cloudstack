@@ -30,30 +30,40 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
+@RunWith(MockitoJUnitRunner.class)
 public class SyncExtensionCmdTest {
+
+    @Mock
+    private ExtensionsManager extensionsManager;
+
+    @Spy
+    @InjectMocks
+    private SyncExtensionCmd cmd;
 
     @Test
     public void returnsIdWhenGetIdIsCalled() {
-        SyncExtensionCmd cmd = new SyncExtensionCmd();
         ReflectionTestUtils.setField(cmd, "id", 123L);
         assertEquals(Long.valueOf(123), cmd.getId());
     }
 
     @Test
     public void returnsSourceManagementServerIdWhenGetSourceManagementServerIdIsCalled() {
-        SyncExtensionCmd cmd = new SyncExtensionCmd();
         ReflectionTestUtils.setField(cmd, "sourceManagementServerId", 456L);
         assertEquals(Long.valueOf(456), cmd.getSourceManagementServerId());
     }
 
     @Test
     public void returnsTargetManagementServerIdsWhenGetTargetManagementServerIdsIsCalled() {
-        SyncExtensionCmd cmd = new SyncExtensionCmd();
         List<Long> targetIds = Arrays.asList(789L, 101L);
         ReflectionTestUtils.setField(cmd, "targetManagementServerIds", targetIds);
         assertEquals(targetIds, cmd.getTargetManagementServerIds());
@@ -61,28 +71,21 @@ public class SyncExtensionCmdTest {
 
     @Test
     public void returnsFilesWhenGetFilesIsCalled() {
-        SyncExtensionCmd cmd = new SyncExtensionCmd();
         List<String> files = Arrays.asList("file1.txt", "file2.txt");
         ReflectionTestUtils.setField(cmd, "files", files);
         assertEquals(files, cmd.getFiles());
     }
 
     @Test
-    public void executesSuccessfullyWhenSyncExtensionSucceeds() throws Exception {
-        SyncExtensionCmd cmd = new SyncExtensionCmd();
-        ExtensionsManager mockManager = mock(ExtensionsManager.class);
-        ReflectionTestUtils.setField(cmd, "extensionsManager", mockManager);
-        when(mockManager.syncExtension(cmd)).thenReturn(true);
-
+    public void executesSuccessfullyWhenSyncExtensionSucceeds() {
+        when(extensionsManager.syncExtension(cmd)).thenReturn(true);
         cmd.execute();
-
         SuccessResponse response = (SuccessResponse) cmd.getResponseObject();
         assertTrue(response.getSuccess());
     }
 
     @Test(expected = ServerApiException.class)
-    public void throwsExceptionWhenSyncExtensionFails() throws Exception {
-        SyncExtensionCmd cmd = new SyncExtensionCmd();
+    public void throwsExceptionWhenSyncExtensionFails() {
         ExtensionsManager mockManager = mock(ExtensionsManager.class);
         ReflectionTestUtils.setField(cmd, "extensionsManager", mockManager);
         when(mockManager.syncExtension(cmd)).thenReturn(false);
@@ -92,32 +95,27 @@ public class SyncExtensionCmdTest {
 
     @Test
     public void returnsSystemAccountIdWhenGetEntityOwnerIdIsCalled() {
-        SyncExtensionCmd cmd = new SyncExtensionCmd();
         assertEquals(Account.ACCOUNT_ID_SYSTEM, cmd.getEntityOwnerId());
     }
 
     @Test
     public void returnsExtensionResourceTypeWhenGetApiResourceTypeIsCalled() {
-        SyncExtensionCmd cmd = new SyncExtensionCmd();
         assertEquals(ApiCommandResourceType.Extension, cmd.getApiResourceType());
     }
 
     @Test
     public void returnsIdWhenGetApiResourceIdIsCalled() {
-        SyncExtensionCmd cmd = new SyncExtensionCmd();
         ReflectionTestUtils.setField(cmd, "id", 123L);
         assertEquals(Long.valueOf(123), cmd.getApiResourceId());
     }
 
     @Test
     public void returnsCorrectEventType() {
-        SyncExtensionCmd cmd = new SyncExtensionCmd();
         assertEquals(EventTypes.EVENT_EXTENSION_SYNC, cmd.getEventType());
     }
 
     @Test
     public void returnsCorrectEventDescription() {
-        SyncExtensionCmd cmd = new SyncExtensionCmd();
         ReflectionTestUtils.setField(cmd, "id", 123L);
         assertEquals("Sync extension: 123", cmd.getEventDescription());
     }
