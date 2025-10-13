@@ -2557,7 +2557,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             SearchCriteria<NetworkVO> sc = createNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType,
                     physicalNetworkId, networkOfferingId, null, restartRequired, specifyIpRanges,
                     vpcId, tags, display, vlanId, associatedNetworkId);
-            addProjectNetworksConditionToSearch(sc, true, null);
+            addProjectNetworksConditionToSearch(sc, true);
             result = _networksDao.searchAndCount(sc, searchFilter);
         } else {
             SearchCriteria<NetworkVO> additionalSC = _networksDao.createSearchCriteria();
@@ -2785,7 +2785,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             SearchCriteria<NetworkVO> domainSC = sb.create();
             domainSC.addAnd("id", SearchCriteria.Op.IN, networkIds.toArray());
             domainSC.addAnd("aclType", SearchCriteria.Op.EQ, ACLType.Domain.toString());
-            addProjectNetworksConditionToSearch(domainSC, true, null);
+            addProjectNetworksConditionToSearch(domainSC, true);
             additionalSC.addOr("id", SearchCriteria.Op.SC, domainSC);
         }
     }
@@ -2813,12 +2813,17 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             SearchCriteria<NetworkVO> domainSC = sb.create();
             domainSC.addAnd("id", SearchCriteria.Op.IN, networkIds.toArray());
             domainSC.addAnd("aclType", SearchCriteria.Op.EQ, ACLType.Domain.toString());
-            addProjectNetworksConditionToSearch(domainSC, true, null);
+            addProjectNetworksConditionToSearch(domainSC, true);
             additionalSC.addOr("id", SearchCriteria.Op.SC, domainSC);
         }
     }
 
-    protected void addProjectNetworksConditionToSearch(SearchCriteria<NetworkVO> sc, boolean skipProjectNetworks, Long projectId) {
+    protected void addProjectNetworksConditionToSearch(SearchCriteria<NetworkVO> sc, boolean skipProjectNetworks) {
+        addProjectNetworksConditionToSearch(sc, skipProjectNetworks, null);
+    }
+
+    protected void addProjectNetworksConditionToSearch(SearchCriteria<NetworkVO> sc, boolean skipProjectNetworks,
+               Long projectId) {
         if (!skipProjectNetworks && projectId == -1) {
             sc.getJoin("account").addAnd("type", Op.NNULL);
         } else {
@@ -2833,7 +2838,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (!sharedNetworkIds.isEmpty()) {
             SearchCriteria<NetworkVO> ssc = sb.create();
             ssc.addAnd("id", SearchCriteria.Op.IN, sharedNetworkIds.toArray());
-            addProjectNetworksConditionToSearch(ssc, true, null);
+            addProjectNetworksConditionToSearch(ssc, true);
             additionalSC.addOr("id", SearchCriteria.Op.SC, ssc);
         }
     }
@@ -2863,7 +2868,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (!sharedNetworkIds.isEmpty()) {
                 SearchCriteria<NetworkVO> ssc = sb.create();
                 ssc.addAnd("id", SearchCriteria.Op.IN, sharedNetworkIds.toArray());
-                addProjectNetworksConditionToSearch(ssc, true, null);
+                addProjectNetworksConditionToSearch(ssc, true);
                 additionalSC.addOr("id", SearchCriteria.Op.SC, ssc);
             }
         }
