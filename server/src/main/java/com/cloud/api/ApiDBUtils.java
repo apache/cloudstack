@@ -2305,7 +2305,7 @@ public class ApiDBUtils {
 
     public static BackupOfferingResponse newBackupOfferingResponse(BackupOffering offering) {
         BackupRepository repository = s_backupRepositoryDao.findByUuid(offering.getExternalId());
-        Boolean crossZoneInstanceCreationEnabled = repository != null ? repository.crossZoneInstanceCreationEnabled() : false;
+        Boolean crossZoneInstanceCreationEnabled = repository != null ? Boolean.TRUE.equals(repository.crossZoneInstanceCreationEnabled()) : false;
         return s_backupOfferingDao.newBackupOfferingResponse(offering, crossZoneInstanceCreationEnabled);
     }
 
