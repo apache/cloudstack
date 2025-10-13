@@ -153,10 +153,10 @@ class networkConfig:
             if line.find("HWaddr") != -1:
                 macAddr = line.split("HWaddr ")[1].strip(" ")
             elif line.find("inet ") != -1:
-                m = re.search("addr:(.*)\ *Bcast:(.*)\ *Mask:(.*)", line)
+                m = re.search(r"addr:([^\s]+)\s*Bcast:([^\s]+)\s*Mask:([^\s]+)", line)
                 if m is not None:
-                    ipAddr = m.group(1).rstrip(" ")
-                    netmask = m.group(3).rstrip(" ")
+                    ipAddr = m.group(1).strip()
+                    netmask = m.group(3).strip()
 
         if networkConfig.isBridgePort(dev):
             type = "brport"
