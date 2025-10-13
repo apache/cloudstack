@@ -1024,6 +1024,7 @@
                             <exclude>.git/**</exclude>
                             <exclude>.github/linters/codespell.txt</exclude>
                             <exclude>.gitignore</exclude>
+                            <exclude>.markdownlintignore</exclude>
                             <exclude>CHANGES.md</exclude>
                             <exclude>CONTRIBUTING.md</exclude>
                             <exclude>README.md</exclude>

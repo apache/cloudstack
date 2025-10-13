@@ -18,9 +18,6 @@
 # MD001/heading-increment Heading levels should only increment by one level at a time
 MD001: false
 
-# MD003/heading-style Heading style
-MD003: false
-
 # MD004/ul-style Unordered list style
 MD004: false
 
