@@ -156,8 +156,8 @@
         v-if="routes[section]">
         <chart-card :loading="loading">
           <div class="chart-card-inner">
-            <router-link :to="{ name: section === 'backuprepositories' ? 'backuprepository' : section.substring(0, section.length - 1) }">
-              <h2>{{ $t(routes[section].title) }}</h2>
+            <router-link :to="{ name: routes[section].routename }">
+              <h2 style="overflow: hidden; text-overflow: ellipsis;">{{ $t(routes[section].title) }}</h2>
               <h2><render-icon :icon="routes[section].icon" /> {{ stats[section] }}</h2>
             </router-link>
           </div>
@@ -175,6 +175,7 @@ import router from '@/router'
 import Breadcrumb from '@/components/widgets/Breadcrumb'
 import ChartCard from '@/components/widgets/ChartCard'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import { getSingularIfPluralWord } from '@/utils/util.js'
 
 export default {
   name: 'InfraSummary',
@@ -187,7 +188,7 @@ export default {
     return {
       loading: true,
       routes: {},
-      sections: ['zones', 'pods', 'clusters', 'hosts', 'storagepools', 'imagestores', 'backuprepositories', 'objectstores', 'systemvms', 'routers', 'cpusockets', 'managementservers', 'alerts', 'ilbvms', 'metrics'],
+      sections: ['zones', 'pods', 'clusters', 'hosts', 'storagepools', 'imagestores', 'imagecachestores', 'backuprepositories', 'objectstores', 'systemvms', 'routers', 'cpusockets', 'managementservers', 'alerts', 'ilbvms', 'metrics'],
       sslFormVisible: false,
       stats: {},
       intermediateCertificates: [],
@@ -216,12 +217,14 @@ export default {
     fetchData () {
       this.routes = {}
       for (const section of this.sections) {
-        const route = section === 'backuprepositories' ? 'backuprepository' : section.substring(0, section.length - 1)
-        if (router.resolve('/' + route).matched[0].redirect === '/exception/404') {
+        const sectionRouteName = getSingularIfPluralWord(section)
+        const sectionKey = section
+        if (router.resolve('/' + sectionRouteName).matched[0].redirect === '/exception/404') {
           continue
         }
-        const node = router.resolve({ name: route })
-        this.routes[section] = {
+        const node = router.resolve({ name: sectionRouteName })
+        this.routes[sectionKey] = {
+          routename: sectionRouteName,
           title: node.meta.title,
           icon: node.meta.icon
         }
