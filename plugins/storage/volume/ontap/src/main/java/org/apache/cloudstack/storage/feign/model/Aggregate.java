@@ -30,6 +30,11 @@ public class Aggregate {
     @SerializedName("name")
     private String name = null;
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(getName(), getUuid());
+    }
+
     @SerializedName("uuid")
     private String uuid = null;
 

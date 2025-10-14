@@ -33,4 +33,20 @@ public class VolumeSpaceLogicalSpace {
     @JsonProperty("used")
     @SerializedName("used")
     private Double used = null;
+
+    public Long getAvailable() {
+        return available;
+    }
+
+    public void setAvailable(Long available) {
+        this.available = available;
+    }
+
+    public Double getUsed() {
+        return used;
+    }
+
+    public void setUsed(Double used) {
+        this.used = used;
+    }
 }

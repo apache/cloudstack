@@ -21,6 +21,8 @@ package org.apache.cloudstack.storage.feign.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import java.util.Objects;
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Policy {
     private int minThroughputIops;
@@ -41,4 +43,16 @@ public class Policy {
     public void setUuid(String uuid) { this.uuid = uuid; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Policy policy = (Policy) o;
+        return Objects.equals(getUuid(), policy.getUuid());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(getUuid());
+    }
 }

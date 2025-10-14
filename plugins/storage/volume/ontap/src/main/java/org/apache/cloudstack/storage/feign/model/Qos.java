@@ -26,5 +26,11 @@ public class Qos {
     @JsonProperty("policy")
     private Policy policy;
 
-    // Getters and setters
+    public Policy getPolicy() {
+        return policy;
+    }
+
+    public void setPolicy(Policy policy) {
+        this.policy = policy;
+    }
 }

@@ -20,6 +20,8 @@ package org.apache.cloudstack.storage.feign.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import java.util.Objects;
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ExportPolicy {
     private String name;
@@ -28,4 +30,16 @@ public class ExportPolicy {
     public void setName(String name) { this.name = name; }
     public long getId() { return id; }
     public void setId(long id) { this.id = id; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        ExportPolicy that = (ExportPolicy) o;
+        return getId() == that.getId();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(getId());
+    }
 }

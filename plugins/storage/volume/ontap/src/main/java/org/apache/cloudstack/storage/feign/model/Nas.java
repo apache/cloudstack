@@ -29,5 +29,21 @@ public class Nas {
     @JsonProperty("export_policy")
     private ExportPolicy exportPolicy;
 
-    // Getters and setters
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public ExportPolicy getExportPolicy() {
+        return exportPolicy;
+    }
+
+    public void setExportPolicy(ExportPolicy exportPolicy) {
+        this.exportPolicy = exportPolicy;
+    }
+
+
 }

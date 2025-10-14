@@ -75,6 +75,42 @@ public class Volume {
         return nas;
     }
 
+    public void setNas(Nas nas) {
+        this.nas = nas;
+    }
+
+    public Svm getSvm() {
+        return svm;
+    }
+
+    public void setSvm(Svm svm) {
+        this.svm = svm;
+    }
+
+    public Qos getQos() {
+        return qos;
+    }
+
+    public void setQos(Qos qos) {
+        this.qos = qos;
+    }
+
+    public VolumeSpace getSpace() {
+        return space;
+    }
+
+    public void setSpace(VolumeSpace space) {
+        this.space = space;
+    }
+
+    public AntiRansomware getAntiRansomware() {
+        return antiRansomware;
+    }
+
+    public void setAntiRansomware(AntiRansomware antiRansomware) {
+        this.antiRansomware = antiRansomware;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;

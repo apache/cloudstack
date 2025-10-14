@@ -33,5 +33,27 @@ public class VolumeSpace {
     @JsonProperty("used")
     private long used;
 
-    // Getters and setters
+    public long getSize() {
+        return size;
+    }
+
+    public void setSize(long size) {
+        this.size = size;
+    }
+
+    public long getAvailable() {
+        return available;
+    }
+
+    public void setAvailable(long available) {
+        this.available = available;
+    }
+
+    public long getUsed() {
+        return used;
+    }
+
+    public void setUsed(long used) {
+        this.used = used;
+    }
 }
