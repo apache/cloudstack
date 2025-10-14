@@ -62,6 +62,7 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ExtensionsShareManagerImpl extends ManagerBase implements ExtensionsShareManager {
 
@@ -82,6 +83,7 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
 
     private ScheduledExecutorService extensionShareCleanupExecutor;
     private int shareLinkValidityInterval;
+    private boolean serverShareEnabled = true;
 
     protected Path getExtensionsSharePath() {
         String shareBaseDir = ServerPropertiesUtil.getShareBaseDirectory();
@@ -213,7 +215,10 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
       * @throws InvalidKeyException if the secret key is invalid
       */
     protected String generateSignedArchiveUrl(ManagementServerHost managementServer, Path archivePath)
-            throws DecoderException, NoSuchAlgorithmException, InvalidKeyException {
+            throws DecoderException, NoSuchAlgorithmException, InvalidKeyException, CloudRuntimeException {
+        if (!serverShareEnabled) {
+            throw new CloudRuntimeException("Share context is disabled on this management server in server.properties");
+        }
         final String baseUrl = getManagementServerBaseUrl(managementServer);
         final long expiresAtEpochSec = System.currentTimeMillis() / 1000L + shareLinkValidityInterval;
         final String secretKey = ServerPropertiesUtil.getShareSecret();
@@ -442,6 +447,7 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
                 initialDelay, shareLinkValidityInterval);
         extensionShareCleanupExecutor.scheduleWithFixedDelay(new ShareCleanupWorker(),
                 initialDelay, shareLinkValidityInterval, TimeUnit.SECONDS);
+        serverShareEnabled = ServerPropertiesUtil.getShareEnabled();
         return true;
     }
 
@@ -468,7 +474,7 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
             String signedUrl;
             try {
                 signedUrl = generateSignedArchiveUrl(sourceManagementServer, archiveInfo.getPath());
-            } catch (DecoderException | NoSuchAlgorithmException | InvalidKeyException e) {
+            } catch (DecoderException | NoSuchAlgorithmException | InvalidKeyException | CloudRuntimeException e) {
                 String msg = "Failed to generate signed URL";
                 logger.error("{} for {} using {}", msg, extension, sourceManagementServer, e);
                 return new Pair<>(false, msg);

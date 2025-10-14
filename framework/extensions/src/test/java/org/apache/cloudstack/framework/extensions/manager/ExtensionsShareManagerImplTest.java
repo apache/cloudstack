@@ -59,6 +59,7 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.cluster.ClusterManager;
@@ -66,6 +67,7 @@ import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.HttpUtils;
 import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ExtensionsShareManagerImplTest {
@@ -358,6 +360,13 @@ public class ExtensionsShareManagerImplTest {
         IOException exception = assertThrows(IOException.class, () -> extensionsShareManager.createArchiveForDownload(
                 extension));
         assertTrue(exception.getMessage().contains("Failed to create archive"));
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void generateSignedArchiveUrlThrowsExceptionONSHareContextDisabled() throws Exception {
+        ReflectionTestUtils.setField(extensionsShareManager, "serverShareEnabled", false);
+        extensionsShareManager.generateSignedArchiveUrl(mock(ManagementServerHost.class),
+                Path.of("/share/extensions/test-archive.tgz"));
     }
 
     @Test
