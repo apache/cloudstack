@@ -25,6 +25,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.Pair;
 import com.cloud.vm.ImportVMTaskVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.ImportVMTaskDao;
@@ -72,22 +73,19 @@ public class ImportVmTasksManagerImpl implements ImportVmTasksManager {
         Long accountId = cmd.getAccountId();
         String vcenter = cmd.getVcenter();
         Long convertHostId = cmd.getConvertHostId();
-        boolean listAll = cmd.isListAll();
         boolean showCompleted = cmd.isShowCompleted();
+        Long startIndex = cmd.getStartIndex();
+        Long pageSizeVal = cmd.getPageSizeVal();
 
-        List<ImportVMTaskVO> tasks;
-        if (listAll) {
-            tasks = importVMTaskDao.listAll();
-        } else {
-            tasks = importVMTaskDao.listImportVMTasks(zoneId, accountId, vcenter, convertHostId, showCompleted);
-        }
+        Pair<List<ImportVMTaskVO>, Integer> result = importVMTaskDao.listImportVMTasks(zoneId, accountId, vcenter, convertHostId, showCompleted, startIndex, pageSizeVal);
+        List<ImportVMTaskVO> tasks = result.first();
 
         List<ImportVMTaskResponse> responses = new ArrayList<>();
         for (ImportVMTaskVO task : tasks) {
             responses.add(createImportVMTaskResponse(task));
         }
         ListResponse<ImportVMTaskResponse> listResponses = new ListResponse<>();
-        listResponses.setResponses(responses, responses.size());
+        listResponses.setResponses(responses, result.second());
         return listResponses;
     }
 
