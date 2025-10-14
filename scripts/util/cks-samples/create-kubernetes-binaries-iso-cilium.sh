@@ -18,25 +18,10 @@
 
 set -e
 
-if [ $# -lt 6 ]; then
-    echo "Invalid input. Valid usage: ./create-kubernetes-binaries-iso.sh OUTPUT_PATH KUBERNETES_VERSION CNI_VERSION CRICTL_VERSION WEAVENET_NETWORK_YAML_CONFIG DASHBOARD_YAML_CONFIG BUILD_NAME [ARCH] [ETCD_VERSION]"
-    echo "eg: ./create-kubernetes-binaries-iso.sh ./ 1.11.4 0.7.1 1.11.1 https://github.com/weaveworks/weave/releases/download/latest_release/weave-daemonset-k8s-1.11.yaml https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.0/src/deploy/recommended/kubernetes-dashboard.yaml setup-v1.11.4 amd64"
+if [ $# -lt 8 ]; then
+    echo "Invalid input. Valid usage: ./create-kubernetes-binaries-iso-cilium.sh OUTPUT_PATH KUBERNETES_VERSION CNI_VERSION CRICTL_VERSION CILIUM_VERSION HELM_VERSION DASHBOARD_YAML_CONFIG BUILD_NAME"
+    echo "eg: ./create-kubernetes-binaries-iso-cilium.sh ./ 1.27.14 1.4.0 1.29.0 1.15.1 3.14.2 https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml setup-v1.27.14"
     exit 1
-fi
-
-ARCH="amd64"
-ARCH_SUFFIX="x86_64"
-if [ -n "${8}" ]; then
-  if [ "${8}" = "x86_64" ] || [ "${8}" = "amd64" ]; then
-    ARCH="amd64"
-    ARCH_SUFFIX="x86_64"
-  elif [ "${8}" = "aarch64" ] || [ "${8}" = "arm64" ]; then
-    ARCH="arm64"
-    ARCH_SUFFIX="aarch64"
-  else
-    echo "ERROR: ARCH must be 'x86_64' or 'aarch64'. If the optional parameter ARCH is not set then 'x86_64' is used."
-    exit 1
-  fi
 fi
 
 RELEASE="v${2}"
@@ -46,29 +31,29 @@ start_dir="$PWD"
 iso_dir="/tmp/iso"
 working_dir="${iso_dir}/"
 mkdir -p "${working_dir}"
-build_name="${7}-${ARCH_SUFFIX}.iso"
-[ -z "${build_name}" ] && build_name="setup-${RELEASE}-${ARCH_SUFFIX}.iso"
+build_name="${8}.iso"
+[ -z "${build_name}" ] && build_name="setup-${RELEASE}.iso"
 
 CNI_VERSION="v${3}"
 echo "Downloading CNI ${CNI_VERSION}..."
 cni_dir="${working_dir}/cni/"
 mkdir -p "${cni_dir}"
-cni_status_code=$(curl -L  --write-out "%{http_code}\n" "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-${ARCH}-${CNI_VERSION}.tgz" -o "${cni_dir}/cni-plugins-${ARCH}.tgz")
+cni_status_code=$(curl -L  --write-out "%{http_code}\n" "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-amd64-${CNI_VERSION}.tgz" -o "${cni_dir}/cni-plugins-amd64.tgz")
 if [[ ${cni_status_code} -eq 404 ]] ; then
-  curl -L  --write-out "%{http_code}\n" "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-${ARCH}-${CNI_VERSION}.tgz" -o "${cni_dir}/cni-plugins-${ARCH}.tgz"
+  curl -L  --write-out "%{http_code}\n" "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-amd64-${CNI_VERSION}.tgz" -o "${cni_dir}/cni-plugins-amd64.tgz"
 fi
 
 CRICTL_VERSION="v${4}"
 echo "Downloading CRI tools ${CRICTL_VERSION}..."
 crictl_dir="${working_dir}/cri-tools/"
 mkdir -p "${crictl_dir}"
-curl -L "https://github.com/kubernetes-incubator/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz" -o "${crictl_dir}/crictl-linux-${ARCH}.tar.gz"
+curl -L "https://github.com/kubernetes-incubator/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-amd64.tar.gz" -o "${crictl_dir}/crictl-linux-amd64.tar.gz"
 
 echo "Downloading Kubernetes tools ${RELEASE}..."
 k8s_dir="${working_dir}/k8s"
 mkdir -p "${k8s_dir}"
 cd "${k8s_dir}"
-curl -L --remote-name-all https://dl.k8s.io/release/${RELEASE}/bin/linux/${ARCH}/{kubeadm,kubelet,kubectl}
+curl -L --remote-name-all https://storage.googleapis.com/kubernetes-release/release/${RELEASE}/bin/linux/amd64/{kubeadm,kubelet,kubectl}
 kubeadm_file_permissions=`stat --format '%a' kubeadm`
 chmod +x kubeadm
 
@@ -91,15 +76,23 @@ else
   curl -sSL "https://raw.githubusercontent.com/shapeblue/cloudstack-nonoss/main/cks/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > ${kubeadm_conf_file}
 fi
 
-NETWORK_CONFIG_URL="${5}"
-echo "Downloading network config ${NETWORK_CONFIG_URL}"
-network_conf_file="${working_dir}/network.yaml"
-curl -sSL ${NETWORK_CONFIG_URL} -o ${network_conf_file}
+HELM_VERSION="${6}"
+mkdir -p ${iso_dir}/installs
+curl -L -o ${iso_dir}/installs/helm-v${HELM_VERSION}-linux-amd64.tar.gz https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz
 
-DASHBORAD_CONFIG_URL="${6}"
-echo "Downloading dashboard config ${DASHBORAD_CONFIG_URL}"
+CILIUM_VERSION="${5}"
+echo "Downloading Cilium Helm chart version ${CILIUM_VERSION} and cilium cli"
+mkdir -p ${iso_dir}/installs/charts
+curl -Lo ${iso_dir}/installs/charts/cilium-${CILIUM_VERSION}.tgz https://helm.cilium.io/cilium-${CILIUM_VERSION}.tgz
+
+CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
+CLI_ARCH=amd64
+curl -Lo ${iso_dir}/installs/cilium-linux-${CLI_ARCH}-cli-${CILIUM_CLI_VERSION}.tar.gz --fail https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-${CLI_ARCH}.tar.gz
+
+DASHBOARD_CONFIG_URL="${7}"
+echo "Downloading dashboard config ${DASHBOARD_CONFIG_URL}"
 dashboard_conf_file="${working_dir}/dashboard.yaml"
-curl -sSL ${DASHBORAD_CONFIG_URL} -o ${dashboard_conf_file}
+curl -sSL ${DASHBOARD_CONFIG_URL} -o ${dashboard_conf_file}
 
 # TODO : Change the url once merged
 AUTOSCALER_URL="https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/cloudstack/examples/cluster-autoscaler-standard.yaml"
@@ -143,20 +136,29 @@ output=`printf "%s\n" ${output} ${autoscaler_image}`
 provider_image=`grep "image:" ${provider_conf_file} | cut -d ':' -f2- | tr -d ' '`
 output=`printf "%s\n" ${output} ${provider_image}`
 
-if [ -d scripts ]; then
-    /bin/cp -r scripts ${iso_dir}
-fi
+cp -r helm-overrides/ ${iso_dir}/installs
+
+chart_images=`for chart in ${iso_dir}/installs/charts/*; do chartfile=${chart##*/}; chartbase=${chartfile%-*}; if [ -f ${iso_dir}/installs/helm-overrides/${chartbase}-overrides.yaml ]; then helm template -f ${iso_dir}/installs/helm-overrides/${chartbase}-overrides.yaml ${chart}; else helm template ${chart}; fi; done | grep "[[:space:]]image:" | cut -d ':' -f2- | tr -d ' ' | tr -d '\r' | tr -d "'" | tr -d '"' | sort -u`
+output=`printf "%s\n" ${output} ${chart_images}`
 
 while read -r line; do
     echo "Downloading image $line ---"
-    if [[ $line == kubernetesui* ]] || [[ $line == apache* ]] || [[ $line == weaveworks* ]]; then
+    if [[ $line == kubernetesui* ]] || [[ $line == apache* ]]; then
       line="docker.io/${line}"
     fi
-    sudo ctr image pull "$line"
+    if [ ! -z "${https_proxy}" ]; then
+      sudo https_proxy=${https_proxy} ctr image pull "$line"
+    else
+      sudo ctr image pull "$line"
+    fi
     image_name=`echo "$line" | grep -oE "[^/]+$"`
     sudo ctr image export "${working_dir}/docker/$image_name.tar" "$line"
     sudo ctr image rm "$line"
 done <<< "$output"
+
+if [ -d scripts ]; then
+    /bin/cp -r scripts ${iso_dir}
+fi
 
 echo "Restore kubeadm permissions..."
 if [ -z "${kubeadm_file_permissions}" ]; then
@@ -166,15 +168,6 @@ chmod ${kubeadm_file_permissions} "${working_dir}/k8s/kubeadm"
 
 echo "Updating imagePullPolicy to IfNotPresent in yaml files..."
 sed -i "s/imagePullPolicy:.*/imagePullPolicy: IfNotPresent/g" ${working_dir}/*.yaml
-
-# Optional parameter ETCD_VERSION
-if [ -n "${9}" ]; then
-  # Install etcd dependencies
-  etcd_dir="${working_dir}/etcd"
-  mkdir -p "${etcd_dir}"
-  ETCD_VERSION=v${9}
-  wget -q --show-progress "https://github.com/etcd-io/etcd/releases/download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-linux-amd64.tar.gz" -O ${etcd_dir}/etcd-linux-amd64.tar.gz
-fi
 
 mkisofs -o "${output_dir}/${build_name}" -J -R -l "${iso_dir}"
 
