@@ -64,6 +64,7 @@ public class ApiConstants {
     public static final String BACKUP_STORAGE_LIMIT = "backupstoragelimit";
     public static final String BACKUP_STORAGE_TOTAL = "backupstoragetotal";
     public static final String BACKUP_VM_OFFERING_REMOVED = "vmbackupofferingremoved";
+    public static final String IS_BACKUP_VM_EXPUNGED = "isbackupvmexpunged";
     public static final String BACKUP_TOTAL = "backuptotal";
     public static final String BASE64_IMAGE = "base64image";
     public static final String BGP_PEERS = "bgppeers";
@@ -227,6 +228,7 @@ public class ApiConstants {
     public static final String EVENT_TYPE = "eventtype";
     public static final String EXPIRES = "expires";
     public static final String EXTRA_CONFIG = "extraconfig";
+    public static final String EXTRA_PARAMS = "extraparams";
     public static final String EXTRA_DHCP_OPTION = "extradhcpoption";
     public static final String EXTRA_DHCP_OPTION_NAME = "extradhcpoptionname";
     public static final String EXTRA_DHCP_OPTION_CODE = "extradhcpoptioncode";
@@ -245,6 +247,8 @@ public class ApiConstants {
     public static final String FIRSTNAME = "firstname";
     public static final String FORCED = "forced";
     public static final String FORCED_DESTROY_LOCAL_STORAGE = "forcedestroylocalstorage";
+    public static final String FORCE_CONVERT_TO_POOL = "forceconverttopool";
+
     public static final String FORCE_DELETE_HOST = "forcedeletehost";
     public static final String FORCE_MS_TO_IMPORT_VM_FILES = "forcemstoimportvmfiles";
     public static final String FORCE_UPDATE_OS_TYPE = "forceupdateostype";
@@ -531,6 +535,7 @@ public class ApiConstants {
     public static final String SHOW_CAPACITIES = "showcapacities";
     public static final String SHOW_REMOVED = "showremoved";
     public static final String SHOW_RESOURCE_ICON = "showicon";
+    public static final String SHOW_COMPLETED = "showcompleted";
     public static final String SHOW_INACTIVE = "showinactive";
     public static final String SHOW_UNIQUE = "showunique";
     public static final String SIGNATURE = "signature";
@@ -1159,6 +1164,7 @@ public class ApiConstants {
     public static final String OVM3_CLUSTER = "ovm3cluster";
     public static final String OVM3_VIP = "ovm3vip";
     public static final String CLEAN_UP_DETAILS = "cleanupdetails";
+    public static final String CLEAN_UP_EXTERNAL_DETAILS = "cleanupexternaldetails";
     public static final String CLEAN_UP_PARAMETERS = "cleanupparameters";
     public static final String VIRTUAL_SIZE = "virtualsize";
     public static final String NETSCALER_CONTROLCENTER_ID = "netscalercontrolcenterid";

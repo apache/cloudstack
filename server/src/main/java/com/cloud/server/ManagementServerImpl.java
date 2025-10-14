@@ -789,6 +789,7 @@ import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
@@ -4667,7 +4668,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final boolean isCallerAdmin = _accountService.isAdmin(caller.getId());
         boolean securityGroupsEnabled = false;
         boolean elasticLoadBalancerEnabled;
-        boolean KVMSnapshotEnabled;
         String supportELB = "false";
         final List<NetworkVO> networks = networkDao.listSecurityGroupEnabledNetworks();
         if (networks != null && !networks.isEmpty()) {
@@ -4684,7 +4684,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final long diskOffMinSize = VolumeOrchestrationService.CustomDiskOfferingMinSize.value();
         final long diskOffMaxSize = VolumeOrchestrationService.CustomDiskOfferingMaxSize.value();
-        KVMSnapshotEnabled = Boolean.parseBoolean(_configDao.getValue("KVM.snapshot.enabled"));
+        final boolean KVMSnapshotEnabled = SnapshotManager.KVMSnapshotEnabled.value();
 
         final boolean userPublicTemplateEnabled = TemplateManager.AllowPublicUserTemplates.valueIn(caller.getId());
 

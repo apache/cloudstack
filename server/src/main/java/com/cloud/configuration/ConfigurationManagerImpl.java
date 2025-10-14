@@ -3807,14 +3807,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     protected boolean serviceOfferingExternalDetailsNeedUpdate(final Map<String, String> offeringDetails,
-               final Map<String, String> externalDetails) {
-        if (MapUtils.isEmpty(externalDetails)) {
+               final Map<String, String> externalDetails, final boolean cleanupExternalDetails) {
+        if (MapUtils.isEmpty(externalDetails) && !cleanupExternalDetails) {
             return false;
         }
 
         Map<String, String> existingExternalDetails = offeringDetails.entrySet().stream()
                 .filter(detail -> detail.getKey().startsWith(VmDetailConstants.EXTERNAL_DETAIL_PREFIX))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+       if (cleanupExternalDetails) {
+           return !MapUtils.isEmpty(existingExternalDetails);
+       }
 
         if (MapUtils.isEmpty(existingExternalDetails) || existingExternalDetails.size() != externalDetails.size()) {
             return true;
@@ -3845,6 +3849,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         ServiceOffering.State state = cmd.getState();
         boolean purgeResources = cmd.isPurgeResources();
         final Map<String, String> externalDetails = cmd.getExternalDetails();
+        final boolean cleanupExternalDetails = cmd.isCleanupExternalDetails();
 
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
@@ -3938,7 +3943,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         final boolean updateNeeded = name != null || displayText != null || sortKey != null || storageTags != null || hostTags != null || state != null;
         final boolean serviceOfferingExternalDetailsNeedUpdate =
-                serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
+                serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, cleanupExternalDetails);
         final boolean detailsUpdateNeeded = !filteredDomainIds.equals(existingDomainIds) ||
                 !filteredZoneIds.equals(existingZoneIds) || purgeResources != existingPurgeResources ||
                 serviceOfferingExternalDetailsNeedUpdate;
@@ -4013,8 +4018,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 SearchCriteria<ServiceOfferingDetailsVO> externalDetailsRemoveSC = sb.create();
                 externalDetailsRemoveSC.setParameters("detailNameLike", VmDetailConstants.EXTERNAL_DETAIL_PREFIX + "%");
                 _serviceOfferingDetailsDao.remove(externalDetailsRemoveSC);
-                for (Map.Entry<String, String> entry : externalDetails.entrySet()) {
-                    detailsVO.add(new ServiceOfferingDetailsVO(id, entry.getKey(), entry.getValue(), true));
+                if (!cleanupExternalDetails) {
+                    for (Map.Entry<String, String> entry : externalDetails.entrySet()) {
+                        detailsVO.add(new ServiceOfferingDetailsVO(id, entry.getKey(), entry.getValue(), true));
+                    }
                 }
             }
         }

@@ -5040,8 +5040,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public BackupOfferingResponse createBackupOfferingResponse(BackupOffering policy) {
-        return ApiDBUtils.newBackupOfferingResponse(policy);
+    public BackupOfferingResponse createBackupOfferingResponse(BackupOffering offering) {
+        return ApiDBUtils.newBackupOfferingResponse(offering);
     }
 
     public ManagementServerResponse createManagementResponse(ManagementServerHost mgmt) {

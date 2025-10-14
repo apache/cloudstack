@@ -114,6 +114,7 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.DomainRouterVO;
@@ -1298,5 +1299,35 @@ public class NetworkServiceImplTest {
         } catch (InvalidParameterValueException e) {
             Assert.assertEquals("Mac address is not valid: invalid-mac", e.getMessage());
         }
+    }
+
+    @Test
+    public void addProjectNetworksConditionToSearch_includesProjectNetworksWhenNotSkipped() {
+        SearchCriteria<NetworkVO> sc = Mockito.mock(SearchCriteria.class);
+        SearchCriteria accountJoin = Mockito.mock(SearchCriteria.class);
+        Mockito.when(sc.getJoin("account")).thenReturn(accountJoin);
+        service.addProjectNetworksConditionToSearch(sc, false, -1L);
+        Mockito.verify(accountJoin).addAnd("type", SearchCriteria.Op.NNULL);
+        Mockito.verify(sc).addAnd("id", SearchCriteria.Op.SC, accountJoin);
+    }
+
+    @Test
+    public void addProjectNetworksConditionToSearch_excludesProjectNetworksWhenSkipped() {
+        SearchCriteria<NetworkVO> sc = Mockito.mock(SearchCriteria.class);
+        SearchCriteria accountJoin = Mockito.mock(SearchCriteria.class);
+        Mockito.when(sc.getJoin("account")).thenReturn(accountJoin);
+        service.addProjectNetworksConditionToSearch(sc, true, -1L);
+        Mockito.verify(accountJoin).addAnd("type", SearchCriteria.Op.NEQ, Account.Type.PROJECT);
+        Mockito.verify(sc).addAnd("id", SearchCriteria.Op.SC, accountJoin);
+    }
+
+    @Test
+    public void addProjectNetworksConditionToSearch_includesSpecificProjectWhenProjectIdProvided() {
+        SearchCriteria<NetworkVO> sc = Mockito.mock(SearchCriteria.class);
+        SearchCriteria accountJoin = Mockito.mock(SearchCriteria.class);
+        Mockito.when(sc.getJoin("account")).thenReturn(accountJoin);
+        service.addProjectNetworksConditionToSearch(sc, false, 123L);
+        Mockito.verify(accountJoin).addAnd("type", SearchCriteria.Op.EQ, Account.Type.PROJECT);
+        Mockito.verify(sc).addAnd("id", SearchCriteria.Op.SC, accountJoin);
     }
 }

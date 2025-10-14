@@ -50,7 +50,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.systemvm.template.location>https://download.cloudstack.org/systemvm</project.systemvm.template.location>
-        <project.systemvm.template.version>4.20.2.0</project.systemvm.template.version>
+        <project.systemvm.template.version>4.22.0.0</project.systemvm.template.version>
         <sonar.organization>apache</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
 
@@ -1019,16 +1019,17 @@
                             <exclude>**/*.md</exclude>
                             <exclude>.java-version</exclude>
                             <exclude>.python-version</exclude>
-                            <exclude>systemvm/.pythen-version</exclude>
                             <exclude>.idea/</exclude>
                             <exclude>.metadata/**</exclude>
                             <exclude>.git/**</exclude>
                             <exclude>.github/linters/codespell.txt</exclude>
                             <exclude>.gitignore</exclude>
+                            <exclude>.markdownlintignore</exclude>
                             <exclude>CHANGES.md</exclude>
                             <exclude>CONTRIBUTING.md</exclude>
                             <exclude>README.md</exclude>
                             <exclude>INSTALL.md</exclude>
+                            <exclude>PRE-COMMIT.md</exclude>
                             <exclude>build/build.number</exclude>
                             <exclude>debian/cloudstack-agent.dirs</exclude>
                             <exclude>debian/cloudstack-usage.dirs</exclude>
