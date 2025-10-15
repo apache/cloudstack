@@ -30,6 +30,8 @@ import com.cloud.vm.ImportVMTaskVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.ImportVMTaskDao;
 import com.cloud.vm.dao.UserVmDao;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.vm.ListImportVMTasksCmd;
 import org.apache.cloudstack.api.response.ImportVMTaskResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -73,11 +75,17 @@ public class ImportVmTasksManagerImpl implements ImportVmTasksManager {
         Long accountId = cmd.getAccountId();
         String vcenter = cmd.getVcenter();
         Long convertHostId = cmd.getConvertHostId();
-        boolean showCompleted = cmd.isShowCompleted();
         Long startIndex = cmd.getStartIndex();
         Long pageSizeVal = cmd.getPageSizeVal();
 
-        Pair<List<ImportVMTaskVO>, Integer> result = importVMTaskDao.listImportVMTasks(zoneId, accountId, vcenter, convertHostId, showCompleted, startIndex, pageSizeVal);
+        ImportVmTask.TaskState state;
+        try {
+            state = ImportVmTask.TaskState.getValue(cmd.getState());
+        } catch (IllegalArgumentException e) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid value for task state: " + cmd.getState());
+        }
+
+        Pair<List<ImportVMTaskVO>, Integer> result = importVMTaskDao.listImportVMTasks(zoneId, accountId, vcenter, convertHostId, state, startIndex, pageSizeVal);
         List<ImportVMTaskVO> tasks = result.first();
 
         List<ImportVMTaskResponse> responses = new ArrayList<>();
@@ -96,6 +104,7 @@ public class ImportVmTasksManagerImpl implements ImportVmTasksManager {
                 sourceVMName, owner.getAccountName(), zone.getName(), displayName, vcenter, datacenterName);
         ImportVMTaskVO importVMTaskVO = new ImportVMTaskVO(zone.getId(), owner.getAccountId(), userId, displayName,
                 vcenter, datacenterName, sourceVMName, convertHost.getId(), importHost.getId());
+        importVMTaskVO.setState(ImportVmTask.TaskState.Running);
         return importVMTaskDao.persist(importVMTaskVO);
     }
 
@@ -109,7 +118,6 @@ public class ImportVmTasksManagerImpl implements ImportVmTasksManager {
         if (Completed == step) {
             stringBuilder.append("Completed at ").append(DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), updatedDate));
         } else {
-            stringBuilder.append(String.format("[%s] ", DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), updatedDate)));
             if (CloningInstance == step) {
                 stringBuilder.append(String.format("Cloning source instance: %s on vCenter: %s / datacenter: %s", sourceVMName, vcenter, datacenter));
             } else if (ConvertingInstance == step) {
@@ -140,13 +148,19 @@ public class ImportVmTasksManagerImpl implements ImportVmTasksManager {
             Duration duration = Duration.between(importVMTaskVO.getCreated().toInstant(), updatedDate.toInstant());
             importVMTaskVO.setDuration(duration.toMillis());
             importVMTaskVO.setVmId(vmId);
+            importVMTaskVO.setState(ImportVmTask.TaskState.Completed);
         }
         importVMTaskDao.update(importVMTaskVO.getId(), importVMTaskVO);
     }
 
     @Override
-    public boolean removeImportVMTask(long taskId) {
-        return importVMTaskDao.remove(taskId);
+    public void updateImportVMTaskErrorState(ImportVmTask importVMTask, ImportVmTask.TaskState state, String errorMsg) {
+        ImportVMTaskVO importVMTaskVO = (ImportVMTaskVO) importVMTask;
+        Date updatedDate = DateUtil.now();
+        importVMTaskVO.setUpdated(updatedDate);
+        importVMTaskVO.setState(state);
+        importVMTaskVO.setDescription(errorMsg);
+        importVMTaskDao.update(importVMTaskVO.getId(), importVMTaskVO);
     }
 
     private ImportVMTaskResponse createImportVMTaskResponse(ImportVMTaskVO task) {
@@ -167,19 +181,21 @@ public class ImportVmTasksManagerImpl implements ImportVmTasksManager {
         response.setDisplayName(task.getDisplayName());
         response.setStep(getStepDisplayField(task.getStep()));
         response.setDescription(task.getDescription());
+        response.setState(task.getState().name());
 
         Date updated = task.getUpdated();
         Date currentDate = new Date();
-        if (updated != null && Completed != task.getStep()) {
-            Duration stepDuration = Duration.between(updated.toInstant(), currentDate.toInstant());
-            response.setStepDuration(getDurationDisplay(stepDuration.toMillis()));
+
+        if (updated != null) {
+            if (ImportVmTask.TaskState.Running == task.getState()) {
+                Duration stepDuration = Duration.between(updated.toInstant(), currentDate.toInstant());
+                response.setStepDuration(getDurationDisplay(stepDuration.toMillis()));
+            } else {
+                Duration totalDuration = Duration.between(task.getCreated().toInstant(), updated.toInstant());
+                response.setDuration(getDurationDisplay(totalDuration.toMillis()));
+            }
         }
-        if (Completed == task.getStep()) {
-            response.setStepDuration(getDurationDisplay(task.getDuration()));
-        } else {
-            Duration totalDuration = Duration.between(task.getCreated().toInstant(), currentDate.toInstant());
-            response.setDuration(getDurationDisplay(totalDuration.toMillis()));
-        }
+
         HostVO host = hostDao.findById(task.getConvertHostId());
         if (host != null) {
             response.setConvertInstanceHostId(host.getUuid());

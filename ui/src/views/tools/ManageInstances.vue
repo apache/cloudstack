@@ -1203,10 +1203,8 @@ export default {
       const params = {
         zoneid: this.zoneId,
         page: this.page.tasks,
-        pagesize: this.pageSize.tasks
-      }
-      if (this.importVmTasksFilter === 'completed') {
-        params.showcompleted = true
+        pagesize: this.pageSize.tasks,
+        state: this.importVmTasksFilter
       }
       getAPI('listImportVmTasks', params).then(response => {
         this.itemCount.tasks = response.listimportvmtasksresponse.count

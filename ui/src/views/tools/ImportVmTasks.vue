@@ -173,7 +173,7 @@ export default {
     ]
     return {
       columns,
-      filters: ['running', 'completed'],
+      filters: ['running', 'completed', 'failed'],
       filterValue: 'running'
     }
   },

@@ -22,6 +22,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.ImportVMTaskVO;
+import org.apache.cloudstack.vm.ImportVmTask;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -43,12 +44,14 @@ public class ImportVMTaskDaoImpl extends GenericDaoBase<ImportVMTaskVO, Long> im
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("vcenter", AllFieldsSearch.entity().getVcenter(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("convertHostId", AllFieldsSearch.entity().getConvertHostId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
     }
 
 
     @Override
-    public Pair<List<ImportVMTaskVO>, Integer> listImportVMTasks(Long zoneId, Long accountId, String vcenter, Long convertHostId, boolean showCompleted, Long startIndex, Long pageSizeVal) {
+    public Pair<List<ImportVMTaskVO>, Integer> listImportVMTasks(Long zoneId, Long accountId, String vcenter, Long convertHostId,
+                                                                 ImportVmTask.TaskState state, Long startIndex, Long pageSizeVal) {
         SearchCriteria<ImportVMTaskVO> sc = AllFieldsSearch.create();
         if (zoneId != null) {
             sc.setParameters("zoneId", zoneId);
@@ -62,7 +65,8 @@ public class ImportVMTaskDaoImpl extends GenericDaoBase<ImportVMTaskVO, Long> im
         if (convertHostId != null) {
             sc.setParameters("convertHostId", convertHostId);
         }
+        sc.setParameters("state", state);
         Filter filter = new Filter(ImportVMTaskVO.class, "created", false, startIndex, pageSizeVal);
-        return searchAndCount(sc, filter, showCompleted);
+        return searchAndCount(sc, filter);
     }
 }

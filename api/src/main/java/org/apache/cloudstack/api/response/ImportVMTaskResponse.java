@@ -55,6 +55,10 @@ public class ImportVMTaskResponse extends BaseResponse {
     @Param(description = "the display name of the importing VM")
     private String displayName;
 
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "the state of the importing VM task")
+    private String state;
+
     @SerializedName(ApiConstants.VCENTER)
     @Param(description = "the vcenter name of the importing VM task")
     private String vcenter;
@@ -241,5 +245,13 @@ public class ImportVMTaskResponse extends BaseResponse {
 
     public void setLastUpdated(Date lastUpdated) {
         this.lastUpdated = lastUpdated;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 }
