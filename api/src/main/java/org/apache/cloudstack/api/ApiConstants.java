@@ -534,6 +534,7 @@ public class ApiConstants {
     public static final String SESSIONKEY = "sessionkey";
     public static final String SHOW_CAPACITIES = "showcapacities";
     public static final String SHOW_REMOVED = "showremoved";
+    public static final String SHOW_RESOURCES = "showresources";
     public static final String SHOW_RESOURCE_ICON = "showicon";
     public static final String SHOW_COMPLETED = "showcompleted";
     public static final String SHOW_INACTIVE = "showinactive";
