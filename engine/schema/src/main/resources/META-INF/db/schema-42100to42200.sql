@@ -83,3 +83,6 @@ CREATE TABLE IF NOT EXISTS `cloud`.`import_vm_task`(
 
 CALL `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`('MaaS', 'Baremetal Extension for Canonical MaaS written in Python', 'MaaS/maas.py');
 CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('MaaS', 'orchestratorrequirespreparevm', 'true', 0);
+
+CALL `cloud`.`IDEMPOTENT_DROP_UNIQUE_KEY`('counter', 'uc_counter__provider__source__value');
+CALL `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY`('cloud.counter', 'uc_counter__provider__source__value__removed', '(provider, source, value, removed)');
