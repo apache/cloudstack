@@ -54,7 +54,7 @@ public class ADLdapUserManagerImplTest {
         String [] groups = {"dev", "dev-hyd"};
         for (String group: groups) {
             String result = adLdapUserManager.generateADGroupSearchFilter(group, 1L);
-            assertTrue(("(&(objectClass=user)(memberOf:1.2.840.113556.1.4.1941:=CN=" + group + ",DC=cloud,DC=citrix,DC=com))").equals(result));
+            assertTrue(("(&(objectCategory=person)(objectClass=user)(memberOf:1.2.840.113556.1.4.1941:=CN=" + group + ",DC=cloud,DC=citrix,DC=com))").equals(result));
         }
 
     }
@@ -69,7 +69,7 @@ public class ADLdapUserManagerImplTest {
         String [] groups = {"dev", "dev-hyd"};
         for (String group: groups) {
             String result = adLdapUserManager.generateADGroupSearchFilter(group, 1L);
-            assertTrue(("(&(objectClass=user)(memberOf=CN=" + group + ",DC=cloud,DC=citrix,DC=com))").equals(result));
+            assertTrue(("(&(objectCategory=person)(objectClass=user)(memberOf=CN=" + group + ",DC=cloud,DC=citrix,DC=com))").equals(result));
         }
     }
 
