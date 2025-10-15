@@ -48,6 +48,9 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backup_repository', 'cross_zone_inst
 UPDATE `cloud`.`storage_pool_details` SET display = 0 WHERE name LIKE '%password%';
 UPDATE `cloud`.`storage_pool_details` SET display = 0 WHERE name LIKE '%token%';
 
+-- Add csi_enabled column to kubernetes_cluster table to indicate if the cluster is using csi or not
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster', 'csi_enabled', 'TINYINT(1) unsigned NOT NULL DEFAULT 0 COMMENT "true if kubernetes cluster is using csi, false otherwise" ');
+
 -- VMware to KVM migration improvements
 CREATE TABLE IF NOT EXISTS `cloud`.`import_vm_task`(
     `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
