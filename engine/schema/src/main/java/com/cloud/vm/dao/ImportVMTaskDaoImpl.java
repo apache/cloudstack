@@ -22,7 +22,6 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.ImportVMTaskVO;
-import org.apache.cloudstack.acl.RoleVO;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -63,7 +62,7 @@ public class ImportVMTaskDaoImpl extends GenericDaoBase<ImportVMTaskVO, Long> im
         if (convertHostId != null) {
             sc.setParameters("convertHostId", convertHostId);
         }
-        Filter filter = new Filter(RoleVO.class, "created", false, startIndex, pageSizeVal);
+        Filter filter = new Filter(ImportVMTaskVO.class, "created", false, startIndex, pageSizeVal);
         return searchAndCount(sc, filter, showCompleted);
     }
 }
