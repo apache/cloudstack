@@ -65,7 +65,9 @@ public class ImportVMTaskDaoImpl extends GenericDaoBase<ImportVMTaskVO, Long> im
         if (convertHostId != null) {
             sc.setParameters("convertHostId", convertHostId);
         }
-        sc.setParameters("state", state);
+        if (state != null) {
+            sc.setParameters("state", state);
+        }
         Filter filter = new Filter(ImportVMTaskVO.class, "created", false, startIndex, pageSizeVal);
         return searchAndCount(sc, filter);
     }

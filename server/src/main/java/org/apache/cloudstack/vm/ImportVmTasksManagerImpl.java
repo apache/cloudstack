@@ -35,6 +35,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.vm.ListImportVMTasksCmd;
 import org.apache.cloudstack.api.response.ImportVMTaskResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -78,13 +79,7 @@ public class ImportVmTasksManagerImpl implements ImportVmTasksManager {
         Long startIndex = cmd.getStartIndex();
         Long pageSizeVal = cmd.getPageSizeVal();
 
-        ImportVmTask.TaskState state;
-        try {
-            state = ImportVmTask.TaskState.getValue(cmd.getState());
-        } catch (IllegalArgumentException e) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid value for task state: " + cmd.getState());
-        }
-
+        ImportVmTask.TaskState state = getStateFromFilter(cmd.getTasksFilter());
         Pair<List<ImportVMTaskVO>, Integer> result = importVMTaskDao.listImportVMTasks(zoneId, accountId, vcenter, convertHostId, state, startIndex, pageSizeVal);
         List<ImportVMTaskVO> tasks = result.first();
 
@@ -95,6 +90,17 @@ public class ImportVmTasksManagerImpl implements ImportVmTasksManager {
         ListResponse<ImportVMTaskResponse> listResponses = new ListResponse<>();
         listResponses.setResponses(responses, result.second());
         return listResponses;
+    }
+
+    private ImportVmTask.TaskState getStateFromFilter(String tasksFilter) {
+        if (StringUtils.isBlank(tasksFilter) || tasksFilter.equalsIgnoreCase("all")) {
+            return null;
+        }
+        try {
+            return ImportVmTask.TaskState.getValue(tasksFilter);
+        } catch (IllegalArgumentException e) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Invalid value for task state: %s", tasksFilter));
+        }
     }
 
     @Override

@@ -70,6 +70,9 @@
                 <router-link v-if="record.virtualmachineid" :to="{ path: '/vm/' + record.virtualmachineid }">{{ record.displayname }}</router-link>
                 <span v-else>{{ record.displayname }}</span>
               </template>
+              <template v-else-if="column.key === 'created'">
+                <span>{{ $toLocaleDate(record.created) }}</span>
+              </template>
             </template>
         </a-table>
         <div class="instances-card-footer">
@@ -126,54 +129,64 @@ export default {
   data () {
     const columns = [
       {
+        key: 'created',
+        title: this.$t('label.created'),
+        dataIndex: 'created'
+      },
+      {
         key: 'displayname',
-        title: 'VM Display Name',
+        title: this.$t('label.displayname'),
         dataIndex: 'displayname'
       },
       {
         key: 'convertinstancehostid',
-        title: 'Conversion Host',
+        title: this.$t('label.conversionhost'),
         dataIndex: 'convertinstancehostid'
       },
       {
         key: 'step',
-        title: 'Current Step',
+        title: this.$t('label.currentstep'),
         dataIndex: 'step'
       },
       {
         key: 'stepduration',
-        title: 'Current Step Duration',
+        title: this.$t('label.currentstep.duration'),
         dataIndex: 'stepduration'
       },
       {
         key: 'description',
-        title: 'Description',
+        title: this.$t('label.description'),
         dataIndex: 'description'
       },
       {
         key: 'duration',
-        title: 'Total Duration',
+        title: this.$t('label.totalduration'),
         dataIndex: 'duration'
       },
       {
         key: 'sourcevmname',
-        title: 'Source VM Name',
+        title: this.$t('label.sourcevmname'),
         dataIndex: 'sourcevmname'
       },
       {
         key: 'vcenter',
-        title: 'vCenter',
+        title: this.$t('label.vcenter'),
         dataIndex: 'vcenter'
       },
       {
         key: 'datacentername',
-        title: 'Datacenter Name',
+        title: this.$t('label.vcenter.datacenter'),
         dataIndex: 'datacentername'
+      },
+      {
+        key: 'state',
+        title: this.$t('label.state'),
+        dataIndex: 'state'
       }
     ]
     return {
       columns,
-      filters: ['running', 'completed', 'failed'],
+      filters: ['all', 'running', 'completed', 'failed'],
       filterValue: 'running'
     }
   },

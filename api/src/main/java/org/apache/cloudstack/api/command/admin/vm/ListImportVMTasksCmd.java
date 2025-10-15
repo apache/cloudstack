@@ -35,7 +35,6 @@ import org.apache.cloudstack.api.response.ImportVMTaskResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.vm.ImportVmTask;
 import org.apache.cloudstack.vm.ImportVmTasksManager;
 
 import javax.inject.Inject;
@@ -76,8 +75,8 @@ public class ListImportVMTasksCmd extends BaseListCmd {
             description = "Conversion host of the importing task")
     private Long convertHostId;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "List tasks by status, valid options are: Running, Completed, Failed")
-    private String state;
+    @Parameter(name = ApiConstants.TASKS_FILTER, type = CommandType.STRING, description = "Filter tasks by status, valid options are: All, Running, Completed, Failed")
+    private String tasksFilter;
 
     public Long getZoneId() {
         return zoneId;
@@ -95,8 +94,8 @@ public class ListImportVMTasksCmd extends BaseListCmd {
         return convertHostId;
     }
 
-    public String getState() {
-        return state == null ? ImportVmTask.TaskState.Running.name() : state;
+    public String getTasksFilter() {
+        return tasksFilter;
     }
 
     @Override

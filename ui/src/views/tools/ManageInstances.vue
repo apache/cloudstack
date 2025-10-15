@@ -1204,7 +1204,7 @@ export default {
         zoneid: this.zoneId,
         page: this.page.tasks,
         pagesize: this.pageSize.tasks,
-        state: this.importVmTasksFilter
+        tasksfilter: this.importVmTasksFilter
       }
       getAPI('listImportVmTasks', params).then(response => {
         this.itemCount.tasks = response.listimportvmtasksresponse.count
