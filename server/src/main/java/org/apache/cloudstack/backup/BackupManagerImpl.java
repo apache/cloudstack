@@ -122,12 +122,14 @@ import com.cloud.projects.Project;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.VirtualMachineTemplate;
@@ -232,6 +234,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     private ResourceLimitService resourceLimitMgr;
     @Inject
     private AlertManager alertManager;
+    @Inject
+    private GuestOSDao _guestOSDao;
 
     private AsyncJobDispatcher asyncJobDispatcher;
     private Timer backupTimer;
@@ -379,7 +383,15 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         ServiceOffering serviceOffering = serviceOfferingDao.findById(vm.getServiceOfferingId());
         details.put(ApiConstants.SERVICE_OFFERING_ID, serviceOffering.getUuid());
         VirtualMachineTemplate template = vmTemplateDao.findById(vm.getTemplateId());
-        details.put(ApiConstants.TEMPLATE_ID, template.getUuid());
+        if (template != null) {
+            long guestOSId = template.getGuestOSId();
+            details.put(ApiConstants.TEMPLATE_ID, template.getUuid());
+            GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
+            if (guestOS != null) {
+                details.put(ApiConstants.OS_TYPE_ID, guestOS.getUuid());
+                details.put(ApiConstants.OS_NAME, guestOS.getDisplayName());
+            }
+        }
 
         List<VMInstanceDetailVO> vmDetails = vmInstanceDetailsDao.listDetails(vm.getId());
         HashMap<String, String> settings = new HashMap<>();
@@ -2143,7 +2155,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (details.containsKey(ApiConstants.TEMPLATE_ID)) {
             VirtualMachineTemplate template = vmTemplateDao.findByUuid(details.get(ApiConstants.TEMPLATE_ID));
             if (template != null) {
-                details.put(ApiConstants.TEMPLATE_ID, template.getUuid());
                 details.put(ApiConstants.TEMPLATE_NAME, template.getName());
                 details.put(ApiConstants.IS_ISO, String.valueOf(template.getFormat().equals(Storage.ImageFormat.ISO)));
             }
@@ -2151,7 +2162,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (details.containsKey(ApiConstants.SERVICE_OFFERING_ID)) {
             ServiceOffering serviceOffering = serviceOfferingDao.findByUuid(details.get(ApiConstants.SERVICE_OFFERING_ID));
             if (serviceOffering != null) {
-                details.put(ApiConstants.SERVICE_OFFERING_ID, serviceOffering.getUuid());
                 details.put(ApiConstants.SERVICE_OFFERING_NAME, serviceOffering.getName());
             }
         }
@@ -2186,10 +2196,15 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         response.setId(backup.getUuid());
         response.setName(backup.getName());
         response.setDescription(backup.getDescription());
-        response.setVmName(vm.getHostName());
-        response.setVmId(vm.getUuid());
-        if (vm.getBackupOfferingId() == null || vm.getBackupOfferingId() != backup.getBackupOfferingId()) {
-            response.setVmOfferingRemoved(true);
+        if (vm != null) {
+            response.setVmName(vm.getHostName());
+            response.setVmId(vm.getUuid());
+            if (vm.getBackupOfferingId() == null || vm.getBackupOfferingId() != backup.getBackupOfferingId()) {
+                response.setVmOfferingRemoved(true);
+            }
+        }
+        if (vm == null || VirtualMachine.State.Expunging.equals(vm.getState())) {
+            response.setVmExpunged(true);
         }
         response.setExternalId(backup.getExternalId());
         response.setType(backup.getType());
@@ -2205,9 +2220,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             }
         }
         // ACS 4.20: For backups taken prior this release the backup.backed_volumes column would be empty hence use vm_instance.backup_volumes
-        String backedUpVolumes;
+        String backedUpVolumes = "";
         if (Objects.isNull(backup.getBackedUpVolumes())) {
-            backedUpVolumes = new Gson().toJson(vm.getBackupVolumeList().toArray(), Backup.VolumeInfo[].class);
+            if (vm != null) {
+                backedUpVolumes = new Gson().toJson(vm.getBackupVolumeList().toArray(), Backup.VolumeInfo[].class);
+            }
         } else {
             backedUpVolumes = new Gson().toJson(backup.getBackedUpVolumes().toArray(), Backup.VolumeInfo[].class);
         }
@@ -2223,7 +2240,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         if (Boolean.TRUE.equals(listVmDetails)) {
             Map<String, String> vmDetails = new HashMap<>();
-            vmDetails.put(ApiConstants.HYPERVISOR, vm.getHypervisorType().toString());
+            if (vm != null) {
+                vmDetails.put(ApiConstants.HYPERVISOR, vm.getHypervisorType().toString());
+            }
             Map<String, String> details = getDetailsFromBackupDetails(backup.getId());
             vmDetails.putAll(details);
             response.setVmDetails(vmDetails);

@@ -38,6 +38,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.libvirt.LibvirtException;
 
+import com.cloud.utils.storage.TemplateDownloaderUtil;
 import com.linbit.linstor.api.ApiClient;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiException;
@@ -694,7 +695,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
 
     private String getFinalDirectDownloadPath(String templateFilePath, KVMStoragePool destPool) {
         String finalSourcePath = templateFilePath;
-        if (LibvirtStorageAdaptor.isTemplateExtractable(templateFilePath)) {
+        if (TemplateDownloaderUtil.isTemplateExtractable(templateFilePath)) {
             finalSourcePath = templateFilePath.substring(0, templateFilePath.lastIndexOf('.'));
             LibvirtStorageAdaptor.extractDownloadedTemplate(templateFilePath, destPool, finalSourcePath);
         }
