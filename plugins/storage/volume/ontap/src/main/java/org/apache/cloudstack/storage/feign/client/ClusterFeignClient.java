@@ -17,33 +17,21 @@
  * under the License.
  */
 
-package org.apache.cloudstack.storage.feign.model;
+package org.apache.cloudstack.storage.feign.client;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.cloudstack.storage.feign.FeignConfiguration;
+import org.apache.cloudstack.storage.feign.model.Cluster;
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class VolumeSpaceLogicalSpace {
+import java.net.URI;
 
-    @JsonProperty("available")
-    private Long available = null;
+@FeignClient(name="ClusterClient", url="https://{clusterIP}/api/cluster", configuration = FeignConfiguration.class)
+public interface ClusterFeignClient {
 
-    @JsonProperty("used")
-    private Double used = null;
+    @RequestMapping(method= RequestMethod.GET)
+    Cluster getCluster(URI baseURL, @RequestHeader("Authorization") String header, @RequestHeader("return_records") boolean value);
 
-    public Long getAvailable() {
-        return available;
-    }
-
-    public void setAvailable(Long available) {
-        this.available = available;
-    }
-
-    public Double getUsed() {
-        return used;
-    }
-
-    public void setUsed(Double used) {
-        this.used = used;
-    }
 }

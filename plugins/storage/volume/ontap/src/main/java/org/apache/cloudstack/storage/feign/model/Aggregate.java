@@ -20,14 +20,14 @@
 package org.apache.cloudstack.storage.feign.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.google.gson.annotations.SerializedName;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Objects;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Aggregate {
 
-    @SerializedName("name")
+    @JsonProperty("name")
     private String name = null;
 
     @Override
@@ -35,19 +35,13 @@ public class Aggregate {
         return Objects.hash(getName(), getUuid());
     }
 
-    @SerializedName("uuid")
+    @JsonProperty("uuid")
     private String uuid = null;
 
     public Aggregate name(String name) {
         this.name = name;
         return this;
     }
-
-    /**
-     * Get name
-     *
-     * @return name
-     **/
     public String getName() {
         return name;
     }
@@ -61,11 +55,6 @@ public class Aggregate {
         return this;
     }
 
-    /**
-     * Get uuid
-     *
-     * @return uuid
-     **/
     public String getUuid() {
         return uuid;
     }

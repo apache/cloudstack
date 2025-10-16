@@ -17,33 +17,46 @@
  * under the License.
  */
 
-package org.apache.cloudstack.storage.feign.model;
+package org.apache.cloudstack.storage.feign.model.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 
+/**
+ * OnTapResponse
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class VolumeSpaceLogicalSpace {
+public class OntapResponse<T> {
+  @JsonProperty("num_records")
+  private Integer numRecords;
 
-    @JsonProperty("available")
-    private Long available = null;
+  @JsonProperty("records")
+  private List<T> records;
 
-    @JsonProperty("used")
-    private Double used = null;
+  public OntapResponse () {
+    // Default constructor
+  }
 
-    public Long getAvailable() {
-        return available;
-    }
+  public OntapResponse (List<T> records) {
+    this.records = records;
+    this.numRecords = (records != null) ? records.size() : 0;
+  }
 
-    public void setAvailable(Long available) {
-        this.available = available;
-    }
+  public Integer getNumRecords() {
+    return numRecords;
+  }
 
-    public Double getUsed() {
-        return used;
-    }
+  public void setNumRecords(Integer numRecords) {
+    this.numRecords = numRecords;
+  }
 
-    public void setUsed(Double used) {
-        this.used = used;
-    }
+  public List<T> getRecords() {
+    return records;
+  }
+
+  public void setRecords(List<T> records) {
+    this.records = records;
+    this.numRecords = (records != null) ? records.size() : 0;
+  }
 }
