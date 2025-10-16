@@ -75,7 +75,7 @@ public class ListImportVMTasksCmd extends BaseListCmd {
             description = "Conversion host of the importing task")
     private Long convertHostId;
 
-    @Parameter(name = ApiConstants.TASKS_FILTER, type = CommandType.STRING, description = "Filter tasks by status, valid options are: All, Running, Completed, Failed")
+    @Parameter(name = ApiConstants.TASKS_FILTER, type = CommandType.STRING, description = "Filter tasks by state, valid options are: All, Running, Completed, Failed")
     private String tasksFilter;
 
     public Long getZoneId() {
