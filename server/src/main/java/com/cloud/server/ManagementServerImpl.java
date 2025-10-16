@@ -4672,7 +4672,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Map<String, Object> capabilities = new HashMap<>();
 
         final Account caller = getCaller();
-        final boolean isCallerAdmin = _accountService.isAdmin(caller.getId());
+        final boolean isCallerRootAdmin = _accountService.isRootAdmin(caller.getId());
+        final boolean isCallerAdmin = isCallerRootAdmin || _accountService.isAdmin(caller.getId());
         boolean securityGroupsEnabled = false;
         boolean elasticLoadBalancerEnabled;
         String supportELB = "false";
@@ -4753,7 +4754,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
         capabilities.put(ApiConstants.SHAREDFSVM_MIN_CPU_COUNT, fsVmMinCpu);
         capabilities.put(ApiConstants.SHAREDFSVM_MIN_RAM_SIZE, fsVmMinRam);
-        if (isCallerAdmin) {
+        if (isCallerRootAdmin) {
             capabilities.put(ApiConstants.EXTENSIONS_PATH, extensionsManager.getExtensionsPath());
         }
         capabilities.put(ApiConstants.ADDITONAL_CONFIG_ENABLED, UserVmManager.EnableAdditionalVmConfig.valueIn(caller.getId()));
