@@ -49,7 +49,7 @@
       </div>
     </template>
     <template #bodyCell="{ column, text, record }">
-      <template v-if="['name', 'provider'].includes(column.key) ">
+      <template v-if="column.key === 'name' || (column.key === 'provider' && ['oauthsetting'].includes($route.path.split('/')[1]))">
         <span
           v-if="['vm', 'vnfapp'].includes($route.path.split('/')[1])"
           style="margin-right: 5px"
@@ -70,7 +70,7 @@
             style="margin-left: 5px"
             :actions="actions"
             :resource="record"
-            :enabled="quickViewEnabled() && actions.length > 0 && columns && ['name', 'provider'].includes(columns[0].dataIndex)"
+            :enabled="quickViewEnabled() && actions.length > 0 && columns && (columns[0].dataIndex === 'name' || (columns[0].dataIndex === 'provider' && ['oauthsetting'].includes($route.path.split('/')[1])))"
             @exec-action="$parent.execAction"
           />
           <span
