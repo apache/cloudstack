@@ -71,7 +71,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
-import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
@@ -302,8 +301,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private NetworkOrchestrationService networkMgr;
     @Inject
     private PhysicalNetworkDao physicalNetworkDao;
-    @Inject
-    private IpAddressManager ipAddressManager;
     @Inject
     private StoragePoolHostDao storagePoolHostDao;
     @Inject
@@ -2766,10 +2763,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
 
         String macAddress = networkModel.getNextAvailableMacAddressInNetwork(networkId);
-        String ipAddress = null;
-        if (network.getGuestType() != Network.GuestType.L2) {
-            ipAddress = ipAddressManager.acquireGuestIpAddress(network, null);
-        }
+
+        String ipAddress = network.getGuestType() != Network.GuestType.L2 ? "auto" : null;
 
         Network.IpAddresses requestedIpPair = new Network.IpAddresses(ipAddress, null, macAddress);
 
