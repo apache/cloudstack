@@ -34,5 +34,5 @@ public interface ImportVmTasksManager {
     void updateImportVMTaskStep(ImportVmTask importVMTaskVO, DataCenter zone, Account owner, Host convertHost,
                                 Host importHost, Long vmId, ImportVmTask.Step step);
 
-    boolean removeImportVMTask(long taskId);
+    void updateImportVMTaskErrorState(ImportVmTask importVMTaskVO, ImportVmTask.TaskState state, String errorMsg);
 }

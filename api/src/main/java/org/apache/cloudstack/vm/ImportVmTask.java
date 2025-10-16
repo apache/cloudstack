@@ -23,6 +23,19 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface ImportVmTask extends Identity, InternalIdentity {
     enum Step {
-        Prepare, CloningInstance, ConvertingInstance, Importing, Cleaning, Completed
+        Prepare, CloningInstance, ConvertingInstance, Importing, Completed
+    }
+
+    enum TaskState {
+        Running, Completed, Failed;
+
+        public static TaskState getValue(String state) {
+            for (TaskState s : TaskState.values()) {
+                if (s.name().equalsIgnoreCase(state)) {
+                    return s;
+                }
+            }
+            throw new IllegalArgumentException("Invalid task state: " + state);
+        }
     }
 }
