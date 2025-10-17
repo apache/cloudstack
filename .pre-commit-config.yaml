@@ -25,6 +25,13 @@ repos:
     hooks:
       - id: identity
       - id: check-hooks-apply
+  - repo: https://github.com/oxipng/oxipng
+    rev: v9.1.5
+    hooks:
+      - id: oxipng
+        name: run oxipng
+        description: optimize PNG images with lossless compression
+        args: ['-o', '4', '--strip', 'safe', '--alpha']
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.27.2
     hooks:
