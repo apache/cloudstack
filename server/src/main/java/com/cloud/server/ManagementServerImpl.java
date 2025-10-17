@@ -360,7 +360,7 @@ import org.apache.cloudstack.api.command.user.affinitygroup.UpdateVMAffinityGrou
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScalePolicyCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmGroupCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmProfileCmd;
-import org.apache.cloudstack.api.command.user.autoscale.CreateConditionCmd;
+import org.apache.cloudstack.api.command.user.autoscale.CreateConditionForVmAutoScalingCmd;
 import org.apache.cloudstack.api.command.user.autoscale.DeleteAutoScalePolicyCmd;
 import org.apache.cloudstack.api.command.user.autoscale.DeleteAutoScaleVmGroupCmd;
 import org.apache.cloudstack.api.command.user.autoscale.DeleteAutoScaleVmProfileCmd;
@@ -3859,7 +3859,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(CreateAutoScalePolicyCmd.class);
         cmdList.add(CreateAutoScaleVmGroupCmd.class);
         cmdList.add(CreateAutoScaleVmProfileCmd.class);
-        cmdList.add(CreateConditionCmd.class);
+        cmdList.add(CreateConditionForVmAutoScalingCmd.class);
         cmdList.add(DeleteAutoScalePolicyCmd.class);
         cmdList.add(DeleteAutoScaleVmGroupCmd.class);
         cmdList.add(DeleteAutoScaleVmProfileCmd.class);
