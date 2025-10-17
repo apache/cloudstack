@@ -32,12 +32,7 @@ import java.util.TimeZone;
 
 import static org.apache.commons.configuration.DataConfiguration.DEFAULT_DATE_FORMAT;
 
-import javax.inject.Inject;
-
 public class ACSRequestLog extends NCSARequestLog {
-    @Inject
-    ApiServlet apiServlet;
-
     private static final ThreadLocal<StringBuilder> buffers =
             ThreadLocal.withInitial(() -> new StringBuilder(256));
 
@@ -58,7 +53,7 @@ public class ACSRequestLog extends NCSARequestLog {
             StringBuilder sb = buffers.get();
             sb.setLength(0);
 
-            InetAddress remoteAddress = apiServlet.getClientAddress(request);
+            InetAddress remoteAddress = ApiServlet.getClientAddress(request);
             sb.append(remoteAddress)
                     .append(" - - [")
                     .append(dateCache.format(request.getTimeStamp()))
