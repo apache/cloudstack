@@ -58,6 +58,8 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
     }
 
     String generateADGroupSearchFilter(String groupName, Long domainId) {
+        final String isPersonFilter = "(objectCategory=person)";
+
         final StringBuilder userObjectFilter = new StringBuilder();
         userObjectFilter.append("(objectClass=");
         userObjectFilter.append(_ldapConfiguration.getUserObject(domainId));
@@ -71,6 +73,7 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
 
         final StringBuilder result = new StringBuilder();
         result.append("(&");
+        result.append(isPersonFilter);
         result.append(userObjectFilter);
         result.append(memberOfFilter);
         result.append(")");
