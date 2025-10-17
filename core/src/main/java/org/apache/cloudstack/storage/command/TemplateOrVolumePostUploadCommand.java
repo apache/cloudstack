@@ -57,8 +57,10 @@ public class TemplateOrVolumePostUploadCommand {
 
     private String nfsVersion;
 
-    public TemplateOrVolumePostUploadCommand(long entityId, String entityUUID, String absolutePath, String checksum, String type, String name, String imageFormat, String dataTo,
-            String dataToRole) {
+    private long zoneId;
+
+    public TemplateOrVolumePostUploadCommand(long entityId, String entityUUID, String absolutePath, String checksum,
+             String type, String name, String imageFormat, String dataTo, String dataToRole, long zoneId) {
         this.entityId = entityId;
         this.entityUUID = entityUUID;
         this.absolutePath = absolutePath;
@@ -68,9 +70,7 @@ public class TemplateOrVolumePostUploadCommand {
         this.imageFormat = imageFormat;
         this.dataTo = dataTo;
         this.dataToRole = dataToRole;
-    }
-
-    public TemplateOrVolumePostUploadCommand() {
+        this.zoneId = zoneId;
     }
 
     public String getRemoteEndPoint() {
@@ -215,5 +215,9 @@ public class TemplateOrVolumePostUploadCommand {
 
     public long getProcessTimeout() {
         return processTimeout;
+    }
+
+    public long getZoneId() {
+        return zoneId;
     }
 }
