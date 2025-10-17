@@ -16,30 +16,105 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.cloudstack.storage.feign.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.math.BigInteger;
+import java.util.List;
 import java.util.Objects;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ExportPolicy {
-    private String name;
-    private long id;
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public long getId() { return id; }
-    public void setId(long id) { this.id = id; }
 
-    @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        ExportPolicy that = (ExportPolicy) o;
-        return getId() == that.getId();
-    }
+  @JsonProperty("id")
+  private BigInteger id = null;
+  @JsonProperty("name")
+  private String name = null;
+  @JsonProperty("rules")
+  private List<ExportRule> rules = null;
+  @JsonProperty("svm")
+  private Svm svm = null;
 
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(getId());
+  public BigInteger getId() {
+    return id;
+  }
+
+  public ExportPolicy name(String name) {
+    this.name = name;
+    return this;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public ExportPolicy rules(List<ExportRule> rules) {
+    this.rules = rules;
+    return this;
+  }
+
+  public List<ExportRule> getRules() {
+    return rules;
+  }
+
+  public void setRules(List<ExportRule> rules) {
+    this.rules = rules;
+  }
+
+  public ExportPolicy svm(Svm svm) {
+    this.svm = svm;
+    return this;
+  }
+
+  public Svm getSvm() {
+    return svm;
+  }
+
+  public void setSvm(Svm svm) {
+    this.svm = svm;
+  }
+
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    ExportPolicy exportPolicy = (ExportPolicy) o;
+    return Objects.equals(this.id, exportPolicy.id) &&
+        Objects.equals(this.name, exportPolicy.name);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash( id, name, rules, svm);
+  }
+
+
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("class ExportPolicy {\n");
+    sb.append("    id: ").append(toIndentedString(id)).append("\n");
+    sb.append("    name: ").append(toIndentedString(name)).append("\n");
+    sb.append("    rules: ").append(toIndentedString(rules)).append("\n");
+    sb.append("    svm: ").append(toIndentedString(svm)).append("\n");
+    sb.append("}");
+    return sb.toString();
+  }
+  private String toIndentedString(Object o) {
+    if (o == null) {
+      return "null";
+    }
+    return o.toString().replace("\n", "\n    ");
+  }
 }

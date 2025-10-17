@@ -22,6 +22,7 @@ package org.apache.cloudstack.storage.feign.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.List;
 import java.util.Objects;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -49,6 +50,12 @@ public class Volume {
 
     @JsonProperty("anti_ransomware")
     private AntiRansomware antiRansomware;
+
+    @JsonProperty("aggregates")
+    private List<Aggregate> aggregates = null;
+
+    @JsonProperty("size")
+    private Long size = null;
 
     // Getters and setters
     public String getUuid() {
@@ -110,6 +117,15 @@ public class Volume {
     public void setAntiRansomware(AntiRansomware antiRansomware) {
         this.antiRansomware = antiRansomware;
     }
+
+    public List<Aggregate> getAggregates () { return aggregates; }
+
+    public void setAggregates (List<Aggregate> aggregates) { this.aggregates = aggregates; }
+
+    public Long getSize () { return size; }
+
+    public void setSize (Long size) { this.size = size; }
+
 
     @Override
     public boolean equals(Object o) {

@@ -18,33 +18,25 @@
  */
 package org.apache.cloudstack.storage.feign.client;
 
-
 import org.apache.cloudstack.storage.feign.FeignConfiguration;
-import org.apache.cloudstack.storage.feign.model.Volume;
-import org.apache.cloudstack.storage.feign.model.response.JobResponse;
+import org.apache.cloudstack.storage.feign.model.Job;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMethod;
+import java.net.URI;
 
-
+/**
+ * @author Administrator
+ *
+ */
 @Lazy
-@FeignClient(name = "VolumeClient", url = "https://{clusterIP}/api/storage/volumes", configuration = FeignConfiguration.class)
-public interface VolumeFeignClient {
-
-    @RequestMapping(method = RequestMethod.DELETE, value="/{uuid}")
-    void deleteVolume(@RequestHeader("Authorization") String authHeader, @PathVariable("uuid") String uuid);
-
-    @RequestMapping(method = RequestMethod.POST)
-    JobResponse createVolumeWithJob(@RequestHeader("Authorization") String authHeader, @RequestBody Volume volumeRequest);
+@FeignClient(name = "JobClient", url = "https://{clusterIP}/api/cluster/jobs" , configuration = FeignConfiguration.class)
+public interface JobFeignClient {
 
     @RequestMapping(method = RequestMethod.GET, value="/{uuid}")
-    Volume getVolumeByUUID(@RequestHeader("Authorization") String authHeader, @PathVariable("uuid") String uuid);
-
-    @RequestMapping(method = RequestMethod.PATCH)
-    JobResponse updateVolumeRebalancing(@RequestHeader("accept") String acceptHeader, @PathVariable("uuid") String uuid, @RequestBody Volume volumeRequest);
+    Job getJobByUUID(URI baseURL, @RequestHeader("Authorization") String header, @PathVariable(name = "uuid", required = true) String uuid);
 
 }
