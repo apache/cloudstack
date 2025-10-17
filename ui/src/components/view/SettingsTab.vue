@@ -25,7 +25,8 @@
         @search="handleSearch" />
       <ConfigurationTable
         :columns="columns"
-        :config="items" />
+        :config="items"
+        :resource="resource" />
     </a-col>
   </div>
 </template>
