@@ -18,6 +18,8 @@ package com.cloud.cluster;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.rmi.RemoteException;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
@@ -26,6 +28,7 @@ import java.util.List;
 import javax.net.ssl.SSLContext;
 
 import org.apache.cloudstack.framework.ca.CAService;
+import org.apache.cloudstack.utils.server.ServerPropertiesUtil;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.config.RequestConfig;
@@ -41,6 +44,7 @@ import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.HttpUtils;
 import com.cloud.utils.Profiler;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.nio.Link;
 import com.google.gson.Gson;
 
@@ -162,6 +166,23 @@ public class ClusterServiceServletImpl implements ClusterService {
         return result;
     }
 
+    protected InetAddress getBindAddressIfAvailable() {
+        String bindAddressStr = ServerPropertiesUtil.getProperty("bind.interface");
+        InetAddress bindAddress = null;
+        if (StringUtils.isBlank(bindAddressStr) ||
+                "0.0.0.0".equalsIgnoreCase(bindAddressStr) ||
+                "::".equals(bindAddressStr)) {
+            return bindAddress;
+        }
+        try {
+            bindAddress = InetAddress.getByName(bindAddressStr);
+        } catch (UnknownHostException e) {
+            logger.error("Unable to resolve bind address: {}", bindAddressStr, e);
+            throw new RuntimeException(e);
+        }
+        return bindAddress;
+    }
+
     private CloseableHttpClient getHttpClient() {
         if (s_client == null) {
             SSLContext sslContext = null;
@@ -172,7 +193,9 @@ public class ClusterServiceServletImpl implements ClusterService {
             }
 
             int timeout = ClusterServiceAdapter.ClusterMessageTimeOut.value() * 1000;
+            InetAddress bindAddress = getBindAddressIfAvailable();
             RequestConfig config = RequestConfig.custom()
+                    .setLocalAddress(bindAddress)
                     .setConnectTimeout(timeout)
                     .setConnectionRequestTimeout(timeout)
                     .setSocketTimeout(timeout).build();
