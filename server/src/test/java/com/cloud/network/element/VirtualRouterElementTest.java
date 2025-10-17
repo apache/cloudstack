@@ -16,6 +16,44 @@
 // under the License.
 package com.cloud.network.element;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.context.RequestEntityCache;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.network.BgpPeerVO;
+import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinitionBuilder;
+import org.apache.cloudstack.network.topology.NetworkTopology;
+import org.apache.cloudstack.network.topology.NetworkTopologyContext;
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
+
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
@@ -95,42 +133,8 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.network.BgpPeerVO;
-import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinitionBuilder;
-import org.apache.cloudstack.network.topology.NetworkTopology;
-import org.apache.cloudstack.network.topology.NetworkTopologyContext;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.ArgumentMatchers;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.mockito.stubbing.Answer;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class VirtualRouterElementTest {
@@ -548,10 +552,16 @@ public class VirtualRouterElementTest {
         when(networkTopologyContext.retrieveNetworkTopology(dc)).thenReturn(networkTopology);
         doReturn(true).when(networkTopology).applyBgpPeers(any(), any(), any());
 
-        boolean result = virtualRouterElement.applyBgpPeers(vpc, null, bgpPeers);
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+            Mockito.when(callContextMock.getRequestEntityCache()).thenReturn(new RequestEntityCache(Duration.ofSeconds(60)));
 
-        Assert.assertTrue(result);
-        verify(networkTopology).applyBgpPeers(any(), any(), any());
+            boolean result = virtualRouterElement.applyBgpPeers(vpc, null, bgpPeers);
+
+            Assert.assertTrue(result);
+            verify(networkTopology).applyBgpPeers(any(), any(), any());
+        }
     }
 
     @Test
@@ -572,9 +582,15 @@ public class VirtualRouterElementTest {
         when(networkTopologyContext.retrieveNetworkTopology(dc)).thenReturn(networkTopology);
         doReturn(true).when(networkTopology).applyBgpPeers(any(), any(), any());
 
-        boolean result = virtualRouterElement.applyBgpPeers(null, network, bgpPeers);
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+            Mockito.when(callContextMock.getRequestEntityCache()).thenReturn(new RequestEntityCache(Duration.ofSeconds(60)));
 
-        Assert.assertTrue(result);
-        verify(networkTopology).applyBgpPeers(any(), any(), any());
+            boolean result = virtualRouterElement.applyBgpPeers(null, network, bgpPeers);
+
+            Assert.assertTrue(result);
+            verify(networkTopology).applyBgpPeers(any(), any(), any());
+        }
     }
 }
