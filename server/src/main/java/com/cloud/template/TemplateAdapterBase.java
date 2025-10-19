@@ -29,6 +29,7 @@ import java.util.Set;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
@@ -469,7 +470,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
     /**
      * Prepare upload parameters internal method for templates and ISOs local upload
      */
-    private TemplateProfile prepareUploadParamsInternal(UploadParams params) throws ResourceAllocationException {
+    private TemplateProfile prepareUploadParamsInternal(BaseCmd cmd, UploadParams params) throws ResourceAllocationException {
         //check if the caller can operate with the template owner
         Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountMgr.getAccount(params.getTemplateOwnerId());
@@ -490,12 +491,16 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                     StringUtils.join(Arrays.stream(HypervisorType.values()).filter(h -> h != HypervisorType.None).map(HypervisorType::name).toArray(), ", ")));
         }
 
+        TemplateType templateType = templateMgr.validateTemplateType(cmd, _accountMgr.isAdmin(caller.getAccountId()),
+                false, params.getHypervisorType());
+
         return prepare(params.isIso(), params.getUserId(), params.getName(), params.getDisplayText(), params.getArch(), params.getBits(),
                 params.isPasswordEnabled(), params.requiresHVM(), params.getUrl(), params.isPublic(), params.isFeatured(),
                 params.isExtractable(), params.getFormat(), params.getGuestOSId(), zoneList,
                 params.getHypervisorType(), params.getChecksum(), params.isBootable(), params.getTemplateTag(), owner,
                 params.getDetails(), params.isSshKeyEnabled(), params.getImageStoreUuid(),
-                params.isDynamicallyScalable(), params.isRoutingType() ? TemplateType.ROUTING : TemplateType.USER, params.isDirectDownload(), params.isDeployAsIs(), false, null);
+                params.isDynamicallyScalable(), templateType, params.isDirectDownload(), params.isDeployAsIs(),
+                params.isForCks(), null);
     }
 
     private Long getDefaultDeployAsIsGuestOsId() {
@@ -516,8 +521,9 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 BooleanUtils.toBoolean(cmd.isFeatured()), BooleanUtils.toBoolean(cmd.isExtractable()), cmd.getFormat(), osTypeId,
                 cmd.getZoneId(), HypervisorType.getType(cmd.getHypervisor()), cmd.getChecksum(),
                 cmd.getTemplateTag(), cmd.getEntityOwnerId(), cmd.getDetails(), BooleanUtils.toBoolean(cmd.isSshKeyEnabled()),
-                BooleanUtils.toBoolean(cmd.isDynamicallyScalable()), BooleanUtils.toBoolean(cmd.isRoutingType()), cmd.isDeployAsIs(), cmd.isForCks());
-        return prepareUploadParamsInternal(params);
+                BooleanUtils.toBoolean(cmd.isDynamicallyScalable()), BooleanUtils.toBoolean(cmd.isRoutingType()), cmd.isDeployAsIs(),
+                cmd.isForCks(), cmd.getTemplateType());
+        return prepareUploadParamsInternal(cmd, params);
     }
 
     @Override
@@ -526,7 +532,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 cmd.getDisplayText(), BooleanUtils.toBoolean(cmd.isPublic()), BooleanUtils.toBoolean(cmd.isFeatured()),
                 BooleanUtils.toBoolean(cmd.isExtractable()), cmd.getOsTypeId(),
                 cmd.getZoneId(), BooleanUtils.toBoolean(cmd.isBootable()), cmd.getEntityOwnerId());
-        return prepareUploadParamsInternal(params);
+        return prepareUploadParamsInternal(cmd, params);
     }
 
     @Override
