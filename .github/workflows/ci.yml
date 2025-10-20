@@ -275,7 +275,7 @@ jobs:
       - name: Setup Simulator Prerequisites
         run: |
           sudo python3 -m pip install --upgrade netaddr mysql-connector-python
-          python3 -m pip install --user --upgrade tools/marvin/dist/Marvin-*.tar.gz
+          python3 -m pip install --user --upgrade tools/marvin/dist/[Mm]arvin-*.tar.gz
           mvn -q -Pdeveloper -pl developer -Ddeploydb
           mvn -q -Pdeveloper -pl developer -Ddeploydb-simulator
 
