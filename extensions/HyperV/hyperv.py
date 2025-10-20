@@ -25,7 +25,7 @@ import winrm
 
 
 def fail(message):
-    print(json.dumps({"error": message}))
+    print(json.dumps({"status": "error", "error": message}))
     sys.exit(1)
 
 
@@ -220,6 +220,9 @@ class HyperVManager:
                 fail(str(e))
         succeed({"status": "success", "message": "Instance deleted"})
 
+    def get_console(self):
+        fail("Operation not supported")
+
     def suspend(self):
         self.run_ps(f'Suspend-VM -Name "{self.data["vmname"]}"')
         succeed({"status": "success", "message": "Instance suspended"})
@@ -283,6 +286,7 @@ def main():
         "reboot": manager.reboot,
         "delete": manager.delete,
         "status": manager.status,
+        "getconsole": manager.get_console,
         "suspend": manager.suspend,
         "resume": manager.resume,
         "listsnapshots": manager.list_snapshots,

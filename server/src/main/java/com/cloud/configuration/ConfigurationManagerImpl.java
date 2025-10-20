@@ -49,6 +49,10 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.consoleproxy.ConsoleProxyManager;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
+import com.cloud.vm.VirtualMachineManager;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -573,7 +577,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add("event.purge.interval");
         configValuesForValidation.add("account.cleanup.interval");
         configValuesForValidation.add("alert.wait");
-        configValuesForValidation.add("consoleproxy.capacityscan.interval");
+        configValuesForValidation.add(ConsoleProxyManager.ConsoleProxyCapacityScanInterval.key());
         configValuesForValidation.add("expunge.interval");
         configValuesForValidation.add("host.stats.interval");
         configValuesForValidation.add("network.gc.interval");
@@ -637,6 +641,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     protected void populateConfigKeysAllowedOnlyForDefaultAdmin() {
         configKeysAllowedOnlyForDefaultAdmin.add(AccountManagerImpl.listOfRoleTypesAllowedForOperationsOfSameRoleType.key());
         configKeysAllowedOnlyForDefaultAdmin.add(AccountManagerImpl.allowOperationsOnUsersInSameAccount.key());
+
+        configKeysAllowedOnlyForDefaultAdmin.add(VirtualMachineManager.SystemVmEnableUserData.key());
+        configKeysAllowedOnlyForDefaultAdmin.add(ConsoleProxyManager.ConsoleProxyVmUserData.key());
+        configKeysAllowedOnlyForDefaultAdmin.add(SecondaryStorageVmManager.SecondaryStorageVmUserData.key());
+        configKeysAllowedOnlyForDefaultAdmin.add(VirtualNetworkApplianceManager.VirtualRouterUserData.key());
     }
 
     private void initMessageBusListener() {
@@ -3798,14 +3807,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     protected boolean serviceOfferingExternalDetailsNeedUpdate(final Map<String, String> offeringDetails,
-               final Map<String, String> externalDetails) {
-        if (MapUtils.isEmpty(externalDetails)) {
+               final Map<String, String> externalDetails, final boolean cleanupExternalDetails) {
+        if (MapUtils.isEmpty(externalDetails) && !cleanupExternalDetails) {
             return false;
         }
 
         Map<String, String> existingExternalDetails = offeringDetails.entrySet().stream()
                 .filter(detail -> detail.getKey().startsWith(VmDetailConstants.EXTERNAL_DETAIL_PREFIX))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+       if (cleanupExternalDetails) {
+           return !MapUtils.isEmpty(existingExternalDetails);
+       }
 
         if (MapUtils.isEmpty(existingExternalDetails) || existingExternalDetails.size() != externalDetails.size()) {
             return true;
@@ -3836,6 +3849,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         ServiceOffering.State state = cmd.getState();
         boolean purgeResources = cmd.isPurgeResources();
         final Map<String, String> externalDetails = cmd.getExternalDetails();
+        final boolean cleanupExternalDetails = cmd.isCleanupExternalDetails();
 
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
@@ -3929,7 +3943,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         final boolean updateNeeded = name != null || displayText != null || sortKey != null || storageTags != null || hostTags != null || state != null;
         final boolean serviceOfferingExternalDetailsNeedUpdate =
-                serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
+                serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, cleanupExternalDetails);
         final boolean detailsUpdateNeeded = !filteredDomainIds.equals(existingDomainIds) ||
                 !filteredZoneIds.equals(existingZoneIds) || purgeResources != existingPurgeResources ||
                 serviceOfferingExternalDetailsNeedUpdate;
@@ -4004,8 +4018,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 SearchCriteria<ServiceOfferingDetailsVO> externalDetailsRemoveSC = sb.create();
                 externalDetailsRemoveSC.setParameters("detailNameLike", VmDetailConstants.EXTERNAL_DETAIL_PREFIX + "%");
                 _serviceOfferingDetailsDao.remove(externalDetailsRemoveSC);
-                for (Map.Entry<String, String> entry : externalDetails.entrySet()) {
-                    detailsVO.add(new ServiceOfferingDetailsVO(id, entry.getKey(), entry.getValue(), true));
+                if (!cleanupExternalDetails) {
+                    for (Map.Entry<String, String> entry : externalDetails.entrySet()) {
+                        detailsVO.add(new ServiceOfferingDetailsVO(id, entry.getKey(), entry.getValue(), true));
+                    }
                 }
             }
         }
@@ -6809,7 +6825,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (lbServiceCapabilityMap != null && !lbServiceCapabilityMap.isEmpty()) {
             maxconn = cmd.getMaxconnections();
             if (maxconn == null) {
-                maxconn = Integer.parseInt(_configDao.getValue(Config.NetworkLBHaproxyMaxConn.key()));
+                maxconn = NetworkOrchestrationService.NETWORK_LB_HAPROXY_MAX_CONN.value();
             }
         }
         if (cmd.getKeepAliveEnabled() != null && cmd.getKeepAliveEnabled()) {
@@ -8431,7 +8447,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 !Enums.getIfPresent(DiskOffering.DiskCacheMode.class,
                         cacheMode.toUpperCase()).isPresent()) {
             throw new InvalidParameterValueException(String.format("Invalid cache mode (%s). Please specify one of the following " +
-                    "valid cache mode parameters: none, writeback or writethrough", cacheMode));
+                    "valid cache mode parameters: none, writeback, writethrough or hypervisor_default.", cacheMode));
         }
     }
 

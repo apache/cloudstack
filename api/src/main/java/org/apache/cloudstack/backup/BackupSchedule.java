@@ -19,11 +19,12 @@ package org.apache.cloudstack.backup;
 
 import java.util.Date;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import com.cloud.utils.DateUtil;
 
-public interface BackupSchedule extends InternalIdentity {
+public interface BackupSchedule extends ControlledEntity, InternalIdentity {
     Long getVmId();
     DateUtil.IntervalType getScheduleType();
     String getSchedule();

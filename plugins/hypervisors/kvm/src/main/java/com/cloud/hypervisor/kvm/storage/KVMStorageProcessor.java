@@ -62,7 +62,7 @@ import org.apache.cloudstack.direct.download.DirectTemplateDownloader;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
-import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplianceCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
@@ -364,16 +364,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 final TemplateObjectTO newTemplate = new TemplateObjectTO();
                 newTemplate.setPath(primaryVol.getName());
                 newTemplate.setSize(primaryVol.getSize());
-
-                if(List.of(
-                    StoragePoolType.RBD,
-                    StoragePoolType.PowerFlex,
-                    StoragePoolType.Linstor,
-                    StoragePoolType.FiberChannel).contains(primaryPool.getType())) {
-                    newTemplate.setFormat(ImageFormat.RAW);
-                } else {
-                    newTemplate.setFormat(ImageFormat.QCOW2);
-                }
+                newTemplate.setFormat(getFormat(primaryPool.getType()));
                 data = newTemplate;
             } else if (destData.getObjectType() == DataObjectType.VOLUME) {
                 final VolumeObjectTO volumeObjectTO = new VolumeObjectTO();
@@ -654,7 +645,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         try {
             final String volumeName = UUID.randomUUID().toString();
 
-            final String destVolumeName = volumeName + "." + destFormat.getFileExtension();
+            final String destVolumeName = volumeName + "." + ImageFormat.QCOW2.getFileExtension();
             final KVMPhysicalDisk volume = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), srcVolumePath);
             volume.setFormat(PhysicalDiskFormat.valueOf(srcFormat.toString()));
 
@@ -2990,7 +2981,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         final VolumeObjectTO srcVol = (VolumeObjectTO)srcData;
         final VolumeObjectTO destVol = (VolumeObjectTO)destData;
         final ImageFormat srcFormat = srcVol.getFormat();
-        final ImageFormat destFormat = destVol.getFormat();
+        ImageFormat destFormat = destVol.getFormat();
         final DataStoreTO srcStore = srcData.getDataStore();
         final DataStoreTO destStore = destData.getDataStore();
         final PrimaryDataStoreTO srcPrimaryStore = (PrimaryDataStoreTO)srcStore;
@@ -3025,33 +3016,35 @@ public class KVMStorageProcessor implements StorageProcessor {
             volume.setFormat(PhysicalDiskFormat.valueOf(srcFormat.toString()));
             volume.setDispName(srcVol.getName());
             volume.setVmName(srcVol.getVmName());
-
-            String destVolumeName = null;
+            KVMPhysicalDisk newVolume;
+            String destVolumeName;
+            destPool = storagePoolMgr.getStoragePool(destPrimaryStore.getPoolType(), destPrimaryStore.getUuid());
             if (destPrimaryStore.isManaged()) {
                 if (!storagePoolMgr.connectPhysicalDisk(destPrimaryStore.getPoolType(), destPrimaryStore.getUuid(), destVolumePath, destPrimaryStore.getDetails())) {
                     logger.warn("Failed to connect dest volume {}, in storage pool {}", destVol, destPrimaryStore);
                 }
                 destVolumeName = derivePath(destPrimaryStore, destData, destPrimaryStore.getDetails());
             } else {
+                PhysicalDiskFormat destPoolDefaultFormat = destPool.getDefaultFormat();
+                destFormat = getFormat(destPoolDefaultFormat);
                 final String volumeName = UUID.randomUUID().toString();
                 destVolumeName = volumeName + "." + destFormat.getFileExtension();
 
                 // Update path in the command for reconciliation
-                if (destData.getPath() == null) {
+                if (StringUtils.isBlank(destVolumePath)) {
                     ((VolumeObjectTO) destData).setPath(destVolumeName);
                 }
             }
 
-            destPool = storagePoolMgr.getStoragePool(destPrimaryStore.getPoolType(), destPrimaryStore.getUuid());
             try {
                 Volume.Type volumeType = srcVol.getVolumeType();
 
                 resource.createOrUpdateLogFileForCommand(cmd, Command.State.PROCESSING_IN_BACKEND);
                 if (srcVol.getPassphrase() != null && (Volume.Type.ROOT.equals(volumeType) || Volume.Type.DATADISK.equals(volumeType))) {
                     volume.setQemuEncryptFormat(QemuObject.EncryptFormat.LUKS);
-                    storagePoolMgr.copyPhysicalDisk(volume, destVolumeName, destPool, cmd.getWaitInMillSeconds(), srcVol.getPassphrase(), destVol.getPassphrase(), srcVol.getProvisioningType());
+                    newVolume = storagePoolMgr.copyPhysicalDisk(volume, destVolumeName, destPool, cmd.getWaitInMillSeconds(), srcVol.getPassphrase(), destVol.getPassphrase(), srcVol.getProvisioningType());
                 } else {
-                    storagePoolMgr.copyPhysicalDisk(volume, destVolumeName, destPool, cmd.getWaitInMillSeconds());
+                    newVolume = storagePoolMgr.copyPhysicalDisk(volume, destVolumeName, destPool, cmd.getWaitInMillSeconds());
                 }
                 resource.createOrUpdateLogFileForCommand(cmd, Command.State.COMPLETED);
             } catch (Exception e) { // Any exceptions while copying the disk, should send failed answer with the error message
@@ -3071,9 +3064,13 @@ public class KVMStorageProcessor implements StorageProcessor {
             }
 
             final VolumeObjectTO newVol = new VolumeObjectTO();
-            String path = destPrimaryStore.isManaged() ? destVolumeName : destVolumePath + File.separator + destVolumeName;
+            String path = destVolumeName;
+            if (!destPrimaryStore.isManaged() && StringUtils.isNotBlank(destVolumePath)) {
+                path = destVolumePath + File.separator + destVolumeName;
+            }
             newVol.setPath(path);
-            newVol.setFormat(destFormat);
+            ImageFormat newVolumeFormat = getFormat(newVolume.getFormat());
+            newVol.setFormat(newVolumeFormat);
             newVol.setEncryptFormat(destVol.getEncryptFormat());
             return new CopyCmdAnswer(newVol);
         } catch (final CloudRuntimeException e) {
@@ -3082,6 +3079,26 @@ public class KVMStorageProcessor implements StorageProcessor {
         } finally {
             srcVol.clearPassphrase();
             destVol.clearPassphrase();
+        }
+    }
+
+    private Storage.ImageFormat getFormat(PhysicalDiskFormat format) {
+        if (format == null) {
+            return null;
+        }
+
+        return ImageFormat.valueOf(format.toString().toUpperCase());
+    }
+
+    private Storage.ImageFormat getFormat(StoragePoolType poolType) {
+        if(List.of(
+                StoragePoolType.RBD,
+                StoragePoolType.PowerFlex,
+                StoragePoolType.Linstor,
+                StoragePoolType.FiberChannel).contains(poolType)) {
+            return ImageFormat.RAW;
+        } else {
+            return ImageFormat.QCOW2;
         }
     }
 
@@ -3116,8 +3133,8 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     @Override
-    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplainceCommand cmd) {
-        logger.info("'CheckDataStoreStoragePolicyComplainceCommand' not currently applicable for KVMStorageProcessor");
+    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplianceCommand cmd) {
+        logger.info("'CheckDataStoreStoragePolicyComplianceCommand' not currently applicable for KVMStorageProcessor");
         return new Answer(cmd,false,"Not currently applicable for KVMStorageProcessor");
     }
 

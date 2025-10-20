@@ -851,30 +851,6 @@ public class ConfigurationManagerImplTest {
     }
 
     @Test
-    public void shouldValidateConfigRangeTestValueIsNullReturnFalse() {
-        boolean result = configurationManagerImplSpy.shouldValidateConfigRange(Config.ConsoleProxyUrlDomain.name(), null, Config.ConsoleProxyUrlDomain);
-        Assert.assertFalse(result);
-    }
-
-    @Test
-    public void shouldValidateConfigRangeTestConfigIsNullReturnFalse() {
-        boolean result = configurationManagerImplSpy.shouldValidateConfigRange("", "test", null);
-        Assert.assertFalse(result);
-    }
-
-    @Test
-    public void shouldValidateConfigRangeTestConfigDoesNotHaveARangeReturnFalse() {
-        boolean result = configurationManagerImplSpy.shouldValidateConfigRange(Config.ConsoleProxySessionMax.name(), "test", Config.ConsoleProxySessionMax);
-        Assert.assertFalse(result);
-    }
-
-    @Test
-    public void shouldValidateConfigRangeTestValueIsNotNullAndConfigHasRangeReturnTrue() {
-        boolean result = configurationManagerImplSpy.shouldValidateConfigRange(Config.ConsoleProxySessionMax.name(), "test", Config.ConsoleProxyUrlDomain);
-        Assert.assertTrue(result);
-    }
-
-    @Test
     public void testResetConfigurations() {
         Long poolId = 1L;
         ResetCfgCmd cmd = Mockito.mock(ResetCfgCmd.class);
@@ -1052,9 +1028,39 @@ public class ConfigurationManagerImplTest {
         Map<String, String> offeringDetails = Map.of("key1", "value1");
         Map<String, String> externalDetails = Collections.emptyMap();
 
-        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, false);
 
         Assert.assertFalse(result);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsFalseWhenExternalDetailsIsEmptyAndCleanupTrue() {
+        Map<String, String> offeringDetails = Map.of("key1", "value1");
+        Map<String, String> externalDetails = Collections.emptyMap();
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, true);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsTrueWhenExistingDetailsExistExternalDetailsIsEmptyAndCleanupTrue() {
+        Map<String, String> offeringDetails = Map.of("External:key1", "value1");
+        Map<String, String> externalDetails = Collections.emptyMap();
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, true);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsTrueWhenExistingExternalDetailsExistValidExternalDetailsAndCleanupTrue() {
+        Map<String, String> offeringDetails = Map.of("External:key1", "value1");
+        Map<String, String> externalDetails = Collections.emptyMap();
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, true);
+
+        Assert.assertTrue(result);
     }
 
     @Test
@@ -1062,7 +1068,7 @@ public class ConfigurationManagerImplTest {
         Map<String, String> offeringDetails = Map.of("key1", "value1");
         Map<String, String> externalDetails = Map.of("External:key1", "value1");
 
-        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, false);
 
         Assert.assertTrue(result);
     }
@@ -1072,7 +1078,7 @@ public class ConfigurationManagerImplTest {
         Map<String, String> offeringDetails = Map.of("External:key1", "value1");
         Map<String, String> externalDetails = Map.of("External:key1", "value1", "External:key2", "value2");
 
-        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, false);
 
         Assert.assertTrue(result);
     }
@@ -1082,7 +1088,7 @@ public class ConfigurationManagerImplTest {
         Map<String, String> offeringDetails = Map.of("External:key1", "value1");
         Map<String, String> externalDetails = Map.of("External:key1", "differentValue");
 
-        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, false);
 
         Assert.assertTrue(result);
     }
@@ -1092,7 +1098,7 @@ public class ConfigurationManagerImplTest {
         Map<String, String> offeringDetails = Map.of("External:key1", "value1", "External:key2", "value2");
         Map<String, String> externalDetails = Map.of("External:key1", "value1", "External:key2", "value2");
 
-        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, false);
 
         Assert.assertFalse(result);
     }

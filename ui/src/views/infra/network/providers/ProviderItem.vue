@@ -93,7 +93,8 @@ export default {
       currentAction: {},
       page: 1,
       pageSize: 10,
-      itemCount: 0
+      itemCount: 0,
+      pluginEnabled: false
     }
   },
   provide () {
@@ -138,6 +139,19 @@ export default {
         }
         this.provider.lists.map(this.fetchOptions)
       }
+    },
+    async fetchConfiguration (configName) {
+      const params = {
+        name: configName
+      }
+      getAPI('listConfigurations', params).then(json => {
+        if (json.listconfigurationsresponse.configuration !== null) {
+          const config = json.listconfigurationsresponse.configuration[0]
+          if (config && config.name === params.name) {
+            this.pluginEnabled = config.value
+          }
+        }
+      })
     },
     async fetchOptions (args) {
       if (!args || Object.keys(args).length === 0) {
@@ -185,6 +199,18 @@ export default {
       }
 
       try {
+        const providers = ['tungsten', 'nsx', 'netris']
+        const apiLower = args.api.toLowerCase()
+
+        for (const provider of providers) {
+          if (apiLower.includes(provider)) {
+            await this.fetchConfiguration(`${provider}.plugin.enable`)
+            if (!this.pluginEnabled) {
+              this.listData[args.title].loading = false
+              return
+            }
+          }
+        }
         const listResult = await this.executeApi(args.api, params)
         this.listData[args.title].data = listResult.data
         this.listData[args.title].itemCount = listResult.itemCount

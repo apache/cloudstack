@@ -63,7 +63,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         final String firstname = LdapUtils.getAttributeValue(attributes, _ldapConfiguration.getFirstnameAttribute(domainId));
         final String lastname = LdapUtils.getAttributeValue(attributes, _ldapConfiguration.getLastnameAttribute(domainId));
         final String principal = result.getNameInNamespace();
-        final List<String> memberships = LdapUtils.getAttributeValues(attributes, _ldapConfiguration.getUserMemberOfAttribute(domainId));
+        final List<String> memberships = LdapUtils.getAttributeValues(attributes, getMemberOfAttribute(domainId));
 
         String domain = principal.replace("cn=" + LdapUtils.getAttributeValue(attributes, _ldapConfiguration.getCommonNameAttribute()) + ",", "");
         domain = domain.replace("," + _ldapConfiguration.getBaseDn(domainId), "");
@@ -87,7 +87,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         usernameFilter.append((username == null ? "*" : LdapUtils.escapeLDAPSearchFilter(username)));
         usernameFilter.append(")");
 
-        String memberOfAttribute = _ldapConfiguration.getUserMemberOfAttribute(domainId);
+        String memberOfAttribute = getMemberOfAttribute(domainId);
         StringBuilder ldapGroupsFilter = new StringBuilder();
         // this should get the trustmaps for this domain
         List<String> ldapGroups = getMappedLdapGroups(domainId);

@@ -46,13 +46,75 @@
                 </template>
               </a-step>
               <a-step
+                v-if="crossZoneInstanceCreationEnabled"
+                :title="$t('label.select.a.zone')"
+                status="process">
+                <template #description>
+                  <div style="margin-top: 15px">
+                    <a-form-item :label="$t('label.zoneid')" name="zoneid" ref="zoneid">
+                      <div v-if="zones.length <= 8">
+                        <a-row type="flex" :gutter="[16, 18]" justify="start">
+                          <div v-for="(zoneItem, idx) in zones" :key="idx">
+                            <a-radio-group
+                              :key="idx"
+                              v-model:value="form.zoneid"
+                              @change="onSelectZoneId(zoneItem.id)">
+                              <a-col :span="6">
+                                <a-radio-button
+                                  :value="zoneItem.id"
+                                  style="border-width: 2px"
+                                  class="zone-radio-button">
+                                  <span>
+                                    <resource-icon
+                                      v-if="zoneItem && zoneItem.icon && zoneItem.icon.base64image"
+                                      :image="zoneItem.icon.base64image"
+                                      size="2x" />
+                                    <global-outlined size="2x" v-else />
+                                    {{ zoneItem.name }}
+                                    </span>
+                                </a-radio-button>
+                              </a-col>
+                            </a-radio-group>
+                          </div>
+                        </a-row>
+                      </div>
+                      <a-select
+                        v-else
+                        v-model:value="form.zoneid"
+                        showSearch
+                        optionFilterProp="label"
+                        :filterOption="(input, option) => {
+                          return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                        }"
+                        @change="onSelectZoneId"
+                        :loading="loading.zones"
+                        v-focus="true"
+                      >
+                        <a-select-option v-for="zone1 in zones" :key="zone1.id" :label="zone1.name">
+                          <span>
+                            <resource-icon v-if="zone1.icon && zone1.icon.base64image" :image="zone1.icon.base64image" size="2x" style="margin-right: 5px"/>
+                            <global-outlined v-else style="margin-right: 5px" />
+                            {{ zone1.name }}
+                          </span>
+                        </a-select-option>
+                      </a-select>
+                    </a-form-item>
+                    <a-alert
+                      v-if="isDifferentZoneFromBackup">
+                      <template #message>
+                        <div v-html="$t('message.create.instance.from.backup.different.zone')"></div>
+                      </template>
+                    </a-alert>
+                  </div>
+                </template>
+              </a-step>
+              <a-step
                 v-if="!isNormalAndDomainUser"
                 :title="$t('label.select.deployment.infrastructure')"
                 status="process">
                 <template #description>
                   <div style="margin-top: 15px">
                     <a-form-item
-                      v-if="!isNormalAndDomainUser"
                       :label="$t('label.podid')"
                       name="podid"
                       ref="podid">
@@ -67,7 +129,6 @@
                       ></a-select>
                     </a-form-item>
                     <a-form-item
-                      v-if="!isNormalAndDomainUser"
                       :label="$t('label.clusterid')"
                       name="clusterid"
                       ref="clusterid">
@@ -82,7 +143,6 @@
                       ></a-select>
                     </a-form-item>
                     <a-form-item
-                      v-if="!isNormalAndDomainUser"
                       :label="$t('label.hostid')"
                       name="hostid"
                       ref="hostid">
@@ -108,6 +168,23 @@
                       :tabList="tabList"
                       :activeTabKey="tabKey"
                       @tabChange="key => onTabChange(key, 'tabKey')">
+                      <a-alert
+                        v-if="showOsTypeWarning && selectedTemplateIso"
+                        style="margin-bottom: 10px">
+                        <template #message>
+                          <div>
+                            {{ selectedTemplateIso.message }}<br>
+                            {{ selectedTemplateIso.label }} :
+                            <router-link :to="{ path: '/guestos/' + selectedTemplateIso.item.ostypeid }">
+                              {{ selectedTemplateIso.item.ostypename }}
+                            </router-link><br>
+                            {{ $t('label.backup') }} :
+                            <router-link :to="{ path: '/guestos/' + dataPreFill.ostypeid }">
+                              {{ dataPreFill.ostypename }}
+                            </router-link>
+                          </div>
+                        </template>
+                      </a-alert>
                       <div v-if="tabKey === 'templateid'">
                         {{ $t('message.template.desc') }}
                         <div v-if="isZoneSelectedMultiArch" style="width: 100%; margin-top: 5px">
@@ -873,6 +950,7 @@ export default {
       dataPreFill: {},
       showDetails: false,
       showRootDiskSizeChanger: false,
+      showOsTypeWarning: false,
       showOverrideDiskOfferingOption: false,
       securitygroupids: [],
       rootDiskSizeFixed: 0,
@@ -909,8 +987,23 @@ export default {
     isNormalAndDomainUser () {
       return ['DomainAdmin', 'User'].includes(this.$store.getters.userInfo.roletype)
     },
+    isDifferentZoneFromBackup () {
+      return this.selectedZone !== this.dataPreFill.zoneid
+    },
+    crossZoneInstanceCreationEnabled () {
+      return this.dataPreFill.crosszoneinstancecreation
+    },
     isNormalUserOrProject () {
       return ['User'].includes(this.$store.getters.userInfo.roletype) || store.getters.project.id
+    },
+    selectedTemplateIso () {
+      if (this.tabKey === 'templateid' && this.template?.ostypeid) {
+        return { label: this.$t('label.template'), item: this.template, message: this.$t('message.template.ostype.different.from.backup') }
+      }
+      if (this.tabKey === 'isoid' && this.iso?.ostypeid) {
+        return { label: this.$t('label.iso'), item: this.iso, message: this.$t('message.iso.ostype.different.from.backup') }
+      }
+      return null
     },
     diskSize () {
       const customRootDiskSize = _.get(this.instanceConfig, 'rootdisksize', null)
@@ -1488,21 +1581,12 @@ export default {
       })
     },
     async fetchData () {
-      const zones = await this.fetchZoneByQuery()
-      if (zones && zones.length === 1) {
-        this.selectedZone = zones[0]
-        this.dataPreFill.zoneid = zones[0]
-      }
-      if (this.dataPreFill.zoneid) {
-        this.fetchDataByZone(this.dataPreFill.zoneid)
-      } else {
-        this.fetchZones(null, zones)
-        _.each(this.params, (param, name) => {
-          if (param.isLoad) {
-            this.fetchOptions(param, name)
-          }
-        })
-      }
+      this.fetchZones(null, null)
+      _.each(this.params, (param, name) => {
+        if (param.isLoad) {
+          this.fetchOptions(param, name)
+        }
+      })
       this.fetchBootTypes()
       this.fetchBootModes()
       this.fetchInstaceGroups()
@@ -1530,11 +1614,6 @@ export default {
         this.form.overridediskofferingid = undefined
       }
       this.showOverrideDiskOfferingOption = val
-    },
-    async fetchDataByZone (zoneId) {
-      this.fillValue('zoneid')
-      this.options.zones = await this.fetchZones(zoneId)
-      this.onSelectZoneId(zoneId)
     },
     fetchBootTypes () {
       this.options.bootTypes = [
@@ -1635,6 +1714,7 @@ export default {
           this.form.iothreadsenabled = template.details && Object.prototype.hasOwnProperty.call(template.details, 'iothreads')
           this.form.iodriverpolicy = template.details?.['io.policy']
           this.form.keyboard = template.details?.keyboard
+          this.showOsTypeWarning = this.dataPreFill.ostypeid && template.ostypeid !== this.dataPreFill.ostypeid
           if (template.details['vmware-to-kvm-mac-addresses']) {
             this.dataPreFill.macAddressArray = JSON.parse(template.details['vmware-to-kvm-mac-addresses'])
           }
@@ -1648,6 +1728,13 @@ export default {
         this.tabKey = 'isoid'
         this.form.isoid = value
         this.form.templateid = null
+        for (const key in this.options.isos) {
+          var iso = _.find(_.get(this.options.isos[key], 'iso', []), (option) => option.id === value)
+          if (iso) {
+            this.showOsTypeWarning = this.dataPreFill.ostypeid && iso.ostypeid !== this.dataPreFill.ostypeid
+            break
+          }
+        }
       } else if (['cpuspeed', 'cpunumber', 'memory'].includes(name)) {
         this.vm[name] = value
         this.form[name] = value
@@ -2124,7 +2211,9 @@ export default {
 
           if (name === 'zones') {
             let zoneid = ''
-            if (this.$route.query.zoneid) {
+            if (this.dataPreFill.zoneid) {
+              zoneid = this.dataPreFill.zoneid
+            } else if (this.$route.query.zoneid) {
               zoneid = this.$route.query.zoneid
             } else if (this.options.zones.length === 1) {
               zoneid = this.options.zones[0].id
@@ -2634,6 +2723,15 @@ export default {
     border: 1px solid @border-color-split;
     border-radius: @border-radius-base !important;
     margin: 0 0 1.2rem;
+  }
+
+  .zone-radio-button {
+    width:100%;
+    min-width: 345px;
+    height: 60px;
+    display: flex;
+    padding-left: 20px;
+    align-items: center;
   }
 
   .vm-info-card {

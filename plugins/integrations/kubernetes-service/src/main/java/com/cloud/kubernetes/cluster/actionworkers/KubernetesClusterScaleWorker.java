@@ -582,8 +582,6 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
                 scaleKubernetesClusterOffering(nodeType, scalingServiceOffering, updateNodeOffering, updateClusterOffering);
             } else if (clusterSizeScalingNeeded) {
                 scaleKubernetesClusterSize(nodeType);
-            } else {
-                return true;
             }
         }
 

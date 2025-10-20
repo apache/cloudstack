@@ -298,7 +298,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {BackupRetryAttempts, BackupRetryInterval, SnapshotHourlyMax, SnapshotDailyMax, SnapshotMonthlyMax, SnapshotWeeklyMax, usageSnapshotSelection,
-                SnapshotInfo.BackupSnapshotAfterTakingSnapshot, VmStorageSnapshotKvm, kvmIncrementalSnapshot, snapshotDeltaMax, snapshotShowChainSize, UseStorageReplication};
+                SnapshotInfo.BackupSnapshotAfterTakingSnapshot, VmStorageSnapshotKvm, kvmIncrementalSnapshot, snapshotDeltaMax, snapshotShowChainSize, UseStorageReplication, KVMSnapshotEnabled};
     }
 
     @Override
@@ -1303,7 +1303,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     }
 
     protected SnapshotPolicyVO createSnapshotPolicy(long volumeId, String schedule, String timezone, IntervalType intervalType, int maxSnaps, boolean display, List<Long> zoneIds, List<Long> poolIds) {
-        SnapshotPolicyVO policy = new SnapshotPolicyVO(volumeId, schedule, timezone, intervalType, maxSnaps, display);
+        VolumeVO volume = _volsDao.findById(volumeId);
+        SnapshotPolicyVO policy = new SnapshotPolicyVO(volumeId, schedule, timezone, intervalType, maxSnaps, volume.getAccountId(), volume.getDomainId(), display);
         policy = _snapshotPolicyDao.persist(policy);
         if (CollectionUtils.isNotEmpty(zoneIds)) {
             List<SnapshotPolicyDetailVO> details = new ArrayList<>();
@@ -1388,28 +1389,54 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     }
 
     @Override
-    public Pair<List<? extends SnapshotPolicy>, Integer> listPoliciesforVolume(ListSnapshotPoliciesCmd cmd) {
+    public Pair<List<? extends SnapshotPolicy>, Integer> listSnapshotPolicies(ListSnapshotPoliciesCmd cmd) {
         Long volumeId = cmd.getVolumeId();
-        boolean display = cmd.isDisplay();
         Long id = cmd.getId();
-        Pair<List<SnapshotPolicyVO>, Integer> result = null;
-        // TODO - Have a better way of doing this.
-        if (id != null) {
-            result = _snapshotPolicyDao.listAndCountById(id, display, null);
-            if (result != null && result.first() != null && !result.first().isEmpty()) {
-                SnapshotPolicyVO snapshotPolicy = result.first().get(0);
-                volumeId = snapshotPolicy.getVolumeId();
+        Account caller = CallContext.current().getCallingAccount();
+        List<Long> permittedAccounts = new ArrayList<>();
+        String keyword = cmd.getKeyword();
+
+        // Verify parameters
+        if (volumeId != null) {
+            VolumeVO volume = _volsDao.findById(volumeId);
+            if (volume != null) {
+                _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
             }
         }
-        VolumeVO volume = _volsDao.findById(volumeId);
-        if (volume == null) {
-            throw new InvalidParameterValueException("Unable to find a volume with id " + volumeId);
+
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
+                new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
+        Long domainId = domainIdRecursiveListProject.first();
+        Boolean isRecursive = domainIdRecursiveListProject.second();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+
+        Filter searchFilter = new Filter(SnapshotPolicyVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchBuilder<SnapshotPolicyVO> policySearch = _snapshotPolicyDao.createSearchBuilder();
+        _accountMgr.buildACLSearchBuilder(policySearch, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
+        policySearch.and("id", policySearch.entity().getId(), SearchCriteria.Op.EQ);
+        policySearch.and("volumeId", policySearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+
+        SearchBuilder<VolumeVO> volumeSearch = _volsDao.createSearchBuilder();
+        volumeSearch.and("name", volumeSearch.entity().getName(), SearchCriteria.Op.LIKE);
+        policySearch.join("volumeJoin", volumeSearch, policySearch.entity().getVolumeId(), volumeSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+
+        SearchCriteria<SnapshotPolicyVO> sc = policySearch.create();
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
+        if (volumeId != null) {
+            sc.setParameters("volumeId", volumeId);
         }
-        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
-        if (result != null)
-            return new Pair<List<? extends SnapshotPolicy>, Integer>(result.first(), result.second());
-        result = _snapshotPolicyDao.listAndCountByVolumeId(volumeId, display);
-        return new Pair<List<? extends SnapshotPolicy>, Integer>(result.first(), result.second());
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+        if (keyword != null) {
+            sc.setJoinParameters("volumeJoin", "name", "%" + keyword + "%");
+        }
+
+        Pair<List<SnapshotPolicyVO>, Integer> result = _snapshotPolicyDao.searchAndCount(sc, searchFilter);
+        return new Pair<>(result.first(), result.second());
     }
 
     private List<SnapshotPolicyVO> listPoliciesforVolume(long volumeId) {
@@ -1510,7 +1537,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         if (vmId != null) {
             VMInstanceVO vm = _vmDao.findById(vmId);
             if (vm.getState() != VirtualMachine.State.Stopped && vm.getState() != VirtualMachine.State.Destroyed) {
-                boolean snapshotEnabled = Boolean.parseBoolean(_configDao.getValue("kvm.snapshot.enabled"));
+                boolean snapshotEnabled = KVMSnapshotEnabled.value();
                 if (!snapshotEnabled && !isFromVmSnapshot) {
                     logger.debug("Snapshot is not supported on host " + host + " for the volume " + volume + " attached to the vm " + vm);
                     return false;
@@ -1965,9 +1992,14 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         Type snapshotType = getSnapshotType(policyId);
         Account owner = _accountMgr.getAccount(volume.getAccountId());
 
+        ResourceType storeResourceType = ResourceType.secondary_storage;
+        if (!isBackupSnapshotToSecondaryForZone(volume.getDataCenterId()) ||
+                Snapshot.LocationType.PRIMARY.equals(locationType)) {
+            storeResourceType = ResourceType.primary_storage;
+        }
         try {
             _resourceLimitMgr.checkResourceLimit(owner, ResourceType.snapshot);
-            _resourceLimitMgr.checkResourceLimit(owner, ResourceType.secondary_storage, new Long(volume.getSize()).longValue());
+            _resourceLimitMgr.checkResourceLimit(owner, storeResourceType, volume.getSize());
         } catch (ResourceAllocationException e) {
             if (snapshotType != Type.MANUAL) {
                 String msg = String.format("Snapshot resource limit exceeded for account %s. Failed to create recurring snapshots", owner);
@@ -2018,7 +2050,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
         CallContext.current().putContextParameter(Snapshot.class, snapshot.getUuid());
         _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.snapshot);
-        _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage, new Long(volume.getSize()));
+        _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), storeResourceType, volume.getSize());
         return snapshot;
     }
 

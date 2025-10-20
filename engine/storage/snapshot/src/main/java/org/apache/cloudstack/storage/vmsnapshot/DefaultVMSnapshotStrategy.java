@@ -345,6 +345,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 StoragePool pool = primaryDataStoreDao.findPoolByUUID(volume.getDataStoreUuid());
                 if (pool != null && pool.getId() != volumeVO.getPoolId()) {
                     volumeVO.setPoolId(pool.getId());
+                    volumeVO.setPoolType(pool.getPoolType());
                 }
             }
             if (StringUtils.isNotEmpty(volume.getPath())) {
@@ -513,5 +514,15 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         }
 
         return false;
+    }
+
+    @Override
+    public void updateOperationFailed(VMSnapshot vmSnapshot) throws NoTransitionException {
+        try {
+            vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
+        } catch (NoTransitionException e) {
+            logger.debug("Failed to change vm snapshot state with event OperationFailed");
+            throw e;
+        }
     }
 }

@@ -822,7 +822,7 @@ public class NetworkOrchestratorTest extends TestCase {
         Mockito.when(network.getId()).thenReturn(networkId);
         Mockito.when(dataCenter.getId()).thenReturn(dataCenterId);
         Mockito.when(ipAddresses.getIp4Address()).thenReturn(requestedIp);
-        Mockito.when(testOrchestrator._ipAddressDao.findByIp(requestedIp)).thenReturn(ipAddressVO);
+        Mockito.when(testOrchestrator._ipAddressDao.findByIpAndSourceNetworkId(networkId, requestedIp)).thenReturn(ipAddressVO);
         String ipAddress = testOrchestrator.getSelectedIpForNicImport(network, dataCenter, ipAddresses);
         Assert.assertEquals(requestedIp, ipAddress);
     }

@@ -32,12 +32,15 @@ repos:
         name: run gitleaks
         description: detect hardcoded secrets
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       #- id: check-added-large-files
       - id: check-case-conflict
       #- id: check-executables-have-shebangs
+      - id: check-illegal-windows-names
       - id: check-merge-conflict
+      - id: check-shebang-scripts-are-executable
+        files: \.sh$
       - id: check-symlinks
       - id: check-vcs-permalinks
       #- id: check-yaml
@@ -48,7 +51,7 @@ repos:
         exclude: >
           (?x)
           ^scripts/vm/systemvm/id_rsa\.cloud$|
-          ^server/src/test/java/org/apache/cloudstack/network/ssl/CertServiceTest.java$|
+          ^server/src/test/java/org/apache/cloudstack/network/ssl/CertServiceTest\.java$|
           ^server/src/test/java/com/cloud/keystore/KeystoreTest\.java$|
           ^server/src/test/resources/certs/dsa_self_signed\.key$|
           ^server/src/test/resources/certs/non_root\.key$|
@@ -59,15 +62,17 @@ repos:
           ^services/console-proxy/rdpconsole/src/test/doc/rdp-key\.pem$|
           ^systemvm/agent/certs/localhost\.key$|
           ^systemvm/agent/certs/realhostip\.key$|
-          ^test/integration/smoke/test_ssl_offloading.py$
+          ^test/integration/smoke/test_ssl_offloading\.py$
       - id: end-of-file-fixer
         exclude: \.vhd$
+      - id: file-contents-sorter
+        args: [--unique]
+        files: ^\.github/linters/codespell\.txt$
       - id: fix-byte-order-marker
       - id: forbid-submodules
       - id: mixed-line-ending
-        exclude: \.cs$
       - id: trailing-whitespace
-        files: \.(bat|cfg|cs|css|gitignore|header|in|install|java|md|properties|py|rb|sh|sql|txt|vue|xml|xsl|yaml|yml)$
+        files: \.(bat|cfg|cs|css|gitignore|header|in|install|java|md|properties|py|rb|rc|sh|sql|te|template|txt|ucls|vue|xml|xsl|yaml|yml)$|^cloud-cli/bindir/cloud-tool$|^debian/changelog$
         args: [--markdown-linebreak-ext=md]
         exclude: ^services/console-proxy/rdpconsole/src/test/doc/freerdp-debug-log\.txt$
   - repo: https://github.com/codespell-project/codespell
@@ -83,17 +88,6 @@ repos:
     hooks:
     - id: flake8
       args: [--config, .github/linters/.flake8]
-      exclude: >
-        (?x)
-        ^agent/bindir/cloud-setup-agent\.in$|
-        ^client/bindir/cloud-update-xenserver-licenses\.in$|
-        ^cloud-cli/bindir/cloud-tool$|
-        ^python/bindir/cloud-grab-dependent-library-versions$|
-        ^python/bindir/cloud-setup-baremetal$|
-        ^scripts/vm/hypervisor/xenserver/storagePlugin$|
-        ^scripts/vm/hypervisor/xenserver/vmopspremium$|
-        ^setup/bindir/cloud-setup-encryption\.in$|
-        ^venv/.*$
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.45.0
     hooks:
@@ -103,3 +97,13 @@ repos:
         args: [--config=.github/linters/.markdown-lint.yml]
         types: [markdown]
         files: \.(md|mdown|markdown)$
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.37.1
+    hooks:
+      - id: yamllint
+        name: run yamllint
+        description: check YAML files with yamllint
+        args: [--config-file=.github/linters/.yamllint.yml]
+        types: [yaml]
+        files: \.ya?ml$
+        exclude: ^.*k8s-.*\.ya?ml$

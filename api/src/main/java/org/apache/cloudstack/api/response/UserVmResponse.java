@@ -41,7 +41,7 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = {VirtualMachine.class, UserVm.class, VirtualRouter.class})
-public class UserVmResponse extends BaseResponseWithTagInformation implements ControlledEntityResponse, SetResourceIconResponse {
+public class UserVmResponse extends BaseResponseWithTagInformation implements ControlledViewEntityResponse, SetResourceIconResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "the ID of the virtual machine")
     private String id;

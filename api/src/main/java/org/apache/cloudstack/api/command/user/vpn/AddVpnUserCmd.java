@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import com.cloud.domain.Domain;
 import com.cloud.event.EventTypes;
 import com.cloud.network.VpnUser;
 import com.cloud.user.Account;
@@ -110,7 +109,6 @@ public class AddVpnUserCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() {
         VpnUser vpnUser = _entityMgr.findById(VpnUser.class, getEntityId());
-        Account account = _entityMgr.findById(Account.class, vpnUser.getAccountId());
         try {
             if (!_ravService.applyVpnUsers(vpnUser.getAccountId(), userName)) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add vpn user");
@@ -118,24 +116,10 @@ public class AddVpnUserCmd extends BaseAsyncCreateCmd {
         } catch (Exception ex) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
-
-        VpnUsersResponse vpnResponse = new VpnUsersResponse();
-        vpnResponse.setId(vpnUser.getUuid());
-        vpnResponse.setUserName(vpnUser.getUsername());
-        vpnResponse.setAccountName(account.getAccountName());
         // re-retrieve the vpnuser, as the call to `applyVpnUsers` might have changed the state
         vpnUser = _entityMgr.findById(VpnUser.class, getEntityId());
-        vpnResponse.setState(vpnUser.getState().toString());
-
-        Domain domain = _entityMgr.findById(Domain.class, account.getDomainId());
-        if (domain != null) {
-            vpnResponse.setDomainId(domain.getUuid());
-            vpnResponse.setDomainName(domain.getName());
-            vpnResponse.setDomainPath(domain.getPath());
-        }
-
+        VpnUsersResponse vpnResponse = _responseGenerator.createVpnUserResponse(vpnUser);
         vpnResponse.setResponseName(getCommandName());
-        vpnResponse.setObjectName("vpnuser");
         setResponseObject(vpnResponse);
     }
 

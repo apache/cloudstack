@@ -401,7 +401,8 @@ class VirtualMachine:
             self.ssh_port = 22
         self.ssh_client = None
         # extract out the ipaddress
-        self.ipaddress = self.nic[0].ipaddress
+        if self.nic:
+            self.ipaddress = self.nic[0].ipaddress
 
     @classmethod
     def ssh_access_group(cls, apiclient, cmd):
@@ -1083,7 +1084,7 @@ class VirtualMachine:
         return apiclient.scaleVirtualMachine(cmd)
 
     def unmanage(self, apiclient):
-        """Unmanage a VM from CloudStack (currently VMware only)"""
+        """Unmanage a VM from CloudStack"""
         cmd = unmanageVirtualMachine.unmanageVirtualMachineCmd()
         cmd.id = self.id
         return apiclient.unmanageVirtualMachine(cmd)
@@ -6265,7 +6266,7 @@ class Backup:
         return (apiclient.restoreVolumeFromBackupAndAttachToVM(cmd))
 
     @classmethod
-    def createVMFromBackup(cls, apiclient, services, mode, backupid, accountname, domainid, zoneid, vmname=None):
+    def createVMFromBackup(cls, apiclient, services, mode, backupid, accountname, domainid, zoneid, vmname=None, networkids=None, templateid=None):
         """Create new VM from backup
         """
         cmd = createVMFromBackup.createVMFromBackupCmd()
@@ -6275,6 +6276,10 @@ class Backup:
         cmd.zoneid = zoneid
         if vmname:
             cmd.name = vmname
+        if networkids:
+            cmd.networkids = networkids
+        if templateid:
+            cmd.templateid = templateid
         response = apiclient.createVMFromBackup(cmd)
         virtual_machine = VirtualMachine(response.__dict__, [])
         VirtualMachine.program_ssh_access(apiclient, services, mode, cmd.networkids, virtual_machine)
@@ -6345,6 +6350,14 @@ class BackupRepository:
         cmd = deleteBackupRepository.deleteBackupRepositoryCmd()
         cmd.id = self.id
         return (apiclient.deleteBackupRepository(cmd))
+
+    def update(self, apiclient, crosszoneinstancecreation):
+        """Update backup repository"""
+
+        cmd = updateBackupRepository.updateBackupRepositoryCmd()
+        cmd.id = self.id
+        cmd.crosszoneinstancecreation = crosszoneinstancecreation
+        return (apiclient.updateBackupRepository(cmd))
 
     def list(self, apiclient):
         """List backup repository"""

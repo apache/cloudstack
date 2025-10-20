@@ -613,7 +613,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     }
 
     protected String getAgentArch() {
-        String arch = Script.runSimpleBashScript(Script.getExecutableAbsolutePath("arch"), 1000);
+        String arch = Script.runSimpleBashScript(Script.getExecutableAbsolutePath("arch"), 2000);
         logger.debug("Arch for agent: {} found: {}", _name, arch);
         return arch;
     }

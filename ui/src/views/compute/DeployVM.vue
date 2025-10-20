@@ -541,6 +541,25 @@
                 </template>
               </a-step>
               <a-step
+                v-if="zoneAllowsBackupOperations"
+                :title="$t('label.backup')"
+                :status="zoneSelected ? 'process' : 'wait'">
+                <template #description>
+                  <div v-if="zoneSelected" style="margin-top: 15px">
+                    <deploy-instance-backup-selection
+                      :zoneId="zoneId"
+                      v-model:backupOfferingId="form.backupofferingid"
+                      :backupSchedules="backupSchedules"
+                      @change-backup-offering="onChangeBackupOffering"
+                      @add-backup-schedule="onAddBackupSchedule"
+                      @delete-backup-schedule="backupSchedules = backupSchedules.filter(schedule => schedule.id !== $event.id)" />
+                    <a-form-item class="form-item-hidden">
+                      <a-input v-model:value="form.backupofferingid" />
+                    </a-form-item>
+                  </div>
+                </template>
+              </a-step>
+              <a-step
                 :title="$t('label.advanced.mode')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description v-if="zoneSelected">
@@ -743,6 +762,12 @@
                         </div>
                       </a-card>
                     </a-form-item>
+                    <a-form-item v-if="extraConfigEnabled" name="extraconfig" ref="extraconfig">
+                      <template #label>
+                        <tooltip-label :title="$t('label.extraconfig')" :tooltip="$t('label.extraconfig.tooltip')"/>
+                      </template>
+                      <a-textarea v-model:value="form.extraconfig"/>
+                    </a-form-item>
                     <a-form-item :label="$t('label.affinity.groups')">
                       <affinity-group-selection
                         :items="options.affinityGroups"
@@ -901,7 +926,7 @@
 
 <script>
 import { ref, reactive, toRaw, nextTick, h } from 'vue'
-import { Button } from 'ant-design-vue'
+import { Button, message } from 'ant-design-vue'
 import { getAPI, postAPI } from '@/api'
 import _ from 'lodash'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
@@ -930,6 +955,7 @@ import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import InstanceNicsNetworkSelectListView from '@/components/view/InstanceNicsNetworkSelectListView'
 import DetailsInput from '@/components/widgets/DetailsInput'
+import DeployInstanceBackupSelection from '@views/compute/wizard/DeployInstanceBackupSelection'
 
 export default {
   name: 'Wizard',
@@ -955,7 +981,8 @@ export default {
     SecurityGroupSelection,
     TooltipLabel,
     InstanceNicsNetworkSelectListView,
-    DetailsInput
+    DetailsInput,
+    DeployInstanceBackupSelection
   },
   props: {
     visible: {
@@ -1135,7 +1162,10 @@ export default {
         opts: []
       },
       externalDetailsEnabled: false,
-      selectedExtensionId: null
+      selectedExtensionId: null,
+      zoneAllowsBackupOperations: false,
+      selectedBackupOffering: null,
+      backupSchedules: []
     }
   },
   computed: {
@@ -1486,6 +1516,9 @@ export default {
     dynamicScalingVmConfigValue () {
       return this.$store.getters.features.dynamicscalingenabled
     },
+    extraConfigEnabled () {
+      return this.$store.getters.features.additionalconfigenabled
+    },
     isCustomizedDiskIOPS () {
       return this.diskSelected?.iscustomizediops || false
     },
@@ -1671,6 +1704,13 @@ export default {
 
         if (this.leaseduration < 1) {
           this.vm.leaseduration = undefined
+        }
+
+        delete this.vm.backupofferingid
+        delete this.vm.backupofferingname
+        if (this.form.backupofferingid && this.selectedBackupOffering) {
+          this.vm.backupofferingid = this.selectedBackupOffering.id
+          this.vm.backupofferingname = this.selectedBackupOffering.name
         }
       }
     }
@@ -2292,6 +2332,9 @@ export default {
         if (isUserdataAllowed && values.userdata && values.userdata.length > 0) {
           deployVmData.userdata = this.$toBase64AndURIEncoded(values.userdata)
         }
+        if (values.extraconfig && values.extraconfig.length > 0) {
+          deployVmData.extraconfig = encodeURIComponent(values.extraconfig)
+        }
         // step 2: select template/iso
         if (this.imageType === 'templateid') {
           deployVmData.templateid = values.templateid
@@ -2507,6 +2550,7 @@ export default {
                     duration: 0
                   })
                 }
+                this.performPostDeployBackupActions(vm)
                 eventBus.emit('vm-refresh-data')
               },
               loadingMessage: `${title} ${this.$t('label.in.progress')}`,
@@ -2979,6 +3023,31 @@ export default {
       this.updateTemplateKey()
       this.formModel = toRaw(this.form)
     },
+    async updateZoneAllowsBackupOperations () {
+      this.zoneAllowsBackupOperations = false
+      if (!this.zoneId) {
+        return
+      }
+      if (!('listBackupOfferings' in this.$store.getters.apis) ||
+        !('assignVirtualMachineToBackupOffering' in this.$store.getters.apis)) {
+        return
+      }
+      const params = {
+        zoneid: this.zoneId,
+        issystem: false,
+        listall: true,
+        page: 1,
+        pageSize: 1
+      }
+      try {
+        const response = await getAPI('listBackupOfferings', params)
+        const backupOfferings = response.listbackupofferingsresponse.backupoffering || []
+        this.zoneAllowsBackupOperations = backupOfferings.length > 0
+      } catch (error) {
+        console.error('Error fetching backup offerings:', error)
+        this.zoneAllowsBackupOperations = false
+      }
+    },
     onSelectZoneId (value) {
       if (this.dataPreFill.zoneid !== value) {
         this.dataPreFill = {}
@@ -3004,7 +3073,10 @@ export default {
       this.resetTemplatesList()
       this.resetIsosList()
       this.imageType = this.queryIsoId ? 'isoid' : 'templateid'
+      this.form.backupofferingid = undefined
+      this.selectedBackupOffering = null
       this.fetchZoneOptions()
+      this.updateZoneAllowsBackupOperations()
     },
     onSelectPodId (value) {
       this.podId = value
@@ -3395,6 +3467,113 @@ export default {
         return
       }
       this.form.externaldetails = undefined
+    },
+    onChangeBackupOffering (val) {
+      if (!val || !val.id) {
+        this.selectedBackupOffering = null
+        this.backupSchedules = []
+        return
+      }
+      this.selectedBackupOffering = val
+      if (this.backupSchedules && this.backupSchedules.length > 0 && !this.$isBackupProviderSupportsQuiesceVm(val.provider)) {
+        this.backupSchedules = this.backupSchedules.filter(item => !item.quiescevm)
+      }
+    },
+    onAddBackupSchedule (schedule) {
+      if (!schedule) {
+        return
+      }
+      // This is in accordance with the API behavior that only one schedule per intervaltype is allowed
+      const existingIndex = this.backupSchedules.findIndex(item => item.intervaltype === schedule.intervaltype)
+      if (existingIndex !== -1) {
+        message.warning({
+          content: this.$t('message.backup.update.existing.schedule') + ' ' + schedule.intervaltype,
+          duration: 2
+        })
+        this.backupSchedules.splice(existingIndex, 1, schedule)
+        return
+      }
+      this.backupSchedules.push(schedule)
+    },
+    async performPostDeployBackupActions (vm) {
+      if (!this.zoneAllowsBackupOperations) {
+        return
+      }
+      const assigned = await this.assignVirtualMachineToBackupOfferingIfNeeded(vm)
+      if (assigned) {
+        await this.createVirtualMachineBackupSchedulesIfNeeded(vm)
+      }
+    },
+    assignVirtualMachineToBackupOfferingIfNeeded (vm) {
+      if (!this.form.backupofferingid || !vm || !vm.id) {
+        return Promise.resolve(false)
+      }
+      const params = {
+        virtualmachineid: vm.id,
+        backupofferingid: this.form.backupofferingid
+      }
+      return new Promise((resolve, reject) => {
+        postAPI('assignVirtualMachineToBackupOffering', params).then(json => {
+          const jobId = json.assignvirtualmachinetobackupofferingresponse?.jobid
+          if (!jobId) {
+            resolve(false)
+            return
+          }
+          this.$pollJob({
+            jobId,
+            loadingMessage: `${this.$t('label.backup.offering.assign')} ${this.$t('label.in.progress')}`,
+            successMethod: () => {
+              resolve(true)
+            },
+            errorMethod: (result) => {
+              this.$notification.error({
+                message: this.$t('label.backup.offering.assign.failed'),
+                description: result?.jobresult?.errortext || this.$t('error.fetching.async.job.result')
+              })
+              resolve(false)
+            },
+            catchMessage: this.$t('error.fetching.async.job.result')
+          })
+        }).catch(error => {
+          this.$notification.error({
+            message: this.$t('label.backup.offering.assign.failed'),
+            description: error.message || error
+          })
+          resolve(false)
+        })
+      })
+    },
+    createVirtualMachineBackupSchedulesIfNeeded (vm) {
+      if (!vm || !vm.id || !this.backupSchedules) {
+        return Promise.resolve()
+      }
+      const promises = (this.backupSchedules || []).map(item =>
+        this.createVirtualMachineBackupSchedule(vm, item)
+      )
+      return Promise.all(promises)
+    },
+    createVirtualMachineBackupSchedule (vm, item) {
+      const params = {
+        virtualmachineid: vm.id,
+        intervaltype: item.intervaltype,
+        maxbackups: item.maxbackups,
+        timezone: item.timezone,
+        schedule: item.schedule
+      }
+      if (item.quiescevm) {
+        params.quiescevm = item.quiescevm
+      }
+      return new Promise((resolve, reject) => {
+        postAPI('createBackupSchedule', params).then(response => {
+          resolve(response)
+        }).catch(error => {
+          this.$notification.error({
+            message: this.$t('label.backup.schedule.create.failed'),
+            description: error.message || error
+          })
+          reject(error)
+        })
+      })
     }
   }
 }

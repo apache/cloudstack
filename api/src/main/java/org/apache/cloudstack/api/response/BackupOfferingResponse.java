@@ -61,6 +61,10 @@ public class BackupOfferingResponse extends BaseResponse {
     @Param(description = "zone name")
     private String zoneName;
 
+    @SerializedName(ApiConstants.CROSS_ZONE_INSTANCE_CREATION)
+    @Param(description = "the backups with this offering can be used to create Instances on all Zones", since = "4.22.0")
+    private Boolean crossZoneInstanceCreation;
+
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "the date this backup offering was created")
     private Date created;
@@ -95,6 +99,10 @@ public class BackupOfferingResponse extends BaseResponse {
 
     public void setZoneName(String zoneName) {
         this.zoneName = zoneName;
+    }
+
+    public void setCrossZoneInstanceCreation(Boolean crossZoneInstanceCreation) {
+        this.crossZoneInstanceCreation = crossZoneInstanceCreation;
     }
 
     public void setCreated(Date created) {

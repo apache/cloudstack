@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.logging.log4j.Logger;
@@ -430,5 +431,38 @@ public class LinstorUtil {
 
     public static boolean isRscDiskless(ResourceWithVolumes rsc) {
         return rsc.getFlags() != null && rsc.getFlags().contains(ApiConsts.FLAG_DISKLESS);
+    }
+
+    /**
+     * Checks if all diskful resource are on a zeroed block device.
+     * @param pool Linstor pool to use
+     * @param resName Linstor resource name
+     * @return true if all resources are on a provider with zeroed blocks.
+     */
+    public static boolean resourceSupportZeroBlocks(KVMStoragePool pool, String resName) {
+        final DevelopersApi api = getLinstorAPI(pool.getSourceHost());
+        try {
+            List<ResourceWithVolumes> resWithVols = api.viewResources(
+                    Collections.emptyList(),
+                    Collections.singletonList(resName),
+                    Collections.emptyList(),
+                    Collections.emptyList(),
+                    null,
+                    null);
+
+            if (resWithVols != null) {
+                return resWithVols.stream()
+                        .allMatch(res -> {
+                            Volume vol0 = res.getVolumes().get(0);
+                            return vol0 != null && (vol0.getProviderKind() == ProviderKind.LVM_THIN ||
+                                    vol0.getProviderKind() == ProviderKind.ZFS ||
+                                    vol0.getProviderKind() == ProviderKind.ZFS_THIN ||
+                                    vol0.getProviderKind() == ProviderKind.DISKLESS);
+                        } );
+            }
+        } catch (ApiException apiExc) {
+            LOGGER.error(apiExc.getMessage());
+        }
+        return false;
     }
 }

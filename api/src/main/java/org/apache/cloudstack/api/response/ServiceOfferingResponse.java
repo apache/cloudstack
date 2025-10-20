@@ -197,7 +197,7 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     private Boolean isCustomized;
 
     @SerializedName("cacheMode")
-    @Param(description = "the cache mode to use for this disk offering. none, writeback or writethrough", since = "4.14")
+    @Param(description = "the cache mode to use for this disk offering. none, writeback, writethrough or hypervisor default", since = "4.14")
     private String cacheMode;
 
     @SerializedName("vspherestoragepolicy")

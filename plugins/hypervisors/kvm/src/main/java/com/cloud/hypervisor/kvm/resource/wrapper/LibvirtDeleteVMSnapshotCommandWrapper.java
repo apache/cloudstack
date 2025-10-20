@@ -40,6 +40,7 @@ import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.script.Script;
 
 @ResourceWrapper(handles =  DeleteVMSnapshotCommand.class)
@@ -104,7 +105,7 @@ public final class LibvirtDeleteVMSnapshotCommandWrapper extends CommandWrapper<
                     commands.add(new String[]{Script.getExecutableAbsolutePath("awk"), "-F", " ", "{print $2}"});
                     commands.add(new String[]{Script.getExecutableAbsolutePath("grep"), "^" + sanitizeBashCommandArgument(cmd.getTarget().getSnapshotName()) + "$"});
                     String qemu_img_snapshot = Script.executePipedCommands(commands, 0).second();
-                    if (qemu_img_snapshot == null) {
+                    if (StringUtils.isEmpty(qemu_img_snapshot)) {
                         logger.info("Cannot find snapshot " + cmd.getTarget().getSnapshotName() + " in file " + rootDisk.getPath() + ", return true");
                         return new DeleteVMSnapshotAnswer(cmd, cmd.getVolumeTOs());
                     }

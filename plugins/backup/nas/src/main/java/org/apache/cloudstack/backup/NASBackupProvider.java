@@ -26,9 +26,9 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.offering.DiskOffering;
 import com.cloud.resource.ResourceManager;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
-import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiServiceImpl;
 import com.cloud.storage.VolumeVO;
@@ -49,10 +49,13 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -70,8 +73,17 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static org.apache.cloudstack.backup.BackupManager.BackupFrameworkEnabled;
+
 public class NASBackupProvider extends AdapterBase implements BackupProvider, Configurable {
     private static final Logger LOG = LogManager.getLogger(NASBackupProvider.class);
+
+    ConfigKey<Integer> NASBackupRestoreMountTimeout = new ConfigKey<>("Advanced", Integer.class,
+            "nas.backup.restore.mount.timeout",
+            "30",
+            "Timeout in seconds after which backup repository mount for restore fails.",
+            true,
+            BackupFrameworkEnabled.key());
 
     @Inject
     private BackupDao backupDao;
@@ -98,6 +110,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     private PrimaryDataStoreDao primaryDataStoreDao;
 
     @Inject
+    DataStoreManager dataStoreMgr;
+
+    @Inject
     private AgentManager agentManager;
 
     @Inject
@@ -115,30 +130,45 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     @Inject
     private DiskOfferingDao diskOfferingDao;
 
-    protected Host getLastVMHypervisorHost(VirtualMachine vm) {
-        Long hostId = vm.getLastHostId();
-        if (hostId == null) {
-            LOG.debug("Cannot find last host for vm. This should never happen, please check your database.");
+    private Long getClusterIdFromRootVolume(VirtualMachine vm) {
+        VolumeVO rootVolume = volumeDao.getInstanceRootVolume(vm.getId());
+        StoragePoolVO rootDiskPool = primaryDataStoreDao.findById(rootVolume.getPoolId());
+        if (rootDiskPool == null) {
             return null;
         }
-        Host host = hostDao.findById(hostId);
+        return rootDiskPool.getClusterId();
+    }
 
-        if (host.getStatus() == Status.Up) {
-            return host;
-        } else {
+    protected Host getVMHypervisorHost(VirtualMachine vm) {
+        Long hostId = vm.getLastHostId();
+        Long clusterId = null;
+
+        if (hostId != null) {
+            Host host = hostDao.findById(hostId);
+            if (host.getStatus() == Status.Up) {
+                return host;
+            }
             // Try to find any Up host in the same cluster
-            for (final Host hostInCluster : hostDao.findHypervisorHostInCluster(host.getClusterId())) {
+            clusterId = host.getClusterId();
+        } else {
+            // Try to find any Up host in the same cluster as the root volume
+            clusterId = getClusterIdFromRootVolume(vm);
+        }
+
+        if (clusterId != null) {
+            for (final Host hostInCluster : hostDao.findHypervisorHostInCluster(clusterId)) {
                 if (hostInCluster.getStatus() == Status.Up) {
-                    LOG.debug("Found Host {} in cluster {}", hostInCluster, host.getClusterId());
+                    LOG.debug("Found Host {} in cluster {}", hostInCluster, clusterId);
                     return hostInCluster;
                 }
             }
         }
+
         // Try to find any Host in the zone
-        return resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, host.getDataCenterId());
+        return resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, vm.getDataCenterId());
     }
 
-    protected Host getVMHypervisorHost(VirtualMachine vm) {
+    protected Host getVMHypervisorHostForBackup(VirtualMachine vm) {
         Long hostId = vm.getHostId();
         if (hostId == null && VirtualMachine.State.Running.equals(vm.getState())) {
             throw new CloudRuntimeException(String.format("Unable to find the hypervisor host for %s. Make sure the virtual machine is running", vm.getName()));
@@ -158,7 +188,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Override
     public Pair<Boolean, Backup> takeBackup(final VirtualMachine vm, Boolean quiesceVM) {
-        final Host host = getVMHypervisorHost(vm);
+        final Host host = getVMHypervisorHostForBackup(vm);
 
         final BackupRepository backupRepository = backupRepositoryDao.findByBackupOfferingId(vm.getBackupOfferingId());
         if (backupRepository == null) {
@@ -179,8 +209,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         if (VirtualMachine.State.Stopped.equals(vm.getState())) {
             List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
             vmVolumes.sort(Comparator.comparing(Volume::getDeviceId));
-            List<String> volumePaths = getVolumePaths(vmVolumes);
-            command.setVolumePaths(volumePaths);
+            Pair<List<PrimaryDataStoreTO>, List<String>> volumePoolsAndPaths = getVolumePoolsAndPaths(vmVolumes);
+            command.setVolumePools(volumePoolsAndPaths.first());
+            command.setVolumePaths(volumePoolsAndPaths.second());
         }
 
         BackupAnswer answer;
@@ -249,16 +280,16 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     @Override
-    public boolean restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid) {
+    public Pair<Boolean, String> restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid) {
         return restoreVMBackup(vm, backup);
     }
 
     @Override
     public boolean restoreVMFromBackup(VirtualMachine vm, Backup backup) {
-        return restoreVMBackup(vm, backup);
+        return restoreVMBackup(vm, backup).first();
     }
 
-    private boolean restoreVMBackup(VirtualMachine vm, Backup backup) {
+    private Pair<Boolean, String> restoreVMBackup(VirtualMachine vm, Backup backup) {
         List<String> backedVolumesUUIDs = backup.getBackedUpVolumes().stream()
                 .sorted(Comparator.comparingLong(Backup.VolumeInfo::getDeviceId))
                 .map(Backup.VolumeInfo::getUuid)
@@ -271,7 +302,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         LOG.debug("Restoring vm {} from backup {} on the NAS Backup Provider", vm, backup);
         BackupRepository backupRepository = getBackupRepository(backup);
 
-        final Host host = getLastVMHypervisorHost(vm);
+        final Host host = getVMHypervisorHost(vm);
         RestoreBackupCommand restoreCommand = new RestoreBackupCommand();
         restoreCommand.setBackupPath(backup.getExternalId());
         restoreCommand.setBackupRepoType(backupRepository.getType());
@@ -279,9 +310,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setMountOptions(backupRepository.getMountOptions());
         restoreCommand.setVmName(vm.getName());
         restoreCommand.setBackupVolumesUUIDs(backedVolumesUUIDs);
-        restoreCommand.setRestoreVolumePaths(getVolumePaths(restoreVolumes));
+        Pair<List<PrimaryDataStoreTO>, List<String>> volumePoolsAndPaths = getVolumePoolsAndPaths(restoreVolumes);
+        restoreCommand.setRestoreVolumePools(volumePoolsAndPaths.first());
+        restoreCommand.setRestoreVolumePaths(volumePoolsAndPaths.second());
         restoreCommand.setVmExists(vm.getRemoved() == null);
         restoreCommand.setVmState(vm.getState());
+        restoreCommand.setMountTimeout(NASBackupRestoreMountTimeout.value());
 
         BackupAnswer answer;
         try {
@@ -291,34 +325,45 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Operation to restore backup timed out, please try again");
         }
-        return answer.getResult();
+        return new Pair<>(answer.getResult(), answer.getDetails());
     }
 
-    private List<String> getVolumePaths(List<VolumeVO> volumes) {
+    private Pair<List<PrimaryDataStoreTO>, List<String>> getVolumePoolsAndPaths(List<VolumeVO> volumes) {
+        List<PrimaryDataStoreTO> volumePools = new ArrayList<>();
         List<String> volumePaths = new ArrayList<>();
         for (VolumeVO volume : volumes) {
             StoragePoolVO storagePool = primaryDataStoreDao.findById(volume.getPoolId());
             if (Objects.isNull(storagePool)) {
                 throw new CloudRuntimeException("Unable to find storage pool associated to the volume");
             }
-            String volumePathPrefix;
-            if (ScopeType.HOST.equals(storagePool.getScope())) {
-                volumePathPrefix = storagePool.getPath();
-            } else if (Storage.StoragePoolType.SharedMountPoint.equals(storagePool.getPoolType())) {
-                volumePathPrefix = storagePool.getPath();
-            } else {
-                volumePathPrefix = String.format("/mnt/%s", storagePool.getUuid());
-            }
+
+            DataStore dataStore = dataStoreMgr.getDataStore(storagePool.getId(), DataStoreRole.Primary);
+            volumePools.add(dataStore != null ? (PrimaryDataStoreTO)dataStore.getTO() : null);
+
+            String volumePathPrefix = getVolumePathPrefix(storagePool);
             volumePaths.add(String.format("%s/%s", volumePathPrefix, volume.getPath()));
         }
-        return volumePaths;
+        return new Pair<>(volumePools, volumePaths);
+    }
+
+    private String getVolumePathPrefix(StoragePoolVO storagePool) {
+        String volumePathPrefix;
+        if (ScopeType.HOST.equals(storagePool.getScope()) ||
+                Storage.StoragePoolType.SharedMountPoint.equals(storagePool.getPoolType()) ||
+                Storage.StoragePoolType.RBD.equals(storagePool.getPoolType())) {
+            volumePathPrefix = storagePool.getPath();
+        } else {
+            // Should be Storage.StoragePoolType.NetworkFilesystem
+            volumePathPrefix = String.format("/mnt/%s", storagePool.getUuid());
+        }
+        return volumePathPrefix;
     }
 
     @Override
     public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, Backup.VolumeInfo backupVolumeInfo, String hostIp, String dataStoreUuid, Pair<String, VirtualMachine.State> vmNameAndState) {
         final VolumeVO volume = volumeDao.findByUuid(backupVolumeInfo.getUuid());
         final DiskOffering diskOffering = diskOfferingDao.findByUuid(backupVolumeInfo.getDiskOfferingId());
-        final StoragePoolHostVO dataStore = storagePoolHostDao.findByUuid(dataStoreUuid);
+        final StoragePoolVO pool = primaryDataStoreDao.findByUuid(dataStoreUuid);
         final HostVO hostVO = hostDao.findByIp(hostIp);
 
         LOG.debug("Restoring vm volume {} from backup {} on the NAS Backup Provider", backupVolumeInfo, backup);
@@ -335,19 +380,26 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoredVolume.setUuid(volumeUUID);
         restoredVolume.setRemoved(null);
         restoredVolume.setDisplayVolume(true);
-        restoredVolume.setPoolId(dataStore.getPoolId());
+        restoredVolume.setPoolId(pool.getId());
+        restoredVolume.setPoolType(pool.getPoolType());
         restoredVolume.setPath(restoredVolume.getUuid());
         restoredVolume.setState(Volume.State.Copying);
-        restoredVolume.setFormat(Storage.ImageFormat.QCOW2);
         restoredVolume.setSize(backupVolumeInfo.getSize());
         restoredVolume.setDiskOfferingId(diskOffering.getId());
+        if (pool.getPoolType() != Storage.StoragePoolType.RBD) {
+            restoredVolume.setFormat(Storage.ImageFormat.QCOW2);
+        } else {
+            restoredVolume.setFormat(Storage.ImageFormat.RAW);
+        }
 
         RestoreBackupCommand restoreCommand = new RestoreBackupCommand();
         restoreCommand.setBackupPath(backup.getExternalId());
         restoreCommand.setBackupRepoType(backupRepository.getType());
         restoreCommand.setBackupRepoAddress(backupRepository.getAddress());
         restoreCommand.setVmName(vmNameAndState.first());
-        restoreCommand.setRestoreVolumePaths(Collections.singletonList(String.format("%s/%s", dataStore.getLocalPath(), volumeUUID)));
+        restoreCommand.setRestoreVolumePaths(Collections.singletonList(String.format("%s/%s", getVolumePathPrefix(pool), volumeUUID)));
+        DataStore dataStore = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
+        restoreCommand.setRestoreVolumePools(Collections.singletonList(dataStore != null ? (PrimaryDataStoreTO)dataStore.getTO() : null));
         restoreCommand.setDiskType(backupVolumeInfo.getType().name().toLowerCase(Locale.ROOT));
         restoreCommand.setMountOptions(backupRepository.getMountOptions());
         restoreCommand.setVmExists(null);
@@ -398,7 +450,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         final Host host;
         final VirtualMachine vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
         if (vm != null) {
-            host = getLastVMHypervisorHost(vm);
+            host = getVMHypervisorHost(vm);
         } else {
             host = resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, backup.getZoneId());
         }
@@ -514,8 +566,18 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     @Override
+    public Boolean crossZoneInstanceCreationEnabled(BackupOffering backupOffering) {
+        final BackupRepository backupRepository = backupRepositoryDao.findByBackupOfferingId(backupOffering.getId());
+        if (backupRepository == null) {
+            throw new CloudRuntimeException("Backup repository not found for the backup offering" + backupOffering.getName());
+        }
+        return Boolean.TRUE.equals(backupRepository.crossZoneInstanceCreationEnabled());
+    }
+
+    @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[]{
+                NASBackupRestoreMountTimeout
         };
     }
 

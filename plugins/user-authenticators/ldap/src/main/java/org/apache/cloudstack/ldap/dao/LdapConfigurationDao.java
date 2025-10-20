@@ -41,5 +41,5 @@ public interface LdapConfigurationDao extends GenericDao<LdapConfigurationVO, Lo
 
     Pair<List<LdapConfigurationVO>, Integer> searchConfigurations(String hostname, int port, Long domainId);
 
-    Pair<List<LdapConfigurationVO>, Integer> searchConfigurations(String hostname, int port, Long domainId, boolean listAll);
+    Pair<List<LdapConfigurationVO>, Integer> searchConfigurations(Long id, String hostname, int port, Long domainId, boolean listAll);
 }

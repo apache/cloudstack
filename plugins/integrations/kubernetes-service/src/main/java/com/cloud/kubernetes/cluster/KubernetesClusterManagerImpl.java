@@ -96,7 +96,16 @@ import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.DeleteNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
+import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
+import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotCmd;
+import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
+import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.DeleteVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
+import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.api.response.KubernetesClusterConfigResponse;
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.api.response.KubernetesUserVmResponse;
@@ -118,6 +127,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.dao.NetworkOfferingJoinDao;
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
@@ -135,7 +145,6 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.domain.Domain;
 import com.cloud.event.ActionEvent;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -252,7 +261,16 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     private static final List<Class<?>> PROJECT_KUBERNETES_ACCOUNT_ROLE_ALLOWED_APIS = Arrays.asList(
             QueryAsyncJobResultCmd.class,
             ListVMsCmd.class,
+            ListVolumesCmd.class,
+            CreateVolumeCmd.class,
+            DeleteVolumeCmd.class,
+            AttachVolumeCmd.class,
+            DetachVolumeCmd.class,
+            ResizeVolumeCmd.class,
             ListNetworksCmd.class,
+            CreateSnapshotCmd.class,
+            ListSnapshotsCmd.class,
+            DeleteSnapshotCmd.class,
             ListPublicIpAddressesCmd.class,
             AssociateIPAddrCmd.class,
             DisassociateIPAddrCmd.class,
@@ -429,6 +447,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             if (network == null) {
                 logger.warn("Unable to find the network with ID: {} passed for the Kubernetes cluster", networkId);
                 return false;
+            }
+            if (isDirectAccess(network)) {
+                return true;
             }
             networkOffering = networkOfferingDao.findById(network.getNetworkOfferingId());
             if (networkOffering == null) {
@@ -811,18 +832,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             response.setKubernetesVersionId(version.getUuid());
             response.setKubernetesVersionName(version.getName());
         }
-        Account account = ApiDBUtils.findAccountById(kubernetesCluster.getAccountId());
-        if (account.getType() == Account.Type.PROJECT) {
-            Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
-            response.setProjectId(project.getUuid());
-            response.setProjectName(project.getName());
-        } else {
-            response.setAccountName(account.getAccountName());
-        }
-        Domain domain = ApiDBUtils.findDomainById(kubernetesCluster.getDomainId());
-        response.setDomainId(domain.getUuid());
-        response.setDomainName(domain.getName());
-        response.setDomainPath(domain.getPath());
+        ApiResponseHelper.populateOwner(response, kubernetesCluster);
         response.setKeypair(kubernetesCluster.getKeyPair());
         response.setState(kubernetesCluster.getState().toString());
         response.setCores(String.valueOf(kubernetesCluster.getCores()));
@@ -888,6 +898,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         response.setMinSize(kubernetesCluster.getMinSize());
         response.setMaxSize(kubernetesCluster.getMaxSize());
         response.setClusterType(kubernetesCluster.getClusterType());
+        response.setCsiEnabled(kubernetesCluster.isCsiEnabled());
         response.setCreated(kubernetesCluster.getCreated());
 
         return response;
@@ -1613,6 +1624,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 if (zone.isSecurityGroupEnabled()) {
                     newCluster.setSecurityGroupId(finalSecurityGroup.getId());
                 }
+                newCluster.setCsiEnabled(cmd.getEnableCsi());
                 kubernetesClusterDao.persist(newCluster);
                 addKubernetesClusterDetails(newCluster, defaultNetwork, cmd);
                 return newCluster;
@@ -1870,7 +1882,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         try {
             Role role = getProjectKubernetesAccountRole();
             UserAccount userAccount = accountService.createUserAccount(accountName,
-                    UuidUtils.first(UUID.randomUUID().toString()), PROJECT_KUBERNETES_ACCOUNT_FIRST_NAME,
+                    UUID.randomUUID().toString(), PROJECT_KUBERNETES_ACCOUNT_FIRST_NAME,
                     PROJECT_KUBERNETES_ACCOUNT_LAST_NAME, null, null, accountName, Account.Type.NORMAL, role.getId(),
                     project.getDomainId(), null, null, null, null, User.Source.NATIVE);
             projectManager.assignAccountToProject(project, userAccount.getAccountId(), ProjectAccount.Role.Regular,

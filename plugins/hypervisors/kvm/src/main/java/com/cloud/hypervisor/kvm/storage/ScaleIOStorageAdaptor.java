@@ -53,6 +53,8 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+import com.cloud.utils.storage.TemplateDownloaderUtil;
+
 import org.apache.commons.lang3.StringUtils;
 
 public class ScaleIOStorageAdaptor implements StorageAdaptor {
@@ -572,10 +574,10 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
                 throw new CloudRuntimeException("Failed to find the disk: " + destTemplatePath + " of the storage pool: " + destPool.getUuid());
             }
 
-            if (isTemplateExtractable(templateFilePath)) {
+            if (TemplateDownloaderUtil.isTemplateExtractable(templateFilePath)) {
                 srcTemplateFilePath = sourceFile.getParent() + "/" + UUID.randomUUID().toString();
                 logger.debug("Extract the downloaded template " + templateFilePath + " to " + srcTemplateFilePath);
-                String extractCommand = getExtractCommandForDownloadedFile(templateFilePath, srcTemplateFilePath);
+                String extractCommand = TemplateDownloaderUtil.getExtractCommandForDownloadedFile(templateFilePath, srcTemplateFilePath);
                 Script.runSimpleBashScript(extractCommand);
                 Script.runSimpleBashScript("rm -f " + templateFilePath);
             }
@@ -609,23 +611,6 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
         }
 
         return destDisk;
-    }
-
-    private boolean isTemplateExtractable(String templatePath) {
-        String type = Script.runSimpleBashScript("file " + templatePath + " | awk -F' ' '{print $2}'");
-        return type.equalsIgnoreCase("bzip2") || type.equalsIgnoreCase("gzip") || type.equalsIgnoreCase("zip");
-    }
-
-    private String getExtractCommandForDownloadedFile(String downloadedTemplateFile, String templateFile) {
-        if (downloadedTemplateFile.endsWith(".zip")) {
-            return "unzip -p " + downloadedTemplateFile + " | cat > " + templateFile;
-        } else if (downloadedTemplateFile.endsWith(".bz2")) {
-            return "bunzip2 -c " + downloadedTemplateFile + " > " + templateFile;
-        } else if (downloadedTemplateFile.endsWith(".gz")) {
-            return "gunzip -c " + downloadedTemplateFile + " > " + templateFile;
-        } else {
-            throw new CloudRuntimeException("Unable to extract template " + downloadedTemplateFile);
-        }
     }
 
     public void resizeQcow2ToVolume(String volumePath, QemuImageOptions options, List<QemuObject> objects, Integer timeout) throws QemuImgException, LibvirtException {

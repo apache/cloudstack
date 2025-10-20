@@ -104,6 +104,7 @@
   "showUserCategoryForModernImageSelection": true,
   "showAllCategoryForModernImageSelection": false,
   "docHelpMappings": {},
+  "notifyLatestCSVersion": true,
   "announcementBanner": {
     "enabled": false,
     "showIcon": false,

@@ -116,8 +116,8 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
         iopsWriteRate = volume.getIopsWriteRate();
         iopsWriteRateMax = volume.getIopsWriteRateMax();
         iopsWriteRateMaxLength = volume.getIopsWriteRateMaxLength();
-        cacheMode = volume.getCacheMode();
         hypervisorType = volume.getHypervisorType();
+        setCacheMode(volume.getCacheMode());
         setDeviceId(volume.getDeviceId());
         this.migrationOptions = volume.getMigrationOptions();
         this.directDownload = volume.isDirectDownload();
@@ -343,6 +343,10 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
     }
 
     public void setCacheMode(DiskCacheMode cacheMode) {
+        if (DiskCacheMode.HYPERVISOR_DEFAULT.equals(cacheMode) && !Hypervisor.HypervisorType.KVM.equals(hypervisorType)) {
+            this.cacheMode = DiskCacheMode.NONE;
+            return;
+        }
         this.cacheMode = cacheMode;
     }
 

@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.consoleproxy;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  *
  * Data object to store parameter info needed by client to connect to its host
@@ -38,6 +40,8 @@ public class ConsoleProxyClientParam {
     private String username;
     private String password;
     private String websocketUrl;
+
+    private boolean sessionRequiresNewViewer;
 
     /**
      * IP that has generated the console endpoint
@@ -143,8 +147,12 @@ public class ConsoleProxyClientParam {
     }
 
     public String getClientMapKey() {
-        if (clientTag != null && !clientTag.isEmpty())
+        if (sessionRequiresNewViewer && StringUtils.isNotBlank(sessionUuid)) {
+            return sessionUuid;
+        }
+        if (StringUtils.isNotBlank(clientTag)) {
             return clientTag;
+        }
 
         return clientHostAddress + ":" + clientHostPort;
     }
@@ -219,5 +227,13 @@ public class ConsoleProxyClientParam {
 
     public void setClientIp(String clientIp) {
         this.clientIp = clientIp;
+    }
+
+    public boolean isSessionRequiresNewViewer() {
+        return sessionRequiresNewViewer;
+    }
+
+    public void setSessionRequiresNewViewer(boolean sessionRequiresNewViewer) {
+        this.sessionRequiresNewViewer = sessionRequiresNewViewer;
     }
 }

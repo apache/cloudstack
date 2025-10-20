@@ -152,6 +152,12 @@
                   </a-row>
                 </a-radio-group>
               </a-form-item>
+              <a-form-item name="forceconverttopool" ref="forceconverttopool" v-if="selectedVmwareVcenter">
+                <template #label>
+                  <tooltip-label :title="$t('label.force.convert.to.pool')" :tooltip="apiParams.forceconverttopool.description"/>
+                </template>
+                <a-switch v-model:checked="form.forceconverttopool" @change="onForceConvertToPoolChange" />
+              </a-form-item>
               <a-form-item name="converthostid" ref="converthostid">
                 <check-box-select-pair
                   layout="vertical"
@@ -179,17 +185,21 @@
               <a-form-item name="convertstorageoption" ref="convertstorageoption">
                 <check-box-select-pair
                   layout="vertical"
-                  style="margin-bottom: 5px"
                   v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter"
                   :resourceKey="cluster.id"
                   :selectOptions="storageOptionsForConversion"
-                  :checkBoxLabel="$t('message.select.temporary.storage.instance.conversion')"
+                  :checkBoxLabel="switches.forceConvertToPool ? $t('message.select.destination.storage.instance.conversion') : $t('message.select.temporary.storage.instance.conversion')"
                   :defaultCheckBoxValue="false"
                   :reversed="false"
                   @handle-checkselectpair-change="updateSelectedStorageOptionForConversion"
                 />
               </a-form-item>
-              <a-form-item v-if="showStoragePoolsForConversion" name="convertstoragepool" ref="convertstoragepool" :label="$t('label.storagepool')">
+              <a-form-item
+                v-if="showStoragePoolsForConversion"
+                name="convertstoragepool"
+                ref="convertstoragepool"
+                :label="$t('label.storagepool')"
+              >
                 <a-select
                   v-model:value="form.convertstoragepoolid"
                   defaultActiveFirstOption
@@ -203,6 +213,18 @@
                     {{ pool.name }}
                   </a-select-option>
                 </a-select>
+              </a-form-item>
+              <a-form-item name="extraparams" ref="extraparams">
+                <a-checkbox
+                  v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter && vmwareToKvmExtraParamsAllowed"
+                  v-model:checked="vmwareToKvmExtraParamsSelected">
+                  {{ $t('message.select.extra.parameters.for.instance.conversion') }}
+                </a-checkbox>
+                <a-input
+                  v-if="vmwareToKvmExtraParamsSelected"
+                  v-model:value="vmwareToKvmExtraParams"
+                  :placeholder="$t('label.extra')"
+                />
               </a-form-item>
               <a-form-item name="forcemstoimportvmfiles" ref="forcemstoimportvmfiles" v-if="selectedVmwareVcenter">
                 <template #label>
@@ -529,7 +551,10 @@ export default {
           title: this.$t('label.rootdisk')
         }
       ],
-      selectedRootDiskSources: []
+      selectedRootDiskSources: [],
+      vmwareToKvmExtraParamsAllowed: false,
+      vmwareToKvmExtraParamsSelected: false,
+      vmwareToKvmExtraParams: ''
     }
   },
   beforeCreate () {
@@ -724,6 +749,7 @@ export default {
         migrateallowed: this.switches.migrateAllowed,
         forced: this.switches.forced,
         forcemstoimportvmfiles: this.switches.forceMsToImportVmFiles,
+        forceconverttopool: this.switches.forceConvertToPool,
         domainid: null,
         account: null
       })
@@ -749,6 +775,20 @@ export default {
       if (this.resource?.disk?.length > 1) {
         this.updateSelectedRootDisk()
       }
+      this.fetchVmwareToKVMExtraConfigsSetting()
+    },
+    fetchVmwareToKVMExtraConfigsSetting () {
+      const params = {
+        name: 'convert.vmware.instance.to.kvm.extra.params.allowed'
+      }
+      getAPI('listConfigurations', params).then(json => {
+        if (json.listconfigurationsresponse.configuration !== null) {
+          const config = json.listconfigurationsresponse.configuration[0]
+          if (config && config.name === params.name) {
+            this.vmwareToKvmExtraParamsAllowed = config.value
+          }
+        }
+      })
     },
     getMeta (obj, metaKeys) {
       var meta = []
@@ -1027,19 +1067,22 @@ export default {
       }
     },
     resetStorageOptionsForConversion () {
-      this.storageOptionsForConversion = [
-        {
-          id: 'secondary',
-          name: 'Secondary Storage'
-        }, {
-          id: 'primary',
-          name: 'Primary Storage'
-        }
-      ]
+      this.storageOptionsForConversion = this.switches.forceConvertToPool ? [] : [{
+        id: 'secondary',
+        name: 'Secondary Storage'
+      }]
+      this.storageOptionsForConversion.push({
+        id: 'primary',
+        name: 'Primary Storage'
+      })
     },
     onSelectRootDisk (val) {
       this.selectedRootDiskIndex = val
       this.updateSelectedRootDisk()
+    },
+    onForceConvertToPoolChange (val) {
+      this.switches.forceConvertToPool = val
+      this.resetStorageOptionsForConversion()
     },
     updateSelectedRootDisk () {
       var rootDisk = this.resource.disk[this.selectedRootDiskIndex]
@@ -1156,7 +1199,13 @@ export default {
           if (this.selectedStoragePoolForConversion) {
             params.convertinstancepoolid = this.selectedStoragePoolForConversion
           }
+          if (this.vmwareToKvmExtraParams) {
+            params.extraparams = this.vmwareToKvmExtraParams
+          }
           params.forcemstoimportvmfiles = values.forcemstoimportvmfiles
+          if (values.forceconverttopool) {
+            params.forceconverttopool = values.forceconverttopool
+          }
         }
         var keys = ['hostname', 'domainid', 'projectid', 'account', 'migrateallowed', 'forced', 'forcemstoimportvmfiles']
         if (this.templateType !== 'auto') {

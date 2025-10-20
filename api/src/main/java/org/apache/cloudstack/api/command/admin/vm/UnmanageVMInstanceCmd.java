@@ -27,6 +27,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -36,10 +37,12 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.UnmanageVMInstanceResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.vm.UnmanagedVMsManager;
+import org.apache.commons.lang3.BooleanUtils;
 
 import javax.inject.Inject;
 
@@ -65,6 +68,20 @@ public class UnmanageVMInstanceCmd extends BaseAsyncCmd {
             description = "The ID of the virtual machine to unmanage")
     private Long vmId;
 
+    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID,
+            entityType = HostResponse.class, required = false,
+            description = "ID of the host which will be used for unmanaging the Instance. " +
+                    "Applicable only for KVM hypervisor and stopped Instances. Domain XML will be stored on this host.",
+            since = "4.22.0")
+    private Long hostId;
+
+    @Parameter(name = ApiConstants.FORCED,
+            type = CommandType.BOOLEAN,
+            required = false,
+            description = "Force unmanaging Instance with config drive. Applicable only for KVM Hypervisor.",
+            since = "4.22.0")
+    private Boolean forced;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -83,6 +100,18 @@ public class UnmanageVMInstanceCmd extends BaseAsyncCmd {
         return "unmanaging VM. VM ID = " + vmId;
     }
 
+    public Long getHostId() {
+        return hostId;
+    }
+
+    public void setHostId(Long hostId) {
+        this.hostId = hostId;
+    }
+
+    public Boolean isForced() {
+        return BooleanUtils.isTrue(forced);
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -93,9 +122,10 @@ public class UnmanageVMInstanceCmd extends BaseAsyncCmd {
         UnmanageVMInstanceResponse response = new UnmanageVMInstanceResponse();
         try {
             CallContext.current().setEventDetails("VM ID = " + vmId);
-            boolean result = unmanagedVMsManager.unmanageVMInstance(vmId);
-            response.setSuccess(result);
-            if (result) {
+            Pair<Boolean, String> result = unmanagedVMsManager.unmanageVMInstance(vmId, hostId, isForced());
+            if (result.first()) {
+                response.setSuccess(true);
+                response.setHostId(result.second());
                 response.setDetails("VM unmanaged successfully");
             }
         } catch (Exception e) {
@@ -124,5 +154,4 @@ public class UnmanageVMInstanceCmd extends BaseAsyncCmd {
     public Long getApiResourceId() {
         return vmId;
     }
-
 }

@@ -52,6 +52,7 @@ import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.ldap.dao.LdapConfigurationDao;
 import org.apache.cloudstack.ldap.dao.LdapTrustMapDao;
 import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.domain.DomainVO;
@@ -240,7 +241,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
                 domainUuid = domain.getUuid();
             }
         }
-        return new LdapConfigurationResponse(configuration.getHostname(), configuration.getPort(), domainUuid);
+        return new LdapConfigurationResponse(configuration.getHostname(), configuration.getPort(), domainUuid, configuration.getUuid());
     }
 
     @Override
@@ -257,6 +258,19 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
 
     @Override
     public LdapConfigurationResponse deleteConfiguration(final LdapDeleteConfigurationCmd cmd) throws InvalidParameterValueException {
+        Long id = cmd.getId();
+        String hostname = cmd.getHostname();
+        if (id == null && StringUtils.isEmpty(hostname)) {
+            throw new InvalidParameterValueException("Either id or hostname must be specified");
+        }
+        if (id != null) {
+            final LdapConfigurationVO config = _ldapConfigurationDao.findById(cmd.getId());
+            if (config != null) {
+                _ldapConfigurationDao.remove(config.getId());
+                return createLdapConfigurationResponse(config);
+            }
+            throw new InvalidParameterValueException("Cannot find configuration with id " + id);
+        }
         return deleteConfigurationInternal(cmd.getHostname(), cmd.getPort(), cmd.getDomainId());
     }
 
@@ -377,7 +391,8 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
         final int port = cmd.getPort();
         final Long domainId = cmd.getDomainId();
         final boolean listAll = cmd.listAll();
-        final Pair<List<LdapConfigurationVO>, Integer> result = _ldapConfigurationDao.searchConfigurations(hostname, port, domainId, listAll);
+        final Long id = cmd.getId();
+        final Pair<List<LdapConfigurationVO>, Integer> result = _ldapConfigurationDao.searchConfigurations(id, hostname, port, domainId, listAll);
         return new Pair<List<? extends LdapConfigurationVO>, Integer>(result.first(), result.second());
     }
 

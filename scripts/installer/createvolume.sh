@@ -88,6 +88,8 @@ uncompress() {
          ;;
   ZIP)  unzip -p $1 | cat > $tmpfile
         ;;
+  XZ)   xz -d -c $1 > $tmpfile
+        ;;
   *)	printf "$1"
         return 0
 	;;

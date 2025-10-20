@@ -20,6 +20,8 @@ set -x
 PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
 CMDLINE=/var/cache/cloud/cmdline
 
+. /lib/lsb/init-functions
+
 log_it() {
   echo "$(date) $@" >> /var/log/cloud.log
   log_action_msg "$@"

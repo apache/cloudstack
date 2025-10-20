@@ -15,6 +15,12 @@
 -- specific language governing permissions and limitations
 -- under the License.
 
---;
--- Schema upgrade from 4.20.1.0 to 4.21.0.0
---;
+-- in cloud
+DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_DROP_UNIQUE_KEY`;
+
+CREATE PROCEDURE `cloud`.`IDEMPOTENT_DROP_UNIQUE_KEY` (
+    IN in_table_name VARCHAR(200),
+    IN in_index_name VARCHAR(200)
+)
+BEGIN
+    DECLARE CONTINUE HANDLER FOR 1091, 1025 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name, ' DROP KEY ', in_index_name); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;

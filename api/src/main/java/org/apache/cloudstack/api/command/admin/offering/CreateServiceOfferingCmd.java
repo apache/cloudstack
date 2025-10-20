@@ -190,7 +190,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.CACHE_MODE,
             type = CommandType.STRING,
             required = false,
-            description = "the cache mode to use for this disk offering. none, writeback or writethrough",
+            description = "the cache mode to use for this disk offering. none, writeback, writethrough or hypervisor default. If the hypervisor default cache mode is used on other hypervisors than KVM, it will fall back to none cache mode",
             since = "4.14")
     private String cacheMode;
 

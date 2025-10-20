@@ -87,8 +87,8 @@ export default {
   data () {
     return {
       columns: [
-        { title: this.$t('label.key'), dataIndex: 'key', key: 'key', width: '40%' },
-        { title: this.$t('label.value'), dataIndex: 'value', key: 'value', width: '40%' },
+        { title: this.$t('label.key'), dataIndex: 'key', key: 'key', width: '40%', ellipsis: true },
+        { title: this.$t('label.value'), dataIndex: 'value', key: 'value', width: '40%', ellipsis: true },
         { title: this.$t('label.actions'), key: 'actions', width: '20%' }
       ],
       newKey: '',
