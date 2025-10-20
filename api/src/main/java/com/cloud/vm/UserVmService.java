@@ -64,6 +64,7 @@ import com.cloud.storage.StoragePool;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.ExecutionException;
 
 public interface UserVmService {
@@ -507,16 +508,41 @@ public interface UserVmService {
 
     void collectVmNetworkStatistics (UserVm userVm);
 
-    UserVm importVM(final DataCenter zone, final Host host, final VirtualMachineTemplate template, final String instanceName, final String displayName, final Account owner, final String userData, final Account caller, final Boolean isDisplayVm, final String keyboard,
+    /**
+     * Import VM into CloudStack
+     * @param zone importing zone
+     * @param host importing host
+     * @param template template for the imported VM
+     * @param instanceNameInternal set to null to CloudStack to autogenerate from the next available VM ID on database
+     * @param displayName display name for the imported VM
+     * @param owner owner of the imported VM
+     * @param userData user data for the imported VM
+     * @param caller caller account
+     * @param isDisplayVm true to display the imported VM
+     * @param keyboard keyboard distribution for the imported VM
+     * @param accountId account ID
+     * @param userId user ID
+     * @param serviceOffering service offering for the imported VM
+     * @param sshPublicKey ssh key for the imported VM
+     * @param hostName the name for the imported VM
+     * @param hypervisorType hypervisor type for the imported VM
+     * @param customParameters details for the imported VM
+     * @param powerState power state of the imported VM
+     * @param networkNicMap network to nic mapping
+     * @return the imported VM
+     * @throws InsufficientCapacityException in case of errors
+     */
+    UserVm importVM(final DataCenter zone, final Host host, final VirtualMachineTemplate template, final String instanceNameInternal, final String displayName, final Account owner, final String userData, final Account caller, final Boolean isDisplayVm, final String keyboard,
                     final long accountId, final long userId, final ServiceOffering serviceOffering, final String sshPublicKey,
                     final String hostName, final HypervisorType hypervisorType, final Map<String, String> customParameters,
                     final VirtualMachine.PowerState powerState, final LinkedHashMap<String, List<NicProfile>> networkNicMap) throws InsufficientCapacityException;
 
     /**
      * Unmanage a guest VM from CloudStack
-     * @return true if the VM is successfully unmanaged, false if not.
+     *
+     * @return (true if successful, false if not, hostUuid) if the VM is successfully unmanaged.
      */
-    boolean unmanageUserVM(Long vmId);
+    Pair<Boolean, String> unmanageUserVM(Long vmId, Long targetHostId);
 
     UserVm allocateVMFromBackup(CreateVMFromBackupCmd cmd) throws InsufficientCapacityException, ResourceAllocationException, ResourceUnavailableException;
 

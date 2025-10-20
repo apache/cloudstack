@@ -57,7 +57,7 @@ version="1.0">
                         	<div class="apiannouncement_contentarea">
                                 <h3>Using the CloudStack API</h3>
                                 <p>For information about how the APIs work, and tips on how to use them, see the
-                                    <a href="http://docs.cloudstack.apache.org/en/latest/dev.html">Developer's Guide</a>.</p>
+                                    <a href="http://docs.cloudstack.apache.org/en/latest/developersguide">Developer's Guide</a>.</p>
        					 	</div>
        					 </div>
 

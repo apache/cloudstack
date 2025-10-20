@@ -42,6 +42,11 @@
               {{ getTemplateDisplayName() }}
             </router-link>
           </div>
+          <div v-else-if="item === 'ostypeid'">
+            <router-link :to="{ path: '/guestos' + '/' + backupMetadata[item] }">
+              {{ backupMetadata.osname }}
+            </router-link>
+          </div>
           <div v-else-if="item === 'serviceofferingid'">
             <router-link :to="{ path: '/computeoffering/' + backupMetadata[item] }">
               {{ getServiceOfferingDisplayName() }}
@@ -84,15 +89,14 @@ export default {
       if (!this.backupMetadata || Object.keys(this.backupMetadata).length === 0) {
         return []
       }
-      const fieldOrder = []
-      fieldOrder.push('templateid')
-      if (this.backupMetadata.isiso === 'true') {
-        fieldOrder.push('hypervisor')
-      }
-      fieldOrder.push('serviceofferingid')
-      fieldOrder.push('nics')
-      fieldOrder.push('vmsettings')
-
+      const fieldOrder = [
+        'templateid',
+        'ostypeid',
+        'hypervisor',
+        'serviceofferingid',
+        'nics',
+        'vmsettings'
+      ]
       return fieldOrder.filter(field => this.backupMetadata[field] !== undefined)
     },
     getNicEntities () {

@@ -68,7 +68,7 @@ public class UsageBackupDaoImpl extends GenericDaoBase<UsageBackupVO, Long> impl
                     pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), eventDate));
                     pstmt.setLong(2, accountId);
                     pstmt.setLong(3, vmId);
-                    pstmt.setLong(3, backupOfferingId);
+                    pstmt.setLong(4, backupOfferingId);
                     pstmt.executeUpdate();
                 }
             } catch (SQLException e) {

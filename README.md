@@ -49,7 +49,7 @@ OVM and LXC containers.
 Users can manage their cloud with an easy to use Web interface, command line
 tools, and/or a full-featured query based API.
 
-For more information on Apache CloudStack, please visit the [website](http://cloudstack.apache.org)
+For more information on Apache CloudStack, please visit the [website](https://cloudstack.apache.org)
 
 ## Who Uses CloudStack?
 
@@ -106,10 +106,10 @@ via GitHub pull requests.
 ## Getting Involved and Contributing
 
 Interested in helping out with Apache CloudStack? Great! We welcome
-participation from anybody willing to work [The Apache Way](http://theapacheway.com) and make a
+participation from anybody willing to work [The Apache Way](https://theapacheway.com) and make a
 contribution. Note that you do not have to be a developer in order to contribute
 to Apache CloudStack. We need folks to help with documentation, translation,
-promotion etc. See our contribution [page](http://cloudstack.apache.org/contribute.html).
+promotion etc. See our contribution [page](https://cloudstack.apache.org/contribute.html).
 
 If you are a frequent contributors, you can request to be added as collaborators
 (see https://cwiki.apache.org/confluence/display/INFRA/Git+-+.asf.yaml+features#Git.asf.yamlfeatures-AssigningexternalcollaboratorswiththetriageroleonGitHub)
@@ -120,7 +120,7 @@ You may do so by sharing your GitHub users ID or raise a GitHub issue.
 
 If you're interested in learning more or participating in the Apache CloudStack
 project, the mailing lists are the best way to do that. While the project has
-several communications channels, the [mailing lists](http://cloudstack.apache.org/mailing-lists.html) are the most active and the
+several communications channels, the [mailing lists](https://cloudstack.apache.org/mailing-lists.html) are the most active and the
 official channels for making decisions about the project itself.
 
 Mailing lists:
@@ -140,7 +140,7 @@ released version of CloudStack, please report it to `security@apache.org` with
 details about the vulnerability, how it might be exploited, and any additional
 information that might be useful.
 
-For more details, please visit our security [page](http://cloudstack.apache.org/security.html).
+For more details, please visit our security [page](https://cloudstack.apache.org/security.html).
 
 ## License
 
