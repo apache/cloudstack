@@ -39,7 +39,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.CreateVMSnapshotAnswer;
 import com.cloud.agent.api.CreateVMSnapshotCommand;
@@ -75,7 +74,6 @@ import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 
 public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
-    private static final Logger s_logger = Logger.getLogger(StorageVMSnapshotStrategy.class);
     @Inject
     VolumeApiService volumeService;
     @Inject
@@ -96,8 +94,6 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
     SnapshotApiService snapshotApiService;
     @Inject
     VMSnapshotDetailsDao vmSnapshotDetailsDao;
-
-    private static final String STORAGE_SNAPSHOT = "kvmStorageSnapshot";
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -148,7 +144,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                 vmSnapshotVO.setParent(current.getId());
             }
             CreateVMSnapshotCommand ccmd = new CreateVMSnapshotCommand(userVm.getInstanceName(), userVm.getUuid(), target, volumeTOs,  guestOS.getDisplayName());
-            s_logger.info("Creating VM snapshot for KVM hypervisor without memory");
+            logger.info("Creating VM snapshot for KVM hypervisor without memory");
 
             List<VolumeInfo> vinfos = new ArrayList<>();
             for (VolumeObjectTO volumeObjectTO : volumeTOs) {
@@ -166,7 +162,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
             thawCmd = new FreezeThawVMCommand(userVm.getInstanceName());
             thawCmd.setOption(FreezeThawVMCommand.THAW);
             if (freezeAnswer != null && freezeAnswer.getResult()) {
-                s_logger.info("The virtual machine is frozen");
+                logger.info("The virtual machine is frozen");
                 for (VolumeInfo vol : vinfos) {
                     long startSnapshtot = System.nanoTime();
                     SnapshotInfo snapInfo = createDiskSnapshot(vmSnapshot, forRollback, vol);
@@ -175,15 +171,15 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                         thawAnswer = (FreezeThawVMAnswer) agentMgr.send(hostId, thawCmd);
                         throw new CloudRuntimeException("Could not take snapshot for volume with id=" + vol.getId());
                     }
-                    s_logger.info(String.format("Snapshot with id=%s, took  %s milliseconds", snapInfo.getId(),
+                    logger.info(String.format("Snapshot with id=%s, took  %s milliseconds", snapInfo.getId(),
                             TimeUnit.MILLISECONDS.convert(elapsedTime(startSnapshtot), TimeUnit.NANOSECONDS)));
                 }
                 answer = new CreateVMSnapshotAnswer(ccmd, true, "");
                 answer.setVolumeTOs(volumeTOs);
                 thawAnswer = (FreezeThawVMAnswer) agentMgr.send(hostId, thawCmd);
                 if (thawAnswer != null && thawAnswer.getResult()) {
-                    s_logger.info(String.format(
-                            "Virtual machne is thawed. The freeze of virtual machine took %s milliseconds.",
+                    logger.info(String.format(
+                            "Virtual machine is thawed. The freeze of virtual machine took %s milliseconds.",
                             TimeUnit.MILLISECONDS.convert(elapsedTime(startFreeze), TimeUnit.NANOSECONDS)));
                 }
             } else {
@@ -191,7 +187,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
             }
             if (answer != null && answer.getResult()) {
                 processAnswer(vmSnapshotVO, userVm, answer, null);
-                s_logger.debug("Create vm snapshot " + vmSnapshot.getName() + " succeeded for vm: " + userVm.getInstanceName());
+                logger.debug("Create vm snapshot " + vmSnapshot.getName() + " succeeded for vm: " + userVm.getInstanceName());
                 long new_chain_size = 0;
                 for (VolumeObjectTO volumeTo : answer.getVolumeTOs()) {
                     publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_CREATE, vmSnapshot, userVm, volumeTo);
@@ -202,27 +198,27 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                 return vmSnapshot;
             } else {
                 String errMsg = "Creating VM snapshot: " + vmSnapshot.getName() + " failed";
-                s_logger.error(errMsg);
+                logger.error(errMsg);
                 throw new CloudRuntimeException(errMsg);
             }
         } catch (OperationTimedoutException e) {
-            s_logger.debug("Creating VM snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
+            logger.debug("Creating VM snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
             throw new CloudRuntimeException(
                     "Creating VM snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
         } catch (AgentUnavailableException e) {
-            s_logger.debug("Creating VM snapshot: " + vmSnapshot.getName() + " failed", e);
+            logger.debug("Creating VM snapshot: " + vmSnapshot.getName() + " failed", e);
             throw new CloudRuntimeException(
                     "Creating VM snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
         } catch (CloudRuntimeException e) {
             throw new CloudRuntimeException(e.getMessage());
         } finally {
             if (thawAnswer == null && freezeAnswer != null) {
-                s_logger.info(String.format("Freeze of virtual machine took %s milliseconds.", TimeUnit.MILLISECONDS
+                logger.info(String.format("Freeze of virtual machine took %s milliseconds.", TimeUnit.MILLISECONDS
                                                 .convert(elapsedTime(startFreeze), TimeUnit.NANOSECONDS)));
                 try {
                     thawAnswer = (FreezeThawVMAnswer) agentMgr.send(hostId, thawCmd);
                 } catch (AgentUnavailableException | OperationTimedoutException e) {
-                    s_logger.debug("Could not unfreeze the VM due to " + e);
+                    logger.debug("Could not unfreeze the VM due to " + e);
                 }
             }
             if (!result) {
@@ -238,7 +234,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                     }
                     vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
                 } catch (NoTransitionException e1) {
-                    s_logger.error("Cannot set vm snapshot state due to: " + e1.getMessage());
+                    logger.error("Cannot set vm snapshot state due to: " + e1.getMessage());
                 }
             }
         }
@@ -251,7 +247,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         try {
             vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.ExpungeRequested);
         } catch (NoTransitionException e) {
-            s_logger.debug("Failed to change vm snapshot state with event ExpungeRequested");
+            logger.debug("Failed to change vm snapshot state with event ExpungeRequested");
             throw new CloudRuntimeException(
                     "Failed to change vm snapshot state with event ExpungeRequested: " + e.getMessage());
         }
@@ -289,7 +285,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                 }
             }
             String errMsg = String.format("Delete of VM snapshot [%s] of VM [%s] failed due to [%s]", vmSnapshot.getName(), userVm.getUserId(), err);
-            s_logger.error(errMsg, err);
+            logger.error(errMsg, err);
             throw new CloudRuntimeException(errMsg, err);
         }
     }
@@ -325,14 +321,14 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
             processAnswer(vmSnapshotVO, userVm, answer, null);
             result = true;
         } catch (CloudRuntimeException e) {
-            s_logger.error(e);
+            logger.error(e);
             throw new CloudRuntimeException(e);
         } finally {
             if (!result) {
                 try {
                     vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
                 } catch (NoTransitionException e1) {
-                    s_logger.error("Cannot set vm snapshot state due to: " + e1.getMessage());
+                    logger.error("Cannot set vm snapshot state due to: " + e1.getMessage());
                 }
             }
         }
@@ -358,12 +354,25 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
 
     @Override
     public StrategyPriority canHandle(Long vmId, Long rootPoolId, boolean snapshotMemory) {
-        if (SnapshotManager.VmStorageSnapshotKvm.value() && !snapshotMemory) {
-            UserVmVO vm = userVmDao.findById(vmId);
-            if (vm.getState() == VirtualMachine.State.Running) {
-                return StrategyPriority.HYPERVISOR;
-            }
+        UserVmVO vm = userVmDao.findById(vmId);
+        String cantHandleLog = String.format("Storage VM snapshot strategy cannot handle VM snapshot for [%s]", vm);
+
+        if (CollectionUtils.isNotEmpty(vmSnapshotDao.findByVmAndByType(vmId, VMSnapshot.Type.DiskAndMemory))) {
+            logger.debug("{} as it has VM snapshots with disk and memory.", cantHandleLog);
+            return StrategyPriority.CANT_HANDLE;
         }
+
+        if (!VirtualMachine.State.Running.equals(vm.getState())) {
+            logger.debug("{} as the VM is not running.", cantHandleLog);
+            return StrategyPriority.CANT_HANDLE;
+        }
+
+        if (SnapshotManager.VmStorageSnapshotKvm.value() && !snapshotMemory) {
+            return StrategyPriority.HYPERVISOR;
+        }
+
+        logger.debug("{} as {}.", () -> cantHandleLog, () -> snapshotMemory ? "A VM snapshot with memory was requested" :
+                String.format("%s is false", SnapshotManager.VmStorageSnapshotKvm.key()));
         return StrategyPriority.CANT_HANDLE;
     }
 
@@ -382,7 +391,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         Long snapshotID = snapshotInfo.getId();
         SnapshotVO snapshot = snapshotDao.findById(snapshotID);
         deleteSnapshotByStrategy(snapshot);
-        s_logger.debug("Rollback is executed: deleting snapshot with id:" + snapshotID);
+        logger.debug("Rollback is executed: deleting snapshot with id:" + snapshotID);
     }
 
     protected void deleteSnapshotByStrategy(SnapshotVO snapshot) {
@@ -429,9 +438,14 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         String snapshotName = vmSnapshot.getId() + "_" + vol.getUuid();
         SnapshotVO snapshot = new SnapshotVO(vol.getDataCenterId(), vol.getAccountId(), vol.getDomainId(), vol.getId(), vol.getDiskOfferingId(),
                               snapshotName, (short) Snapshot.Type.GROUP.ordinal(),  Snapshot.Type.GROUP.name(),  vol.getSize(), vol.getMinIops(),  vol.getMaxIops(), Hypervisor.HypervisorType.KVM, null);
+        VMSnapshotOptions options = ((VMSnapshotVO) vmSnapshot).getOptions();
+        boolean quiescevm = false;
+        if (options != null) {
+            quiescevm = options.needQuiesceVM();
+        }
 
         snapshot = snapshotDao.persist(snapshot);
-        vol.addPayload(setPayload(vol, snapshot));
+        vol.addPayload(setPayload(vol, snapshot, quiescevm));
         SnapshotInfo snapshotInfo = snapshotDataFactory.getSnapshot(snapshot.getId(), vol.getDataStore());
         snapshotInfo.addPayload(vol.getpayload());
         SnapshotStrategy snapshotStrategy = storageStrategyFactory.getSnapshotStrategy(snapshotInfo, SnapshotOperation.TAKE);
@@ -449,14 +463,14 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         return snapshotInfo;
     }
 
-    protected CreateSnapshotPayload setPayload(VolumeInfo vol, SnapshotVO snapshotCreate) {
+    protected CreateSnapshotPayload setPayload(VolumeInfo vol, SnapshotVO snapshotCreate, boolean quiescevm) {
         CreateSnapshotPayload payload = new CreateSnapshotPayload();
         payload.setSnapshotId(snapshotCreate.getId());
         payload.setSnapshotPolicyId(SnapshotVO.MANUAL_POLICY_ID);
         payload.setLocationType(snapshotCreate.getLocationType());
         payload.setAccount(accountService.getAccount(vol.getAccountId()));
         payload.setAsyncBackup(false);
-        payload.setQuiescevm(false);
+        payload.setQuiescevm(quiescevm);
         return payload;
     }
 }

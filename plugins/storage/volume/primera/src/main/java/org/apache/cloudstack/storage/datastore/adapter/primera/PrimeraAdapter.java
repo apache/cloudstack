@@ -24,7 +24,6 @@ import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.net.ssl.HostnameVerifier;
@@ -54,15 +53,16 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContextBuilder;
-import org.apache.log4j.Logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class PrimeraAdapter implements ProviderAdapter {
 
-    static final Logger logger = Logger.getLogger(PrimeraAdapter.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public static final String HOSTSET = "hostset";
     public static final String CPG = "cpg";
@@ -73,7 +73,7 @@ public class PrimeraAdapter implements ProviderAdapter {
     public static final String TASK_WAIT_TIMEOUT_MS = "taskWaitTimeoutMs";
 
     private static final long KEY_TTL_DEFAULT = (1000 * 60 * 14);
-    private static final long CONNECT_TIMEOUT_MS_DEFAULT = 600000;
+    private static final long CONNECT_TIMEOUT_MS_DEFAULT = 60 * 1000;
     private static final long TASK_WAIT_TIMEOUT_MS_DEFAULT = 10 * 60 * 1000;
     public static final long BYTES_IN_MiB = 1048576;
 
@@ -106,18 +106,11 @@ public class PrimeraAdapter implements ProviderAdapter {
         this.refreshSession(true);
     }
 
-    /**
-     * Validate that the hostgroup and pod from the details data exists.  Each
-     * configuration object/connection needs a distinct set of these 2 things.
-     */
     @Override
     public void validate() {
         login();
-        if (this.getHostset(hostset) == null) {
-            throw new RuntimeException("Hostgroup [" + hostset + "] not found in FlashArray at [" + url
-                    + "], please validate configuration");
-        }
-
+        // check if hostgroup and pod from details really exist - we will
+        // require a distinct configuration object/connection object for each type
         if (this.getCpg(cpg) == null) {
             throw new RuntimeException(
                     "Pod [" + cpg + "] not found in FlashArray at [" + url + "], please validate configuration");
@@ -126,7 +119,54 @@ public class PrimeraAdapter implements ProviderAdapter {
 
     @Override
     public void disconnect() {
+        logger.info("PrimeraAdapter:disconnect(): closing session");
+        try {
+            //Delete session safely without triggering refreshSession
+            if (key != null && _client != null) {
+                logout();
+            }
+            _client.close();
+        } catch (IOException e) {
+            logger.warn("PrimeraAdapter:refreshSession(): Error closing client connection", e);
+        } finally {
+            _client = null;
+            keyExpiration = -1;
+        }
         return;
+    }
+    /**
+     * Delete session directly without going through refreshSession to avoid infinite recursion
+     */
+    private void logout() {
+        CloseableHttpResponse response = null;
+        try {
+            logger.debug("PrimeraAdapter:logout(): Delete session directly");
+            HttpDelete request = new HttpDelete(url + "/credentials/" + key);
+            request.addHeader("Content-Type", "application/json");
+            request.addHeader("Accept", "application/json");
+            request.addHeader("X-HP3PAR-WSAPI-SessionKey", key);
+
+            response = (CloseableHttpResponse) _client.execute(request);
+            final int statusCode = response.getStatusLine().getStatusCode();
+
+            if (statusCode == 200 || statusCode == 404) {
+                logger.debug("PrimeraAdapter:logout(): Session deleted successfully or was already expired");
+            } else if (statusCode == 401 || statusCode == 403) {
+                logger.warn("PrimeraAdapter:logout(): Session already invalid or expired during deletion");
+            } else {
+                logger.warn("PrimeraAdapter:logout(): Unexpected response when deleting session: {}", statusCode);
+            }
+        } catch (IOException e) {
+            logger.warn("PrimeraAdapter:logout(): Error deleting session: {}", e.getMessage());
+        } finally {
+            if (response != null) {
+                try {
+                    response.close();
+                } catch (IOException e) {
+                    logger.debug("PrimeraAdapter:logout(): Error closing response from session deletion", e);
+                }
+            }
+        }
     }
 
     @Override
@@ -144,16 +184,18 @@ public class PrimeraAdapter implements ProviderAdapter {
         }
 
         // determine volume type based on offering
-        // THIN: tpvv=true, reduce=false
-        // SPARSE: tpvv=true, reduce=true
-        // THICK: tpvv=false, tpZeroFill=true (not supported)
+        // tpvv -- thin provisioned virtual volume (no deduplication)
+        // reduce -- thin provisioned virtual volume (with duplication and compression, also known as DECO)
+        // these are the only choices with newer Primera devices
+        // we will use THIN for the deduplicated/compressed type and SPARSE for thin-only without dedup/compress
+        // note: DECO/reduce type must be at least 16GB in size
         if (diskOffering != null) {
             if (diskOffering.getType() == ProvisioningType.THIN) {
-                request.setTpvv(true);
-                request.setReduce(false);
-            } else if (diskOffering.getType() == ProvisioningType.SPARSE) {
                 request.setTpvv(false);
                 request.setReduce(true);
+            } else if (diskOffering.getType() == ProvisioningType.SPARSE) {
+                request.setTpvv(true);
+                request.setReduce(false);
             } else if (diskOffering.getType() == ProvisioningType.FAT) {
                 throw new RuntimeException("This storage provider does not support FAT provisioned volumes");
             }
@@ -164,8 +206,16 @@ public class PrimeraAdapter implements ProviderAdapter {
             }
         } else {
             // default to deduplicated volume
-            request.setReduce(true);
             request.setTpvv(false);
+            request.setReduce(true);
+        }
+
+        if (request.getReduce() == true) {
+            // check if sizeMiB is less than 16GB adjust up to 16GB.  The AdaptiveDatastoreDriver will automatically
+            // update this on the cloudstack side to match
+            if (request.getSizeMiB() < 16 * 1024) {
+                request.setSizeMiB(16 * 1024);
+            }
         }
 
         request.setComment(ProviderVolumeNamer.generateObjectComment(context, dataIn));
@@ -176,10 +226,18 @@ public class PrimeraAdapter implements ProviderAdapter {
     }
 
     @Override
-    public String attach(ProviderAdapterContext context, ProviderAdapterDataObject dataIn) {
+    public String attach(ProviderAdapterContext context, ProviderAdapterDataObject dataIn, String hostname) {
         assert dataIn.getExternalName() != null : "External name not provided internally on volume attach";
         PrimeraHostset.PrimeraHostsetVLUNRequest request = new PrimeraHostset.PrimeraHostsetVLUNRequest();
-        request.setHostname("set:" + hostset);
+        PrimeraHost host = getHost(hostname);
+        if (host == null) {
+            throw new RuntimeException("Unable to find host " + hostname + " on storage provider");
+        }
+
+        // check if we already have a vlun for requested host
+        Integer vlun = hasVlun(hostname, hostname);
+        if (vlun == null) {
+        request.setHostname(host.getName());
         request.setVolumeName(dataIn.getExternalName());
         request.setAutoLun(true);
         // auto-lun returned here: Location: /api/v1/vluns/test_vv02,252,mysystem,2:2:4
@@ -191,15 +249,59 @@ public class PrimeraAdapter implements ProviderAdapter {
         if (toks.length <2) {
             throw new RuntimeException("Attach volume failed with invalid location response to vlun add command on storage provider.  Provided location: " + location);
         }
-        return toks[1];
+            try {
+                vlun = Integer.parseInt(toks[1]);
+            } catch (NumberFormatException e) {
+                throw new RuntimeException("VLUN attach request succeeded but the VLUN value is not a valid number: " + toks[1]);
+            }
+        }
+        return vlun.toString();
+    }
+
+    /**
+     * This detaches ALL vlun's for the provided volume name IF they are associated to this hostset
+     * @param context
+     * @param request
+     */
+    public void detach(ProviderAdapterContext context, ProviderAdapterDataObject request) {
+        detach(context, request, null);
     }
 
     @Override
-    public void detach(ProviderAdapterContext context, ProviderAdapterDataObject request) {
+    public void detach(ProviderAdapterContext context, ProviderAdapterDataObject request, String hostname) {
         // we expect to only be attaching one hostset to the vluns, so on detach we'll
         // remove ALL vluns we find.
         assert request.getExternalName() != null : "External name not provided internally on volume detach";
-        removeAllVluns(request.getExternalName());
+
+        PrimeraVlunList list = getVluns(request.getExternalName());
+        if (list != null && list.getMembers().size() > 0) {
+            list.getMembers().forEach(vlun -> {
+                // remove any hostset from old code if configured
+                if (hostset != null && vlun.getHostname() != null && vlun.getHostname().equals("set:" + hostset)) {
+                    removeVlun(request.getExternalName(), vlun.getLun(), vlun.getHostname());
+                }
+
+                if (hostname != null) {
+                    if (vlun.getHostname().equals(hostname) || vlun.getHostname().equals(hostname.split("\\.")[0])) {
+                        removeVlun(request.getExternalName(), vlun.getLun(), vlun.getHostname());
+                    }
+                }
+            });
+        }
+    }
+
+    private Integer hasVlun(String externalName, String hostname) {
+        PrimeraVlunList list = getVluns(externalName);
+        if (list != null && list.getMembers().size() > 0) {
+            for (PrimeraVlun vlun: list.getMembers()) {
+                if (hostname != null) {
+                    if (vlun.getHostname().equals(hostname) || vlun.getHostname().equals(hostname.split("\\.")[0])) {
+                        return vlun.getLun();
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     public void removeVlun(String name, Integer lunid, String hostString) {
@@ -208,20 +310,7 @@ public class PrimeraAdapter implements ProviderAdapter {
         DELETE("/vluns/" + name + "," + lunid + "," + hostString);
     }
 
-    /**
-     * Removes all vluns - this should only be done when you are sure the volume is no longer in use
-     * @param name
-     */
-    public void removeAllVluns(String name) {
-        PrimeraVlunList list = getVolumeHostsets(name);
-        if (list != null && list.getMembers() != null) {
-            for (PrimeraVlun vlun: list.getMembers()) {
-                removeVlun(vlun.getVolumeName(), vlun.getLun(), vlun.getHostname());
-            }
-        }
-    }
-
-    public PrimeraVlunList getVolumeHostsets(String name) {
+    public PrimeraVlunList getVluns(String name) {
         String query = "%22volumeName%20EQ%20" + name + "%22";
         return GET("/vluns?query=" + query, new TypeReference<PrimeraVlunList>() {});
     }
@@ -231,21 +320,28 @@ public class PrimeraAdapter implements ProviderAdapter {
         assert request.getExternalName() != null : "External name not provided internally on volume delete";
 
         // first remove vluns (take volumes from vluns) from hostset
-        removeAllVluns(request.getExternalName());
+        detach(context, request);
         DELETE("/volumes/" + request.getExternalName());
     }
 
     @Override
     public ProviderVolume copy(ProviderAdapterContext context, ProviderAdapterDataObject sourceVolumeInfo,
-            ProviderAdapterDataObject targetVolumeInfo) {
+            ProviderAdapterDataObject targetVolumeInfo, Long newSize) {
+        // Log the start of the copy operation with source volume details
+        logger.debug("PrimeraAdapter: Starting volume copy operation - source volume: '{}', target volume: '{}', requested new size: {} bytes ({} MiB)",
+                sourceVolumeInfo.getExternalName(), targetVolumeInfo.getName(), newSize, newSize / PrimeraAdapter.BYTES_IN_MiB);
+
+        // Flag to determine copy method: online copy (direct clone) vs offline copy (with resize)
+        boolean onlineCopy = true;
         PrimeraVolumeCopyRequest request = new PrimeraVolumeCopyRequest();
         PrimeraVolumeCopyRequestParameters parms = new PrimeraVolumeCopyRequestParameters();
 
         assert sourceVolumeInfo.getExternalName() != null: "External provider name not provided on copy request to Primera volume provider";
 
-        // if we have no external name, treat it as a new volume
+        // Generate external name for target volume if not already set
         if (targetVolumeInfo.getExternalName() == null) {
             targetVolumeInfo.setExternalName(ProviderVolumeNamer.generateObjectName(context, targetVolumeInfo));
+            logger.debug("PrimeraAdapter: Generated external name '{}' for target volume", targetVolumeInfo.getExternalName());
         }
 
         ProviderVolume sourceVolume = this.getVolume(context, sourceVolumeInfo);
@@ -253,22 +349,71 @@ public class PrimeraAdapter implements ProviderAdapter {
             throw new RuntimeException("Source volume " + sourceVolumeInfo.getExternalUuid() + " with provider name " + sourceVolumeInfo.getExternalName() + " not found on storage provider");
         }
 
+        // Determine copy method based on size difference
+        // Online copy: Direct clone without size change (faster, immediate)
+        // Offline copy: Copy with potential resize (slower, requires task completion wait)
+        Long sourceSize = sourceVolume.getAllocatedSizeInBytes();
+        if (newSize == null || sourceSize == null || !newSize.equals(sourceSize)) {
+            logger.debug("PrimeraAdapter: Volume size change detected (source: {} bytes, target: {} bytes) - using offline copy method",
+                    sourceSize, newSize);
+            onlineCopy = false;
+        } else {
+            logger.debug("PrimeraAdapter: No size change required (both {} bytes) - using online copy method for faster cloning", newSize);
+        }
+
+        // Check if target volume already exists on the storage provider
         ProviderVolume targetVolume = this.getVolume(context, targetVolumeInfo);
         if (targetVolume == null) {
-            this.create(context, targetVolumeInfo, null, sourceVolume.getAllocatedSizeInBytes());
+            if (!onlineCopy) {
+                // For offline copy, pre-create the target volume with the desired size
+                logger.debug("PrimeraAdapter: Offline copy mode - pre-creating target volume '{}' with size {} bytes",
+                        targetVolumeInfo.getName(), sourceVolume.getAllocatedSizeInBytes());
+                this.create(context, targetVolumeInfo, null, sourceVolume.getAllocatedSizeInBytes());
+            } else {
+                // For online copy, the target volume will be created automatically during the clone operation
+                logger.debug("PrimeraAdapter: Online copy mode - target volume '{}' will be created automatically during clone operation",
+                        targetVolumeInfo.getName());
+            }
+        } else {
+            logger.warn("PrimeraAdapter: Target volume '{}' already exists on storage provider - proceeding with copy operation",
+                    targetVolumeInfo.getExternalName());
         }
 
         parms.setDestVolume(targetVolumeInfo.getExternalName());
-        parms.setOnline(false);
+        if (onlineCopy) {
+            // Online copy configuration: immediate clone with deduplication and compression
+            parms.setOnline(true);
+            parms.setDestCPG(cpg);
+            parms.setTpvv(false);
+            parms.setReduce(true);
+            logger.debug("PrimeraAdapter: Configuring online copy - destination CPG: '{}', deduplication enabled, thin provisioning disabled", cpg);
+        } else {
+            // Offline copy configuration: background task with high priority
+            parms.setOnline(false);
+            parms.setPriority(1); // Set high priority for faster completion
+            logger.debug("PrimeraAdapter: Configuring offline copy with high priority for target volume '{}'", targetVolumeInfo.getName());
+        }
+
+        // Set request parameters and initiate the copy operation
         request.setParameters(parms);
 
         PrimeraTaskReference taskref = POST("/volumes/" + sourceVolumeInfo.getExternalName(), request, new TypeReference<PrimeraTaskReference>() {});
         if (taskref == null) {
+            logger.error("PrimeraAdapter: Failed to initiate copy operation - no task reference returned from storage provider");
             throw new RuntimeException("Unable to retrieve task used to copy to newly created volume");
         }
 
-        waitForTaskToComplete(taskref.getTaskid(), "copy volume " + sourceVolumeInfo.getExternalName() + " to " +
-            targetVolumeInfo.getExternalName(), taskWaitTimeoutMs);
+        // Handle task completion based on copy method
+        if (!onlineCopy) {
+            // Offline copy requires waiting for task completion
+            logger.debug("PrimeraAdapter: Offline copy initiated - waiting for task completion (TaskID: {})", taskref.getTaskid());
+            waitForTaskToComplete(taskref.getTaskid(), "copy volume " + sourceVolumeInfo.getExternalName() + " to " +
+                targetVolumeInfo.getExternalName(), taskWaitTimeoutMs);
+            logger.debug("PrimeraAdapter: Offline copy operation completed successfully");
+        } else {
+            // Online copy completes immediately
+            logger.debug("PrimeraAdapter: Online copy operation completed successfully (TaskID: {})", taskref.getTaskid());
+        }
 
         return this.getVolume(context, targetVolumeInfo);
     }
@@ -420,6 +565,7 @@ public class PrimeraAdapter implements ProviderAdapter {
         if (cpgobj == null || cpgobj.getTotalSpaceMiB() == 0) {
             return null;
         }
+
         Long capacityBytes = 0L;
         if (cpgobj.getsDGrowth() != null) {
             capacityBytes = cpgobj.getsDGrowth().getLimitMiB() * PrimeraAdapter.BYTES_IN_MiB;
@@ -453,39 +599,25 @@ public class PrimeraAdapter implements ProviderAdapter {
 
     @Override
     public boolean canAccessHost(ProviderAdapterContext context, String hostname) {
-        PrimeraHostset hostset = getHostset(this.hostset);
-
-        List<String> members = hostset.getSetmembers();
-
-        // check for fqdn and shortname combinations.  this assumes there is at least a shortname match in both the storage array and cloudstack
-        // hostname configuration
-        String shortname;
-        if (hostname.indexOf('.') > 0) {
-            shortname = hostname.substring(0, (hostname.indexOf('.')));
-        } else {
-            shortname = hostname;
-        }
-        for (String member: members) {
-            // exact match (short or long names)
-            if (member.equals(hostname)) {
-                return true;
-            }
-
-            // primera has short name and cloudstack had long name
-            if (member.equals(shortname)) {
-                return true;
-            }
-
-            // member has long name but cloudstack had shortname
-            int index = member.indexOf(".");
-            if (index > 0) {
-                if (member.substring(0, (member.indexOf('.'))).equals(shortname)) {
-                    return true;
-                }
-            }
+        // check that the array has the host configured
+        PrimeraHost host = this.getHost(hostname);
+        if (host != null) {
+            // if hostset is configured we'll additionally check if the host is in it (legacy/original behavior)
+            return true;
         }
 
         return false;
+    }
+
+    private PrimeraHost getHost(String name) {
+        PrimeraHost host = GET("/hosts/" + name, new TypeReference<PrimeraHost>() {    });
+        if (host == null) {
+            if (name.indexOf('.') > 0) {
+                host = this.getHost(name.substring(0, (name.indexOf('.'))));
+            }
+        }
+        return host;
+
     }
 
     private PrimeraCpg getCpg(String name) {
@@ -493,33 +625,33 @@ public class PrimeraAdapter implements ProviderAdapter {
         });
     }
 
-    private PrimeraHostset getHostset(String name) {
-        return GET("/hostsets/" + name, new TypeReference<PrimeraHostset>() {
-        });
-    }
-
-    private String getSessionKey() {
-        refreshSession(false);
-        return key;
-    }
-
-    private synchronized void refreshSession(boolean force) {
+    private synchronized String refreshSession(boolean force) {
         try {
-            if (force || keyExpiration < System.currentTimeMillis()) {
+            if (force || keyExpiration < (System.currentTimeMillis()-15000)) {
                 // close client to force connection reset on appliance -- not doing this can result in NotAuthorized error...guessing
-                _client.close();;
-                _client = null;
+                disconnect();
                 login();
-                keyExpiration = System.currentTimeMillis() + keyTtl;
+                logger.debug("PrimeraAdapter:refreshSession(): session created or refreshed with key=" + key + ", expiration=" + keyExpiration);
+            } else {
+                if (logger.isTraceEnabled()) {
+                    logger.trace("PrimeraAdapter:refreshSession(): using existing session key=" + key + ", expiration=" + keyExpiration);
+                }
             }
         } catch (Exception e) {
             // retry frequently but not every request to avoid DDOS on storage API
             logger.warn("Failed to refresh Primera API key for " + username + "@" + url + ", will retry in 5 seconds", e);
             keyExpiration = System.currentTimeMillis() + (5*1000);
         }
+        return key;
     }
+    /**
+     * Login to the array and get an access token
+     */
+    private void login() {
+        username = connectionDetails.get(ProviderAdapter.API_USERNAME_KEY);
+        password = connectionDetails.get(ProviderAdapter.API_PASSWORD_KEY);
+        String urlStr = connectionDetails.get(ProviderAdapter.API_URL_KEY);
 
-    private void validateLoginInfo(String urlStr) {
         URL urlFull;
         try {
             urlFull = new URL(urlStr);
@@ -553,7 +685,7 @@ public class PrimeraAdapter implements ProviderAdapter {
             cpg = queryParms.get(PrimeraAdapter.CPG);
             if (cpg == null) {
                 throw new RuntimeException(
-                        PrimeraAdapter.CPG + " paramater/option required to configure this storage pool");
+                        PrimeraAdapter.CPG + " parameter/option required to configure this storage pool");
             }
         }
 
@@ -566,13 +698,10 @@ public class PrimeraAdapter implements ProviderAdapter {
             }
         }
 
+        // if this is null, we will use direct-to-host vlunids (preferred)
         hostset = connectionDetails.get(PrimeraAdapter.HOSTSET);
         if (hostset == null) {
             hostset = queryParms.get(PrimeraAdapter.HOSTSET);
-            if (hostset == null) {
-                throw new RuntimeException(
-                        PrimeraAdapter.HOSTSET + " paramater/option required to configure this storage pool");
-            }
         }
 
         String connTimeoutStr = connectionDetails.get(PrimeraAdapter.CONNECT_TIMEOUT_MS);
@@ -629,16 +758,7 @@ public class PrimeraAdapter implements ProviderAdapter {
         } else {
             skipTlsValidation = true;
         }
-    }
 
-    /**
-     * Login to the array and get an access token
-     */
-    private void login() {
-        username = connectionDetails.get(ProviderAdapter.API_USERNAME_KEY);
-        password = connectionDetails.get(ProviderAdapter.API_PASSWORD_KEY);
-        String urlStr = connectionDetails.get(ProviderAdapter.API_URL_KEY);
-        validateLoginInfo(urlStr);
         CloseableHttpResponse response = null;
         try {
             HttpPost request = new HttpPost(url + "/credentials");
@@ -652,6 +772,9 @@ public class PrimeraAdapter implements ProviderAdapter {
             if (statusCode == 200 | statusCode == 201) {
                 PrimeraKey keyobj = mapper.readValue(response.getEntity().getContent(), PrimeraKey.class);
                 key = keyobj.getKey();
+                // Set the key expiration to x minutes from now
+                this.keyExpiration = System.currentTimeMillis() + keyTtl;
+                logger.info("PrimeraAdapter:login(): successful, new session: New key=" + key + ", expiration=" + this.keyExpiration);
             } else if (statusCode == 401 || statusCode == 403) {
                 throw new RuntimeException("Authentication or Authorization to Primera [" + url + "] with user [" + username
                         + "] failed, unable to retrieve session token");
@@ -712,15 +835,15 @@ public class PrimeraAdapter implements ProviderAdapter {
     private <T> T POST(String path, Object input, final TypeReference<T> type) {
         CloseableHttpResponse response = null;
         try {
-            this.refreshSession(false);
+            String session_key = this.refreshSession(false);
             HttpPost request = new HttpPost(url + path);
             request.addHeader("Content-Type", "application/json");
             request.addHeader("Accept", "application/json");
-            request.addHeader("X-HP3PAR-WSAPI-SessionKey", getSessionKey());
+            request.addHeader("X-HP3PAR-WSAPI-SessionKey", session_key);
             try {
                 String data = mapper.writeValueAsString(input);
                 request.setEntity(new StringEntity(data));
-                logger.debug("POST data: " + request.getEntity());
+                if (logger.isTraceEnabled()) logger.trace("POST data: " + request.getEntity());
             } catch (UnsupportedEncodingException | JsonProcessingException e) {
                 throw new RuntimeException(
                         "Error processing request payload to [" + url + "] for path [" + path + "]", e);
@@ -797,10 +920,11 @@ public class PrimeraAdapter implements ProviderAdapter {
         CloseableHttpResponse response = null;
         try {
             this.refreshSession(false);
+            String session_key = this.refreshSession(false);
             HttpPut request = new HttpPut(url + path);
             request.addHeader("Content-Type", "application/json");
             request.addHeader("Accept", "application/json");
-            request.addHeader("X-HP3PAR-WSAPI-SessionKey", getSessionKey());
+            request.addHeader("X-HP3PAR-WSAPI-SessionKey", session_key);
             String data = mapper.writeValueAsString(input);
             request.setEntity(new StringEntity(data));
 
@@ -850,10 +974,11 @@ public class PrimeraAdapter implements ProviderAdapter {
         CloseableHttpResponse response = null;
         try {
             this.refreshSession(false);
+            String session_key = this.refreshSession(false);
             HttpGet request = new HttpGet(url + path);
             request.addHeader("Content-Type", "application/json");
             request.addHeader("Accept", "application/json");
-            request.addHeader("X-HP3PAR-WSAPI-SessionKey", getSessionKey());
+            request.addHeader("X-HP3PAR-WSAPI-SessionKey", session_key);
 
             CloseableHttpClient client = getClient();
             response = (CloseableHttpResponse) client.execute(request);
@@ -892,10 +1017,11 @@ public class PrimeraAdapter implements ProviderAdapter {
         CloseableHttpResponse response = null;
         try {
             this.refreshSession(false);
+            String session_key = this.refreshSession(false);
             HttpDelete request = new HttpDelete(url + path);
             request.addHeader("Content-Type", "application/json");
             request.addHeader("Accept", "application/json");
-            request.addHeader("X-HP3PAR-WSAPI-SessionKey", getSessionKey());
+            request.addHeader("X-HP3PAR-WSAPI-SessionKey", session_key);
 
             CloseableHttpClient client = getClient();
             response = (CloseableHttpResponse) client.execute(request);
@@ -926,5 +1052,22 @@ public class PrimeraAdapter implements ProviderAdapter {
         }
     }
 
+    @Override
+    public Map<String, String> getConnectionIdMap(ProviderAdapterDataObject dataIn) {
+        Map<String,String> connIdMap = new HashMap<String,String>();
+        PrimeraVlunList list = this.getVluns(dataIn.getExternalName());
 
+        if (list != null && list.getMembers() != null && list.getMembers().size() > 0) {
+            for (PrimeraVlun vlun: list.getMembers()) {
+                connIdMap.put(vlun.getHostname(), ""+vlun.getLun());
+            }
+        }
+
+        return connIdMap;
+    }
+
+    @Override
+    public boolean canDirectAttachSnapshot() {
+        return true;
+    }
 }

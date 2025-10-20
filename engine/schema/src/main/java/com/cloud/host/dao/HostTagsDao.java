@@ -20,6 +20,7 @@ import java.util.List;
 
 import com.cloud.host.HostTagVO;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.response.HostTagResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface HostTagsDao extends GenericDao<HostTagVO, Long> {
@@ -35,6 +36,13 @@ public interface HostTagsDao extends GenericDao<HostTagVO, Long> {
 
     void deleteTags(long hostId);
 
+    boolean updateImplicitTags(long hostId, List<String> hostTags);
+
+    List<HostTagVO> getExplicitHostTags(long hostId);
+
     List<HostTagVO> findHostRuleTags();
 
+    HostTagResponse newHostTagResponse(HostTagVO hostTag);
+
+    List<HostTagVO> searchByIds(Long... hostTagIds);
 }

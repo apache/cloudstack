@@ -156,7 +156,7 @@
         v-if="routes[section]">
         <chart-card :loading="loading">
           <div class="chart-card-inner">
-            <router-link :to="{ name: section.substring(0, section.length - 1) }">
+            <router-link :to="{ name: section === 'backuprepositories' ? 'backuprepository' : section.substring(0, section.length - 1) }">
               <h2>{{ $t(routes[section].title) }}</h2>
               <h2><render-icon :icon="routes[section].icon" /> {{ stats[section] }}</h2>
             </router-link>
@@ -169,7 +169,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import router from '@/router'
 
 import Breadcrumb from '@/components/widgets/Breadcrumb'
@@ -187,7 +187,7 @@ export default {
     return {
       loading: true,
       routes: {},
-      sections: ['zones', 'pods', 'clusters', 'hosts', 'storagepools', 'imagestores', 'objectstores', 'systemvms', 'routers', 'cpusockets', 'managementservers', 'alerts', 'ilbvms', 'metrics'],
+      sections: ['zones', 'pods', 'clusters', 'hosts', 'storagepools', 'imagestores', 'backuprepositories', 'objectstores', 'systemvms', 'routers', 'cpusockets', 'managementservers', 'alerts', 'ilbvms', 'metrics'],
       sslFormVisible: false,
       stats: {},
       intermediateCertificates: [],
@@ -216,10 +216,11 @@ export default {
     fetchData () {
       this.routes = {}
       for (const section of this.sections) {
-        if (router.resolve('/' + section.substring(0, section.length - 1)).matched[0].redirect === '/exception/404') {
+        const route = section === 'backuprepositories' ? 'backuprepository' : section.substring(0, section.length - 1)
+        if (router.resolve('/' + route).matched[0].redirect === '/exception/404') {
           continue
         }
-        const node = router.resolve({ name: section.substring(0, section.length - 1) })
+        const node = router.resolve({ name: route })
         this.routes[section] = {
           title: node.meta.title,
           icon: node.meta.icon
@@ -229,7 +230,7 @@ export default {
     },
     listInfra () {
       this.loading = true
-      api('listInfrastructure').then(json => {
+      getAPI('listInfrastructure').then(json => {
         this.stats = []
         if (json && json.listinfrastructureresponse && json.listinfrastructureresponse.infrastructure) {
           this.stats = json.listinfrastructureresponse.infrastructure
@@ -255,7 +256,7 @@ export default {
     },
 
     pollActionCompletion (jobId, count) {
-      api('queryAsyncJobResult', { jobid: jobId }).then(json => {
+      getAPI('queryAsyncJobResult', { jobid: jobId }).then(json => {
         const result = json.queryasyncjobresultresponse
         if (result.jobstatus === 1 && this.maxCerts === count) {
           this.$message.success(`${this.$t('label.certificate.upload')}: ${result.jobresult.customcertificate.message}`)
@@ -294,7 +295,7 @@ export default {
           domainsuffix: formValues.dns,
           name: 'root'
         }
-        api('uploadCustomCertificate', {}, 'POST', data).then(response => {
+        postAPI('uploadCustomCertificate', data).then(response => {
           this.pollActionCompletion(response.uploadcustomcertificateresponse.jobid, count)
         }).then(() => {
           this.sslModalClose()
@@ -309,7 +310,7 @@ export default {
               domainsuffix: formValues.dns,
               name: key
             }
-            api('uploadCustomCertificate', {}, 'POST', data).then(response => {
+            postAPI('uploadCustomCertificate', data).then(response => {
               this.pollActionCompletion(response.uploadcustomcertificateresponse.jobid, count)
             }).then(() => {
               this.sslModalClose()
@@ -324,7 +325,7 @@ export default {
           domainsuffix: formValues.dns,
           privatekey: formValues.pkcs
         }
-        api('uploadCustomCertificate', {}, 'POST', data).then(response => {
+        postAPI('uploadCustomCertificate', data).then(response => {
           this.pollActionCompletion(response.uploadcustomcertificateresponse.jobid, count)
         }).then(() => {
           this.sslModalClose()

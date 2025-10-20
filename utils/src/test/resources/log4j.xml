@@ -19,100 +19,43 @@
     under the License.
 
 -->
-<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
 
-<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="false">
+<Configuration monitorInterval="60">
+   <Appenders>
 
-       <throwableRenderer class="com.cloud.utils.log.CglibThrowableRenderer"/>
-   <!-- ================================= -->
-   <!-- Preserve messages in a local file -->
-   <!-- ================================= -->
+      <properties>
+         <property name="filters">net.sf.cglib.proxy</property>
+      </properties>
 
-   <!-- A regular appender FIXME implement code that will close/reopen logs on SIGHUP by logrotate FIXME make the paths configurable using the build system -->
-<!--   <appender name="FILE" class="org.apache.log4j.rolling.RollingFileAppender">
-      <param name="Append" value="true"/>
-      <param name="Threshold" value="TRACE"/>
-      <rollingPolicy class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
-        <param name="FileNamePattern" value="@MSLOG@.%d{yyyy-MM-dd}.gz"/>
-        <param name="ActiveFileName" value="@MSLOG@"/>
-      </rollingPolicy>
-      <layout class="org.apache.log4j.EnhancedPatternLayout">
-         <param name="ConversionPattern" value="%d{ISO8601} %-5p [%c{3}] (%t:%x) %m%n"/>
-      </layout>
-   </appender>
-   -->
-  <!-- 
-   <appender name="APISERVER" class="org.apache.log4j.rolling.RollingFileAppender">
-      <param name="Append" value="true"/>
-      <param name="Threshold" value="TRACE"/>
-      <rollingPolicy class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
-        <param name="FileNamePattern" value="@APISERVERLOG@.%d{yyyy-MM-dd}.gz"/>
-        <param name="ActiveFileName" value="@APISERVERLOG@"/>
-      </rollingPolicy>
-      <layout class="org.apache.log4j.EnhancedPatternLayout">
-         <param name="ConversionPattern" value="%d{ISO8601} %-5p [%c{3}] (%t:%x) %m%n"/>
-      </layout>
-   </appender>
-   -->
-   
-   
-   <!-- ============================== -->
-   <!-- Append warnings+ to the syslog if it is listening on UDP port FIXME make sysloghost configurable! -->
-   <!-- ============================== -->
-<!--
-   <appender name="SYSLOG" class="org.apache.log4j.net.SyslogAppender">
-      <param name="Threshold" value="WARN"/>
-      <param name="SyslogHost" value="localhost"/>
-      <param name="Facility" value="LOCAL6"/>
-      <layout class="org.apache.log4j.PatternLayout">
-         <param name="ConversionPattern" value="%-5p [%c{3}] (%t:%x) %m%n"/>
-      </layout>
-   </appender>
--->
-   <!-- ============================== -->
-   <!-- Append messages to the console -->
-   <!-- ============================== -->
+      <!-- ============================== -->
+      <!-- Append messages to the console -->
+      <!-- ============================== -->
 
-   <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
-      <param name="Target" value="System.out"/>
-      <param name="Threshold" value="TRACE"/>
-      <layout class="org.apache.log4j.PatternLayout">
-         <param name="ConversionPattern" value="%d{ISO8601} %-5p [%c{3}] (%t:%x) %m%n"/>
-      </layout>
-   </appender>
+      <Console name="CONSOLE" target="SYSTEM_OUT">
+         <ThresholdFilter level="TRACE" onMatch="ACCEPT" onMismatch="DENY"/>
+         <PatternLayout pattern="%d{DEFAULT} %-5p [%c{3}] (%t:%x) %m%xEx{filters(${filters})}%n"/>
+      </Console>
+   </Appenders>
 
-   <!-- ================ -->
-   <!-- Limit categories -->
-   <!-- ================ -->
+   <Loggers>
 
-   <category name="com.cloud">
-     <priority value="DEBUG"/>
-   </category>
-   
-   <!-- Limit the org.apache category to INFO as its DEBUG is verbose -->
-   <category name="org.apache">
-      <priority value="INFO"/>
-   </category>
+      <Logger name="com.cloud" level="DEBUG"/>
 
-   <category name="org">
-      <priority value="INFO"/>
-   </category>
-   
-   <category name="net">
-     <priority value="INFO"/>
-   </category>
+      <Logger name="org.apache" level="INFO"/>
 
-   <category name="apiserver.com.cloud">
-     <priority value="DEBUG"/>
-   </category>
+      <Logger name="org" level="INFO"/>
 
-   <!-- ======================= -->
-   <!-- Setup the Root category -->
-   <!-- ======================= -->
+      <Logger name="net" level="INFO"/>
 
-   <root>
-      <level value="INFO"/>
-      <appender-ref ref="CONSOLE"/>
-   </root>
+      <Logger name="apiserver.com.cloud"  level="DEBUG"/>
 
-</log4j:configuration>
+      <!-- ======================= -->
+      <!-- Setup the Root category -->
+      <!-- ======================= -->
+
+      <Root level="INFO">
+         <AppenderRef ref="CONSOLE"/>
+      </Root>
+
+   </Loggers>
+</Configuration>

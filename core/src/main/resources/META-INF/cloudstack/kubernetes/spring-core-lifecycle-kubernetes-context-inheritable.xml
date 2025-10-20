@@ -25,8 +25,8 @@
 >
 
     <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
-        <property name="registry" ref="kubernetesClusterHelperRegistry" />
-        <property name="typeClass" value="com.cloud.kubernetes.cluster.KubernetesClusterHelper" />
+        <property name="registry" ref="kubernetesServiceHelperRegistry" />
+        <property name="typeClass" value="com.cloud.kubernetes.cluster.KubernetesServiceHelper" />
     </bean>
 
 </beans>

@@ -48,6 +48,7 @@ import {
   Divider,
   DatePicker,
   TimePicker,
+  Typography,
   Upload,
   Progress,
   Skeleton,
@@ -61,6 +62,7 @@ import {
   Tree,
   Calendar,
   Slider,
+  Result,
   AutoComplete,
   Collapse,
   Space,
@@ -116,6 +118,7 @@ export default {
     app.use(Divider)
     app.use(DatePicker)
     app.use(TimePicker)
+    app.use(Typography)
     app.use(Upload)
     app.use(Progress)
     app.use(Skeleton)
@@ -133,5 +136,6 @@ export default {
     app.use(Descriptions)
     app.use(Space)
     app.use(Statistic)
+    app.use(Result)
   }
 }

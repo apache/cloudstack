@@ -18,11 +18,12 @@ package com.cloud.cluster.agentlb;
 
 import java.util.List;
 
+import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.host.HostVO;
 import com.cloud.utils.component.Adapter;
 
 public interface AgentLoadBalancerPlanner extends Adapter {
 
-    List<HostVO> getHostsToRebalance(long msId, int avLoad);
+    List<HostVO> getHostsToRebalance(ManagementServerHostVO ms, int avLoad);
 
 }

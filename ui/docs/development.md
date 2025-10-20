@@ -1,8 +1,8 @@
 # UI Development
 
-The modern CloudStack UI is role-based progressive app that uses VueJS and Ant Design.
+The modern CloudStack UI is role-based progressive app that uses Vue.js and Ant Design.
 
-JavaScript, VueJS references:
+JavaScript, Vue.js references:
 - https://www.w3schools.com/js/
 - https://www.geeksforgeeks.org/javascript-tutorial/
 - https://vuejs.org/v2/guide/
@@ -60,7 +60,6 @@ import the new section's (newconfig.js as example) configuration file and rules 
 
       generateRouterMap(newSection),
 
-
 ### Section
 
 An existing or new section's config/js file must export the following parameters:
@@ -80,7 +79,6 @@ An existing or new section's config/js file must export the following parameters
 - `columns`: When children is not defined, list of column keys
 - `component`: When children is not defined, the custom component for rendering
   the route view
-
 
 See `src/config/section/compute.js` and `src/config/section/project.js` for example.
 
@@ -207,7 +205,7 @@ The Resource View has 2 sections:
   with the related entities
 - DetailsTab to the right which provide the basic details about the resource.
 
-Custom tabs to render custom details, addtional information of the resource
+Custom tabs to render custom details, additional information of the resource
   The list of fields to be displayed maybe defined as an array
   or a function in case we need to selectively (i.e., based on certain
   conditions) restrict the view of certain columns. The names specified in the

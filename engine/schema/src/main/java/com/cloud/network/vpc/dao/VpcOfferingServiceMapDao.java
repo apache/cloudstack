@@ -18,6 +18,7 @@ package com.cloud.network.vpc.dao;
 
 import java.util.List;
 
+import com.cloud.network.Network;
 import com.cloud.network.Network.Service;
 import com.cloud.network.vpc.VpcOfferingServiceMapVO;
 import com.cloud.utils.db.GenericDao;
@@ -36,5 +37,9 @@ public interface VpcOfferingServiceMapDao extends GenericDao<VpcOfferingServiceM
     List<String> listServicesForVpcOffering(long vpcOfferingId);
 
     VpcOfferingServiceMapVO findByServiceProviderAndOfferingId(String service, String provider, long vpcOfferingId);
+
+    boolean isProviderForVpcOffering(Network.Provider provider, long vpcOfferingId);
+
+    List<VpcOfferingServiceMapVO> listProvidersForServiceForVpcOffering(long vpcOfferingId, Service service);
 
 }

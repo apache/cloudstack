@@ -22,7 +22,6 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 
@@ -37,7 +36,6 @@ import com.cloud.resource.ResourceWrapper;
 @ResourceWrapper(handles =  GetVmNetworkStatsCommand.class)
 public final class LibvirtGetVmNetworkStatsCommandWrapper extends CommandWrapper<GetVmNetworkStatsCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtGetVmNetworkStatsCommandWrapper.class);
 
     @Override
     public Answer execute(final GetVmNetworkStatsCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -56,12 +54,12 @@ public final class LibvirtGetVmNetworkStatsCommandWrapper extends CommandWrapper
 
                     vmNetworkStatsNameMap.put(vmName, statEntry);
                 } catch (LibvirtException e) {
-                    s_logger.warn("Can't get vm network stats: " + e.toString() + ", continue");
+                    logger.warn("Can't get vm network stats: " + e.toString() + ", continue");
                 }
             }
             return new GetVmNetworkStatsAnswer(command, "", command.getHostName(), vmNetworkStatsNameMap);
         } catch (final LibvirtException e) {
-            s_logger.debug("Can't get vm network stats: " + e.toString());
+            logger.debug("Can't get vm network stats: " + e.toString());
             return new GetVmNetworkStatsAnswer(command, null, null, null);
         }
     }

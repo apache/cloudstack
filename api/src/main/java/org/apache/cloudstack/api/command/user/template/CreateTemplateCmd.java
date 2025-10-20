@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.cpu.CPU;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -40,7 +41,6 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -55,7 +55,6 @@ import com.cloud.user.Account;
         + "A template created from this command is automatically designated as a private template visible to the account that created it.", responseView = ResponseView.Restricted,
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateTemplateCmd.class.getName());
     private static final String s_name = "createtemplateresponse";
 
     // ///////////////////////////////////////////////////
@@ -150,6 +149,11 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
           since = "4.19.0")
     private String accountName;
 
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "the CPU arch of the template. Valid options are: x86_64, aarch64. Defaults to x86_64",
+            since = "4.20.2")
+    private String arch;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -234,6 +238,10 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     public String getAccountName() {
         return accountName;
+    }
+
+    public CPU.CPUArch getArch() {
+        return CPU.CPUArch.fromType(arch);
     }
 
     // ///////////////////////////////////////////////////
@@ -348,11 +356,11 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
         try {
             accountIdToUse = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
         } catch (InvalidParameterValueException | PermissionDeniedException ex) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("An exception occurred while finalizing account id with accountName, domainId and projectId" +
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("An exception occurred while finalizing account id with accountName, domainId and projectId" +
                       "using callingAccountId=%s", callingAccount.getUuid()), ex);
             }
-            s_logger.warn("Unable to find accountId associated with accountName=" + accountName + " and domainId="
+            logger.warn("Unable to find accountId associated with accountName=" + accountName + " and domainId="
                   + domainId + " or projectId=" + projectId + ", using callingAccountId=" + callingAccount.getUuid());
         }
         return accountIdToUse != null ? accountIdToUse : callingAccount.getAccountId();

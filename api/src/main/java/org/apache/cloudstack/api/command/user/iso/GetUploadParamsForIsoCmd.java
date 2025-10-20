@@ -104,6 +104,29 @@ public class GetUploadParamsForIsoCmd extends AbstractGetUploadParamsCmd {
         return osTypeId;
     }
 
+    public void setBootable(Boolean bootable) {
+        this.bootable = bootable;
+    }
+
+    public void setDisplayText(String displayText) {
+        this.displayText = displayText;
+    }
+
+    public void setFeatured(Boolean featured) {
+        this.featured = featured;
+    }
+
+    public void setPublicIso(Boolean publicIso) {
+        this.publicIso = publicIso;
+    }
+
+    public void setExtractable(Boolean extractable) {
+        this.extractable = extractable;
+    }
+
+    public void setOsTypeId(Long osTypeId) {
+        this.osTypeId = osTypeId;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -117,7 +140,7 @@ public class GetUploadParamsForIsoCmd extends AbstractGetUploadParamsCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (ResourceAllocationException | MalformedURLException e) {
-            s_logger.error("Exception while registering ISO", e);
+            logger.error("Exception while registering ISO", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Exception while registering ISO: " + e.getMessage());
         }
     }

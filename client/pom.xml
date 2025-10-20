@@ -25,24 +25,9 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.19.0.0-SNAPSHOT</version>
+        <version>4.22.0.0-SNAPSHOT</version>
     </parent>
-    <repositories>
-        <repository>
-            <id>juniper-contrail</id>
-            <url>https://juniper.github.io/contrail-maven/snapshots</url>
-        </repository>
-        <repository>
-            <id>juniper-tungsten-api</id>
-            <url>https://github.com/radu-todirica/tungsten-api/raw/master</url>
-        </repository>
-    </repositories>
     <dependencies>
-        <dependency>
-            <groupId>net.juniper.tungsten</groupId>
-            <artifactId>juniper-tungsten-api</artifactId>
-            <version>2.0</version>
-        </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
@@ -68,8 +53,8 @@
             <artifactId>jetty-util</artifactId>
         </dependency>
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
@@ -273,11 +258,6 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-plugin-network-contrail</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-network-palo-alto</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -289,11 +269,6 @@
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-network-ovs</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-plugin-network-tungsten</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -348,16 +323,6 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-plugin-hypervisor-ovm</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-plugin-hypervisor-ovm3</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-hypervisor-kvm</artifactId>
             <version>${project.version}</version>
             <exclusions>
@@ -370,6 +335,11 @@
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-hypervisor-hyperv</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-hypervisor-external</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -445,6 +415,11 @@
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-mom-kafka</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-mom-webhook</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -634,12 +609,17 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-backup-nas</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-integrations-kubernetes-service</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
            <groupId>org.apache.cloudstack</groupId>
-           <artifactId>cloud-plugin-shutdown</artifactId>
+           <artifactId>cloud-plugin-maintenance</artifactId>
            <version>${project.version}</version>
        </dependency>
         <dependency>
@@ -654,7 +634,22 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-storage-object-ceph</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-storage-object-cloudian</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-storage-object-simulator</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-sharedfs-provider-storagevm</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -709,8 +704,8 @@
                 <dependencies>
                     <!-- specify the dependent jdbc driver here -->
                     <dependency>
-                        <groupId>mysql</groupId>
-                        <artifactId>mysql-connector-java</artifactId>
+                        <groupId>com.mysql</groupId>
+                        <artifactId>mysql-connector-j</artifactId>
                         <version>${cs.mysql.version}</version>
                     </dependency>
                     <dependency>
@@ -752,7 +747,7 @@
                     </webApp>
                     <systemProperties>
                         <systemProperty>
-                            <name>log4j.configuration</name>
+                            <name>log4j2.configurationFile</name>
                             <value>log4j-cloud.xml</value>
                         </systemProperty>
                     </systemProperties>
@@ -898,8 +893,8 @@
                                     <outputDirectory>${project.build.directory}/pythonlibs</outputDirectory>
                                 </artifactItem>
                                 <artifactItem>
-                                    <groupId>mysql</groupId>
-                                    <artifactId>mysql-connector-java</artifactId>
+                                    <groupId>com.mysql</groupId>
+                                    <artifactId>mysql-connector-j</artifactId>
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}/lib</outputDirectory>
                                 </artifactItem>
@@ -973,7 +968,7 @@
                                     <exclude>org.bouncycastle:bcprov-jdk15on</exclude>
                                     <exclude>org.bouncycastle:bcpkix-jdk15on</exclude>
                                     <exclude>org.bouncycastle:bctls-jdk15on</exclude>
-                                    <exclude>mysql:mysql-connector-java</exclude>
+                                    <exclude>com.mysql:mysql-connector-j</exclude>
                                     <exclude>org.apache.cloudstack:cloud-plugin-storage-volume-storpool</exclude>
                                     <exclude>org.apache.cloudstack:cloud-plugin-storage-volume-linstor</exclude>
                                     <exclude>org.apache.cloudstack:cloud-usage</exclude>
@@ -1099,7 +1094,27 @@
                 </dependency>
                 <dependency>
                     <groupId>org.apache.cloudstack</groupId>
+                    <artifactId>cloud-plugin-network-nsx</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.cloudstack</groupId>
+                    <artifactId>cloud-plugin-network-netris</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.cloudstack</groupId>
+                    <artifactId>cloud-plugin-network-tungsten</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.cloudstack</groupId>
                     <artifactId>cloud-plugin-api-vmware-sioc</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.cloudstack</groupId>
+                    <artifactId>cloud-plugin-network-contrail</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>

@@ -17,7 +17,8 @@
 package com.cloud.consoleproxy.vnc.network;
 
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class NioSocketStream {
 
@@ -28,7 +29,7 @@ public class NioSocketStream {
     protected int start;
     protected NioSocket socket;
 
-    private static final Logger s_logger = Logger.getLogger(NioSocketStream.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public NioSocketStream(int bufferSize, NioSocket socket) {
         this.buffer = new byte[bufferSize];
@@ -46,7 +47,7 @@ public class NioSocketStream {
     protected void checkUnsignedIntegerSize(int sizeInBits) {
         if (!isUnsignedIntegerSizeAllowed(sizeInBits)) {
             String msg = "Unsupported size in bits for unsigned integer reading " + sizeInBits;
-            s_logger.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
     }
@@ -82,7 +83,7 @@ public class NioSocketStream {
     protected void checkItemSizeOnBuffer(int itemSize) {
         if (itemSize > buffer.length) {
             String msg = String.format("Item size: %s exceeds the buffer size: %s", itemSize, buffer.length);
-            s_logger.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
     }

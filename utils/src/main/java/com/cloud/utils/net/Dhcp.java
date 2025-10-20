@@ -28,7 +28,7 @@ public class Dhcp {
         ROUTER(3, "router"),
         TIME_SERVER(4, "time-server"),
         DNS_SERVER(6, "dns-server"),
-        LOG_SERVER(7, "log-server"),
+        logger_SERVER(7, "log-server"),
         LPR_SERVER(9, "lpr-server"),
         HOSTNAME(12, "hostname"),
         BOOT_FILE_SIZE(13, "boot-file-size"),

@@ -37,9 +37,9 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VmwareDatacenterResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.vm.VmImportService;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
@@ -52,7 +52,6 @@ import javax.inject.Inject;
         authorized = {RoleType.Admin},
         since = "4.19.0")
 public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
-    public static final Logger LOGGER = Logger.getLogger(ImportVmCmd.class);
 
     @Inject
     public VmImportService vmImportService;
@@ -118,39 +117,59 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
             description = "Temp Path on external host for disk image copy" )
     private String tmpPath;
 
-    // Import from Vmware to KVM migration parameters
+    // Import from VMware to KVM migration parameters
 
     @Parameter(name = ApiConstants.EXISTING_VCENTER_ID,
             type = CommandType.UUID,
             entityType = VmwareDatacenterResponse.class,
-            description = "(only for importing migrated VMs from Vmware to KVM) UUID of a linked existing vCenter")
+            description = "(only for importing VMs from VMware to KVM) UUID of a linked existing vCenter")
     private Long existingVcenterId;
 
     @Parameter(name = ApiConstants.HOST_IP,
             type = BaseCmd.CommandType.STRING,
-            description = "(only for importing migrated VMs from Vmware to KVM) VMware ESXi host IP/Name.")
+            description = "(only for importing VMs from VMware to KVM) VMware ESXi host IP/Name.")
     private String hostip;
 
     @Parameter(name = ApiConstants.VCENTER,
             type = CommandType.STRING,
-            description = "(only for importing migrated VMs from Vmware to KVM) The name/ip of vCenter. Make sure it is IP address or full qualified domain name for host running vCenter server.")
+            description = "(only for importing VMs from VMware to KVM) The name/ip of vCenter. Make sure it is IP address or full qualified domain name for host running vCenter server.")
     private String vcenter;
 
     @Parameter(name = ApiConstants.DATACENTER_NAME, type = CommandType.STRING,
-            description = "(only for importing migrated VMs from Vmware to KVM) Name of VMware datacenter.")
+            description = "(only for importing VMs from VMware to KVM) Name of VMware datacenter.")
     private String datacenterName;
 
     @Parameter(name = ApiConstants.CLUSTER_NAME, type = CommandType.STRING,
-            description = "(only for importing migrated VMs from Vmware to KVM) Name of VMware cluster.")
+            description = "(only for importing VMs from VMware to KVM) Name of VMware cluster.")
     private String clusterName;
 
     @Parameter(name = ApiConstants.CONVERT_INSTANCE_HOST_ID, type = CommandType.UUID, entityType = HostResponse.class,
-            description = "(only for importing migrated VMs from Vmware to KVM) optional - the host to perform the virt-v2v migration from VMware to KVM.")
+            description = "(only for importing VMs from VMware to KVM) optional - the host to perform the virt-v2v conversion from VMware to KVM.")
     private Long convertInstanceHostId;
 
+    @Parameter(name = ApiConstants.IMPORT_INSTANCE_HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, since = "4.19.2",
+            description = "(only for importing VMs from VMware to KVM) optional - the host to import the converted instance from VMware to KVM.")
+    private Long importInstanceHostId;
+
     @Parameter(name = ApiConstants.CONVERT_INSTANCE_STORAGE_POOL_ID, type = CommandType.UUID, entityType = StoragePoolResponse.class,
-            description = "(only for importing migrated VMs from Vmware to KVM) optional - the temporary storage pool to perform the virt-v2v migration from VMware to KVM.")
+            description = "(only for importing VMs from VMware to KVM) optional - the temporary storage pool to perform the virt-v2v migration from VMware to KVM.")
     private Long convertStoragePoolId;
+
+    @Parameter(name = ApiConstants.FORCE_MS_TO_IMPORT_VM_FILES, type = CommandType.BOOLEAN,
+            description = "(only for importing VMs from VMware to KVM) optional - if true, forces MS to export OVF from VMware to temporary storage, else uses KVM Host if ovftool is available, falls back to MS if not.")
+    private Boolean forceMsToImportVmFiles;
+
+    @Parameter(name = ApiConstants.EXTRA_PARAMS,
+            type = CommandType.STRING,
+            since = "4.22",
+            description = "(only for importing VMs from VMware to KVM) optional - extra parameters to be passed on the virt-v2v command, if allowed by the administrator")
+    private String extraParams;
+
+    @Parameter(name = ApiConstants.FORCE_CONVERT_TO_POOL,
+            type = CommandType.BOOLEAN,
+            since = "4.22",
+            description = "(only for importing VMs from VMware to KVM) optional - if true, forces virt-v2v conversions to write directly on the provided storage pool (avoid using temporary conversion pool).")
+    private Boolean forceConvertToPool;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -196,8 +215,16 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
         return convertInstanceHostId;
     }
 
+    public Long getImportInstanceHostId() {
+        return importInstanceHostId;
+    }
+
     public Long getConvertStoragePoolId() {
         return convertStoragePoolId;
+    }
+
+    public Boolean getForceMsToImportVmFiles() {
+        return BooleanUtils.toBooleanDefaultIfNull(forceMsToImportVmFiles, false);
     }
 
     public String getHypervisor() {
@@ -231,6 +258,14 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
     @Override
     public String getEventType() {
         return EventTypes.EVENT_VM_IMPORT;
+    }
+
+    public String getExtraParams() {
+        return extraParams;
+    }
+
+    public boolean getForceConvertToPool() {
+        return BooleanUtils.toBooleanDefaultIfNull(forceConvertToPool, false);
     }
 
     @Override

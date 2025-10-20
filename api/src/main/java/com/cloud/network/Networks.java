@@ -128,7 +128,9 @@ public class Networks {
         },
         UnDecided(null, null),
         OpenDaylight("opendaylight", String.class),
-        TUNGSTEN("tf", String.class);
+        TUNGSTEN("tf", String.class),
+        NSX("nsx", String.class),
+        Netris("netris", String.class);
 
         private final String scheme;
         private final Class<?> type;

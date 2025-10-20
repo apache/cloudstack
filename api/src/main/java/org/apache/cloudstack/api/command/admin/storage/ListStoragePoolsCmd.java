@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.storage;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -33,7 +32,6 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 @APICommand(name = "listStoragePools", description = "Lists storage pools.", responseObject = StoragePoolResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListStoragePoolsCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListStoragePoolsCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -43,7 +41,7 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.CLUSTER_ID,
                type = CommandType.UUID,
                entityType = ClusterResponse.class,
-               description = "list storage pools belongig to the specific cluster")
+               description = "list storage pools belonging to the specific cluster")
     private Long clusterId;
 
     @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "the IP address for the storage pool")
@@ -74,6 +72,11 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "host ID of the storage pools")
     private Long hostId;
 
+    @Parameter(name = ApiConstants.STORAGE_CUSTOM_STATS, type = CommandType.BOOLEAN, description = "If true, lists the custom stats of the storage pool", since = "4.18.1")
+    private Boolean customStats;
+
+    @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUP, type = CommandType.STRING, description = "the name of the storage access group", since = "4.21.0")
+    private String storageAccessGroup;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -129,6 +132,21 @@ public class ListStoragePoolsCmd extends BaseListCmd {
 
     public void setScope(String scope) {
         this.scope = scope;
+    }
+
+    public Boolean getCustomStats() {
+        return customStats != null && customStats;
+    }
+
+    public String getStorageAccessGroup() {
+        return storageAccessGroup;
+    }
+
+    public ListStoragePoolsCmd() {
+    }
+
+    public ListStoragePoolsCmd(String storageAccessGroup) {
+        this.storageAccessGroup = storageAccessGroup;
     }
 
     /////////////////////////////////////////////////////

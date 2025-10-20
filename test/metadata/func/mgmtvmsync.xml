@@ -22,12 +22,12 @@ under the License.
 <command>
 		    <name>deployVirtualMachine</name>  <!--deploy vm 1-->
             <testcase>deploy First VM test case</testcase>
-            
+
          <parameters>
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>serviceofferingid</name>
 				<param>globalserviceofferingid</param>
@@ -39,7 +39,7 @@ under the License.
 			<item getparam="true">
 			    <name>zoneid</name>
 				<param>globalzoneid</param>
-			</item>	
+			</item>
 			<item>
 				<name>displayname</name>
 				<value>FirstVM</value>
@@ -80,12 +80,12 @@ under the License.
 <command>
 		    <name>deployVirtualMachine</name>  <!--deploy vm 1-->
             <testcase>deploy Second VM test case</testcase>
-            
+
          <parameters>
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>serviceofferingid</name>
 				<param>globalserviceofferingid</param>
@@ -97,7 +97,7 @@ under the License.
 			<item getparam="true">
 			    <name>zoneid</name>
 				<param>globalzoneid</param>
-			</item>	
+			</item>
 			<item>
 				<name>displayname</name>
 				<value>SecondVM</value>
@@ -172,7 +172,7 @@ under the License.
 			<item>
 				<name>haenable</name>
 				<value>false</value>
-			</item>			
+			</item>
 		</parameters>
 </command>
 
@@ -194,7 +194,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 <!-- 3.2 Obtains the Host IP address of the HA disabled VM's Host machine -->
 
 <command>
@@ -231,8 +231,8 @@ under the License.
 				<param>instance_name_1st</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>select instance_name from vm_instance</name>
 		<mysql>true</mysql>
@@ -269,7 +269,7 @@ under the License.
 		</parameters>
 </command>
 
-	
+
 
 <!-- 6. Kill the two VMs -->
 
@@ -277,13 +277,13 @@ under the License.
 	<name>killvm.sh</name>
 	<testcase>Kill the First HA disabled VM</testcase>
 	<script>true</script>
-	
+
 	<parameters>
 		<item getparam="true">
 			<name>n</name>
 			<param>instance_name_1st</param>
 		</item>
-		
+
 		<item getparam="true">
 			<name>h</name>
 			<param>ipaddress_1st</param>
@@ -295,13 +295,13 @@ under the License.
 	<name>killvm.sh</name>
 	<testcase>Kill the Second HA disabled VM</testcase>
 	<script>true</script>
-	
+
 	<parameters>
 		<item getparam="true">
 			<name>n</name>
 			<param>instance_name_2nd</param>
 		</item>
-		
+
 		<item getparam="true">
 			<name>h</name>
 			<param>ipaddress_2nd</param>
@@ -320,7 +320,7 @@ under the License.
 				<value>100</value>
 			</item>
 		</parameters>
-	</command>	
+	</command>
 
 
 <!-- 8. Start the Management Server -->
@@ -352,7 +352,7 @@ under the License.
 				<value>100</value>
 			</item>
 		</parameters>
-	</command>	
+	</command>
 
 <!-- 10. Check the Management Server Database for the states of the killed VMs -->
 
@@ -369,10 +369,10 @@ under the License.
 			<item>
 				<name>state</name>
 				<value>Stopped</value>
-			</item>			
+			</item>
 		</returnvalue>
-	</command>		
-	
+	</command>
+
 	<command>
 		<name>listVirtualMachines</name>
 		<testcase>Check the stopped status of Second virtual machine with ha disabled</testcase>
@@ -387,7 +387,7 @@ under the License.
 				<name>state</name>
 				<value>Stopped</value>
 			</item>
-			
+
 		</returnvalue>
 	</command>
 
@@ -403,7 +403,7 @@ under the License.
 			</item>
 		</parameters>
 </command>
-	
+
 <command>
 		<name>destroyVirtualMachine</name>
 		<testcase>Destroy the Second vm as a part of cleanup</testcase>
@@ -421,12 +421,12 @@ under the License.
 <command>
 		    <name>deployVirtualMachine</name>  <!--deploy vm 1-->
             <testcase>deploy VM test case</testcase>
-            
+
          <parameters>
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>serviceofferingid</name>
 				<param>globalserviceofferingid</param>
@@ -438,7 +438,7 @@ under the License.
 			<item getparam="true">
 			    <name>zoneid</name>
 				<param>globalzoneid</param>
-			</item>	
+			</item>
 			<item>
 				<name>displayname</name>
 				<value>FirstVM</value>
@@ -493,7 +493,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 
 <!-- 3. Get VM instance name of the VMs from the db -->
 	<command>
@@ -513,7 +513,7 @@ under the License.
 			</item>
 		</returnvalue>
 </command>
-	
+
 <!-- 4. Stop the Management Server -->
 <command>
 		<name>ms.sh</name>
@@ -537,13 +537,13 @@ under the License.
 	<name>shutdown.sh</name>
 	<testcase>Shut down the VM Test Case</testcase>
 	<script>true</script>
-	
+
 	<parameters>
 		<item getparam="true">
 			<name>n</name>
 			<param>instance_name_1st</param>
 		</item>
-		
+
 		<item getparam="true">
 			<name>h</name>
 			<param>ipaddress_1st</param>
@@ -562,7 +562,7 @@ under the License.
 				<value>60</value>
 			</item>
 		</parameters>
-	</command>	
+	</command>
 
 
 <!-- 7. Start the Management Server -->
@@ -593,7 +593,7 @@ under the License.
 				<value>60</value>
 			</item>
 		</parameters>
-</command>	
+</command>
 
 <!-- 9. Check the Management Server Database for the state of the killed VM -->
 
@@ -613,7 +613,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listHosts</name>
 		<testcase>List host that is presumed to have the VM Test Case</testcase>
@@ -630,7 +630,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listvm.sh</name>
 		<script>true</script>
@@ -646,6 +646,6 @@ under the License.
 				<param>instance_name_1st</param>
 			</item>
 		</parameters>
-	</command>							
+	</command>
 
 </mgmtvmsync>

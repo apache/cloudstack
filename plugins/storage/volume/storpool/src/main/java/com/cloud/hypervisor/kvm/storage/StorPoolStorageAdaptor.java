@@ -17,6 +17,32 @@
 package com.cloud.hypervisor.kvm.storage;
 
 
+import com.cloud.agent.api.to.DiskTO;
+import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.ProvisioningType;
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.OutputInterpreter;
+import com.cloud.utils.script.Script;
+
+import com.cloud.utils.storage.TemplateDownloaderUtil;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
+
+import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
+import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.cloudstack.utils.qemu.QemuImgException;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.libvirt.LibvirtException;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -27,19 +53,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
-import org.apache.log4j.Logger;
+import java.util.UUID;
 
-import com.cloud.agent.api.to.DiskTO;
-import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.ProvisioningType;
-import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.OutputInterpreter;
-import com.cloud.utils.script.Script;
-
-@StorageAdaptorInfo(storagePoolType=StoragePoolType.StorPool)
 public class StorPoolStorageAdaptor implements StorageAdaptor {
     public static void SP_LOG(String fmt, Object... args) {
         try (PrintWriter spLogFile = new PrintWriter(new BufferedWriter(new FileWriter("/var/log/cloudstack/agent/storpool-agent.log", true)))) {
@@ -52,17 +67,22 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
         }
     }
 
-    private static final Logger log = Logger.getLogger(StorPoolStorageAdaptor.class);
+    protected static Logger LOGGER = LogManager.getLogger(StorPoolStorageAdaptor.class);
 
     private static final Map<String, KVMStoragePool> storageUuidToStoragePool = new HashMap<String, KVMStoragePool>();
 
     @Override
-    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, StoragePoolType storagePoolType, Map<String, String> details) {
+    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, StoragePoolType storagePoolType, Map<String, String> details, boolean isPrimaryStorage) {
         SP_LOG("StorPoolStorageAdaptor.createStoragePool: uuid=%s, host=%s:%d, path=%s, userInfo=%s, type=%s", uuid, host, port, path, userInfo, storagePoolType);
 
         StorPoolStoragePool storagePool = new StorPoolStoragePool(uuid, host, port, storagePoolType, this);
         storageUuidToStoragePool.put(uuid, storagePool);
         return storagePool;
+    }
+
+    @Override
+    public StoragePoolType getStoragePoolType() {
+        return StoragePoolType.StorPool;
     }
 
     @Override
@@ -99,7 +119,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
         if (!file.exists()) {
             return 0;
         }
-        Script sc = new Script("blockdev", 0, log);
+        Script sc = new Script("blockdev", 0, LOGGER);
         sc.add("--getsize64", devPath);
 
         OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
@@ -108,7 +128,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
         if (res != null) {
             SP_LOG("Unable to retrieve device size for %s. Res: %s", devPath, res);
 
-            log.debug(String.format("Unable to retrieve device size for %s. Res: %s", devPath, res));
+            LOGGER.debug(String.format("Unable to retrieve device size for %s. Res: %s", devPath, res));
             return 0;
         }
 
@@ -134,6 +154,9 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
     }
 
     public static String getVolumeNameFromPath(final String volumeUuid, boolean tildeNeeded) {
+        if (volumeUuid == null) {
+            return null;
+        }
         if (volumeUuid.startsWith("/dev/storpool/")) {
             return volumeUuid.split("/")[3];
         } else if (volumeUuid.startsWith("/dev/storpool-byid/")) {
@@ -144,6 +167,10 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
     }
 
     public static boolean attachOrDetachVolume(String command, String type, String volumeUuid) {
+        if (volumeUuid == null) {
+            LOGGER.debug("Could not attach volume. The volume ID is null");
+            return false;
+        }
         final String name = getVolumeNameFromPath(volumeUuid, true);
         if (name == null) {
             return false;
@@ -156,7 +183,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
         String err = null;
 
         for(int i = 0; i < numTries; i++) {
-            Script sc = new Script("storpool", 0, log);
+            Script sc = new Script("storpool", 0, LOGGER);
             sc.add("-M");
             sc.add(command);
             sc.add(type, name);
@@ -188,7 +215,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
 
         if (err != null) {
             SP_LOG(err);
-            log.warn(err);
+            LOGGER.warn(err);
             throw new CloudRuntimeException(err);
         }
 
@@ -207,7 +234,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
 
         SP_LOG("StorPoolStorageAdaptor.resize: size=%s, uuid=%s, name=%s", newSize, volumeUuid, name);
 
-        Script sc = new Script("storpool", 0, log);
+        Script sc = new Script("storpool", 0, LOGGER);
         sc.add("-M");
         sc.add("volume");
         sc.add(name);
@@ -224,7 +251,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
 
         String err = String.format("Unable to resize volume %s. Error: %s", name, res);
         SP_LOG(err);
-        log.warn(err);
+        LOGGER.warn(err);
         throw new CloudRuntimeException(err);
     }
 
@@ -232,7 +259,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
     public KVMPhysicalDisk getPhysicalDisk(String volumeUuid, KVMStoragePool pool) {
         SP_LOG("StorPoolStorageAdaptor.getPhysicalDisk: uuid=%s, pool=%s", volumeUuid, pool);
 
-        log.debug(String.format("getPhysicalDisk: uuid=%s, pool=%s", volumeUuid, pool));
+        LOGGER.debug(String.format("getPhysicalDisk: uuid=%s, pool=%s", volumeUuid, pool));
 
         final long deviceSize = getDeviceSize(volumeUuid);
 
@@ -244,10 +271,10 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public boolean connectPhysicalDisk(String volumeUuid, KVMStoragePool pool, Map<String, String> details) {
+    public boolean connectPhysicalDisk(String volumeUuid, KVMStoragePool pool, Map<String, String> details, boolean isVMMigrate) {
         SP_LOG("StorPoolStorageAdaptor.connectPhysicalDisk: uuid=%s, pool=%s", volumeUuid, pool);
 
-        log.debug(String.format("connectPhysicalDisk: uuid=%s, pool=%s", volumeUuid, pool));
+        LOGGER.debug(String.format("connectPhysicalDisk: uuid=%s, pool=%s", volumeUuid, pool));
 
         return attachOrDetachVolume("attach", "volume", volumeUuid);
     }
@@ -256,19 +283,19 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
     public boolean disconnectPhysicalDisk(String volumeUuid, KVMStoragePool pool) {
         SP_LOG("StorPoolStorageAdaptor.disconnectPhysicalDisk: uuid=%s, pool=%s", volumeUuid, pool);
 
-        log.debug(String.format("disconnectPhysicalDisk: uuid=%s, pool=%s", volumeUuid, pool));
+        LOGGER.debug(String.format("disconnectPhysicalDisk: uuid=%s, pool=%s", volumeUuid, pool));
         return attachOrDetachVolume("detach", "volume", volumeUuid);
     }
 
     public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect) {
         String volumeUuid = volumeToDisconnect.get(DiskTO.UUID);
-        log.debug(String.format("StorPoolStorageAdaptor.disconnectPhysicalDisk: map. uuid=%s", volumeUuid));
+        LOGGER.debug(String.format("StorPoolStorageAdaptor.disconnectPhysicalDisk: map. uuid=%s", volumeUuid));
         return attachOrDetachVolume("detach", "volume", volumeUuid);
     }
 
     @Override
     public boolean disconnectPhysicalDiskByPath(String localPath) {
-        log.debug(String.format("disconnectPhysicalDiskByPath: localPath=%s", localPath));
+        LOGGER.debug(String.format("disconnectPhysicalDiskByPath: localPath=%s", localPath));
         return attachOrDetachVolume("detach", "volume", localPath);
     }
 
@@ -283,7 +310,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
             throw new UnsupportedOperationException(err);
         }
 
-        Script sc = new Script("storpool", 0, log);
+        Script sc = new Script("storpool", 0, LOGGER);
         sc.add("-M");
         sc.add("snapshot", name);
         sc.add("delete", name);
@@ -294,7 +321,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
         if (res != null) {
             final String err = String.format("Unable to delete StorPool snapshot '%s'. Error: %s", name, res);
             SP_LOG(err);
-            log.warn(err);
+            LOGGER.warn(err);
             throw new UnsupportedOperationException(err);
         }
         return true; // apparently ignored
@@ -340,9 +367,83 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
         throw new UnsupportedOperationException("A folder cannot be created in this configuration.");
     }
 
-    public KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, String destTemplatePath,
-            KVMStoragePool destPool, ImageFormat format, int timeout) {
+    @Override
+    public KVMPhysicalDisk createDiskFromTemplateBacking(KVMPhysicalDisk template, String name,
+                                                         PhysicalDiskFormat format, long size, KVMStoragePool destPool, int timeout, byte[] passphrase) {
         return null;
+    }
+
+    @Override
+    public KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, String destTemplatePath,
+                                                                KVMStoragePool destPool, ImageFormat format, int timeout) {
+        if (StringUtils.isEmpty(templateFilePath) || destPool == null) {
+            throw new CloudRuntimeException(
+                    "Unable to create template from direct download template file due to insufficient data");
+        }
+
+        File sourceFile = new File(templateFilePath);
+        if (!sourceFile.exists()) {
+            throw new CloudRuntimeException(
+                    "Direct download template file " + templateFilePath + " does not exist on this host");
+        }
+
+        if (!StoragePoolType.StorPool.equals(destPool.getType())) {
+            throw new CloudRuntimeException("Unsupported storage pool type: " + destPool.getType().toString());
+        }
+
+        if (!Storage.ImageFormat.QCOW2.equals(format)) {
+            throw new CloudRuntimeException("Unsupported template format: " + format.toString());
+        }
+
+        String srcTemplateFilePath = templateFilePath;
+        KVMPhysicalDisk destDisk = null;
+        QemuImgFile srcFile = null;
+        QemuImgFile destFile = null;
+        String templateName = UUID.randomUUID().toString();
+        String volume = null;
+        try {
+
+            srcTemplateFilePath = extractTemplate(templateFilePath, sourceFile, srcTemplateFilePath, templateName);
+
+            QemuImg.PhysicalDiskFormat srcFileFormat = QemuImg.PhysicalDiskFormat.QCOW2;
+
+            srcFile = new QemuImgFile(srcTemplateFilePath, srcFileFormat);
+
+            String spTemplate = destPool.getUuid().split(";")[0];
+
+            QemuImg qemu = new QemuImg(timeout);
+            OutputInterpreter.AllLinesParser parser = createStorPoolVolume(destPool, srcFile, qemu, spTemplate);
+
+            String response = parser.getLines();
+
+            LOGGER.debug(response);
+            volume = StorPoolUtil.devPath(getNameFromResponse(response, false, false));
+            attachOrDetachVolume("attach", "volume", volume);
+            destDisk = destPool.getPhysicalDisk(volume);
+            if (destDisk == null) {
+                throw new CloudRuntimeException(
+                        "Failed to find the disk: " + volume + " of the storage pool: " + destPool.getUuid());
+            }
+
+            destFile = new QemuImgFile(destDisk.getPath(), QemuImg.PhysicalDiskFormat.RAW);
+
+            qemu.convert(srcFile, destFile);
+            parser = volumeSnapshot(StorPoolStorageAdaptor.getVolumeNameFromPath(volume, true), spTemplate);
+            response = parser.getLines();
+            LOGGER.debug(response);
+            String newPath = StorPoolUtil.devPath(getNameFromResponse(response, false, true));
+            destDisk = destPool.getPhysicalDisk(newPath);
+        } catch (QemuImgException | LibvirtException e) {
+            destDisk = null;
+        } finally {
+            if (volume != null) {
+                attachOrDetachVolume("detach", "volume", volume);
+                volumeDelete(StorPoolStorageAdaptor.getVolumeNameFromPath(volume, true));
+            }
+            Script.runSimpleBashScript("rm -f " + srcTemplateFilePath);
+        }
+
+        return destDisk;
     }
 
     @Override
@@ -362,9 +463,87 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
         return null;
     }
 
-    @Override
-    public KVMPhysicalDisk createDiskFromTemplateBacking(KVMPhysicalDisk template, String name,
-            PhysicalDiskFormat format, long size, KVMStoragePool destPool, int timeout, byte[] passphrase) {
-        return null;
+    private OutputInterpreter.AllLinesParser createStorPoolVolume(KVMStoragePool destPool, QemuImgFile srcFile,
+                                                                  QemuImg qemu, String templateUuid) throws QemuImgException, LibvirtException {
+        Map<String, String> info = qemu.info(srcFile);
+        Map<String, Object> reqParams = new HashMap<>();
+        reqParams.put("template", templateUuid);
+        reqParams.put("size", info.get("virtual_size"));
+        Map<String, String> tags = new HashMap<>();
+        tags.put("cs", "template");
+        reqParams.put("tags", tags);
+        Gson gson = new Gson();
+        String js = gson.toJson(reqParams);
+
+        Script sc = createStorPoolRequest(js, "VolumeCreate", null,true);
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+
+        String res = sc.execute(parser);
+        if (res != null) {
+            throw new CloudRuntimeException("Could not create volume due to: " + res);
+        }
+        return parser;
+    }
+
+    private  OutputInterpreter.AllLinesParser volumeSnapshot(String volumeName, String templateUuid) {
+        Map<String, String> reqParams = new HashMap<>();
+        reqParams.put("template", templateUuid);
+        Gson gson = new Gson();
+        String js = gson.toJson(reqParams);
+
+        Script sc = createStorPoolRequest(js, "VolumeSnapshot", volumeName,true);
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+
+        String res = sc.execute(parser);
+        if (res != null) {
+            throw new CloudRuntimeException("Could not snapshot volume due to: " + res);
+        }
+        return parser;
+    }
+
+    private OutputInterpreter.AllLinesParser volumeDelete(String volumeName) {
+        Script sc = createStorPoolRequest(null, "VolumeDelete", volumeName, false);
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+
+        String res = sc.execute(parser);
+        if (res != null) {
+            throw new CloudRuntimeException("Could not delete volume due to: " + res);
+        }
+        return parser;
+    }
+    @NotNull
+    private static Script createStorPoolRequest(String js, String apiCall, String param, boolean jsonRequired) {
+        Script sc = new Script("storpool_req", 0, LOGGER);
+        sc.add("-P");
+        sc.add("-M");
+        if (jsonRequired) {
+            sc.add("--json");
+            sc.add(js);
+        }
+        sc.add(apiCall);
+        if (param != null) {
+            sc.add(param);
+        }
+        return sc;
+    }
+
+    private String extractTemplate(String templateFilePath, File sourceFile, String srcTemplateFilePath,
+                                   String templateName) {
+        if (TemplateDownloaderUtil.isTemplateExtractable(templateFilePath)) {
+            srcTemplateFilePath = sourceFile.getParent() + "/" + templateName;
+            String extractCommand = TemplateDownloaderUtil.getExtractCommandForDownloadedFile(templateFilePath, srcTemplateFilePath);
+            Script.runSimpleBashScript(extractCommand);
+            Script.runSimpleBashScript("rm -f " + templateFilePath);
+        }
+        return srcTemplateFilePath;
+    }
+
+    private String getNameFromResponse(String resp, boolean tildeNeeded, boolean isSnapshot) {
+        JsonParser jsonParser = new JsonParser();
+        JsonObject respObj = (JsonObject) jsonParser.parse(resp);
+        JsonPrimitive data = isSnapshot ? respObj.getAsJsonPrimitive("snapshotGlobalId") : respObj.getAsJsonPrimitive("globalId");
+        String name = data !=null ? data.getAsString() : null;
+        name = name != null ? name.startsWith("~") && !tildeNeeded ? name.split("~")[1] : name : name;
+        return name;
     }
 }

@@ -59,8 +59,8 @@ class ShellCmd(object):
             err = []
             err.append('failed to execute shell command: %s' % self.cmd)
             err.append('return code: %s' % self.process.returncode)
-            err.append('stdout: %s' % self.stdout)
-            err.append('stderr: %s' % self.stderr)
+            err.append('stdout: %s' % self.stdout.decode())
+            err.append('stderr: %s' % self.stderr.decode())
             raise Exception('\n'.join(err))
 
         self.return_code = self.process.returncode

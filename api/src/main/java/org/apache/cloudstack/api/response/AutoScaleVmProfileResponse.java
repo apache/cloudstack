@@ -69,7 +69,7 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
     private Map<String, String> counterParams;
 
     @SerializedName(ApiConstants.USER_DATA)
-    @Param(description = "Base 64 encoded VM user data")
+    @Param(description = "Base64 encoded VM user data")
     private String userData;
 
     @SerializedName(ApiConstants.USER_DATA_ID) @Param(description="the id of userdata used for the VM", since = "4.18.1")
@@ -113,6 +113,10 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the domain name of the vm profile")
     private String domainName;
+
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain to which the vm profile belongs", since = "4.19.2.0")
+    private String domainPath;
 
     @SerializedName(ApiConstants.FOR_DISPLAY)
     @Param(description = "is profile for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
@@ -196,6 +200,10 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
         this.domainName = domainName;
     }
 
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
+    }
     @Override
     public void setProjectId(String projectId) {
         this.projectId = projectId;

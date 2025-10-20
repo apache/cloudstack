@@ -52,7 +52,7 @@ public class Upgrade218to22Premium extends Upgrade218to22 {
             ) {
             pstmt.executeUpdate();
 
-            s_logger.debug("Upgraded cloud_usage user_statistics with deviceId");
+            logger.debug("Upgraded cloud_usage user_statistics with deviceId");
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to upgrade user stats: ", e);
         }
@@ -64,7 +64,7 @@ public class Upgrade218to22Premium extends Upgrade218to22 {
                 ) {
             pstmt1.executeUpdate();
 
-            s_logger.debug("Upgraded cloud_usage usage_network with hostId");
+            logger.debug("Upgraded cloud_usage usage_network with hostId");
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to upgrade network usage stats: ", e);
         }
@@ -78,7 +78,7 @@ public class Upgrade218to22Premium extends Upgrade218to22 {
             ) {
             pstmt.executeUpdate();
 
-            s_logger.debug("Upgraded cloud_usage usage_ip_address with Id");
+            logger.debug("Upgraded cloud_usage usage_ip_address with Id");
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to upgrade usage_ip_address: ", e);
         }

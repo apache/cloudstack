@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.zone;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -32,10 +31,11 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.dc.DataCenter;
 import com.cloud.user.Account;
 
+import java.util.List;
+
 @APICommand(name = "createZone", description = "Creates a Zone.", responseObject = ZoneResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateZoneCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateZoneCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -90,6 +90,11 @@ public class CreateZoneCmd extends BaseCmd {
     @Parameter(name = ApiConstants.IS_EDGE, type = CommandType.BOOLEAN, description = "true if the zone is an edge zone, false otherwise", since = "4.18.0")
     private Boolean isEdge;
 
+    @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUPS,
+            type = CommandType.LIST, collectionType = CommandType.STRING,
+            description = "comma separated list of storage access groups for the hosts in the zone",
+            since = "4.21.0")
+    private List<String> storageAccessGroups;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -162,6 +167,10 @@ public class CreateZoneCmd extends BaseCmd {
             return false;
         }
         return isEdge;
+    }
+
+    public List<String> getStorageAccessGroups() {
+        return storageAccessGroups;
     }
 
     /////////////////////////////////////////////////////

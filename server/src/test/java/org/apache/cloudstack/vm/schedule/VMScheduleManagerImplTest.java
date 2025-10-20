@@ -36,6 +36,7 @@ import org.apache.cloudstack.api.response.VMScheduleResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.vm.schedule.dao.VMScheduleDao;
 import org.apache.commons.lang.time.DateUtils;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -72,12 +73,19 @@ public class VMScheduleManagerImplTest {
     @Mock
     AccountManager accountManager;
 
+    private AutoCloseable closeable;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         Account callingAccount = Mockito.mock(Account.class);
         User callingUser = Mockito.mock(User.class);
         CallContext.register(callingUser, callingAccount);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     private void validateResponse(VMScheduleResponse response, VMSchedule vmSchedule, VirtualMachine vm) {

@@ -59,14 +59,6 @@ public class LibvirtScaleVmCommandWrapper extends CommandWrapper<ScaleVmCommand,
             String message = String.format("Unable to scale %s due to [%s].", scalingDetails, e.getMessage());
             logger.error(message, e);
             return new ScaleVmAnswer(command, false, message);
-        } finally {
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (LibvirtException ex) {
-                    logger.warn(String.format("Error trying to close libvirt connection [%s]", ex.getMessage()), ex);
-                }
-            }
         }
     }
 

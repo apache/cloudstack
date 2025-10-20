@@ -233,6 +233,7 @@ export default {
       this.selectedRowKeys = value
       this.$emit('select-disk-offering-item', value[0])
       this.$emit('on-selected-disk-size', this.diskSelected)
+      this.$emit('on-selected-root-disk-size', this.diskSelected)
     },
     handleSearch (value) {
       this.filter = value

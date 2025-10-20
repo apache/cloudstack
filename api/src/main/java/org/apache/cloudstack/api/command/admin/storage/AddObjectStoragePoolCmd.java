@@ -25,7 +25,6 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ObjectStoreResponse;
-import org.apache.log4j.Logger;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -35,7 +34,6 @@ import java.util.Map;
 @APICommand(name = "addObjectStoragePool", description = "Adds a object storage pool", responseObject = ObjectStoreResponse.class, since = "4.19.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddObjectStoragePoolCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(AddObjectStoragePoolCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -58,6 +56,9 @@ public class AddObjectStoragePoolCmd extends BaseCmd {
     @Parameter(name = ApiConstants.TAGS, type = CommandType.STRING, description = "the tags for the storage pool")
     private String tags;
 
+    @Parameter(name = ApiConstants.SIZE, type = CommandType.LONG, description = "the total size of the object store in GiB. Used for tracking capacity and sending alerts", since = "4.21")
+    private Long size;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -68,6 +69,10 @@ public class AddObjectStoragePoolCmd extends BaseCmd {
 
     public String getName() {
         return name;
+    }
+
+    public Long getTotalSize() {
+        return size;
     }
 
     public Map<String, String> getDetails() {
@@ -114,7 +119,7 @@ public class AddObjectStoragePoolCmd extends BaseCmd {
     @Override
     public void execute(){
         try{
-            ObjectStore result = _storageService.discoverObjectStore(getName(), getUrl(), getProviderName(), getDetails());
+            ObjectStore result = _storageService.discoverObjectStore(getName(), getUrl(), getTotalSize(), getProviderName(), getDetails());
             ObjectStoreResponse storeResponse = null;
             if (result != null) {
                 storeResponse = _responseGenerator.createObjectStoreResponse(result);
@@ -125,7 +130,7 @@ public class AddObjectStoragePoolCmd extends BaseCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add object storage");
             }
         } catch (Exception ex) {
-            s_logger.error("Exception: ", ex);
+            logger.error("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
     }

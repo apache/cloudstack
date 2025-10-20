@@ -103,7 +103,7 @@ public class AddUserToProjectCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Adding user "+getUsername()+" to Project "+getProjectId();
+        return "Adding user " + getUsername() + " to project: " + getProjectId();
     }
 
     /////////////////////////////////////////////////////

@@ -19,7 +19,10 @@ package com.cloud.network.router;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.CheckS2SVpnConnectionsAnswer;
 import com.cloud.agent.api.CheckS2SVpnConnectionsCommand;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
+import com.cloud.bgp.BGPService;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -30,13 +33,17 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
+import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.MonitoringServiceDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.OpRouterMonitorServiceDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
@@ -48,7 +55,11 @@ import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.dao.VpnUserDao;
+import com.cloud.network.lb.LoadBalancingRule;
+import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -59,6 +70,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.user.dao.UserStatsLogDao;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
@@ -66,16 +78,19 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.network.BgpPeer;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -83,9 +98,9 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
@@ -191,7 +206,7 @@ public class VirtualNetworkApplianceManagerImplTest {
     private VMInstanceDao _vmDao;
 
     @Mock
-    private UserVmDetailsDao _vmDetailsDao;
+    private VMInstanceDetailsDao _vmDetailsDao;
 
     @Mock
     private VolumeDao _volumeDao;
@@ -233,6 +248,23 @@ public class VirtualNetworkApplianceManagerImplTest {
     @InjectMocks
     private VirtualNetworkApplianceManagerImpl virtualNetworkApplianceManagerImpl;
 
+    @Mock
+    private NetworkModel _networkModel;
+
+    @Mock
+    private RoutedIpv4Manager routedIpv4Manager;
+
+    @Mock
+    private CommandSetupHelper _commandSetupHelper;
+
+    @Mock
+    private VpcDao _vpcDao;
+
+    @Mock
+    private BGPService bgpService;
+
+    @Mock
+    private LoadBalancingRulesManager _lbMgr;
 
     //    @InjectMocks
     //    private VirtualNetworkApplianceManagerImpl virtualNetworkApplianceManagerImpl;
@@ -327,5 +359,60 @@ public class VirtualNetworkApplianceManagerImplTest {
         foo = "*:*:00";
         result = virtualNetworkApplianceManagerImpl.checkLogrotateTimerPattern(foo);
         Assert.assertTrue(result);
+    }
+
+    @Test
+    public void testFinalizeNetworkRulesForNetwork() {
+        Long guestNetworkId = 10L;
+        Commands cmds = new Commands(Command.OnError.Stop);
+        DomainRouterVO router = Mockito.mock(DomainRouterVO.class);
+
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+        when(_networkDao.findById(guestNetworkId)).thenReturn(network);
+        when(network.getVpcId()).thenReturn(null);
+        when(routedIpv4Manager.isDynamicRoutedNetwork(network)).thenReturn(true);
+        List<? extends BgpPeer> bgpPeers = Mockito.mock(List.class);
+        doReturn(bgpPeers).when(bgpService).getBgpPeersForNetwork(network);
+        virtualNetworkApplianceManagerImpl.finalizeNetworkRulesForNetwork(cmds, router, Network.Provider.VirtualRouter, guestNetworkId);
+
+        Mockito.verify(_commandSetupHelper).createBgpPeersCommands(bgpPeers, router, cmds, network);
+    }
+
+    @Test
+    public void testFinalizeNetworkRulesForVpcNetwork() {
+        Long guestNetworkId = 10L;
+        Long vpcId = 11L;
+        Commands cmds = new Commands(Command.OnError.Stop);
+        DomainRouterVO router = Mockito.mock(DomainRouterVO.class);
+
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+        when(_networkDao.findById(guestNetworkId)).thenReturn(network);
+        when(network.getVpcId()).thenReturn(vpcId);
+        VpcVO vpc = Mockito.mock(VpcVO.class);
+        when(_vpcDao.findById(vpcId)).thenReturn(vpc);
+        when(routedIpv4Manager.isDynamicRoutedVpc(vpc)).thenReturn(true);
+        List<? extends BgpPeer> bgpPeers = Mockito.mock(List.class);
+        doReturn(bgpPeers).when(bgpService).getBgpPeersForVpc(vpc);
+
+        virtualNetworkApplianceManagerImpl.finalizeNetworkRulesForNetwork(cmds, router, Network.Provider.VirtualRouter, guestNetworkId);
+
+        Mockito.verify(_commandSetupHelper).createBgpPeersCommands(bgpPeers, router, cmds, network);
+    }
+
+    @Test
+    public void testUpdateWithLbRuleSslCertificates() {
+        StringBuilder loadBalancingData = new StringBuilder();
+        LoadBalancerVO loadBalancer = Mockito.mock(LoadBalancerVO.class);
+        when(loadBalancer.getLbProtocol()).thenReturn(NetUtils.SSL_PROTO);
+        when(loadBalancer.getId()).thenReturn(1L);
+        when(loadBalancer.getSourcePortStart()).thenReturn(443);
+        LoadBalancingRule.LbSslCert lbSslCert = Mockito.mock(LoadBalancingRule.LbSslCert.class);
+        when(lbSslCert.isRevoked()).thenReturn(false);
+        when(_lbMgr.getLbSslCert(1L)).thenReturn(lbSslCert);
+        String sourceIp = "1.2.3.4";
+
+        virtualNetworkApplianceManagerImpl.updateWithLbRuleSslCertificates(loadBalancingData, loadBalancer, sourceIp);
+
+        Assert.assertEquals(",sslcert=1_2_3_4-443.pem",  loadBalancingData.toString());
     }
 }

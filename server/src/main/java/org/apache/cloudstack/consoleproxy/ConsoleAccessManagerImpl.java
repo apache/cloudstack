@@ -16,34 +16,51 @@
 // under the License.
 package org.apache.cloudstack.consoleproxy;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.command.user.consoleproxy.ConsoleEndpoint;
+import org.apache.cloudstack.api.command.user.consoleproxy.ListConsoleSessionsCmd;
+import org.apache.cloudstack.api.response.ConsoleSessionResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.security.keys.KeysManager;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.joda.time.DateTime;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.GetExternalConsoleAnswer;
 import com.cloud.agent.api.GetVmVncTicketAnswer;
 import com.cloud.agent.api.GetVmVncTicketCommand;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.domain.Domain;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
@@ -64,26 +81,22 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.ConsoleSessionVO;
-import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.ConsoleSessionDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.joda.time.DateTime;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import static com.cloud.consoleproxy.ConsoleProxyManager.NoVncConsoleShowDot;
 
 public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAccessManager {
 
     @Inject
     private AccountManager accountManager;
+    @Inject
+    private DomainDao domainDao;
     @Inject
     private VirtualMachineManager virtualMachineManager;
     @Inject
@@ -91,7 +104,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     @Inject
     private EntityManager entityManager;
     @Inject
-    private UserVmDetailsDao userVmDetailsDao;
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
     @Inject
     private KeysManager keysManager;
     @Inject
@@ -102,17 +115,24 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     DataCenterDao dataCenterDao;
     @Inject
     private ConsoleSessionDao consoleSessionDao;
+    @Inject
+    private ResponseGenerator responseGenerator;
 
     private ScheduledExecutorService executorService = null;
 
     private static KeysManager secretKeysManager;
     private final Gson gson = new GsonBuilder().create();
 
-    public static final Logger s_logger = Logger.getLogger(ConsoleAccessManagerImpl.class.getName());
+    protected Logger logger = LogManager.getLogger(ConsoleAccessManagerImpl.class);
 
     private static final List<VirtualMachine.State> unsupportedConsoleVMState = Arrays.asList(
-            VirtualMachine.State.Stopped, VirtualMachine.State.Error, VirtualMachine.State.Destroyed
+            VirtualMachine.State.Stopped, VirtualMachine.State.Restoring, VirtualMachine.State.Error, VirtualMachine.State.Destroyed
     );
+
+    protected static final List<ResourceState> MAINTENANCE_RESOURCE_STATES = new ArrayList<>(Arrays.asList(
+            ResourceState.ErrorInMaintenance, ResourceState.ErrorInPrepareForMaintenance
+    ));
+    protected static final String WEB_SOCKET_PATH= "websockify";
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -125,7 +145,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     public boolean start() {
         int consoleCleanupInterval = ConsoleAccessManager.ConsoleSessionCleanupInterval.value();
         if (consoleCleanupInterval > 0) {
-            s_logger.info(String.format("The ConsoleSessionCleanupTask will run every %s hours", consoleCleanupInterval));
+            logger.info(String.format("The ConsoleSessionCleanupTask will run every %s hours", consoleCleanupInterval));
             executorService.scheduleWithFixedDelay(new ConsoleSessionCleanupTask(), consoleCleanupInterval, consoleCleanupInterval, TimeUnit.HOURS);
         }
         return true;
@@ -162,22 +182,94 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         }
 
         private void reallyRun() {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Starting ConsoleSessionCleanupTask...");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Starting ConsoleSessionCleanupTask...");
             }
             Integer retentionHours = ConsoleAccessManager.ConsoleSessionCleanupRetentionHours.value();
             Date dateBefore = DateTime.now().minusHours(retentionHours).toDate();
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("Retention hours: %s, checking for removed console session " +
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("Retention hours: %s, checking for removed console session " +
                         "records to expunge older than: %s", retentionHours, dateBefore));
             }
             int sessionsExpunged = consoleSessionDao.expungeSessionsOlderThanDate(dateBefore);
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(sessionsExpunged > 0 ?
+            if (logger.isDebugEnabled()) {
+                logger.debug(sessionsExpunged > 0 ?
                         String.format("Expunged %s removed console session records", sessionsExpunged) :
                         "No removed console session records expunged on this cleanup task run");
             }
         }
+    }
+
+    @Override
+    public ListResponse<ConsoleSessionResponse> listConsoleSessions(ListConsoleSessionsCmd cmd) {
+        Pair<List<ConsoleSessionVO>, Integer> consoleSessions = listConsoleSessionsInternal(cmd);
+        ListResponse<ConsoleSessionResponse> response = new ListResponse<>();
+
+        ResponseObject.ResponseView responseView = ResponseObject.ResponseView.Restricted;
+        Long callerId = CallContext.current().getCallingAccountId();
+        if (accountManager.isRootAdmin(callerId)) {
+            responseView = ResponseObject.ResponseView.Full;
+        }
+
+        List<ConsoleSessionResponse> consoleSessionResponses = new ArrayList<>();
+        for (ConsoleSessionVO consoleSession : consoleSessions.first()) {
+            ConsoleSessionResponse consoleSessionResponse = responseGenerator.createConsoleSessionResponse(consoleSession, responseView);
+            consoleSessionResponses.add(consoleSessionResponse);
+        }
+
+        response.setResponses(consoleSessionResponses, consoleSessions.second());
+        return response;
+    }
+
+    protected Pair<List<ConsoleSessionVO>, Integer> listConsoleSessionsInternal(ListConsoleSessionsCmd cmd) {
+        CallContext caller = CallContext.current();
+        long domainId = getBaseDomainIdToListConsoleSessions(cmd.getDomainId());
+        Long accountId = cmd.getAccountId();
+        Long userId = cmd.getUserId();
+        boolean isRecursive = cmd.isRecursive();
+
+        boolean isCallerNormalUser = accountManager.isNormalUser(caller.getCallingAccountId());
+        if (isCallerNormalUser) {
+            accountId = caller.getCallingAccountId();
+            userId = caller.getCallingUserId();
+        }
+
+        List<Long> domainIds = isRecursive ? domainDao.getDomainAndChildrenIds(domainId) : List.of(domainId);
+
+        return consoleSessionDao.listConsoleSessions(cmd.getId(), domainIds, accountId, userId,
+                cmd.getHostId(), cmd.getStartDate(), cmd.getEndDate(), cmd.getVmId(),
+                cmd.getConsoleEndpointCreatorAddress(), cmd.getClientAddress(), cmd.isActiveOnly(),
+                cmd.getAcquired(), cmd.getPageSizeVal(), cmd.getStartIndex());
+    }
+
+    /**
+     * Determines the base domain ID for listing console sessions.
+     *
+     * If no domain ID is provided, returns the caller's domain ID. Otherwise,
+     * checks if the caller has access to that domain and returns the provided domain ID.
+     *
+     * @param domainId The domain ID to check, can be null
+     * @return The base domain ID to use for listing console sessions
+     * @throws PermissionDeniedException if the caller does not have access to the specified domain
+     */
+    protected long getBaseDomainIdToListConsoleSessions(Long domainId) {
+        Account caller = CallContext.current().getCallingAccount();
+        if (domainId == null) {
+            return caller.getDomainId();
+        }
+
+        Domain domain = domainDao.findById(domainId);
+        if (domain == null) {
+            throw new InvalidParameterValueException(String.format("Unable to find domain with ID [%s]. Verify the informed domain and try again.", domainId));
+        }
+
+        accountManager.checkAccess(caller, domain);
+        return domainId;
+    }
+
+    @Override
+    public ConsoleSession listConsoleSessionById(long id) {
+        return consoleSessionDao.findByIdIncludingRemoved(id);
     }
 
     @Override
@@ -189,7 +281,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
 
             if (keysManager.getHashKey() == null) {
                 String msg = "Console access denied. Ticket service is not ready yet";
-                s_logger.debug(msg);
+                logger.debug(msg);
                 return new ConsoleEndpoint(false, null, msg);
             }
 
@@ -197,13 +289,13 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
 
             // Do a sanity check here to make sure the user hasn't already been deleted
             if (account == null) {
-                s_logger.debug("Invalid user/account, reject console access");
+                logger.debug("Invalid user/account, reject console access");
                 return new ConsoleEndpoint(false, null,"Access denied. Invalid or inconsistent account is found");
             }
 
             VirtualMachine vm = entityManager.findById(VirtualMachine.class, vmId);
             if (vm == null) {
-                s_logger.info("Invalid console servlet command parameter: " + vmId);
+                logger.info("Invalid console servlet command parameter: " + vmId);
                 return new ConsoleEndpoint(false, null, "Cannot find VM with ID " + vmId);
             }
 
@@ -214,16 +306,16 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             DataCenter zone = dataCenterDao.findById(vm.getDataCenterId());
             if (zone != null && DataCenter.Type.Edge.equals(zone.getType())) {
                 String errorMsg = "Console access is not supported for Edge zones";
-                s_logger.error(errorMsg);
+                logger.error(errorMsg);
                 return new ConsoleEndpoint(false, null, errorMsg);
             }
 
             String sessionUuid = UUID.randomUUID().toString();
             return generateAccessEndpoint(vmId, sessionUuid, extraSecurityToken, clientAddress);
         } catch (Exception e) {
-            String errorMsg = String.format("Unexepected exception in ConsoleAccessManager - vmId: %s, clientAddress: %s",
-                    vmId, clientAddress);
-            s_logger.error(errorMsg, e);
+            String errorMsg = String.format("Unexpected exception in ConsoleAccessManager - vmId: %s (%s), clientAddress: %s",
+                    vmId, entityManager.findById(VirtualMachine.class, vmId), clientAddress);
+            logger.error(errorMsg, e);
             return new ConsoleEndpoint(false, null, "Server Internal Error: " + e.getMessage());
         }
     }
@@ -247,8 +339,8 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     }
 
     @Override
-    public void acquireSession(String sessionUuid) {
-        consoleSessionDao.acquireSession(sessionUuid);
+    public void acquireSession(String sessionUuid, String clientAddress) {
+        consoleSessionDao.acquireSession(sessionUuid, clientAddress);
     }
 
     protected boolean checkSessionPermission(VirtualMachine vm, Account account) {
@@ -262,16 +354,18 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
                     accountManager.checkAccess(account, null, true, vm);
                 } catch (PermissionDeniedException ex) {
                     if (accountManager.isNormalUser(account.getId())) {
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("VM access is denied for VM ID " + vm.getUuid() + ". VM owner account " +
-                                    vm.getAccountId() + " does not match the account id in session " +
-                                    account.getId() + " and caller is a normal user");
+                        if (logger.isDebugEnabled()) {
+                            logger.debug("VM access is denied for VM {}. VM owner " +
+                                    "account {} does not match the account id in session {} and " +
+                                    "caller is a normal user", vm,
+                                    accountManager.getAccount(vm.getAccountId()), account);
                         }
                     } else if ((accountManager.isDomainAdmin(account.getId())
-                            || account.getType() == Account.Type.READ_ONLY_ADMIN) && s_logger.isDebugEnabled()) {
-                        s_logger.debug("VM access is denied for VM ID " + vm.getUuid() + ". VM owner account " +
-                                vm.getAccountId() + " does not match the account id in session " +
-                                account.getId() + " and the domain-admin caller does not manage the target domain");
+                            || account.getType() == Account.Type.READ_ONLY_ADMIN) && logger.isDebugEnabled()) {
+                        logger.debug("VM access is denied for VM {}. VM owner account {}" +
+                                " does not match the account id in session {} and the " +
+                                "domain-admin caller does not manage the target domain",
+                                vm, accountManager.getAccount(vm.getAccountId()), account);
                     }
                     return false;
                 }
@@ -283,7 +377,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
                 return false;
 
             default:
-                s_logger.warn("Unrecoginized virtual machine type, deny access by default. type: " + vm.getType());
+                logger.warn("Unrecoginized virtual machine type, deny access by default. type: " + vm.getType());
                 return false;
         }
 
@@ -295,28 +389,27 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         String msg;
         if (vm == null) {
             msg = "VM " + vmId + " does not exist, sending blank response for console access request";
-            s_logger.warn(msg);
+            logger.warn(msg);
             throw new CloudRuntimeException(msg);
         }
 
-        String vmUuid = vm.getUuid();
         if (unsupportedConsoleVMState.contains(vm.getState())) {
-            msg = "VM " + vmUuid + " must be running to connect console, sending blank response for console access request";
-            s_logger.warn(msg);
+            msg = String.format("VM %s must be running to connect console, sending blank response for console access request", vm);
+            logger.warn(msg);
             throw new CloudRuntimeException(msg);
         }
 
         Long hostId = vm.getState() != VirtualMachine.State.Migrating ? vm.getHostId() : vm.getLastHostId();
         if (hostId == null) {
-            msg = "VM " + vmUuid + " lost host info, sending blank response for console access request";
-            s_logger.warn(msg);
+            msg = String.format("VM %s lost host info, sending blank response for console access request", vm);
+            logger.warn(msg);
             throw new CloudRuntimeException(msg);
         }
 
         HostVO host = managementServer.getHostBy(hostId);
         if (host == null) {
-            msg = "VM " + vmUuid + "'s host does not exist, sending blank response for console access request";
-            s_logger.warn(msg);
+            msg = String.format("Host for VM %s does not exist, sending blank response for console access request", vm);
+            logger.warn(msg);
             throw new CloudRuntimeException(msg);
         }
 
@@ -330,71 +423,123 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         }
 
         ConsoleEndpoint consoleEndpoint = composeConsoleAccessEndpoint(rootUrl, vm, host, clientAddress, sessionUuid, extraSecurityToken);
-        s_logger.debug("The console URL is: " + consoleEndpoint.getUrl());
+        logger.debug("The console URL is: " + consoleEndpoint.getUrl());
         return consoleEndpoint;
     }
 
-    private ConsoleEndpoint composeConsoleAccessEndpoint(String rootUrl, VirtualMachine vm, HostVO hostVo, String addr,
-                                                         String sessionUuid, String extraSecurityToken) {
-        String host = hostVo.getPrivateIpAddress();
-
-        Pair<String, Integer> portInfo = null;
-        if (hostVo.getHypervisorType() == Hypervisor.HypervisorType.KVM &&
-                (hostVo.getResourceState().equals(ResourceState.ErrorInMaintenance) ||
-                        hostVo.getResourceState().equals(ResourceState.ErrorInPrepareForMaintenance))) {
-            UserVmDetailVO detailAddress = userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.KVM_VNC_ADDRESS);
-            UserVmDetailVO detailPort = userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.KVM_VNC_PORT);
-            if (detailAddress != null && detailPort != null) {
-                portInfo = new Pair<>(detailAddress.getValue(), Integer.valueOf(detailPort.getValue()));
-            } else {
-                s_logger.warn("KVM Host in ErrorInMaintenance/ErrorInPrepareForMaintenance but " +
-                        "no VNC Address/Port was available. Falling back to default one from MS.");
-            }
+    protected ConsoleConnectionDetails getConsoleConnectionDetailsForExternalVm(ConsoleConnectionDetails details,
+                            VirtualMachine vm, HostVO host) {
+        Answer answer = managementServer.getExternalVmConsole(vm, host);
+        if (answer == null) {
+            logger.error("Unable to get console access details for external {} on {}: answer is null.", vm, host);
+            return null;
         }
-
-        if (portInfo == null) {
-            portInfo = managementServer.getVncPort(vm);
+        if (!answer.getResult()) {
+            logger.error("Unable to get console access details for external {} on {}: answer result is false. Reason: {}", vm, host, answer.getDetails());
+            return null;
         }
-
-        if (s_logger.isDebugEnabled())
-            s_logger.debug("Port info " + portInfo.first());
-
-        Ternary<String, String, String> parsedHostInfo = parseHostInfo(portInfo.first());
-
-        int port = -1;
-        if (portInfo.second() == -9) {
-            //for hyperv
-            port = Integer.parseInt(managementServer.findDetail(hostVo.getId(), "rdp.server.port").getValue());
-        } else {
-            port = portInfo.second();
+        if (!(answer instanceof GetExternalConsoleAnswer)) {
+            logger.error("Unable to get console access details for external {} on {}: answer is not of type GetExternalConsoleAnswer.", vm, host);
+            return null;
         }
+        GetExternalConsoleAnswer getExternalConsoleAnswer = (GetExternalConsoleAnswer) answer;
+        details.setModeFromExternalProtocol(getExternalConsoleAnswer.getProtocol());
+        details.setDirectUrl(getExternalConsoleAnswer.getUrl());
+        details.setHost(getExternalConsoleAnswer.getHost());
+        if (getExternalConsoleAnswer.getPort() != null) {
+            details.setPort(getExternalConsoleAnswer.getPort());
+        }
+        if (StringUtils.isNotBlank(getExternalConsoleAnswer.getPassword())) {
+            details.setSid(getExternalConsoleAnswer.getPassword());
+            details.setSessionRequiresNewViewer(getExternalConsoleAnswer.isPasswordOneTimeUseOnly());
+        }
+        return details;
+    }
 
-        String sid = vm.getVncPassword();
-        UserVmDetailVO details = userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.KEYBOARD);
+    protected Pair<String, Integer> getHostAndPortForKVMMaintenanceHostIfNeeded(HostVO host,
+                            Map<String, String> vmDetails) {
+        if (!Hypervisor.HypervisorType.KVM.equals(host.getHypervisorType())) {
+            return null;
+        }
+        if(!MAINTENANCE_RESOURCE_STATES.contains(host.getResourceState())) {
+            return null;
+        }
+        String address = vmDetails.get(VmDetailConstants.KVM_VNC_ADDRESS);
+        String port = vmDetails.get(VmDetailConstants.KVM_VNC_PORT);
+        if (ObjectUtils.allNotNull(address, port)) {
+            return new Pair<>(address, Integer.valueOf(port));
+        }
+        logger.warn("KVM Host in ErrorInMaintenance/ErrorInPrepareForMaintenance but " +
+                "no VNC Address/Port was available. Falling back to default one from MS.");
+        return null;
+    }
 
+    protected ConsoleConnectionDetails getConsoleConnectionDetails(VirtualMachine vm, HostVO host) {
+        String locale = null;
         String tag = vm.getUuid();
         String displayName = vm.getHostName();
         if (vm instanceof UserVm) {
             displayName = ((UserVm) vm).getDisplayName();
         }
+        Map<String, String> vmDetails = vmInstanceDetailsDao.listDetailsKeyPairs(vm.getId(),
+                List.of(VmDetailConstants.KEYBOARD, VmDetailConstants.KVM_VNC_ADDRESS, VmDetailConstants.KVM_VNC_PORT));
+        if (vmDetails.get(VmDetailConstants.KEYBOARD) != null) {
+            locale = vmDetails.get(VmDetailConstants.KEYBOARD);
+        }
+        ConsoleConnectionDetails details = new ConsoleConnectionDetails(vm.getVncPassword(), locale, tag, displayName);
+        if (Hypervisor.HypervisorType.External.equals(host.getHypervisorType())) {
+            return getConsoleConnectionDetailsForExternalVm(details, vm, host);
+        }
+        Pair<String, Integer> hostPortInfo = getHostAndPortForKVMMaintenanceHostIfNeeded(host, vmDetails);
+        if (hostPortInfo == null) {
+            hostPortInfo = managementServer.getVncPort(vm);
+        }
+        logger.debug("Retrieved VNC host and port info :[{}, {}] for {} on {}", hostPortInfo.first(),
+                hostPortInfo.second(), vm, host);
+        Ternary<String, String, String> parsedHostInfo = parseHostInfo(hostPortInfo.first());
+        details.setHost(parsedHostInfo.first());
+        details.setTunnelUrl(parsedHostInfo.second());
+        details.setTunnelSession(parsedHostInfo.third());
+        details.setPort(hostPortInfo.second());
+        if (hostPortInfo.second() == -9) {
+            details.setUsingRDP(true);
+            details.setPort(Integer.parseInt(managementServer.findDetail(host.getId(), "rdp.server.port")
+                    .getValue()));
+            logger.debug("HyperV RDP port for {} on {} is: {}", vm, host, details.getPort());
+        }
+        return details;
+    }
 
-        String ticket = genAccessTicket(parsedHostInfo.first(), String.valueOf(port), sid, tag, sessionUuid);
+    protected ConsoleEndpoint composeConsoleAccessEndpoint(String rootUrl, VirtualMachine vm, HostVO hostVo, String addr,
+                         String sessionUuid, String extraSecurityToken) {
+        ConsoleConnectionDetails result = getConsoleConnectionDetails(vm, hostVo);
+        if (result == null) {
+            return new ConsoleEndpoint(false, null, "Console access to this instance cannot be provided");
+        }
+
+        if (ConsoleConnectionDetails.Mode.Direct.equals(result.getMode())) {
+            persistConsoleSession(sessionUuid, vm.getId(), hostVo.getId(), addr);
+            return new ConsoleEndpoint(true, result.getDirectUrl());
+        }
+
+        String ticket = genAccessTicket(result.getHost(), String.valueOf(result.getPort()), result.getSid(),
+                result.getTag(), sessionUuid);
         ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(getEncryptorPassword());
-        ConsoleProxyClientParam param = generateConsoleProxyClientParam(parsedHostInfo, port, sid, tag, ticket,
-                sessionUuid, addr, extraSecurityToken, vm, hostVo, details, portInfo, host, displayName);
+        ConsoleProxyClientParam param = generateConsoleProxyClientParam(result, ticket, sessionUuid, addr,
+                extraSecurityToken, vm, hostVo);
         String token = encryptor.encryptObject(ConsoleProxyClientParam.class, param);
-        int vncPort = consoleProxyManager.getVncPort();
+        int vncPort = consoleProxyManager.getVncPort(vm.getDataCenterId());
 
-        String url = generateConsoleAccessUrl(rootUrl, param, token, vncPort, vm, hostVo, details);
+        String url = generateConsoleAccessUrl(rootUrl, param, token, vncPort, vm, hostVo, result.getLocale());
 
-        s_logger.debug("Adding allowed session: " + sessionUuid);
-        persistConsoleSession(sessionUuid, vm.getId(), hostVo.getId());
+        logger.debug("Adding allowed session: {}", sessionUuid);
+        persistConsoleSession(sessionUuid, vm.getId(), hostVo.getId(), addr);
         managementServer.setConsoleAccessForVm(vm.getId(), sessionUuid);
 
         ConsoleEndpoint consoleEndpoint = new ConsoleEndpoint(true, url);
         consoleEndpoint.setWebsocketHost(managementServer.getConsoleAccessAddress(vm.getId()));
         consoleEndpoint.setWebsocketPort(String.valueOf(vncPort));
-        consoleEndpoint.setWebsocketPath("websockify");
+        consoleEndpoint.setWebsocketPath(WEB_SOCKET_PATH);
         consoleEndpoint.setWebsocketToken(token);
         if (StringUtils.isNotBlank(param.getExtraSecurityToken())) {
             consoleEndpoint.setWebsocketExtra(param.getExtraSecurityToken());
@@ -402,33 +547,38 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         return consoleEndpoint;
     }
 
-    protected void persistConsoleSession(String sessionUuid, long instanceId, long hostId) {
+    protected void persistConsoleSession(String sessionUuid, long instanceId, long hostId, String consoleEndpointCreatorAddress) {
+        CallContext caller = CallContext.current();
+
         ConsoleSessionVO consoleSessionVo = new ConsoleSessionVO();
         consoleSessionVo.setUuid(sessionUuid);
-        consoleSessionVo.setAccountId(CallContext.current().getCallingAccountId());
-        consoleSessionVo.setUserId(CallContext.current().getCallingUserId());
+        consoleSessionVo.setDomainId(caller.getCallingAccount().getDomainId());
+        consoleSessionVo.setAccountId(caller.getCallingAccountId());
+        consoleSessionVo.setUserId(caller.getCallingUserId());
         consoleSessionVo.setInstanceId(instanceId);
         consoleSessionVo.setHostId(hostId);
+        consoleSessionVo.setConsoleEndpointCreatorAddress(consoleEndpointCreatorAddress);
         consoleSessionDao.persist(consoleSessionVo);
     }
 
-    private String generateConsoleAccessUrl(String rootUrl, ConsoleProxyClientParam param, String token, int vncPort,
-                                            VirtualMachine vm, HostVO hostVo, UserVmDetailVO details) {
+    protected String generateConsoleAccessUrl(String rootUrl, ConsoleProxyClientParam param, String token, int vncPort,
+                                            VirtualMachine vm, HostVO hostVo, String locale) {
         StringBuilder sb = new StringBuilder(rootUrl);
         if (param.getHypervHost() != null || !ConsoleProxyManager.NoVncConsoleDefault.value()) {
-            sb.append("/ajax?token=" + token);
+            sb.append("/ajax?token=").append(token);
         } else {
+            String showDot = NoVncConsoleShowDot.valueIn(vm.getDataCenterId()) ? "true" : "false";
             sb.append("/resource/noVNC/vnc.html")
-                    .append("?autoconnect=true")
-                    .append("&port=" + vncPort)
-                    .append("&token=" + token);
-            if (requiresVncOverWebSocketConnection(vm, hostVo) && details != null && details.getValue() != null) {
-                sb.append("&language=" + details.getValue());
+                    .append("?autoconnect=true&show_dot=").append(showDot)
+                    .append("&port=").append(vncPort)
+                    .append("&token=").append(token);
+            if (requiresVncOverWebSocketConnection(vm, hostVo) && StringUtils.isNotBlank(locale)) {
+                sb.append("&language=").append(locale);
             }
         }
 
         if (StringUtils.isNotBlank(param.getExtraSecurityToken())) {
-            sb.append("&extra=" + param.getExtraSecurityToken());
+            sb.append("&extra=").append(param.getExtraSecurityToken());
         }
 
         // for console access, we need guest OS type to help implement keyboard
@@ -437,61 +587,57 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         if (guestOsVo.getCategoryId() == 6)
             sb.append("&guest=windows");
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Compose console url: " + sb);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Compose console url: {}", sb);
         }
         return sb.toString().startsWith("https") ? sb.toString() : "http:" + sb;
     }
 
-    private ConsoleProxyClientParam generateConsoleProxyClientParam(Ternary<String, String, String> parsedHostInfo,
-                                                                    int port, String sid, String tag, String ticket,
-                                                                    String sessionUuid, String addr,
-                                                                    String extraSecurityToken, VirtualMachine vm,
-                                                                    HostVO hostVo, UserVmDetailVO details,
-                                                                    Pair<String, Integer> portInfo, String host,
-                                                                    String displayName) {
+    protected ConsoleProxyClientParam generateConsoleProxyClientParam(ConsoleConnectionDetails details, String ticket,
+                        String sessionUuid, String addr, String extraSecurityToken, VirtualMachine vm, HostVO host) {
         ConsoleProxyClientParam param = new ConsoleProxyClientParam();
-        param.setClientHostAddress(parsedHostInfo.first());
-        param.setClientHostPort(port);
-        param.setClientHostPassword(sid);
-        param.setClientTag(tag);
-        param.setClientDisplayName(displayName);
+        param.setClientHostAddress(details.getHost());
+        param.setClientHostPort(details.getPort());
+        param.setClientHostPassword(details.getSid());
+        param.setClientTag(details.getTag());
+        param.setClientDisplayName(details.getDisplayName());
         param.setTicket(ticket);
         param.setSessionUuid(sessionUuid);
         param.setSourceIP(addr);
+        param.setSessionRequiresNewViewer(details.isSessionRequiresNewViewer());
 
         if (StringUtils.isNotBlank(extraSecurityToken)) {
             param.setExtraSecurityToken(extraSecurityToken);
-            s_logger.debug("Added security token for client validation");
+            logger.debug("Added security token for client validation");
         }
 
-        if (requiresVncOverWebSocketConnection(vm, hostVo)) {
+        if (requiresVncOverWebSocketConnection(vm, host)) {
             setWebsocketUrl(vm, param);
         }
 
-        if (details != null) {
-            param.setLocale(details.getValue());
+        if (details.getLocale() != null) {
+            param.setLocale(details.getLocale());
         }
 
-        if (portInfo.second() == -9) {
-            //For Hyperv Clinet Host Address will send Instance id
-            param.setHypervHost(host);
-            param.setUsername(managementServer.findDetail(hostVo.getId(), "username").getValue());
-            param.setPassword(managementServer.findDetail(hostVo.getId(), "password").getValue());
+        if (details.isUsingRDP()) {
+            //For Hyperv Client Host Address will send Instance id
+            param.setHypervHost(host.getPrivateIpAddress());
+            param.setUsername(managementServer.findDetail(host.getId(), "username").getValue());
+            param.setPassword(managementServer.findDetail(host.getId(), "password").getValue());
         }
-        if (parsedHostInfo.second() != null  && parsedHostInfo.third() != null) {
-            param.setClientTunnelUrl(parsedHostInfo.second());
-            param.setClientTunnelSession(parsedHostInfo.third());
+        if (ObjectUtils.allNotNull(details.getTunnelUrl(), details.getTunnelSession())) {
+            param.setClientTunnelUrl(details.getTunnelUrl());
+            param.setClientTunnelSession(details.getTunnelSession());
         }
         return param;
     }
 
-    public static Ternary<String, String, String> parseHostInfo(String hostInfo) {
+    public Ternary<String, String, String> parseHostInfo(String hostInfo) {
         String host = null;
         String tunnelUrl = null;
         String tunnelSession = null;
 
-        s_logger.info("Parse host info returned from executing GetVNCPortCommand. host info: " + hostInfo);
+        logger.info("Parse host info returned from executing GetVNCPortCommand. host info: " + hostInfo);
 
         if (hostInfo != null) {
             if (hostInfo.startsWith("consoleurl")) {
@@ -524,11 +670,13 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         return vm.getHypervisorType() == Hypervisor.HypervisorType.VMware && hostVo.getHypervisorVersion().compareTo("7.0") >= 0;
     }
 
-    public static String genAccessTicket(String host, String port, String sid, String tag, String sessionUuid) {
+    @Override
+    public String genAccessTicket(String host, String port, String sid, String tag, String sessionUuid) {
         return genAccessTicket(host, port, sid, tag, new Date(), sessionUuid);
     }
 
-    public static String genAccessTicket(String host, String port, String sid, String tag, Date normalizedHashTime, String sessionUuid) {
+    @Override
+    public String genAccessTicket(String host, String port, String sid, String tag, Date normalizedHashTime, String sessionUuid) {
         String params = "host=" + host + "&port=" + port + "&sid=" + sid + "&tag=" + tag + "&session=" + sessionUuid;
 
         try {
@@ -547,12 +695,12 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
 
             return Base64.encodeBase64String(encryptedBytes);
         } catch (Exception e) {
-            s_logger.error("Unexpected exception ", e);
+            logger.error("Unexpected exception ", e);
         }
         return "";
     }
 
-    private String getEncryptorPassword() {
+    protected String getEncryptorPassword() {
         String key = keysManager.getEncryptionKey();
         String iv = keysManager.getEncryptionIV();
 
@@ -566,7 +714,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     private void setWebsocketUrl(VirtualMachine vm, ConsoleProxyClientParam param) {
         String ticket = acquireVncTicketForVmwareVm(vm);
         if (StringUtils.isBlank(ticket)) {
-            s_logger.error("Could not obtain VNC ticket for VM " + vm.getInstanceName());
+            logger.error(String.format("Could not obtain VNC ticket for VM %s", vm));
             return;
         }
         String wsUrl = composeWebsocketUrlForVmwareVm(ticket, param);
@@ -587,18 +735,134 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
      */
     private String acquireVncTicketForVmwareVm(VirtualMachine vm) {
         try {
-            s_logger.info("Acquiring VNC ticket for VM = " + vm.getHostName());
+            logger.info("Acquiring VNC ticket for VM = {}", vm);
             GetVmVncTicketCommand cmd = new GetVmVncTicketCommand(vm.getInstanceName());
             Answer answer = agentManager.send(vm.getHostId(), cmd);
             GetVmVncTicketAnswer ans = (GetVmVncTicketAnswer) answer;
             if (!ans.getResult()) {
-                s_logger.info("VNC ticket could not be acquired correctly: " + ans.getDetails());
+                logger.info("VNC ticket could not be acquired correctly: " + ans.getDetails());
             }
             return ans.getTicket();
         } catch (AgentUnavailableException | OperationTimedoutException e) {
-            s_logger.error("Error acquiring ticket", e);
+            logger.error("Error acquiring ticket", e);
             return null;
         }
     }
 
+    protected static class ConsoleConnectionDetails {
+        public enum Mode {
+            ConsoleProxy,
+            Direct
+        }
+
+        private Mode mode = Mode.ConsoleProxy;
+        private String host;
+        private int port = -1;
+        private String sid;
+        private String locale;
+        private String tag;
+        private String displayName;
+        private String tunnelUrl = null;
+        private String tunnelSession = null;
+        private boolean usingRDP;
+        private String directUrl;
+        private boolean sessionRequiresNewViewer = false;
+
+        ConsoleConnectionDetails(String sid, String locale, String tag, String displayName) {
+            this.sid = sid;
+            this.locale = locale;
+            this.tag = tag;
+            this.displayName = displayName;
+        }
+
+        public Mode getMode() {
+            return mode;
+        }
+
+        public void setModeFromExternalProtocol(String protocol) {
+            this.mode = Mode.ConsoleProxy;
+            if (StringUtils.isBlank(protocol)) {
+                return;
+            }
+            if (Mode.Direct.name().toLowerCase().equalsIgnoreCase(protocol)) {
+                this.mode = Mode.Direct;
+            }
+        }
+
+        public String getHost() {
+            return host;
+        }
+
+        public void setHost(String host) {
+            this.host = host;
+        }
+
+        public int getPort() {
+            return port;
+        }
+
+        public void setPort(int port) {
+            this.port = port;
+        }
+
+        public String getSid() {
+            return sid;
+        }
+
+        public void setSid(String sid) {
+            this.sid = sid;
+        }
+
+        public String getLocale() {
+            return locale;
+        }
+
+        public String getTag() {
+            return tag;
+        }
+
+        public String getDisplayName() {
+            return displayName;
+        }
+
+        public String getTunnelUrl() {
+            return tunnelUrl;
+        }
+
+        public void setTunnelUrl(String tunnelUrl) {
+            this.tunnelUrl = tunnelUrl;
+        }
+
+        public String getTunnelSession() {
+            return tunnelSession;
+        }
+
+        public void setTunnelSession(String tunnelSession) {
+            this.tunnelSession = tunnelSession;
+        }
+
+        public boolean isUsingRDP() {
+            return usingRDP;
+        }
+
+        public void setUsingRDP(boolean usingRDP) {
+            this.usingRDP = usingRDP;
+        }
+
+        public String getDirectUrl() {
+            return directUrl;
+        }
+
+        public void setDirectUrl(String directUrl) {
+            this.directUrl = directUrl;
+        }
+
+        public boolean isSessionRequiresNewViewer() {
+            return sessionRequiresNewViewer;
+        }
+
+        public void setSessionRequiresNewViewer(boolean sessionRequiresNewViewer) {
+            this.sessionRequiresNewViewer = sessionRequiresNewViewer;
+        }
+    }
 }

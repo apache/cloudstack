@@ -29,7 +29,6 @@ import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.object.datastore.ObjectStoreHelper;
 import org.apache.cloudstack.storage.object.datastore.ObjectStoreProviderManager;
 import org.apache.cloudstack.storage.object.store.lifecycle.ObjectStoreLifeCycle;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.HashMap;
@@ -37,8 +36,6 @@ import java.util.List;
 import java.util.Map;
 
 public class SimulatorObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
-
-    private static final Logger s_logger = Logger.getLogger(SimulatorObjectStoreLifeCycleImpl.class);
     @Inject
     protected ResourceManager _resourceMgr;
     @Inject
@@ -68,12 +65,14 @@ public class SimulatorObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
         String url = (String)dsInfos.get("url");
         String name = (String)dsInfos.get("name");
         String providerName = (String)dsInfos.get("providerName");
+        Long size = (Long)dsInfos.get("size");
         Map<String, String> details = (Map<String, String>)dsInfos.get("details");
 
         Map<String, Object> objectStoreParameters = new HashMap();
         objectStoreParameters.put("name", name);
         objectStoreParameters.put("url", url);
         objectStoreParameters.put("providerName", providerName);
+        objectStoreParameters.put("size", size);
 
         ObjectStoreVO ids = objectStoreHelper.createObjectStore(objectStoreParameters, details);
         return objectStoreMgr.getObjectStore(ids.getId());

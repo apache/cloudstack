@@ -35,6 +35,7 @@ jobs:
       fail-fast: false
       matrix:
         tests: [ "smoke/test_accounts
+                  smoke/test_account_access
                   smoke/test_affinity_groups
                   smoke/test_affinity_groups_projects
                   smoke/test_annotations
@@ -54,6 +55,7 @@ jobs:
                   smoke/test_deploy_vm_with_userdata
                   smoke/test_deploy_vms_in_parallel
                   smoke/test_deploy_vms_with_varied_deploymentplanners
+                  smoke/test_restore_vm
                   smoke/test_diagnostics
                   smoke/test_direct_download
                   smoke/test_disk_offerings
@@ -85,7 +87,12 @@ jobs:
                   smoke/test_migration
                   smoke/test_multipleips_per_nic
                   smoke/test_nested_virtualization
-                  smoke/test_set_sourcenat",
+                  smoke/test_set_sourcenat
+                  smoke/test_webhook_lifecycle
+                  smoke/test_purge_expunged_vms
+                  smoke/test_extension_lifecycle
+                  smoke/test_extension_custom_action_lifecycle
+                  smoke/test_extension_custom",
                 "smoke/test_network
                   smoke/test_network_acl
                   smoke/test_network_ipv6
@@ -131,7 +138,9 @@ jobs:
                   smoke/test_usage
                   smoke/test_usage_events
                   smoke/test_vm_deployment_planner
+                  smoke/test_vm_strict_host_tags
                   smoke/test_vm_schedule
+                  smoke/test_deploy_vgpu_enabled_vm
                   smoke/test_vm_life_cycle
                   smoke/test_vm_lifecycle_unmanage_import
                   smoke/test_vm_snapshot_kvm
@@ -159,7 +168,8 @@ jobs:
                   component/test_cpu_limits
                   component/test_cpu_max_limits
                   component/test_cpu_project_limits
-                  component/test_deploy_vm_userdata_multi_nic",
+                  component/test_deploy_vm_userdata_multi_nic
+                  component/test_deploy_vm_lease",
                 "component/test_egress_fw_rules
                   component/test_invalid_gw_nm
                   component/test_ip_reservation",
@@ -179,7 +189,8 @@ jobs:
                 "component/test_project_usage
                   component/test_protocol_number_security_group
                   component/test_public_ip
-                  component/test_resource_limits",
+                  component/test_resource_limits
+                  component/test_resource_limit_tags",
                 "component/test_regions_accounts
                   component/test_routers
                   component/test_snapshots
@@ -194,26 +205,32 @@ jobs:
                   component/test_vpc_network
                   component/test_vpc_offerings
                   component/test_vpc_routers
-                  component/test_vpn_users",
-                "component/test_vpc_network_lbrules" ]
+                  component/test_vpn_users
+                  component/test_vpc_network_lbrules",
+                "smoke/test_list_accounts
+                  smoke/test_list_disk_offerings
+                  smoke/test_list_domains
+                  smoke/test_list_hosts
+                  smoke/test_list_service_offerings
+                  smoke/test_list_storage_pools
+                  smoke/test_list_volumes"]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - name: Set up JDK
-        uses: actions/setup-java@v3
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
         with:
-          java-version: '11'
-          distribution: 'adopt'
-          architecture: x64
-          cache: maven
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.8'
+          python-version: '3.10'
           architecture: 'x64'
 
       - name: Install Build Dependencies
@@ -223,7 +240,7 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          python3 -m pip install --user --upgrade urllib3 lxml paramiko nose texttable ipmisim pyopenssl pycrypto mock flask netaddr pylint pycodestyle six astroid
+          python3 -m pip install --user --upgrade urllib3 lxml paramiko nose texttable ipmisim pyopenssl pycryptodome mock flask netaddr pylint pycodestyle six astroid pynose
 
       - name: Install jacoco dependencies
         run: |
@@ -271,14 +288,14 @@ jobs:
 
       - name: Start CloudStack Management Server with Simulator
         run: |
-          export MAVEN_OPTS="-Xmx4096m -XX:MaxPermSize=800m -Djava.security.egd=file:/dev/urandom  -javaagent:jacoco/lib/jacocoagent.jar=address=*,port=36320,output=tcpserver"
+          export MAVEN_OPTS="-Xmx4096m -XX:MaxMetaspaceSize=800m -Djava.security.egd=file:/dev/urandom  -javaagent:jacoco/lib/jacocoagent.jar=address=*,port=36320,output=tcpserver --add-opens=java.base/java.lang=ALL-UNNAMED --add-exports=java.base/sun.security.x509=ALL-UNNAMED --add-opens=java.base/jdk.internal.reflect=ALL-UNNAMED"
           echo -e "\nStarting simulator"
           set +e
           mvn -Dsimulator -Dorg.eclipse.jetty.annotations.maxWait=120 -pl :cloud-client-ui jetty:run 2>&1 > /tmp/jetty-log || true &
           while ! nc -vzw 5 localhost 8096 2>&1 > /dev/null; do grep Exception /tmp/jetty-log; sleep 10; done
           set -e
           echo -e "\nStarting Advanced Zone DataCenter deployment"
-          python3 tools/marvin/marvin/deployDataCenter.py -i setup/dev/advanced.cfg 2>&1 || true
+          python3 tools/marvin/marvin/deployDataCenter.py -i setup/dev/advdualzone.cfg 2>&1 || true
 
       - name: Run Integration Tests with Simulator
         run: |
@@ -291,7 +308,7 @@ jobs:
           TESTS=($(echo $TESTS | tr -d '\n' | tr -s ' '))
           for suite in "${TESTS[@]}" ; do
             echo -e "Currently running test: $suite\n"
-            time nosetests-3.4 --with-xunit --xunit-file=integration-test-results/$suite.xml --with-marvin --marvin-config=setup/dev/advanced.cfg test/integration/$suite.py -s -a tags=advanced,required_hardware=false --zone=Sandbox-simulator --hypervisor=simulator || true ;
+            time nosetests-3.4 --with-xunit --xunit-file=integration-test-results/$suite.xml --with-marvin --marvin-config=setup/dev/advdualzone.cfg test/integration/$suite.py -s -a tags=advanced,required_hardware=false --zone=zim1 --hypervisor=simulator || true ;
           done
 
           echo -e "Stopping Simulator, integration tests run completed\n"
@@ -305,10 +322,11 @@ jobs:
           echo -e "Simulator CI Test Results: (only failures listed)\n"
           python3 ./tools/marvin/xunit-reader.py integration-test-results/
 
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
         with:
           files: jacoco-coverage.xml
           fail_ci_if_error: true
           flags: simulator-marvin-tests
           verbose: true
           name: codecov
+          token: ${{ secrets.CODECOV_TOKEN }}

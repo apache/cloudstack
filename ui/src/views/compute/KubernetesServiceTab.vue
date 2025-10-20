@@ -25,7 +25,7 @@
       <a-tab-pane :tab="$t('label.details')" key="details">
         <DetailsTab :resource="resource" :loading="loading" />
       </a-tab-pane>
-      <a-tab-pane v-if="resource.clustertype == 'CloudManaged'" :tab="$t('label.access')" key="access">
+      <a-tab-pane v-if="resource.clustertype === 'CloudManaged'" :tab="$t('label.access')" key="access">
         <a-card :title="$t('label.kubeconfig.cluster')" :loading="versionLoading">
           <div v-if="clusterConfig !== ''">
             <a-textarea :value="clusterConfig" :rows="5" readonly />
@@ -114,7 +114,18 @@
               <status :text="text ? text : ''" displayText />
             </template>
             <template v-if="column.key === 'port'" :name="text" :record="record">
-              {{ cksSshStartingPort + index }}
+              <div v-if="network.type === 'Shared' || network.ip4routing">
+                {{ cksSshPortSharedNetwork }}
+              </div>
+              <div v-else-if="record.isexternalnode || (!record.isexternalnode && !record.isetcdnode)">
+                {{ cksSshStartingPort + index }}
+              </div>
+              <div v-else>
+                {{ parseInt(etcdSshPort) + parseInt(getEtcdIndex(record.name)) - 1 }}
+              </div>
+            </template>
+            <template v-if="column.key === 'kubernetesnodeversion'">
+              <span> {{ text ? text : '' }} </span>
             </template>
             <template v-if="column.key === 'actions'">
               <a-tooltip placement="bottom" >
@@ -149,6 +160,9 @@
       <a-tab-pane :tab="$t('label.loadbalancing')" key="loadbalancing" v-if="publicIpAddress">
         <LoadBalancing :resource="publicIpAddress" :loading="networkLoading" />
       </a-tab-pane>
+      <a-tab-pane :tab="$t('label.events')" key="events" v-if="'listEvents' in $store.getters.apis">
+        <events-tab :resource="resource" resourceType="KubernetesCluster" :loading="loading" />
+      </a-tab-pane>
       <a-tab-pane :tab="$t('label.annotations')" key="comments" v-if="'listAnnotations' in $store.getters.apis">
         <AnnotationsTab
           :resource="resource"
@@ -160,7 +174,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { isAdmin } from '@/role'
 import { mixinDevice } from '@/utils/mixin.js'
 import DetailsTab from '@/components/view/DetailsTab'
@@ -169,6 +183,7 @@ import PortForwarding from '@/views/network/PortForwarding'
 import LoadBalancing from '@/views/network/LoadBalancing'
 import Status from '@/components/widgets/Status'
 import AnnotationsTab from '@/components/view/AnnotationsTab'
+import EventsTab from '@/components/view/EventsTab'
 
 export default {
   name: 'KubernetesServiceTab',
@@ -178,7 +193,8 @@ export default {
     PortForwarding,
     LoadBalancing,
     Status,
-    AnnotationsTab
+    AnnotationsTab,
+    EventsTab
   },
   mixins: [mixinDevice],
   inject: ['parentFetchData'],
@@ -205,10 +221,12 @@ export default {
       virtualmachines: [],
       vmColumns: [],
       networkLoading: false,
-      network: {},
+      network: null,
       publicIpAddress: null,
       currentTab: 'details',
       cksSshStartingPort: 2222,
+      etcdSshPort: 50000,
+      cksSshPortSharedNetwork: 22,
       annotations: []
     }
   },
@@ -236,6 +254,11 @@ export default {
         key: 'port',
         title: this.$t('label.ssh.port'),
         dataIndex: 'port'
+      },
+      {
+        key: 'kubernetesnodeversion',
+        title: this.$t('label.node.version'),
+        dataIndex: 'kubernetesnodeversion'
       },
       {
         title: this.$t('label.zonename'),
@@ -273,13 +296,14 @@ export default {
     }
   },
   mounted () {
-    if (this.$store.getters.apis.scaleKubernetesCluster.params.filter(x => x.name === 'nodeids').length > 0) {
+    if (this.$store.getters.apis.scaleKubernetesCluster?.params?.filter(x => x.name === 'nodeids').length > 0 && this.resource.clustertype === 'CloudManaged') {
       this.vmColumns.push({
         key: 'actions',
         title: this.$t('label.actions'),
         dataIndex: 'actions'
       })
     }
+    this.fetchEtcdSshPort()
     this.handleFetchData()
     this.setCurrentTab()
   },
@@ -319,7 +343,7 @@ export default {
     },
     fetchComments () {
       this.clusterConfigLoading = true
-      api('listAnnotations', { entityid: this.resource.id, entitytype: 'KUBERNETES_CLUSTER', annotationfilter: 'all' }).then(json => {
+      getAPI('listAnnotations', { entityid: this.resource.id, entitytype: 'KUBERNETES_CLUSTER', annotationfilter: 'all' }).then(json => {
         if (json.listannotationsresponse?.annotation) {
           this.annotations = json.listannotationsresponse.annotation
         }
@@ -335,7 +359,7 @@ export default {
       if (!this.isObjectEmpty(this.resource)) {
         var params = {}
         params.id = this.resource.id
-        api('getKubernetesClusterConfig', params).then(json => {
+        getAPI('getKubernetesClusterConfig', params).then(json => {
           const config = json.getkubernetesclusterconfigresponse.clusterconfig
           if (!this.isObjectEmpty(config) &&
             this.isValidValueForKey(config, 'configdata') &&
@@ -350,9 +374,9 @@ export default {
         }).finally(() => {
           this.clusterConfigLoading = false
           if (!this.isObjectEmpty(this.kubernetesVersion) && this.isValidValueForKey(this.kubernetesVersion, 'semanticversion')) {
-            this.kubectlLinuxLink = 'https://storage.googleapis.com/kubernetes-release/release/v' + this.kubernetesVersion.semanticversion + '/bin/linux/amd64/kubectl'
-            this.kubectlMacLink = 'https://storage.googleapis.com/kubernetes-release/release/v' + this.kubernetesVersion.semanticversion + '/bin/darwin/amd64/kubectl'
-            this.kubectlWindowsLink = 'https://storage.googleapis.com/kubernetes-release/release/v' + this.kubernetesVersion.semanticversion + '/bin/windows/amd64/kubectl.exe'
+            this.kubectlLinuxLink = 'https://dl.k8s.io/release/v' + this.kubernetesVersion.semanticversion + '/bin/linux/amd64/kubectl'
+            this.kubectlMacLink = 'https://dl.k8s.io/release/v' + this.kubernetesVersion.semanticversion + '/bin/darwin/amd64/kubectl'
+            this.kubectlWindowsLink = 'https://dl.k8s.io/release/v' + this.kubernetesVersion.semanticversion + '/bin/windows/amd64/kubectl.exe'
           }
         })
       }
@@ -363,7 +387,7 @@ export default {
         this.resource.kubernetesversionid !== '') {
         var params = {}
         params.id = this.resource.kubernetesversionid
-        api('listKubernetesSupportedVersions', params).then(json => {
+        getAPI('listKubernetesSupportedVersions', params).then(json => {
           const versionObjs = json.listkubernetessupportedversionsresponse.kubernetessupportedversion
           if (this.arrayHasItems(versionObjs)) {
             this.kubernetesVersion = versionObjs[0]
@@ -373,20 +397,44 @@ export default {
         }).finally(() => {
           this.versionLoading = false
           if (!this.isObjectEmpty(this.kubernetesVersion) && this.isValidValueForKey(this.kubernetesVersion, 'semanticversion')) {
-            this.kubectlLinuxLink = 'https://storage.googleapis.com/kubernetes-release/release/v' + this.kubernetesVersion.semanticversion + '/bin/linux/amd64/kubectl'
-            this.kubectlMacLink = 'https://storage.googleapis.com/kubernetes-release/release/v' + this.kubernetesVersion.semanticversion + '/bin/darwin/amd64/kubectl'
-            this.kubectlWindowsLink = 'https://storage.googleapis.com/kubernetes-release/release/v' + this.kubernetesVersion.semanticversion + '/bin/windows/amd64/kubectl.exe'
+            this.kubectlLinuxLink = 'https://dl.k8s.io/release/v' + this.kubernetesVersion.semanticversion + '/bin/linux/amd64/kubectl'
+            this.kubectlMacLink = 'https://dl.k8s.io/release/v' + this.kubernetesVersion.semanticversion + '/bin/darwin/amd64/kubectl'
+            this.kubectlWindowsLink = 'https://dl.k8s.io/release/v' + this.kubernetesVersion.semanticversion + '/bin/windows/amd64/kubectl.exe'
           }
         })
       }
     },
     fetchInstances () {
       this.instanceLoading = true
-      this.virtualmachines = this.resource.virtualmachines || []
+      var defaultNodes = this.resource.virtualmachines.filter(x => !x.isexternalnode && !x.isetcdnode)
+      var externalNodes = this.resource.virtualmachines.filter(x => x.isexternalnode)
+      var etcdNodes = this.resource.virtualmachines.filter(x => x.isetcdnode)
+      this.virtualmachines = defaultNodes.concat(externalNodes).concat(etcdNodes)
       this.virtualmachines.map(x => { x.ipaddress = x.nic[0].ipaddress })
       this.instanceLoading = false
     },
-    fetchPublicIpAddress () {
+    fetchNetwork () {
+      this.networkLoading = true
+      return new Promise((resolve, reject) => {
+        getAPI('listNetworks', {
+          listAll: true,
+          id: this.resource.networkid
+        }).then(json => {
+          const networks = json.listnetworksresponse.network
+          if (this.arrayHasItems(networks)) {
+            this.network = networks[0]
+          }
+          resolve(this.network)
+        })
+        this.networkLoading = false
+      })
+    },
+    async fetchPublicIpAddress () {
+      await this.fetchNetwork()
+      if (this.network && (this.network.type === 'Shared' || this.network.ip4routing)) {
+        this.publicIpAddress = null
+        return
+      }
       this.networkLoading = true
       var params = {
         listAll: true,
@@ -401,7 +449,7 @@ export default {
           params.associatednetworkid = this.resource.networkid
         }
       }
-      api('listPublicIpAddresses', params).then(json => {
+      getAPI('listPublicIpAddresses', params).then(json => {
         let ips = json.listpublicipaddressesresponse.publicipaddress
         if (this.arrayHasItems(ips)) {
           ips = ips.filter(x => x.issourcenat)
@@ -411,6 +459,15 @@ export default {
         this.$notifyError(error)
       }).finally(() => {
         this.networkLoading = false
+      })
+    },
+    fetchEtcdSshPort () {
+      const params = {}
+      params.name = 'cloud.kubernetes.etcd.node.start.port'
+      var apiName = 'listConfigurations'
+      getAPI(apiName, params).then(json => {
+        const configResponse = json.listconfigurationsresponse.configuration
+        this.etcdSshPort = configResponse[0]?.value
       })
     },
     downloadKubernetesClusterConfig () {
@@ -432,7 +489,7 @@ export default {
         id: this.resource.id,
         nodeids: node.id
       }
-      api('scaleKubernetesCluster', params).then(json => {
+      postAPI('scaleKubernetesCluster', params).then(json => {
         const jobId = json.scalekubernetesclusterresponse.jobid
         console.log(jobId)
         this.$store.dispatch('AddAsyncJob', {
@@ -455,6 +512,14 @@ export default {
       }).finally(() => {
         this.parentFetchData()
       })
+    },
+    getEtcdIndex (name) {
+      const lastIndex = name.lastIndexOf('-')
+      if (lastIndex > 0) {
+        return name.charAt(lastIndex - 1)
+      } else {
+        return null
+      }
     }
   }
 }

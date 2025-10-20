@@ -26,7 +26,7 @@ public class CreateConsoleEndpointResponse extends BaseResponse {
     public CreateConsoleEndpointResponse() {
     }
 
-    @SerializedName(ApiConstants.RESULT)
+    @SerializedName(ApiConstants.SUCCESS)
     @Param(description = "true if the console endpoint is generated properly")
     private Boolean result;
 

@@ -22,7 +22,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -43,7 +42,6 @@ import com.cloud.network.NetScalerServicePackageVO;
 @APICommand(name = "listRegisteredServicePackages", responseObject = NetScalerServicePackageResponse.class, description = "lists registered service packages", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListRegisteredServicePackageCmd extends BaseListCmd {
 
-    public static final Logger s_logger = Logger.getLogger(ListRegisteredServicePackageCmd.class.getName());
     private static final String s_name = "listregisteredservicepackage";
     @Inject
     NetscalerLoadBalancerElementService _netsclarLbService;

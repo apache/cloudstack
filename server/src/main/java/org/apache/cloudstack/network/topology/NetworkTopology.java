@@ -38,6 +38,7 @@ import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
+import org.apache.cloudstack.network.BgpPeer;
 
 public interface NetworkTopology {
 
@@ -89,4 +90,6 @@ public interface NetworkTopology {
             final boolean failWhenDisconnect, RuleApplierWrapper<RuleApplier> ruleApplier) throws ResourceUnavailableException;
 
     boolean removeDhcpEntry(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final VirtualRouter virtualRouter) throws ResourceUnavailableException;
+
+    boolean applyBgpPeers(final Network network, final List<? extends BgpPeer> bpgPeers, final VirtualRouter virtualRouter) throws ResourceUnavailableException;
 }

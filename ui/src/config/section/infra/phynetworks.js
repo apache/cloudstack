@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { shallowRef, defineAsyncComponent } from 'vue'
+import { shallowRef, defineAsyncComponent, reactive } from 'vue'
 export default {
   name: 'physicalnetwork',
   title: 'label.physical.network',
@@ -42,6 +42,11 @@ export default {
     name: 'guestnetwork',
     title: 'label.guest.networks',
     param: 'physicalnetworkid'
+  },
+  {
+    name: 'publicip',
+    title: 'label.public.ip.addresses',
+    param: 'physicalnetworkid'
   }],
   actions: [
     {
@@ -52,7 +57,7 @@ export default {
       args: ['name', 'zoneid', 'isolationmethods', 'vlan', 'tags', 'networkspeed', 'broadcastdomainrange'],
       mapping: {
         isolationmethods: {
-          options: ['VLAN', 'VXLAN', 'GRE', 'STT', 'BCF_SEGMENT', 'SSP', 'ODL', 'L3VPN', 'VCS']
+          options: ['VLAN', 'VXLAN', 'GRE', 'STT', 'BCF_SEGMENT', 'SSP', 'ODL', 'L3VPN', 'VCS', 'NSX', 'NETRIS']
         }
       }
     },
@@ -126,3 +131,6 @@ export default {
     }
   ]
 }
+export const trafficTypeTab = reactive({
+  index: 0
+})

@@ -16,11 +16,13 @@
 // under the License.
 package com.cloud.hypervisor.kvm.storage;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.joda.time.Duration;
 
@@ -37,6 +39,9 @@ public interface KVMStoragePool {
     public static final long HeartBeatUpdateRetrySleep = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_UPDATE_RETRY_SLEEP);
     public static final long HeartBeatCheckerTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_CHECKER_TIMEOUT);
 
+    public default KVMPhysicalDisk createPhysicalDisk(String volumeUuid, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, Long usableSize, byte[] passphrase) {
+        return createPhysicalDisk(volumeUuid, format, provisioningType, size, passphrase);
+    }
 
     public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase);
 
@@ -57,6 +62,14 @@ public interface KVMStoragePool {
     public long getCapacity();
 
     public long getUsed();
+
+    default Long getCapacityIops() {
+        return null;
+    }
+
+    default Long getUsedIops() {
+        return null;
+    }
 
     public long getAvailable();
 
@@ -88,6 +101,10 @@ public interface KVMStoragePool {
 
     public Map<String, String> getDetails();
 
+    default String getLocalPathFor(String relativePath) {
+        return String.format("%s%s%s", getLocalPath(), File.separator, relativePath);
+    }
+
     public boolean isPoolSupportHA();
 
     public String getHearthBeatPath();
@@ -99,4 +116,15 @@ public interface KVMStoragePool {
     public Boolean checkingHeartBeat(HAStoragePool pool, HostTO host);
 
     public Boolean vmActivityCheck(HAStoragePool pool, HostTO host, Duration activityScriptTimeout, String volumeUUIDListString, String vmActivityCheckPath, long duration);
+
+    default LibvirtVMDef.DiskDef.BlockIOSize getSupportedLogicalBlockSize() {
+        return null;
+    }
+
+    default LibvirtVMDef.DiskDef.BlockIOSize getSupportedPhysicalBlockSize() {
+        return null;
+    }
+
+    default void customizeLibvirtDiskDef(LibvirtVMDef.DiskDef disk) {
+    }
 }

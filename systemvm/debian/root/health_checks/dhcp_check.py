@@ -24,8 +24,8 @@ def main():
     vMs = getHealthChecksData("virtualMachines")
 
     if vMs is None or len(vMs) == 0:
-        print "No VMs running data available, skipping"
-        exit(0)
+        print("No VMs running data available, skipping")
+        exit(3)
 
     try:
         with open('/etc/dhcphosts.txt', 'r') as hostsFile:
@@ -64,10 +64,10 @@ def main():
             failureMessage = failureMessage + entry + ", "
 
     if failedCheck:
-        print failureMessage[:-2]
+        print(failureMessage[:-2])
         exit(1)
     else:
-        print "All " + str(COUNT) + " VMs are present in dhcphosts.txt"
+        print("All " + str(COUNT) + " VMs are present in dhcphosts.txt")
         exit(0)
 
 

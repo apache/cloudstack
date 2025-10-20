@@ -17,7 +17,8 @@
 package com.cloud.servlet;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -27,7 +28,7 @@ import com.cloud.utils.crypt.Base64Encryptor;
 
 // To maintain independency of console proxy project, we duplicate this class from console proxy project
 public class ConsoleProxyPasswordBasedEncryptor {
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyPasswordBasedEncryptor.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private Gson gson;
 

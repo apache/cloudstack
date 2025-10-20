@@ -101,13 +101,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyFloat;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyFloat;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
@@ -419,7 +419,7 @@ public class UserVmManagerTest {
         doReturn(VirtualMachine.State.Running).when(_vmInstance).getState();
 
         //when(ApiDBUtils.getCpuOverprovisioningFactor()).thenReturn(3f);
-        when(_capacityMgr.checkIfHostHasCapacity(anyLong(), anyInt(), anyLong(), anyBoolean(), anyFloat(), anyFloat(), anyBoolean())).thenReturn(false);
+        when(_capacityMgr.checkIfHostHasCapacity(any(), anyInt(), anyLong(), anyBoolean(), anyFloat(), anyFloat(), anyBoolean())).thenReturn(false);
         when(_itMgr.reConfigureVm(_vmInstance.getUuid(), so2, so1, new HashMap<String, String>(), false)).thenReturn(_vmInstance);
 
         doReturn(true).when(_itMgr).upgradeVmDb(anyLong(), so1, so2);
@@ -477,7 +477,7 @@ public class UserVmManagerTest {
         CallContext.register(user, caller);
         try {
 
-            _userVmMgr.moveVMToUser(cmd);
+            _userVmMgr.moveVmToUser(cmd);
         } finally {
             CallContext.unregister();
         }
@@ -527,7 +527,7 @@ public class UserVmManagerTest {
         when(_accountMgr.isRootAdmin(anyLong())).thenReturn(true);
 
         try {
-            _userVmMgr.moveVMToUser(cmd);
+            _userVmMgr.moveVmToUser(cmd);
         } finally {
             CallContext.unregister();
         }
@@ -772,7 +772,6 @@ public class UserVmManagerTest {
     @Test
     public void testApplyUserDataInNetworkWithoutUserDataSupport() throws Exception {
         UserVm userVm = mock(UserVm.class);
-        when(userVm.getId()).thenReturn(1L);
 
         when(_nicMock.getNetworkId()).thenReturn(2L);
         when(_networkMock.getNetworkOfferingId()).thenReturn(3L);

@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.admin.pod;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -35,7 +34,6 @@ import com.cloud.utils.Pair;
 @APICommand(name = "listPods", description = "Lists all Pods.", responseObject = PodResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListPodsByCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListPodsByCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -56,6 +54,11 @@ public class ListPodsByCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.SHOW_CAPACITIES, type = CommandType.BOOLEAN, description = "flag to display the capacity of the pods")
     private Boolean showCapacities;
+
+    @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUP, type = CommandType.STRING,
+            description = "the name of the storage access group",
+            since = "4.21.0")
+    private String storageAccessGroup;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -81,6 +84,18 @@ public class ListPodsByCmd extends BaseListCmd {
         return showCapacities;
     }
 
+    public String getStorageAccessGroup() {
+        return storageAccessGroup;
+    }
+
+    public ListPodsByCmd() {
+
+    }
+
+    public ListPodsByCmd(String storageAccessGroup) {
+        this.storageAccessGroup = storageAccessGroup;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -88,8 +103,8 @@ public class ListPodsByCmd extends BaseListCmd {
     @Override
     public void execute() {
         Pair<List<? extends Pod>, Integer> result = _mgr.searchForPods(this);
-        ListResponse<PodResponse> response = new ListResponse<PodResponse>();
-        List<PodResponse> podResponses = new ArrayList<PodResponse>();
+        ListResponse<PodResponse> response = new ListResponse<>();
+        List<PodResponse> podResponses = new ArrayList<>();
         for (Pod pod : result.first()) {
             PodResponse podResponse = _responseGenerator.createPodResponse(pod, showCapacities);
             podResponse.setObjectName("pod");

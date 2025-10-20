@@ -23,7 +23,8 @@ import java.util.Stack;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.managed.context.ManagedContext;
 import org.apache.cloudstack.managed.context.ManagedContextListener;
@@ -32,7 +33,7 @@ import org.apache.cloudstack.managed.threadlocal.ManagedThreadLocal;
 
 public class DefaultManagedContext implements ManagedContext {
 
-    private static final Logger log = Logger.getLogger(DefaultManagedContext.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     List<ManagedContextListener<?>> listeners = new CopyOnWriteArrayList<ManagedContextListener<?>>();
 
@@ -87,7 +88,7 @@ public class DefaultManagedContext implements ManagedContext {
                     if (firstError == null) {
                         firstError = t;
                     }
-                    log.error("Failed onEnterContext for listener: " +  listener, t);
+                    logger.error("Failed onEnterContext for listener: " +  listener, t);
                 }
 
                 /* Stack data structure is used because in between onEnter and onLeave
@@ -113,7 +114,7 @@ public class DefaultManagedContext implements ManagedContext {
                         invocation.listener.onLeaveContext(invocation.data, reentry);
                     } catch (Throwable t) {
                         lastError = t;
-                        log.error("Failed onLeaveContext for listener: [" + invocation.listener + "]", t);
+                        logger.error("Failed onLeaveContext for listener: [" + invocation.listener + "]", t);
                     }
                 }
 

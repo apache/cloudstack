@@ -22,11 +22,11 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
 
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
@@ -42,10 +42,12 @@ public class ScaleIOSnapshotStrategy extends StorageSystemSnapshotStrategy {
     @Inject
     private VolumeDao volumeDao;
 
-    private static final Logger LOG = Logger.getLogger(ScaleIOSnapshotStrategy.class);
 
     @Override
     public StrategyPriority canHandle(Snapshot snapshot, Long zoneId, SnapshotOperation op) {
+        if (SnapshotOperation.COPY.equals(op)) {
+            return StrategyPriority.CANT_HANDLE;
+        }
         long volumeId = snapshot.getVolumeId();
         VolumeVO volumeVO = volumeDao.findByIdIncludingRemoved(volumeId);
         boolean baseVolumeExists = volumeVO.getRemoved() == null;
@@ -73,7 +75,7 @@ public class ScaleIOSnapshotStrategy extends StorageSystemSnapshotStrategy {
         VolumeInfo volumeInfo = snapshotInfo.getBaseVolume();
         Storage.ImageFormat imageFormat = volumeInfo.getFormat();
         if (!Storage.ImageFormat.RAW.equals(imageFormat)) {
-            LOG.error(String.format("Does not support revert snapshot of the image format [%s] on PowerFlex. Can only rollback snapshots of format RAW", imageFormat));
+            logger.error(String.format("Does not support revert snapshot of the image format [%s] on PowerFlex. Can only rollback snapshots of format RAW", imageFormat));
             return false;
         }
 

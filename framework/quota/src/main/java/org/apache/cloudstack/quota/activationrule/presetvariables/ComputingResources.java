@@ -21,8 +21,13 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class ComputingResources {
+    @PresetVariableDefinition(description = "Current VM's memory (in MiB).")
     private Integer memory;
+
+    @PresetVariableDefinition(description = "Current VM's vCPUs.")
     private Integer cpuNumber;
+
+    @PresetVariableDefinition(description = "Current VM's CPU speed (in MHz).")
     private Integer cpuSpeed;
 
     public Integer getMemory() {

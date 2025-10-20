@@ -33,6 +33,7 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.vm.NicProfile;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -84,9 +85,11 @@ public class DirectNetworkGuruTest {
     final String[] ip4Dns = {"5.5.5.5", "6.6.6.6"};
     final String[] ip6Dns = {"2001:4860:4860::5555", "2001:4860:4860::6666"};
 
+    private AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         guru._ntwkOfferingSrvcDao = ntwkOfferingSrvcDao;
         guru._dcDao = dcDao;
         guru._physicalNetworkDao = physicalNetworkDao;
@@ -101,6 +104,11 @@ public class DirectNetworkGuruTest {
         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
         when(offering.getId()).thenReturn(42l);
         when(ntwkOfferingSrvcDao.isProviderForNetworkOffering(offering.getId(), Network.Provider.NiciraNvp)).thenReturn(false);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
@@ -134,7 +142,7 @@ public class DirectNetworkGuruTest {
 
         when(networkModel.areServicesSupportedByNetworkOffering(offering.getId(), Network.Service.SecurityGroup)).thenReturn(true);
 
-        assertNotNull(guru.design(offering, plan, network, owner));
+        assertNotNull(guru.design(offering, plan, network, "", 1L, owner));
     }
 
     @Test
@@ -151,7 +159,7 @@ public class DirectNetworkGuruTest {
 
         when(networkModel.areServicesSupportedByNetworkOffering(offering.getId(), Network.Service.SecurityGroup)).thenReturn(false);
 
-        Network config = guru.design(offering, plan, network, owner);
+        Network config = guru.design(offering, plan, network, "", 1L, owner);
         assertNotNull(config);
         assertEquals(ip4Dns[0], config.getDns1());
         assertEquals(ip4Dns[1], config.getDns2());

@@ -1,5 +1,5 @@
-Requirements
-============
+# Requirements
+
 To run these tests, first get the vagrant setup for the systemvm working,
 see ../../tools/vagrant/systemvm.
 
@@ -7,8 +7,8 @@ Then, install dependencies
 
     pip install nose paramiko python-vagrant envassert cuisine fabric
 
-Running tests
-=============
+## Running tests
+
 Then run the tests using your favorite python unittest runner
 
     nosetests-2.7
@@ -22,8 +22,8 @@ not recommended.
 
 You can also run these tests out of the box with PyDev or PyCharm or whatever.
 
-Adding tests
-============
+## Adding tests
+
 Simply create new test_xxx.py files with test cases that extend from
 SystemVMTestCase.
 
@@ -55,8 +55,8 @@ class HelloSystemVMTestCase(SystemVMTestCase):
         assert something_to_do('foo')
 ```
 
-Edit, test, edit, test
-======================
+## Edit, test, edit, test
+
 The SystemVM Vagrantfile sets up rsync from systemvm/patches. These rsyncs run
 once, when you type 'vagrant up'. To do these rsyncs every time you change a
 patch file, run 'vagrant rsync-auto'. With that, your development process can

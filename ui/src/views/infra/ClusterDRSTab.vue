@@ -57,7 +57,8 @@
         :columns="migrationColumns"
         :dataSource="record.migrations"
         :rowKey="(record, index) => index"
-        :pagination="{hideOnSinglePage: true, showSizeChanger: true}">
+        :pagination="{hideOnSinglePage: true, showSizeChanger: true}"
+        @resizeColumn="resizeColumn">
         <template #bodyCell="{ column, text, record }">
           <template v-if="column.key === 'vm'">
             <router-link :to="{ path: '/vm/' + record.virtualmachineid }">
@@ -117,7 +118,8 @@
       :columns="generatedPlanMigrationColumns"
       :dataSource="generatedMigrations"
       :rowKey="(record, index) => index"
-      :pagination="{ showTotal: (total, range) => [range[0], '-', range[1], $t('label.of'), total, $t('label.items')].join(' ') }" >
+      :pagination="{ showTotal: (total, range) => [range[0], '-', range[1], $t('label.of'), total, $t('label.items')].join(' ') }"
+      @resizeColumn="resizeColumn" >
       <template #bodyCell="{ column, text, record }">
         <template v-if="column.key === 'vm'">
           <router-link :to="{ path: '/vm/' + record.virtualmachineid }">
@@ -150,7 +152,7 @@
 <script>
 
 import { reactive } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 
 export default {
   name: 'ClusterDrsTab',
@@ -166,19 +168,22 @@ export default {
         key: 'vm',
         title: this.$t('label.vm'),
         dataIndex: 'vm',
-        ellipsis: true
+        ellipsis: true,
+        resizable: true
       },
       {
         key: 'sourcehost',
         title: this.$t('label.sourcehost'),
         dataIndex: 'sourcehost',
-        ellipsis: true
+        ellipsis: true,
+        resizable: true
       },
       {
         key: 'destinationhost',
         title: this.$t('label.desthost'),
         dataIndex: 'created',
-        ellipsis: true
+        ellipsis: true,
+        resizable: true
       }
     ]
     return {
@@ -239,7 +244,7 @@ export default {
   methods: {
     fetchDRSPlans () {
       if (!this.resource || !this.resource.id) return
-      api('listClusterDrsPlan', { page: 1, pageSize: 500, clusterid: this.resource.id }).then(json => {
+      getAPI('listClusterDrsPlan', { page: 1, pageSize: 500, clusterid: this.resource.id }).then(json => {
         this.drsPlans = json.listclusterdrsplanresponse.drsPlan
       })
     },
@@ -254,7 +259,7 @@ export default {
         params['migrateto[' + i + '].host'] = mapping.destinationhostid
       }
 
-      api('executeClusterDrsPlan', params).then(json => {
+      postAPI('executeClusterDrsPlan', params).then(json => {
         this.$message.success(this.$t('message.drs.plan.executed'))
       }).catch(error => {
         console.error(error)
@@ -266,7 +271,7 @@ export default {
     },
     generateDrsPlan () {
       this.loading = true
-      api('generateClusterDrsPlan', { id: this.resource.id, migrations: this.maxMigrations }).then(json => {
+      postAPI('generateClusterDrsPlan', { id: this.resource.id, migrations: this.maxMigrations }).then(json => {
         this.generatedMigrations = json?.generateclusterdrsplanresponse?.generateclusterdrsplanresponse?.migrations || []
         this.loading = false
         this.showModal = true
@@ -274,9 +279,9 @@ export default {
     },
     fetchDrsConfig () {
       this.loading = true
-      api('listConfigurations', { clusterid: this.resource.id, name: 'drs.algorithm' }).then(json => {
+      getAPI('listConfigurations', { clusterid: this.resource.id, name: 'drs.algorithm' }).then(json => {
         this.algorithm = json.listconfigurationsresponse.configuration[0].value
-        api('listConfigurations', { clusterid: this.resource.id, name: 'drs.max.migrations' }).then(json => {
+        getAPI('listConfigurations', { clusterid: this.resource.id, name: 'drs.max.migrations' }).then(json => {
           this.maxMigrations = json.listconfigurationsresponse.configuration[0].value
           this.loading = false
         }).catch((err) => {
@@ -291,6 +296,9 @@ export default {
     closeModal () {
       this.showModal = false
       this.generatedMigrations = reactive([])
+    },
+    resizeColumn (w, col) {
+      col.width = w
     }
   }
 }

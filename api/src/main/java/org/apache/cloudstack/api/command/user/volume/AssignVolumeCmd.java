@@ -29,7 +29,6 @@ import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.storage.Volume;
 
@@ -38,7 +37,6 @@ import java.util.Map;
 @APICommand(name = AssignVolumeCmd.CMD_NAME, responseObject = VolumeResponse.class, description = "Changes ownership of a Volume from one account to another.", entityType = {
         Volume.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.18.0.0")
 public class AssignVolumeCmd extends BaseCmd implements UserCmd {
-    public static final Logger LOGGER = Logger.getLogger(AssignVolumeCmd.class.getName());
     public static final String CMD_NAME = "assignVolume";
 
     /////////////////////////////////////////////////////
@@ -96,7 +94,7 @@ public class AssignVolumeCmd extends BaseCmd implements UserCmd {
 
         } catch (CloudRuntimeException | ResourceAllocationException e) {
             String msg = String.format("Assign volume command for volume [%s] failed due to [%s].", getFullUrlParams().get("volumeid"), e.getMessage());
-            LOGGER.error(msg, e);
+            logger.error(msg, e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, msg);
         }
     }

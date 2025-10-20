@@ -27,13 +27,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade304to305 extends Upgrade30xBase {
-    final static Logger s_logger = Logger.getLogger(Upgrade304to305.class);
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -99,7 +97,7 @@ public class Upgrade304to305 extends Upgrade30xBase {
             throw new CloudRuntimeException("Error while iterating through list of hypervisors in use", e);
         }
         // Just update the VMware system template. Other hypervisor templates are unchanged from previous 3.0.x versions.
-        s_logger.debug("Updating VMware System Vms");
+        logger.debug("Updating VMware System Vms");
         try {
             //Get 3.0.5 VMware system Vm template Id
             pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = 'systemvm-vmware-3.0.5' and removed is null");
@@ -122,18 +120,18 @@ public class Upgrade304to305 extends Upgrade30xBase {
                 if (VMware) {
                     throw new CloudRuntimeException("3.0.5 VMware SystemVm template not found. Cannot upgrade system Vms");
                 } else {
-                    s_logger.warn("3.0.5 VMware SystemVm template not found. VMware hypervisor is not used, so not failing upgrade");
+                    logger.warn("3.0.5 VMware SystemVm template not found. VMware hypervisor is not used, so not failing upgrade");
                 }
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Error while updating VMware systemVm template", e);
         }
-        s_logger.debug("Updating System Vm Template IDs Complete");
+        logger.debug("Updating System Vm Template IDs Complete");
     }
 
     private void addVpcProvider(Connection conn) {
         //Encrypt config params and change category to Hidden
-        s_logger.debug("Adding vpc provider to all physical networks in the system");
+        logger.debug("Adding vpc provider to all physical networks in the system");
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
@@ -168,7 +166,7 @@ public class Upgrade304to305 extends Upgrade30xBase {
                 pstmt.setLong(1, providerId);
                 pstmt.executeUpdate();
 
-                s_logger.debug("Added VPC Virtual router provider for physical network id=" + pNtwkId);
+                logger.debug("Added VPC Virtual router provider for physical network id=" + pNtwkId);
 
             }
         } catch (SQLException e) {
@@ -177,12 +175,12 @@ public class Upgrade304to305 extends Upgrade30xBase {
             closeAutoCloseable(rs);
             closeAutoCloseable(pstmt);
         }
-        s_logger.debug("Done adding VPC physical network service providers to all physical networks");
+        logger.debug("Done adding VPC physical network service providers to all physical networks");
     }
 
     private void updateRouterNetworkRef(Connection conn) {
         //Encrypt config params and change category to Hidden
-        s_logger.debug("Updating router network ref");
+        logger.debug("Updating router network ref");
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
@@ -207,7 +205,7 @@ public class Upgrade304to305 extends Upgrade30xBase {
                 pstmt.setString(3, networkType);
                 pstmt.executeUpdate();
 
-                s_logger.debug("Added reference for router id=" + routerId + " and network id=" + networkId);
+                logger.debug("Added reference for router id=" + routerId + " and network id=" + networkId);
 
             }
         } catch (SQLException e) {
@@ -216,24 +214,24 @@ public class Upgrade304to305 extends Upgrade30xBase {
             closeAutoCloseable(rs);
             closeAutoCloseable(pstmt);
         }
-        s_logger.debug("Done updating router/network references");
+        logger.debug("Done updating router/network references");
     }
 
     private void addHostDetailsUniqueKey(Connection conn) {
-        s_logger.debug("Checking if host_details unique key exists, if not we will add it");
+        logger.debug("Checking if host_details unique key exists, if not we will add it");
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             pstmt = conn.prepareStatement("SHOW INDEX FROM `cloud`.`host_details` WHERE KEY_NAME = 'uk_host_id_name'");
             rs = pstmt.executeQuery();
             if (rs.next()) {
-                s_logger.debug("Unique key already exists on host_details - not adding new one");
+                logger.debug("Unique key already exists on host_details - not adding new one");
             } else {
                 //add the key
                 PreparedStatement pstmtUpdate =
                     conn.prepareStatement("ALTER IGNORE TABLE `cloud`.`host_details` ADD CONSTRAINT UNIQUE KEY `uk_host_id_name` (`host_id`, `name`)");
                 pstmtUpdate.executeUpdate();
-                s_logger.debug("Unique key did not exist on host_details -  added new one");
+                logger.debug("Unique key did not exist on host_details -  added new one");
                 pstmtUpdate.close();
             }
         } catch (SQLException e) {
@@ -347,7 +345,7 @@ public class Upgrade304to305 extends Upgrade30xBase {
                     pstmtUpdate.setLong(2, networkId);
                     pstmtUpdate.setLong(3, f5DeviceId);
                     pstmtUpdate.executeUpdate();
-                    s_logger.debug("Successfully added entry in network_external_lb_device_map for network " + networkId + " and F5 device ID " + f5DeviceId);
+                    logger.debug("Successfully added entry in network_external_lb_device_map for network " + networkId + " and F5 device ID " + f5DeviceId);
 
                     // add mapping for the network in network_external_firewall_device_map
                     String insertFwMapping =
@@ -357,11 +355,11 @@ public class Upgrade304to305 extends Upgrade30xBase {
                     pstmtUpdate.setLong(2, networkId);
                     pstmtUpdate.setLong(3, srxDevivceId);
                     pstmtUpdate.executeUpdate();
-                    s_logger.debug("Successfully added entry in network_external_firewall_device_map for network " + networkId + " and SRX device ID " + srxDevivceId);
+                    logger.debug("Successfully added entry in network_external_firewall_device_map for network " + networkId + " and SRX device ID " + srxDevivceId);
                 }
 
                 // update host details for F5 and SRX devices
-                s_logger.debug("Updating the host details for F5 and SRX devices");
+                logger.debug("Updating the host details for F5 and SRX devices");
                 pstmt = conn.prepareStatement("SELECT host_id, name FROM `cloud`.`host_details` WHERE  host_id=? OR host_id=?");
                 pstmt.setLong(1, f5HostId);
                 pstmt.setLong(2, srxHostId);
@@ -380,19 +378,19 @@ public class Upgrade304to305 extends Upgrade30xBase {
                     pstmt.setString(3, camlCaseName);
                     pstmt.executeUpdate();
                 }
-                s_logger.debug("Successfully updated host details for F5 and SRX devices");
+                logger.debug("Successfully updated host details for F5 and SRX devices");
             } catch (SQLException e) {
                 throw new CloudRuntimeException("Unable create a mapping for the networks in network_external_lb_device_map and network_external_firewall_device_map", e);
             } finally {
                 closeAutoCloseable(rs);
                 closeAutoCloseable(pstmt);
             }
-            s_logger.info("Successfully upgraded network using F5 and SRX devices to have a entry in the network_external_lb_device_map and network_external_firewall_device_map");
+            logger.info("Successfully upgraded network using F5 and SRX devices to have a entry in the network_external_lb_device_map and network_external_firewall_device_map");
         }
     }
 
     private void fixForeignKeys(Connection conn) {
-        s_logger.debug("Fixing foreign keys' names in ssh_keypairs table");
+        logger.debug("Fixing foreign keys' names in ssh_keypairs table");
         //Drop the keys (if exist)
         List<String> keys = new ArrayList<String>();
         keys.add("fk_ssh_keypair__account_id");
@@ -434,7 +432,7 @@ public class Upgrade304to305 extends Upgrade30xBase {
     }
 
     private void encryptClusterDetails(Connection conn) {
-        s_logger.debug("Encrypting cluster details");
+        logger.debug("Encrypting cluster details");
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
@@ -460,6 +458,6 @@ public class Upgrade304to305 extends Upgrade30xBase {
             closeAutoCloseable(rs);
             closeAutoCloseable(pstmt);
         }
-        s_logger.debug("Done encrypting cluster_details");
+        logger.debug("Done encrypting cluster_details");
     }
 }

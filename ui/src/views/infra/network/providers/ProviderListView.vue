@@ -117,7 +117,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
@@ -343,7 +343,7 @@ export default {
     executeDeleteRecord (apiName, args) {
       return new Promise((resolve, reject) => {
         let jobId = null
-        api(apiName, args).then(json => {
+        postAPI(apiName, args).then(json => {
           for (const obj in json) {
             if (obj.includes('response')) {
               for (const res in json[obj]) {
@@ -364,7 +364,7 @@ export default {
     },
     configureOvsElement (args) {
       return new Promise((resolve, reject) => {
-        api('configureOvsElement', args).then(json => {
+        postAPI('configureOvsElement', args).then(json => {
           const jobId = json.configureovselementresponse.jobid
           resolve(jobId)
         }).catch(error => {

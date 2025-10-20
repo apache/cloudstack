@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.19.0.0-SNAPSHOT</version>
+        <version>4.22.0.0-SNAPSHOT</version>
     </parent>
     <build>
         <plugins>
@@ -62,6 +62,7 @@
 
         <module>backup/dummy</module>
         <module>backup/networker</module>
+        <module>backup/nas</module>
 
         <module>ca/root-ca</module>
 
@@ -79,16 +80,16 @@
         <module>event-bus/inmemory</module>
         <module>event-bus/kafka</module>
         <module>event-bus/rabbitmq</module>
+        <module>event-bus/webhook</module>
 
         <module>ha-planners/skip-heurestics</module>
 
         <module>host-allocators/random</module>
 
         <module>hypervisors/baremetal</module>
+        <module>hypervisors/external</module>
         <module>hypervisors/hyperv</module>
         <module>hypervisors/kvm</module>
-        <module>hypervisors/ovm3</module>
-        <module>hypervisors/ovm</module>
         <module>hypervisors/ucs</module>
         <module>hypervisors/xenserver</module>
 
@@ -100,7 +101,6 @@
 
         <module>network-elements/bigswitch</module>
         <module>network-elements/dns-notifier</module>
-        <module>network-elements/juniper-contrail</module>
         <module>network-elements/elastic-loadbalancer</module>
         <module>network-elements/globodns</module>
         <module>network-elements/internal-loadbalancer</module>
@@ -112,14 +112,14 @@
         <module>network-elements/stratosphere-ssp</module>
         <module>network-elements/brocade-vcs</module>
         <module>network-elements/vxlan</module>
-        <module>network-elements/tungsten</module>
 
         <module>outofbandmanagement-drivers/ipmitool</module>
         <module>outofbandmanagement-drivers/nested-cloudstack</module>
         <module>outofbandmanagement-drivers/redfish</module>
 
-        <module>shutdown</module>
+        <module>maintenance</module>
 
+        <module>storage/sharedfs/storagevm</module>
         <module>storage/image/default</module>
         <module>storage/image/s3</module>
         <module>storage/image/sample</module>
@@ -137,6 +137,8 @@
         <module>storage/volume/flasharray</module>
         <module>storage/volume/primera</module>
         <module>storage/object/minio</module>
+        <module>storage/object/ceph</module>
+        <module>storage/object/cloudian</module>
         <module>storage/object/simulator</module>
 
 
@@ -195,7 +197,7 @@
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-engine-storage</artifactId>
-            <version>4.19.0.0-SNAPSHOT</version>
+            <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -213,7 +215,7 @@
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-engine-storage-object</artifactId>
-            <version>4.19.0.0-SNAPSHOT</version>
+            <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
@@ -230,6 +232,10 @@
                 <module>backup/veeam</module>
                 <module>hypervisors/vmware</module>
                 <module>network-elements/cisco-vnmc</module>
+                <module>network-elements/nsx</module>
+                <module>network-elements/netris</module>
+                <module>network-elements/juniper-contrail</module>
+                <module>network-elements/tungsten</module>
             </modules>
         </profile>
         <profile>

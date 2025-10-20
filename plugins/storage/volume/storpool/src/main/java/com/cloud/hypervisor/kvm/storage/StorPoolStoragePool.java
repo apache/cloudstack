@@ -21,13 +21,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.joda.time.Duration;
 
 import com.cloud.agent.api.to.HostTO;
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.script.OutputInterpreter;
@@ -39,7 +41,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
 public class StorPoolStoragePool implements KVMStoragePool {
-    private static final Logger log = Logger.getLogger(StorPoolStoragePool.class);
+    protected Logger logger = LogManager.getLogger(StorPoolStoragePool.class);
     private String _uuid;
     private String _sourceHost;
     private int _sourcePort;
@@ -131,7 +133,7 @@ public class StorPoolStoragePool implements KVMStoragePool {
 
     @Override
     public boolean connectPhysicalDisk(String name, Map<String, String> details) {
-        return _storageAdaptor.connectPhysicalDisk(name, this, details);
+        return _storageAdaptor.connectPhysicalDisk(name, this, details, false);
     }
 
     @Override
@@ -199,8 +201,8 @@ public class StorPoolStoragePool implements KVMStoragePool {
         boolean isStorageNodeUp = checkingHeartBeat(primaryStoragePool, null);
         if (!isStorageNodeUp && !hostValidation) {
             //restart the host
-            log.debug(String.format("The host [%s] will be restarted because the health check failed for the storage pool [%s]", hostPrivateIp, primaryStoragePool.getPool().getType()));
-            Script cmd = new Script(primaryStoragePool.getPool().getHearthBeatPath(), HeartBeatUpdateTimeout, log);
+            logger.debug(String.format("The host [%s] will be restarted because the health check failed for the storage pool [%s]", hostPrivateIp, primaryStoragePool.getPool().getType()));
+            Script cmd = new Script(primaryStoragePool.getPool().getHearthBeatPath(), HeartBeatUpdateTimeout, logger);
             cmd.add("-c");
             cmd.execute();
             return "Down";
@@ -214,7 +216,7 @@ public class StorPoolStoragePool implements KVMStoragePool {
     }
 
     public static final String getStorPoolConfigParam(String param) {
-        Script sc = new Script("storpool_confget", 0, Logger.getLogger(StorPoolStoragePool.class));
+        Script sc = new Script("storpool_confget", 0, LogManager.getLogger(StorPoolStoragePool.class));
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
 
         String configParam = null;
@@ -289,7 +291,7 @@ public class StorPoolStoragePool implements KVMStoragePool {
     }
 
     private String executeStorPoolServiceListCmd(OutputInterpreter.AllLinesParser parser) {
-        Script sc = new Script("storpool", 0, log);
+        Script sc = new Script("storpool", 0, logger);
         sc.add("-j");
         sc.add("service");
         sc.add("list");
@@ -300,5 +302,12 @@ public class StorPoolStoragePool implements KVMStoragePool {
     @Override
     public Boolean vmActivityCheck(HAStoragePool pool, HostTO host, Duration activityScriptTimeout, String volumeUuidListString, String vmActivityCheckPath, long duration) {
         return checkingHeartBeat(pool, host);
+    }
+
+    @Override
+    public void customizeLibvirtDiskDef(LibvirtVMDef.DiskDef disk) {
+        if (LibvirtVMDef.DiskDef.DiskBus.VIRTIO.equals(disk.getBusType()) || LibvirtVMDef.DiskDef.DiskBus.SCSI.equals(disk.getBusType())) {
+            disk.setDiscard(LibvirtVMDef.DiskDef.DiscardType.UNMAP);
+        }
     }
 }

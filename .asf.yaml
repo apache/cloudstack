@@ -51,19 +51,20 @@ github:
 
   collaborators:
     - acs-robot
-    - kiranchavala
-    - rajujith
-    - alexandremattioli
-    - vishesh92
-    - GaOrtiga
-    - SadiJr
-    - winterhazel
-    - rp-
+    - gpordeus
+    - hsato03
+    - FelipeM525
+    - lucas-a-martins
+    - nicoschmdt
+    - abh1sar
+    - rosi-shapeblue
+    - sudo87
+    - erikbocks
 
   protected_branches: ~
 
 notifications:
-  commits:      commits@cloudstack.apache.org
-  issues:       commits@cloudstack.apache.org
+  commits: commits@cloudstack.apache.org
+  issues: commits@cloudstack.apache.org
   pullrequests: commits@cloudstack.apache.org
-  discussions:  users@cloudstack.apache.org
+  discussions: users@cloudstack.apache.org

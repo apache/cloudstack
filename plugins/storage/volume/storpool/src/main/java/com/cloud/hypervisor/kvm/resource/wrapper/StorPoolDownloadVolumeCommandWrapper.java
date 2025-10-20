@@ -30,7 +30,6 @@ import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 //import java.io.File;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.storage.StorPoolDownloadVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -48,7 +47,6 @@ import com.cloud.storage.Storage.StoragePoolType;
 @ResourceWrapper(handles = StorPoolDownloadVolumeCommand.class)
 public final class StorPoolDownloadVolumeCommandWrapper extends CommandWrapper<StorPoolDownloadVolumeCommand, CopyCmdAnswer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(StorPoolDownloadVolumeCommandWrapper.class);
 
     @Override
     public CopyCmdAnswer execute(final StorPoolDownloadVolumeCommand cmd, final LibvirtComputingResource libvirtComputingResource) {
@@ -116,11 +114,7 @@ public final class StorPoolDownloadVolumeCommandWrapper extends CommandWrapper<S
             if (isRBDPool) {
                 KVMStoragePool srcPool = srcDisk.getPool();
                 String rbdDestPath = srcPool.getSourceDir() + "/" + srcDisk.getName();
-                srcPath = KVMPhysicalDisk.RBDStringBuilder(srcPool.getSourceHost(),
-                        srcPool.getSourcePort(),
-                        srcPool.getAuthUserName(),
-                        srcPool.getAuthSecret(),
-                        rbdDestPath);
+                srcPath = KVMPhysicalDisk.RBDStringBuilder(srcPool, rbdDestPath);
             } else {
                 srcPath = srcDisk.getPath();
             }
@@ -143,7 +137,7 @@ public final class StorPoolDownloadVolumeCommandWrapper extends CommandWrapper<S
         } catch (final Exception e) {
             final String error = "Failed to copy volume to primary: " + e.getMessage();
             SP_LOG(error);
-            s_logger.debug(error);
+            logger.debug(error);
             return new CopyCmdAnswer(cmd, e);
         } finally {
             if (dstPath != null) {
@@ -154,7 +148,7 @@ public final class StorPoolDownloadVolumeCommandWrapper extends CommandWrapper<S
                 try {
                     secondaryPool.delete();
                 } catch (final Exception e) {
-                    s_logger.debug("Failed to delete secondary storage", e);
+                    logger.debug("Failed to delete secondary storage", e);
                 }
             }
         }

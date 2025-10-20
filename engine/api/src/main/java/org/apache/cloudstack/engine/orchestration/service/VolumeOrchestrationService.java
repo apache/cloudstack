@@ -22,6 +22,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.storage.Storage;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -82,10 +85,21 @@ public interface VolumeOrchestrationService {
             "The maximum size for a volume (in GiB).",
             true);
 
+    ConfigKey<String> VolumeAllocationAlgorithm = new ConfigKey<>(
+            String.class,
+            "volume.allocation.algorithm",
+            "Advanced",
+            "random",
+            "Order in which storage pool within a cluster will be considered for volume allocation. The value can be 'random', 'firstfit', 'userdispersing', 'userconcentratedpod_random', 'userconcentratedpod_firstfit', or 'firstfitleastconsumed'.",
+            true,
+            ConfigKey.Scope.Global, null, null, null, null, null,
+            ConfigKey.Kind.Select,
+            "random,firstfit,userdispersing,userconcentratedpod_random,userconcentratedpod_firstfit,firstfitleastconsumed");
+
     VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType)
         throws ConcurrentOperationException, StorageUnavailableException;
 
-    Volume allocateDuplicateVolume(Volume oldVol, Long templateId);
+    Volume allocateDuplicateVolume(Volume oldVol, DiskOffering diskOffering, Long templateId);
 
     boolean volumeOnSharedStoragePool(Volume volume);
 
@@ -126,15 +140,17 @@ public interface VolumeOrchestrationService {
 
     void prepareForMigration(VirtualMachineProfile vm, DeployDestination dest);
 
-    void prepare(VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException, ConcurrentOperationException, StorageAccessException;
+    void prepare(VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException, ConcurrentOperationException, StorageAccessException, ResourceAllocationException;
 
     boolean canVmRestartOnAnotherServer(long vmId);
+
+    void saveVolumeDetails(Long diskOfferingId, Long volumeId);
 
     /**
      * Allocate a volume or multiple volumes in case of template is registered with the 'deploy-as-is' option, allowing multiple disks
      */
     List<DiskProfile> allocateTemplatedVolumes(Type type, String name, DiskOffering offering, Long rootDisksize, Long minIops, Long maxIops, VirtualMachineTemplate template, VirtualMachine vm,
-                                               Account owner);
+                                               Account owner, Volume volume, Snapshot snapshot);
 
     String getVmNameFromVolumeId(long volumeId);
 
@@ -153,7 +169,7 @@ public interface VolumeOrchestrationService {
      * @param type Type of the volume - ROOT, DATADISK, etc
      * @param name Name of the volume
      * @param offering DiskOffering for the volume
-     * @param size DiskOffering for the volume
+     * @param sizeInBytes size of the volume in bytes
      * @param minIops minimum IOPS for the disk, if not passed DiskOffering value will be used
      * @param maxIops maximum IOPS for the disk, if not passed DiskOffering value will be used
      * @param vm VirtualMachine this volume is attached to
@@ -165,14 +181,20 @@ public interface VolumeOrchestrationService {
      * @param chainInfo chain info for the volume. Hypervisor specific.
      * @return  DiskProfile of imported volume
      */
-    DiskProfile importVolume(Type type, String name, DiskOffering offering, Long size, Long minIops, Long maxIops, VirtualMachine vm, VirtualMachineTemplate template,
-                             Account owner, Long deviceId, Long poolId, String path, String chainInfo);
+    DiskProfile importVolume(Type type, String name, DiskOffering offering, Long sizeInBytes, Long minIops, Long maxIops,
+                             Long zoneId, HypervisorType hypervisorType, VirtualMachine vm, VirtualMachineTemplate template,
+                             Account owner, Long deviceId, Long poolId, Storage.StoragePoolType poolType, String path, String chainInfo);
 
     DiskProfile updateImportedVolume(Type type, DiskOffering offering, VirtualMachine vm, VirtualMachineTemplate template,
-                                     Long deviceId, Long poolId, String path, String chainInfo, DiskProfile diskProfile);
+                                     Long deviceId, Long poolId, Storage.StoragePoolType poolType, String path, String chainInfo, DiskProfile diskProfile);
 
     /**
      * Unmanage VM volumes
      */
     void unmanageVolumes(long vmId);
+
+    /**
+     * Retrieves the volume's checkpoints paths to be used in the KVM processor. If there are no checkpoints, it will return an empty list.
+     */
+    Pair<List<String>, Set<String>> getVolumeCheckpointPathsAndImageStoreUrls(long volumeId, HypervisorType hypervisorType);
 }

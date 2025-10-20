@@ -25,6 +25,8 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.libvirt.LibvirtException;
 
 import com.cloud.agent.api.to.NicTO;
@@ -32,9 +34,13 @@ import com.cloud.exception.InternalErrorException;
 
 public abstract class VifDriverBase implements VifDriver {
 
+    protected Logger logger = LogManager.getLogger(getClass());
+
     protected LibvirtComputingResource _libvirtComputingResource;
     protected Map<String, String> _pifs;
     protected Map<String, String> _bridges;
+
+    protected static final int bitsPerMbpsToKbps = 125;
 
     @Override
     public void configure(Map<String, Object> params) throws ConfigurationException {
@@ -73,5 +79,12 @@ public abstract class VifDriverBase implements VifDriver {
 
     public boolean isExistingBridge(String bridgeName) {
         return false;
+    }
+
+    protected static int getNetworkRateKbps(NicTO nic) {
+        if (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1) {
+            return nic.getNetworkRateMbps().intValue() * bitsPerMbpsToKbps;
+        }
+        return 0;
     }
 }

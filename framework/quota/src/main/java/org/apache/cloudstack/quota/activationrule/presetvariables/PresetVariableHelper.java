@@ -25,7 +25,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.host.HostTagVO;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.vpc.VpcVO;
 import javax.inject.Inject;
 
 import com.cloud.hypervisor.Hypervisor;
@@ -35,8 +39,11 @@ import org.apache.cloudstack.acl.dao.RoleDao;
 import org.apache.cloudstack.backup.BackupOfferingVO;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
+import org.apache.cloudstack.quota.dao.NetworkDao;
 import org.apache.cloudstack.quota.dao.VmTemplateDao;
+import org.apache.cloudstack.quota.dao.VpcDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -47,7 +54,9 @@ import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.jsinterpreter.JsInterpreter;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenterVO;
@@ -83,10 +92,10 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.constants.VmDetails;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
@@ -99,7 +108,7 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Component
 public class PresetVariableHelper {
-    protected Logger logger = Logger.getLogger(PresetVariableHelper.class);
+    protected Logger logger = LogManager.getLogger(PresetVariableHelper.class);
 
     @Inject
     AccountDao accountDao;
@@ -165,10 +174,22 @@ public class PresetVariableHelper {
     VMSnapshotDao vmSnapshotDao;
 
     @Inject
-    UserVmDetailsDao userVmDetailsDao;
+    VMInstanceDetailsDao vmInstanceDetailsDao;
 
     @Inject
     BackupOfferingDao backupOfferingDao;
+
+    @Inject
+    NetworkDao networkDao;
+
+    @Inject
+    VpcDao vpcDao;
+
+    @Inject
+    ConfigurationDao configDao;
+
+    @Inject
+    ClusterDetailsDao clusterDetailsDao;
 
     protected boolean backupSnapshotAfterTakingSnapshot = SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value();
 
@@ -182,6 +203,7 @@ public class PresetVariableHelper {
 
         presetVariables.setAccount(getPresetVariableAccount(usageRecord.getAccountId()));
         setPresetVariableProject(presetVariables);
+        setPresetVariableConfiguration(presetVariables, usageRecord);
 
         presetVariables.setDomain(getPresetVariableDomain(usageRecord.getDomainId()));
         presetVariables.setResourceType(usageRecord.getType());
@@ -212,6 +234,7 @@ public class PresetVariableHelper {
         Account account = new Account();
         account.setId(accountVo.getUuid());
         account.setName(accountVo.getName());
+        account.setCreated(accountVo.getCreated());
 
         setPresetVariableRoleInAccountIfAccountIsNotAProject(accountVo.getType(), accountVo.getRoleId(), account);
 
@@ -259,6 +282,39 @@ public class PresetVariableHelper {
         return zone;
     }
 
+    protected void setPresetVariableConfiguration(PresetVariables presetVariables, UsageVO usageRecord) {
+        if (usageRecord.getUsageType() != UsageTypes.RUNNING_VM) {
+            return;
+        }
+
+        Configuration configuration = new Configuration();
+        setForceHaInConfiguration(configuration, usageRecord);
+
+        presetVariables.setConfiguration(configuration);
+    }
+
+    protected void setForceHaInConfiguration(Configuration configuration, UsageVO usageRecord) {
+        Long vmId = usageRecord.getUsageId();
+        VMInstanceVO vmVo = vmInstanceDao.findByIdIncludingRemoved(vmId);
+        validateIfObjectIsNull(vmVo, vmId, "VM");
+
+        Long hostId = ObjectUtils.defaultIfNull(vmVo.getHostId(), vmVo.getLastHostId());
+
+        HostVO hostVo = hostDao.findByIdIncludingRemoved(hostId);
+        validateIfObjectIsNull(hostVo, hostId, "host");
+        ClusterDetailsVO forceHa = clusterDetailsDao.findDetail(hostVo.getClusterId(), "force.ha");
+
+        String forceHaValue;
+
+        if (forceHa != null) {
+            forceHaValue = forceHa.getValue();
+        } else {
+            forceHaValue = configDao.getValue("force.ha");
+        }
+
+        configuration.setForceHa((Boolean.parseBoolean(forceHaValue)));
+    }
+
     protected Value getPresetVariableValue(UsageVO usageRecord) {
         Long accountId = usageRecord.getAccountId();
         int usageType = usageRecord.getUsageType();
@@ -273,6 +329,8 @@ public class PresetVariableHelper {
         loadPresetVariableValueForNetworkOffering(usageRecord, value);
         loadPresetVariableValueForVmSnapshot(usageRecord, value);
         loadPresetVariableValueForBackup(usageRecord, value);
+        loadPresetVariableValueForNetwork(usageRecord, value);
+        loadPresetVariableValueForVpc(usageRecord, value);
 
         return value;
     }
@@ -375,11 +433,15 @@ public class PresetVariableHelper {
         return guestOsVo.getDisplayName();
     }
 
-    protected ComputeOffering getPresetVariableValueComputeOffering(ServiceOfferingVO serviceOfferingVo) {
+    protected ComputeOffering getPresetVariableValueComputeOffering(ServiceOfferingVO serviceOfferingVo, int usageType) {
         ComputeOffering computeOffering = new ComputeOffering();
         computeOffering.setId(serviceOfferingVo.getUuid());
         computeOffering.setName(serviceOfferingVo.getName());
         computeOffering.setCustomized(serviceOfferingVo.isDynamic());
+
+        if (usageType == UsageTypes.RUNNING_VM) {
+            computeOffering.setOfferHa(serviceOfferingVo.isOfferHA());
+        }
 
         return computeOffering;
     }
@@ -389,7 +451,7 @@ public class PresetVariableHelper {
         long computeOfferingId = vmVo.getServiceOfferingId();
         ServiceOfferingVO serviceOfferingVo = serviceOfferingDao.findByIdIncludingRemoved(computeOfferingId);
         validateIfObjectIsNull(serviceOfferingVo, computeOfferingId, "compute offering");
-        value.setComputeOffering(getPresetVariableValueComputeOffering(serviceOfferingVo));
+        value.setComputeOffering(getPresetVariableValueComputeOffering(serviceOfferingVo, usageType));
 
         if (usageType == UsageTypes.RUNNING_VM) {
             value.setComputingResources(getPresetVariableValueComputingResource(vmVo, serviceOfferingVo));
@@ -403,7 +465,7 @@ public class PresetVariableHelper {
         computingResources.setCpuSpeed(serviceOfferingVo.getSpeed());
 
         if (serviceOfferingVo.isDynamic()) {
-            List<UserVmDetailVO> details = userVmDetailsDao.listDetails(vmVo.getId());
+            List<VMInstanceDetailVO> details = vmInstanceDetailsDao.listDetails(vmVo.getId());
 
             computingResources.setMemory(getDetailByName(details, VmDetails.MEMORY.getName(), computingResources.getMemory()));
             computingResources.setCpuNumber(getDetailByName(details, VmDetails.CPU_NUMBER.getName(), computingResources.getCpuNumber()));
@@ -423,14 +485,14 @@ public class PresetVariableHelper {
         }
     }
 
-    protected Integer getDetailByName(List<UserVmDetailVO> details, String name, Integer defaultValue) {
-        List<UserVmDetailVO> detailFiltered = details.stream().filter(det -> name.equals(det.getName())).collect(Collectors.toList());
+    protected Integer getDetailByName(List<VMInstanceDetailVO> details, String name, Integer defaultValue) {
+        List<VMInstanceDetailVO> detailFiltered = details.stream().filter(det -> name.equals(det.getName())).collect(Collectors.toList());
 
         if (CollectionUtils.isEmpty(detailFiltered)) {
             return defaultValue;
         }
 
-        UserVmDetailVO detail = detailFiltered.get(0);
+        VMInstanceDetailVO detail = detailFiltered.get(0);
 
         if (detail.getValue() != null) {
             return Integer.valueOf(detail.getValue());
@@ -477,6 +539,7 @@ public class PresetVariableHelper {
         value.setId(volumeVo.getUuid());
         value.setName(volumeVo.getName());
         value.setProvisioningType(volumeVo.getProvisioningType());
+        value.setVolumeType(volumeVo.getVolumeType());
 
         Long poolId = volumeVo.getPoolId();
         if (poolId == null) {
@@ -495,13 +558,25 @@ public class PresetVariableHelper {
         }
     }
 
-    protected GenericPresetVariable getPresetVariableValueDiskOffering(Long diskOfferingId) {
+    protected DiskOfferingPresetVariables getPresetVariableValueDiskOffering(Long diskOfferingId) {
         DiskOfferingVO diskOfferingVo = diskOfferingDao.findByIdIncludingRemoved(diskOfferingId);
         validateIfObjectIsNull(diskOfferingVo, diskOfferingId, "disk offering");
 
-        GenericPresetVariable diskOffering = new GenericPresetVariable();
+        DiskOfferingPresetVariables diskOffering = new DiskOfferingPresetVariables();
         diskOffering.setId(diskOfferingVo.getUuid());
         diskOffering.setName(diskOfferingVo.getName());
+        diskOffering.setBytesReadRate(diskOfferingVo.getBytesReadRate());
+        diskOffering.setBytesReadBurst(diskOfferingVo.getBytesReadRateMax());
+        diskOffering.setBytesReadBurstLength(diskOfferingVo.getBytesReadRateMaxLength());
+        diskOffering.setBytesWriteRate(diskOfferingVo.getBytesWriteRate());
+        diskOffering.setBytesWriteBurst(diskOfferingVo.getBytesWriteRateMax());
+        diskOffering.setBytesWriteBurstLength(diskOfferingVo.getBytesWriteRateMaxLength());
+        diskOffering.setIopsReadRate(diskOfferingVo.getIopsReadRate());
+        diskOffering.setIopsReadBurst(diskOfferingVo.getIopsReadRateMax());
+        diskOffering.setIopsReadBurstLength(diskOfferingVo.getIopsReadRateMaxLength());
+        diskOffering.setIopsWriteRate(diskOfferingVo.getIopsWriteRate());
+        diskOffering.setIopsWriteBurst(diskOfferingVo.getIopsWriteRateMax());
+        diskOffering.setIopsWriteBurstLength(diskOfferingVo.getIopsWriteRateMaxLength());
 
         return diskOffering;
     }
@@ -687,6 +762,37 @@ public class PresetVariableHelper {
         backupOffering.setExternalId(backupOfferingVo.getExternalId());
 
         return backupOffering;
+    }
+
+    protected void loadPresetVariableValueForNetwork(UsageVO usageRecord, Value value) {
+        int usageType = usageRecord.getUsageType();
+        if (usageType != QuotaTypes.NETWORK) {
+            logNotLoadingMessageInTrace("Network", usageType);
+            return;
+        }
+
+        Long networkId = usageRecord.getUsageId();
+        NetworkVO network = networkDao.findByIdIncludingRemoved(networkId);
+        validateIfObjectIsNull(network, networkId, "Network");
+
+        value.setId(network.getUuid());
+        value.setName(network.getName());
+        value.setState(usageRecord.getState());
+    }
+
+    protected void loadPresetVariableValueForVpc(UsageVO usageRecord, Value value) {
+        int usageType = usageRecord.getUsageType();
+        if (usageType != QuotaTypes.VPC) {
+            logNotLoadingMessageInTrace("VPC", usageType);
+            return;
+        }
+
+        Long vpcId = usageRecord.getUsageId();
+        VpcVO vpc = vpcDao.findByIdIncludingRemoved(vpcId);
+        validateIfObjectIsNull(vpc, vpcId, "VPC");
+
+        value.setId(vpc.getUuid());
+        value.setName(vpc.getName());
     }
 
     /**
