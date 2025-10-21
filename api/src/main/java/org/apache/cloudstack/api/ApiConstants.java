@@ -535,7 +535,6 @@ public class ApiConstants {
     public static final String SHOW_CAPACITIES = "showcapacities";
     public static final String SHOW_REMOVED = "showremoved";
     public static final String SHOW_RESOURCE_ICON = "showicon";
-    public static final String SHOW_COMPLETED = "showcompleted";
     public static final String SHOW_INACTIVE = "showinactive";
     public static final String SHOW_UNIQUE = "showunique";
     public static final String SIGNATURE = "signature";
@@ -585,6 +584,7 @@ public class ApiConstants {
     public static final String SUITABLE_FOR_VM = "suitableforvirtualmachine";
     public static final String SUPPORTS_STORAGE_SNAPSHOT = "supportsstoragesnapshot";
     public static final String TARGET_IQN = "targetiqn";
+    public static final String TASKS_FILTER = "tasksfilter";
     public static final String TEMPLATE_FILTER = "templatefilter";
     public static final String TEMPLATE_ID = "templateid";
     public static final String TEMPLATE_IDS = "templateids";

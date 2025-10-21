@@ -93,6 +93,9 @@ public class ImportVMTaskVO implements ImportVmTask {
     @Column(name = "step")
     private Step step;
 
+    @Column(name = "state")
+    private TaskState state;
+
     @Column(name = "description")
     private String description;
 
@@ -215,6 +218,14 @@ public class ImportVMTaskVO implements ImportVmTask {
 
     public void setStep(Step step) {
         this.step = step;
+    }
+
+    public TaskState getState() {
+        return state;
+    }
+
+    public void setState(TaskState state) {
+        this.state = state;
     }
 
     public String getDescription() {

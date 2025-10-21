@@ -1776,10 +1776,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             logger.debug(String.format("VMware VM %s imported successfully to CloudStack instance %s (%s), Time taken: %d secs, OVF files imported from %s, Source VMware VM details - OS: %s, PowerState: %s, Disks: %s, NICs: %s",
                     sourceVMName, displayName, displayName, timeElapsedInSecs, (ovfTemplateOnConvertLocation != null)? "MS" : "KVM Host", sourceVMwareInstance.getOperatingSystem(), sourceVMwareInstance.getPowerState(), sourceVMwareInstance.getDisks(), sourceVMwareInstance.getNics()));
             importVmTasksManager.updateImportVMTaskStep(importVMTask, zone, owner, convertHost, importHost, userVm.getId(), Completed);
-            importVmTasksManager.removeImportVMTask(importVMTask.getId());
             return userVm;
         } catch (CloudRuntimeException e) {
             logger.error(String.format("Error importing VM: %s", e.getMessage()), e);
+            importVmTasksManager.updateImportVMTaskErrorState(importVMTask, ImportVmTask.TaskState.Failed, e.getMessage());
             ActionEventUtils.onCompletedActionEvent(userId, owner.getId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_IMPORT,
                     cmd.getEventDescription(), null, null, 0);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());

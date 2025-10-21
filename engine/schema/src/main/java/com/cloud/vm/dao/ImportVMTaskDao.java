@@ -18,12 +18,14 @@
 //
 package com.cloud.vm.dao;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.ImportVMTaskVO;
-
+import org.apache.cloudstack.vm.ImportVmTask;
 import java.util.List;
 
 public interface ImportVMTaskDao extends GenericDao<ImportVMTaskVO, Long> {
 
-    List<ImportVMTaskVO> listImportVMTasks(Long zoneId, Long accountId, String vcenter, Long convertHostId, boolean showCompleted);
+    Pair<List<ImportVMTaskVO>, Integer> listImportVMTasks(Long zoneId, Long accountId, String vcenter, Long convertHostId,
+                                                          ImportVmTask.TaskState state, Long startIndex, Long pageSizeVal);
 }
