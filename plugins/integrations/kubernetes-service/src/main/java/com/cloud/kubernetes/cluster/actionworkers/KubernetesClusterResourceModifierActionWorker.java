@@ -944,4 +944,47 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     protected List<DedicatedResourceVO> listDedicatedHostsInDomain(Long domainId) {
         return dedicatedResourceDao.listByDomainId(domainId);
     }
+
+    public boolean deletePVsWithReclaimPolicyDelete() {
+        File pkFile = getManagementServerSshPublicKeyFile();
+        Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
+        publicIpAddress = publicIpSshPort.first();
+        sshPort = publicIpSshPort.second();
+        try {
+            String command = String.format("sudo %s/%s", scriptPath, deletePvScriptFilename);
+            logMessage(Level.INFO, "Starting PV deletion script for cluster: " + kubernetesCluster.getName(), null);
+            Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
+                    pkFile, null, command, 10000, 10000, 600000); // 10 minute timeout
+            if (Boolean.FALSE.equals(result.first())) {
+                logMessage(Level.INFO, "PV delete script missing. Adding it now", null);
+                retrieveScriptFiles();
+                if (deletePvScriptFile != null) {
+                    copyScriptFile(publicIpAddress, sshPort, deletePvScriptFile, deletePvScriptFilename);
+                    logMessage(Level.INFO, "Executing PV deletion script (this may take several minutes)...", null);
+                    result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
+                            pkFile, null, command, 10000, 10000, 600000); // 10 minute timeout
+                    if (Boolean.FALSE.equals(result.first())) {
+                        logMessage(Level.ERROR, "PV deletion script failed: " + result.second(), null);
+                        throw new CloudRuntimeException(result.second());
+                    }
+                    logMessage(Level.INFO, "PV deletion script completed successfully", null);
+                } else {
+                    logMessage(Level.WARN, "PV delete script file not found in resources, skipping PV deletion", null);
+                    return false;
+                }
+            } else {
+                logMessage(Level.INFO, "PV deletion script completed successfully", null);
+            }
+
+            if (result.second() != null && !result.second().trim().isEmpty()) {
+                logMessage(Level.INFO, "PV deletion script output: " + result.second(), null);
+            }
+
+            return true;
+        } catch (Exception e) {
+            String msg = String.format("Failed to delete PVs with reclaimPolicy=Delete: %s : %s", kubernetesCluster.getName(), e.getMessage());
+            logMessage(Level.WARN, msg, e);
+            return false;
+        }
+    }
 }

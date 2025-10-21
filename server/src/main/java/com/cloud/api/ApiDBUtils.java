@@ -75,9 +75,11 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupOffering;
+import org.apache.cloudstack.backup.BackupRepository;
 import org.apache.cloudstack.backup.BackupSchedule;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
+import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -360,7 +362,11 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class ApiDBUtils {
+    private static final Logger log = LogManager.getLogger(ApiDBUtils.class);
     private static ManagementServer s_ms;
     static AsyncJobManager s_asyncMgr;
     static SecurityGroupManager s_securityGroupMgr;
@@ -489,6 +495,7 @@ public class ApiDBUtils {
     static BackupDao s_backupDao;
     static BackupScheduleDao s_backupScheduleDao;
     static BackupOfferingDao s_backupOfferingDao;
+    static BackupRepositoryDao s_backupRepositoryDao;
     static NicDao s_nicDao;
     static ResourceManagerUtil s_resourceManagerUtil;
     static SnapshotPolicyDetailsDao s_snapshotPolicyDetailsDao;
@@ -747,6 +754,8 @@ public class ApiDBUtils {
     @Inject
     private BackupOfferingDao backupOfferingDao;
     @Inject
+    private BackupRepositoryDao backupRepositoryDao;
+    @Inject
     private BackupScheduleDao backupScheduleDao;
     @Inject
     private NicDao nicDao;
@@ -895,6 +904,7 @@ public class ApiDBUtils {
         s_backupDao = backupDao;
         s_backupScheduleDao = backupScheduleDao;
         s_backupOfferingDao = backupOfferingDao;
+        s_backupRepositoryDao = backupRepositoryDao;
         s_resourceIconDao = resourceIconDao;
         s_resourceManagerUtil = resourceManagerUtil;
         s_objectStoreDao = objectStoreDao;
@@ -1717,6 +1727,21 @@ public class ApiDBUtils {
         return s_zoneDao.listByIds(zoneIds);
     }
 
+    public static List<StoragePoolVO> findSnapshotPolicyPools(SnapshotPolicy policy, Volume volume) {
+        List<SnapshotPolicyDetailVO> poolDetails = s_snapshotPolicyDetailsDao.findDetails(policy.getId(), ApiConstants.STORAGE_ID);
+        List<Long> poolIds = new ArrayList<>();
+        for (SnapshotPolicyDetailVO detail : poolDetails) {
+            try {
+                poolIds.add(Long.valueOf(detail.getValue()));
+            } catch (NumberFormatException ignored) {
+                log.debug(String.format("Could not parse the storage ID value of %s", detail.getValue()), ignored);
+            }
+        }
+        if (volume != null && !poolIds.contains(volume.getPoolId())) {
+            poolIds.add(0, volume.getPoolId());
+        }
+        return s_storagePoolDao.listByIds(poolIds);
+    }
     public static VpcOffering findVpcOfferingById(long offeringId) {
         return s_vpcOfferingDao.findById(offeringId);
     }
@@ -2278,8 +2303,10 @@ public class ApiDBUtils {
         return s_backupScheduleDao.newBackupScheduleResponse(schedule);
     }
 
-    public static BackupOfferingResponse newBackupOfferingResponse(BackupOffering policy) {
-        return s_backupOfferingDao.newBackupOfferingResponse(policy);
+    public static BackupOfferingResponse newBackupOfferingResponse(BackupOffering offering) {
+        BackupRepository repository = s_backupRepositoryDao.findByUuid(offering.getExternalId());
+        Boolean crossZoneInstanceCreationEnabled = repository != null ? Boolean.TRUE.equals(repository.crossZoneInstanceCreationEnabled()) : false;
+        return s_backupOfferingDao.newBackupOfferingResponse(offering, crossZoneInstanceCreationEnabled);
     }
 
     public static NicVO findByIp4AddressAndNetworkId(String ip4Address, long networkId) {

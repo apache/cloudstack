@@ -1018,7 +1018,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 Node sourceNode = diskChildNode;
                 NamedNodeMap sourceNodeAttributes = sourceNode.getAttributes();
                 Node sourceNodeAttribute = sourceNodeAttributes.getNamedItem("file");
-                if ( sourceNodeAttribute.getNodeValue().contains(vmName)) {
+                if (sourceNodeAttribute != null && sourceNodeAttribute.getNodeValue().contains(vmName)) {
                     diskNode.removeChild(diskChildNode);
                     Element newChildSourceNode = doc.createElement("source");
                     newChildSourceNode.setAttribute("file", isoPath);

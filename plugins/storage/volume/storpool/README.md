@@ -341,8 +341,6 @@ corresponding system disk offering.
 
 CloudStack has no way to specify max BW. Do they want to be able to specify max BW only is sufficient.
 
-================================================================================
-
 StorPool provides the ‘storpool_qos’ service ([QoS user guide](https://kb.storpool.com/storpool_misc/qos.html#storpool-qos-user-guide)) that tracks and configures the storage tier for all volumes based on a specifically provided `qc` tag specifying the storage tier for each volume.
 
 To manage the QoS limits with a `qc` tag, you have to add a `qc` tag resource detail to each disk offering to which a tier should be applied, with a key `SP_QOSCLASS` and the value from the configuration file for the `storpool_qos` service:
