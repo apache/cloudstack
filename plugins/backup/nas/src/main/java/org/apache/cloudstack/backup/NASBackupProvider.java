@@ -220,12 +220,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         } catch (AgentUnavailableException e) {
             logger.error("Unable to contact backend control plane to initiate backup for VM {}", vm.getInstanceName());
             backupVO.setStatus(Backup.Status.Failed);
-            backupDao.remove(backupVO.getId());
+            backupDao.update(backupVO.getId(), backupVO);
             throw new CloudRuntimeException("Unable to contact backend control plane to initiate backup");
         } catch (OperationTimedoutException e) {
             logger.error("Operation to initiate backup timed out for VM {}", vm.getInstanceName());
             backupVO.setStatus(Backup.Status.Failed);
-            backupDao.remove(backupVO.getId());
+            backupDao.update(backupVO.getId(), backupVO);
             throw new CloudRuntimeException("Operation to initiate backup timed out, please try again");
         }
 
@@ -248,7 +248,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                 backupDao.update(backupVO.getId(), backupVO);
             } else {
                 backupVO.setStatus(Backup.Status.Failed);
-                backupDao.remove(backupVO.getId());
+                backupDao.update(backupVO.getId(), backupVO);
             }
             return new Pair<>(false, null);
         }
