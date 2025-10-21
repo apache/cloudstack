@@ -134,7 +134,7 @@ public class ApiServletTest {
         Field apiServerField = ApiServlet.class.getDeclaredField("apiServer");
         apiServerField.setAccessible(true);
         apiServerField.set(servlet, apiServer);
-        
+
         setupConfigDepotMock();
     }
 
