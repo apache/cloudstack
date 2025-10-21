@@ -104,7 +104,7 @@ public class ApiServletTest {
     StringWriter responseWriter;
 
     ApiServlet servlet;
-    
+
     private ConfigDepotImpl originalConfigDepot;
 
     @SuppressWarnings("unchecked")
@@ -158,7 +158,7 @@ public class ApiServletTest {
         smsField.set(null, null);
         restoreConfigDepot();
     }
-    
+
     private void setupConfigDepotMock() throws NoSuchFieldException, IllegalAccessException {
         Field depotField = ConfigKey.class.getDeclaredField("s_depot");
         depotField.setAccessible(true);
@@ -170,17 +170,17 @@ public class ApiServletTest {
             Mockito.any()
         )).thenReturn(null);
     }
-    
+
     private void restoreConfigDepot() throws Exception {
         Field depotField = ConfigKey.class.getDeclaredField("s_depot");
         depotField.setAccessible(true);
         depotField.set(null, originalConfigDepot);
     }
-    
+
     private void setConfigValue(String configName, String value) {
         Mockito.when(mockConfigDepot.getConfigStringValue(
-            Mockito.eq(configName), 
-            Mockito.eq(ConfigKey.Scope.Global), 
+            Mockito.eq(configName),
+            Mockito.eq(ConfigKey.Scope.Global),
             Mockito.isNull()
         )).thenReturn(value);
     }
