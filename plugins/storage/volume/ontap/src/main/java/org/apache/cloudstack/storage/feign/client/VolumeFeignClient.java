@@ -30,21 +30,23 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import java.net.URI;
+
 
 @Lazy
 @FeignClient(name = "VolumeClient", url = "https://{clusterIP}/api/storage/volumes", configuration = FeignConfiguration.class)
 public interface VolumeFeignClient {
 
     @RequestMapping(method = RequestMethod.DELETE, value="/{uuid}")
-    void deleteVolume(@RequestHeader("Authorization") String authHeader, @PathVariable("uuid") String uuid);
+    void deleteVolume(URI baseURL, @RequestHeader("Authorization") String authHeader, @PathVariable("uuid") String uuid);
 
     @RequestMapping(method = RequestMethod.POST)
-    JobResponse createVolumeWithJob(@RequestHeader("Authorization") String authHeader, @RequestBody Volume volumeRequest);
+    JobResponse createVolumeWithJob(URI baseURL, @RequestHeader("Authorization") String authHeader, @RequestBody Volume volumeRequest);
 
     @RequestMapping(method = RequestMethod.GET, value="/{uuid}")
-    Volume getVolumeByUUID(@RequestHeader("Authorization") String authHeader, @PathVariable("uuid") String uuid);
+    Volume getVolumeByUUID(URI baseURL, @RequestHeader("Authorization") String authHeader, @PathVariable("uuid") String uuid);
 
     @RequestMapping(method = RequestMethod.PATCH)
-    JobResponse updateVolumeRebalancing(@RequestHeader("accept") String acceptHeader, @PathVariable("uuid") String uuid, @RequestBody Volume volumeRequest);
+    JobResponse updateVolumeRebalancing(URI baseURL, @RequestHeader("accept") String acceptHeader, @PathVariable("uuid") String uuid, @RequestBody Volume volumeRequest);
 
 }

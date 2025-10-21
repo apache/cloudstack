@@ -24,7 +24,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 /**
- * OnTapResponse
+ * OntapResponse
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class OntapResponse<T> {
@@ -34,11 +34,11 @@ public class OntapResponse<T> {
   @JsonProperty("records")
   private List<T> records;
 
-  public OntapResponse () {
+  public OntapResponse() {
     // Default constructor
   }
 
-  public OntapResponse (List<T> records) {
+  public OntapResponse(List<T> records) {
     this.records = records;
     this.numRecords = (records != null) ? records.size() : 0;
   }
