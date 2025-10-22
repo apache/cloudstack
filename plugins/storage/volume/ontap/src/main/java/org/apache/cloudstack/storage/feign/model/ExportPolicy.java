@@ -96,7 +96,7 @@ public class ExportPolicy {
 
   @Override
   public int hashCode() {
-    return Objects.hash( id, name, rules, svm);
+    return Objects.hash( id, name);
   }
 
 
