@@ -29,7 +29,7 @@ permissions:
 jobs:
   build:
     if: github.repository == 'apache/cloudstack'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     strategy:
       fail-fast: false
@@ -236,7 +236,7 @@ jobs:
       - name: Install Build Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y git uuid-runtime genisoimage netcat ipmitool build-essential libgcrypt20 libgpg-error-dev libgpg-error0 libopenipmi0 ipmitool libpython3-dev libssl-dev libffi-dev python3-openssl python3-dev python3-setuptools
+          sudo apt-get install -y git uuid-runtime genisoimage netcat-openbsd ipmitool build-essential libgcrypt20 libgpg-error-dev libgpg-error0 libopenipmi0 ipmitool libpython3-dev libssl-dev libffi-dev python3-openssl python3-dev python3-setuptools
 
       - name: Install Python dependencies
         run: |
@@ -275,7 +275,7 @@ jobs:
       - name: Setup Simulator Prerequisites
         run: |
           sudo python3 -m pip install --upgrade netaddr mysql-connector-python
-          python3 -m pip install --user --upgrade tools/marvin/dist/Marvin-*.tar.gz
+          python3 -m pip install --user --upgrade tools/marvin/dist/[mM]arvin-*.tar.gz
           mvn -q -Pdeveloper -pl developer -Ddeploydb
           mvn -q -Pdeveloper -pl developer -Ddeploydb-simulator
 
