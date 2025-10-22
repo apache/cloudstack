@@ -209,7 +209,10 @@ public class ImportVmTasksManagerImpl implements ImportVmTasksManager {
         }
         if (task.getVmId() != null) {
             UserVmVO userVm = userVmDao.findById(task.getVmId());
-            response.setVirtualMachineId(userVm.getUuid());
+            if (userVm != null) {
+                // Migrated VM could have been removed from CloudStack after the migration
+                response.setVirtualMachineId(userVm.getUuid());
+            }
         }
         response.setCreated(task.getCreated());
         response.setLastUpdated(task.getUpdated());
