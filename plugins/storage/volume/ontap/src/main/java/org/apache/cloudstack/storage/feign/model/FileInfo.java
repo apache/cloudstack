@@ -255,7 +255,7 @@ public class FileInfo {
 
   @Override
   public int hashCode() {
-    return Objects.hash(bytesUsed, creationTime, fillEnabled, isEmpty, isSnapshot, isVmAligned, modifiedTime, name, overwriteEnabled, path, size, target, type, uniqueBytes, unixPermissions);
+    return Objects.hash(name, path);
   }
 
 
