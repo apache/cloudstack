@@ -23,9 +23,7 @@ import org.apache.cloudstack.storage.feign.FeignConfiguration;
 import org.apache.cloudstack.storage.feign.model.Svm;
 import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 
@@ -37,6 +35,9 @@ public interface SvmFeignClient {
     OntapResponse<Svm> getSvms(URI baseURL, @RequestHeader("Authorization") String header);
 
     @RequestMapping(method = RequestMethod.GET, value = "/{uuid}")
-    Svm getSvmByUUID(URI baseURL, @RequestHeader("Authorization") String header);
+    Svm getSvmByUUID(URI baseURL, @RequestHeader("Authorization") String header, @PathVariable("uuid") String uuid);
+
+    @RequestMapping(method = RequestMethod.PATCH, value = "/{uuid}")
+    Svm updateSVM(URI baseURL, @RequestHeader("Authorization") String header, @RequestBody Svm svm);
 
 }

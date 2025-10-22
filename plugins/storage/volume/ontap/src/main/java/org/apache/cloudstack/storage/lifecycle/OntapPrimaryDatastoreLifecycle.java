@@ -66,6 +66,7 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
      */
     @Override
     public DataStore initialize(Map<String, Object> dsInfos) {
+        s_logger.info("initialize {}", dsInfos);
         if (dsInfos == null) {
             throw new CloudRuntimeException("Datastore info map is null, cannot create primary storage");
         }
@@ -94,7 +95,7 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
             return null;
         }
 
-        if (podId == null && clusterId == null) {
+        if (podId == null) {
             if (zoneId != null) {
                 s_logger.info("Both Pod Id and Cluster Id are null, Primary storage pool will be associated with a Zone");
             } else {
@@ -115,7 +116,7 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
             ClusterVO clusterVO = _clusterDao.findById(clusterId);
             Preconditions.checkNotNull(clusterVO, "Unable to locate the specified cluster");
             if (clusterVO.getHypervisorType() != Hypervisor.HypervisorType.KVM) {
-                throw new CloudRuntimeException("ONTAP primary storage is not supported for KVM hypervisor");
+                throw new CloudRuntimeException("ONTAP primary storage does not support" + clusterVO.getHypervisorType() + "hypervisor currently");
             }
             parameters.setHypervisorType(clusterVO.getHypervisorType());
         }
@@ -144,8 +145,7 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
         OntapStorage ontapStorage = new OntapStorage(details.get(Constants.USERNAME), details.get(Constants.PASSWORD),
                 details.get(Constants.MANAGEMENTLIF), details.get(Constants.SVMNAME), details.get(Constants.PROTOCOL),
                 Boolean.parseBoolean(details.get(Constants.ISDISAGGREGATED)));
-        StorageProviderFactory storageProviderManager = new StorageProviderFactory(ontapStorage);
-        StorageStrategy storageStrategy = storageProviderManager.getStrategy();
+        StorageStrategy storageStrategy = StorageProviderFactory.createStrategy(ontapStorage);
         boolean isValid = storageStrategy.connect();
         if (isValid) {
 //            String volumeName = storagePoolName + "_vol"; //TODO: Figure out a better naming convention
@@ -154,6 +154,7 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
             throw new CloudRuntimeException("ONTAP details validation failed, cannot create primary storage");
         }
 
+        String storagePath = url + ":/" + storagePoolName;
         parameters.setTags(tags);
         parameters.setIsTagARule(isTagARule);
         parameters.setDetails(details);
@@ -164,6 +165,7 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
         parameters.setName(storagePoolName);
         parameters.setProviderName(providerName);
         parameters.setManaged(true);
+        parameters.setPath(storagePath);
 
         return _dataStoreHelper.createPrimaryDataStore(parameters);
     }

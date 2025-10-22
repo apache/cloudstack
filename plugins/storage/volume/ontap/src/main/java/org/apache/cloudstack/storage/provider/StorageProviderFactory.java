@@ -29,36 +29,29 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-@Component
 public class StorageProviderFactory {
-    private final StorageStrategy storageStrategy;
     private static final Logger s_logger = (Logger) LogManager.getLogger(StorageProviderFactory.class);
 
-    public StorageProviderFactory(OntapStorage ontapStorage) {
+    public static StorageStrategy createStrategy(OntapStorage ontapStorage) {
         String protocol = ontapStorage.getProtocol();
         s_logger.info("Initializing StorageProviderFactory with protocol: " + protocol);
         switch (protocol.toLowerCase()) {
             case Constants.NFS:
                 if(!ontapStorage.getIsDisaggregated()) {
-                    this.storageStrategy = new UnifiedNASStrategy(ontapStorage);
+                    return new UnifiedNASStrategy(ontapStorage);
                 } else {
                     throw new CloudRuntimeException("Unsupported configuration: Disaggregated ONTAP is not supported.");
                 }
-                break;
             case Constants.ISCSI:
                 if (!ontapStorage.getIsDisaggregated()) {
-                    this.storageStrategy = new UnifiedSANStrategy(ontapStorage);
+                   return new UnifiedSANStrategy(ontapStorage);
                 } else {
                     throw new CloudRuntimeException("Unsupported configuration: Disaggregated ONTAP is not supported.");
                 }
-                break;
             default:
-                this.storageStrategy = null;
+
                 throw new CloudRuntimeException("Unsupported protocol: " + protocol);
         }
     }
 
-    public StorageStrategy getStrategy() {
-        return storageStrategy;
-    }
 }
