@@ -782,7 +782,6 @@ public class UnmanagedVMsManagerImplTest {
             when(agentManager.send(Mockito.eq(convertHostId), Mockito.any(CheckConvertInstanceCommand.class))).thenReturn(checkConvertInstanceAnswer);
         }
 
-        when(importVMTaskVO.getId()).thenReturn(1L);
         when(importVmTasksManager.createImportVMTaskRecord(any(DataCenter.class), any(Account.class), anyLong(), anyString(),
                 anyString(), anyString(), anyString(), any(Host.class), any(Host.class))).thenReturn(importVMTaskVO);
         when(volumeApiService.doesStoragePoolSupportDiskOffering(any(StoragePool.class), any(DiskOffering.class))).thenReturn(true);
