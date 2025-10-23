@@ -238,6 +238,24 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y git uuid-runtime genisoimage netcat-openbsd ipmitool build-essential libgcrypt20 libgpg-error-dev libgpg-error0 libopenipmi0 ipmitool libpython3-dev libssl-dev libffi-dev python3-openssl python3-dev python3-setuptools
 
+      - name: Setup IPMI Tool for CloudStack
+        run: |
+          # Create cloudstack-common directory if it doesn't exist
+          sudo mkdir -p /usr/share/cloudstack-common
+
+          # Copy ipmitool to cloudstack-common directory if it doesn't exist
+          if [ ! -f /usr/share/cloudstack-common/ipmitool ]; then
+            sudo cp /usr/bin/ipmitool /usr/share/cloudstack-common/ipmitool
+            sudo chmod 755 /usr/share/cloudstack-common/ipmitool
+          fi
+
+          # Create ipmitool-C3 wrapper script
+          sudo tee /usr/bin/ipmitool > /dev/null << 'EOF'
+          #!/bin/bash
+          /usr/share/cloudstack-common/ipmitool -C3 $@
+          EOF
+          sudo chmod 755 /usr/bin/ipmitool
+
       - name: Install Python dependencies
         run: |
           python3 -m pip install --user --upgrade urllib3 lxml paramiko nose texttable ipmisim pyopenssl pycryptodome mock flask netaddr pylint pycodestyle six astroid pynose
