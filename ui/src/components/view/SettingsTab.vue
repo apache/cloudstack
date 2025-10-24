@@ -25,7 +25,8 @@
         @search="handleSearch" />
       <ConfigurationTable
         :columns="columns"
-        :config="items" />
+        :config="items"
+        @refresh-config="handleConfigRefresh" />
     </a-col>
   </div>
 </template>
@@ -139,6 +140,13 @@ export default {
     handleSearch (value) {
       this.filter = value
       this.fetchData()
+    },
+    handleConfigRefresh (name, updatedRecord) {
+      if (!name || !updatedRecord) return
+      const index = this.items.findIndex(item => item.name === name)
+      if (index !== -1) {
+        this.items.splice(index, 1, updatedRecord)
+      }
     }
   }
 }
