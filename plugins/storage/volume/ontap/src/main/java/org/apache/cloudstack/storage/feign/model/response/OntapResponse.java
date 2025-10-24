@@ -24,7 +24,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 /**
- * OnTapResponse
+ * OntapResponse
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class OntapResponse<T> {
