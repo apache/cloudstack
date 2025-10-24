@@ -33,7 +33,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.vmware.vim25.VirtualMachineConfigInfo;
 import com.vmware.vim25.VirtualMachineConfigSummary;
 import org.apache.cloudstack.storage.NfsMountManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
