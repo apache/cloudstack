@@ -789,6 +789,7 @@ import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
@@ -1066,6 +1067,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     protected List<DeploymentPlanner> _planners;
 
+    private boolean jsInterpretationEnabled = false;
+
     private final List<HypervisorType> supportedHypervisors = new ArrayList<>();
 
     public List<DeploymentPlanner> getPlanners() {
@@ -1145,6 +1148,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         supportedHypervisors.add(HypervisorType.KVM);
         supportedHypervisors.add(HypervisorType.XenServer);
+
+        jsInterpretationEnabled = JsInterpretationEnabled.value();
 
         return true;
     }
@@ -4219,8 +4224,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListGuestVlansCmd.class);
         cmdList.add(AssignVolumeCmd.class);
         cmdList.add(ListSecondaryStorageSelectorsCmd.class);
-        cmdList.add(CreateSecondaryStorageSelectorCmd.class);
-        cmdList.add(UpdateSecondaryStorageSelectorCmd.class);
+        if (jsInterpretationEnabled) {
+            cmdList.add(CreateSecondaryStorageSelectorCmd.class);
+            cmdList.add(UpdateSecondaryStorageSelectorCmd.class);
+        }
         cmdList.add(RemoveSecondaryStorageSelectorCmd.class);
         cmdList.add(ListAffectedVmsForStorageScopeChangeCmd.class);
         cmdList.add(ListGuiThemesCmd.class);
@@ -4274,7 +4281,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {exposeCloudStackVersionInApiXmlResponse, exposeCloudStackVersionInApiListCapabilities, vmPasswordLength, sshKeyLength, humanReadableSizes, customCsIdentifier};
+        return new ConfigKey<?>[] {exposeCloudStackVersionInApiXmlResponse, exposeCloudStackVersionInApiListCapabilities, vmPasswordLength, sshKeyLength, humanReadableSizes, customCsIdentifier,
+        JsInterpretationEnabled};
     }
 
     protected class EventPurgeTask extends ManagedContextRunnable {
@@ -4664,10 +4672,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Map<String, Object> capabilities = new HashMap<>();
 
         final Account caller = getCaller();
-        final boolean isCallerAdmin = _accountService.isAdmin(caller.getId());
+        final boolean isCallerRootAdmin = _accountService.isRootAdmin(caller.getId());
+        final boolean isCallerAdmin = isCallerRootAdmin || _accountService.isAdmin(caller.getId());
         boolean securityGroupsEnabled = false;
         boolean elasticLoadBalancerEnabled;
-        boolean KVMSnapshotEnabled;
         String supportELB = "false";
         final List<NetworkVO> networks = networkDao.listSecurityGroupEnabledNetworks();
         if (networks != null && !networks.isEmpty()) {
@@ -4684,7 +4692,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final long diskOffMinSize = VolumeOrchestrationService.CustomDiskOfferingMinSize.value();
         final long diskOffMaxSize = VolumeOrchestrationService.CustomDiskOfferingMaxSize.value();
-        KVMSnapshotEnabled = Boolean.parseBoolean(_configDao.getValue("KVM.snapshot.enabled"));
+        final boolean KVMSnapshotEnabled = SnapshotManager.KVMSnapshotEnabled.value();
 
         final boolean userPublicTemplateEnabled = TemplateManager.AllowPublicUserTemplates.valueIn(caller.getId());
 
@@ -4746,7 +4754,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
         capabilities.put(ApiConstants.SHAREDFSVM_MIN_CPU_COUNT, fsVmMinCpu);
         capabilities.put(ApiConstants.SHAREDFSVM_MIN_RAM_SIZE, fsVmMinRam);
-        if (isCallerAdmin) {
+        if (isCallerRootAdmin) {
             capabilities.put(ApiConstants.EXTENSIONS_PATH, extensionsManager.getExtensionsPath());
         }
         capabilities.put(ApiConstants.ADDITONAL_CONFIG_ENABLED, UserVmManager.EnableAdditionalVmConfig.valueIn(caller.getId()));
@@ -5779,5 +5787,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Override
     public Answer getExternalVmConsole(VirtualMachine vm, Host host) {
         return extensionsManager.getInstanceConsole(vm, host);
+    }
+    @Override
+    public void checkJsInterpretationAllowedIfNeededForParameterValue(String paramName, boolean paramValue) {
+        if (!paramValue || jsInterpretationEnabled) {
+            return;
+        }
+        throw new InvalidParameterValueException(String.format(
+                "The parameter %s cannot be set to true as JS interpretation is disabled",
+                paramName));
     }
 }

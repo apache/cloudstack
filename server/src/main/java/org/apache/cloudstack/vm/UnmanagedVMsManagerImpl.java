@@ -71,7 +71,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
-import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
@@ -302,8 +301,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private NetworkOrchestrationService networkMgr;
     @Inject
     private PhysicalNetworkDao physicalNetworkDao;
-    @Inject
-    private IpAddressManager ipAddressManager;
     @Inject
     private StoragePoolHostDao storagePoolHostDao;
     @Inject
@@ -1779,10 +1776,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             logger.debug(String.format("VMware VM %s imported successfully to CloudStack instance %s (%s), Time taken: %d secs, OVF files imported from %s, Source VMware VM details - OS: %s, PowerState: %s, Disks: %s, NICs: %s",
                     sourceVMName, displayName, displayName, timeElapsedInSecs, (ovfTemplateOnConvertLocation != null)? "MS" : "KVM Host", sourceVMwareInstance.getOperatingSystem(), sourceVMwareInstance.getPowerState(), sourceVMwareInstance.getDisks(), sourceVMwareInstance.getNics()));
             importVmTasksManager.updateImportVMTaskStep(importVMTask, zone, owner, convertHost, importHost, userVm.getId(), Completed);
-            importVmTasksManager.removeImportVMTask(importVMTask.getId());
             return userVm;
         } catch (CloudRuntimeException e) {
             logger.error(String.format("Error importing VM: %s", e.getMessage()), e);
+            importVmTasksManager.updateImportVMTaskErrorState(importVMTask, ImportVmTask.TaskState.Failed, e.getMessage());
             ActionEventUtils.onCompletedActionEvent(userId, owner.getId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_IMPORT,
                     cmd.getEventDescription(), null, null, 0);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
@@ -2766,10 +2763,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
 
         String macAddress = networkModel.getNextAvailableMacAddressInNetwork(networkId);
-        String ipAddress = null;
-        if (network.getGuestType() != Network.GuestType.L2) {
-            ipAddress = ipAddressManager.acquireGuestIpAddress(network, null);
-        }
+
+        String ipAddress = network.getGuestType() != Network.GuestType.L2 ? "auto" : null;
 
         Network.IpAddresses requestedIpPair = new Network.IpAddresses(ipAddress, null, macAddress);
 

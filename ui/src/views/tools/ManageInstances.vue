@@ -497,11 +497,17 @@
                 </a-col>
               </a-row>
             </a-tab-pane>
-            <a-tab-pane :key=2 tab="Import VM Tasks" v-if="isMigrateFromVmware">
+            <a-tab-pane :key=2 :tab="$t('label.import.vm.tasks')" v-if="isMigrateFromVmware">
               <ImportVmTasks
                 :tasks="importVmTasks"
                 :loading="loadingImportVmTasks"
+                :filter="importVmTasksFilter"
+                :total="itemCount.tasks || 0"
+                :page="page.tasks"
+                :pageSize="pageSize.tasks"
                 @fetch-import-vm-tasks="fetchImportVmTasks"
+                @change-pagination="onChangeImportTasksPagination"
+                @change-filter="onChangeImportTasksFilter"
               />
             </a-tab-pane>
           </a-tabs>
@@ -704,11 +710,13 @@ export default {
       },
       page: {
         unmanaged: 1,
-        managed: 1
+        managed: 1,
+        tasks: 1
       },
       pageSize: {
         unmanaged: 10,
-        managed: 10
+        managed: 10,
+        tasks: 10
       },
       searchFilters: {
         unmanaged: [],
@@ -765,12 +773,14 @@ export default {
       selectedVmwareVcenter: undefined,
       activeTabKey: 1,
       loadingImportVmTasks: false,
-      importVmTasks: []
+      importVmTasks: [],
+      importVmTasksFilter: 'running'
     }
   },
   created () {
     this.page.unmanaged = parseInt(this.$route.query.unmanagedpage || 1)
     this.page.managed = parseInt(this.$route.query.managedpage || 1)
+    this.page.tasks = parseInt(this.$route.query.tasks || 1)
     this.initForm()
     this.fetchData()
   },
@@ -1102,6 +1112,7 @@ export default {
       this.page.managed = 1
       this.managedInstances = []
       this.managedInstancesSelectedRowKeys = []
+      this.page.tasks = 1
       this.activeTabKey = 1
     },
     onSelectHypervisor (value) {
@@ -1178,15 +1189,25 @@ export default {
         this.fetchImportVmTasks()
       }
     },
-    fetchImportVmTasks (filter) {
+    onChangeImportTasksPagination (page, pagesize) {
+      this.page.tasks = page
+      this.pageSize.tasks = pagesize
+      this.fetchImportVmTasks()
+    },
+    onChangeImportTasksFilter (filter) {
+      this.importVmTasksFilter = filter
+      this.fetchImportVmTasks()
+    },
+    fetchImportVmTasks () {
       this.loadingImportVmTasks = true
       const params = {
-        zoneid: this.zoneId
-      }
-      if (filter && filter === 'completed') {
-        params.showcompleted = true
+        zoneid: this.zoneId,
+        page: this.page.tasks,
+        pagesize: this.pageSize.tasks,
+        tasksfilter: this.importVmTasksFilter
       }
       getAPI('listImportVmTasks', params).then(response => {
+        this.itemCount.tasks = response.listimportvmtasksresponse.count
         this.importVmTasks = response.listimportvmtasksresponse.importvmtask || []
       }).catch(error => {
         this.$notifyError(error)

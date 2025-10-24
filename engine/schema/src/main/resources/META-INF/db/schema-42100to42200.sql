@@ -48,6 +48,9 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backup_repository', 'cross_zone_inst
 UPDATE `cloud`.`storage_pool_details` SET display = 0 WHERE name LIKE '%password%';
 UPDATE `cloud`.`storage_pool_details` SET display = 0 WHERE name LIKE '%token%';
 
+-- Add csi_enabled column to kubernetes_cluster table to indicate if the cluster is using csi or not
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster', 'csi_enabled', 'TINYINT(1) unsigned NOT NULL DEFAULT 0 COMMENT "true if kubernetes cluster is using csi, false otherwise" ');
+
 -- VMware to KVM migration improvements
 CREATE TABLE IF NOT EXISTS `cloud`.`import_vm_task`(
     `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
@@ -62,7 +65,8 @@ CREATE TABLE IF NOT EXISTS `cloud`.`import_vm_task`(
     `source_vm_name` varchar(255) COMMENT 'Source VM name on vCenter',
     `convert_host_id` bigint unsigned COMMENT 'Convert Host ID',
     `import_host_id` bigint unsigned COMMENT 'Import Host ID',
-    `step` varchar(20) NOT NULL COMMENT 'Importing VM Task Step',
+    `step` varchar(20) COMMENT 'Importing VM Task Step',
+    `state` varchar(20) COMMENT 'Importing VM Task State',
     `description` varchar(255) COMMENT 'Importing VM Task Description',
     `duration` bigint unsigned COMMENT 'Duration in milliseconds for the completed tasks',
     `created` datetime NOT NULL COMMENT 'date created',
@@ -80,3 +84,6 @@ CREATE TABLE IF NOT EXISTS `cloud`.`import_vm_task`(
 
 CALL `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`('MaaS', 'Baremetal Extension for Canonical MaaS written in Python', 'MaaS/maas.py');
 CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('MaaS', 'orchestratorrequirespreparevm', 'true', 0);
+
+CALL `cloud`.`IDEMPOTENT_DROP_UNIQUE_KEY`('counter', 'uc_counter__provider__source__value');
+CALL `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY`('cloud.counter', 'uc_counter__provider__source__value__removed', '(provider, source, value, removed)');

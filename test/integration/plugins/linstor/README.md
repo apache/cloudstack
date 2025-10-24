@@ -1,9 +1,9 @@
 # Linstor storage plugin
-==================================
+
 This directory contains the basic VM, Volume life cycle tests for Linstor storage pool (in KVM hypervisor).
 
-# Running tests
-===============
+## Running tests
+
 To run the basic volume tests, first update the below test data of the CloudStack environment
 
 ```
