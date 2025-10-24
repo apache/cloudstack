@@ -785,7 +785,7 @@ export default {
         if (json.listconfigurationsresponse.configuration !== null) {
           const config = json.listconfigurationsresponse.configuration[0]
           if (config && config.name === params.name) {
-            this.vmwareToKvmExtraParamsAllowed = config.value
+            this.vmwareToKvmExtraParamsAllowed = config.value === 'true'
           }
         }
       })
