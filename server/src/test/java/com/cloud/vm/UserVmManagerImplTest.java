@@ -1120,10 +1120,12 @@ public class UserVmManagerImplTest {
     public void recoverRootVolumeTestDestroyState() {
         Mockito.doReturn(Volume.State.Destroy).when(volumeVOMock).getState();
 
-        userVmManagerImpl.recoverRootVolume(volumeVOMock, vmId);
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
+            userVmManagerImpl.recoverRootVolume(volumeVOMock, vmId);
 
-        Mockito.verify(volumeApiService).recoverVolume(volumeVOMock.getId());
-        Mockito.verify(volumeDaoMock).attachVolume(volumeVOMock.getId(), vmId, UserVmManagerImpl.ROOT_DEVICE_ID);
+            Mockito.verify(volumeApiService).recoverVolume(volumeVOMock.getId());
+            Mockito.verify(volumeDaoMock).attachVolume(volumeVOMock.getId(), vmId, UserVmManagerImpl.ROOT_DEVICE_ID);
+        }
     }
 
     @Test(expected = InvalidParameterValueException.class)
