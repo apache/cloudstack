@@ -2401,7 +2401,7 @@
 "message.success.create.internallb": "LB interno criado com sucesso",
 "message.success.create.isolated.network": "Rede isolada criada com sucesso",
 "message.success.create.keypair": "Par de chaves SSH criado com sucesso",
-"message.success.create.kubernetes.cluter": "Cluster Kubernetes criado com sucesso",
+"message.success.create.kubernetes.cluster": "Cluster Kubernetes criado com sucesso",
 "message.success.create.l2.network": "Rede L2 criada com sucesso",
 "message.success.create.snapshot.from.vmsnapshot": "Snapshot de volume a partir da snapshot de VM criada com sucesso",
 "message.success.create.user": "Usu\u00e1rio criado com sucesso",
