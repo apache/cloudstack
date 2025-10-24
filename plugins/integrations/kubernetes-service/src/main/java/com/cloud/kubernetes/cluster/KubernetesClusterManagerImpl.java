@@ -807,6 +807,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         VMTemplateVO template = ApiDBUtils.findTemplateById(kubernetesCluster.getTemplateId());
         if (template != null) {
             response.setTemplateId(template.getUuid());
+            response.setTemplateName(template.getName());
         }
         ServiceOfferingVO offering = serviceOfferingDao.findByIdIncludingRemoved(kubernetesCluster.getServiceOfferingId());
         if (offering != null) {
