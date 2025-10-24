@@ -40,6 +40,7 @@ import java.util.UUID;
 
 import com.cloud.offering.DiskOffering;
 import com.cloud.vm.ImportVMTaskVO;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
@@ -1308,5 +1309,46 @@ public class UnmanagedVMsManagerImplTest {
         Mockito.when(configKeyMockParamsAllowed.value()).thenReturn(true);
         Mockito.when(configKeyMockParamsAllowedList.value()).thenReturn("network,x");
         unmanagedVMsManager.checkExtraParamsAllowed("--mac 00:0c:29:e6:3d:9d:ip:192.168.0.89,192.168.0.1,24,192.168.0.254 -x");
+    }
+
+    @Test
+    public void testAddServiceOfferingDetailsToParamsFixedOffering() {
+        Map<String, String> params = new HashMap<>();
+        ServiceOfferingVO serviceOfferingVO = mock(ServiceOfferingVO.class);
+        Mockito.when(serviceOfferingVO.getCpu()).thenReturn(2);
+        Mockito.when(serviceOfferingVO.getRamSize()).thenReturn(2048);
+        unmanagedVMsManager.addServiceOfferingDetailsToParams(params, serviceOfferingVO);
+        Assert.assertEquals("2", params.get(VmDetailConstants.CPU_NUMBER));
+        Assert.assertEquals("2048", params.get(VmDetailConstants.MEMORY));
+    }
+
+    @Test
+    public void testAddServiceOfferingDetailsToParamsCustomConstrainedOffering() {
+        Map<String, String> params = new HashMap<>();
+        ServiceOfferingVO serviceOfferingVO = mock(ServiceOfferingVO.class);
+        Map<String, String> details = new HashMap<>();
+        details.put(ApiConstants.MIN_CPU_NUMBER, "1");
+        details.put(ApiConstants.MIN_MEMORY, "1024");
+        Mockito.when(serviceOfferingVO.getDetails()).thenReturn(details);
+        Mockito.when(serviceOfferingVO.getCpu()).thenReturn(null);
+        Mockito.when(serviceOfferingVO.getSpeed()).thenReturn(1500);
+        Mockito.when(serviceOfferingVO.getRamSize()).thenReturn(null);
+        unmanagedVMsManager.addServiceOfferingDetailsToParams(params, serviceOfferingVO);
+        Assert.assertEquals("1", params.get(VmDetailConstants.CPU_NUMBER));
+        Assert.assertEquals("1500", params.get(VmDetailConstants.CPU_SPEED));
+        Assert.assertEquals("1024", params.get(VmDetailConstants.MEMORY));
+    }
+
+    @Test
+    public void testAddServiceOfferingDetailsToParamsCustomUnconstrainedOffering() {
+        Map<String, String> params = new HashMap<>();
+        ServiceOfferingVO serviceOfferingVO = mock(ServiceOfferingVO.class);
+        Mockito.when(serviceOfferingVO.getCpu()).thenReturn(null);
+        Mockito.when(serviceOfferingVO.getSpeed()).thenReturn(null);
+        Mockito.when(serviceOfferingVO.getRamSize()).thenReturn(null);
+        unmanagedVMsManager.addServiceOfferingDetailsToParams(params, serviceOfferingVO);
+        Assert.assertFalse(params.containsKey(VmDetailConstants.CPU_NUMBER));
+        Assert.assertFalse(params.containsKey(VmDetailConstants.CPU_SPEED));
+        Assert.assertFalse(params.containsKey(VmDetailConstants.MEMORY));
     }
 }
