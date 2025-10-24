@@ -207,6 +207,12 @@
           </template>
           <a-switch v-model:checked="form.advancedmode" />
         </a-form-item>
+        <a-form-item v-if="form.advancedmode" name="enablecsi" ref="enablecsi" :label="$t('label.enable.csi')">
+            <template #label>
+              <tooltip-label :title="$t('label.enable.csi')" :tooltip="apiParams.enablecsi.description"/>
+            </template>
+            <a-switch v-model:checked="form.enablecsi" />
+          </a-form-item>
         <a-form-item v-if="form.advancedmode" name="controlofferingid" ref="controlofferingid">
           <template #label>
             <tooltip-label :title="$t('label.cks.cluster.control.nodes.offeringid')" :tooltip="$t('label.cks.cluster.control.nodes.offeringid')"/>
@@ -899,6 +905,10 @@ export default {
 
         if (values.cniconfigurationid) {
           params.cniconfigurationid = values.cniconfigurationid
+        }
+
+        if (values.enablecsi) {
+          params.enablecsi = values.enablecsi
         }
 
         var idx = 0

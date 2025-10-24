@@ -211,6 +211,9 @@
             <a-radio-button value="writethrough">
               {{ $t('label.writethrough') }}
             </a-radio-button>
+            <a-radio-button value="hypervisor_default">
+              {{ $t('label.hypervisor.default') }}
+            </a-radio-button>
           </a-radio-group>
         </a-form-item>
         <a-form-item v-if="isAdmin() || isDomainAdminAllowedToInformTags" name="tags" ref="tags">
@@ -604,7 +607,7 @@ export default {
     width: 80vw;
 
     @media (min-width: 800px) {
-      width: 430px;
+      width: 480px;
     }
   }
 </style>

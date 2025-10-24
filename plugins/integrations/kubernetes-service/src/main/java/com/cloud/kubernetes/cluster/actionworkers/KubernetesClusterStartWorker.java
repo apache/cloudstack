@@ -143,7 +143,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
 
     private Pair<String, String> getKubernetesControlNodeConfig(final String controlNodeIp, final String serverIp,
                                                                 final List<Network.IpAddresses> etcdIps, final String hostName, final boolean haSupported,
-                                                                final boolean ejectIso, final boolean externalCni) throws IOException {
+                                                                final boolean ejectIso, final boolean externalCni, final boolean setupCsi) throws IOException {
         String k8sControlNodeConfig = readK8sConfigFile("/conf/k8s-control-node.yml");
         final String apiServerCert = "{{ k8s_control_node.apiserver.crt }}";
         final String apiServerKey = "{{ k8s_control_node.apiserver.key }}";
@@ -161,6 +161,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         final String certSans = "{{ k8s_control.server_ips }}";
         final String k8sCertificate = "{{ k8s_control.certificate_key }}";
         final String externalCniPlugin = "{{ k8s.external.cni.plugin }}";
+        final String setupCsiDriver = "{{ k8s.setup.csi.driver }}";
 
         final List<String> addresses = new ArrayList<>();
         addresses.add(controlNodeIp);
@@ -198,20 +199,21 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         String initArgs = "";
         if (haSupported) {
             initArgs = String.format("--control-plane-endpoint %s:%d --upload-certs --certificate-key %s ",
-                    controlNodeIp,
+                    serverIp,
                     CLUSTER_API_PORT,
                     KubernetesClusterUtil.generateClusterHACertificateKey(kubernetesCluster));
         }
-        initArgs += String.format("--apiserver-cert-extra-sans=%s", controlNodeIp);
+        initArgs += String.format("--apiserver-cert-extra-sans=%s", serverIp);
         initArgs += String.format(" --kubernetes-version=%s", getKubernetesClusterVersion().getSemanticVersion());
         k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterInitArgsKey, initArgs);
         k8sControlNodeConfig = k8sControlNodeConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(etcdEndpointList, endpointList);
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(k8sServerIp, controlNodeIp);
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(k8sServerIp, serverIp);
         k8sControlNodeConfig = k8sControlNodeConfig.replace(k8sApiPort, String.valueOf(CLUSTER_API_PORT));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(certSans, String.format("- %s", serverIp));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(k8sCertificate, KubernetesClusterUtil.generateClusterHACertificateKey(kubernetesCluster));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(externalCniPlugin, String.valueOf(externalCni));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(setupCsiDriver, String.valueOf(setupCsi));
 
         k8sControlNodeConfig = updateKubeConfigWithRegistryDetails(k8sControlNodeConfig);
 
@@ -246,7 +248,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         Long userDataId = kubernetesCluster.getCniConfigId();
         Pair<String, String> k8sControlNodeConfigAndControlIp = new Pair<>(null, null);
         try {
-            k8sControlNodeConfigAndControlIp = getKubernetesControlNodeConfig(controlNodeIp, serverIp, etcdIps, hostName, haSupported, Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType()), Objects.nonNull(userDataId));
+            k8sControlNodeConfigAndControlIp = getKubernetesControlNodeConfig(controlNodeIp, serverIp, etcdIps, hostName, haSupported, Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType()), Objects.nonNull(userDataId), kubernetesCluster.isCsiEnabled());
         } catch (IOException e) {
             logAndThrow(Level.ERROR, "Failed to read Kubernetes control node configuration file", e);
         }
@@ -858,6 +860,9 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
         taintControlNodes();
         deployProvider();
+        if (kubernetesCluster.isCsiEnabled()) {
+            deployCsiDriver();
+        }
         updateLoginUserDetails(clusterVMs.stream().map(InternalIdentity::getId).collect(Collectors.toList()));
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         return true;
