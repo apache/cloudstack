@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.vmware.vim25.VirtualMachineConfigSummary;
 import org.apache.cloudstack.storage.NfsMountManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -625,5 +626,25 @@ public class VMwareGuruTest {
         String templateDir = "f887b7b3-3d1f-4a7d-93e5-3147f58866c6";
         boolean result = vMwareGuru.removeVMTemplateOutOfBand(dataStore, templateDir);
         assertTrue(result);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testCheckSourceVmResourcesAgainstSelectedOfferingResourcesInsufficientMemory() throws Exception {
+        VirtualMachineMO virtualMachineMO = Mockito.mock(VirtualMachineMO.class);
+        VirtualMachineConfigSummary configSummary = Mockito.mock(VirtualMachineConfigSummary.class);
+        Mockito.when(virtualMachineMO.getConfigSummary()).thenReturn(configSummary);
+        Mockito.when(configSummary.getNumCpu()).thenReturn(1);
+        Mockito.when(configSummary.getMemorySizeMB()).thenReturn(2048);
+        vMwareGuru.checkSourceVmResourcesAgainstSelectedOfferingResources(virtualMachineMO, 1, 500, 1024);
+    }
+
+    @Test
+    public void testCheckSourceVmResourcesAgainstSelectedOfferingResourcesGreaterOffering() throws Exception {
+        VirtualMachineMO virtualMachineMO = Mockito.mock(VirtualMachineMO.class);
+        VirtualMachineConfigSummary configSummary = Mockito.mock(VirtualMachineConfigSummary.class);
+        Mockito.when(virtualMachineMO.getConfigSummary()).thenReturn(configSummary);
+        Mockito.when(configSummary.getNumCpu()).thenReturn(1);
+        Mockito.when(configSummary.getMemorySizeMB()).thenReturn(1024);
+        vMwareGuru.checkSourceVmResourcesAgainstSelectedOfferingResources(virtualMachineMO, 2, 1500, 2048);
     }
 }
