@@ -38,6 +38,19 @@ repos:
       - id: gitleaks
         name: run gitleaks
         description: detect hardcoded secrets
+  - repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.5.5
+    hooks:
+      - id: insert-license
+        name: add license for all Markdown files
+        files: \.md$
+        args:
+          - --comment-style
+          - '<!--|| -->'
+          - --license-filepath
+          - .github/workflows/license-templates/LICENSE.txt
+          - --fuzzy-match-generates-todo
+        exclude: ^(CHANGES|ISSUE_TEMPLATE|PULL_REQUEST_TEMPLATE)\.md$|^ui/docs/(full|smoke)-test-plan\.template\.md$
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
