@@ -430,7 +430,7 @@ public class KubernetesClusterManagerImplTest {
         VMTemplateVO cksIso = Mockito.mock(VMTemplateVO.class);
         Mockito.when(cksIso.getArch()).thenReturn(CPU.CPUArch.arm64);
         String cksClusterPreferredArch = kubernetesClusterManager.getCksClusterPreferredArch(systemVMArch, cksIso);
-        Assert.assertEquals(CPU.CPUArch.arm64.name(), cksClusterPreferredArch);
+        Assert.assertEquals(CPU.CPUArch.arm64.getType(), cksClusterPreferredArch);
     }
 
     @Test
@@ -439,6 +439,6 @@ public class KubernetesClusterManagerImplTest {
         VMTemplateVO cksIso = Mockito.mock(VMTemplateVO.class);
         Mockito.when(cksIso.getArch()).thenReturn(CPU.CPUArch.amd64);
         String cksClusterPreferredArch = kubernetesClusterManager.getCksClusterPreferredArch(systemVMArch, cksIso);
-        Assert.assertEquals(CPU.CPUArch.amd64.name(), cksClusterPreferredArch);
+        Assert.assertEquals(CPU.CPUArch.amd64.getType(), cksClusterPreferredArch);
     }
 }
