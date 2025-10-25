@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+  <changeSet id="vnf-dictionary" author="wei.zhou">
+    <createTable tableName="vnf_dictionary">
+      <column name="id" type="BIGINT" autoIncrement="true">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="network_id" type="BIGINT"><constraints nullable="false"/></column>
+      <column name="name" type="VARCHAR(128)"/>
+      <column name="version" type="INT" defaultValueNumeric="1"/>
+      <column name="yaml_blob" type="LONGTEXT"/>
+      <column name="checksum" type="CHAR(64)"/>
+      <column name="created" type="DATETIME"/>
+      <column name="created_by" type="VARCHAR(128)"/>
+    </createTable>
+    <createIndex indexName="idx_vnfdict_network" tableName="vnf_dictionary">
+      <column name="network_id"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet id="vnf-network-binding" author="wei.zhou">
+    <createTable tableName="vnf_network_binding">
+      <column name="network_id" type="BIGINT">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="vnf_vm_id" type="BIGINT"/>
+      <column name="broker_state" type="VARCHAR(16)"/>
+      <column name="helpers" type="INT" defaultValueNumeric="7"/>
+      <column name="updated" type="DATETIME"/>
+    </createTable>
+  </changeSet>
+
+  <changeSet id="vnf-rule-map" author="wei.zhou">
+    <createTable tableName="vnf_rule_map">
+      <column name="id" type="BIGINT" autoIncrement="true">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="network_id" type="BIGINT"><constraints nullable="false"/></column>
+      <column name="acs_rule_uuid" type="CHAR(36)"><constraints nullable="false"/></column>
+      <column name="vnf_rule_id" type="VARCHAR(128)"/>
+      <column name="service" type="VARCHAR(32)"/>
+      <column name="created" type="DATETIME"/>
+      <column name="updated" type="DATETIME"/>
+    </createTable>
+    <createIndex indexName="idx_vrm_network_service" tableName="vnf_rule_map">
+      <column name="network_id"/>
+      <column name="service"/>
+    </createIndex>
+    <createIndex indexName="idx_vrm_vnfid" tableName="vnf_rule_map">
+      <column name="vnf_rule_id"/>
+    </createIndex>
+    <addUniqueConstraint tableName="vnf_rule_map" columnNames="network_id,acs_rule_uuid"
+                         constraintName="uc_vrm_network_ruleuuid"/>
+  </changeSet>
+</databaseChangeLog>
