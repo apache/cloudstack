@@ -1408,6 +1408,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 throw new CloudRuntimeException(err);
             }
 
+            checkSourceVmResourcesAgainstSelectedOfferingResources(vmMo, requestedCpuNumber, requestedCpuSpeed, requestedMemory);
             VirtualMachinePowerState sourceVmPowerState = vmMo.getPowerState();
 
             if (sourceVmPowerState == VirtualMachinePowerState.POWERED_OFF) {
@@ -1431,8 +1432,6 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                     throw new CloudRuntimeException(err);
                 }
             }
-
-            checkSourceVmResourcesAgainstSelectedOfferingResources(vmMo, requestedCpuNumber, requestedCpuSpeed, requestedMemory);
 
             logger.debug(String.format("Cloning VM %s at VMware host %s on vCenter %s", vmName, hostIp, vcenter));
             VirtualMachineMO clonedVM = createCloneFromSourceVM(vmName, vmMo, dataCenterMO);
