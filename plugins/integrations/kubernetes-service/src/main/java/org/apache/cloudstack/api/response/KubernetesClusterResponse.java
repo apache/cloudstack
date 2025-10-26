@@ -204,6 +204,10 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
     @Param(description = "Maximum size of the cluster")
     private Long maxSize;
 
+    @SerializedName(ApiConstants.CSI_ENABLED)
+    @Param(description = "Indicates if the CloudStack CSI driver has been setup in the cluster")
+    private Boolean isCsiEnabled;
+
     @SerializedName(ApiConstants.CLUSTER_TYPE)
     @Param(description = "the type of the cluster")
     private KubernetesCluster.ClusterType clusterType;
@@ -514,5 +518,9 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
 
     public void setCniConfigName(String cniConfigName) {
         this.cniConfigName = cniConfigName;
+    }
+
+    public void setCsiEnabled(Boolean csiEnabled) {
+        isCsiEnabled = csiEnabled;
     }
 }

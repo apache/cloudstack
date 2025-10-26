@@ -118,6 +118,7 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
@@ -126,6 +127,7 @@ import com.cloud.org.Cluster;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
+import com.cloud.user.AccountService;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UuidUtils;
 import com.cloud.utils.db.EntityManager;
@@ -182,6 +184,8 @@ public class ExtensionsManagerImplTest {
     private VMTemplateDao templateDao;
     @Mock
     private RoleService roleService;
+    @Mock
+    private AccountService accountService;
     @Mock
     private ExtensionsShareManager extensionsShareManager;
 
@@ -1677,6 +1681,35 @@ public class ExtensionsManagerImplTest {
 
         try (MockedStatic<CallContext> ignored = mockStatic(CallContext.class)) {
             mockCallerRole(RoleType.Admin);
+            CustomActionResultResponse result = extensionsManager.runCustomAction(cmd);
+
+            assertFalse(result.getSuccess());
+        }
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void runCustomAction_CheckAccessThrowsException() throws Exception {
+        RunCustomActionCmd cmd = mock(RunCustomActionCmd.class);
+        when(cmd.getCustomActionId()).thenReturn(1L);
+        when(cmd.getResourceId()).thenReturn("vm-123");
+        when(cmd.getParameters()).thenReturn(Map.of("param1", "value1"));
+
+        ExtensionCustomActionVO actionVO = mock(ExtensionCustomActionVO.class);
+        when(extensionCustomActionDao.findById(1L)).thenReturn(actionVO);
+        when(actionVO.isEnabled()).thenReturn(true);
+        when(actionVO.getResourceType()).thenReturn(ExtensionCustomAction.ResourceType.VirtualMachine);
+        when(actionVO.getAllowedRoleTypes()).thenReturn(RoleType.toCombinedMask(List.of(RoleType.Admin, RoleType.DomainAdmin, RoleType.User)));
+
+        ExtensionVO extensionVO = mock(ExtensionVO.class);
+        when(extensionDao.findById(anyLong())).thenReturn(extensionVO);
+        when(extensionVO.getState()).thenReturn(Extension.State.Enabled);
+
+        VirtualMachine vm = mock(VirtualMachine.class);
+        when(entityManager.findByUuid(eq(VirtualMachine.class), anyString())).thenReturn(vm);
+        doThrow(PermissionDeniedException.class).when(accountService).checkAccess(any(Account.class), eq(null), eq(true), eq(vm));
+
+        try (MockedStatic<CallContext> ignored = mockStatic(CallContext.class)) {
+            mockCallerRole(RoleType.User);
             CustomActionResultResponse result = extensionsManager.runCustomAction(cmd);
 
             assertFalse(result.getSuccess());

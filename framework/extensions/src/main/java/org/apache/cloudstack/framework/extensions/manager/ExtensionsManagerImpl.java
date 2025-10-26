@@ -134,6 +134,7 @@ import com.cloud.org.Cluster;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
+import com.cloud.user.AccountService;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
@@ -213,6 +214,9 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     @Inject
     RoleService roleService;
+
+    @Inject
+    AccountService accountService;
 
     @Inject
     ExtensionsFilesystemManager extensionsFilesystemManager;
@@ -1406,6 +1410,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             clusterId = host.getClusterId();
         } else if (entity instanceof VirtualMachine) {
             VirtualMachine virtualMachine = (VirtualMachine)entity;
+            accountService.checkAccess(caller, null, true, virtualMachine);
             if (!Hypervisor.HypervisorType.External.equals(virtualMachine.getHypervisorType())) {
                 logger.error("Invalid {} specified as VM resource for running {}", entity, customActionVO);
                 throw new InvalidParameterValueException(error);
