@@ -22,67 +22,67 @@ package org.apache.cloudstack.storage.feign.model;
 import org.apache.cloudstack.storage.utils.Constants.ProtocolType;
 
 public class OntapStorage {
-    public static String _username;
-    public static String _password;
-    public static String _managementLIF;
-    public static String _svmName;
-    public static ProtocolType _protocolType;
-    public static Boolean _isDisaggregated;
+    public static String username;
+    public static String password;
+    public static String managementLIF;
+    public static String svmName;
+    public static ProtocolType protocolType;
+    public static Boolean isDisaggregated;
 
     public OntapStorage(String username, String password, String managementLIF, String svmName, ProtocolType protocolType, Boolean isDisaggregated) {
-        _username = username;
-        _password = password;
-        _managementLIF = managementLIF;
-        _svmName = svmName;
-        _protocolType = protocolType;
-        _isDisaggregated = isDisaggregated;
+        this.username = username;
+        this.password = password;
+        this.managementLIF = managementLIF;
+        this.svmName = svmName;
+        this.protocolType = protocolType;
+        this.isDisaggregated = isDisaggregated;
     }
 
     public String getUsername() {
-        return _username;
+        return username;
     }
 
     public void setUsername(String username) {
-        _username = username;
+        username = username;
     }
 
     public String getPassword() {
-        return _password;
+        return password;
     }
 
     public void setPassword(String password) {
-        _password = password;
+        password = password;
     }
 
     public String getManagementLIF() {
-        return _managementLIF;
+        return managementLIF;
     }
 
     public void setManagementLIF(String managementLIF) {
-        _managementLIF = managementLIF;
+        managementLIF = managementLIF;
     }
 
     public String getSvmName() {
-        return _svmName;
+        return svmName;
     }
 
     public void setSvmName(String svmName) {
-        _svmName = svmName;
+        svmName = svmName;
     }
 
     public ProtocolType getProtocol() {
-        return _protocolType;
+        return protocolType;
     }
 
     public void setProtocol(ProtocolType protocolType) {
-        _protocolType = protocolType;
+        protocolType = protocolType;
     }
 
     public Boolean getIsDisaggregated() {
-        return _isDisaggregated;
+        return isDisaggregated;
     }
 
     public void setIsDisaggregated(Boolean isDisaggregated) {
-        _isDisaggregated = isDisaggregated;
+        isDisaggregated = isDisaggregated;
     }
 }

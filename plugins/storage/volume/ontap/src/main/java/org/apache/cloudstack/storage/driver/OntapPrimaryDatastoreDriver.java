@@ -18,13 +18,17 @@
  */
 package org.apache.cloudstack.storage.driver;
 
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -37,18 +41,35 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.feign.model.Lun;
+import org.apache.cloudstack.storage.provider.StorageProviderFactory;
+import org.apache.cloudstack.storage.service.SANStrategy;
+import org.apache.cloudstack.storage.service.StorageStrategy;
+import org.apache.cloudstack.storage.feign.model.OntapStorage;
+import org.apache.cloudstack.storage.utils.Constants;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.inject.Inject;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
 
-    private static final Logger s_logger = (Logger)LogManager.getLogger(OntapPrimaryDatastoreDriver.class);
+    private static final Logger logger = (Logger)LogManager.getLogger(OntapPrimaryDatastoreDriver.class);
+
+    @Inject
+    private StoragePoolDetailsDao storagePoolDetailsDao;
+    @Inject private PrimaryDataStoreDao storagePoolDao;
+
     @Override
     public Map<String, String> getCapabilities() {
-        s_logger.trace("OntapPrimaryDatastoreDriver: getCapabilities: Called");
+        logger.trace("OntapPrimaryDatastoreDriver: getCapabilities: Called");
         Map<String, String> mapCapabilities = new HashMap<>();
 
         mapCapabilities.put(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString(), Boolean.TRUE.toString());
@@ -68,9 +89,74 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
     }
 
     @Override
-    public void createAsync(DataStore store, DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
+    public void createAsync(DataStore dataStore, DataObject dataObject, AsyncCompletionCallback<CreateCmdResult> callback) {
+        CreateCmdResult createCmdResult = null;
+        String path = null;
+        String errMsg = null;
+        if (dataStore == null) {
+            throw new InvalidParameterValueException("createAsync: dataStore should not be null");
+        }
+        if (dataObject == null) {
+            throw new InvalidParameterValueException("createAsync: dataObject should not be null");
+        }
+        if (callback == null) {
+            throw new InvalidParameterValueException("createAsync: callback should not be null");
+        }
 
-        s_logger.trace("OntapPrimaryDatastoreDriver: createAsync: Store: "+store+", data: "+data);
+       try {
+           logger.info("createAsync: Volume creation starting for data store [{}] and data object [{}] of type [{}]",
+                    dataStore, dataObject, dataObject.getType());
+           if (dataObject.getType() == DataObjectType.VOLUME) {
+                path = createCloudStackVolume(dataStore.getId(), dataObject);
+               createCmdResult = new CreateCmdResult(path, new Answer(null, true, null));
+           } else {
+                errMsg = "Invalid DataObjectType (" + dataObject.getType() + ") passed to createAsync";
+                logger.error(errMsg);
+                throw new CloudRuntimeException(errMsg);
+           }
+       } catch (Exception e) {
+            errMsg = e.getMessage();
+            logger.error("createAsync: Volume creation failed for dataObject [{}]: {}", dataObject, errMsg);
+            createCmdResult = new CreateCmdResult(null, new Answer(null, false, errMsg));
+            createCmdResult.setResult(e.toString());
+       } finally {
+            callback.complete(createCmdResult);
+       }
+    }
+
+    private String createCloudStackVolume(long storagePoolId, DataObject dataObject) {
+        String path = null;
+        StoragePoolVO storagePool = storagePoolDao.findById(storagePoolId);
+        if(storagePool == null) {
+            throw new CloudRuntimeException("createCloudStackVolume : Storage Pool not found for id: " + storagePoolId);
+        }
+        List<String> keyList = Arrays.asList(Constants.USERNAME, Constants.PROTOCOL, Constants.IS_DISAGGREGATED, Constants.PASSWORD, Constants.MANAGEMENT_LIF,
+                Constants.SVM_NAME, Constants.NAME);
+        Map<String, String> storagePoolDetailMap = storagePoolDetailsDao.listDetailsKeyPairs(storagePoolId, keyList);
+        OntapStorage ontapStorage = new OntapStorage(storagePoolDetailMap.get(Constants.USERNAME), storagePoolDetailMap.get(Constants.PASSWORD),
+                storagePoolDetailMap.get(Constants.MANAGEMENT_LIF), storagePoolDetailMap.get(Constants.SVM_NAME), Constants.ProtocolType.valueOf(storagePoolDetailMap.get(Constants.PROTOCOL)),
+                Boolean.parseBoolean(storagePoolDetailMap.get(Constants.IS_DISAGGREGATED)));
+        StorageStrategy storageStrategy = StorageProviderFactory.createStrategy(ontapStorage);
+        boolean isValid = storageStrategy.connect();
+        if (isValid) {
+            String svmName = ontapStorage.getSvmName();
+            String lunOrFileName = dataObject.getName();
+            Long size = dataObject.getSize();
+            String volName = storagePool.getName();
+
+            // Create LUN based on protocol
+            if (ontapStorage.getProtocol().equals(Constants.ISCSI)) {
+                SANStrategy sanStrategy = StorageProviderFactory.getSANStrategy(ontapStorage);
+                Lun lun = sanStrategy.createLUN(svmName, volName, lunOrFileName, size , Lun.OsTypeEnum.LINUX.getValue());
+                if(lun.getName() == null || lun.getName().isEmpty()) {
+                    throw new CloudRuntimeException("createCloudStackVolume : LUN Name is invalid");
+                }
+                path = lun.getName();
+            }
+        } else {
+            throw new CloudRuntimeException("createCloudStackVolume : ONTAP details validation failed, cannot connect to ONTAP cluster");
+        }
+        return path;
     }
 
     @Override
@@ -105,6 +191,15 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public boolean grantAccess(DataObject dataObject, Host host, DataStore dataStore) {
+        if (dataStore == null) {
+            throw new CloudRuntimeException("grantAccess: dataStore should not be null");
+        }
+        if (dataObject == null) {
+            throw new CloudRuntimeException("grantAccess: dataObject should not be null");
+        }
+        if (host == null) {
+            throw new CloudRuntimeException("grantAccess: host should not be null");
+        }
         return true;
     }
 

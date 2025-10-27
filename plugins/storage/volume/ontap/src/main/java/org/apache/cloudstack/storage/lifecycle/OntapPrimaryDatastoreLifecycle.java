@@ -141,7 +141,7 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
         OntapStorage ontapStorage = new OntapStorage(details.get(Constants.USERNAME), details.get(Constants.PASSWORD),
                 details.get(Constants.MANAGEMENT_LIF), details.get(Constants.SVM_NAME), protocol,
                 Boolean.parseBoolean(details.get(Constants.IS_DISAGGREGATED)));
-        StorageStrategy storageStrategy = StorageProviderFactory.getStrategy(ontapStorage);
+        StorageStrategy storageStrategy = StorageProviderFactory.createStrategy(ontapStorage);
         boolean isValid = storageStrategy.connect();
         if (isValid) {
 //            String volumeName = storagePoolName + "_vol"; //TODO: Figure out a better naming convention

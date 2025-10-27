@@ -20,6 +20,7 @@
 package org.apache.cloudstack.storage.utils;
 
 import com.cloud.utils.StringUtils;
+import org.apache.cloudstack.storage.feign.model.Job;
 import org.apache.cloudstack.storage.feign.model.OntapStorage;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Base64Utils;
@@ -48,5 +49,9 @@ public class Utility {
     public URI generateURI(String path) {
         String uriString = Constants.HTTPS + ontapStorage.getManagementLIF() + path;
         return URI.create(uriString);
+    }
+
+    public Job pollJob(Job job) {
+        return null;
     }
 }

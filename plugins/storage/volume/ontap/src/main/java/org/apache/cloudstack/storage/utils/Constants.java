@@ -31,6 +31,7 @@ public class Constants {
     public static final String SVM_NAME = "svmName";
     public static final String USERNAME = "username";
     public static final String PASSWORD = "password";
+    public static final String NAME = "name";
     public static final String MANAGEMENT_LIF = "managementLIF";
     public static final String IS_DISAGGREGATED = "isDisaggregated";
     public static final String RUNNING = "running";
@@ -47,5 +48,9 @@ public class Constants {
     public static final String HTTPS = "https://";
     public static final String GET_SVMs = "/api/svm/svms";
     public static final String CREATE_VOLUME = "/api/storage/volumes";
+    public static final String CREATE_LUN = "/api/storage/luns";
+
+    public static final String VOLUME_PATH_PREFIX = "/vol/";
+    public static final String PATH_SEPARATOR = "/";
     public static final String GET_JOB_BY_UUID = "/api/cluster/jobs";
 }
