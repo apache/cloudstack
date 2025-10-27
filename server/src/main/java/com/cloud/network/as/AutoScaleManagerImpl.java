@@ -50,7 +50,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterForAutoScaleConditionCmd;
+import org.apache.cloudstack.api.command.admin.autoscale.CreateAutoScaleCounterCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleConditionCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScalePolicyCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmGroupCmd;
@@ -59,7 +59,7 @@ import org.apache.cloudstack.api.command.user.autoscale.ListAutoScalePoliciesCmd
 import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleVmGroupsCmd;
 import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleVmProfilesCmd;
 import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleConditionsCmd;
-import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleConditionCountersCmd;
+import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleCountersCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScalePolicyCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmGroupCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;
@@ -1454,7 +1454,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_COUNTER_CREATE, eventDescription = "Counter", create = true)
     @DB
-    public Counter createCounter(CreateCounterForAutoScaleConditionCmd cmd) {
+    public Counter createCounter(CreateAutoScaleCounterCmd cmd) {
         String source = cmd.getSource().toUpperCase();
         String name = cmd.getName();
         String value = cmd.getValue();
@@ -1527,7 +1527,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     }
 
     @Override
-    public List<? extends Counter> listCounters(ListAutoScaleConditionCountersCmd cmd) {
+    public List<? extends Counter> listCounters(ListAutoScaleCountersCmd cmd) {
         String name = cmd.getName();
         Long id = cmd.getId();
         String source = cmd.getSource();

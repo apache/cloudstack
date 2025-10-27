@@ -34,7 +34,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "deleteCounter", description = "Deletes a counter for VM auto scaling", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class DeleteAutoScaleConditionCounterCmd extends BaseAsyncCmd {
+public class DeleteAutoScaleCounterCmd extends BaseAsyncCmd {
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////

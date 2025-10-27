@@ -33,7 +33,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "listCounters", description = "List the counters for VM auto scaling", responseObject = CounterResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListAutoScaleConditionCountersCmd extends BaseListCmd {
+public class ListAutoScaleCountersCmd extends BaseListCmd {
     private static final String s_name = "counterresponse";
 
     // ///////////////////////////////////////////////////

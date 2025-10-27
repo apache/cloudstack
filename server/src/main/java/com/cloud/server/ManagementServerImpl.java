@@ -64,8 +64,8 @@ import org.apache.cloudstack.api.command.admin.address.ListPublicIpAddressesCmdB
 import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.affinitygroup.UpdateVMAffinityGroupCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.alert.GenerateAlertCmd;
-import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterForAutoScaleConditionCmd;
-import org.apache.cloudstack.api.command.admin.autoscale.DeleteAutoScaleConditionCounterCmd;
+import org.apache.cloudstack.api.command.admin.autoscale.CreateAutoScaleCounterCmd;
+import org.apache.cloudstack.api.command.admin.autoscale.DeleteAutoScaleCounterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
@@ -371,7 +371,7 @@ import org.apache.cloudstack.api.command.user.autoscale.ListAutoScalePoliciesCmd
 import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleVmGroupsCmd;
 import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleVmProfilesCmd;
 import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleConditionsCmd;
-import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleConditionCountersCmd;
+import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleCountersCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScalePolicyCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmGroupCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;
@@ -3698,8 +3698,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(EnableAccountCmd.class);
         cmdList.add(LockAccountCmd.class);
         cmdList.add(UpdateAccountCmd.class);
-        cmdList.add(CreateCounterForAutoScaleConditionCmd.class);
-        cmdList.add(DeleteAutoScaleConditionCounterCmd.class);
+        cmdList.add(CreateAutoScaleCounterCmd.class);
+        cmdList.add(DeleteAutoScaleCounterCmd.class);
         cmdList.add(AddClusterCmd.class);
         cmdList.add(DeleteClusterCmd.class);
         cmdList.add(ListClustersCmd.class);
@@ -3870,7 +3870,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListAutoScaleVmGroupsCmd.class);
         cmdList.add(ListAutoScaleVmProfilesCmd.class);
         cmdList.add(ListAutoScaleConditionsCmd.class);
-        cmdList.add(ListAutoScaleConditionCountersCmd.class);
+        cmdList.add(ListAutoScaleCountersCmd.class);
         cmdList.add(UpdateAutoScalePolicyCmd.class);
         cmdList.add(UpdateAutoScaleVmGroupCmd.class);
         cmdList.add(UpdateAutoScaleVmProfileCmd.class);

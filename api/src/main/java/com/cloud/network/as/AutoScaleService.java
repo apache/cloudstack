@@ -18,7 +18,7 @@ package com.cloud.network.as;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterForAutoScaleConditionCmd;
+import org.apache.cloudstack.api.command.admin.autoscale.CreateAutoScaleCounterCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleConditionCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScalePolicyCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmGroupCmd;
@@ -27,7 +27,7 @@ import org.apache.cloudstack.api.command.user.autoscale.ListAutoScalePoliciesCmd
 import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleVmGroupsCmd;
 import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleVmProfilesCmd;
 import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleConditionsCmd;
-import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleConditionCountersCmd;
+import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleCountersCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScalePolicyCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmGroupCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;
@@ -68,13 +68,13 @@ public interface AutoScaleService {
 
     List<? extends AutoScaleVmGroup> listAutoScaleVmGroups(ListAutoScaleVmGroupsCmd listAutoScaleVmGroupsCmd);
 
-    Counter createCounter(CreateCounterForAutoScaleConditionCmd cmd);
+    Counter createCounter(CreateAutoScaleCounterCmd cmd);
 
     Counter getCounter(long counterId);
 
     boolean deleteCounter(long counterId) throws ResourceInUseException;
 
-    List<? extends Counter> listCounters(ListAutoScaleConditionCountersCmd cmd);
+    List<? extends Counter> listCounters(ListAutoScaleCountersCmd cmd);
 
     Condition createCondition(CreateAutoScaleConditionCmd cmd);
 

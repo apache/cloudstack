@@ -34,7 +34,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "createCounter", description = "Adds metric counter for VM auto scaling", responseObject = CounterResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class CreateCounterForAutoScaleConditionCmd extends BaseAsyncCreateCmd {
+public class CreateAutoScaleCounterCmd extends BaseAsyncCreateCmd {
     private static final String s_name = "counterresponse";
 
     // ///////////////////////////////////////////////////
