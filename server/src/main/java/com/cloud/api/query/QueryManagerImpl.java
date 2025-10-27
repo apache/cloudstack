@@ -5653,7 +5653,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         //Validation - 1.3
         if (resourceIdStr != null) {
-            resourceId = resourceManagerUtil.getResourceId(resourceIdStr, resourceType);
+            resourceId = resourceManagerUtil.getResourceId(resourceIdStr, resourceType, true);
         }
 
         List<? extends ResourceDetail> detailList = new ArrayList<>();

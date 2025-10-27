@@ -64,6 +64,7 @@ public class ApiConstants {
     public static final String BACKUP_STORAGE_LIMIT = "backupstoragelimit";
     public static final String BACKUP_STORAGE_TOTAL = "backupstoragetotal";
     public static final String BACKUP_VM_OFFERING_REMOVED = "vmbackupofferingremoved";
+    public static final String IS_BACKUP_VM_EXPUNGED = "isbackupvmexpunged";
     public static final String BACKUP_TOTAL = "backuptotal";
     public static final String BASE64_IMAGE = "base64image";
     public static final String BGP_PEERS = "bgppeers";
@@ -134,6 +135,7 @@ public class ApiConstants {
     public static final String CNI_CONFIG_ID = "cniconfigurationid";
     public static final String CNI_CONFIG_DETAILS = "cniconfigdetails";
     public static final String CNI_CONFIG_NAME = "cniconfigname";
+    public static final String CSI_ENABLED = "csienabled";
     public static final String COMPONENT = "component";
     public static final String CPU = "CPU";
     public static final String CPU_CORE_PER_SOCKET = "cpucorepersocket";
@@ -214,6 +216,7 @@ public class ApiConstants {
     public static final String DURATION = "duration";
     public static final String ELIGIBLE = "eligible";
     public static final String EMAIL = "email";
+    public static final String ENABLE_CSI = "enablecsi";
     public static final String END_ASN = "endasn";
     public static final String END_DATE = "enddate";
     public static final String END_IP = "endip";
@@ -532,7 +535,6 @@ public class ApiConstants {
     public static final String SHOW_CAPACITIES = "showcapacities";
     public static final String SHOW_REMOVED = "showremoved";
     public static final String SHOW_RESOURCE_ICON = "showicon";
-    public static final String SHOW_COMPLETED = "showcompleted";
     public static final String SHOW_INACTIVE = "showinactive";
     public static final String SHOW_UNIQUE = "showunique";
     public static final String SIGNATURE = "signature";
@@ -582,6 +584,7 @@ public class ApiConstants {
     public static final String SUITABLE_FOR_VM = "suitableforvirtualmachine";
     public static final String SUPPORTS_STORAGE_SNAPSHOT = "supportsstoragesnapshot";
     public static final String TARGET_IQN = "targetiqn";
+    public static final String TASKS_FILTER = "tasksfilter";
     public static final String TEMPLATE_FILTER = "templatefilter";
     public static final String TEMPLATE_ID = "templateid";
     public static final String TEMPLATE_IDS = "templateids";
@@ -1161,6 +1164,7 @@ public class ApiConstants {
     public static final String OVM3_CLUSTER = "ovm3cluster";
     public static final String OVM3_VIP = "ovm3vip";
     public static final String CLEAN_UP_DETAILS = "cleanupdetails";
+    public static final String CLEAN_UP_EXTERNAL_DETAILS = "cleanupexternaldetails";
     public static final String CLEAN_UP_PARAMETERS = "cleanupparameters";
     public static final String VIRTUAL_SIZE = "virtualsize";
     public static final String NETSCALER_CONTROLCENTER_ID = "netscalercontrolcenterid";
