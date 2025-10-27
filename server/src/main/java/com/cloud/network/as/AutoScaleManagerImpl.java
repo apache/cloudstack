@@ -50,20 +50,20 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
+import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterForAutoScaleConditionCmd;
+import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleConditionCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScalePolicyCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmGroupCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmProfileCmd;
-import org.apache.cloudstack.api.command.user.autoscale.CreateConditionForVmAutoScalingCmd;
 import org.apache.cloudstack.api.command.user.autoscale.ListAutoScalePoliciesCmd;
 import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleVmGroupsCmd;
 import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleVmProfilesCmd;
-import org.apache.cloudstack.api.command.user.autoscale.ListConditionsCmd;
-import org.apache.cloudstack.api.command.user.autoscale.ListCountersCmd;
+import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleConditionsCmd;
+import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleConditionCountersCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScalePolicyCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmGroupCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;
-import org.apache.cloudstack.api.command.user.autoscale.UpdateConditionCmd;
+import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleConditionCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
@@ -1454,7 +1454,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_COUNTER_CREATE, eventDescription = "Counter", create = true)
     @DB
-    public Counter createCounter(CreateCounterCmd cmd) {
+    public Counter createCounter(CreateCounterForAutoScaleConditionCmd cmd) {
         String source = cmd.getSource().toUpperCase();
         String name = cmd.getName();
         String value = cmd.getValue();
@@ -1493,7 +1493,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_CONDITION_CREATE, eventDescription = "Condition", create = true)
-    public Condition createCondition(CreateConditionForVmAutoScalingCmd cmd) {
+    public Condition createCondition(CreateAutoScaleConditionCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
         Account owner = accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
         accountMgr.checkAccess(caller, null, true, owner);
@@ -1527,7 +1527,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     }
 
     @Override
-    public List<? extends Counter> listCounters(ListCountersCmd cmd) {
+    public List<? extends Counter> listCounters(ListAutoScaleConditionCountersCmd cmd) {
         String name = cmd.getName();
         Long id = cmd.getId();
         String source = cmd.getSource();
@@ -1549,7 +1549,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     }
 
     @Override
-    public List<? extends Condition> listConditions(ListConditionsCmd cmd) {
+    public List<? extends Condition> listConditions(ListAutoScaleConditionsCmd cmd) {
         Long id = cmd.getId();
         Long counterId = cmd.getCounterId();
         Long policyId = cmd.getPolicyId();
@@ -1631,7 +1631,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_CONDITION_UPDATE, eventDescription = "update a condition")
-    public Condition updateCondition(UpdateConditionCmd cmd) throws ResourceInUseException {
+    public Condition updateCondition(UpdateAutoScaleConditionCmd cmd) throws ResourceInUseException {
         Long conditionId = cmd.getId();
         /* Check if entity is in database */
         ConditionVO condition = getEntityInDatabase(CallContext.current().getCallingAccount(), "Condition", conditionId, conditionDao);

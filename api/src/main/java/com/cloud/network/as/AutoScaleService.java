@@ -18,20 +18,20 @@ package com.cloud.network.as;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
+import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterForAutoScaleConditionCmd;
+import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleConditionCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScalePolicyCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmGroupCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmProfileCmd;
-import org.apache.cloudstack.api.command.user.autoscale.CreateConditionForVmAutoScalingCmd;
 import org.apache.cloudstack.api.command.user.autoscale.ListAutoScalePoliciesCmd;
 import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleVmGroupsCmd;
 import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleVmProfilesCmd;
-import org.apache.cloudstack.api.command.user.autoscale.ListConditionsCmd;
-import org.apache.cloudstack.api.command.user.autoscale.ListCountersCmd;
+import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleConditionsCmd;
+import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleConditionCountersCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScalePolicyCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmGroupCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;
-import org.apache.cloudstack.api.command.user.autoscale.UpdateConditionCmd;
+import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleConditionCmd;
 
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -68,19 +68,19 @@ public interface AutoScaleService {
 
     List<? extends AutoScaleVmGroup> listAutoScaleVmGroups(ListAutoScaleVmGroupsCmd listAutoScaleVmGroupsCmd);
 
-    Counter createCounter(CreateCounterCmd cmd);
+    Counter createCounter(CreateCounterForAutoScaleConditionCmd cmd);
 
     Counter getCounter(long counterId);
 
     boolean deleteCounter(long counterId) throws ResourceInUseException;
 
-    List<? extends Counter> listCounters(ListCountersCmd cmd);
+    List<? extends Counter> listCounters(ListAutoScaleConditionCountersCmd cmd);
 
-    Condition createCondition(CreateConditionForVmAutoScalingCmd cmd);
+    Condition createCondition(CreateAutoScaleConditionCmd cmd);
 
-    List<? extends Condition> listConditions(ListConditionsCmd cmd);
+    List<? extends Condition> listConditions(ListAutoScaleConditionsCmd cmd);
 
     boolean deleteCondition(long conditionId) throws ResourceInUseException;
 
-    Condition updateCondition(UpdateConditionCmd cmd) throws ResourceInUseException;
+    Condition updateCondition(UpdateAutoScaleConditionCmd cmd) throws ResourceInUseException;
 }

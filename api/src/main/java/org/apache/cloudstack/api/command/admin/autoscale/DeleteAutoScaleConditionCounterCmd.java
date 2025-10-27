@@ -15,11 +15,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.api.command.user.autoscale;
+package org.apache.cloudstack.api.command.admin.autoscale;
 
 
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -27,24 +25,22 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.ConditionResponse;
+import org.apache.cloudstack.api.response.CounterResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceInUseException;
-import com.cloud.network.as.Condition;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteCondition", description = "Removes a condition for VM auto scaling", responseObject = SuccessResponse.class, entityType = {Condition.class},
+@APICommand(name = "deleteCounter", description = "Deletes a counter for VM auto scaling", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class DeleteConditionCmd extends BaseAsyncCmd {
+public class DeleteAutoScaleConditionCounterCmd extends BaseAsyncCmd {
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ConditionResponse.class, required = true, description = "the ID of the condition.")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = CounterResponse.class, required = true, description = "the ID of the counter")
     private Long id;
 
     // ///////////////////////////////////////////////////
@@ -55,17 +51,18 @@ public class DeleteConditionCmd extends BaseAsyncCmd {
     public void execute() {
         boolean result = false;
         try {
-            result = _autoScaleService.deleteCondition(getId());
+            result = _autoScaleService.deleteCounter(getId());
         } catch (ResourceInUseException ex) {
             logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_IN_USE_ERROR, ex.getMessage());
         }
+
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            setResponseObject(response);
+            this.setResponseObject(response);
         } else {
-            logger.warn("Failed to delete condition " + getId());
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete condition.");
+            logger.warn("Failed to delete counter with Id: " + getId());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete counter.");
         }
     }
 
@@ -79,27 +76,21 @@ public class DeleteConditionCmd extends BaseAsyncCmd {
 
     @Override
     public ApiCommandResourceType getApiResourceType() {
-        return ApiCommandResourceType.Condition;
+        return ApiCommandResourceType.Counter;
     }
 
     @Override
     public long getEntityOwnerId() {
-        Condition condition = _entityMgr.findById(Condition.class, getId());
-        if (condition != null) {
-            return condition.getAccountId();
-        }
-
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are
-        // tracked
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_CONDITION_DELETE;
+        return EventTypes.EVENT_COUNTER_DELETE;
     }
 
     @Override
     public String getEventDescription() {
-        return "Deleting a condition.";
+        return "Deleting a counter.";
     }
 }

@@ -49,15 +49,15 @@ import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
+import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterForAutoScaleConditionCmd;
+import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleConditionCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScalePolicyCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmGroupCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmProfileCmd;
-import org.apache.cloudstack.api.command.user.autoscale.CreateConditionForVmAutoScalingCmd;
-import org.apache.cloudstack.api.command.user.autoscale.ListCountersCmd;
+import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleConditionCountersCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmGroupCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;
-import org.apache.cloudstack.api.command.user.autoscale.UpdateConditionCmd;
+import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleConditionCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
@@ -429,7 +429,7 @@ public class AutoScaleManagerImplTest {
 
     @Test
     public void testCreateCounterCmd() throws IllegalArgumentException {
-        CreateCounterCmd cmd = new CreateCounterCmd();
+        CreateCounterForAutoScaleConditionCmd cmd = new CreateCounterForAutoScaleConditionCmd();
         ReflectionTestUtils.setField(cmd, ApiConstants.NAME, counterName);
         ReflectionTestUtils.setField(cmd, ApiConstants.PROVIDER, counterProvider);
         ReflectionTestUtils.setField(cmd, ApiConstants.SOURCE, counterSource.toString());
@@ -443,7 +443,7 @@ public class AutoScaleManagerImplTest {
 
     @Test(expected = InvalidParameterValueException.class)
     public void testCreateCounterCmdWithInvalidSource() throws IllegalArgumentException {
-        CreateCounterCmd cmd = new CreateCounterCmd();
+        CreateCounterForAutoScaleConditionCmd cmd = new CreateCounterForAutoScaleConditionCmd();
         ReflectionTestUtils.setField(cmd, ApiConstants.NAME, counterName);
         ReflectionTestUtils.setField(cmd, ApiConstants.PROVIDER, counterProvider);
         ReflectionTestUtils.setField(cmd, ApiConstants.SOURCE, INVALID);
@@ -456,7 +456,7 @@ public class AutoScaleManagerImplTest {
 
     @Test(expected = InvalidParameterValueException.class)
     public void testCreateCounterCmdWithInvalidProvider() throws IllegalArgumentException {
-        CreateCounterCmd cmd = new CreateCounterCmd();
+        CreateCounterForAutoScaleConditionCmd cmd = new CreateCounterForAutoScaleConditionCmd();
         ReflectionTestUtils.setField(cmd, ApiConstants.NAME, counterName);
         ReflectionTestUtils.setField(cmd, ApiConstants.PROVIDER, INVALID);
         ReflectionTestUtils.setField(cmd, ApiConstants.SOURCE, counterSource.toString());
@@ -472,7 +472,7 @@ public class AutoScaleManagerImplTest {
         List<CounterVO> countersMock = Arrays.asList(counterMock);
         when(counterDao.listCounters(any(), any(), any(), any(), any(), any())).thenReturn(countersMock);
 
-        ListCountersCmd cmd = new ListCountersCmd();
+        ListAutoScaleConditionCountersCmd cmd = new ListAutoScaleConditionCountersCmd();
         ReflectionTestUtils.setField(cmd, ApiConstants.PROVIDER, counterProvider);
 
         List<? extends Counter> counters = autoScaleManagerImplSpy.listCounters(cmd);
@@ -481,7 +481,7 @@ public class AutoScaleManagerImplTest {
 
     @Test(expected = InvalidParameterValueException.class)
     public void testListCountersWithInvalidProvider() {
-        ListCountersCmd cmd = new ListCountersCmd();
+        ListAutoScaleConditionCountersCmd cmd = new ListAutoScaleConditionCountersCmd();
         ReflectionTestUtils.setField(cmd, ApiConstants.PROVIDER, INVALID);
 
         List<? extends Counter> counters = autoScaleManagerImplSpy.listCounters(cmd);
@@ -515,7 +515,7 @@ public class AutoScaleManagerImplTest {
 
     @Test
     public void testCreateConditionForVmAutoScalingCmd() throws IllegalArgumentException {
-        CreateConditionForVmAutoScalingCmd cmd = new CreateConditionForVmAutoScalingCmd();
+        CreateAutoScaleConditionCmd cmd = new CreateAutoScaleConditionCmd();
 
         ReflectionTestUtils.setField(cmd, "counterId", counterId);
         ReflectionTestUtils.setField(cmd, "relationalOperator", String.valueOf(relationalOperator));
@@ -529,7 +529,7 @@ public class AutoScaleManagerImplTest {
 
     @Test(expected = InvalidParameterValueException.class)
     public void testCreateConditionForVmAutoScalingCmdWithInvalidOperator() throws IllegalArgumentException {
-        CreateConditionForVmAutoScalingCmd cmd = new CreateConditionForVmAutoScalingCmd();
+        CreateAutoScaleConditionCmd cmd = new CreateAutoScaleConditionCmd();
 
         ReflectionTestUtils.setField(cmd, "counterId", counterId);
         ReflectionTestUtils.setField(cmd, "relationalOperator", INVALID);
@@ -542,7 +542,7 @@ public class AutoScaleManagerImplTest {
 
     @Test(expected = InvalidParameterValueException.class)
     public void testCreateConditionForVmAutoScalingCmdWithInvalidThreshold() throws IllegalArgumentException {
-        CreateConditionForVmAutoScalingCmd cmd = new CreateConditionForVmAutoScalingCmd();
+        CreateAutoScaleConditionCmd cmd = new CreateAutoScaleConditionCmd();
 
         ReflectionTestUtils.setField(cmd, "counterId", counterId);
         ReflectionTestUtils.setField(cmd, "relationalOperator", String.valueOf(relationalOperator));
@@ -585,7 +585,7 @@ public class AutoScaleManagerImplTest {
 
         when(conditionDao.update(eq(conditionId), any())).thenReturn(true);
 
-        UpdateConditionCmd cmd = new UpdateConditionCmd();
+        UpdateAutoScaleConditionCmd cmd = new UpdateAutoScaleConditionCmd();
 
         ReflectionTestUtils.setField(cmd, "id", conditionId);
         ReflectionTestUtils.setField(cmd, "relationalOperator", String.valueOf(relationalOperator));
@@ -599,7 +599,7 @@ public class AutoScaleManagerImplTest {
 
     @Test(expected = InvalidParameterValueException.class)
     public void testUpdateConditionWithInvalidOperator() throws ResourceInUseException {
-        UpdateConditionCmd cmd = new UpdateConditionCmd();
+        UpdateAutoScaleConditionCmd cmd = new UpdateAutoScaleConditionCmd();
 
         ReflectionTestUtils.setField(cmd, "id", conditionId);
         ReflectionTestUtils.setField(cmd, "relationalOperator", INVALID);
@@ -612,7 +612,7 @@ public class AutoScaleManagerImplTest {
 
     @Test(expected = InvalidParameterValueException.class)
     public void testUpdateConditionWithInvalidThreshold() throws ResourceInUseException {
-        UpdateConditionCmd cmd = new UpdateConditionCmd();
+        UpdateAutoScaleConditionCmd cmd = new UpdateAutoScaleConditionCmd();
 
         ReflectionTestUtils.setField(cmd, "id", conditionId);
         ReflectionTestUtils.setField(cmd, "relationalOperator", String.valueOf(relationalOperator));
@@ -645,7 +645,7 @@ public class AutoScaleManagerImplTest {
         Mockito.doReturn(searchCriteriaMock2).when(searchBuilderMock2).create();
         Mockito.doReturn(Arrays.asList(asVmGroupMock)).when(autoScaleVmGroupDao).search(searchCriteriaMock2, null);
 
-        UpdateConditionCmd cmd = new UpdateConditionCmd();
+        UpdateAutoScaleConditionCmd cmd = new UpdateAutoScaleConditionCmd();
 
         ReflectionTestUtils.setField(cmd, "id", conditionId);
         ReflectionTestUtils.setField(cmd, "relationalOperator", String.valueOf(relationalOperator));
