@@ -27,7 +27,7 @@ function getTemplateVersion() {
   export CS_VERSION="${subversion1}"."${subversion2}"
   export CS_MINOR_VERSION="${minorversion}"
   export VERSION="${CS_VERSION}.${CS_MINOR_VERSION}"
-  export CS_SYSTEMTEMPLATE_REPO="https://download.cloudstack.org/systemvm/${CS_VERSION}/"
+  export CS_SYSTEMTEMPLATE_REPO="https://download.cloudstack.org/systemvm/"
 }
 
 function getGenericName() {
@@ -95,7 +95,7 @@ declare -A template_specs=(
 
 templates=()
 for key in "${!template_specs[@]}"; do
-  url="${CS_SYSTEMTEMPLATE_REPO}/systemvmtemplate-$VERSION-${template_specs[$key]}"
+  url="${CS_SYSTEMTEMPLATE_REPO}/${CS_VERSION}/systemvmtemplate-$VERSION-${template_specs[$key]}"
   templates+=("$key:$url")
 done
 

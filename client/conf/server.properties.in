@@ -66,4 +66,4 @@ extensions.deployment.mode=@EXTENSIONSDEPLOYMENTMODE@
 # The URL prefix for the system VM templates repository. When downloading system VM templates, the server replaces the
 # `downloadrepository` key value from the metadata file in template URLs. If not specified, the original template URL
 # will be for download.
-# system.vm.templates.download.repository=http://download.cloudstack.org/systemvm/4.20/
+# system.vm.templates.download.repository=http://download.cloudstack.org/systemvm/
