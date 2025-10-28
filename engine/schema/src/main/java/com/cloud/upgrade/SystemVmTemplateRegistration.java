@@ -825,13 +825,10 @@ public class SystemVmTemplateRegistration {
             throw new CloudRuntimeException(errMsg);
         }
         Ini.Section defaultSection = ini.get("default");
-        boolean updateCustomDownloadRepository = false;
         String defaultDownloadRepository = defaultSection.get(TEMPLATES_DOWNLOAD_REPOSITORY_KEY);
         String customDownloadRepository = ServerPropertiesUtil.getProperty(TEMPLATES_CUSTOM_DOWNLOAD_REPOSITORY_KEY);
-        if (StringUtils.isNotBlank(customDownloadRepository) && StringUtils.isNotBlank(defaultDownloadRepository)) {
-            LOGGER.debug("Updating custom download repository: {}", customDownloadRepository);
-            updateCustomDownloadRepository = true;
-        }
+        boolean updateCustomDownloadRepository = StringUtils.isNotBlank(customDownloadRepository) &&
+                StringUtils.isNotBlank(defaultDownloadRepository);
         for (Pair<Hypervisor.HypervisorType, CPU.CPUArch> hypervisorType : hypervisorList) {
             String key = getHypervisorArchKey(hypervisorType.first(), hypervisorType.second());
             Ini.Section section = ini.get(key);
@@ -844,7 +841,7 @@ public class SystemVmTemplateRegistration {
             if (StringUtils.isNotBlank(url) && updateCustomDownloadRepository) {
                 url = url.replaceFirst(defaultDownloadRepository.trim(),
                         customDownloadRepository.trim());
-                LOGGER.info("Updated download URL for {} to {}", key, url);
+                LOGGER.debug("Updated download URL for {} using custom repository to {}", key, url);
             }
             NewTemplateMap.put(key, new MetadataTemplateDetails(
                     hypervisorType.first(),
