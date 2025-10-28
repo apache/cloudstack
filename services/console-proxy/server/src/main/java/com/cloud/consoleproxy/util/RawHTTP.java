@@ -38,6 +38,9 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 //
 // This file is originally from XenConsole with modifications
 //
@@ -48,7 +51,7 @@ import java.util.regex.Pattern;
  * connections and import/export operations.
  */
 public final class RawHTTP {
-    private static final Logger s_logger = Logger.getLogger(RawHTTP.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private static final Pattern END_PATTERN = Pattern.compile("^\r\n$");
     private static final Pattern HEADER_PATTERN = Pattern.compile("^([A-Z_a-z0-9-]+):\\s*(.*)\r\n$");
@@ -140,9 +143,9 @@ public final class RawHTTP {
             try {
                 context = SSLUtils.getSSLContext("SunJSSE");
             } catch (NoSuchAlgorithmException e) {
-                s_logger.error("Unexpected exception ", e);
+                logger.error("Unexpected exception ", e);
             } catch (NoSuchProviderException e) {
-                s_logger.error("Unexpected exception ", e);
+                logger.error("Unexpected exception ", e);
             }
 
             if (context == null)
@@ -156,12 +159,12 @@ public final class RawHTTP {
                 ssl.setEnabledProtocols(SSLUtils.getSupportedProtocols(ssl.getEnabledProtocols()));
                 /* ssl.setSSLParameters(context.getDefaultSSLParameters()); */
             } catch (IOException e) {
-                s_logger.error("IOException: " + e.getMessage(), e);
+                logger.error("IOException: " + e.getMessage(), e);
                 throw e;
             } catch (KeyManagementException e) {
-                s_logger.error("KeyManagementException: " + e.getMessage(), e);
+                logger.error("KeyManagementException: " + e.getMessage(), e);
             } catch (NoSuchAlgorithmException e) {
-                s_logger.error("NoSuchAlgorithmException: " + e.getMessage(), e);
+                logger.error("NoSuchAlgorithmException: " + e.getMessage(), e);
             }
             return ssl;
         } else {

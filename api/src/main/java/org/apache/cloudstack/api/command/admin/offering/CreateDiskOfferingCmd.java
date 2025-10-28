@@ -37,7 +37,6 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
@@ -47,7 +46,6 @@ import com.cloud.user.Account;
 @APICommand(name = "createDiskOffering", description = "Creates a disk offering.", responseObject = DiskOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateDiskOfferingCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateDiskOfferingCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -153,7 +151,7 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.CACHE_MODE,
             type = CommandType.STRING,
             required = false,
-            description = "the cache mode to use for this disk offering. none, writeback or writethrough",
+            description = "the cache mode to use for this disk offering. none, writeback, writethrough or hypervisor default. If the hypervisor default cache mode is used on other hypervisors than KVM, it will fall back to none cache mode",
             since = "4.14")
     private String cacheMode;
 

@@ -26,6 +26,9 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.jobs.JobInfo;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -64,6 +67,16 @@ public class SnapshotSchedulerImplTest {
 
     @Mock
     AccountVO accountVoMock;
+
+    @Mock
+    private SnapshotScheduleVO snapshotScheduleVoMock;
+
+    @Mock
+    private AsyncJobDao asyncJobDaoMock;
+
+    @Mock
+    private AsyncJobVO asyncJobVoMock;
+
 
     @Test
     public void scheduleNextSnapshotJobTestParameterIsNullReturnNull() {
@@ -214,5 +227,51 @@ public class SnapshotSchedulerImplTest {
         Assert.assertTrue(result);
 
         Mockito.verify(snapshotScheduleDaoMock, Mockito.never()).remove(Mockito.anyLong());
+    }
+
+    @Test
+    public void scheduleNextSnapshotJobIfNecessaryTestAsyncJobIsNullThenScheduleNextSnapshot() {
+        Mockito.doReturn(1L).when(snapshotScheduleVoMock).getAsyncJobId();
+        Mockito.doReturn(null).when(asyncJobDaoMock).findByIdIncludingRemoved(Mockito.any());
+        Mockito.doReturn(new Date()).when(snapshotSchedulerImplSpy).scheduleNextSnapshotJob(Mockito.any(SnapshotScheduleVO.class));
+
+        snapshotSchedulerImplSpy.scheduleNextSnapshotJobIfNecessary(snapshotScheduleVoMock);
+
+        Mockito.verify(snapshotSchedulerImplSpy).scheduleNextSnapshotJob(Mockito.any(SnapshotScheduleVO.class));
+    }
+
+    @Test
+    public void scheduleNextSnapshotJobIfNecessaryTestAsyncJobSucceededThenScheduleNextSnapshot() {
+        Mockito.doReturn(1L).when(snapshotScheduleVoMock).getAsyncJobId();
+        Mockito.doReturn(asyncJobVoMock).when(asyncJobDaoMock).findByIdIncludingRemoved(Mockito.any());
+        Mockito.doReturn(JobInfo.Status.SUCCEEDED).when(asyncJobVoMock).getStatus();
+        Mockito.doReturn(new Date()).when(snapshotSchedulerImplSpy).scheduleNextSnapshotJob(Mockito.any(SnapshotScheduleVO.class));
+
+        snapshotSchedulerImplSpy.scheduleNextSnapshotJobIfNecessary(snapshotScheduleVoMock);
+
+        Mockito.verify(snapshotSchedulerImplSpy).scheduleNextSnapshotJob(Mockito.any(SnapshotScheduleVO.class));
+    }
+
+    @Test
+    public void scheduleNextSnapshotJobIfNecessaryTestAsyncJobFailedThenScheduleNextSnapshot() {
+        Mockito.doReturn(1L).when(snapshotScheduleVoMock).getAsyncJobId();
+        Mockito.doReturn(asyncJobVoMock).when(asyncJobDaoMock).findByIdIncludingRemoved(Mockito.any());
+        Mockito.doReturn(JobInfo.Status.FAILED).when(asyncJobVoMock).getStatus();
+        Mockito.doReturn(new Date()).when(snapshotSchedulerImplSpy).scheduleNextSnapshotJob(Mockito.any(SnapshotScheduleVO.class));
+
+        snapshotSchedulerImplSpy.scheduleNextSnapshotJobIfNecessary(snapshotScheduleVoMock);
+
+        Mockito.verify(snapshotSchedulerImplSpy).scheduleNextSnapshotJob(Mockito.any(SnapshotScheduleVO.class));
+    }
+
+    @Test
+    public void scheduleNextSnapshotJobIfNecessaryTestAsyncJobInProgressThenDoNothing() {
+        Mockito.doReturn(1L).when(snapshotScheduleVoMock).getAsyncJobId();
+        Mockito.doReturn(asyncJobVoMock).when(asyncJobDaoMock).findByIdIncludingRemoved(Mockito.any());
+        Mockito.doReturn(JobInfo.Status.IN_PROGRESS).when(asyncJobVoMock).getStatus();
+
+        snapshotSchedulerImplSpy.scheduleNextSnapshotJobIfNecessary(snapshotScheduleVoMock);
+
+        Mockito.verify(snapshotSchedulerImplSpy, Mockito.never()).scheduleNextSnapshotJob(Mockito.any(SnapshotScheduleVO.class));
     }
 }

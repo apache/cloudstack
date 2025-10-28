@@ -16,8 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
-import org.apache.log4j.Logger;
 
+import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -42,7 +42,6 @@ import com.cloud.vm.VirtualMachine;
 @APICommand(name = "rebootVirtualMachine", description = "Reboots a virtual machine.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class RebootVMCmd extends BaseAsyncCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(RebootVMCmd.class.getName());
     private static final String s_name = "rebootvirtualmachineresponse";
 
     /////////////////////////////////////////////////////
@@ -115,7 +114,7 @@ public class RebootVMCmd extends BaseAsyncCmd implements UserCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
         UserVm result;
         result = _userVmService.rebootVirtualMachine(this);

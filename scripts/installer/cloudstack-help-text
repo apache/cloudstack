@@ -21,7 +21,7 @@ ACL_MINOR_VERSION=$(echo $ACS_VERSION | cut -d'-' -f1)
 
 case $1 in
     management)
-        PACKAGE="Managment Server"
+        PACKAGE="Management Server"
         ;;
     usage)
         PACKAGE="Usage Server"
@@ -40,4 +40,10 @@ printf " * Release notes:       https://docs.cloudstack.apache.org/en/${ACL_MINO
 printf " * Join mailing lists:  https://cloudstack.apache.org/mailing-lists.html\n"
 printf " * Take the survey:     https://cloudstack.apache.org/survey.html\n"
 printf " * Report issues:       https://github.com/apache/cloudstack/issues/new\n"
+
+if [ "$1" = "management" ];then
+    printf "\nSince Apache CloudStack 4.20.0.0, the System VMs and virtual routers require at least 512 MiB memory, please check the System Offerings."
+    printf "\nMore information can be found at https://docs.cloudstack.apache.org/en/${ACL_MINOR_VERSION:-latest}/upgrading/upgrade/_sysvm_restart.html\n"
+fi
+
 printf "\n"

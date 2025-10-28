@@ -30,13 +30,14 @@ import org.apache.cloudstack.framework.config.impl.ConfigurationSubGroupVO;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ConfigurationGroupsAggregator {
 
-    static final Logger LOG = Logger.getLogger(ConfigurationGroupsAggregator.class);
+    protected Logger LOG = LogManager.getLogger(getClass());
 
     @Inject
     ConfigurationDao configDao;
@@ -53,7 +54,7 @@ public class ConfigurationGroupsAggregator {
 
     public void updateConfigurationGroups() {
         LOG.debug("Updating configuration groups");
-        List<ConfigurationVO> configs =  configDao.listAllIncludingRemoved();
+        List<ConfigurationVO> configs =  configDao.searchPartialConfigurations();
         if (CollectionUtils.isEmpty(configs)) {
             return;
         }

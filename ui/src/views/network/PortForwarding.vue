@@ -72,6 +72,12 @@
             <a-select-option value="udp" :label="$t('label.udp')">{{ $t('label.udp') }}</a-select-option>
           </a-select>
         </div>
+        <div v-if="isVPC()">
+          <div class="form__item" ref="newCidrList">
+            <tooltip-label :title="$t('label.sourcecidrlist')" bold :tooltip="apiParams.cidrlist.description" :tooltip-placement="'right'"/>
+            <a-input v-model:value="newRule.cidrlist"></a-input>
+          </div>
+        </div>
         <div class="form__item" style="margin-left: auto;">
           <div class="form__label">{{ $t('label.add.vm') }}</div>
           <a-button :disabled="!('createPortForwardingRule' in $store.getters.apis)" type="primary" @click="openAddVMModal">{{ $t('label.add') }}</a-button>
@@ -107,6 +113,9 @@
         </template>
         <template v-if="column.key === 'protocol'">
           {{ getCapitalise(record.protocol) }}
+        </template>
+        <template v-if="column.key === 'cidrlist'">
+          <span style="white-space: pre-line"> {{ record.cidrlist?.replaceAll(",", "\n") }}</span>
         </template>
         <template v-if="column.key === 'vm'">
           <div><desktop-outlined/>
@@ -329,14 +338,16 @@
 
 <script>
 import { reactive, ref, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import BulkActionView from '@/components/view/BulkActionView'
 import eventBus from '@/config/eventBus'
+import TooltipLabel from '@/components/widgets/TooltipLabel.vue'
 
 export default {
   components: {
+    TooltipLabel,
     Status,
     TooltipButton,
     BulkActionView
@@ -400,6 +411,11 @@ export default {
           title: this.$t('label.protocol')
         },
         {
+          key: 'cidrlist',
+          title: this.$t('label.sourcecidrlist'),
+          hidden: !this.isVPC()
+        },
+        {
           title: this.$t('label.state'),
           dataIndex: 'state'
         },
@@ -411,7 +427,7 @@ export default {
           key: 'actions',
           title: this.$t('label.actions')
         }
-      ],
+      ].filter(item => !item.hidden),
       tiers: {
         loading: false,
         data: []
@@ -433,11 +449,6 @@ export default {
           dataIndex: 'displayname'
         },
         {
-          title: this.$t('label.ip'),
-          dataIndex: 'ip',
-          width: 100
-        },
-        {
           title: this.$t('label.account'),
           dataIndex: 'account'
         },
@@ -455,13 +466,17 @@ export default {
       vmPage: 1,
       vmPageSize: 10,
       vmCount: 0,
-      searchQuery: null
+      searchQuery: null,
+      cidrlist: ''
     }
   },
   computed: {
     hasSelected () {
       return this.selectedRowKeys.length > 0
     }
+  },
+  beforeCreate () {
+    this.apiParams = this.$getApiParams('createPortForwardingRule')
   },
   created () {
     console.log(this.resource)
@@ -498,7 +513,7 @@ export default {
       }
       this.selectedTier = null
       this.tiers.loading = true
-      api('listNetworks', {
+      getAPI('listNetworks', {
         supportedservices: 'PortForwarding',
         vpcid: this.resource.vpcid,
         listall: this.resource.vpcid !== null
@@ -513,7 +528,7 @@ export default {
     },
     fetchPFRules () {
       this.loading = true
-      api('listPortForwardingRules', {
+      getAPI('listPortForwardingRules', {
         listAll: true,
         ipaddressid: this.resource.id,
         page: this.page,
@@ -580,7 +595,7 @@ export default {
     },
     deleteRule (rule) {
       this.loading = true
-      api('deletePortForwardingRule', { id: rule.id }).then(response => {
+      postAPI('deletePortForwardingRule', { id: rule.id }).then(response => {
         const jobId = response.deleteportforwardingruleresponse.jobid
         eventBus.emit('update-job-details', { jobId, resourceId: null })
         this.$pollJob({
@@ -616,7 +631,7 @@ export default {
       this.loading = true
       this.addVmModalVisible = false
       const networkId = ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
-      api('createPortForwardingRule', {
+      postAPI('createPortForwardingRule', {
         ...this.newRule,
         ipaddressid: this.resource.id,
         networkid: networkId
@@ -678,7 +693,7 @@ export default {
       this.selectedRule = id
       this.tagsModalVisible = true
       this.tags = []
-      api('listTags', {
+      getAPI('listTags', {
         resourceId: id,
         resourceType: 'PortForwardingRule',
         listAll: true
@@ -699,7 +714,7 @@ export default {
         const values = toRaw(this.form)
         this.tagsModalLoading = false
 
-        api('createTags', {
+        postAPI('createTags', {
           'tags[0].key': values.key,
           'tags[0].value': values.value,
           resourceIds: this.selectedRule,
@@ -732,7 +747,7 @@ export default {
     },
     handleDeleteTag (tag) {
       this.tagsModalLoading = true
-      api('deleteTags', {
+      postAPI('deleteTags', {
         'tags[0].key': tag.key,
         'tags[0].value': tag.value,
         resourceIds: this.selectedRule,
@@ -771,7 +786,7 @@ export default {
       this.nics = []
       this.addVmModalNicLoading = true
       this.newRule.virtualmachineid = e.target.value
-      api('listNics', {
+      getAPI('listNics', {
         virtualmachineid: e.target.value,
         networkId: ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
       }).then(response => {
@@ -798,7 +813,7 @@ export default {
         this.addVmModalLoading = false
         return
       }
-      api('listVirtualMachines', {
+      getAPI('listVirtualMachines', {
         listAll: true,
         keyword: this.searchQuery,
         page: this.vmPage,
@@ -835,6 +850,9 @@ export default {
     onSearch (value) {
       this.searchQuery = value
       this.fetchVirtualMachines()
+    },
+    isVPC () {
+      return 'vpcid' in this.resource
     }
   }
 }

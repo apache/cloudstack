@@ -20,6 +20,7 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseGsonHelper;
 import com.cloud.api.ApiServer;
 import com.cloud.serializer.Param;
+import com.cloud.server.ManagementServerImpl;
 import com.cloud.user.Account;
 import com.cloud.utils.HttpUtils;
 import com.cloud.utils.encoding.URLEncoder;
@@ -39,7 +40,8 @@ import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -52,10 +54,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ApiResponseSerializer {
-    private static final Logger s_logger = Logger.getLogger(ApiResponseSerializer.class.getName());
+    protected static Logger LOGGER = LogManager.getLogger(ApiResponseSerializer.class);
 
     public static String toSerializedString(ResponseObject result, String responseType) {
-        s_logger.trace("===Serializing Response===");
+        LOGGER.trace("===Serializing Response===");
         if (HttpUtils.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
             return toJSONSerializedString(result, new StringBuilder());
         } else {
@@ -64,7 +66,7 @@ public class ApiResponseSerializer {
     }
 
     public static String toSerializedStringWithSecureLogs(ResponseObject result, String responseType, StringBuilder log) {
-        s_logger.trace("===Serializing Response===");
+        LOGGER.trace("===Serializing Response===");
         if (HttpUtils.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
             return toJSONSerializedString(result, log);
         } else {
@@ -85,8 +87,8 @@ public class ApiResponseSerializer {
 
     public static String toJSONSerializedString(ResponseObject result, StringBuilder log) {
         if (result != null && log != null) {
-            Gson responseBuilder = ApiResponseGsonHelper.getBuilder().excludeFieldsWithModifiers(Modifier.TRANSIENT).create();
-            Gson logBuilder = ApiResponseGsonHelper.getLogBuilder().excludeFieldsWithModifiers(Modifier.TRANSIENT).create();
+            Gson responseBuilder = ApiResponseGsonHelper.getBuilder().excludeFieldsWithModifiers(Modifier.TRANSIENT, Modifier.STATIC).create();
+            Gson logBuilder = ApiResponseGsonHelper.getLogBuilder().excludeFieldsWithModifiers(Modifier.TRANSIENT, Modifier.STATIC).create();
 
             StringBuilder sb = new StringBuilder();
 
@@ -170,9 +172,18 @@ public class ApiResponseSerializer {
         if (result != null && log != null) {
             StringBuilder sb = new StringBuilder();
             sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-            sb.append("<").append(result.getResponseName()).append(" cloud-stack-version=\"").append(ApiDBUtils.getVersion()).append("\">");
             log.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-            log.append("<").append(result.getResponseName()).append(" cloud-stack-version=\"").append(ApiDBUtils.getVersion()).append("\">");
+
+            sb.append("<").append(result.getResponseName());
+            log.append("<").append(result.getResponseName());
+
+            boolean authenticated = CallContext.current().getCallingAccount().getId() != Account.ACCOUNT_ID_SYSTEM;
+            if (ManagementServerImpl.exposeCloudStackVersionInApiXmlResponse.value() && authenticated) {
+                sb.append(" cloud-stack-version=\"").append(ApiDBUtils.getVersion()).append("\"");
+                log.append(" cloud-stack-version=\"").append(ApiDBUtils.getVersion()).append("\"");
+            }
+            sb.append(">");
+            log.append(">");
 
             if (result instanceof ListResponse) {
                 Integer count = ((ListResponse)result).getCount();
@@ -253,7 +264,7 @@ public class ApiResponseSerializer {
                         }
                     }
                     if (!permittedParameter) {
-                        s_logger.trace("Ignoring parameter " + param.name() + " as the caller is not authorized to see it");
+                        LOGGER.trace("Ignoring parameter " + param.name() + " as the caller is not authorized to see it");
                         continue;
                     }
                 }
@@ -372,7 +383,7 @@ public class ApiResponseSerializer {
         try {
             return new URLEncoder().encode(value).replaceAll("\\+", "%20");
         } catch (Exception e) {
-            s_logger.warn("Unable to encode: " + value, e);
+            LOGGER.warn("Unable to encode: " + value, e);
         }
         return value;
     }

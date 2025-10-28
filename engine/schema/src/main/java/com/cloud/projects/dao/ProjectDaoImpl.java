@@ -20,7 +20,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.projects.Project;
@@ -36,7 +35,6 @@ import com.cloud.utils.db.SearchCriteria.Func;
 
 @Component
 public class ProjectDaoImpl extends GenericDaoBase<ProjectVO, Long> implements ProjectDao {
-    private static final Logger s_logger = Logger.getLogger(ProjectDaoImpl.class);
     protected final SearchBuilder<ProjectVO> AllFieldsSearch;
     protected GenericSearchBuilder<ProjectVO, Long> CountByDomain;
     protected GenericSearchBuilder<ProjectVO, Long> ProjectAccountSearch;

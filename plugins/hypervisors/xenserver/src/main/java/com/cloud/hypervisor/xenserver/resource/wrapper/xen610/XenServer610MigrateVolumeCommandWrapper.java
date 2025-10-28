@@ -22,7 +22,6 @@ package com.cloud.hypervisor.xenserver.resource.wrapper.xen610;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.MigrateVolumeAnswer;
@@ -41,7 +40,6 @@ import com.xensource.xenapi.VDI;
 
 @ResourceWrapper(handles =  MigrateVolumeCommand.class)
 public final class XenServer610MigrateVolumeCommandWrapper extends CommandWrapper<MigrateVolumeCommand, Answer, XenServer610Resource> {
-    private static final Logger LOGGER = Logger.getLogger(XenServer610MigrateVolumeCommandWrapper.class);
 
     @Override
     public Answer execute(final MigrateVolumeCommand command, final XenServer610Resource xenServer610Resource) {
@@ -89,7 +87,7 @@ public final class XenServer610MigrateVolumeCommandWrapper extends CommandWrappe
 
             String msg = "Caught exception " + ex.getClass().getName() + " due to the following: " + ex.toString();
 
-            LOGGER.error(msg, ex);
+            logger.error(msg, ex);
 
             return new MigrateVolumeAnswer(command, false, msg, null);
         }

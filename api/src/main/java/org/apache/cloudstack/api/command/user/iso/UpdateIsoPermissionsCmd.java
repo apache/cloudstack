@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.iso;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoPermissionsCmd;
@@ -33,10 +32,6 @@ public class UpdateIsoPermissionsCmd extends BaseUpdateTemplateOrIsoPermissionsC
         return "updateisopermissionsresponse";
     }
 
-    @Override
-    protected Logger getLogger() {
-        return Logger.getLogger(UpdateIsoPermissionsCmd.class.getName());
-    }
 
     @Override
     public long getEntityOwnerId() {

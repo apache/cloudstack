@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.kvm.storage;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -23,14 +25,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.reflections.Reflections;
 
 import com.cloud.agent.api.to.DiskTO;
@@ -42,33 +44,14 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Volume;
+import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 
 public class KVMStoragePoolManager {
-    private static final Logger s_logger = Logger.getLogger(KVMStoragePoolManager.class);
-
-    private class StoragePoolInformation {
-        String name;
-        String host;
-        int port;
-        String path;
-        String userInfo;
-        boolean type;
-        StoragePoolType poolType;
-        Map<String, String> details;
-
-        public StoragePoolInformation(String name, String host, int port, String path, String userInfo, StoragePoolType poolType, Map<String, String> details, boolean type) {
-            this.name = name;
-            this.host = host;
-            this.port = port;
-            this.path = path;
-            this.userInfo = userInfo;
-            this.type = type;
-            this.poolType = poolType;
-            this.details = details;
-        }
-    }
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private KVMHAMonitor _haMonitor;
     private final Map<String, StoragePoolInformation> _storagePools = new ConcurrentHashMap<String, StoragePoolInformation>();
@@ -98,43 +81,68 @@ public class KVMStoragePoolManager {
     public KVMStoragePoolManager(StorageLayer storagelayer, KVMHAMonitor monitor) {
         this._haMonitor = monitor;
         this._storageMapper.put("libvirt", new LibvirtStorageAdaptor(storagelayer));
-        // add other storage adaptors here
-        // this._storageMapper.put("newadaptor", new NewStorageAdaptor(storagelayer));
-        this._storageMapper.put(StoragePoolType.ManagedNFS.toString(), new ManagedNfsStorageAdaptor(storagelayer));
-        this._storageMapper.put(StoragePoolType.PowerFlex.toString(), new ScaleIOStorageAdaptor(storagelayer));
+        // add other storage adaptors manually here
 
-        // add any adaptors that wish to register themselves via annotation
+        // add any adaptors that wish to register themselves via call to adaptor.getStoragePoolType()
         Reflections reflections = new Reflections("com.cloud.hypervisor.kvm.storage");
-        Set<Class<? extends StorageAdaptor>> storageAdaptors = reflections.getSubTypesOf(StorageAdaptor.class);
-        for (Class<? extends StorageAdaptor> storageAdaptor : storageAdaptors) {
-            StorageAdaptorInfo info = storageAdaptor.getAnnotation(StorageAdaptorInfo.class);
-            if (info != null && info.storagePoolType() != null) {
-                if (this._storageMapper.containsKey(info.storagePoolType().toString())) {
-                    s_logger.warn(String.format("Duplicate StorageAdaptor type %s, not loading %s", info.storagePoolType().toString(), storageAdaptor.getName()));
+        Set<Class<? extends StorageAdaptor>> storageAdaptorClasses = reflections.getSubTypesOf(StorageAdaptor.class);
+        for (Class<? extends StorageAdaptor> storageAdaptorClass : storageAdaptorClasses) {
+            logger.debug("Checking pool type for adaptor " + storageAdaptorClass.getName());
+            if (Modifier.isAbstract(storageAdaptorClass.getModifiers()) || storageAdaptorClass.isInterface()) {
+                logger.debug("Skipping registration of abstract class / interface " + storageAdaptorClass.getName());
+                continue;
+            }
+            if (storageAdaptorClass.isAssignableFrom(LibvirtStorageAdaptor.class)) {
+                logger.debug("Skipping re-registration of LibvirtStorageAdaptor");
+                continue;
+            }
+            try {
+                Constructor<?> storageLayerConstructor = Arrays.stream(storageAdaptorClass.getConstructors())
+                        .filter(c -> c.getParameterCount() == 1)
+                        .filter(c -> c.getParameterTypes()[0].isAssignableFrom(StorageLayer.class))
+                        .findFirst().orElse(null);
+                StorageAdaptor adaptor;
+
+                if (storageLayerConstructor == null) {
+                    adaptor = storageAdaptorClass.getDeclaredConstructor().newInstance();
                 } else {
-                    try {
-                        s_logger.info(String.format("adding storage adaptor for %s", storageAdaptor.getName()));
-                        this._storageMapper.put(info.storagePoolType().toString(), storageAdaptor.getDeclaredConstructor().newInstance());
-                    } catch (Exception ex) {
-                       throw new CloudRuntimeException(ex.toString());
+                    adaptor = (StorageAdaptor) storageLayerConstructor.newInstance(storagelayer);
+                }
+
+                StoragePoolType storagePoolType = adaptor.getStoragePoolType();
+                if (storagePoolType != null) {
+                    if (this._storageMapper.containsKey(storagePoolType.toString())) {
+                        logger.warn(String.format("Duplicate StorageAdaptor type %s, not loading %s", storagePoolType, storageAdaptorClass.getName()));
+                    } else {
+                        logger.info(String.format("Adding storage adaptor for %s", storageAdaptorClass.getName()));
+                        this._storageMapper.put(storagePoolType.toString(), adaptor);
                     }
                 }
+            } catch (Exception ex) {
+                throw new CloudRuntimeException("Failed to set up storage adaptors", ex);
             }
         }
 
         for (Map.Entry<String, StorageAdaptor> adaptors : this._storageMapper.entrySet()) {
-            s_logger.debug("Registered a StorageAdaptor for " + adaptors.getKey());
+            logger.debug("Registered a StorageAdaptor for " + adaptors.getKey());
         }
+    }
+
+    /**
+     * Returns true if physical disk copy functionality supported.
+     */
+    public boolean supportsPhysicalDiskCopy(StoragePoolType type) {
+        return getStorageAdaptor(type).supportsPhysicalDiskCopy(type);
     }
 
     public boolean connectPhysicalDisk(StoragePoolType type, String poolUuid, String volPath, Map<String, String> details) {
         StorageAdaptor adaptor = getStorageAdaptor(type);
         KVMStoragePool pool = adaptor.getStoragePool(poolUuid);
 
-        return adaptor.connectPhysicalDisk(volPath, pool, details);
+        return adaptor.connectPhysicalDisk(volPath, pool, details, false);
     }
 
-    public boolean connectPhysicalDisksViaVmSpec(VirtualMachineTO vmSpec) {
+    public boolean connectPhysicalDisksViaVmSpec(VirtualMachineTO vmSpec, boolean isVMMigrate) {
         boolean result = false;
 
         final String vmName = vmSpec.getName();
@@ -157,10 +165,10 @@ public class KVMStoragePoolManager {
             KVMStoragePool pool = getStoragePool(store.getPoolType(), store.getUuid());
             StorageAdaptor adaptor = getStorageAdaptor(pool.getType());
 
-            result = adaptor.connectPhysicalDisk(vol.getPath(), pool, disk.getDetails());
+            result = adaptor.connectPhysicalDisk(vol.getPath(), pool, disk.getDetails(), isVMMigrate);
 
             if (!result) {
-                s_logger.error("Failed to connect disks via vm spec for vm: " + vmName + " volume:" + vol.toString());
+                logger.error("Failed to connect disks via vm spec for vm: " + vmName + " volume:" + vol.toString());
                 return result;
             }
         }
@@ -169,7 +177,7 @@ public class KVMStoragePoolManager {
     }
 
     public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect) {
-        s_logger.debug(String.format("Disconnect physical disks using volume map: %s", volumeToDisconnect.toString()));
+        logger.debug(String.format("Disconnect physical disks using volume map: %s", volumeToDisconnect.toString()));
         if (MapUtils.isEmpty(volumeToDisconnect)) {
             return false;
         }
@@ -178,18 +186,18 @@ public class KVMStoragePoolManager {
             String poolType = volumeToDisconnect.get(DiskTO.PROTOCOL_TYPE);
             StorageAdaptor adaptor = _storageMapper.get(poolType);
             if (adaptor != null) {
-                s_logger.info(String.format("Disconnecting physical disk using the storage adaptor found for pool type: %s", poolType));
+                logger.info(String.format("Disconnecting physical disk using the storage adaptor found for pool type: %s", poolType));
                 return adaptor.disconnectPhysicalDisk(volumeToDisconnect);
             }
 
-            s_logger.debug(String.format("Couldn't find the storage adaptor for pool type: %s to disconnect the physical disk, trying with others", poolType));
+            logger.debug(String.format("Couldn't find the storage adaptor for pool type: %s to disconnect the physical disk, trying with others", poolType));
         }
 
         for (Map.Entry<String, StorageAdaptor> set : _storageMapper.entrySet()) {
             StorageAdaptor adaptor = set.getValue();
 
             if (adaptor.disconnectPhysicalDisk(volumeToDisconnect)) {
-                s_logger.debug(String.format("Disconnected physical disk using the storage adaptor for pool type: %s", set.getKey()));
+                logger.debug(String.format("Disconnected physical disk using the storage adaptor for pool type: %s", set.getKey()));
                 return true;
             }
         }
@@ -198,12 +206,12 @@ public class KVMStoragePoolManager {
     }
 
     public boolean disconnectPhysicalDiskByPath(String path) {
-        s_logger.debug(String.format("Disconnect physical disk by path: %s", path));
+        logger.debug(String.format("Disconnect physical disk by path: %s", path));
         for (Map.Entry<String, StorageAdaptor> set : _storageMapper.entrySet()) {
             StorageAdaptor adaptor = set.getValue();
 
             if (adaptor.disconnectPhysicalDiskByPath(path)) {
-                s_logger.debug(String.format("Disconnected physical disk by local path: %s, using the storage adaptor for pool type: %s", path, set.getKey()));
+                logger.debug(String.format("Disconnected physical disk by local path: %s, using the storage adaptor for pool type: %s", path, set.getKey()));
                 return true;
             }
         }
@@ -218,7 +226,7 @@ public class KVMStoragePoolManager {
                We may not know about these yet. This might mean that we can't use the vmspec map, because
                when we restart the agent we lose all of the info about running VMs. */
 
-            s_logger.debug("disconnectPhysicalDiskViaVmSpec: Attempted to stop a VM that is not yet in our hash map");
+            logger.debug("disconnectPhysicalDiskViaVmSpec: Attempted to stop a VM that is not yet in our hash map");
 
             return true;
         }
@@ -231,7 +239,7 @@ public class KVMStoragePoolManager {
 
         for (DiskTO disk : disks) {
             if (disk.getType() != Volume.Type.ISO) {
-                s_logger.debug("Disconnecting disk " + disk.getPath());
+                logger.debug("Disconnecting disk " + disk.getPath());
 
                 VolumeObjectTO vol = (VolumeObjectTO)disk.getData();
                 PrimaryDataStoreTO store = (PrimaryDataStoreTO)vol.getDataStore();
@@ -239,7 +247,7 @@ public class KVMStoragePoolManager {
                 KVMStoragePool pool = getStoragePool(store.getPoolType(), store.getUuid());
 
                 if (pool == null) {
-                    s_logger.error("Pool " + store.getUuid() + " of type " + store.getPoolType() + " was not found, skipping disconnect logic");
+                    logger.error("Pool " + store.getUuid() + " of type " + store.getPoolType() + " was not found, skipping disconnect logic");
                     continue;
                 }
 
@@ -250,7 +258,7 @@ public class KVMStoragePoolManager {
                 boolean subResult = adaptor.disconnectPhysicalDisk(vol.getPath(), pool);
 
                 if (!subResult) {
-                    s_logger.error("Failed to disconnect disks via vm spec for vm: " + vmName + " volume:" + vol.toString());
+                    logger.error("Failed to disconnect disks via vm spec for vm: " + vmName + " volume:" + vol.toString());
 
                     result = false;
                 }
@@ -273,18 +281,38 @@ public class KVMStoragePoolManager {
         } catch (Exception e) {
             StoragePoolInformation info = _storagePools.get(uuid);
             if (info != null) {
-                pool = createStoragePool(info.name, info.host, info.port, info.path, info.userInfo, info.poolType, info.details, info.type);
+                pool = createStoragePool(info.getName(), info.getHost(), info.getPort(), info.getPath(), info.getUserInfo(), info.getPoolType(), info.getDetails(), info.isType());
             } else {
                 throw new CloudRuntimeException("Could not fetch storage pool " + uuid + " from libvirt due to " + e.getMessage());
             }
         }
+
+        if (pool instanceof LibvirtStoragePool) {
+            addPoolDetails(uuid, (LibvirtStoragePool) pool);
+        }
+
         return pool;
+    }
+
+    /**
+     * As the class {@link LibvirtStoragePool} is constrained to the {@link org.libvirt.StoragePool} class, there is no way of saving a generic parameter such as the details, hence,
+     * this method was created to always make available the details of libvirt primary storages for when they are needed.
+     */
+    private void addPoolDetails(String uuid, LibvirtStoragePool pool) {
+        StoragePoolInformation storagePoolInformation = _storagePools.get(uuid);
+        Map<String, String> details = storagePoolInformation.getDetails();
+
+        if (MapUtils.isNotEmpty(details)) {
+            logger.trace("Adding the details {} to the pool with UUID {}.", details, uuid);
+            pool.setDetails(details);
+        }
     }
 
     public KVMStoragePool getStoragePoolByURI(String uri) {
         URI storageUri = null;
 
         try {
+            logger.debug("Get storage pool by uri: " + uri);
             storageUri = new URI(uri);
         } catch (URISyntaxException e) {
             throw new CloudRuntimeException(e.toString());
@@ -294,17 +322,19 @@ public class KVMStoragePoolManager {
         String uuid = null;
         String sourceHost = "";
         StoragePoolType protocol = null;
-        final String scheme = storageUri.getScheme().toLowerCase();
         List<String> acceptedSchemes = List.of("nfs", "networkfilesystem", "filesystem");
-        if (acceptedSchemes.contains(scheme)) {
-            sourcePath = storageUri.getPath();
-            sourcePath = sourcePath.replace("//", "/");
-            sourceHost = storageUri.getHost();
-            uuid = UUID.nameUUIDFromBytes(new String(sourceHost + sourcePath).getBytes()).toString();
-            protocol = scheme.equals("filesystem") ? StoragePoolType.Filesystem: StoragePoolType.NetworkFilesystem;
+        if (storageUri.getScheme() == null || !acceptedSchemes.contains(storageUri.getScheme().toLowerCase())) {
+            throw new CloudRuntimeException("Empty or unsupported storage pool uri scheme");
         }
 
-        // secondary storage registers itself through here
+        final String scheme = storageUri.getScheme().toLowerCase();
+        sourcePath = storageUri.getPath();
+        sourcePath = sourcePath.replace("//", "/");
+        sourceHost = storageUri.getHost();
+        uuid = UuidUtils.nameUUIDFromBytes(new String(sourceHost + sourcePath).getBytes()).toString();
+        protocol = scheme.equals("filesystem") ? StoragePoolType.Filesystem: StoragePoolType.NetworkFilesystem;
+
+        // storage registers itself through here
         return createStoragePool(uuid, sourceHost, 0, sourcePath, "", protocol, null, false);
     }
 
@@ -323,14 +353,14 @@ public class KVMStoragePoolManager {
                     return vol;
                 }
             } catch (Exception e) {
-                s_logger.debug("Failed to find volume:" + volName + " due to " + e.toString() + ", retry:" + cnt);
+                logger.debug("Failed to find volume:" + volName + " due to " + e.toString() + ", retry:" + cnt);
                 errMsg = e.toString();
             }
 
             try {
                 Thread.sleep(3000);
             } catch (InterruptedException e) {
-                s_logger.debug("[ignored] interrupted while trying to get storage pool.");
+                logger.debug("[ignored] interrupted while trying to get storage pool.");
             }
             cnt++;
         }
@@ -359,7 +389,7 @@ public class KVMStoragePoolManager {
     //Note: due to bug CLOUDSTACK-4459, createStoragepool can be called in parallel, so need to be synced.
     private synchronized KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type, Map<String, String> details, boolean primaryStorage) {
         StorageAdaptor adaptor = getStorageAdaptor(type);
-        KVMStoragePool pool = adaptor.createStoragePool(name, host, port, path, userInfo, type, details);
+        KVMStoragePool pool = adaptor.createStoragePool(name, host, port, path, userInfo, type, details, primaryStorage);
 
         // LibvirtStorageAdaptor-specific statement
         if (pool.isPoolSupportHA() && primaryStorage) {
@@ -380,12 +410,26 @@ public class KVMStoragePoolManager {
 
     public boolean deleteStoragePool(StoragePoolType type, String uuid) {
         StorageAdaptor adaptor = getStorageAdaptor(type);
-        _haMonitor.removeStoragePool(uuid);
-        adaptor.deleteStoragePool(uuid);
+        if (type == StoragePoolType.NetworkFilesystem) {
+            _haMonitor.removeStoragePool(uuid);
+        }
+        boolean deleteStatus = adaptor.deleteStoragePool(uuid);;
         synchronized (_storagePools) {
             _storagePools.remove(uuid);
         }
-        return true;
+        return deleteStatus;
+    }
+
+    public boolean deleteStoragePool(StoragePoolType type, String uuid, Map<String, String> details) {
+        StorageAdaptor adaptor = getStorageAdaptor(type);
+        if (type == StoragePoolType.NetworkFilesystem) {
+            _haMonitor.removeStoragePool(uuid);
+        }
+        boolean deleteStatus = adaptor.deleteStoragePool(uuid, details);
+        synchronized (_storagePools) {
+            _storagePools.remove(uuid);
+        }
+        return deleteStatus;
     }
 
     public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template, String name, Storage.ProvisioningType provisioningType,
@@ -447,4 +491,13 @@ public class KVMStoragePoolManager {
         return adaptor.createTemplateFromDirectDownloadFile(templateFilePath, destTemplatePath, destPool, format, timeout);
     }
 
+    public Ternary<Boolean, Map<String, String>, String> prepareStorageClient(StoragePoolType type, String uuid, Map<String, String> details) {
+        StorageAdaptor adaptor = getStorageAdaptor(type);
+        return adaptor.prepareStorageClient(uuid, details);
+    }
+
+    public Pair<Boolean, String> unprepareStorageClient(StoragePoolType type, String uuid, Map<String, String> details) {
+        StorageAdaptor adaptor = getStorageAdaptor(type);
+        return adaptor.unprepareStorageClient(uuid, details);
+    }
 }

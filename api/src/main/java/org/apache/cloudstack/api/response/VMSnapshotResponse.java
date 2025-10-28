@@ -108,6 +108,10 @@ public class VMSnapshotResponse extends BaseResponseWithTagInformation implement
     @Param(description = "the domain associated with the disk volume")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain to which the disk volume belongs", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.HYPERVISOR)
     @Param(description = "the type of hypervisor on which snapshot is stored")
     private String hypervisor;
@@ -259,6 +263,11 @@ public class VMSnapshotResponse extends BaseResponseWithTagInformation implement
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     public void setTags(Set<ResourceTagResponse> tags) {

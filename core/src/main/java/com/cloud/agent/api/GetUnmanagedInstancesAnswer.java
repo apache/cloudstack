@@ -21,13 +21,17 @@ import java.util.HashMap;
 
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 
-@LogLevel(LogLevel.Log4jLevel.Trace)
 public class GetUnmanagedInstancesAnswer extends Answer {
 
     private String instanceName;
+    @LogLevel(LogLevel.Log4jLevel.Trace)
     private HashMap<String, UnmanagedInstanceTO> unmanagedInstances;
 
     GetUnmanagedInstancesAnswer() {
+    }
+
+    public GetUnmanagedInstancesAnswer(GetUnmanagedInstancesCommand cmd, String details) {
+        super(cmd, false, details);
     }
 
     public GetUnmanagedInstancesAnswer(GetUnmanagedInstancesCommand cmd, String details, HashMap<String, UnmanagedInstanceTO> unmanagedInstances) {

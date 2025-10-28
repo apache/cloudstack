@@ -20,14 +20,11 @@ package org.apache.cloudstack.api.command.admin.storage;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.cloudstack.storage.browser.StorageBrowser;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -47,18 +44,6 @@ public class DownloadImageStoreObjectCmdTest {
     @InjectMocks
     @Spy
     private DownloadImageStoreObjectCmd cmd;
-
-    private AutoCloseable closeable;
-
-    @Before
-    public void setUp() {
-        closeable = MockitoAnnotations.openMocks(this);
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        closeable.close();
-    }
 
     @Test
     public void testExecute() throws Exception {

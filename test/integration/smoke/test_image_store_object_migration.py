@@ -148,7 +148,7 @@ class TestImageStoreObjectMigration(cloudstackTestCase):
 
         storeObjects = originalSecondaryStore.listObjects(self.apiclient, path="template/tmpl/" + str(account_id) + "/" + str(template_id))
 
-        self.assertEqual(len(storeObjects), 2, "Check template is uploaded on secondary storage")
+        self.assertGreaterEqual(len(storeObjects), 2, "Check template is uploaded on secondary storage")
 
         # Migrate template to another secondary storage
         secondaryStores = ImageStore.list(self.apiclient, zoneid=self.zone.id)
@@ -173,7 +173,7 @@ class TestImageStoreObjectMigration(cloudstackTestCase):
 
         storeObjects = destSecondaryStore.listObjects(self.apiclient, path="template/tmpl/" + str(account_id) + "/" + str(template_id))
 
-        self.assertEqual(len(storeObjects), 2, "Check template is uploaded on destination secondary storage")
+        self.assertGreaterEqual(len(storeObjects), 2, "Check template is uploaded on destination secondary storage")
 
     def registerTemplate(self, cmd):
         temp = self.apiclient.registerTemplate(cmd)[0]

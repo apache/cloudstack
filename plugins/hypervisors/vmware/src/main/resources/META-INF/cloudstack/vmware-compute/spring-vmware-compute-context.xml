@@ -41,5 +41,5 @@
         <property name="name" value="VMwareInvestigator" />
     </bean>
 
-    
+
 </beans>

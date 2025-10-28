@@ -25,12 +25,13 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.concurrency.NamedThreadFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class DhcpProtocolParserServer extends Thread {
-    private static final Logger s_logger = Logger.getLogger(DhcpProtocolParserServer.class);;
+    protected Logger logger = LogManager.getLogger(DhcpProtocolParserServer.class);;
     protected ExecutorService _executor;
     private int dhcpServerPort = 67;
     private int bufferSize = 300;
@@ -54,7 +55,7 @@ public class DhcpProtocolParserServer extends Thread {
                     dhcpSocket.receive(dgp);
                 }
             } catch (IOException e) {
-                s_logger.debug(e.getMessage());
+                logger.debug(e.getMessage());
             }
         }
     }

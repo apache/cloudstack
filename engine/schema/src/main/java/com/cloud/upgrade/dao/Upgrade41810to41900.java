@@ -20,7 +20,6 @@ import com.cloud.upgrade.SystemVmTemplateRegistration;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.log4j.Logger;
 import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
 
 import java.io.InputStream;
@@ -34,8 +33,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class Upgrade41810to41900 implements DbUpgrade, DbUpgradeSystemVmTemplate {
-    final static Logger LOG = Logger.getLogger(Upgrade41810to41900.class);
+public class Upgrade41810to41900 extends DbUpgradeAbstractImpl implements DbUpgrade, DbUpgradeSystemVmTemplate {
     private SystemVmTemplateRegistration systemVmTemplateRegistration;
 
     private static final String ACCOUNT_DETAILS = "account_details";
@@ -76,6 +74,8 @@ public class Upgrade41810to41900 implements DbUpgrade, DbUpgradeSystemVmTemplate
     public void performDataMigration(Connection conn) {
         decryptConfigurationValuesFromAccountAndDomainScopesNotInSecureHiddenCategories(conn);
         migrateBackupDates(conn);
+        addIndexes(conn);
+        addRemoverAccountIdForeignKeyToQuarantinedIps(conn);
     }
 
     @Override
@@ -95,7 +95,7 @@ public class Upgrade41810to41900 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     @Override
     public void updateSystemVmTemplates(Connection conn) {
-        LOG.debug("Updating System Vm template IDs");
+        logger.debug("Updating System Vm template IDs");
         initSystemVmTemplateRegistration();
         try {
             systemVmTemplateRegistration.updateSystemVmTemplates(conn);
@@ -105,15 +105,15 @@ public class Upgrade41810to41900 implements DbUpgrade, DbUpgradeSystemVmTemplate
     }
 
     protected void decryptConfigurationValuesFromAccountAndDomainScopesNotInSecureHiddenCategories(Connection conn) {
-        LOG.info("Decrypting global configuration values from the following tables: account_details and domain_details.");
+        logger.info("Decrypting global configuration values from the following tables: account_details and domain_details.");
 
         Map<Long, String> accountsMap = getConfigsWithScope(conn, ACCOUNT_DETAILS);
         updateConfigValuesWithScope(conn, accountsMap, ACCOUNT_DETAILS);
-        LOG.info("Successfully decrypted configurations from account_details table.");
+        logger.info("Successfully decrypted configurations from account_details table.");
 
         Map<Long, String> domainsMap = getConfigsWithScope(conn, DOMAIN_DETAILS);
         updateConfigValuesWithScope(conn, domainsMap, DOMAIN_DETAILS);
-        LOG.info("Successfully decrypted configurations from domain_details table.");
+        logger.info("Successfully decrypted configurations from domain_details table.");
     }
 
     protected Map<Long, String> getConfigsWithScope(Connection conn, String table) {
@@ -130,19 +130,19 @@ public class Upgrade41810to41900 implements DbUpgrade, DbUpgradeSystemVmTemplate
             return configsToBeUpdated;
         } catch (SQLException e) {
             String message = String.format("Unable to retrieve data from table [%s] due to [%s].", table, e.getMessage());
-            LOG.error(message, e);
+            logger.error(message, e);
             throw new CloudRuntimeException(message, e);
         }
     }
 
     public void migrateBackupDates(Connection conn) {
-        LOG.info("Trying to convert backups' date column from varchar(255) to datetime type.");
+        logger.info("Trying to convert backups' date column from varchar(255) to datetime type.");
 
         modifyDateColumnNameAndCreateNewOne(conn);
         fetchDatesAndMigrateToNewColumn(conn);
         dropOldColumn(conn);
 
-        LOG.info("Finished converting backups' date column from varchar(255) to datetime.");
+        logger.info("Finished converting backups' date column from varchar(255) to datetime.");
     }
 
     private void modifyDateColumnNameAndCreateNewOne(Connection conn) {
@@ -151,7 +151,7 @@ public class Upgrade41810to41900 implements DbUpgrade, DbUpgradeSystemVmTemplate
             pstmt.execute();
         } catch (SQLException e) {
             String message = String.format("Unable to alter backups' date column name due to [%s].", e.getMessage());
-            LOG.error(message, e);
+            logger.error(message, e);
             throw new CloudRuntimeException(message, e);
         }
 
@@ -160,7 +160,7 @@ public class Upgrade41810to41900 implements DbUpgrade, DbUpgradeSystemVmTemplate
             pstmt.execute();
         } catch (SQLException e) {
             String message = String.format("Unable to crate new backups' column date due to [%s].", e.getMessage());
-            LOG.error(message, e);
+            logger.error(message, e);
             throw new CloudRuntimeException(message, e);
         }
     }
@@ -175,12 +175,12 @@ public class Upgrade41810to41900 implements DbUpgrade, DbUpgradeSystemVmTemplate
                 pstmt.setString(1, decryptedValue);
                 pstmt.setLong(2, config.getKey());
 
-                LOG.info(String.format("Updating config with ID [%s] to value [%s].", config.getKey(), decryptedValue));
+                logger.info(String.format("Updating config with ID [%s] to value [%s].", config.getKey(), decryptedValue));
                 pstmt.executeUpdate();
             } catch (SQLException | EncryptionOperationNotPossibleException e) {
                 String message = String.format("Unable to update config value with ID [%s] on table [%s] due to [%s]. The config value may already be decrypted.",
                         config.getKey(), table, e);
-                LOG.error(message);
+                logger.error(message);
                 throw new CloudRuntimeException(message, e);
             }
         }
@@ -201,7 +201,7 @@ public class Upgrade41810to41900 implements DbUpgrade, DbUpgradeSystemVmTemplate
             }
         } catch (SQLException e) {
             String message = String.format("Unable to retrieve backup dates due to [%s].", e.getMessage());
-            LOG.error(message, e);
+            logger.error(message, e);
             throw new CloudRuntimeException(message, e);
         }
     }
@@ -222,7 +222,7 @@ public class Upgrade41810to41900 implements DbUpgrade, DbUpgradeSystemVmTemplate
         }
         if (parsedDate == null) {
             String msg = String.format("Unable to parse date [%s]. Will change backup date to null.", date);
-            LOG.error(msg);
+            logger.error(msg);
             return null;
         }
 
@@ -238,7 +238,7 @@ public class Upgrade41810to41900 implements DbUpgrade, DbUpgradeSystemVmTemplate
             pstmt.executeUpdate();
         } catch (SQLException e) {
             String message = String.format("Unable to update backup date with id [%s] to date [%s] due to [%s].", id, date, e.getMessage());
-            LOG.error(message, e);
+            logger.error(message, e);
             throw new CloudRuntimeException(message, e);
         }
     }
@@ -249,9 +249,19 @@ public class Upgrade41810to41900 implements DbUpgrade, DbUpgradeSystemVmTemplate
             pstmt.execute();
         } catch (SQLException e) {
             String message = String.format("Unable to drop old_date column due to [%s].", e.getMessage());
-            LOG.error(message, e);
+            logger.error(message, e);
             throw new CloudRuntimeException(message, e);
         }
     }
 
+    private void addIndexes(Connection conn) {
+        DbUpgradeUtils.addIndexIfNeeded(conn, "alert", "archived", "created");
+        DbUpgradeUtils.addIndexIfNeeded(conn, "alert", "type", "data_center_id", "pod_id");
+
+        DbUpgradeUtils.addIndexIfNeeded(conn, "event", "resource_type", "resource_id");
+    }
+
+    private void addRemoverAccountIdForeignKeyToQuarantinedIps(Connection conn) {
+        DbUpgradeUtils.addForeignKey(conn, "quarantined_ips", "remover_account_id", "account", "id");
+    }
 }

@@ -143,7 +143,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 
 export default {
   name: 'AddNetscalerLoadBalancer',
@@ -312,7 +312,7 @@ export default {
     },
     addNetworkServiceProvider (args) {
       return new Promise((resolve, reject) => {
-        api('addNetworkServiceProvider', args).then(async json => {
+        postAPI('addNetworkServiceProvider', args).then(async json => {
           this.$pollJob({
             jobId: json.addnetworkserviceproviderresponse.jobid,
             successMethod: (result) => {
@@ -333,7 +333,7 @@ export default {
     },
     addNetscalerLoadBalancer (args) {
       return new Promise((resolve, reject) => {
-        api('addNetscalerLoadBalancer', args).then(json => {
+        postAPI('addNetscalerLoadBalancer', args).then(json => {
           const jobId = json.addnetscalerloadbalancerresponse.jobid || null
           resolve(jobId)
         }).catch(error => {

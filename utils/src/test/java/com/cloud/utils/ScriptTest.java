@@ -23,12 +23,13 @@ import java.io.BufferedReader;
 import java.io.IOException;
 
 import org.apache.commons.lang.SystemUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.Message;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 
 import com.cloud.utils.script.OutputInterpreter;
@@ -51,7 +52,7 @@ public class ScriptTest {
     public void testLogger() {
         Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
         Logger mock = Mockito.mock(Logger.class);
-        Mockito.doNothing().when(mock).debug(Matchers.any());
+        Mockito.doNothing().when(mock).debug((Message) ArgumentMatchers.any());
         Script script = new Script("/bin/echo", mock);
         script.execute();
     }
@@ -80,7 +81,7 @@ public class ScriptTest {
     public void testExecute() {
         Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
         Logger mock = Mockito.mock(Logger.class);
-        Mockito.doNothing().when(mock).debug(Matchers.any());
+        Mockito.doNothing().when(mock).debug((Message) ArgumentMatchers.any());
         for (int i = 0; i < 100000; i++) {
             Script script = new Script("/bin/false", mock);
             script.execute();
@@ -109,6 +110,20 @@ public class ScriptTest {
         });
         // it is a stack trace in this case as string
         Assert.assertNotNull(value);
+    }
+
+    @Test
+    public void executeWithOutputInterpreterAllLinesParserLargeOutput() {
+        Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        Script script = new Script("seq");
+        script.add("-f");
+        script.add("my text to test cloudstack %g");
+        script.add("4096"); // AllLinesParser doesn't work with that amount of data
+        String value = script.execute(parser);
+        // it is a stack trace in this case as string
+        Assert.assertNull(value);
+        Assert.assertEquals(129965, parser.getLines().length());
     }
 
     @Test

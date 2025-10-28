@@ -26,7 +26,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 
 import org.apache.cloudstack.api.ServerApiException;
@@ -86,7 +86,7 @@ public class AddNetworkServiceProviderCmdTest extends TestCase {
         addNetworkServiceProviderCmd._networkService = networkService;
 
         PhysicalNetworkServiceProvider physicalNetworkServiceProvider = Mockito.mock(PhysicalNetworkServiceProvider.class);
-        Mockito.when(networkService.addProviderToPhysicalNetwork(Matchers.anyLong(), Matchers.anyString(), Matchers.anyLong(), Matchers.anyList())).thenReturn(
+        Mockito.when(networkService.addProviderToPhysicalNetwork(ArgumentMatchers.anyLong(), ArgumentMatchers.anyString(), ArgumentMatchers.anyLong(), ArgumentMatchers.anyList())).thenReturn(
             physicalNetworkServiceProvider);
 
         try {
@@ -103,7 +103,7 @@ public class AddNetworkServiceProviderCmdTest extends TestCase {
         NetworkService networkService = Mockito.mock(NetworkService.class);
         addNetworkServiceProviderCmd._networkService = networkService;
 
-        Mockito.when(networkService.addProviderToPhysicalNetwork(Matchers.anyLong(), Matchers.anyString(), Matchers.anyLong(), Matchers.anyList())).thenReturn(null);
+        Mockito.when(networkService.addProviderToPhysicalNetwork(ArgumentMatchers.anyLong(), ArgumentMatchers.anyString(), ArgumentMatchers.anyLong(), ArgumentMatchers.anyList())).thenReturn(null);
 
         try {
             addNetworkServiceProviderCmd.create();

@@ -22,7 +22,8 @@ import com.cloud.utils.UriUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -42,16 +43,19 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
     private String checksum;
     private boolean redownload = false;
     protected String temporaryDownloadPath;
+    private boolean followRedirects;
 
-    public static final Logger s_logger = Logger.getLogger(DirectTemplateDownloaderImpl.class.getName());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     protected DirectTemplateDownloaderImpl(final String url, final String destPoolPath, final Long templateId,
-                                           final String checksum, final String temporaryDownloadPath) {
+                                           final String checksum, final String temporaryDownloadPath,
+                                           final boolean followRedirects) {
         this.url = url;
         this.destPoolPath = destPoolPath;
         this.templateId = templateId;
         this.checksum = checksum;
         this.temporaryDownloadPath = temporaryDownloadPath;
+        this.followRedirects = followRedirects;
     }
 
     private static String directDownloadDir = "template";
@@ -111,6 +115,14 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
         return redownload;
     }
 
+    public boolean isFollowRedirects() {
+        return followRedirects;
+    }
+
+    public void setFollowRedirects(boolean followRedirects) {
+        this.followRedirects = followRedirects;
+    }
+
     /**
      * Create download directory (if it does not exist)
      */
@@ -135,16 +147,16 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
             try {
                 while (!valid && retry > 0) {
                     retry--;
-                    s_logger.info("Performing checksum validation for downloaded template " + templateId + " using " + checksum + ", retries left: " + retry);
+                    logger.info("Performing checksum validation for downloaded template " + templateId + " using " + checksum + ", retries left: " + retry);
                     valid = DigestHelper.check(checksum, new FileInputStream(downloadedFilePath));
                     if (!valid && retry > 0) {
-                        s_logger.info("Checksum validation failed, re-downloading template");
+                        logger.info("Checksum validation failed, re-downloading template");
                         redownload = true;
                         resetDownloadFile();
                         downloadTemplate();
                     }
                 }
-                s_logger.info("Checksum validation for template " + templateId + ": " + (valid ? "succeeded" : "failed"));
+                logger.info("Checksum validation for template " + templateId + ": " + (valid ? "succeeded" : "failed"));
                 return valid;
             } catch (IOException e) {
                 throw new CloudRuntimeException("could not check sum for file: " + downloadedFilePath, e);
@@ -152,7 +164,7 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
                 throw new CloudRuntimeException("Unknown checksum algorithm: " + checksum, e);
             }
         }
-        s_logger.info("No checksum provided, skipping checksum validation");
+        logger.info("No checksum provided, skipping checksum validation");
         return true;
     }
 
@@ -161,14 +173,14 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
      */
     private void resetDownloadFile() {
         File f = new File(getDownloadedFilePath());
-        s_logger.info("Resetting download file: " + getDownloadedFilePath() + ", in order to re-download and persist template " + templateId + " on it");
+        logger.info("Resetting download file: " + getDownloadedFilePath() + ", in order to re-download and persist template " + templateId + " on it");
         try {
             if (f.exists()) {
                 f.delete();
             }
             f.createNewFile();
         } catch (IOException e) {
-            s_logger.error("Error creating file to download on: " + getDownloadedFilePath() + " due to: " + e.getMessage());
+            logger.error("Error creating file to download on: " + getDownloadedFilePath() + " due to: " + e.getMessage());
             throw new CloudRuntimeException("Failed to create download file for direct download");
         }
     }

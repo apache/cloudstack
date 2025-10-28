@@ -19,6 +19,7 @@ package com.cloud.vm;
 public interface VmDetailConstants {
     String KEYBOARD = "keyboard";
     String CPU_CORE_PER_SOCKET = "cpu.corespersocket";
+    String CPU_THREAD_PER_CORE = "cpu.threadspercore";
     String ROOT_DISK_SIZE = "rootdisksize";
     String BOOT_MODE = "boot.mode";
     String NAME_ON_HYPERVISOR= "nameonhypervisor";
@@ -39,6 +40,8 @@ public interface VmDetailConstants {
     // KVM specific (internal)
     String KVM_VNC_PORT = "kvm.vnc.port";
     String KVM_VNC_ADDRESS = "kvm.vnc.address";
+    String KVM_VNC_PASSWORD = "kvm.vnc.password";
+    String KVM_GUEST_OS_MACHINE_TYPE = "kvm.guest.os.machine.type";
 
     // KVM specific, custom virtual GPU hardware
     String VIDEO_HARDWARE = "video.hardware";
@@ -72,6 +75,7 @@ public interface VmDetailConstants {
     String ENCRYPTED_PASSWORD = "Encrypted.Password";
 
     String CONFIG_DRIVE_LOCATION = "configDriveLocation";
+    String LAST_CONFIG_DRIVE_LOCATION = "lastConfigDriveLocation";
 
     String SKIP_DRS = "skipFromDRS";
 
@@ -86,4 +90,40 @@ public interface VmDetailConstants {
     String DEPLOY_AS_IS_CONFIGURATION = "configurationId";
     String KEY_PAIR_NAMES = "keypairnames";
     String CKS_CONTROL_NODE_LOGIN_USER = "controlNodeLoginUser";
+    String CKS_NODE_TYPE = "node";
+    String OFFERING = "offering";
+    String TEMPLATE = "template";
+
+    // VMware to KVM VM migrations specific
+    String VMWARE_TO_KVM_PREFIX = "vmware-to-kvm";
+    String VMWARE_VCENTER_HOST = String.format("%s-vcenter", VMWARE_TO_KVM_PREFIX);
+    String VMWARE_DATACENTER_NAME = String.format("%s-datacenter", VMWARE_TO_KVM_PREFIX);
+    String VMWARE_CLUSTER_NAME = String.format("%s-cluster", VMWARE_TO_KVM_PREFIX);
+    String VMWARE_VCENTER_USERNAME = String.format("%s-username", VMWARE_TO_KVM_PREFIX);
+    String VMWARE_VCENTER_PASSWORD = String.format("%s-password", VMWARE_TO_KVM_PREFIX);
+    String VMWARE_VM_NAME = String.format("%s-vmname", VMWARE_TO_KVM_PREFIX);
+    String VMWARE_HOST_NAME = String.format("%s-host", VMWARE_TO_KVM_PREFIX);
+    String VMWARE_DISK = String.format("%s-disk", VMWARE_TO_KVM_PREFIX);
+    String VMWARE_MAC_ADDRESSES = String.format("%s-mac-addresses", VMWARE_TO_KVM_PREFIX);
+
+    // TPM
+    String VIRTUAL_TPM_ENABLED = "virtual.tpm.enabled";
+    String VIRTUAL_TPM_MODEL = "virtual.tpm.model";
+    String VIRTUAL_TPM_VERSION = "virtual.tpm.version";
+
+    // CPU mode and model, ADMIN only
+    String GUEST_CPU_MODE = "guest.cpu.mode";
+    String GUEST_CPU_MODEL = "guest.cpu.model";
+
+    // Lease related
+    String INSTANCE_LEASE_EXPIRY_DATE = "leaseexpirydate";
+    String INSTANCE_LEASE_EXPIRY_ACTION = "leaseexpiryaction";
+    String INSTANCE_LEASE_EXECUTION = "leaseactionexecution";
+
+    // External orchestrator related
+    String MAC_ADDRESS = "mac_address";
+    String EXPUNGE_EXTERNAL_VM = "expunge.external.vm";
+    String EXTERNAL_DETAIL_PREFIX = "External:";
+    String CLOUDSTACK_VM_DETAILS = "cloudstack.vm.details";
+    String CLOUDSTACK_VLAN = "cloudstack.vlan";
 }

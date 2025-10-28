@@ -18,23 +18,22 @@ package com.cloud.agent.manager;
 
 import java.nio.channels.ClosedChannelException;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.transport.Request;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Status;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.nio.Link;
 
 /**
  * ConnectedAgentAttache implements a direct connection to this management server.
  */
 public class ConnectedAgentAttache extends AgentAttache {
-    private static final Logger s_logger = Logger.getLogger(ConnectedAgentAttache.class);
 
     protected Link _link;
 
-    public ConnectedAgentAttache(final AgentManagerImpl agentMgr, final long id, final String name, final Link link, final boolean maintenance) {
-        super(agentMgr, id, name, maintenance);
+    public ConnectedAgentAttache(final AgentManagerImpl agentMgr, final long id, final String uuid, final String name, final Hypervisor.HypervisorType hypervisorType, final Link link, final boolean maintenance) {
+        super(agentMgr, id, uuid, name, hypervisorType, maintenance);
         _link = link;
     }
 
@@ -55,8 +54,10 @@ public class ConnectedAgentAttache extends AgentAttache {
     @Override
     public void disconnect(final Status state) {
         synchronized (this) {
-            s_logger.debug("Processing Disconnect.");
+            logger.debug("Processing disconnect [id: {}, uuid: {}, name: {}]", _id, _uuid, _name);
+
             if (_link != null) {
+                logger.debug("Disconnecting from {}, Socket Address: {}", _link.getIpAddress(), _link.getSocketAddress());
                 _link.close();
                 _link.terminated();
             }
@@ -100,7 +101,7 @@ public class ConnectedAgentAttache extends AgentAttache {
             assert _link == null : "Duh...Says you....Forgot to call disconnect()!";
             synchronized (this) {
                 if (_link != null) {
-                    s_logger.warn("Lost attache " + _id + "(" + _name + ")");
+                    logger.warn("Lost attache {} ({})", _id, _name);
                     disconnect(Status.Alert);
                 }
             }

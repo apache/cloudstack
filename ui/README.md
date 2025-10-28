@@ -1,6 +1,25 @@
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+ -->
+
 # CloudStack UI
 
-A modern role-based progressive CloudStack UI based on VueJS and Ant Design.
+A modern role-based progressive CloudStack UI based on Vue.js and Ant Design.
 
 ![Screenshot](docs/screenshot-dashboard.png)
 
@@ -8,18 +27,18 @@ A modern role-based progressive CloudStack UI based on VueJS and Ant Design.
 
 Install node: (Debian/Ubuntu)
 
-    curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+    curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
     sudo apt-get install -y nodejs
     # Or use distro provided: sudo apt-get install npm nodejs
 
 Install node: (CentOS/Fedora/RHEL)
 
-    curl -sL https://rpm.nodesource.com/setup_14.x | sudo bash -
+    curl -sL https://rpm.nodesource.com/setup_20.x | sudo bash -
     sudo yum install nodejs
 
 Install node: (Mac OS)
 
-    brew install node@16
+    brew install node@20
 
 Optionally, you may also install system-wide dev tools:
 
@@ -44,6 +63,10 @@ To use the community Simulator QA server you can do this:
 
     echo "CS_URL=https://qa.cloudstack.cloud" > .env.local
 
+This may be required for newer npm versions:
+
+    export NODE_OPTIONS=--openssl-legacy-provider
+
 Build and run:
 
     npm run serve
@@ -62,7 +85,7 @@ Fix issues and vulnerabilities:
 
     npm audit
 
-A basic development guide and explaination of the basic components can be found
+A basic development guide and explanation of the basic components can be found
   [here](docs/development.md)
 
 ## Production
@@ -142,7 +165,7 @@ docker container:
 
 ## Documentation
 
-- VueJS Guide: https://vuejs.org/guide/
+- Vue.js Guide: https://vuejs.org/guide/
 - Vue Ant Design: https://www.antdv.com/docs/vue/introduce/
 - UI Developer [Docs](docs)
 - JavaScript ES6 Reference: https://www.tutorialspoint.com/es6/
@@ -152,7 +175,7 @@ docker container:
 
 The UI uses the following:
 
-- [VueJS](https://vuejs.org/)
+- [Vue.js](https://vuejs.org/)
 - [Ant Design Spec](https://ant.design/docs/spec/introduce)
 - [Ant Design Vue](https://vue.ant.design/)
 - [Ant Design Pro Vue](https://github.com/sendya/ant-design-pro-vue)

@@ -57,8 +57,9 @@ public class NfsDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
         this(url, null, null, null, null);
     }
 
-    public NfsDirectTemplateDownloader(String url, String destPool, Long templateId, String checksum, String downloadPath) {
-        super(url, destPool, templateId, checksum, downloadPath);
+    public NfsDirectTemplateDownloader(String url, String destPool, Long templateId, String checksum,
+               String downloadPath) {
+        super(url, destPool, templateId, checksum, downloadPath, false);
         parseUrl();
     }
 
@@ -80,7 +81,7 @@ public class NfsDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
             parseUrl();
             return true;
         } catch (CloudRuntimeException e) {
-            s_logger.error(String.format("Cannot check URL %s is reachable due to: %s", url, e.getMessage()), e);
+            logger.error(String.format("Cannot check URL %s is reachable due to: %s", url, e.getMessage()), e);
             return false;
         }
     }

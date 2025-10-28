@@ -47,6 +47,10 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "the domain name of the snapshot's account")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the Domain the snapshot's account belongs to", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.PROJECT_ID)
     @Param(description = "the project id of the snapshot")
     private String projectId;
@@ -70,6 +74,10 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
     @SerializedName("volumetype")
     @Param(description = "type of the disk volume")
     private String volumeType;
+
+    @SerializedName(ApiConstants.VOLUME_STATE)
+    @Param(description = "state of the disk volume")
+    private String volumeState;
 
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "  the date the snapshot was created")
@@ -98,6 +106,10 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
     @SerializedName(ApiConstants.PHYSICAL_SIZE)
     @Param(description = "physical size of backedup snapshot on image store")
     private long physicalSize;
+
+    @SerializedName(ApiConstants.CHAIN_SIZE)
+    @Param(description = "chain size of snapshot including all parent snapshots. Shown only for incremental snapshots if snapshot.show.chain.size setting is set to true", since = "4.21.0")
+    private Long chainSize;
 
     @SerializedName(ApiConstants.ZONE_ID)
     @Param(description = "id of the availability zone")
@@ -183,6 +195,11 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
         this.domainName = domainName;
     }
 
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
+    }
+
     public void setSnapshotType(String snapshotType) {
         this.snapshotType = snapshotType;
     }
@@ -197,6 +214,10 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
 
     public void setVolumeType(String volumeType) {
         this.volumeType = volumeType;
+    }
+
+    public void setVolumeState(String volumeState) {
+        this.volumeState = volumeState;
     }
 
     public void setCreated(Date created) {
@@ -225,6 +246,10 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
 
     public void setPhysicalSize(long physicalSize) {
         this.physicalSize = physicalSize;
+    }
+
+    public void setChainSize(long chainSize) {
+        this.chainSize = chainSize;
     }
 
     @Override

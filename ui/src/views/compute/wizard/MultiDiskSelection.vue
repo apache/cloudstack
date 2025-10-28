@@ -31,7 +31,7 @@
           <span>{{ record.displaytext || record.name }}</span>
           <div v-if="record.meta">
             <div v-for="meta in record.meta" :key="meta.key">
-              <a-tag style="margin-top: 5px" :key="meta.key">{{ meta.key + ': ' + meta.value }}</a-tag>
+              <a-tag v-if="(isKVMUnmanage && meta.key !== 'datastore') || !isKVMUnmanage" style="margin-top: 5px" :key="meta.key">{{ meta.key + ': ' + meta.value }}</a-tag>
             </div>
           </div>
         </template>
@@ -72,7 +72,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
 
 export default {
@@ -104,6 +104,10 @@ export default {
     autoSelectLabel: {
       type: String,
       default: ''
+    },
+    isKVMUnmanage: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -175,7 +179,7 @@ export default {
     fetchDiskOfferings () {
       this.diskOfferings = []
       this.loading = true
-      api('listDiskOfferings', {
+      getAPI('listDiskOfferings', {
         zoneid: this.zoneId,
         listall: true
       }).then(response => {

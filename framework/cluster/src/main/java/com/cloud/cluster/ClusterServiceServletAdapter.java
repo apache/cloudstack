@@ -23,7 +23,7 @@ import java.util.Properties;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
@@ -34,7 +34,6 @@ import com.cloud.utils.db.DbProperties;
 
 public class ClusterServiceServletAdapter extends AdapterBase implements ClusterServiceAdapter {
 
-    private static final Logger s_logger = Logger.getLogger(ClusterServiceServletAdapter.class);
     private static final int DEFAULT_SERVICE_PORT = 9090;
     private static final int DEFAULT_REQUEST_TIMEOUT = 300;            // 300 seconds
 
@@ -44,6 +43,8 @@ public class ClusterServiceServletAdapter extends AdapterBase implements Cluster
     @Inject
     private ManagementServerHostDao _mshostDao;
     @Inject
+    private CAManager caService;
+    @Inject
     protected ConfigDepot _configDepot;
 
     private ClusterServiceServletContainer _servletContainer;
@@ -51,7 +52,7 @@ public class ClusterServiceServletAdapter extends AdapterBase implements Cluster
     private int _clusterServicePort = DEFAULT_SERVICE_PORT;
 
     public ClusterServiceServletAdapter() {
-        setRunLevel(ComponentLifecycle.RUN_LEVEL_FRAMEWORK);
+        setRunLevel(ComponentLifecycle.RUN_LEVEL_COMPONENT);
     }
 
     @Override
@@ -59,23 +60,21 @@ public class ClusterServiceServletAdapter extends AdapterBase implements Cluster
         try {
             init();
         } catch (ConfigurationException e) {
-            s_logger.error("Unable to init ClusterServiceServletAdapter");
+            logger.error("Unable to init ClusterServiceServletAdapter");
             throw new RemoteException("Unable to init ClusterServiceServletAdapter");
         }
 
         String serviceUrl = getServiceEndpointName(strPeer);
         if (serviceUrl == null)
             return null;
-
-        return new ClusterServiceServletImpl(serviceUrl);
+        return new ClusterServiceServletImpl(serviceUrl, caService);
     }
 
-    @Override
-    public String getServiceEndpointName(String strPeer) {
+    protected String getServiceEndpointName(String strPeer) {
         try {
             init();
         } catch (ConfigurationException e) {
-            s_logger.error("Unable to init ClusterServiceServletAdapter");
+            logger.error("Unable to init ClusterServiceServletAdapter");
             return null;
         }
 
@@ -95,7 +94,7 @@ public class ClusterServiceServletAdapter extends AdapterBase implements Cluster
 
     private String composeEndpointName(String nodeIP, int port) {
         StringBuffer sb = new StringBuffer();
-        sb.append("http://").append(nodeIP).append(":").append(port).append("/clusterservice");
+        sb.append("https://").append(nodeIP).append(":").append(port).append("/clusterservice");
         return sb.toString();
     }
 
@@ -108,7 +107,8 @@ public class ClusterServiceServletAdapter extends AdapterBase implements Cluster
     @Override
     public boolean start() {
         _servletContainer = new ClusterServiceServletContainer();
-        _servletContainer.start(new ClusterServiceServletHttpHandler(_manager), _clusterServicePort);
+        _servletContainer.start(new ClusterServiceServletHttpHandler(_manager), _manager.getSelfNodeIP(),
+                _clusterServicePort, caService);
         return true;
     }
 
@@ -126,7 +126,7 @@ public class ClusterServiceServletAdapter extends AdapterBase implements Cluster
         Properties dbProps = DbProperties.getDbProperties();
 
         _clusterServicePort = NumbersUtil.parseInt(dbProps.getProperty("cluster.servlet.port"), DEFAULT_SERVICE_PORT);
-        if (s_logger.isInfoEnabled())
-            s_logger.info("Cluster servlet port : " + _clusterServicePort);
+        if (logger.isInfoEnabled())
+            logger.info("Cluster servlet port : " + _clusterServicePort);
     }
 }

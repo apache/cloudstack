@@ -119,7 +119,7 @@
 
 <script>
 
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 
 export default {
   name: 'AnnotationsTab',
@@ -193,6 +193,7 @@ export default {
         case 'VirtualRouter': return 'VR'
         case 'AutoScaleVmGroup': return 'AUTOSCALE_VM_GROUP'
         case 'ManagementServer': return 'MANAGEMENT_SERVER'
+        case 'ObjectStorage': return 'OBJECT_STORAGE'
         default: return ''
       }
     },
@@ -216,7 +217,7 @@ export default {
       }
       this.loadingAnnotations = true
       this.notes = []
-      api('listAnnotations', { entityid: this.resource.id, entitytype: this.annotationType, annotationfilter: 'all', page: this.page, pagesize: this.pageSize }).then(json => {
+      getAPI('listAnnotations', { entityid: this.resource.id, entitytype: this.annotationType, annotationfilter: 'all', page: this.page, pagesize: this.pageSize }).then(json => {
         if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
           this.notes = json.listannotationsresponse.annotation
           this.itemCount = json.listannotationsresponse.count
@@ -245,7 +246,7 @@ export default {
       args.entitytype = this.annotationType
       args.annotation = this.annotation
       args.adminsonly = this.annotationAdminsOnly
-      api('addAnnotation', args).catch(error => {
+      postAPI('addAnnotation', args).catch(error => {
         this.$notifyError(error)
       }).finally(e => {
         this.getAnnotations()
@@ -257,7 +258,7 @@ export default {
       this.loadingAnnotations = true
       const args = {}
       args.id = annotation.id
-      api('removeAnnotation', args).catch(error => {
+      postAPI('removeAnnotation', args).catch(error => {
         this.$notifyError(error)
       }).finally(e => {
         this.getAnnotations()
@@ -269,7 +270,7 @@ export default {
         id: annotation.id,
         adminsonly: !annotation.adminsonly
       }
-      api('updateAnnotationVisibility', args).catch(error => {
+      postAPI('updateAnnotationVisibility', args).catch(error => {
         this.$notifyError(error)
       }).finally(e => {
         this.getAnnotations()

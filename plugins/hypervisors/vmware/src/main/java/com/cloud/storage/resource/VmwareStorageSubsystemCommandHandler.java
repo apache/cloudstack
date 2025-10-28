@@ -37,7 +37,6 @@ import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyCommand;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -54,7 +53,6 @@ import com.cloud.utils.NumbersUtil;
 
 public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemCommandHandlerBase {
 
-    private static final Logger s_logger = Logger.getLogger(VmwareStorageSubsystemCommandHandler.class);
     private VmwareStorageManager storageManager;
     private PremiumSecondaryStorageResource storageResource;
     private String _nfsVersion;
@@ -98,7 +96,7 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
                 processor.setDiskProvisioningStrictness(diskProvisioningStrictness);
                 break;
             default:
-                s_logger.error("Unknown reconfigurable field " + key.getName() + " for VmwareStorageProcessor");
+                logger.error("Unknown reconfigurable field " + key.getName() + " for VmwareStorageProcessor");
                 return false;
             }
         }
@@ -163,7 +161,7 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
                         DeleteCommand deleteCommand = new DeleteCommand(template);
                         storageResource.defaultAction(deleteCommand);
                     } catch (Exception e) {
-                        s_logger.debug("Failed to clean up staging area:", e);
+                        logger.debug("Failed to clean up staging area:", e);
                     }
                     return result;
                 }
@@ -199,7 +197,7 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
                     DeleteCommand deleteCommand = new DeleteCommand(newSnapshot);
                     storageResource.defaultAction(deleteCommand);
                 } catch (Exception e) {
-                    s_logger.debug("Failed to clean up staging area:", e);
+                    logger.debug("Failed to clean up staging area:", e);
                 }
                 return result;
             }
@@ -232,11 +230,11 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
                     .collect(Collectors.toList());
             for (String file : fileNames) {
                 file = snapDir + "/" + file;
-                s_logger.debug(String.format("Found snapshot file %s", file));
+                logger.debug(String.format("Found snapshot file %s", file));
                 files.add(file);
             }
         } catch (IOException ioe) {
-            s_logger.error("Error preparing file list for snapshot copy", ioe);
+            logger.error("Error preparing file list for snapshot copy", ioe);
         }
         return new QuerySnapshotZoneCopyAnswer(cmd, files);
     }

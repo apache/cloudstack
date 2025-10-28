@@ -75,6 +75,8 @@ public class SetGuestNetworkConfigItem extends AbstractConfigItemFacade {
         guestNetwork.setRouterIp6(command.getRouterIpv6());
         guestNetwork.setRouterIp6Gateway(command.getRouterIpv6Gateway());
         guestNetwork.setRouterIp6Cidr(command.getRouterIpv6Cidr());
+        guestNetwork.setVrGuestGateway(command.isVrGuestGateway());
+        guestNetwork.setNetworkId(command.getNetworkId());
 
         return generateConfigItems(guestNetwork);
     }

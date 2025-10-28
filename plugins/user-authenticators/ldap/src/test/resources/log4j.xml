@@ -19,60 +19,46 @@
     under the License.
 
 -->
-<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<Configuration monitorInterval="60">
+   <Appenders>
 
-<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="false">
+      <properties>
+         <property name="filters">net.sf.cglib.proxy</property>
+      </properties>
 
-       <throwableRenderer class="com.cloud.utils.log.CglibThrowableRenderer"/>
-   <!-- ================================= -->
-   <!-- Preserve messages in a local file -->
-   <!-- ================================= -->
+      <!-- ============================== -->
+      <!-- Append messages to the console -->
+      <!-- ============================== -->
 
-   <!-- ============================== -->
-   <!-- Append messages to the console -->
-   <!-- ============================== -->
+      <Console name="CONSOLE" target="SYSTEM_OUT">
+         <ThresholdFilter level="TRACE" onMatch="ACCEPT" onMismatch="DENY"/>
+         <PatternLayout pattern="%d{DEFAULT} %-5p [%c{3}] (%t:%x) %m%xEx{filters(${filters})}%n"/>
+      </Console>
+   </Appenders>
 
-   <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
-      <param name="Target" value="System.out"/>
-      <param name="Threshold" value="TRACE"/>
-      <layout class="org.apache.log4j.PatternLayout">
-         <param name="ConversionPattern" value="%d{ISO8601} %-5p [%c{3}] (%t:%x) %m%n"/>
-      </layout>
-   </appender>
+   <Loggers>
 
-   <!-- ================ -->
-   <!-- Limit categories -->
-   <!-- ================ -->
+      <!-- ================ -->
+      <!-- Limit categories -->
+      <!-- ================ -->
 
-   <category name="com.cloud">
-     <priority value="DEBUG"/>
-   </category>
-   
-   <!-- Limit the org.apache category to INFO as its DEBUG is verbose -->
-   <category name="org.apache.cloudstack">
-      <priority value="DEBUG"/>
-   </category>
+      <Logger name="com.cloud" level="DEBUG"/>
 
-   <category name="org.apache.directory">
-      <priority value="WARN"/>
-   </category>
+      <Logger name="org.apache.cloudstack" level="DEBUG"/>
 
-   <category name="org.apache.directory.api.ldap.model.entry.Value">
-      <priority value="FATAL"/>
-   </category>
+      <Logger name="org.apache.directory" level="WARN"/>
 
-   <category name="org.apache.directory.api.ldap.model.entry.DefaultAttribute">
-      <priority value="FATAL"/>
-   </category>
+      <Logger name="org.apache.directory.api.ldap.model.entry.Value" level="FATAL"/>
 
+      <Logger name="org.apache.directory.api.ldap.model.entry.DefaultAttribute" level="FATAL"/>
 
-   <!-- ======================= -->
-   <!-- Setup the Root category -->
-   <!-- ======================= -->
+      <!-- ======================= -->
+      <!-- Setup the Root category -->
+      <!-- ======================= -->
 
-   <root>
-      <level value="INFO"/>
-      <appender-ref ref="CONSOLE"/>
-   </root>
+      <Root level="INFO">
+         <AppenderRef ref="CONSOLE"/>
+      </Root>
 
-</log4j:configuration>
+   </Loggers>
+</Configuration>

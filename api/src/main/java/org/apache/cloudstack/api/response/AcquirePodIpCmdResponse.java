@@ -44,7 +44,7 @@ public class AcquirePodIpCmdResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.NIC_ID)
     @Param(description = "the ID of the nic")
-    private Long instanceId;
+    private Long nicId;
 
     @SerializedName(ApiConstants.HOST_MAC)
     @Param(description = "MAC address of the pod the  IP")
@@ -58,8 +58,8 @@ public class AcquirePodIpCmdResponse extends BaseResponse {
         this.ipAddress = ipAddress;
     }
 
-    public void setInstanceId(Long instanceId) {
-        this.instanceId = instanceId;
+    public void setNicId(Long nicId) {
+        this.nicId = nicId;
     }
 
     public void setPodId(long podId) {
@@ -82,8 +82,8 @@ public class AcquirePodIpCmdResponse extends BaseResponse {
         return id;
     }
 
-    public Long getInstanceId() {
-        return instanceId;
+    public Long getNicId() {
+        return nicId;
     }
 
     public long getPodId() {

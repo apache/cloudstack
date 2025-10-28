@@ -26,7 +26,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.event.EventTypes;
@@ -46,7 +45,6 @@ import com.cloud.vm.VirtualMachine;
 @APICommand(name = "addIpToNic", description = "Assigns secondary IP to NIC", responseObject = NicSecondaryIpResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddIpToVmNicCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(AddIpToVmNicCmd.class.getName());
     private static final String s_name = "addiptovmnicresponse";
 
     /////////////////////////////////////////////////////
@@ -81,7 +79,7 @@ public class AddIpToVmNicCmd extends BaseAsyncCreateCmd {
     private boolean isZoneSGEnabled() {
         Network ntwk = _entityMgr.findById(Network.class, getNetworkId());
         DataCenter dc = _entityMgr.findById(DataCenter.class, ntwk.getDataCenterId());
-        return dc.isSecurityGroupEnabled();
+        return dc.isSecurityGroupEnabled() || _ntwkModel.isSecurityGroupSupportedForZone(dc.getId());
     }
 
     @Override

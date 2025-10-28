@@ -66,10 +66,12 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
         LBStickinessPolicy(false, true),
         LBHealthCheckPolicy(false, true),
         SnapshotPolicy(true, true),
+        GuestOsCategory(false, false, true),
         GuestOs(false, true),
         NetworkOffering(false, true),
         VpcOffering(true, false),
-        Domain(false, false, true);
+        Domain(false, false, true),
+        ObjectStore(false, false, true);
 
 
         ResourceObjectType(boolean resourceTagsSupport, boolean resourceMetadataSupport) {

@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.admin.storage;
 import java.net.UnknownHostException;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -41,7 +40,6 @@ import com.cloud.user.Account;
 @APICommand(name = "createStoragePool", description = "Creates a storage pool.", responseObject = StoragePoolResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateStoragePoolCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateStoragePoolCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -62,6 +60,10 @@ public class CreateStoragePoolCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.TAGS, type = CommandType.STRING, description = "the tags for the storage pool")
     private String tags;
+
+    @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUPS, type = CommandType.STRING,
+            description = "comma separated list of storage access groups for connecting to hosts having those specific groups", since = "4.21.0")
+    private String storageAccessGroups;
 
     @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "the URL of the storage pool")
     private String url;
@@ -117,6 +119,10 @@ public class CreateStoragePoolCmd extends BaseCmd {
         return tags;
     }
 
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
+    }
+
     public String getUrl() {
         return url;
     }
@@ -170,13 +176,13 @@ public class CreateStoragePoolCmd extends BaseCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add storage pool");
             }
         } catch (ResourceUnavailableException ex1) {
-            s_logger.warn("Exception: ", ex1);
+            logger.warn("Exception: ", ex1);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex1.getMessage());
         } catch (ResourceInUseException ex2) {
-            s_logger.warn("Exception: ", ex2);
+            logger.warn("Exception: ", ex2);
             throw new ServerApiException(ApiErrorCode.RESOURCE_IN_USE_ERROR, ex2.getMessage());
         } catch (UnknownHostException ex3) {
-            s_logger.warn("Exception: ", ex3);
+            logger.warn("Exception: ", ex3);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex3.getMessage());
         } catch (Exception ex4) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex4.getMessage());

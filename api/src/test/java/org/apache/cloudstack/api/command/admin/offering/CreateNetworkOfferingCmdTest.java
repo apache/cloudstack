@@ -23,14 +23,16 @@ import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.springframework.test.util.ReflectionTestUtils;
 
+
 public class CreateNetworkOfferingCmdTest {
 
     @InjectMocks
     private CreateNetworkOfferingCmd createNetworkOfferingCmd = new CreateNetworkOfferingCmd();
 
+    String netName = "network";
+
     @Test
     public void createVpcNtwkOffWithEmptyDisplayText() {
-        String netName = "network";
         ReflectionTestUtils.setField(createNetworkOfferingCmd, "networkOfferingName", netName);
         Assert.assertEquals(createNetworkOfferingCmd.getDisplayText(), netName);
     }

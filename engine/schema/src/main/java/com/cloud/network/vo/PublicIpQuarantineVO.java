@@ -63,6 +63,9 @@ public class PublicIpQuarantineVO implements PublicIpQuarantine {
     @Column(name = "removal_reason")
     private String removalReason = null;
 
+    @Column(name = "remover_account_id")
+    private Long removerAccountId = null;
+
     public PublicIpQuarantineVO() {
     }
 
@@ -99,6 +102,11 @@ public class PublicIpQuarantineVO implements PublicIpQuarantine {
     }
 
     @Override
+    public Long getRemoverAccountId() {
+        return this.removerAccountId;
+    }
+
+    @Override
     public String getUuid() {
         return uuid;
     }
@@ -109,6 +117,10 @@ public class PublicIpQuarantineVO implements PublicIpQuarantine {
 
     public void setRemovalReason(String removalReason) {
         this.removalReason = removalReason;
+    }
+
+    public void setRemoverAccountId(Long removerAccountId) {
+        this.removerAccountId = removerAccountId;
     }
 
     @Override

@@ -19,7 +19,6 @@
 
 package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
@@ -31,7 +30,6 @@ import com.xensource.xenapi.Connection;
 @ResourceWrapper(handles =  CleanupNetworkRulesCmd.class)
 public final class CitrixCleanupNetworkRulesCmdWrapper extends CommandWrapper<CleanupNetworkRulesCmd, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixCleanupNetworkRulesCmdWrapper.class);
 
     @Override
     public Answer execute(final CleanupNetworkRulesCmd command, final CitrixResourceBase citrixResourceBase) {
@@ -44,12 +42,12 @@ public final class CitrixCleanupNetworkRulesCmdWrapper extends CommandWrapper<Cl
         final int numCleaned = Integer.parseInt(result);
 
         if (result == null || result.isEmpty() || numCleaned < 0) {
-            s_logger.warn("Failed to cleanup rules for host " + citrixResourceBase.getHost().getIp());
+            logger.warn("Failed to cleanup rules for host " + citrixResourceBase.getHost().getIp());
             return new Answer(command, false, result);
         }
 
         if (numCleaned > 0) {
-            s_logger.info("Cleaned up rules for " + result + " vms on host " + citrixResourceBase.getHost().getIp());
+            logger.info("Cleaned up rules for " + result + " vms on host " + citrixResourceBase.getHost().getIp());
         }
         return new Answer(command, true, result);
     }

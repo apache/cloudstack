@@ -21,7 +21,6 @@ package com.cloud.network.resource.wrapper;
 
 import static com.cloud.network.resource.NiciraNvpResource.NUM_RETRIES;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.DeleteLogicalRouterPortAnswer;
@@ -36,7 +35,6 @@ import com.cloud.resource.ResourceWrapper;
 @ResourceWrapper(handles =  DeleteLogicalRouterPortCommand.class)
 public class NiciraNvpDeleteLogicalRouterPortCommandWrapper extends CommandWrapper<DeleteLogicalRouterPortCommand, Answer, NiciraNvpResource> {
 
-    private static final Logger s_logger = Logger.getLogger(NiciraNvpDeleteLogicalRouterPortCommandWrapper.class);
 
     @Override
     public Answer execute(DeleteLogicalRouterPortCommand command, NiciraNvpResource niciraNvpResource) {
@@ -44,7 +42,7 @@ public class NiciraNvpDeleteLogicalRouterPortCommandWrapper extends CommandWrapp
         final String logicalRouterPortUuid = command.getLogicalRouterPortUuid();
         final NiciraNvpApi niciraNvpApi = niciraNvpResource.getNiciraNvpApi();
 
-        s_logger.debug("Deleting Logical Router Port " + logicalRouterPortUuid + " in Logical Router " + logicalRouterUuid);
+        logger.debug("Deleting Logical Router Port " + logicalRouterPortUuid + " in Logical Router " + logicalRouterUuid);
         try {
             niciraNvpApi.deleteLogicalRouterPort(logicalRouterUuid, logicalRouterPortUuid);
             return new DeleteLogicalRouterPortAnswer(command, true, "Logical Router Port " + logicalRouterPortUuid + " deleted");

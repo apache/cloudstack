@@ -16,25 +16,6 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.db;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.SnapshotVO;
@@ -48,9 +29,27 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
+
+import org.apache.commons.collections.CollectionUtils;
+
+import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
 @Component
 public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO, Long> implements SnapshotDataStoreDao {
-    private static final Logger s_logger = Logger.getLogger(SnapshotDataStoreDaoImpl.class);
     private static final String STORE_ID = "store_id";
     private static final String STORE_ROLE = "store_role";
     private static final String STATE = "state";
@@ -60,25 +59,42 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     private static final String SNAPSHOT_ID = "snapshot_id";
     private static final String VOLUME_ID = "volume_id";
     private static final String CREATED = "created";
+    private static final String KVM_CHECKPOINT_PATH = "kvm_checkpoint_path";
+    private static final String URL_CREATED_BEFORE = "url_created_before";
+    public static final String DOWNLOAD_URL = "downloadUrl";
+    public static final String DATA_CENTER_ID = "data_center_id";
+
     private SearchBuilder<SnapshotDataStoreVO> searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq;
     protected SearchBuilder<SnapshotDataStoreVO> searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq;
     private SearchBuilder<SnapshotDataStoreVO> stateSearch;
-    private SearchBuilder<SnapshotDataStoreVO> idStateNeqSearch;
+    private SearchBuilder<SnapshotDataStoreVO> idStateNinSearch;
     protected SearchBuilder<SnapshotVO> snapshotVOSearch;
     private SearchBuilder<SnapshotDataStoreVO> snapshotCreatedSearch;
     private SearchBuilder<SnapshotDataStoreVO> dataStoreAndInstallPathSearch;
     private SearchBuilder<SnapshotDataStoreVO> storeAndSnapshotIdsSearch;
     private SearchBuilder<SnapshotDataStoreVO> storeSnapshotDownloadStatusSearch;
+    private SearchBuilder<SnapshotDataStoreVO> searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqKVMCheckpointNotNull;
+    private SearchBuilder<SnapshotDataStoreVO> searchFilterStateAndDownloadUrlNotNullAndDownloadUrlCreatedBefore;
+    private SearchBuilder<SnapshotDataStoreVO> searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEq;
+
+    private SearchBuilder<SnapshotDataStoreVO> searchBySnapshotId;
 
     protected static final List<Hypervisor.HypervisorType> HYPERVISORS_SUPPORTING_SNAPSHOTS_CHAINING = List.of(Hypervisor.HypervisorType.XenServer);
 
     @Inject
     protected SnapshotDao snapshotDao;
 
+    @Inject
+    protected ImageStoreDao imageStoreDao;
+
     private static final String FIND_OLDEST_OR_LATEST_SNAPSHOT = "select store_id, store_role, snapshot_id from cloud.snapshot_store_ref where " +
             " store_role = ? and volume_id = ? and state = 'Ready'" +
             " order by created %s " +
             " limit 1";
+
+    private static final String FIND_SNAPSHOT_IN_ZONE = "SELECT ssr.* FROM " +
+            "snapshot_store_ref ssr, snapshots s " +
+            "WHERE ssr.snapshot_id=? AND ssr.snapshot_id = s.id AND s.data_center_id=?;";
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -121,10 +137,10 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         stateSearch.done();
 
 
-        idStateNeqSearch = createSearchBuilder();
-        idStateNeqSearch.and(SNAPSHOT_ID, idStateNeqSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
-        idStateNeqSearch.and(STATE, idStateNeqSearch.entity().getState(), SearchCriteria.Op.NEQ);
-        idStateNeqSearch.done();
+        idStateNinSearch = createSearchBuilder();
+        idStateNinSearch.and(SNAPSHOT_ID, idStateNinSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
+        idStateNinSearch.and(STATE, idStateNinSearch.entity().getState(), SearchCriteria.Op.NOTIN);
+        idStateNinSearch.done();
 
         snapshotVOSearch = snapshotDao.createSearchBuilder();
         snapshotVOSearch.and(VOLUME_ID, snapshotVOSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
@@ -152,6 +168,31 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         storeSnapshotDownloadStatusSearch.and(STORE_ID, storeSnapshotDownloadStatusSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
         storeSnapshotDownloadStatusSearch.and("downloadState", storeSnapshotDownloadStatusSearch.entity().getDownloadState(), SearchCriteria.Op.IN);
         storeSnapshotDownloadStatusSearch.done();
+
+        searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqKVMCheckpointNotNull = createSearchBuilder();
+        searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqKVMCheckpointNotNull.and(VOLUME_ID, searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqKVMCheckpointNotNull.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqKVMCheckpointNotNull.and(STATE, searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqKVMCheckpointNotNull.entity().getState(), SearchCriteria.Op.EQ);
+        searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqKVMCheckpointNotNull.and(STORE_ROLE, searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqKVMCheckpointNotNull.entity().getRole(), SearchCriteria.Op.EQ);
+        searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqKVMCheckpointNotNull.and(KVM_CHECKPOINT_PATH, searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqKVMCheckpointNotNull.entity().getKvmCheckpointPath(), SearchCriteria.Op.NNULL);
+        searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqKVMCheckpointNotNull.and(STORE_ID, searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqKVMCheckpointNotNull.entity().getDataStoreId(), SearchCriteria.Op.IN);
+        searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqKVMCheckpointNotNull.done();
+
+        searchFilterStateAndDownloadUrlNotNullAndDownloadUrlCreatedBefore = createSearchBuilder();
+        searchFilterStateAndDownloadUrlNotNullAndDownloadUrlCreatedBefore.and(STATE, searchFilterStateAndDownloadUrlNotNullAndDownloadUrlCreatedBefore.entity().getState(), SearchCriteria.Op.EQ);
+        searchFilterStateAndDownloadUrlNotNullAndDownloadUrlCreatedBefore.and(DOWNLOAD_URL, searchFilterStateAndDownloadUrlNotNullAndDownloadUrlCreatedBefore.entity().getExtractUrl(), SearchCriteria.Op.NNULL);
+        searchFilterStateAndDownloadUrlNotNullAndDownloadUrlCreatedBefore.and(URL_CREATED_BEFORE, searchFilterStateAndDownloadUrlNotNullAndDownloadUrlCreatedBefore.entity().getExtractUrlCreated(), SearchCriteria.Op.LT);
+        searchFilterStateAndDownloadUrlNotNullAndDownloadUrlCreatedBefore.done();
+
+        searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEq = createSearchBuilder();
+        searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEq.and(STATE, searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEq.entity().getState(), SearchCriteria.Op.EQ);
+        searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEq.and(VOLUME_ID, searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEq.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEq.and(STORE_ROLE, searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEq.entity().getRole(), SearchCriteria.Op.EQ);
+        searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEq.and(STORE_ID, searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEq.entity().getDataStoreId(), SearchCriteria.Op.IN);
+
+        searchBySnapshotId = createSearchBuilder();
+        searchBySnapshotId.and(SNAPSHOT_ID, searchBySnapshotId.entity().getSnapshotId(), SearchCriteria.Op.EQ);
+        searchBySnapshotId.and(STATE, searchBySnapshotId.entity().getState(), SearchCriteria.Op.EQ);
+        searchBySnapshotId.done();
 
         return true;
     }
@@ -188,7 +229,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
             message = String.format("Unable to update objectIndatastore: id=%s, as there is no such object exists in the database anymore", dataObj.getId());
         }
 
-        s_logger.debug(message);
+        logger.debug(message);
         return false;
     }
 
@@ -277,7 +318,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
                 }
             }
         } catch (SQLException e) {
-            s_logger.warn(String.format("Failed to find %s snapshot for volume [%s] in %s store due to [%s].", oldest ? "oldest" : "latest", volumeId, role, e.getMessage()), e);
+            logger.warn(String.format("Failed to find %s snapshot for volume [%s] in %s store due to [%s].", oldest ? "oldest" : "latest", volumeId, role, e.getMessage()), e);
         }
         return null;
     }
@@ -285,27 +326,94 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     @Override
     @DB
     public SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long volumeId) {
-        if (!isSnapshotChainingRequired(volumeId)) {
-            s_logger.trace(String.format("Snapshot chaining is not required for snapshots of volume [%s]. Returning null as parent.", volumeId));
+        return findParent(role, storeId, null, volumeId, false, null);
+    }
+
+    @Override
+    @DB
+    public SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long zoneId, Long volumeId, boolean kvmIncrementalSnapshot, Hypervisor.HypervisorType hypervisorType) {
+        if (!isSnapshotChainingRequired(volumeId, kvmIncrementalSnapshot)) {
+            logger.trace(String.format("Snapshot chaining is not required for snapshots of volume [%s]. Returning null as parent.", volumeId));
             return null;
         }
 
-        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
+        SearchCriteria<SnapshotDataStoreVO> sc;
+        if (kvmIncrementalSnapshot && Hypervisor.HypervisorType.KVM.equals(hypervisorType)) {
+            sc = searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqKVMCheckpointNotNull.create();
+        } else {
+            sc = searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEq.create();
+        }
+
         sc.setParameters(VOLUME_ID, volumeId);
-        sc.setParameters(STORE_ROLE, role.toString());
+        if (role != null) {
+            sc.setParameters(STORE_ROLE, role.toString());
+        }
         sc.setParameters(STATE, ObjectInDataStoreStateMachine.State.Ready.name());
-        sc.setParameters(STORE_ID, storeId);
+        if (storeId != null) {
+            sc.setParameters(STORE_ID, new Long[]{storeId});
+        } else if (zoneId != null) {
+            List<ImageStoreVO> imageStores = imageStoreDao.listStoresByZoneId(zoneId);
+            Object[] imageStoreIds = imageStores.stream().map(ImageStoreVO::getId).toArray();
+            sc.setParameters(STORE_ID, imageStoreIds);
+        }
 
         List<SnapshotDataStoreVO> snapshotList = listBy(sc, new Filter(SnapshotDataStoreVO.class, CREATED, false, null, null));
-        if (CollectionUtils.isNotEmpty(snapshotList)) {
-            return snapshotList.get(0);
+        if (CollectionUtils.isEmpty(snapshotList)) {
+            return null;
+        }
+
+        SnapshotDataStoreVO parent = snapshotList.get(0);
+
+        if (kvmIncrementalSnapshot && parent.getKvmCheckpointPath() == null && Hypervisor.HypervisorType.KVM.equals(hypervisorType)) {
+            return null;
+        }
+
+        return parent;
+    }
+
+    @Override
+    public SnapshotDataStoreVO findBySnapshotIdAndDataStoreRoleAndState(long snapshotId, DataStoreRole role, State state) {
+        SearchCriteria<SnapshotDataStoreVO> sc = createSearchCriteriaBySnapshotIdAndStoreRole(snapshotId, role);
+        sc.setParameters(STATE, state);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public SnapshotDataStoreVO findOneBySnapshotId(long snapshotId, long zoneId) {
+        try (TransactionLegacy transactionLegacy = TransactionLegacy.currentTxn()) {
+            try (PreparedStatement preparedStatement = transactionLegacy.prepareStatement(FIND_SNAPSHOT_IN_ZONE)) {
+                preparedStatement.setLong(1, snapshotId);
+                preparedStatement.setLong(2, zoneId);
+
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    if (resultSet.next()) {
+                        return toEntityBean(resultSet, false);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            logger.warn(String.format("Failed to find %s snapshot in zone %s due to [%s].", snapshotId, zoneId, e.getMessage()), e);
         }
         return null;
     }
 
     @Override
-    public List<SnapshotDataStoreVO> listBySnapshot(long snapshotId, DataStoreRole role) {
+    public List<SnapshotDataStoreVO> listBySnapshotId(long snapshotId) {
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
+        sc.setParameters(SNAPSHOT_ID, snapshotId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<SnapshotDataStoreVO> listBySnapshotAndDataStoreRole(long snapshotId, DataStoreRole role) {
         SearchCriteria<SnapshotDataStoreVO> sc = createSearchCriteriaBySnapshotIdAndStoreRole(snapshotId, role);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<SnapshotDataStoreVO> listSnapshotsBySnapshotId(long snapshotId) {
+        SearchCriteria<SnapshotDataStoreVO> sc = searchBySnapshotId.create();
+        sc.setParameters(SNAPSHOT_ID, snapshotId);
         return listBy(sc);
     }
 
@@ -317,9 +425,23 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     }
 
     @Override
+    public List<SnapshotDataStoreVO> listReadyBySnapshotId(long snapshotId) {
+        SearchCriteria<SnapshotDataStoreVO> sc = searchBySnapshotId.create();
+        sc.setParameters(SNAPSHOT_ID, snapshotId);
+        sc.setParameters(STATE, State.Ready);
+        return listBy(sc);
+    }
+
+    @Override
     public SnapshotDataStoreVO findBySourceSnapshot(long snapshotId, DataStoreRole role) {
         SearchCriteria<SnapshotDataStoreVO> sc = createSearchCriteriaBySnapshotIdAndStoreRole(snapshotId, role);
         sc.setParameters(STATE, State.Migrating);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public SnapshotDataStoreVO findBySnapshotIdInAnyState(long snapshotId, DataStoreRole role) {
+        SearchCriteria<SnapshotDataStoreVO> sc = createSearchCriteriaBySnapshotIdAndStoreRole(snapshotId, role);
         return findOneBy(sc);
     }
 
@@ -342,9 +464,17 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
     @Override
     public List<SnapshotDataStoreVO> findBySnapshotId(long snapshotId) {
-        SearchCriteria<SnapshotDataStoreVO> sc = idStateNeqSearch.create();
+        SearchCriteria<SnapshotDataStoreVO> sc = idStateNinSearch.create();
         sc.setParameters(SNAPSHOT_ID, snapshotId);
-        sc.setParameters(STATE, State.Destroyed);
+        sc.setParameters(STATE, State.Destroyed.name());
+        return listBy(sc);
+    }
+
+    @Override
+    public List<SnapshotDataStoreVO> findBySnapshotIdAndNotInDestroyedHiddenState(long snapshotId) {
+        SearchCriteria<SnapshotDataStoreVO> sc = idStateNinSearch.create();
+        sc.setParameters(SNAPSHOT_ID, snapshotId);
+        sc.setParameters(STATE, State.Destroyed.name(), State.Hidden.name());
         return listBy(sc);
     }
 
@@ -378,21 +508,21 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         List<SnapshotDataStoreVO> snapshots = listBy(sc);
 
         if (snapshots == null) {
-            s_logger.debug(String.format("There are no snapshots on cache store to duplicate to region store [%s].", storeId));
+            logger.debug(String.format("There are no snapshots on cache store to duplicate to region store [%s].", storeId));
             return;
         }
 
-        s_logger.info(String.format("Duplicating [%s] snapshot cache store records to region store [%s].", snapshots.size(), storeId));
+        logger.info(String.format("Duplicating [%s] snapshot cache store records to region store [%s].", snapshots.size(), storeId));
 
         for (SnapshotDataStoreVO snap : snapshots) {
             SnapshotDataStoreVO snapStore = findByStoreSnapshot(DataStoreRole.Image, storeId, snap.getSnapshotId());
 
             if (snapStore != null) {
-                s_logger.debug(String.format("There is already an entry for snapshot [%s] on region store [%s].", snap.getSnapshotId(), storeId));
+                logger.debug(String.format("There is already an entry for snapshot [%s] on region store [%s].", snap.getSnapshotId(), storeId));
                 continue;
             }
 
-            s_logger.info(String.format("Persisting an entry for snapshot [%s] on region store [%s].", snap.getSnapshotId(), storeId));
+            logger.info(String.format("Persisting an entry for snapshot [%s] on region store [%s].", snap.getSnapshotId(), storeId));
             SnapshotDataStoreVO ss = new SnapshotDataStoreVO();
             ss.setSnapshotId(snap.getSnapshotId());
             ss.setDataStoreId(storeId);
@@ -434,9 +564,9 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         sc.setParameters("destroyed", false);
         List<SnapshotDataStoreVO> snaps = listBy(sc);
         if (snaps != null) {
-            s_logger.info(String.format("Updating role to cache store for [%s] entries in snapshot_store_ref.", snaps.size()));
+            logger.info(String.format("Updating role to cache store for [%s] entries in snapshot_store_ref.", snaps.size()));
             for (SnapshotDataStoreVO snap : snaps) {
-                s_logger.debug(String.format("Updating role to cache store for entry [%s].", snap));
+                logger.debug(String.format("Updating role to cache store for entry [%s].", snap));
                 snap.setRole(DataStoreRole.ImageCache);
                 update(snap.getId(), snap);
             }
@@ -487,13 +617,35 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         return sc;
     }
 
-    protected boolean isSnapshotChainingRequired(long volumeId) {
+    protected boolean isSnapshotChainingRequired(long volumeId, boolean kvmIncrementalSnapshot) {
         SearchCriteria<SnapshotVO> sc = snapshotVOSearch.create();
         sc.setParameters(VOLUME_ID, volumeId);
 
         SnapshotVO snapshot = snapshotDao.findOneBy(sc);
 
-        return snapshot != null && HYPERVISORS_SUPPORTING_SNAPSHOTS_CHAINING.contains(snapshot.getHypervisorType());
+        if (snapshot == null) {
+            return false;
+        }
+
+        Hypervisor.HypervisorType hypervisorType = snapshot.getHypervisorType();
+        return HYPERVISORS_SUPPORTING_SNAPSHOTS_CHAINING.contains(hypervisorType) || (Hypervisor.HypervisorType.KVM.equals(hypervisorType) && kvmIncrementalSnapshot);
+    }
+
+    @Override
+    public List<SnapshotDataStoreVO> listReadyByVolumeIdAndCheckpointPathNotNull(long volumeId) {
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqKVMCheckpointNotNull.create();
+        sc.setParameters(VOLUME_ID, volumeId);
+        sc.setParameters(STATE, State.Ready);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<SnapshotDataStoreVO> listExtractedSnapshotsBeforeDate(Date beforeDate) {
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilterStateAndDownloadUrlNotNullAndDownloadUrlCreatedBefore.create();
+        sc.setParameters(URL_CREATED_BEFORE, beforeDate);
+        sc.setParameters(STATE, State.Ready);
+
+        return listBy(sc);
     }
 
     @Override
@@ -560,5 +712,17 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         }
         ref.setDisplay(display);
         update(ref.getId(), ref);
+    }
+
+    @Override
+    public int expungeBySnapshotList(final List<Long> snapshotIds, final Long batchSize) {
+        if (CollectionUtils.isEmpty(snapshotIds)) {
+            return 0;
+        }
+        SearchBuilder<SnapshotDataStoreVO> sb = createSearchBuilder();
+        sb.and("snapshotIds", sb.entity().getSnapshotId(), SearchCriteria.Op.IN);
+        SearchCriteria<SnapshotDataStoreVO> sc = sb.create();
+        sc.setParameters("snapshotIds", snapshotIds.toArray());
+        return batchExpunge(sc, batchSize);
     }
 }

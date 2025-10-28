@@ -22,12 +22,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade227to228Premium extends Upgrade227to228 {
-    final static Logger s_logger = Logger.getLogger(Upgrade227to228Premium.class);
 
     @Override
     public InputStream[] getPrepareScripts() {
@@ -59,7 +57,7 @@ public class Upgrade227to228Premium extends Upgrade227to228 {
                 ResultSet rs = pstmt.executeQuery();
 
                 if (rs.next()) {
-                    s_logger.info("The source id field already exist, not adding it");
+                    logger.info("The source id field already exist, not adding it");
                 }
 
             } catch (Exception e) {
@@ -68,21 +66,21 @@ public class Upgrade227to228Premium extends Upgrade227to228 {
             }
 
             if (insertField) {
-                s_logger.debug("Adding source_id to usage_storage...");
+                logger.debug("Adding source_id to usage_storage...");
                 pstmt = conn.prepareStatement("ALTER TABLE `cloud_usage`.`usage_storage` ADD COLUMN `source_id` bigint unsigned");
                 pstmt.executeUpdate();
-                s_logger.debug("Column source_id was added successfully to usage_storage table");
+                logger.debug("Column source_id was added successfully to usage_storage table");
                 pstmt.close();
             }
 
         } catch (SQLException e) {
-            s_logger.error("Failed to add source_id to usage_storage due to ", e);
+            logger.error("Failed to add source_id to usage_storage due to ", e);
             throw new CloudRuntimeException("Failed to add source_id to usage_storage due to ", e);
         }
     }
 
     private void addNetworkIdsToUserStats(Connection conn) {
-        s_logger.debug("Adding network IDs to user stats...");
+        logger.debug("Adding network IDs to user stats...");
         try {
             String stmt = "SELECT DISTINCT public_ip_address FROM `cloud`.`user_statistics` WHERE public_ip_address IS NOT null";
             PreparedStatement pstmt = conn.prepareStatement(stmt);
@@ -112,10 +110,10 @@ public class Upgrade227to228Premium extends Upgrade227to228 {
 
             rs.close();
             pstmt.close();
-            s_logger.debug("Successfully added network IDs to user stats.");
+            logger.debug("Successfully added network IDs to user stats.");
         } catch (SQLException e) {
             String errorMsg = "Failed to add network IDs to user stats.";
-            s_logger.error(errorMsg, e);
+            logger.error(errorMsg, e);
             throw new CloudRuntimeException(errorMsg, e);
         }
     }

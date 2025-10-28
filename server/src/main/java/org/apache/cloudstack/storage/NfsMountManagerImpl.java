@@ -38,12 +38,13 @@ import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 @Component
 public class NfsMountManagerImpl implements NfsMountManager {
-    private static final Logger s_logger = Logger.getLogger(NfsMountManager.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private StorageLayer storage;
     private int timeout;
@@ -70,13 +71,13 @@ public class NfsMountManagerImpl implements NfsMountManager {
         try {
             uri = new URI(storageUrl);
         } catch (URISyntaxException e) {
-            s_logger.error("Invalid storage URL format ", e);
+            logger.error("Invalid storage URL format ", e);
             throw new CloudRuntimeException("Unable to create mount point due to invalid storage URL format " + storageUrl);
         }
 
         mountPoint = mount(uri.getHost() + ":" + uri.getPath(), MOUNT_PARENT.value(), nfsVersion);
         if (mountPoint == null) {
-            s_logger.error("Unable to create mount point for " + storageUrl);
+            logger.error("Unable to create mount point for " + storageUrl);
             throw new CloudRuntimeException("Unable to create mount point for " + storageUrl);
         }
 
@@ -87,11 +88,11 @@ public class NfsMountManagerImpl implements NfsMountManager {
     private String mount(String path, String parent, String nfsVersion) {
         String mountPoint = setupMountPoint(parent);
         if (mountPoint == null) {
-            s_logger.warn("Unable to create a mount point");
+            logger.warn("Unable to create a mount point");
             return null;
         }
 
-        Script command = new Script(true, "mount", timeout, s_logger);
+        Script command = new Script(true, "mount", timeout, logger);
         command.add("-t", "nfs");
         if (nfsVersion != null){
             command.add("-o", "vers=" + nfsVersion);
@@ -104,17 +105,17 @@ public class NfsMountManagerImpl implements NfsMountManager {
         command.add(mountPoint);
         String result = command.execute();
         if (result != null) {
-            s_logger.warn("Unable to mount " + path + " due to " + result);
+            logger.warn("Unable to mount " + path + " due to " + result);
             deleteMountPath(mountPoint);
             return null;
         }
 
         // Change permissions for the mountpoint
-        Script script = new Script(true, "chmod", timeout, s_logger);
+        Script script = new Script(true, "chmod", timeout, logger);
         script.add("1777", mountPoint);
         result = script.execute();
         if (result != null) {
-            s_logger.warn("Unable to set permissions for " + mountPoint + " due to " + result);
+            logger.warn("Unable to set permissions for " + mountPoint + " due to " + result);
         }
         return mountPoint;
     }
@@ -130,7 +131,7 @@ public class NfsMountManagerImpl implements NfsMountManager {
                     break;
                 }
             }
-            s_logger.error("Unable to create mount: " + mntPt);
+            logger.error("Unable to create mount: " + mntPt);
         }
 
         return mountPoint;
@@ -140,29 +141,29 @@ public class NfsMountManagerImpl implements NfsMountManager {
         if (!mountExists(localRootPath)) {
             return;
         }
-        Script command = new Script(true, "umount", timeout, s_logger);
+        Script command = new Script(true, "umount", timeout, logger);
         command.add(localRootPath);
         String result = command.execute();
         if (result != null) {
             // Fedora Core 12 errors out with any -o option executed from java
             String errMsg = "Unable to umount " + localRootPath + " due to " + result;
-            s_logger.error(errMsg);
+            logger.error(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
         deleteMountPath(localRootPath);
-        s_logger.debug("Successfully umounted " + localRootPath);
+        logger.debug("Successfully umounted " + localRootPath);
     }
 
     private void deleteMountPath(String localRootPath) {
         try {
             Files.deleteIfExists(Paths.get(localRootPath));
         } catch (IOException e) {
-            s_logger.warn(String.format("unable to delete mount directory %s:%s.%n", localRootPath, e.getMessage()));
+            logger.warn(String.format("unable to delete mount directory %s:%s.%n", localRootPath, e.getMessage()));
         }
     }
 
     private boolean mountExists(String localRootPath) {
-        Script script = new Script(true, "mount", timeout, s_logger);
+        Script script = new Script(true, "mount", timeout, logger);
         PathParser parser = new PathParser(localRootPath);
         script.execute(parser);
         return parser.getPaths().stream().filter(s -> s.contains(localRootPath)).findAny().map(s -> true).orElse(false);
@@ -197,7 +198,7 @@ public class NfsMountManagerImpl implements NfsMountManager {
 
     @PreDestroy
     public void destroy() {
-        s_logger.info("Clean up mounted NFS mount points used in current session.");
+        logger.info("Clean up mounted NFS mount points used in current session.");
         storageMounts.values().stream().forEach(this::umount);
     }
 }

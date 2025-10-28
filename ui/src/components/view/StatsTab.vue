@@ -22,9 +22,10 @@
       :title="$t('label.select.period')"
       :maskClosable="false"
       :footer="null">
-      <filter-stats
+      <date-time-filter
         :startDateProp="startDate"
         :endDateProp="endDate"
+        :allDataMessage="$t('message.alert.show.all.stats.data')"
         @closeAction="closeAction"
         @onSubmit="handleSubmit"/>
     </a-modal>
@@ -204,7 +205,7 @@
             />
           </a-col>
         </a-row>
-        <a-row class="chart-row" v-if="resourceType === 'VirtualMachine'">
+        <a-row class="chart-row" v-if="resourceIsVirtualMachine">
           <a-col>
             <strong>{{ $t('label.network') }}</strong>
             <InfoCircleOutlined class="info-icon" :title="$t('label.see.more.info.network.usage')" @click="onClickShowResourceInfoModal('NET')"/>
@@ -248,10 +249,10 @@
   </div>
 </template>
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import moment from 'moment'
 import 'chartjs-adapter-moment'
-import FilterStats from './stats/FilterStats'
+import DateTimeFilter from './DateTimeFilter'
 import ResourceStatsInfo from './stats/ResourceStatsInfo'
 import ResourceStatsLineChart from './stats/ResourceStatsLineChart'
 
@@ -267,7 +268,7 @@ export default {
     }
   },
   components: {
-    FilterStats,
+    DateTimeFilter,
     ResourceStatsInfo,
     ResourceStatsLineChart
   },
@@ -454,7 +455,7 @@ export default {
       if (this.endDate) {
         params.endDate = moment(this.endDate).format()
       }
-      api(this.resourceStatsApi, params).then(response => {
+      getAPI(this.resourceStatsApi, params).then(response => {
         this.handleStatsResponse(response)
       }).catch(error => {
         this.$notifyError(error)
@@ -521,7 +522,7 @@ export default {
         this.chartLabels.push(currentLabel)
 
         if (this.resourceIsVirtualMachine) {
-          cpuLine.data.push({ timestamp: currentLabel, stat: element.cpuused.split('%')[0] })
+          cpuLine.data.push({ timestamp: currentLabel, stat: element.cpuused.replace(',', '.').split('%')[0] })
 
           element.memoryusedkbs = element.memorykbs - element.memoryintfreekbs
           memFreeLinePercent.data.push({ timestamp: currentLabel, stat: this.calculateMemoryPercentage(false, element.memorykbs, element.memoryintfreekbs) })

@@ -28,9 +28,12 @@ After=libvirtd.service
 [Service]
 Type=simple
 EnvironmentFile=/etc/default/cloudstack-agent
+ExecStartPre=/usr/share/cloudstack-common/scripts/installer/pre-check.sh
 ExecStart=/usr/bin/java $JAVA_OPTS $JAVA_DEBUG -cp $CLASSPATH $JAVA_CLASS
 Restart=always
 RestartSec=10s
+StandardOutput=append:/var/log/cloudstack/agent/agent.out
+StandardError=append:/var/log/cloudstack/agent/agent.err
 
 [Install]
 WantedBy=multi-user.target

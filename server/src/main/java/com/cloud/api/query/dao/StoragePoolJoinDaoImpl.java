@@ -16,23 +16,12 @@
 // under the License.
 package com.cloud.api.query.dao;
 
-import com.cloud.api.ApiDBUtils;
-import com.cloud.api.query.vo.StoragePoolJoinVO;
-import com.cloud.capacity.CapacityManager;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.ScopeType;
-import com.cloud.storage.Storage;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolStatus;
-import com.cloud.storage.StorageStats;
-import com.cloud.storage.VolumeApiServiceImpl;
-import com.cloud.user.AccountManager;
-import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
@@ -46,16 +35,29 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.vo.StoragePoolJoinVO;
+import com.cloud.capacity.CapacityManager;
+import com.cloud.server.ResourceTag;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StorageStats;
+import com.cloud.storage.VolumeApiServiceImpl;
+import com.cloud.user.AccountManager;
+import com.cloud.utils.StringUtils;
+import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import org.apache.commons.collections.MapUtils;
+
+import java.util.Map;
 
 @Component
 public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Long> implements StoragePoolJoinDao {
-    public static final Logger s_logger = Logger.getLogger(StoragePoolJoinDaoImpl.class);
 
     @Inject
     private ConfigurationDao _configDao;
@@ -103,7 +105,17 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
     }
 
     @Override
-    public StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO pool) {
+    public StoragePoolResponse newMinimalStoragePoolResponse(StoragePoolJoinVO pool) {
+        StoragePool storagePool = storagePoolDao.findById(pool.getId());
+        StoragePoolResponse poolResponse = new StoragePoolResponse();
+        poolResponse.setId(pool.getUuid());
+        poolResponse.setName(pool.getName());
+        poolResponse.setObjectName("storagepool");
+        return poolResponse;
+    }
+
+    @Override
+    public StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO pool, boolean customStats) {
         StoragePool storagePool = storagePoolDao.findById(pool.getId());
         StoragePoolResponse poolResponse = new StoragePoolResponse();
         poolResponse.setId(pool.getUuid());
@@ -141,30 +153,37 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
                 }
             }
         }
+        poolResponse.setCapacityBytes(pool.getCapacityBytes());
         poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
         poolResponse.setDiskSizeAllocated(allocatedSize);
+        poolResponse.setDiskSizeUsed(pool.getUsedBytes());
         poolResponse.setCapacityIops(pool.getCapacityIops());
+        poolResponse.setUsedIops(pool.getUsedIops());
 
         if (storagePool.isManaged()) {
             DataStore store = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
             PrimaryDataStoreDriver driver = (PrimaryDataStoreDriver) store.getDriver();
             long usedIops = driver.getUsedIops(storagePool);
             poolResponse.setAllocatedIops(usedIops);
-        }
 
-        // TODO: StatsCollector does not persist data
-        StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());
-        if (stats != null) {
-            Long used = stats.getByteUsed();
-            poolResponse.setDiskSizeUsed(used);
+            if (customStats && driver.poolProvidesCustomStorageStats()) {
+                Map<String, String> storageCustomStats = driver.getCustomStorageStats(storagePool);
+                if (MapUtils.isNotEmpty(storageCustomStats)) {
+                    poolResponse.setCustomStats(storageCustomStats);
+                }
+            }
         }
 
         poolResponse.setClusterId(pool.getClusterUuid());
         poolResponse.setClusterName(pool.getClusterName());
         poolResponse.setProvider(pool.getStorageProviderName());
         poolResponse.setTags(pool.getTag());
+        poolResponse.setStorageAccessGroups(pool.getStorageAccessGroup());
         poolResponse.setIsTagARule(pool.getIsTagARule());
         poolResponse.setOverProvisionFactor(Double.toString(CapacityManager.StorageOverprovisioningFactor.valueIn(pool.getId())));
+        poolResponse.setManaged(storagePool.isManaged());
+        Map<String, String> details = ApiDBUtils.getResourceDetails(pool.getId(), ResourceTag.ResourceObjectType.Storage);
+        poolResponse.setDetails(details);
 
         // set async job
         if (pool.getJobId() != null) {
@@ -182,10 +201,26 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
     public StoragePoolResponse setStoragePoolResponse(StoragePoolResponse response, StoragePoolJoinVO sp) {
         String tag = sp.getTag();
         if (tag != null) {
-            if (response.getTags() != null && response.getTags().length() > 0) {
-                response.setTags(response.getTags() + "," + tag);
+            if (response.getTags() != null && !response.getTags().isEmpty()) {
+                List<String> tagsList = new ArrayList<>(Arrays.asList(response.getTags().split(",")));
+                if (!tagsList.contains(tag)) {
+                    tagsList.add(tag);
+                }
+                response.setTags(String.join(",", tagsList));
             } else {
                 response.setTags(tag);
+            }
+        }
+        String storageAccessGroup = sp.getStorageAccessGroup();
+        if (storageAccessGroup != null) {
+            if (response.getStorageAccessGroups() != null && !response.getStorageAccessGroups().isEmpty()) {
+                List<String> groupList = new ArrayList<>(Arrays.asList(response.getStorageAccessGroups().split(",")));
+                if (!groupList.contains(storageAccessGroup)) {
+                    groupList.add(storageAccessGroup);
+                }
+                response.setStorageAccessGroups(String.join(",", groupList));
+            } else {
+                response.setStorageAccessGroups(storageAccessGroup);
             }
         }
         if (response.hasAnnotation() == null) {
@@ -197,6 +232,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
 
     @Override
     public StoragePoolResponse newStoragePoolForMigrationResponse(StoragePoolJoinVO pool) {
+        StoragePool storagePool = storagePoolDao.findById(pool.getId());
         StoragePoolResponse poolResponse = new StoragePoolResponse();
         poolResponse.setId(pool.getUuid());
         poolResponse.setName(pool.getName());
@@ -220,9 +256,21 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         }
 
         long allocatedSize = pool.getUsedCapacity();
+        poolResponse.setCapacityBytes(pool.getCapacityBytes());
         poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
         poolResponse.setDiskSizeAllocated(allocatedSize);
         poolResponse.setCapacityIops(pool.getCapacityIops());
+
+        if (storagePool != null) {
+            poolResponse.setManaged(storagePool.isManaged());
+            if (storagePool.isManaged()) {
+                DataStore store = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
+                PrimaryDataStoreDriver driver = (PrimaryDataStoreDriver) store.getDriver();
+                long usedIops = driver.getUsedIops(storagePool);
+                poolResponse.setAllocatedIops(usedIops);
+            }
+        }
+
         poolResponse.setOverProvisionFactor(Double.toString(CapacityManager.StorageOverprovisioningFactor.valueIn(pool.getId())));
 
         // TODO: StatsCollector does not persist data
@@ -236,6 +284,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setClusterName(pool.getClusterName());
         poolResponse.setProvider(pool.getStorageProviderName());
         poolResponse.setTags(pool.getTag());
+        poolResponse.setStorageAccessGroups(pool.getStorageAccessGroup());
         poolResponse.setIsTagARule(pool.getIsTagARule());
 
         // set async job
@@ -254,6 +303,14 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
                 response.setTags(response.getTags() + "," + tag);
             } else {
                 response.setTags(tag);
+            }
+        }
+        String storageAccessGroup = sp.getStorageAccessGroup();
+        if (storageAccessGroup != null) {
+            if (response.getStorageAccessGroups() != null && response.getStorageAccessGroups().length() > 0) {
+                response.setStorageAccessGroups(response.getStorageAccessGroups() + "," + storageAccessGroup);
+            } else {
+                response.setStorageAccessGroups(storageAccessGroup);
             }
         }
         return response;
@@ -312,77 +369,6 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
     }
 
     @Override
-    public Pair<List<StoragePoolJoinVO>, Integer> searchAndCount(Long storagePoolId, String storagePoolName, Long zoneId, String path, Long podId, Long clusterId, String address, ScopeType scopeType, StoragePoolStatus status, String keyword, Filter searchFilter) {
-        SearchCriteria<StoragePoolJoinVO> sc = createStoragePoolSearchCriteria(storagePoolId, storagePoolName, zoneId, path, podId, clusterId, address, scopeType, status, keyword);
-        return searchAndCount(sc, searchFilter);
-    }
-
-    private SearchCriteria<StoragePoolJoinVO> createStoragePoolSearchCriteria(Long storagePoolId, String storagePoolName, Long zoneId, String path, Long podId, Long clusterId, String address, ScopeType scopeType, StoragePoolStatus status, String keyword) {
-        SearchBuilder<StoragePoolJoinVO> sb = createSearchBuilder();
-        sb.select(null, SearchCriteria.Func.DISTINCT, sb.entity().getId()); // select distinct
-        // ids
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
-        sb.and("path", sb.entity().getPath(), SearchCriteria.Op.EQ);
-        sb.and("dataCenterId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
-        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
-        sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
-        sb.and("hostAddress", sb.entity().getHostAddress(), SearchCriteria.Op.EQ);
-        sb.and("scope", sb.entity().getScope(), SearchCriteria.Op.EQ);
-        sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.EQ);
-        sb.and("parent", sb.entity().getParent(), SearchCriteria.Op.EQ);
-
-        SearchCriteria<StoragePoolJoinVO> sc = sb.create();
-
-        if (keyword != null) {
-            SearchCriteria<StoragePoolJoinVO> ssc = createSearchCriteria();
-            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("poolType", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-
-            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
-        }
-
-        if (storagePoolId != null) {
-            sc.setParameters("id", storagePoolId);
-        }
-
-        if (storagePoolName != null) {
-            sc.setParameters("name", storagePoolName);
-        }
-
-        if (path != null) {
-            sc.setParameters("path", path);
-        }
-        if (zoneId != null) {
-            sc.setParameters("dataCenterId", zoneId);
-        }
-        if (podId != null) {
-            SearchCriteria<StoragePoolJoinVO> ssc = createSearchCriteria();
-            ssc.addOr("podId", SearchCriteria.Op.EQ, podId);
-            ssc.addOr("podId", SearchCriteria.Op.NULL);
-
-            sc.addAnd("podId", SearchCriteria.Op.SC, ssc);
-        }
-        if (address != null) {
-            sc.setParameters("hostAddress", address);
-        }
-        if (clusterId != null) {
-            SearchCriteria<StoragePoolJoinVO> ssc = createSearchCriteria();
-            ssc.addOr("clusterId", SearchCriteria.Op.EQ, clusterId);
-            ssc.addOr("clusterId", SearchCriteria.Op.NULL);
-
-            sc.addAnd("clusterId", SearchCriteria.Op.SC, ssc);
-        }
-        if (scopeType != null) {
-            sc.setParameters("scope", scopeType.toString());
-        }
-        if (status != null) {
-            sc.setParameters("status", status.toString());
-        }
-        sc.setParameters("parent", 0);
-        return sc;
-    }
-    @Override
     public List<StoragePoolVO> findStoragePoolByScopeAndRuleTags(Long datacenterId, Long podId, Long clusterId, ScopeType scopeType, List<String> tags) {
         SearchCriteria<StoragePoolJoinVO> sc =  findByDatacenterAndScopeSb.create();
         if (datacenterId != null) {
@@ -417,7 +403,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
                 if (storagePoolVO != null) {
                     filteredPools.add(storagePoolVO);
                 } else {
-                    s_logger.warn(String.format("Unable to find Storage Pool [%s] in the DB.", storagePoolJoinVO.getUuid()));
+                    logger.warn(String.format("Unable to find Storage Pool [%s] in the DB.", storagePoolJoinVO.getUuid()));
                 }
             }
         }

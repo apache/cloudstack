@@ -17,6 +17,7 @@
 package com.cloud.network.dao;
 
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.utils.db.GenericDao;
 
@@ -26,4 +27,6 @@ public interface NetworkDomainDao extends GenericDao<NetworkDomainVO, Long> {
     NetworkDomainVO getDomainNetworkMapByNetworkId(long networkId);
 
     List<Long> listNetworkIdsByDomain(long domainId);
+
+    Map<Long, List<String>> listDomainsOfSharedNetworksUsedByDomainPath(String domainPath);
 }

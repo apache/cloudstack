@@ -39,11 +39,11 @@ import org.libvirt.DomainInfo;
 import org.libvirt.LibvirtException;
 import org.libvirt.TypedParameter;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -297,7 +297,7 @@ public class LibvirtMigrateVolumeCommandWrapperTest {
 
         Mockito.doReturn(domxml).when(dm).getXMLDesc(0);
 
-        Mockito.doNothing().when(dm).blockCopy(Matchers.anyString(), Matchers.anyString(), Matchers.any(TypedParameter[].class), Matchers.anyInt());
+        Mockito.doNothing().when(dm).blockCopy(ArgumentMatchers.anyString(), ArgumentMatchers.anyString(), ArgumentMatchers.any(TypedParameter[].class), ArgumentMatchers.anyInt());
         MigrateVolumeAnswer answer = new MigrateVolumeAnswer(command, true, null, destPath);
         Mockito.doReturn(answer).when(libvirtMigrateVolumeCommandWrapper).checkBlockJobStatus(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
 
@@ -342,7 +342,7 @@ public class LibvirtMigrateVolumeCommandWrapperTest {
 
         Mockito.doReturn(null).when(destVolumeObjectTO).getPassphrase();
         Mockito.doReturn(domxml).when(dm).getXMLDesc(0);
-        Mockito.doThrow(LibvirtException.class).when(dm).blockCopy(Matchers.anyString(), Matchers.anyString(), Matchers.any(TypedParameter[].class), Matchers.anyInt());
+        Mockito.doThrow(LibvirtException.class).when(dm).blockCopy(ArgumentMatchers.anyString(), ArgumentMatchers.anyString(), ArgumentMatchers.any(TypedParameter[].class), ArgumentMatchers.anyInt());
 
         Answer migrateVolumeAnswer = libvirtMigrateVolumeCommandWrapper.migratePowerFlexVolume(command, libvirtComputingResource);
 

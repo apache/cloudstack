@@ -20,7 +20,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
@@ -37,7 +38,7 @@ public class SystemVmLoadScanner<T> {
         nop, expand, shrink
     }
 
-    private static final Logger s_logger = Logger.getLogger(SystemVmLoadScanner.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3;   // 3 seconds
 
@@ -61,7 +62,7 @@ public class SystemVmLoadScanner<T> {
         try {
             _capacityScanScheduler.awaitTermination(1000, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
-            s_logger.debug("[ignored] interrupted while stopping systemvm load scanner.");
+            logger.debug("[ignored] interrupted while stopping systemvm load scanner.");
         }
 
         _capacityScanLock.releaseRef();
@@ -83,7 +84,7 @@ public class SystemVmLoadScanner<T> {
 
                     AsyncJobExecutionContext.unregister();
                 } catch (Throwable e) {
-                    s_logger.warn("Unexpected exception " + e.getMessage(), e);
+                    logger.warn("Unexpected exception " + e.getMessage(), e);
                 }
             }
 
@@ -99,8 +100,8 @@ public class SystemVmLoadScanner<T> {
         }
 
         if (!_capacityScanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Capacity scan lock is used by others, skip and wait for my turn");
+            if (logger.isTraceEnabled()) {
+                logger.trace("Capacity scan lock is used by others, skip and wait for my turn");
             }
             return;
         }

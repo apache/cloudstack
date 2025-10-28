@@ -19,7 +19,6 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.PingTestCommand;
@@ -31,7 +30,6 @@ import com.cloud.utils.script.Script;
 @ResourceWrapper(handles =  PingTestCommand.class)
 public final class LibvirtPingTestCommandWrapper extends CommandWrapper<PingTestCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtPingTestCommandWrapper.class);
 
     @Override
     public Answer execute(final PingTestCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -53,13 +51,13 @@ public final class LibvirtPingTestCommandWrapper extends CommandWrapper<PingTest
     }
 
     protected String doPingTest(final LibvirtComputingResource libvirtComputingResource, final String computingHostIp) {
-        final Script command = new Script(libvirtComputingResource.getPingTestPath(), 10000, s_logger);
+        final Script command = new Script(libvirtComputingResource.getPingTestPath(), 10000, logger);
         command.add("-h", computingHostIp);
         return command.execute();
     }
 
     protected String doPingTest(final LibvirtComputingResource libvirtComputingResource, final String domRIp, final String vmIp) {
-        final Script command = new Script(libvirtComputingResource.getPingTestPath(), 10000, s_logger);
+        final Script command = new Script(libvirtComputingResource.getPingTestPath(), 10000, logger);
         command.add("-i", domRIp);
         command.add("-p", vmIp);
         return command.execute();

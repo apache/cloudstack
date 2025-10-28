@@ -25,7 +25,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
@@ -41,7 +40,6 @@ import com.cloud.utils.Pair;
 @APICommand(name = "resetConfiguration", description = "Resets a configuration. The configuration will be set to default value for global setting, and removed from account_details or domain_details for Account/Domain settings", responseObject = ConfigurationResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.16.0")
 public class ResetCfgCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(ResetCfgCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

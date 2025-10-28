@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from ConfigParser import SafeConfigParser
+from configparser import ConfigParser
 from subprocess import *
 from datetime import datetime
 import time
@@ -33,6 +33,13 @@ class StatusCodes:
     RUNNING      = 3
     STOPPED      = 4
     STARTING     = 5
+
+# see com.cloud.network.VirtualNetworkApplianceService.RouterHealthStatus and make sure to keep it aligned
+class RouterHealthStatus:
+    SUCCESS = "SUCCESS"
+    FAILED  = "FAILED"
+    WARNING = "WARNING"
+    UNKNOWN = "UNKNOWN"
 
 class Log:
     INFO = 'INFO'
@@ -56,7 +63,7 @@ def getServicesConfig( config_file_path = "/etc/monitor.conf" ):
 
     """
     process_dict = {}
-    parser = SafeConfigParser()
+    parser = ConfigParser()
     parser.read( config_file_path )
 
 
@@ -67,7 +74,7 @@ def getServicesConfig( config_file_path = "/etc/monitor.conf" ):
             process_dict[section][name] = value
             printd (" %s = %r" % (name, value))
 
-    return  process_dict
+    return process_dict
 
 def printd (msg):
     """
@@ -81,7 +88,7 @@ def printd (msg):
     f.seek(0, 2)
     f.write(str(msg)+"\n")
     f.close()
-    print str(msg)
+    print(str(msg))
 
 def raisealert(severity, msg, process_name=None):
     """ Writes the alert message"""
@@ -96,7 +103,7 @@ def raisealert(severity, msg, process_name=None):
     logging.info(log)
     msg = 'logger -t monit '+ log
     pout = Popen(msg, shell=True, stdout=PIPE)
-    print "[Alert] " + msg
+    print("[Alert] " + msg)
 
 
 def isPidMatchPidFile(pidfile, pids):
@@ -148,7 +155,7 @@ def checkProcessRunningStatus(process_name, pidFile):
     #cmd = 'service ' + process_name + ' status'
     pout = Popen(cmd, shell=True, stdout=PIPE)
     exitStatus = pout.wait()
-    temp_out = pout.communicate()[0]
+    temp_out = pout.communicate()[0].decode()
 
     #check there is only one pid or not
     if exitStatus == 0:
@@ -258,33 +265,44 @@ def monitProcess( processes_info ):
         printd("No config items provided - means a redundant VR or a VPC Router")
         return service_status, failing_services
 
-    print "[Process Info] " + json.dumps(processes_info)
+    print("[Process Info] " + json.dumps(processes_info))
 
     #time for noting process down time
     csec = repr(time.time()).split('.')[0]
 
-    for process,properties in processes_info.items():
+    for process,properties in list(processes_info.items()):
         printd ("---------------------------\nchecking the service %s\n---------------------------- " %process)
         serviceName = process + ".service"
         processStatus, wasRestarted = checkProcessStatus(properties)
-        if processStatus != StatusCodes.RUNNING:
-            printd( "\n Service %s is not Running"%process)
-            checkEndTime = time.time()
-            service_status[serviceName] = {
-                "success": "false",
-                "lastUpdate": str(int(checkStartTime * 1000)),
-                "lastRunDuration": str((checkEndTime - checkStartTime) * 1000),
-                "message": "service down at last check " + str(csec)
-            }
+        routerHealth = RouterHealthStatus.UNKNOWN
+
+        match processStatus:
+            case StatusCodes.RUNNING:
+                routerHealth = RouterHealthStatus.SUCCESS
+                routerMessage = "service is running" + (", was restarted" if wasRestarted else "")
+            case StatusCodes.STARTING:
+                routerHealth = RouterHealthStatus.WARNING
+                routerMessage = "service is starting at " + str(csec)
+            case StatusCodes.STOPPED:
+                routerHealth = RouterHealthStatus.WARNING
+                routerMessage = "service down at last check " + str(csec)
+            case StatusCodes.SUCCESS:
+                routerHealth = RouterHealthStatus.UNKNOWN
+                routerMessage = "service exisits but no status"
+            case StatusCodes.FAILED | StatusCodes.INVALID_INP:
+                routerHealth = RouterHealthStatus.FAILED
+                routerMessage = "service down at last check " + str(csec)
+
+        printd( "\n Service %s is status == " % routerHealth)
+        checkEndTime = time.time()
+        service_status[serviceName] = {
+            "success": routerHealth,
+            "lastUpdate": str(int(checkStartTime * 1000)),
+            "lastRunDuration": str((checkEndTime - checkStartTime) * 1000),
+            "message": routerMessage
+        }
+        if routerHealth != RouterHealthStatus.SUCCESS:
             failing_services.append(serviceName)
-        else:
-            checkEndTime = time.time()
-            service_status[serviceName] = {
-                "success": "true",
-                "lastUpdate": str(int(checkStartTime * 1000)),
-                "lastRunDuration": str((checkEndTime - checkStartTime) * 1000),
-                "message": "service is running" + (", was restarted" if wasRestarted else "")
-            }
 
     return service_status, failing_services
 
@@ -296,27 +314,29 @@ def execute(script, checkType = "basic"):
 
     pout = Popen(cmd, shell=True, stdout=PIPE)
     exitStatus = pout.wait()
-    output = pout.communicate()[0].strip()
+    output = pout.communicate()[0].decode().strip()
     checkEndTime = time.time()
 
-    if exitStatus == 0:
-        if len(output) > 0:
-            printd("Successful execution of " + script)
-            return {
-                "success": "true",
-                "lastUpdate": str(int(checkStartTime * 1000)),
-                "lastRunDuration": str((checkEndTime - checkStartTime) * 1000),
-                "message": output
-            }
-        return {} #Skip script if no output is received
-    else:
-        printd("Script execution failed " + script)
-        return {
-            "success": "false",
-            "lastUpdate": str(int(checkStartTime * 1000)),
-            "lastRunDuration": str((checkEndTime - checkStartTime) * 1000),
-            "message": output
-        }
+    # we run all scripts and have to ignore the ones that do nothing
+    if not len(output) > 0 and exitStatus == 0:
+        return {}
+
+    routerHealth = RouterHealthStatus.SUCCESS
+    match exitStatus:
+        case 1:
+            routerHealth = RouterHealthStatus.FAILED
+        case 2:
+            routerHealth = RouterHealthStatus.WARNING
+        case 3:
+            routerHealth = RouterHealthStatus.UNKNOWN
+
+    printd("Ended execution of " + script)
+    return {
+        "success": routerHealth,
+        "lastUpdate": str(int(checkStartTime * 1000)),
+        "lastRunDuration": str((checkEndTime - checkStartTime) * 1000),
+        "message": output
+    }
 
 def main(checkType = "basic"):
     startTime = time.time()
@@ -349,7 +369,7 @@ def main(checkType = "basic"):
                 ret = execute(fpath, checkType)
                 if len(ret) == 0:
                     continue
-                if "success" in ret and ret["success"].lower() == "false":
+                if "success" in ret and ret["success"].upper() == RouterHealthStatus.FAILED:
                     failingChecks.append(f)
                 monitResult[f] = ret
 

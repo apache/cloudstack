@@ -43,7 +43,7 @@
 
 <script>
 import { shallowRef, defineAsyncComponent } from 'vue'
-import { api } from '@api'
+import { getAPI } from '@api'
 import { mixinDevice } from '@/utils/mixin.js'
 import eventBus from '@/config/eventBus'
 import AutogenView from '@/views/AutogenView.vue'
@@ -66,10 +66,26 @@ export default {
       tabs: [{
         name: 'details',
         component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+      },
+      {
+        name: 'events',
+        resourceType: 'IpAddress',
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+        show: () => { return 'listEvents' in this.$store.getters.apis }
       }],
       defaultTabs: [{
         name: 'details',
         component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+      },
+      {
+        name: 'events',
+        resourceType: 'IpAddress',
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+        show: () => { return 'listEvents' in this.$store.getters.apis }
+      },
+      {
+        name: 'comments',
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
       }],
       activeTab: ''
     }
@@ -118,35 +134,41 @@ export default {
         this.tabs = this.defaultTabs
         return
       }
-      // VPC IPs with source nat have only VPN
-      if (this.resource && this.resource.vpcid && this.resource.issourcenat) {
-        this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
-        return
-      }
-      // VPC IPs with vpnenabled have only VPN
-      if (this.resource && this.resource.vpcid && this.resource.vpnenabled) {
-        this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
-        return
-      }
-      // VPC IPs with static nat have nothing
-      if (this.resource && this.resource.vpcid && this.resource.isstaticnat) {
-        return
-      }
       if (this.resource && this.resource.vpcid) {
+        // VPC IPs with source nat have only VPN
+        if (this.resource.issourcenat) {
+          this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
+          return
+        }
+
+        // VPC IPs with static nat have nothing
+        if (this.resource.isstaticnat) {
+          if (this.resource.virtualmachinetype === 'DomainRouter') {
+            this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
+          }
+          return
+        }
+
         // VPC IPs don't have firewall
         let tabs = this.$route.meta.tabs.filter(tab => tab.name !== 'firewall')
+
+        const network = await this.fetchNetwork()
+        if (network && network.networkofferingconservemode) {
+          this.tabs = tabs
+          return
+        }
 
         this.portFWRuleCount = await this.fetchPortFWRule()
         this.loadBalancerRuleCount = await this.fetchLoadBalancerRule()
 
         // VPC IPs with PF only have PF
         if (this.portFWRuleCount > 0) {
-          tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'portforwarding'))
+          tabs = tabs.filter(tab => tab.name !== 'loadbalancing')
         }
 
         // VPC IPs with LB rules only have LB
         if (this.loadBalancerRuleCount > 0) {
-          tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'loadbalancing'))
+          tabs = tabs.filter(tab => tab.name !== 'portforwarding')
         }
         this.tabs = tabs
         return
@@ -171,9 +193,26 @@ export default {
     fetchAction () {
       this.actions = this.$route.meta.actions || []
     },
+    fetchNetwork () {
+      if (!this.resource.associatednetworkid) {
+        return null
+      }
+      return new Promise((resolve, reject) => {
+        getAPI('listNetworks', {
+          listAll: true,
+          projectid: this.resource.projectid,
+          id: this.resource.associatednetworkid
+        }).then(json => {
+          const network = json.listnetworksresponse?.network?.[0] || null
+          resolve(network)
+        }).catch(e => {
+          reject(e)
+        })
+      })
+    },
     fetchPortFWRule () {
       return new Promise((resolve, reject) => {
-        api('listPortForwardingRules', {
+        getAPI('listPortForwardingRules', {
           listAll: true,
           ipaddressid: this.resource.id,
           page: 1,
@@ -188,7 +227,7 @@ export default {
     },
     fetchLoadBalancerRule () {
       return new Promise((resolve, reject) => {
-        api('listLoadBalancerRules', {
+        getAPI('listLoadBalancerRules', {
           listAll: true,
           publicipid: this.resource.id,
           page: 1,
@@ -202,6 +241,7 @@ export default {
       })
     },
     changeResource (resource) {
+      console.log(resource)
       this.resource = resource
     },
     toggleLoading () {

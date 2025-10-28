@@ -17,47 +17,45 @@
 
 <template>
   <div class="center">
-    <a-form>
-      <img
-        v-if="$config.banner"
-        :src="$config.banner"
-        class="user-layout-logo"
-        alt="logo">
-      <h1 style="text-align: center; font-size: 24px; color: gray"> {{ $t('label.two.factor.authentication') }} </h1>
-      <p v-if="$store.getters.twoFaProvider === 'totp'" style="text-align: center; font-size: 16px;" v-html="$t('message.two.fa.auth.totp')"></p>
-      <p v-if="$store.getters.twoFaProvider === 'staticpin'" style="text-align: center; font-size: 16px;" v-html="$t('message.two.fa.auth.staticpin')"></p>
-      <br />
-      <a-form
-        :ref="formRef"
-        :model="form"
-        :rules="rules"
-        @finish="handleSubmit"
-        layout="vertical">
-        <a-form-item name="code" ref="code" style="text-align: center;">
-          <a-input-password
-            style="width: 500px"
-            v-model:value="form.code"
-            placeholder="xxxxxx" />
-        </a-form-item>
-        <br/>
-        <div :span="24" class="center-align top-padding">
-          <a-button
-            :loading="loading"
-            ref="submit"
-            type="primary"
-            :disabled="buttonstate"
-            class="center-align"
-            @click="handleSubmit">{{ $t('label.verify') }}
-          </a-button>
-        </div>
+    <img
+      v-if="$config.banner"
+      :src="$config.banner"
+      class="user-layout-logo"
+      alt="logo">
+    <h1 style="text-align: center; font-size: 24px; color: gray"> {{ $t('label.two.factor.authentication') }} </h1>
+    <p v-if="$store.getters.twoFaProvider === 'totp'" style="text-align: center; font-size: 16px;" v-html="$t('message.two.fa.auth.totp')"></p>
+    <p v-if="$store.getters.twoFaProvider === 'staticpin'" style="text-align: center; font-size: 16px;" v-html="$t('message.two.fa.auth.staticpin')"></p>
+    <br />
+    <a-form
+      :ref="formRef"
+      :model="form"
+      :rules="rules"
+      @finish="handleSubmit"
+      layout="vertical">
+      <a-form-item name="code" ref="code" style="text-align: center;">
+        <a-input-password
+          style="width: 500px"
+          v-model:value="form.code"
+          placeholder="xxxxxx" />
+      </a-form-item>
+      <br/>
+      <div :span="24" class="center-align top-padding">
+        <a-button
+          :loading="loading"
+          ref="submit"
+          type="primary"
+          :disabled="buttonstate"
+          class="center-align"
+          @click="handleSubmit">{{ $t('label.verify') }}
+        </a-button>
+      </div>
 
-      </a-form>
     </a-form>
   </div>
 </template>
 <script>
 
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import { ref, reactive, toRaw } from 'vue'
 
 export default {
@@ -71,6 +69,11 @@ export default {
   created () {
     this.initForm()
   },
+  mounted () {
+    this.$nextTick(() => {
+      this.focusInput()
+    })
+  },
   methods: {
     initForm () {
       this.formRef = ref()
@@ -79,13 +82,19 @@ export default {
         code: [{ required: true, message: this.$t('message.error.authentication.code') }]
       })
     },
+    focusInput () {
+      const inputElement = this.$refs.code.$el.querySelector('input[type=password]')
+      if (inputElement) {
+        inputElement.focus()
+      }
+    },
     handleSubmit () {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         if (values.code !== null) {
           this.buttonstate = true
         }
-        api('validateUserTwoFactorAuthenticationCode', { codefor2fa: values.code }).then(response => {
+        postAPI('validateUserTwoFactorAuthenticationCode', { codefor2fa: values.code }).then(response => {
           this.twoFAresponse = true
           if (this.twoFAresponse) {
             this.$notification.destroy()

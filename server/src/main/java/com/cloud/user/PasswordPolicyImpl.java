@@ -20,13 +20,20 @@ import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class PasswordPolicyImpl implements PasswordPolicy, Configurable {
 
-    private Logger logger = Logger.getLogger(PasswordPolicyImpl.class);
+    private Logger logger = LogManager.getLogger(PasswordPolicyImpl.class);
 
     public void verifyIfPasswordCompliesWithPasswordPolicies(String password, String username, Long domainId) {
+        if (StringUtils.isEmpty(password)) {
+            logger.warn(String.format("User [%s] has an empty password, skipping password policy checks. " +
+                    "If this is not a LDAP user, there is something wrong.", username));
+            return;
+        }
+
         int numberOfSpecialCharactersInPassword = 0;
         int numberOfUppercaseLettersInPassword = 0;
         int numberOfLowercaseLettersInPassword = 0;
@@ -188,12 +195,12 @@ public class PasswordPolicyImpl implements PasswordPolicy, Configurable {
         logger.trace(String.format("Validating if the new password for user [%s] matches regex [%s] defined in the configuration [%s].",
                 username, passwordPolicyRegex, PasswordPolicyRegex.key()));
 
-        if (passwordPolicyRegex == null){
-            logger.trace(String.format("Regex is null; therefore, we will not validate if the new password matches with regex for user [%s].", username));
+        if (StringUtils.isEmpty(passwordPolicyRegex)) {
+            logger.trace(String.format("Regex is empty; therefore, we will not validate if the new password matches with regex for user [%s].", username));
             return;
         }
 
-        if (!password.matches(passwordPolicyRegex)){
+        if (!password.matches(passwordPolicyRegex)) {
             logger.error(String.format("User [%s] informed a new password that does not match with regex [%s]. Refusing the user's new password.", username, passwordPolicyRegex));
             throw new InvalidParameterValueException("User password does not match with password policy regex.");
         }

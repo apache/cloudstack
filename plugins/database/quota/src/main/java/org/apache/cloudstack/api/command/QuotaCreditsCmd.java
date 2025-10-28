@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command;
 
 import com.cloud.user.Account;
 
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -29,7 +30,6 @@ import org.apache.cloudstack.api.response.QuotaCreditsResponse;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.quota.QuotaService;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
@@ -42,12 +42,12 @@ public class QuotaCreditsCmd extends BaseCmd {
     @Inject
     QuotaService _quotaService;
 
-    public static final Logger s_logger = Logger.getLogger(QuotaStatementCmd.class);
 
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = true, description = "Account Id for which quota credits need to be added")
     private String accountName;
 
+    @ACL
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = true, entityType = DomainResponse.class, description = "Domain for which quota credits need to be added")
     private Long domainId;
 
@@ -132,6 +132,10 @@ public class QuotaCreditsCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
+        Account account = _accountService.getActiveAccountByName(accountName, domainId);
+        if (account != null) {
+            return account.getAccountId();
+        }
         return Account.ACCOUNT_ID_SYSTEM;
     }
 

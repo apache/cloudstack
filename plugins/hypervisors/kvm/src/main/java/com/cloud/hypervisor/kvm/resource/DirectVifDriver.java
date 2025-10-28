@@ -20,7 +20,6 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import org.apache.commons.compress.utils.Sets;
-import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
 
 import com.cloud.agent.api.to.NicTO;
@@ -30,8 +29,6 @@ import com.cloud.network.Networks;
 import java.util.Map;
 
 public class DirectVifDriver extends VifDriverBase {
-
-    private static final Logger s_logger = Logger.getLogger(DirectVifDriver.class);
 
     /**
      * Experimental driver to configure direct networking in libvirt. This should only
@@ -44,13 +41,14 @@ public class DirectVifDriver extends VifDriverBase {
      * @throws InternalErrorException
      * @throws LibvirtException
      */
+
     @Override
     public LibvirtVMDef.InterfaceDef plug(NicTO nic, String guestOsType, String nicAdapter, Map<String, String> extraConfig) throws InternalErrorException, LibvirtException {
         LibvirtVMDef.InterfaceDef intf = new LibvirtVMDef.InterfaceDef();
 
         if (Sets.newHashSet(Networks.TrafficType.Guest,
                             Networks.TrafficType.Public).contains(nic.getType())) {
-            Integer networkRateKBps = (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1) ? nic.getNetworkRateMbps().intValue() * 128 : 0;
+            Integer networkRateKBps = getNetworkRateKbps(nic);
             intf.defDirectNet(_libvirtComputingResource.getNetworkDirectDevice(), null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter),
                 _libvirtComputingResource.getNetworkDirectSourceMode(), networkRateKBps);
         }

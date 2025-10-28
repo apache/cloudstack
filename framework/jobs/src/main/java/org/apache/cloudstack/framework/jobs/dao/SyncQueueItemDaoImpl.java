@@ -25,7 +25,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.jobs.impl.SyncQueueItemVO;
 
@@ -42,7 +41,6 @@ import com.cloud.utils.db.TransactionLegacy;
 
 @DB
 public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> implements SyncQueueItemDao {
-    private static final Logger s_logger = Logger.getLogger(SyncQueueItemDaoImpl.class);
     final GenericSearchBuilder<SyncQueueItemVO, Long> queueIdSearch;
     final GenericSearchBuilder<SyncQueueItemVO, Integer> queueActiveItemSearch;
 
@@ -116,9 +114,9 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
                 l.add(item);
             }
         } catch (SQLException e) {
-            s_logger.error("Unexpected sql exception, ", e);
+            logger.error("Unexpected sql exception, ", e);
         } catch (Throwable e) {
-            s_logger.error("Unexpected exception, ", e);
+            logger.error("Unexpected exception, ", e);
         }
         return l;
     }

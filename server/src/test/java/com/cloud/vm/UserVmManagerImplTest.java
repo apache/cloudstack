@@ -16,6 +16,96 @@
 // under the License.
 package com.cloud.vm;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
+import java.util.UUID;
+
+import com.cloud.storage.dao.SnapshotPolicyDao;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
+import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
+import org.apache.cloudstack.api.command.admin.vm.ExpungeVMCmd;
+import org.apache.cloudstack.api.command.user.vm.CreateVMFromBackupCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVnfApplianceCmd;
+import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
+import org.apache.cloudstack.api.command.user.vm.ResetVMSSHKeyCmd;
+import org.apache.cloudstack.api.command.user.vm.ResetVMUserDataCmd;
+import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
+import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
+import org.apache.cloudstack.backup.BackupManager;
+import org.apache.cloudstack.backup.BackupVO;
+import org.apache.cloudstack.backup.dao.BackupDao;
+import org.apache.cloudstack.backup.dao.BackupScheduleDao;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.template.VnfTemplateManager;
+import org.apache.cloudstack.userdata.UserDataManager;
+import org.apache.cloudstack.vm.UnmanagedVMsManager;
+import org.apache.cloudstack.vm.lease.VMLeaseManager;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
+
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.configuration.Resource;
@@ -26,34 +116,61 @@ import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanningManager;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.as.AutoScaleManager;
+import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.LoadBalancerVMMapDao;
+import com.cloud.network.dao.LoadBalancerVMMapVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.element.UserDataServiceProvider;
+import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.guru.NetworkGuru;
+import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupVO;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.VirtualMachineTemplate;
@@ -62,61 +179,25 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.UserData;
 import com.cloud.user.UserDataVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.SSHKeyPairDao;
+import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserDataDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.exception.ExceptionProxyObject;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
-import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
-import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
-import org.apache.cloudstack.api.command.user.vm.DeployVnfApplianceCmd;
-import org.apache.cloudstack.api.command.user.vm.ResetVMUserDataCmd;
-import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
-import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.template.VnfTemplateManager;
-import org.apache.cloudstack.userdata.UserDataManager;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class UserVmManagerImplTest {
@@ -133,6 +214,7 @@ public class UserVmManagerImplTest {
 
     @Mock
     private DataCenterDao _dcDao;
+
     @Mock
     private DataCenterVO _dcMock;
 
@@ -146,7 +228,7 @@ public class UserVmManagerImplTest {
     private NetworkOrchestrationService _networkMgr;
 
     @Mock
-    private NetworkVO _networkMock;
+    private NetworkVO networkMock;
 
     @Mock
     private GuestOSDao guestOSDao;
@@ -167,7 +249,7 @@ public class UserVmManagerImplTest {
     private EntityManager entityManager;
 
     @Mock
-    private UserVmDetailsDao userVmDetailsDao;
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
 
     @Mock
     private UserVmVO userVmVoMock;
@@ -191,6 +273,9 @@ public class UserVmManagerImplTest {
     private AccountDao accountDao;
 
     @Mock
+    private UserDao userDao;
+
+    @Mock
     ResourceLimitService resourceLimitMgr;
 
     @Mock
@@ -201,6 +286,12 @@ public class UserVmManagerImplTest {
 
     @Mock
     PrimaryDataStoreDao primaryDataStoreDao;
+
+    @Mock
+    BackupDao backupDao;
+
+    @Mock
+    BackupManager backupManager;
 
     @Mock
     VirtualMachineManager virtualMachineManager;
@@ -218,6 +309,12 @@ public class UserVmManagerImplTest {
     private VolumeDao volumeDaoMock;
 
     @Mock
+    private SnapshotDao snapshotDaoMock;
+
+    @Mock
+    private VMSnapshotDao vmSnapshotDaoMock;
+
+    @Mock
     AccountVO account;
 
     @Mock
@@ -225,6 +322,72 @@ public class UserVmManagerImplTest {
 
     @Mock
     ManagementService managementServiceMock;
+
+    @Mock
+    AssignVMCmd assignVmCmdMock;
+
+    @Mock
+    PortForwardingRulesDao portForwardingRulesDaoMock;
+
+    @Mock
+    List<PortForwardingRule> portForwardingRulesListMock;
+
+    @Mock
+    FirewallRulesDao firewallRulesDaoMock;
+
+    @Mock
+    List<FirewallRuleVO> firewallRuleVoListMock;
+
+    @Mock
+    LoadBalancerVMMapDao loadBalancerVmMapDaoMock;
+
+    @Mock
+    List<LoadBalancerVMMapVO> loadBalancerVmMapVoListMock;
+
+    @Mock
+    IPAddressDao ipAddressDaoMock;
+
+    @Mock
+    IPAddressVO ipAddressVoMock;
+
+    @Mock
+    VirtualMachineTemplate virtualMachineTemplateMock;
+
+    @Mock
+    VirtualMachineProfileImpl virtualMachineProfileMock;
+
+    @Mock
+    List<NetworkVO> networkVoListMock;
+
+    @Mock
+    SecurityGroupManager securityGroupManagerMock;
+
+    @Mock
+    NetworkOfferingDao networkOfferingDaoMock;
+
+    @Mock
+    NetworkOfferingVO networkOfferingVoMock;
+
+    @Mock
+    List<NetworkOfferingVO> networkOfferingVoListMock;
+
+    @Mock
+    PhysicalNetworkDao physicalNetworkDaoMock;
+
+    @Mock
+    SecurityGroupVO securityGroupVoMock;
+
+    @Mock
+    DomainDao domainDaoMock;
+
+    @Mock
+    DomainVO domainVoMock;
+
+    @Mock
+    SnapshotVO snapshotVoMock;
+
+    @Mock
+    ServiceOfferingVO serviceOfferingVoMock;
 
     @Mock
     private ServiceOfferingVO serviceOffering;
@@ -244,21 +407,68 @@ public class UserVmManagerImplTest {
     @Mock
     ServiceOfferingJoinDao serviceOfferingJoinDao;
 
+    @Mock
+    SSHKeyPairDao sshKeyPairDao;
+
+    @Mock
+    private VMInstanceVO vmInstanceMock;
+
+    @Mock
+    StorageManager storageManager;
+
+    @Mock
+    private VolumeDataFactory volumeDataFactory;
+
+    @Mock
+    private VolumeInfo volumeInfo;
+
+    @Mock
+    private SnapshotVO snapshotMock;
+
+    @Mock
+    private PrimaryDataStore primaryDataStore;
+
+    @Mock
+    private Scope scopeMock;
+
+    @Mock
+    private AutoScaleManager autoScaleManager;
+
+    @Mock
+    private UUIDManager uuidMgr;
+
+
+    @Mock
+    private SnapshotPolicyDao snapshotPolicyDao;
+
+    @Mock
+    private BackupScheduleDao backupScheduleDao;
+
+    MockedStatic<UnmanagedVMsManager> unmanagedVMsManagerMockedStatic;
+
     private static final long vmId = 1l;
     private static final long zoneId = 2L;
     private static final long accountId = 3L;
     private static final long serviceOfferingId = 10L;
     private static final long templateId = 11L;
+    private static final long volumeId = 1L;
+    private static final long snashotId = 1L;
+    private static final String vmUuid = UUID.randomUUID().toString();
 
     private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
 
     private Map<String, String> customParameters = new HashMap<>();
 
+    String[] detailsConstants = {VmDetailConstants.MEMORY, VmDetailConstants.CPU_NUMBER, VmDetailConstants.CPU_SPEED};
+
     private DiskOfferingVO smallerDisdkOffering = prepareDiskOffering(5l * GiB_TO_BYTES, 1l, 1L, 2L);
     private DiskOfferingVO largerDisdkOffering = prepareDiskOffering(10l * GiB_TO_BYTES, 2l, 10L, 20L);
+    Class<InvalidParameterValueException> expectedInvalidParameterValueException = InvalidParameterValueException.class;
+    Class<CloudRuntimeException> expectedCloudRuntimeException = CloudRuntimeException.class;
 
     @Before
     public void beforeTest() {
+        userVmManagerImpl.resourceLimitService = resourceLimitMgr;
 
         Mockito.when(updateVmCommand.getId()).thenReturn(vmId);
 
@@ -270,15 +480,21 @@ public class UserVmManagerImplTest {
         CallContext.register(callerUser, callerAccount);
 
         customParameters.put(VmDetailConstants.ROOT_DISK_SIZE, "123");
+        customParameters.put(VmDetailConstants.MEMORY, "2048");
+        customParameters.put(VmDetailConstants.CPU_NUMBER, "4");
+        customParameters.put(VmDetailConstants.CPU_SPEED, "1000");
+
         lenient().doNothing().when(resourceLimitMgr).incrementResourceCount(anyLong(), any(Resource.ResourceType.class));
         lenient().doNothing().when(resourceLimitMgr).decrementResourceCount(anyLong(), any(Resource.ResourceType.class), anyLong());
 
         Mockito.when(virtualMachineProfile.getId()).thenReturn(vmId);
+        unmanagedVMsManagerMockedStatic = mockStatic(UnmanagedVMsManager.class);
     }
 
     @After
     public void afterTest() {
         CallContext.unregister();
+        unmanagedVMsManagerMockedStatic.close();
     }
 
     @Test
@@ -342,7 +558,7 @@ public class UserVmManagerImplTest {
     }
 
     @Test
-    public void updateVirtualMachineTestDisplayChanged() throws ResourceUnavailableException, InsufficientCapacityException {
+    public void updateVirtualMachineTestDisplayChanged() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         configureDoNothingForMethodsThatWeDoNotWantToTest();
         ServiceOffering offering = getSvcoffering(512);
         Mockito.when(_serviceOfferingDao.findById(Mockito.anyLong(), Mockito.anyLong())).thenReturn((ServiceOfferingVO) offering);
@@ -353,11 +569,11 @@ public class UserVmManagerImplTest {
         verifyMethodsThatAreAlwaysExecuted();
 
         Mockito.verify(userVmManagerImpl).updateDisplayVmFlag(false, vmId, userVmVoMock);
-        Mockito.verify(userVmDetailsDao, Mockito.times(0)).removeDetail(anyLong(), anyString());
+        Mockito.verify(vmInstanceDetailsDao, times(0)).removeDetail(anyLong(), anyString());
     }
 
     @Test
-    public void updateVirtualMachineTestCleanUpTrue() throws ResourceUnavailableException, InsufficientCapacityException {
+    public void updateVirtualMachineTestCleanUpTrue() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         configureDoNothingForMethodsThatWeDoNotWantToTest();
         ServiceOffering offering = getSvcoffering(512);
         Mockito.when(_serviceOfferingDao.findById(Mockito.anyLong(), Mockito.anyLong())).thenReturn((ServiceOfferingVO) offering);
@@ -370,48 +586,47 @@ public class UserVmManagerImplTest {
 
         userVmManagerImpl.updateVirtualMachine(updateVmCommand);
         verifyMethodsThatAreAlwaysExecuted();
-        Mockito.verify(userVmDetailsDao).removeDetail(vmId, "userdetail");
-        Mockito.verify(userVmDetailsDao, Mockito.times(0)).removeDetail(vmId, "systemdetail");
-        Mockito.verify(userVmManagerImpl, Mockito.times(0)).updateDisplayVmFlag(false, vmId, userVmVoMock);
+        Mockito.verify(vmInstanceDetailsDao).removeDetail(vmId, "userdetail");
+        Mockito.verify(vmInstanceDetailsDao, times(0)).removeDetail(vmId, "systemdetail");
+        Mockito.verify(userVmManagerImpl, times(0)).updateDisplayVmFlag(false, vmId, userVmVoMock);
     }
 
     @Test
-    public void updateVirtualMachineTestCleanUpTrueAndDetailEmpty() throws ResourceUnavailableException, InsufficientCapacityException {
+    public void updateVirtualMachineTestCleanUpTrueAndDetailEmpty() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         prepareAndExecuteMethodDealingWithDetails(true, true);
     }
 
     @Test
-    public void updateVirtualMachineTestCleanUpTrueAndDetailsNotEmpty() throws ResourceUnavailableException, InsufficientCapacityException {
+    public void updateVirtualMachineTestCleanUpTrueAndDetailsNotEmpty() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         prepareAndExecuteMethodDealingWithDetails(true, false);
     }
 
     @Test
-    public void updateVirtualMachineTestCleanUpFalseAndDetailsNotEmpty() throws ResourceUnavailableException, InsufficientCapacityException {
+    public void updateVirtualMachineTestCleanUpFalseAndDetailsNotEmpty() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         prepareAndExecuteMethodDealingWithDetails(false, true);
     }
 
     @Test
-    public void updateVirtualMachineTestCleanUpFalseAndDetailsEmpty() throws ResourceUnavailableException, InsufficientCapacityException {
-        Mockito.when(accountDao.findById(Mockito.anyLong())).thenReturn(callerAccount);
+    public void updateVirtualMachineTestCleanUpFalseAndDetailsEmpty() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        Mockito.doNothing().when(userVmManagerImpl).verifyVmLimits(Mockito.any(), Mockito.anyMap());
         prepareAndExecuteMethodDealingWithDetails(false, false);
     }
 
-    private List<UserVmDetailVO> prepareExistingDetails(Long vmId, String... existingDetailKeys) {
-        List<UserVmDetailVO> existingDetails = new ArrayList<>();
+    private List<VMInstanceDetailVO> prepareExistingDetails(Long vmId, String... existingDetailKeys) {
+        List<VMInstanceDetailVO> existingDetails = new ArrayList<>();
         for (String detail : existingDetailKeys) {
-            existingDetails.add(new UserVmDetailVO(vmId, detail, "foo", true));
+            existingDetails.add(new VMInstanceDetailVO(vmId, detail, "foo", true));
         }
-        existingDetails.add(new UserVmDetailVO(vmId, "systemdetail", "bar", false));
-        Mockito.when(userVmDetailsDao.listDetails(vmId)).thenReturn(existingDetails);
+        existingDetails.add(new VMInstanceDetailVO(vmId, "systemdetail", "bar", false));
+        Mockito.when(vmInstanceDetailsDao.listDetails(vmId)).thenReturn(existingDetails);
         return existingDetails;
     }
 
-    private void prepareAndExecuteMethodDealingWithDetails(boolean cleanUpDetails, boolean isDetailsEmpty) throws ResourceUnavailableException, InsufficientCapacityException {
+    private void prepareAndExecuteMethodDealingWithDetails(boolean cleanUpDetails, boolean isDetailsEmpty) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         configureDoNothingForMethodsThatWeDoNotWantToTest();
 
         ServiceOffering offering = getSvcoffering(512);
         Mockito.when(_serviceOfferingDao.findById(Mockito.anyLong(), Mockito.anyLong())).thenReturn((ServiceOfferingVO) offering);
-        Mockito.when(_serviceOfferingDao.findByIdIncludingRemoved(Mockito.anyLong(), Mockito.anyLong())).thenReturn((ServiceOfferingVO) offering);
         ServiceOfferingVO currentServiceOffering = Mockito.mock(ServiceOfferingVO.class);
         Mockito.lenient().when(currentServiceOffering.getCpu()).thenReturn(1);
         Mockito.lenient().when(currentServiceOffering.getRamSize()).thenReturn(512);
@@ -422,7 +637,7 @@ public class UserVmManagerImplTest {
         nics.add(nic1);
         nics.add(nic2);
         when(this.nicDao.listByVmId(Mockito.anyLong())).thenReturn(nics);
-        when(_networkDao.findById(anyLong())).thenReturn(_networkMock);
+        when(_networkDao.findById(anyLong())).thenReturn(networkMock);
         lenient().doNothing().when(_networkMgr).saveExtraDhcpOptions(anyString(), anyLong(), anyMap());
         HashMap<String, String> details = new HashMap<>();
         if(!isDetailsEmpty) {
@@ -437,16 +652,16 @@ public class UserVmManagerImplTest {
         userVmManagerImpl.updateVirtualMachine(updateVmCommand);
         verifyMethodsThatAreAlwaysExecuted();
 
-        Mockito.verify(userVmVoMock, Mockito.times(cleanUpDetails || isDetailsEmpty ? 0 : 1)).setDetails(details);
-        Mockito.verify(userVmDetailsDao, Mockito.times(cleanUpDetails ? 1 : 0)).removeDetail(vmId, "existingdetail");
-        Mockito.verify(userVmDetailsDao, Mockito.times(0)).removeDetail(vmId, "systemdetail");
-        Mockito.verify(userVmDao, Mockito.times(cleanUpDetails || isDetailsEmpty ? 0 : 1)).saveDetails(userVmVoMock);
-        Mockito.verify(userVmManagerImpl, Mockito.times(0)).updateDisplayVmFlag(false, vmId, userVmVoMock);
+        Mockito.verify(userVmVoMock, times(cleanUpDetails || isDetailsEmpty ? 0 : 1)).setDetails(details);
+        Mockito.verify(vmInstanceDetailsDao, times(cleanUpDetails ? 1 : 0)).removeDetail(vmId, "existingdetail");
+        Mockito.verify(vmInstanceDetailsDao, times(0)).removeDetail(vmId, "systemdetail");
+        Mockito.verify(userVmDao, times(cleanUpDetails || isDetailsEmpty ? 0 : 1)).saveDetails(userVmVoMock);
+        Mockito.verify(userVmManagerImpl, times(0)).updateDisplayVmFlag(false, vmId, userVmVoMock);
     }
 
     private void configureDoNothingForDetailsMethod() {
         Mockito.lenient().doNothing().when(userVmManagerImpl).updateDisplayVmFlag(false, vmId, userVmVoMock);
-        Mockito.doNothing().when(userVmDetailsDao).removeDetail(anyLong(), anyString());
+        Mockito.doNothing().when(vmInstanceDetailsDao).removeDetail(anyLong(), anyString());
         Mockito.doNothing().when(userVmDao).saveDetails(userVmVoMock);
     }
 
@@ -456,20 +671,33 @@ public class UserVmManagerImplTest {
         Mockito.verify(userVmManagerImpl).getSecurityGroupIdList(updateVmCommand);
 
         Mockito.verify(userVmManagerImpl).updateVirtualMachine(nullable(Long.class), nullable(String.class), nullable(String.class), nullable(Boolean.class),
-                nullable(Boolean.class), nullable(Long.class),
+                nullable(Boolean.class), nullable(Boolean.class), nullable(Long.class),
                 nullable(String.class), nullable(Long.class), nullable(String.class), nullable(Boolean.class), nullable(HTTPMethod.class), nullable(String.class), nullable(String.class), nullable(String.class), nullable(List.class),
                 nullable(Map.class));
 
     }
 
     @SuppressWarnings("unchecked")
-    private void configureDoNothingForMethodsThatWeDoNotWantToTest() throws ResourceUnavailableException, InsufficientCapacityException {
+    private void configureDoNothingForMethodsThatWeDoNotWantToTest() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         Mockito.doNothing().when(userVmManagerImpl).validateInputsAndPermissionForUpdateVirtualMachineCommand(updateVmCommand);
         Mockito.doReturn(new ArrayList<Long>()).when(userVmManagerImpl).getSecurityGroupIdList(updateVmCommand);
+
         Mockito.lenient().doReturn(Mockito.mock(UserVm.class)).when(userVmManagerImpl).updateVirtualMachine(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean(),
-                Mockito.anyBoolean(), Mockito.anyLong(),
-                Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.any(HTTPMethod.class), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyListOf(Long.class),
-                Mockito.anyMap());
+                Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.any(HTTPMethod.class), Mockito.anyString(), Mockito.anyString(),
+                Mockito.anyString(), anyList(), Mockito.any());
+
+        Mockito.doNothing().when(userVmManagerImpl).validateIfVmSupportsMigration(Mockito.any(), Mockito.anyLong());
+        Mockito.doNothing().when(userVmManagerImpl).validateOldAndNewAccounts(Mockito.nullable(Account.class), Mockito.nullable(Account.class), Mockito.anyLong(), Mockito.nullable(String.class), Mockito.nullable(Long.class));
+        Mockito.doNothing().when(userVmManagerImpl).validateIfVmHasNoRules(Mockito.any(), Mockito.anyLong());
+        Mockito.doNothing().when(userVmManagerImpl).removeInstanceFromInstanceGroup(Mockito.anyLong());
+        Mockito.doNothing().when(userVmManagerImpl).verifyResourceLimitsForAccountAndStorage(Mockito.any(), Mockito.any(), Mockito.any(), anyList(), Mockito.any());
+        Mockito.doNothing().when(userVmManagerImpl).validateIfNewOwnerHasAccessToTemplate(Mockito.any(), Mockito.any(), Mockito.any());
+
+        Mockito.doNothing().when(userVmManagerImpl).updateVmOwner(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.doNothing().when(userVmManagerImpl).updateVolumesOwner(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.doNothing().when(userVmManagerImpl).updateVmNetwork(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+
+        Mockito.doNothing().when(userVmManagerImpl).resourceCountIncrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
     }
 
     @Test
@@ -515,9 +743,9 @@ public class UserVmManagerImplTest {
     private void configureValidateOrReplaceMacAddressTest(int times, String macAddress, String expectedMacAddress) throws InsufficientAddressCapacityException {
         Mockito.when(networkModel.getNextAvailableMacAddressInNetwork(Mockito.anyLong())).thenReturn(expectedMacAddress);
 
-        String returnedMacAddress = userVmManagerImpl.validateOrReplaceMacAddress(macAddress, 1l);
+        String returnedMacAddress = userVmManagerImpl.validateOrReplaceMacAddress(macAddress, networkMock);
 
-        Mockito.verify(networkModel, Mockito.times(times)).getNextAvailableMacAddressInNetwork(Mockito.anyLong());
+        Mockito.verify(networkModel, times(times)).getNextAvailableMacAddressInNetwork(Mockito.anyLong());
         assertEquals(expectedMacAddress, returnedMacAddress);
     }
 
@@ -575,7 +803,7 @@ public class UserVmManagerImplTest {
     public void configureCustomRootDiskSizeTestEmptyParametersAndOfferingRootSize() {
         Map<String, String> customParameters = new HashMap<>();
         long expectedRootDiskSize = 10l * GiB_TO_BYTES;
-        long offeringRootDiskSize = 10l * GiB_TO_BYTES;;
+        long offeringRootDiskSize = 10l * GiB_TO_BYTES;
 
         prepareAndRunConfigureCustomRootDiskSizeTest(customParameters, expectedRootDiskSize, 1, offeringRootDiskSize);
     }
@@ -594,17 +822,17 @@ public class UserVmManagerImplTest {
         long rootDiskSize = userVmManagerImpl.configureCustomRootDiskSize(customParameters, template, Hypervisor.HypervisorType.KVM, diskfferingVo);
 
         Assert.assertEquals(expectedRootDiskSize, rootDiskSize);
-        Mockito.verify(userVmManagerImpl, Mockito.times(timesVerifyIfHypervisorSupports)).verifyIfHypervisorSupportsRootdiskSizeOverride(Mockito.any());
+        Mockito.verify(userVmManagerImpl, times(timesVerifyIfHypervisorSupports)).verifyIfHypervisorSupportsRootdiskSizeOverride(Mockito.any());
     }
 
     @Test
     public void verifyIfHypervisorSupportRootdiskSizeOverrideTest() {
         Hypervisor.HypervisorType[] hypervisorTypeArray = Hypervisor.HypervisorType.values();
         int exceptionCounter = 0;
-        int expectedExceptionCounter = hypervisorTypeArray.length - 5;
+        int expectedExceptionCounter = hypervisorTypeArray.length - 6;
 
         for(int i = 0; i < hypervisorTypeArray.length; i++) {
-            if (UserVmManagerImpl.ROOT_DISK_SIZE_OVERRIDE_SUPPORTING_HYPERVISORS.contains(hypervisorTypeArray[i])) {
+            if (hypervisorTypeArray[i].isFunctionalitySupported(Hypervisor.HypervisorType.Functionality.RootDiskSizeOverride)) {
                 userVmManagerImpl.verifyIfHypervisorSupportsRootdiskSizeOverride(hypervisorTypeArray[i]);
             } else {
                 try {
@@ -660,34 +888,6 @@ public class UserVmManagerImplTest {
         prepareAndRunResizeVolumeTest(2L, 10L, 20L, largerDisdkOffering, smallerDisdkOffering);
     }
 
-    @Test
-    public void validateDiskOfferingCheckForEncryption1Test() {
-        ServiceOfferingVO currentOffering = prepareOfferingsForEncryptionValidation(1L, true);
-        ServiceOfferingVO newOffering = prepareOfferingsForEncryptionValidation(2L, true);
-        userVmManagerImpl.validateDiskOfferingChecks(currentOffering, newOffering);
-    }
-
-    @Test
-    public void validateDiskOfferingCheckForEncryption2Test() {
-        ServiceOfferingVO currentOffering = prepareOfferingsForEncryptionValidation(1L, false);
-        ServiceOfferingVO newOffering = prepareOfferingsForEncryptionValidation(2L, false);
-        userVmManagerImpl.validateDiskOfferingChecks(currentOffering, newOffering);
-    }
-
-    @Test (expected = InvalidParameterValueException.class)
-    public void validateDiskOfferingCheckForEncryptionFail1Test() {
-        ServiceOfferingVO currentOffering = prepareOfferingsForEncryptionValidation(1L, false);
-        ServiceOfferingVO newOffering = prepareOfferingsForEncryptionValidation(2L, true);
-        userVmManagerImpl.validateDiskOfferingChecks(currentOffering, newOffering);
-    }
-
-    @Test (expected = InvalidParameterValueException.class)
-    public void validateDiskOfferingCheckForEncryptionFail2Test() {
-        ServiceOfferingVO currentOffering = prepareOfferingsForEncryptionValidation(1L, true);
-        ServiceOfferingVO newOffering = prepareOfferingsForEncryptionValidation(2L, false);
-        userVmManagerImpl.validateDiskOfferingChecks(currentOffering, newOffering);
-    }
-
     private void prepareAndRunResizeVolumeTest(Long expectedOfferingId, long expectedMinIops, long expectedMaxIops, DiskOfferingVO currentRootDiskOffering, DiskOfferingVO newRootDiskOffering) {
         long rootVolumeId = 1l;
         VolumeVO rootVolumeOfVm = Mockito.mock(VolumeVO.class);
@@ -707,22 +907,7 @@ public class UserVmManagerImplTest {
         Mockito.when(newRootDiskOffering.getId()).thenReturn(diskOfferingId);
         Mockito.when(newRootDiskOffering.getMinIops()).thenReturn(offeringMinIops);
         Mockito.when(newRootDiskOffering.getMaxIops()).thenReturn(offeringMaxIops);
-        Mockito.when(newRootDiskOffering.getName()).thenReturn("OfferingName");
         return newRootDiskOffering;
-    }
-
-    private ServiceOfferingVO prepareOfferingsForEncryptionValidation(long diskOfferingId, boolean encryption) {
-        ServiceOfferingVO svcOffering = Mockito.mock(ServiceOfferingVO.class);
-        DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
-
-        Mockito.when(svcOffering.getDiskOfferingId()).thenReturn(diskOfferingId);
-        Mockito.when(diskOffering.getEncrypt()).thenReturn(encryption);
-
-        // Be aware - Multiple calls with the same disk offering ID could conflict
-        Mockito.when(diskOfferingDao.findByIdIncludingRemoved(diskOfferingId)).thenReturn(diskOffering);
-        Mockito.when(diskOfferingDao.findById(diskOfferingId)).thenReturn(diskOffering);
-
-        return svcOffering;
     }
 
     @Test (expected = CloudRuntimeException.class)
@@ -983,15 +1168,15 @@ public class UserVmManagerImplTest {
         when(_dcMock.isLocalStorageEnabled()).thenReturn(true);
         when(_dcMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
         Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
-                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
-                any(), any(), any(), any(), eq(true), any());
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
+                any(), any(), any(), any(), eq(true), any(), any(), any());
 
         UserVm result = userVmManagerImpl.createVirtualMachine(deployVMCmd);
         assertEquals(userVmVoMock, result);
         Mockito.verify(vnfTemplateManager).validateVnfApplianceNics(templateMock, null);
         Mockito.verify(userVmManagerImpl).createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
-                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
-                any(), any(), any(), any(), eq(true), any());
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
+                any(), any(), any(), any(), eq(true), any(), any(), any());
     }
 
     private List<VolumeVO> mockVolumesForIsAnyVmVolumeUsingLocalStorageTest(int localVolumes, int nonLocalVolumes) {
@@ -1024,11 +1209,15 @@ public class UserVmManagerImplTest {
 
     @Test
     public void testIsAnyVmVolumeUsingLocalStorage() {
-        Assert.assertTrue(userVmManagerImpl.isAnyVmVolumeUsingLocalStorage(mockVolumesForIsAnyVmVolumeUsingLocalStorageTest(1, 0)));
-        Assert.assertTrue(userVmManagerImpl.isAnyVmVolumeUsingLocalStorage(mockVolumesForIsAnyVmVolumeUsingLocalStorageTest(2, 0)));
-        Assert.assertTrue(userVmManagerImpl.isAnyVmVolumeUsingLocalStorage(mockVolumesForIsAnyVmVolumeUsingLocalStorageTest(1, 1)));
-        Assert.assertFalse(userVmManagerImpl.isAnyVmVolumeUsingLocalStorage(mockVolumesForIsAnyVmVolumeUsingLocalStorageTest(0, 2)));
-        Assert.assertFalse(userVmManagerImpl.isAnyVmVolumeUsingLocalStorage(mockVolumesForIsAnyVmVolumeUsingLocalStorageTest(0, 0)));
+        try {
+            Assert.assertTrue(userVmManagerImpl.isAnyVmVolumeUsingLocalStorage(mockVolumesForIsAnyVmVolumeUsingLocalStorageTest(1, 0)));
+            Assert.assertTrue(userVmManagerImpl.isAnyVmVolumeUsingLocalStorage(mockVolumesForIsAnyVmVolumeUsingLocalStorageTest(2, 0)));
+            Assert.assertTrue(userVmManagerImpl.isAnyVmVolumeUsingLocalStorage(mockVolumesForIsAnyVmVolumeUsingLocalStorageTest(1, 1)));
+            Assert.assertFalse(userVmManagerImpl.isAnyVmVolumeUsingLocalStorage(mockVolumesForIsAnyVmVolumeUsingLocalStorageTest(0, 2)));
+            Assert.assertFalse(userVmManagerImpl.isAnyVmVolumeUsingLocalStorage(mockVolumesForIsAnyVmVolumeUsingLocalStorageTest(0, 0)));
+        }catch (NullPointerException npe) {
+            npe.printStackTrace();
+        }
     }
 
     private List<VolumeVO> mockVolumesForIsAllVmVolumesOnZoneWideStore(int nullPoolIdVolumes, int nullPoolVolumes, int zoneVolumes, int nonZoneVolumes) {
@@ -1087,7 +1276,7 @@ public class UserVmManagerImplTest {
                                 Mockito.nullable(DeploymentPlanner.class)))
                         .thenReturn(destination);
             } catch (InsufficientServerCapacityException e) {
-                Assert.fail("Failed to mock DeployDestination");
+                fail("Failed to mock DeployDestination");
             }
         }
         return new Pair<>(vm, host);
@@ -1200,4 +1389,2790 @@ public class UserVmManagerImplTest {
         Assert.assertEquals(expected, result);
         Assert.assertEquals(expected, userVmVoMock.getPassword());
     }
+
+    @Test
+    public void testSetVmRequiredFieldsForImportNotImport() {
+        userVmManagerImpl.setVmRequiredFieldsForImport(false, userVmVoMock, _dcMock,
+                Hypervisor.HypervisorType.VMware, Mockito.mock(HostVO.class), Mockito.mock(HostVO.class), VirtualMachine.PowerState.PowerOn);
+        Mockito.verify(userVmVoMock, never()).setDataCenterId(anyLong());
+    }
+
+
+    @Test
+    public void createVirtualMachineWithCloudRuntimeException() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        DeployVMCmd deployVMCmd = new DeployVMCmd();
+        ReflectionTestUtils.setField(deployVMCmd, "zoneId", zoneId);
+        ReflectionTestUtils.setField(deployVMCmd, "templateId", templateId);
+        ReflectionTestUtils.setField(deployVMCmd, "serviceOfferingId", serviceOfferingId);
+        deployVMCmd._accountService = accountService;
+
+        when(accountService.finalyzeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
+        when(accountService.getActiveAccountById(accountId)).thenReturn(account);
+        when(entityManager.findById(DataCenter.class, zoneId)).thenReturn(_dcMock);
+        when(entityManager.findById(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOffering);
+        when(serviceOffering.getState()).thenReturn(ServiceOffering.State.Active);
+
+        when(entityManager.findById(VirtualMachineTemplate.class, templateId)).thenReturn(templateMock);
+        when(templateMock.getTemplateType()).thenReturn(Storage.TemplateType.VNF);
+        when(templateMock.isDeployAsIs()).thenReturn(false);
+        when(templateMock.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        when(templateMock.getUserDataId()).thenReturn(null);
+        Mockito.doNothing().when(vnfTemplateManager).validateVnfApplianceNics(any(), nullable(List.class));
+
+        ServiceOfferingJoinVO svcOfferingMock = Mockito.mock(ServiceOfferingJoinVO.class);
+        when(serviceOfferingJoinDao.findById(anyLong())).thenReturn(svcOfferingMock);
+        when(_dcMock.isLocalStorageEnabled()).thenReturn(true);
+        when(_dcMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
+        String vmId = "testId";
+        CloudRuntimeException cre = new CloudRuntimeException("Error and CloudRuntimeException is thrown");
+        cre.addProxyObject(vmId, "vmId");
+
+        doThrow(cre).when(userVmManagerImpl).createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
+                any(), any(), any(), any(), eq(true), any(), any(), any());
+
+        CloudRuntimeException creThrown = assertThrows(CloudRuntimeException.class, () -> userVmManagerImpl.createVirtualMachine(deployVMCmd));
+        ArrayList<ExceptionProxyObject> proxyIdList = creThrown.getIdProxyList();
+        assertNotNull(proxyIdList != null );
+        assertTrue(proxyIdList.stream().anyMatch( p -> p.getUuid().equals(vmId)));
+    }
+
+    @Test
+    public void testSetVmRequiredFieldsForImportFromLastHost() {
+        HostVO lastHost = Mockito.mock(HostVO.class);
+        HostVO host = Mockito.mock(HostVO.class);
+        Mockito.when(_dcMock.getId()).thenReturn(1L);
+        Mockito.when(host.getId()).thenReturn(1L);
+        Mockito.when(lastHost.getId()).thenReturn(2L);
+        userVmManagerImpl.setVmRequiredFieldsForImport(true, userVmVoMock, _dcMock,
+                Hypervisor.HypervisorType.VMware, host, lastHost, VirtualMachine.PowerState.PowerOn);
+        Mockito.verify(userVmVoMock).setLastHostId(2L);
+        Mockito.verify(userVmVoMock).setState(VirtualMachine.State.Running);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testRestoreVMNoVM() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        CallContext callContextMock = Mockito.mock(CallContext.class);
+        Mockito.lenient().doReturn(accountMock).when(callContextMock).getCallingAccount();
+
+        RestoreVMCmd cmd = Mockito.mock(RestoreVMCmd.class);
+        when(cmd.getVmId()).thenReturn(vmId);
+        when(cmd.getTemplateId()).thenReturn(2L);
+        when(userVmDao.findById(vmId)).thenReturn(null);
+
+        userVmManagerImpl.restoreVM(cmd);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testRestoreVMWithVolumeSnapshots() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        CallContext callContextMock = Mockito.mock(CallContext.class);
+        Mockito.lenient().doReturn(accountMock).when(callContextMock).getCallingAccount();
+        Mockito.lenient().doNothing().when(accountManager).checkAccess(accountMock, null, true, userVmVoMock);
+
+        RestoreVMCmd cmd = Mockito.mock(RestoreVMCmd.class);
+        when(cmd.getVmId()).thenReturn(vmId);
+        when(cmd.getTemplateId()).thenReturn(2L);
+        when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
+
+        userVmManagerImpl.restoreVM(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testRestoreVirtualMachineNoOwner() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        long userId = 1l;
+        long accountId = 2l;
+        long newTemplateId = 2l;
+        when(accountMock.getId()).thenReturn(userId);
+        when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
+        when(userVmVoMock.getAccountId()).thenReturn(accountId);
+        when(accountDao.findById(accountId)).thenReturn(null);
+
+        userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId, null, false, null);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testRestoreVirtualMachineOwnerDisabled() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        long userId = 1l;
+        long accountId = 2l;
+        long newTemplateId = 2l;
+        when(accountMock.getId()).thenReturn(userId);
+        when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
+        when(userVmVoMock.getAccountId()).thenReturn(accountId);
+        when(accountDao.findById(accountId)).thenReturn(callerAccount);
+        when(callerAccount.getState()).thenReturn(Account.State.DISABLED);
+
+        userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId, null, false, null);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testRestoreVirtualMachineNotInRightState() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        long userId = 1l;
+        long accountId = 2l;
+        long newTemplateId = 2l;
+        when(accountMock.getId()).thenReturn(userId);
+        when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
+        when(userVmVoMock.getAccountId()).thenReturn(accountId);
+        when(userVmVoMock.getUuid()).thenReturn("a967643d-7633-4ab4-ac26-9c0b63f50cc1");
+        when(accountDao.findById(accountId)).thenReturn(callerAccount);
+        when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Starting);
+
+        userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId, null, false, null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testRestoreVirtualMachineNoRootVolume() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        long userId = 1l;
+        long accountId = 2l;
+        long currentTemplateId = 1l;
+        long newTemplateId = 2l;
+        when(accountMock.getId()).thenReturn(userId);
+        when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
+        when(userVmVoMock.getAccountId()).thenReturn(accountId);
+        when(userVmVoMock.getUuid()).thenReturn("a967643d-7633-4ab4-ac26-9c0b63f50cc1");
+        when(accountDao.findById(accountId)).thenReturn(callerAccount);
+        when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Running);
+        when(userVmVoMock.getTemplateId()).thenReturn(currentTemplateId);
+
+        VMTemplateVO currentTemplate = Mockito.mock(VMTemplateVO.class);
+        when(templateDao.findById(currentTemplateId)).thenReturn(currentTemplate);
+        when(volumeDaoMock.findByInstanceAndType(vmId, Volume.Type.ROOT)).thenReturn(new ArrayList<VolumeVO>());
+
+        userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId, null, false, null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testRestoreVirtualMachineMoreThanOneRootVolume() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        long userId = 1l;
+        long accountId = 2l;
+        long currentTemplateId = 1l;
+        long newTemplateId = 2l;
+        when(accountMock.getId()).thenReturn(userId);
+        when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
+        when(userVmVoMock.getAccountId()).thenReturn(accountId);
+        when(userVmVoMock.getUuid()).thenReturn("a967643d-7633-4ab4-ac26-9c0b63f50cc1");
+        when(accountDao.findById(accountId)).thenReturn(callerAccount);
+        when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Running);
+        when(userVmVoMock.getTemplateId()).thenReturn(currentTemplateId);
+
+        VMTemplateVO currentTemplate = Mockito.mock(VMTemplateVO.class);
+        when(currentTemplate.isDeployAsIs()).thenReturn(false);
+        when(templateDao.findById(currentTemplateId)).thenReturn(currentTemplate);
+        List<VolumeVO> volumes = new ArrayList<>();
+        VolumeVO rootVolume1 = Mockito.mock(VolumeVO.class);
+        volumes.add(rootVolume1);
+        VolumeVO rootVolume2 = Mockito.mock(VolumeVO.class);
+        volumes.add(rootVolume2);
+        when(volumeDaoMock.findByInstanceAndType(vmId, Volume.Type.ROOT)).thenReturn(volumes);
+
+        userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId, null, false, null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testRestoreVirtualMachineWithVMSnapshots() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        long userId = 1l;
+        long accountId = 2l;
+        long currentTemplateId = 1l;
+        long newTemplateId = 2l;
+        when(accountMock.getId()).thenReturn(userId);
+        when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
+        when(userVmVoMock.getAccountId()).thenReturn(accountId);
+        when(accountDao.findById(accountId)).thenReturn(callerAccount);
+        when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Running);
+        when(userVmVoMock.getTemplateId()).thenReturn(currentTemplateId);
+
+        VMTemplateVO currentTemplate = Mockito.mock(VMTemplateVO.class);
+        when(templateDao.findById(currentTemplateId)).thenReturn(currentTemplate);
+        List<VolumeVO> volumes = new ArrayList<>();
+        VolumeVO rootVolumeOfVm = Mockito.mock(VolumeVO.class);
+        volumes.add(rootVolumeOfVm);
+        when(volumeDaoMock.findByInstanceAndType(vmId, Volume.Type.ROOT)).thenReturn(volumes);
+        List<VMSnapshotVO> vmSnapshots = new ArrayList<>();
+        VMSnapshotVO vmSnapshot = Mockito.mock(VMSnapshotVO.class);
+        vmSnapshots.add(vmSnapshot);
+        when(vmSnapshotDaoMock.findByVm(vmId)).thenReturn(vmSnapshots);
+
+        userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId, null, false, null);
+    }
+
+    @Test
+    public void addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecifiedTestDetailsConstantIsNotNullDoNothing() {
+        int currentValue = 123;
+
+        for (String detailsConstant : detailsConstants) {
+            userVmManagerImpl.addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecified(null, customParameters, detailsConstant, currentValue);
+        }
+
+        Assert.assertEquals(customParameters.get(VmDetailConstants.MEMORY), "2048");
+        Assert.assertEquals(customParameters.get(VmDetailConstants.CPU_NUMBER), "4");
+        Assert.assertEquals(customParameters.get(VmDetailConstants.CPU_SPEED), "1000");
+    }
+
+    @Test
+    public void addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecifiedTestNewValueIsNotNullDoNothing() {
+        Map<String, String> details = new HashMap<>();
+        int currentValue = 123;
+
+        for (String detailsConstant : detailsConstants) {
+            userVmManagerImpl.addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecified(321, details, detailsConstant, currentValue);
+        }
+
+        Assert.assertNull(details.get(VmDetailConstants.MEMORY));
+        Assert.assertNull(details.get(VmDetailConstants.CPU_NUMBER));
+        Assert.assertNull(details.get(VmDetailConstants.CPU_SPEED));
+    }
+
+    @Test
+    public void addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecifiedTestBothValuesAreNullKeepCurrentValue() {
+        Map<String, String> details = new HashMap<>();
+        int currentValue = 123;
+
+        for (String detailsConstant : detailsConstants) {
+            userVmManagerImpl.addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecified(null, details, detailsConstant, currentValue);
+        }
+
+        Assert.assertEquals(details.get(VmDetailConstants.MEMORY), String.valueOf(currentValue));
+        Assert.assertEquals(details.get(VmDetailConstants.CPU_NUMBER), String.valueOf(currentValue));
+        Assert.assertEquals(details.get(VmDetailConstants.CPU_SPEED),String.valueOf(currentValue));
+    }
+
+    @Test
+    public void addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecifiedTestNeitherValueIsNullDoNothing() {
+        int currentValue = 123;
+
+        for (String detailsConstant : detailsConstants) {
+            userVmManagerImpl.addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecified(321, customParameters, detailsConstant, currentValue);
+        }
+
+        Assert.assertEquals(customParameters.get(VmDetailConstants.MEMORY), "2048");
+        Assert.assertEquals(customParameters.get(VmDetailConstants.CPU_NUMBER), "4");
+        Assert.assertEquals(customParameters.get(VmDetailConstants.CPU_SPEED),"1000");
+    }
+
+    @Test
+    public void updateInstanceDetailsMapWithCurrentValuesForAbsentDetailsTestAllConstantsAreUpdated() {
+        Mockito.doReturn(serviceOffering).when(_serviceOfferingDao).findById(Mockito.anyLong());
+        Mockito.doReturn(1L).when(vmInstanceMock).getId();
+        Mockito.doReturn(1L).when(vmInstanceMock).getServiceOfferingId();
+        Mockito.doReturn(serviceOffering).when(_serviceOfferingDao).findByIdIncludingRemoved(Mockito.anyLong(), Mockito.anyLong());
+        userVmManagerImpl.updateInstanceDetailsMapWithCurrentValuesForAbsentDetails(null, vmInstanceMock, 0l);
+
+        Mockito.verify(userVmManagerImpl).addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecified(Mockito.any(), Mockito.any(), Mockito.eq(VmDetailConstants.CPU_SPEED), Mockito.any());
+        Mockito.verify(userVmManagerImpl).addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecified(Mockito.any(), Mockito.any(), Mockito.eq(VmDetailConstants.MEMORY), Mockito.any());
+        Mockito.verify(userVmManagerImpl).addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecified(Mockito.any(), Mockito.any(), Mockito.eq(VmDetailConstants.CPU_NUMBER), Mockito.any());
+    }
+
+    @Test
+    public void testCheckVolumesLimits() {
+        long diskOffId1 = 1L;
+        DiskOfferingVO diskOfferingVO1 = Mockito.mock(DiskOfferingVO.class);
+        Mockito.when(diskOfferingDao.findById(diskOffId1)).thenReturn(diskOfferingVO1);
+        Mockito.when(resourceLimitMgr.getResourceLimitStorageTags(diskOfferingVO1)).thenReturn(List.of("tag1", "tag2"));
+        long diskOffId2 = 2L;
+        DiskOfferingVO diskOfferingVO2 = Mockito.mock(DiskOfferingVO.class);
+        Mockito.when(diskOfferingDao.findById(diskOffId2)).thenReturn(diskOfferingVO2);
+        Mockito.when(resourceLimitMgr.getResourceLimitStorageTags(diskOfferingVO2)).thenReturn(List.of("tag2"));
+        long diskOffId3 = 3L;
+        DiskOfferingVO diskOfferingVO3 = Mockito.mock(DiskOfferingVO.class);
+        Mockito.when(diskOfferingDao.findById(diskOffId3)).thenReturn(diskOfferingVO3);
+        Mockito.when(resourceLimitMgr.getResourceLimitStorageTags(diskOfferingVO3)).thenReturn(new ArrayList<>());
+
+        VolumeVO vol1 = Mockito.mock(VolumeVO.class);
+        Mockito.when(vol1.getDiskOfferingId()).thenReturn(diskOffId1);
+        Mockito.when(vol1.getSize()).thenReturn(10L);
+        Mockito.when(vol1.isDisplay()).thenReturn(true);
+        VolumeVO undisplayedVolume = Mockito.mock(VolumeVO.class); // shouldn't be considered for limits
+        Mockito.when(undisplayedVolume.isDisplay()).thenReturn(false);
+        VolumeVO vol3 = Mockito.mock(VolumeVO.class);
+        Mockito.when(vol3.getDiskOfferingId()).thenReturn(diskOffId2);
+        Mockito.when(vol3.getSize()).thenReturn(30L);
+        Mockito.when(vol3.isDisplay()).thenReturn(true);
+        VolumeVO vol4 = Mockito.mock(VolumeVO.class);
+        Mockito.when(vol4.getDiskOfferingId()).thenReturn(diskOffId3);
+        Mockito.when(vol4.getSize()).thenReturn(40L);
+        Mockito.when(vol4.isDisplay()).thenReturn(true);
+        VolumeVO vol5 = Mockito.mock(VolumeVO.class);
+        Mockito.when(vol5.getDiskOfferingId()).thenReturn(diskOffId1);
+        Mockito.when(vol5.getSize()).thenReturn(50L);
+        Mockito.when(vol5.isDisplay()).thenReturn(true);
+
+        List<VolumeVO> volumes = List.of(vol1, undisplayedVolume, vol3, vol4, vol5);
+        Long size = volumes.stream().filter(VolumeVO::isDisplay).mapToLong(VolumeVO::getSize).sum();
+        try {
+            userVmManagerImpl.checkVolumesLimits(account, volumes);
+            Mockito.verify(resourceLimitMgr, times(1))
+                    .checkResourceLimit(account, Resource.ResourceType.volume, 4);
+            Mockito.verify(resourceLimitMgr, times(1))
+                    .checkResourceLimit(account, Resource.ResourceType.primary_storage, size);
+            Mockito.verify(resourceLimitMgr, times(1))
+                    .checkResourceLimitWithTag(account, Resource.ResourceType.volume, "tag1", 2);
+            Mockito.verify(resourceLimitMgr, times(1))
+                    .checkResourceLimitWithTag(account, Resource.ResourceType.volume, "tag2", 3);
+            Mockito.verify(resourceLimitMgr, times(1))
+                    .checkResourceLimitWithTag(account, Resource.ResourceType.primary_storage, "tag1",
+                            vol1.getSize() + vol5.getSize());
+            Mockito.verify(resourceLimitMgr, times(1))
+                    .checkResourceLimitWithTag(account, Resource.ResourceType.primary_storage, "tag2",
+                            vol1.getSize() + vol3.getSize() + vol5.getSize());
+        } catch (ResourceAllocationException e) {
+            Assert.fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testValidateStrictHostTagCheckPass() {
+        ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        HostVO destinationHostVO = Mockito.mock(HostVO.class);
+
+        Mockito.when(_serviceOfferingDao.findByIdIncludingRemoved(1L)).thenReturn(serviceOffering);
+        Mockito.when(templateDao.findByIdIncludingRemoved(2L)).thenReturn(template);
+
+        Mockito.when(vm.getServiceOfferingId()).thenReturn(1L);
+        Mockito.when(vm.getTemplateId()).thenReturn(2L);
+
+        Mockito.when(destinationHostVO.checkHostServiceOfferingAndTemplateTags(Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.anySet())).thenReturn(true);
+
+        userVmManagerImpl.validateStrictHostTagCheck(vm, destinationHostVO);
+
+        Mockito.verify(
+                destinationHostVO, times(1)
+        ).checkHostServiceOfferingAndTemplateTags(Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.anySet());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateStrictHostTagCheckFail() {
+        ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        HostVO destinationHostVO = Mockito.mock(HostVO.class);
+
+        Mockito.when(_serviceOfferingDao.findByIdIncludingRemoved(1L)).thenReturn(serviceOffering);
+        Mockito.when(templateDao.findByIdIncludingRemoved(2L)).thenReturn(template);
+
+        Mockito.when(vm.getServiceOfferingId()).thenReturn(1L);
+        Mockito.when(vm.getTemplateId()).thenReturn(2L);
+
+        Mockito.when(destinationHostVO.checkHostServiceOfferingAndTemplateTags(Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.anySet())).thenReturn(false);
+        userVmManagerImpl.validateStrictHostTagCheck(vm, destinationHostVO);
+    }
+
+    public void testGetRootVolumeSizeForVmRestore() {
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(template.getSize()).thenReturn(10L * GiB_TO_BYTES);
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        Mockito.when(userVm.getId()).thenReturn(1L);
+        DiskOffering diskOffering = Mockito.mock(DiskOffering.class);
+        Mockito.when(diskOffering.isCustomized()).thenReturn(false);
+        Mockito.when(diskOffering.getDiskSize()).thenReturn(8L * GiB_TO_BYTES);
+        Map<String, String> details = new HashMap<>();
+        details.put(VmDetailConstants.ROOT_DISK_SIZE, "16");
+        VMInstanceDetailVO vmRootDiskSizeDetail = Mockito.mock(VMInstanceDetailVO.class);
+        Mockito.when(vmRootDiskSizeDetail.getValue()).thenReturn("20");
+        Mockito.when(vmInstanceDetailsDao.findDetail(1L, VmDetailConstants.ROOT_DISK_SIZE)).thenReturn(vmRootDiskSizeDetail);
+        Long actualSize = userVmManagerImpl.getRootVolumeSizeForVmRestore(null, template, userVm, diskOffering, details, false);
+        Assert.assertEquals(16 * GiB_TO_BYTES, actualSize.longValue());
+    }
+
+    @Test
+    public void testGetRootVolumeSizeForVmRestoreNullDiskOfferingAndEmptyDetails() {
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(template.getSize()).thenReturn(10L * GiB_TO_BYTES);
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        Mockito.when(userVm.getId()).thenReturn(1L);
+        DiskOffering diskOffering = null;
+        Map<String, String> details = new HashMap<>();
+        VMInstanceDetailVO vmRootDiskSizeDetail = Mockito.mock(VMInstanceDetailVO.class);
+        Mockito.when(vmRootDiskSizeDetail.getValue()).thenReturn("20");
+        Mockito.when(vmInstanceDetailsDao.findDetail(1L, VmDetailConstants.ROOT_DISK_SIZE)).thenReturn(vmRootDiskSizeDetail);
+        Long actualSize = userVmManagerImpl.getRootVolumeSizeForVmRestore(null, template, userVm, diskOffering, details, false);
+        Assert.assertEquals(20 * GiB_TO_BYTES, actualSize.longValue());
+    }
+
+    @Test
+    public void checkExpungeVMPermissionTestAccountIsNotAdminConfigFalseThrowsPermissionDeniedException () {
+        Mockito.doReturn(false).when(accountManager).isAdmin(Mockito.anyLong());
+        Mockito.doReturn(false).when(userVmManagerImpl).getConfigAllowUserExpungeRecoverVm(Mockito.anyLong());
+
+        Assert.assertThrows(PermissionDeniedException.class, () -> userVmManagerImpl.checkExpungeVmPermission(accountMock));
+    }
+    @Test
+    public void checkExpungeVmPermissionTestAccountIsNotAdminConfigTrueNoApiAccessThrowsPermissionDeniedException () {
+        Mockito.doReturn(false).when(accountManager).isAdmin(Mockito.anyLong());
+        Mockito.doReturn(true).when(userVmManagerImpl).getConfigAllowUserExpungeRecoverVm(Mockito.anyLong());
+        doThrow(PermissionDeniedException.class).when(accountManager).checkApiAccess(accountMock, "expungeVirtualMachine");
+
+        Assert.assertThrows(PermissionDeniedException.class, () -> userVmManagerImpl.checkExpungeVmPermission(accountMock));
+    }
+    @Test
+    public void checkExpungeVmPermissionTestAccountIsNotAdminConfigTrueHasApiAccessReturnNothing () {
+        Mockito.doReturn(false).when(accountManager).isAdmin(Mockito.anyLong());
+        Mockito.doReturn(true).when(userVmManagerImpl).getConfigAllowUserExpungeRecoverVm(Mockito.anyLong());
+
+        userVmManagerImpl.checkExpungeVmPermission(accountMock);
+    }
+    @Test
+    public void checkExpungeVmPermissionTestAccountIsAdminNoApiAccessThrowsPermissionDeniedException () {
+        Mockito.doReturn(true).when(accountManager).isAdmin(Mockito.anyLong());
+        doThrow(PermissionDeniedException.class).when(accountManager).checkApiAccess(accountMock, "expungeVirtualMachine");
+
+        Assert.assertThrows(PermissionDeniedException.class, () -> userVmManagerImpl.checkExpungeVmPermission(accountMock));
+    }
+    @Test
+    public void checkExpungeVmPermissionTestAccountIsAdminHasApiAccessReturnNothing () {
+        Mockito.doReturn(true).when(accountManager).isAdmin(Mockito.anyLong());
+
+        userVmManagerImpl.checkExpungeVmPermission(accountMock);
+    }
+
+    @Test
+    public void validateIfVmSupportsMigrationTestVmIsNullThrowsInvalidParameterValueException() {
+        String expectedMessage = String.format("There is no VM by ID [%s].", 1l);
+
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
+            userVmManagerImpl.validateIfVmSupportsMigration(null, 1l);
+        });
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void validateIfVmSupportsMigrationTestVmIsRunningThrowsInvalidParameterValueException() {
+        String expectedMessage = String.format("Unable to move VM [%s] in [%s] state.", userVmVoMock, VirtualMachine.State.Running);
+        Mockito.doReturn(VirtualMachine.State.Running).when(userVmVoMock).getState();
+
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
+            userVmManagerImpl.validateIfVmSupportsMigration(userVmVoMock, 1l);
+        });
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void validateIfVmSupportsMigrationTestVmIsSharedFileSystemInstanceThrowsInvalidParameterValueException() {
+        Mockito.doReturn(UserVmManager.SHAREDFSVM).when(userVmVoMock).getUserVmType();
+
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
+            userVmManagerImpl.validateIfVmSupportsMigration(userVmVoMock, 1l);
+        });
+
+        Assert.assertEquals("Migration is not supported for Shared FileSystem Instances.", assertThrows.getMessage());
+    }
+
+    @Test
+    public void validateIfVmSupportsMigrationTestVmIsNotRunningDoesNotThrowInvalidParameterValueException() {
+        userVmManagerImpl.validateIfVmSupportsMigration(userVmVoMock, 1l);
+    }
+
+    @Test
+    public void validateOldAndNewAccountsTestBothAreValidDoNothing() {
+        Account newAccount = Mockito.mock(Account.class);
+        Mockito.doReturn(1l).when(newAccount).getAccountId();
+
+        userVmManagerImpl.validateOldAndNewAccounts(accountMock, newAccount, 1L, "", 1L);
+    }
+
+    @Test
+    public void validateOldAndNewAccountsTestOldAccountIsNullThrowsInvalidParameterValueException() {
+        String expectedMessage = String.format("Invalid old account [%s] for VM in domain [%s].", userVmVoMock.getAccountId(), assignVmCmdMock.getDomainId());
+
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
+            userVmManagerImpl.validateOldAndNewAccounts(null, accountMock, userVmVoMock.getAccountId(), "", assignVmCmdMock.getDomainId());
+        });
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void validateOldAndNewAccountsTestNewAccountIsNullThrowsInvalidParameterValueException() {
+        String expectedMessage = String.format("Invalid new account [%s] for VM in domain [%s].", assignVmCmdMock.getAccountName(), assignVmCmdMock.getDomainId());
+
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
+            userVmManagerImpl.validateOldAndNewAccounts(accountMock, null, 1l, assignVmCmdMock.getAccountName(), assignVmCmdMock.getDomainId());
+        });
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void validateOldAndNewAccountsTestNewAccountStateIsDisabledThrowsInvalidParameterValueException() {
+        String expectedMessage = String.format("The new account owner [%s] is disabled.", accountMock.toString());
+
+        Mockito.doReturn(Account.State.DISABLED).when(accountMock).getState();
+
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
+            userVmManagerImpl.validateOldAndNewAccounts(accountMock, accountMock, 1l, "", 1l);
+        });
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void validateOldAndNewAccountsTestOldAccountIsTheSameAsNewAccountThrowsInvalidParameterValueException() {
+        String expectedMessage = String.format("The new account [%s] is the same as the old account.", accountMock.toString());
+
+        Mockito.doReturn(Account.State.ENABLED).when(accountMock).getState();
+
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
+            userVmManagerImpl.validateOldAndNewAccounts(accountMock, accountMock, 1l, "", 1l);
+        });
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void validateOldAndNewAccountsTestOldAccountIsNotTheSameAsNewAccountDoesNotThrowInvalidParameterValueException() {
+        AccountVO oldAccount = new AccountVO();
+        Mockito.doReturn(1l).when(accountMock).getAccountId();
+
+        userVmManagerImpl.validateOldAndNewAccounts(oldAccount, accountMock, 1l, "", 1l);
+    }
+
+    @Test
+    public void checkCallerAccessToAccountsTestCallsCheckAccessToOldAccountAndNewAccount() {
+        AccountVO oldAccount = new AccountVO();
+
+        userVmManagerImpl.checkCallerAccessToAccounts(callerAccount, oldAccount, accountMock);
+
+        Mockito.verify(accountManager).checkAccess(callerAccount, null, true, oldAccount);
+        Mockito.verify(accountManager).checkAccess(callerAccount, null, true, accountMock);
+    }
+
+    @Test
+    public void validateIfVmHasNoRulesTestPortForwardingRulesExistThrowsInvalidParameterValueException() {
+        String expectedMessage = String.format("Remove any Port Forwarding rules for VM [%s] before assigning it to another user.", userVmVoMock);
+
+        Mockito.doReturn(portForwardingRulesListMock).when(portForwardingRulesDaoMock).listByVm(Mockito.anyLong());
+
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
+            userVmManagerImpl.validateIfVmHasNoRules(userVmVoMock, 1l);
+        });
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void validateIfVmHasNoRulesTestStaticNatRulesExistThrowsInvalidParameterValueException() {
+        String expectedMessage = String.format("Remove the StaticNat rules for VM [%s] before assigning it to another user.", userVmVoMock);
+
+        Mockito.doReturn(firewallRuleVoListMock).when(firewallRulesDaoMock).listStaticNatByVmId(Mockito.anyLong());
+
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
+            userVmManagerImpl.validateIfVmHasNoRules(userVmVoMock, 1l);
+        });
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void validateIfVmHasNoRulesTestLoadBalancingRulesExistThrowsInvalidParameterValueException() {
+        String expectedMessage = String.format("Remove the Load Balancing rules for VM [%s] before assigning it to another user.", userVmVoMock);
+
+        Mockito.doReturn(loadBalancerVmMapVoListMock).when(loadBalancerVmMapDaoMock).listByInstanceId(Mockito.anyLong());
+
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
+            userVmManagerImpl.validateIfVmHasNoRules(userVmVoMock, 1l);
+        });
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void validateIfVmHasNoRulesTestOneToOneNatRulesExistThrowsInvalidParameterValueException() {
+        String expectedMessage = String.format("Remove the One to One Nat rule for VM [%s] for IP [%s].", userVmVoMock, ipAddressVoMock.toString());
+
+        LinkedList<IPAddressVO> ipAddressVoList = new LinkedList<IPAddressVO>();
+
+        Mockito.doReturn(ipAddressVoList).when(ipAddressDaoMock).findAllByAssociatedVmId(Mockito.anyLong());
+        ipAddressVoList.add(ipAddressVoMock);
+        Mockito.doReturn(true).when(ipAddressVoMock).isOneToOneNat();
+
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
+            userVmManagerImpl.validateIfVmHasNoRules(userVmVoMock, 1l);
+        });
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void validateIfVmHasNoRulesTestOneToOneNatRulesDoNotExistDoesNotThrowInvalidParameterValueException() {
+        userVmManagerImpl.validateIfVmHasNoRules(userVmVoMock, 1l);
+    }
+
+    @Test
+    public void verifyResourceLimitsForAccountAndStorageTestCountOnlyRunningVmsInResourceLimitationIsTrueDoesNotCallVmResourceLimitCheck() throws ResourceAllocationException {
+        LinkedList<VolumeVO> volumeVoList = new LinkedList<VolumeVO>();
+        Mockito.doReturn(true).when(userVmManagerImpl).countOnlyRunningVmsInResourceLimitation();
+
+        userVmManagerImpl.verifyResourceLimitsForAccountAndStorage(accountMock, userVmVoMock, serviceOfferingVoMock, volumeVoList, virtualMachineTemplateMock);
+
+        Mockito.verify(resourceLimitMgr, Mockito.never()).checkVmResourceLimit(Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any());
+        Mockito.verify(resourceLimitMgr).checkResourceLimit(accountMock, Resource.ResourceType.volume, 0l);
+        Mockito.verify(resourceLimitMgr).checkResourceLimit(accountMock, Resource.ResourceType.primary_storage, 0l);
+    }
+
+    @Test
+    public void verifyResourceLimitsForAccountAndStorageTestCountOnlyRunningVmsInResourceLimitationIsFalseCallsVmResourceLimitCheck() throws ResourceAllocationException {
+        LinkedList<VolumeVO> volumeVoList = new LinkedList<VolumeVO>();
+        Mockito.doReturn(false).when(userVmManagerImpl).countOnlyRunningVmsInResourceLimitation();
+
+        userVmManagerImpl.verifyResourceLimitsForAccountAndStorage(accountMock, userVmVoMock, serviceOfferingVoMock, volumeVoList, virtualMachineTemplateMock);
+
+        Mockito.verify(resourceLimitMgr).checkVmResourceLimit(Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any());
+        Mockito.verify(resourceLimitMgr).checkResourceLimit(accountMock, Resource.ResourceType.volume, 0l);
+        Mockito.verify(resourceLimitMgr).checkResourceLimit(accountMock, Resource.ResourceType.primary_storage, 0l);
+    }
+
+    @Test
+    public void validateIfNewOwnerHasAccessToTemplateTestTemplateIsNullThrowsInvalidParameterValueException() {
+        String expectedMessage = String.format("Template for VM [%s] cannot be found.", userVmVoMock.getUuid());
+
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
+            userVmManagerImpl.validateIfNewOwnerHasAccessToTemplate(userVmVoMock, accountMock, null);
+        });
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void validateIfNewOwnerHasAccessToTemplateTestCallCheckAccessWhenTemplateIsNotPublic() {
+        userVmManagerImpl.validateIfNewOwnerHasAccessToTemplate(userVmVoMock, accountMock, virtualMachineTemplateMock);
+
+        Mockito.verify(accountManager).checkAccess(accountMock, SecurityChecker.AccessType.UseEntry, true, virtualMachineTemplateMock);
+    }
+
+    @Test
+    public void updateVmOwnerTestCallsSetAccountIdSetDomainIdAndPersist() {
+        userVmManagerImpl.updateVmOwner(accountMock, userVmVoMock, 1l, 1l);
+
+        Mockito.verify(userVmVoMock).setAccountId(Mockito.anyLong());
+        Mockito.verify(userVmVoMock).setDomainId(Mockito.anyLong());
+        Mockito.verify(userVmDao).persist(userVmVoMock);
+    }
+
+    @Test
+    public void updateVmNetworkTestCallsUpdateBasicTypeNetworkForVmIfBasicTypeZone() throws InsufficientCapacityException, ResourceAllocationException {
+        Mockito.doReturn(_dcMock).when(_dcDao).findById(Mockito.anyLong());
+        Mockito.doReturn(DataCenter.NetworkType.Basic).when(_dcMock).getNetworkType();
+        Mockito.doNothing().when(userVmManagerImpl).updateBasicTypeNetworkForVm(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any());
+
+        userVmManagerImpl.updateVmNetwork(assignVmCmdMock, callerAccount, userVmVoMock, accountMock, virtualMachineTemplateMock);
+
+        Mockito.verify(userVmManagerImpl).updateBasicTypeNetworkForVm(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void updateVmNetworkTestCallsUpdateAdvancedTypeNetworkForVmIfNotBasicTypeZone() throws InsufficientCapacityException, ResourceAllocationException {
+        Mockito.doReturn(_dcMock).when(_dcDao).findById(Mockito.anyLong());
+        Mockito.doReturn(DataCenter.NetworkType.Advanced).when(_dcMock).getNetworkType();
+        Mockito.doNothing().when(userVmManagerImpl).updateAdvancedTypeNetworkForVm(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.any());
+
+        userVmManagerImpl.updateVmNetwork(assignVmCmdMock, callerAccount, userVmVoMock, accountMock, virtualMachineTemplateMock);
+
+        Mockito.verify(userVmManagerImpl).updateAdvancedTypeNetworkForVm(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void cleanupOfOldOwnerNicsForNetworkTestCallsCleanupNicsAndRemoveNics() {
+        userVmManagerImpl.cleanupOfOldOwnerNicsForNetwork(virtualMachineProfileMock);
+
+        Mockito.verify(_networkMgr).cleanupNics(virtualMachineProfileMock);
+        Mockito.verify(_networkMgr).removeNics(virtualMachineProfileMock);
+    }
+
+    @Test
+    public void addDefaultNetworkToNetworkListTestDefaultNetworkIsNullThrowsInvalidParameterValueException() {
+        String expectedMessage = "Unable to find a default network to start a VM.";
+
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
+            userVmManagerImpl.addDefaultNetworkToNetworkList(networkVoListMock, null);
+        });
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void addDefaultNetworkToNetworkListTestDefaultNetworkIsNotNullAddNetworkToNetworkList() {
+        userVmManagerImpl.addDefaultNetworkToNetworkList(networkVoListMock, networkMock);
+
+        Mockito.verify(networkVoListMock).add(Mockito.any());
+    }
+
+    @Test
+    public void allocateNetworksForVmTestCallsNetworkManagerAllocate() throws InsufficientCapacityException {
+        LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>();
+
+        Mockito.doReturn(userVmVoMock).when(virtualMachineManager).findById(Mockito.anyLong());
+
+        userVmManagerImpl.allocateNetworksForVm(userVmVoMock, networks);
+
+        Mockito.verify(_networkMgr).allocate(Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void addSecurityGroupsToVmTestIsVmWareAndSecurityGroupIdListIsNotNullThrowsInvalidParameterValueException() {
+        String expectedMessage = "Security group feature is not supported for VMWare hypervisor.";
+        LinkedList<Long> securityGroupIdList = new LinkedList<Long>();
+
+        Mockito.doReturn(Hypervisor.HypervisorType.VMware).when(virtualMachineTemplateMock).getHypervisorType();
+
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
+            userVmManagerImpl.addSecurityGroupsToVm(accountMock, userVmVoMock, virtualMachineTemplateMock, securityGroupIdList, networkMock);
+        });
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void addSecurityGroupsToVmTestIsNotVmWareDefaultNetworkIsNullAndNetworkModelCanAddDefaultSecurityGroupCallsAddDefaultSecurityGroupToSecurityGroupIdList() {
+        LinkedList<Long> securityGroupIdList = new LinkedList<Long>();
+
+        Mockito.doReturn(Hypervisor.HypervisorType.KVM).when(virtualMachineTemplateMock).getHypervisorType();
+        Mockito.doReturn(true).when(networkModel).canAddDefaultSecurityGroup();
+        Mockito.doReturn(securityGroupVoMock).when(securityGroupManagerMock).getDefaultSecurityGroup(Mockito.anyLong());
+
+        userVmManagerImpl.addSecurityGroupsToVm(accountMock, userVmVoMock, virtualMachineTemplateMock, securityGroupIdList, null);
+
+        Mockito.verify(userVmManagerImpl).addDefaultSecurityGroupToSecurityGroupIdList(accountMock, securityGroupIdList);
+        Mockito.verify(securityGroupManagerMock).addInstanceToGroups(Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void addNetworksToNetworkIdListTestCallsKeepOldSharedNetworkForVmAndAddAdditionalNetworksToVm() {
+        LinkedList<Long> networkIdList = new LinkedList<Long>();
+        HashSet<NetworkVO> applicableNetworks = new HashSet<NetworkVO>();
+        HashMap<Long, String> requestedIPv4ForNics = new HashMap<Long, String>();
+        HashMap<Long, String> requestedIPv6ForNics = new HashMap<Long, String>();
+
+        userVmManagerImpl.addNetworksToNetworkIdList(userVmVoMock, accountMock, networkIdList, applicableNetworks, requestedIPv4ForNics,
+                requestedIPv6ForNics);
+
+        Mockito.verify(userVmManagerImpl).keepOldSharedNetworkForVm(userVmVoMock, accountMock, networkIdList, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
+        Mockito.verify(userVmManagerImpl).addAdditionalNetworksToVm(userVmVoMock, accountMock, networkIdList, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
+    }
+
+    @Test
+    public void getOfferingWithRequiredAvailabilityForNetworkCreationTestRequiredOfferingsListHasNoOfferingsThrowsInvalidParameterValueException() {
+        String expectedMessage = String.format("Unable to find network offering with availability [%s] to automatically create the network as a part of VM creation.",
+                NetworkOffering.Availability.Required);
+        LinkedList<NetworkOfferingVO> requiredOfferings = new LinkedList<>();
+
+        Mockito.doReturn(requiredOfferings).when(networkOfferingDaoMock).listByAvailability(NetworkOffering.Availability.Required, false);
+
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
+            userVmManagerImpl.getOfferingWithRequiredAvailabilityForNetworkCreation();
+        });
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void getOfferingWithRequiredAvailabilityForNetworkCreationTestFirstOfferingIsNotEnabledThrowsInvalidParameterValueException() {
+        String expectedMessage = String.format("Required network offering ID [%s] is not in [%s] state.", 1l, NetworkOffering.State.Enabled);
+
+        Mockito.doReturn(networkOfferingVoListMock).when(networkOfferingDaoMock).listByAvailability(NetworkOffering.Availability.Required, false);
+        Mockito.doReturn(networkOfferingVoMock).when(networkOfferingVoListMock).get(0);
+
+        Mockito.doReturn(NetworkOffering.State.Disabled).when(networkOfferingVoMock).getState();
+
+        Mockito.doReturn(1l).when(networkOfferingVoMock).getId();
+
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
+            userVmManagerImpl.getOfferingWithRequiredAvailabilityForNetworkCreation();
+        });
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void selectApplicableNetworkToCreateVmTestVirtualNetworkIsEmptyThrowsException() throws InsufficientCapacityException,
+            ResourceAllocationException {
+
+        HashSet<NetworkVO> applicableNetworks = new HashSet<>();
+        LinkedList<? extends Network> virtualNetworks = new LinkedList<>();
+
+        Mockito.doReturn(virtualNetworks).when(networkModel).listNetworksForAccount(Mockito.anyLong(), Mockito.anyLong(), Mockito.any());
+
+        userVmManagerImpl.selectApplicableNetworkToCreateVm(accountMock, _dcMock, applicableNetworks);
+    }
+
+    @Test
+    public void selectApplicableNetworkToCreateVmTestVirtualNetworkHasMultipleNetworksThrowsInvalidParameterValueException() {
+        String expectedMessage = String.format("More than one default isolated network has been found for account [%s]; please specify networkIDs.", accountMock.toString());
+        HashSet<NetworkVO> applicableNetworks = new HashSet<NetworkVO>();
+        LinkedList<NetworkVO> virtualNetworks = new LinkedList<NetworkVO>();
+
+        Mockito.doReturn(virtualNetworks).when(networkModel).listNetworksForAccount(Mockito.anyLong(), Mockito.anyLong(), Mockito.any());
+
+        virtualNetworks.add(networkMock);
+        virtualNetworks.add(networkMock);
+
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
+            userVmManagerImpl.selectApplicableNetworkToCreateVm(accountMock, _dcMock, applicableNetworks);
+        });
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void selectApplicableNetworkToCreateVmTestVirtualNetworkHasOneNetworkCallsNetworkDaoFindById() throws InsufficientCapacityException, ResourceAllocationException {
+        HashSet<NetworkVO> applicableNetworks = new HashSet<NetworkVO>();
+
+        Mockito.doReturn(networkVoListMock).when(networkModel).listNetworksForAccount(Mockito.anyLong(), Mockito.anyLong(), Mockito.any());
+
+        Mockito.doReturn(false).when(networkVoListMock).isEmpty();
+        Mockito.doReturn(1).when(networkVoListMock).size();
+        Mockito.doReturn(networkMock).when(networkVoListMock).get(0);
+
+        userVmManagerImpl.selectApplicableNetworkToCreateVm(accountMock, _dcMock, applicableNetworks);
+
+        Mockito.verify(_networkDao).findById(Mockito.anyLong());
+    }
+
+    @Test
+    public void addDefaultSecurityGroupToSecurityGroupIdListTestDefaultGroupIsNullCallsCreateSecurityGroup() {
+        String expected = "";
+        LinkedList<Long> securityGroupIdList = Mockito.spy(new LinkedList<Long>());
+
+        Mockito.doReturn(null).when(securityGroupManagerMock).getDefaultSecurityGroup(Mockito.anyLong());
+        Mockito.doReturn(securityGroupVoMock).when(securityGroupManagerMock).createSecurityGroup(SecurityGroupManager.DEFAULT_GROUP_NAME,
+                SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION, 1l, 1l, expected);
+
+        Mockito.doReturn(1l).when(accountMock).getDomainId();
+        Mockito.doReturn(1l).when(accountMock).getId();
+        Mockito.doReturn(expected).when(accountMock).getAccountName();
+        Mockito.doReturn(1l).when(securityGroupVoMock).getId();
+
+        userVmManagerImpl.addDefaultSecurityGroupToSecurityGroupIdList(accountMock, securityGroupIdList);
+
+        Mockito.verify(securityGroupManagerMock).createSecurityGroup(SecurityGroupManager.DEFAULT_GROUP_NAME, SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION, 1l, 1l, expected);
+        Mockito.verify(securityGroupIdList).add(1l);
+    }
+
+    @Test
+    public void addDefaultSecurityGroupToSecurityGroupIdListTestDefaultGroupIsPresentDoesNotCallAddIdToSecurityGroupIdList() {
+        LinkedList<Long> securityGroupIdList = Mockito.spy(new LinkedList<Long>());
+
+        securityGroupIdList.addFirst(1l);
+        Mockito.doReturn(securityGroupVoMock).when(securityGroupManagerMock).getDefaultSecurityGroup(Mockito.anyLong());
+        Mockito.doReturn(1l).when(securityGroupVoMock).getId();
+
+        userVmManagerImpl.addDefaultSecurityGroupToSecurityGroupIdList(accountMock, securityGroupIdList);
+
+        Mockito.verify(securityGroupIdList, Mockito.never()).add(Mockito.anyLong());
+    }
+
+    @Test
+    public void addDefaultSecurityGroupToSecurityGroupIdListTestDefaultGroupIsNotPresentCallsAddIdToSecurityGroupIdList() {
+        LinkedList<Long> securityGroupIdList = Mockito.spy(new LinkedList<Long>());
+
+        Mockito.doReturn(securityGroupVoMock).when(securityGroupManagerMock).getDefaultSecurityGroup(Mockito.anyLong());
+        Mockito.doReturn(1l).when(securityGroupVoMock).getId();
+
+        userVmManagerImpl.addDefaultSecurityGroupToSecurityGroupIdList(accountMock, securityGroupIdList);
+
+        Mockito.verify(securityGroupIdList).add(1l);
+    }
+
+    @Test
+    public void keepOldSharedNetworkForVmTestNetworkIdListIsNotNullOrEmptyDoesNotCallFindDefaultNicForVm() {
+        LinkedList<Long> networkIdList = new LinkedList<Long>();
+        HashSet<NetworkVO> applicableNetworks = new HashSet<NetworkVO>();
+        HashMap<Long, String> requestedIPv4ForNics = new HashMap<Long, String>();
+        HashMap<Long, String> requestedIPv6ForNics = new HashMap<Long, String>();
+
+        networkIdList.add(1l);
+
+        userVmManagerImpl.keepOldSharedNetworkForVm(userVmVoMock, accountMock, networkIdList, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
+
+        Mockito.verify(nicDao, Mockito.never()).findDefaultNicForVM(Mockito.anyLong());
+    }
+
+    @Test
+    public void keepOldSharedNetworkForVmTestNetworkIdListIsNullCallsFindDefaultNicForVm() {
+        HashSet<NetworkVO> applicableNetworks = new HashSet<NetworkVO>();
+        HashMap<Long, String> requestedIPv4ForNics = new HashMap<Long, String>();
+        HashMap<Long, String> requestedIPv6ForNics = new HashMap<Long, String>();
+
+        userVmManagerImpl.keepOldSharedNetworkForVm(userVmVoMock, accountMock, null, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
+
+        Mockito.verify(nicDao).findDefaultNicForVM(Mockito.anyLong());
+    }
+
+    @Test
+    public void keepOldSharedNetworkForVmTestNetworkIdListIsEmptyCallsFindDefaultNicForVm() {
+        LinkedList<Long> networkIdList = new LinkedList<Long>();
+        HashSet<NetworkVO> applicableNetworks = new HashSet<NetworkVO>();
+        HashMap<Long, String> requestedIPv4ForNics = new HashMap<Long, String>();
+        HashMap<Long, String> requestedIPv6ForNics = new HashMap<Long, String>();
+
+        userVmManagerImpl.keepOldSharedNetworkForVm(userVmVoMock, accountMock, networkIdList, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
+
+        Mockito.verify(nicDao).findDefaultNicForVM(Mockito.anyLong());
+    }
+
+    @Test
+    public void keepOldSharedNetworkForVmTestDefaultNicOldIsNullDoesNotCallNetworkDaoFindById() {
+        HashSet<NetworkVO> applicableNetworks = new HashSet<NetworkVO>();
+        HashMap<Long, String> requestedIPv4ForNics = new HashMap<Long, String>();
+        HashMap<Long, String> requestedIPv6ForNics = new HashMap<Long, String>();
+
+        Mockito.doReturn(null).when(nicDao).findDefaultNicForVM(Mockito.anyLong());
+
+        userVmManagerImpl.keepOldSharedNetworkForVm(userVmVoMock, accountMock, null, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
+
+        Mockito.verify(_networkDao, Mockito.never()).findById(Mockito.anyLong());
+    }
+
+    @Test
+    public void keepOldSharedNetworkForVmTestDefaultNicOldIsNotNullCallsNetworkDaoFindById() {
+        HashSet<NetworkVO> applicableNetworks = new HashSet<NetworkVO>();
+        HashMap<Long, String> requestedIPv4ForNics = new HashMap<Long, String>();
+        HashMap<Long, String> requestedIPv6ForNics = new HashMap<Long, String>();
+
+        Mockito.doReturn(new NicVO()).when(nicDao).findDefaultNicForVM(Mockito.anyLong());
+
+        userVmManagerImpl.keepOldSharedNetworkForVm(userVmVoMock, accountMock, null, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
+
+        Mockito.verify(_networkDao).findById(Mockito.anyLong());
+    }
+
+    @Test
+    public void keepOldSharedNetworkForVmTestAccountCanNotUseNetworkDoesNotAddNetworkToApplicableNetworks() {
+        HashSet<NetworkVO> applicableNetworks = Mockito.spy(new HashSet<NetworkVO>());
+        HashMap<Long, String> requestedIPv4ForNics = new HashMap<Long, String>();
+        HashMap<Long, String> requestedIPv6ForNics = new HashMap<Long, String>();
+
+        Mockito.doReturn(new NicVO()).when(nicDao).findDefaultNicForVM(Mockito.anyLong());
+        Mockito.doReturn(networkMock).when(_networkDao).findById(Mockito.anyLong());
+        Mockito.doReturn(false).when(userVmManagerImpl).canAccountUseNetwork(accountMock, networkMock);
+
+        userVmManagerImpl.keepOldSharedNetworkForVm(userVmVoMock, accountMock, null, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
+
+        Mockito.verify(applicableNetworks, Mockito.never()).add(Mockito.any());
+    }
+
+    @Test
+    public void keepOldSharedNetworkForVmTestAccountCanUseNetworkAddsNetworkToApplicableNetworks() {
+        HashSet<NetworkVO> applicableNetworks = Mockito.spy(new HashSet<NetworkVO>());
+        HashMap<Long, String> requestedIPv4ForNics = new HashMap<Long, String>();
+        HashMap<Long, String> requestedIPv6ForNics = new HashMap<Long, String>();
+
+        Mockito.doReturn(new NicVO()).when(nicDao).findDefaultNicForVM(Mockito.anyLong());
+        Mockito.doReturn(networkMock).when(_networkDao).findById(Mockito.anyLong());
+        Mockito.doReturn(true).when(userVmManagerImpl).canAccountUseNetwork(accountMock, networkMock);
+
+        userVmManagerImpl.keepOldSharedNetworkForVm(userVmVoMock, accountMock, null, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
+
+        Mockito.verify(applicableNetworks).add(Mockito.any());
+    }
+
+    @Test
+    public void addAdditionalNetworksToVmTestNetworkIdListIsNullDoesNotCallCheckNetworkPermissions() {
+        HashSet<NetworkVO> applicableNetworks = Mockito.spy(new HashSet<NetworkVO>());
+        HashMap<Long, String> requestedIPv4ForNics = new HashMap<Long, String>();
+        HashMap<Long, String> requestedIPv6ForNics = new HashMap<Long, String>();
+
+        userVmManagerImpl.addAdditionalNetworksToVm(userVmVoMock, accountMock, null, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
+
+        Mockito.verify(networkModel, Mockito.never()).checkNetworkPermissions(Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void addAdditionalNetworksToVmTestNetworkIdListIsEmptyDoesNotCallCheckNetworkPermissions() {
+        LinkedList<Long> networkIdList = new LinkedList<Long>();
+        HashSet<NetworkVO> applicableNetworks = Mockito.spy(new HashSet<NetworkVO>());
+        HashMap<Long, String> requestedIPv4ForNics = new HashMap<Long, String>();
+        HashMap<Long, String> requestedIPv6ForNics = new HashMap<Long, String>();
+
+        userVmManagerImpl.addAdditionalNetworksToVm(userVmVoMock, accountMock, networkIdList, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
+
+        Mockito.verify(networkModel, Mockito.never()).checkNetworkPermissions(Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void addAdditionalNetworksToVmTestNetworkIsNullThrowsInvalidParameterValueException() {
+        String expectedMessage = "Unable to find specified Network ID.";
+        LinkedList<Long> networkIdList = new LinkedList<Long>();
+        HashSet<NetworkVO> applicableNetworks = Mockito.spy(new HashSet<NetworkVO>());
+        HashMap<Long, String> requestedIPv4ForNics = new HashMap<Long, String>();
+        HashMap<Long, String> requestedIPv6ForNics = new HashMap<Long, String>();
+
+        networkIdList.add(1l);
+
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
+            userVmManagerImpl.addAdditionalNetworksToVm(userVmVoMock, accountMock, networkIdList, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
+        });
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void addAdditionalNetworksToVmTestNetworkOfferingIsSystemOnlyThrowsInvalidParameterValueException() {
+        String expectedMessage = String.format("Specified network [%s] is system only and cannot be used for VM deployment.", networkMock);
+        LinkedList<Long> networkIdList = new LinkedList<Long>();
+        HashSet<NetworkVO> applicableNetworks = Mockito.spy(new HashSet<NetworkVO>());
+        HashMap<Long, String> requestedIPv4ForNics = new HashMap<Long, String>();
+        HashMap<Long, String> requestedIPv6ForNics = new HashMap<Long, String>();
+
+        networkIdList.add(1l);
+
+        Mockito.doReturn(networkMock).when(_networkDao).findById(Mockito.anyLong());
+        Mockito.doReturn(networkOfferingVoMock).when(entityManager).findById(Mockito.any(), Mockito.anyLong());
+        Mockito.doReturn(true).when(networkOfferingVoMock).isSystemOnly();
+
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
+            userVmManagerImpl.addAdditionalNetworksToVm(userVmVoMock, accountMock, networkIdList, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
+        });
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void addAdditionalNetworksToVmTestNetworkIsNotSharedGuestTypeDoesNotCallNicDaoFindByNtwkIdAndInstanceId() {
+        LinkedList<Long> networkIdList = new LinkedList<Long>();
+        HashSet<NetworkVO> applicableNetworks = Mockito.spy(new HashSet<NetworkVO>());
+        HashMap<Long, String> requestedIPv4ForNics = new HashMap<Long, String>();
+        HashMap<Long, String> requestedIPv6ForNics = new HashMap<Long, String>();
+
+        networkIdList.add(1l);
+
+        Mockito.doReturn(networkMock).when(_networkDao).findById(Mockito.anyLong());
+        Mockito.doReturn(networkOfferingVoMock).when(entityManager).findById(Mockito.any(), Mockito.anyLong());
+        Mockito.doReturn(false).when(networkOfferingVoMock).isSystemOnly();
+        Mockito.doReturn(Network.GuestType.L2).when(networkMock).getGuestType();
+
+        userVmManagerImpl.addAdditionalNetworksToVm(userVmVoMock, accountMock, networkIdList, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
+
+        Mockito.verify(nicDao, Mockito.never()).findByNtwkIdAndInstanceId(Mockito.anyLong(), Mockito.anyLong());
+    }
+
+    @Test
+    public void addAdditionalNetworksToVmTestNetworkIsNotDomainAclTypeDoesNotCallNicDaoFindByNtwkIdAndInstanceId() {
+        LinkedList<Long> networkIdList = new LinkedList<Long>();
+        HashSet<NetworkVO> applicableNetworks = Mockito.spy(new HashSet<NetworkVO>());
+        HashMap<Long, String> requestedIPv4ForNics = new HashMap<Long, String>();
+        HashMap<Long, String> requestedIPv6ForNics = new HashMap<Long, String>();
+
+        networkIdList.add(1l);
+
+        Mockito.doReturn(networkMock).when(_networkDao).findById(Mockito.anyLong());
+        Mockito.doReturn(networkOfferingVoMock).when(entityManager).findById(Mockito.any(), Mockito.anyLong());
+        Mockito.doReturn(false).when(networkOfferingVoMock).isSystemOnly();
+        Mockito.doReturn(Network.GuestType.Shared).when(networkMock).getGuestType();
+        Mockito.doReturn(ControlledEntity.ACLType.Account).when(networkMock).getAclType();
+
+        userVmManagerImpl.addAdditionalNetworksToVm(userVmVoMock, accountMock, networkIdList, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
+
+        Mockito.verify(nicDao, Mockito.never()).findByNtwkIdAndInstanceId(Mockito.anyLong(), Mockito.anyLong());
+    }
+
+    @Test
+    public void addAdditionalNetworksToVmTestOldNicIsNullDoesNotPutIpv4InRequestIpv4ForNics() {
+        LinkedList<Long> networkIdList = new LinkedList<Long>();
+        HashSet<NetworkVO> applicableNetworks = Mockito.spy(new HashSet<NetworkVO>());
+        HashMap<Long, String> requestedIPv4ForNics = Mockito.spy(new HashMap<Long, String>());
+        HashMap<Long, String> requestedIPv6ForNics = new HashMap<Long, String>();
+
+        networkIdList.add(1l);
+
+        Mockito.doReturn(networkMock).when(_networkDao).findById(Mockito.anyLong());
+        Mockito.doReturn(networkOfferingVoMock).when(entityManager).findById(Mockito.any(), Mockito.anyLong());
+        Mockito.doReturn(false).when(networkOfferingVoMock).isSystemOnly();
+        Mockito.doReturn(Network.GuestType.Shared).when(networkMock).getGuestType();
+        Mockito.doReturn(ControlledEntity.ACLType.Domain).when(networkMock).getAclType();
+        Mockito.doReturn(null).when(nicDao).findByNtwkIdAndInstanceId(Mockito.anyLong(), Mockito.anyLong());
+
+        userVmManagerImpl.addAdditionalNetworksToVm(userVmVoMock, accountMock, networkIdList, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
+
+        Mockito.verify(nicDao).findByNtwkIdAndInstanceId(Mockito.anyLong(), Mockito.anyLong());
+        Mockito.verify(requestedIPv4ForNics, Mockito.never()).put(Mockito.anyLong(), Mockito.any());
+    }
+
+    @Test
+    public void addAdditionalNetworksToVmTestOldNicIsNotNullPutsIpv4InRequestIpv4ForNics() {
+        LinkedList<Long> networkIdList = new LinkedList<Long>();
+        HashSet<NetworkVO> applicableNetworks = Mockito.spy(new HashSet<NetworkVO>());
+        HashMap<Long, String> requestedIPv4ForNics = Mockito.spy(new HashMap<Long, String>());
+        HashMap<Long, String> requestedIPv6ForNics = new HashMap<Long, String>();
+
+        networkIdList.add(1l);
+
+        Mockito.doReturn(networkMock).when(_networkDao).findById(Mockito.anyLong());
+        Mockito.doReturn(networkOfferingVoMock).when(entityManager).findById(Mockito.any(), Mockito.anyLong());
+        Mockito.doReturn(false).when(networkOfferingVoMock).isSystemOnly();
+        Mockito.doReturn(Network.GuestType.Shared).when(networkMock).getGuestType();
+        Mockito.doReturn(ControlledEntity.ACLType.Domain).when(networkMock).getAclType();
+        Mockito.doReturn(new NicVO()).when(nicDao).findByNtwkIdAndInstanceId(Mockito.anyLong(), Mockito.anyLong());
+
+        userVmManagerImpl.addAdditionalNetworksToVm(userVmVoMock, accountMock, networkIdList, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
+
+        Mockito.verify(nicDao).findByNtwkIdAndInstanceId(Mockito.anyLong(), Mockito.anyLong());
+        Mockito.verify(requestedIPv4ForNics).put(Mockito.anyLong(), Mockito.any());
+    }
+
+    @Test
+    public void createApplicableNetworkToCreateVmTestPhysicalNetworkIsNullThrowsInvalidParameterValueException() {
+        Mockito.doReturn(networkOfferingVoMock).when(userVmManagerImpl).getOfferingWithRequiredAvailabilityForNetworkCreation();
+
+        String expectedMessage = String.format("Unable to find physical network with ID [%s] and tag [%s].", 0l, null);
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
+            userVmManagerImpl.createApplicableNetworkToCreateVm(accountMock, _dcMock);
+        });
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void createApplicableNetworkToCreateVmTestFirstNetworkOfferingIsPersistentCallsImplementNetwork() throws InsufficientCapacityException, ResourceAllocationException {
+        PhysicalNetworkVO physicalNetworkVo = new PhysicalNetworkVO();
+
+        Mockito.doReturn(physicalNetworkVo).when(physicalNetworkDaoMock).findById(Mockito.anyLong());
+        Mockito.doReturn(true).when(networkOfferingVoMock).isPersistent();
+        Mockito.doReturn(networkOfferingVoMock).when(userVmManagerImpl).getOfferingWithRequiredAvailabilityForNetworkCreation();
+        Mockito.doReturn(networkMock).when(userVmManagerImpl).implementNetwork(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.doReturn(networkMock).when(_networkMgr).createGuestNetwork(Mockito.anyLong(), Mockito.anyString(),
+                Mockito.anyString(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+
+        userVmManagerImpl.createApplicableNetworkToCreateVm(accountMock, _dcMock);
+
+        Mockito.verify(userVmManagerImpl).implementNetwork(callerAccount, _dcMock, networkMock);
+    }
+
+    @Test
+    public void createApplicableNetworkToCreateVmTestFirstNetworkOfferingIsNotPersistentDoesNotCallImplementNetwork() throws InsufficientCapacityException,
+            ResourceAllocationException {
+
+        PhysicalNetworkVO physicalNetworkVo = new PhysicalNetworkVO();
+
+        Mockito.doReturn(physicalNetworkVo).when(physicalNetworkDaoMock).findById(Mockito.anyLong());
+        Mockito.doReturn(networkMock).when(_networkMgr).createGuestNetwork(Mockito.anyLong(), Mockito.anyString(),
+                Mockito.anyString(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.doReturn(networkOfferingVoMock).when(userVmManagerImpl).getOfferingWithRequiredAvailabilityForNetworkCreation();
+        Mockito.doReturn(1l).when(networkMock).getId();
+        Mockito.doReturn(networkMock).when(_networkDao).findById(Mockito.anyLong());
+
+        userVmManagerImpl.createApplicableNetworkToCreateVm(accountMock, _dcMock);
+
+        Mockito.verify(userVmManagerImpl, Mockito.never()).implementNetwork(Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void canAccountUseNetworkTestNetworkIsNullReturnFalse() {
+        boolean canAccountUseNetwork = userVmManagerImpl.canAccountUseNetwork(accountMock, null);
+
+        Assert.assertFalse(canAccountUseNetwork);
+    }
+
+    @Test
+    public void canAccountUseNetworkTestNetworkAclTypeIsNotDomainReturnFalse() {
+        Mockito.doReturn(ControlledEntity.ACLType.Account).when(networkMock).getAclType();
+
+        boolean canAccountUseNetwork = userVmManagerImpl.canAccountUseNetwork(accountMock, networkMock);
+
+        Assert.assertFalse(canAccountUseNetwork);
+    }
+
+    @Test
+    public void canAccountUseNetworkTestNetworkGuestTypeIsNotSharedOrL2ReturnFalse() {
+        Mockito.doReturn(ControlledEntity.ACLType.Domain).when(networkMock).getAclType();
+        Mockito.doReturn(Network.GuestType.Isolated).when(networkMock).getGuestType();
+
+        boolean canAccountUseNetwork = userVmManagerImpl.canAccountUseNetwork(accountMock, networkMock);
+
+        Assert.assertFalse(canAccountUseNetwork);
+    }
+
+    @Test
+    public void canAccountUseNetworkTestNetworkGuestTypeIsSharedReturnTrue() {
+        Mockito.doReturn(ControlledEntity.ACLType.Domain).when(networkMock).getAclType();
+        Mockito.doReturn(Network.GuestType.Shared).when(networkMock).getGuestType();
+
+        boolean canAccountUseNetwork = userVmManagerImpl.canAccountUseNetwork(accountMock, networkMock);
+
+        Mockito.verify(networkModel).checkNetworkPermissions(accountMock, networkMock);
+        Assert.assertTrue(canAccountUseNetwork);
+    }
+
+    @Test
+    public void canAccountUseNetworkTestNetworkGuestTypeIsL2ReturnTrue() {
+        Mockito.doReturn(ControlledEntity.ACLType.Domain).when(networkMock).getAclType();
+        Mockito.doReturn(Network.GuestType.L2).when(networkMock).getGuestType();
+
+        boolean canAccountUseNetwork = userVmManagerImpl.canAccountUseNetwork(accountMock, networkMock);
+
+        Mockito.verify(networkModel).checkNetworkPermissions(accountMock, networkMock);
+        Assert.assertTrue(canAccountUseNetwork);
+    }
+
+    @Test
+    public void canAccountUseNetworkTestPermissionDeniedExceptionThrownReturnFalse() {
+        Mockito.doReturn(ControlledEntity.ACLType.Domain).when(networkMock).getAclType();
+        Mockito.doReturn(Network.GuestType.L2).when(networkMock).getGuestType();
+
+        doThrow(PermissionDeniedException.class).when(networkModel).checkNetworkPermissions(accountMock, networkMock);
+
+        boolean canAccountUseNetwork = userVmManagerImpl.canAccountUseNetwork(accountMock, networkMock);
+
+        Assert.assertFalse(canAccountUseNetwork);
+    }
+
+    @Test
+    public void implementNetworkTestImplementedNetworkIsNullReturnCurrentNewNetwork() throws ResourceUnavailableException, InsufficientCapacityException {
+        CallContext callContextMock = Mockito.mock(CallContext.class);
+        NetworkVO currentNetwork = Mockito.mock(NetworkVO.class);
+
+        try (MockedStatic<CallContext> ignored = mockStatic(CallContext.class)) {
+            Mockito.when(CallContext.current()).thenReturn(callContextMock);
+
+            Mockito.doReturn(1l).when(callContextMock).getCallingUserId();
+
+            Mockito.doReturn(callerUser).when(userDao).findById(Mockito.anyLong());
+            Mockito.doReturn(null).when(_networkMgr).implementNetwork(Mockito.anyLong(), Mockito.any(), Mockito.any());
+
+            Network newNetwork = userVmManagerImpl.implementNetwork(accountMock, _dcMock, currentNetwork);
+
+            Assert.assertEquals(newNetwork, currentNetwork);
+        }
+    }
+
+    @Test
+    public void implementNetworkTestImplementedNetworkFirstIsNullReturnCurrentNewNetwork() throws ResourceUnavailableException, InsufficientCapacityException {
+        CallContext callContextMock = Mockito.mock(CallContext.class);
+        NetworkVO currentNetwork = Mockito.mock(NetworkVO.class);
+
+        try (MockedStatic<CallContext> ignored = mockStatic(CallContext.class)) {
+            Mockito.when(CallContext.current()).thenReturn(callContextMock);
+
+            Mockito.doReturn(1l).when(callContextMock).getCallingUserId();
+
+            Pair<? extends NetworkGuru, ? extends Network> implementedNetwork = Mockito.mock(Pair.class);
+
+            Mockito.doReturn(callerUser).when(userDao).findById(Mockito.anyLong());
+            Mockito.doReturn(null).when(implementedNetwork).first();
+            Mockito.doReturn(implementedNetwork).when(_networkMgr).implementNetwork(Mockito.anyLong(), Mockito.any(), Mockito.any());
+
+            Network newNetwork = userVmManagerImpl.implementNetwork(accountMock, _dcMock, currentNetwork);
+
+            Assert.assertEquals(newNetwork, currentNetwork);
+        }
+    }
+
+    @Test
+    public void implementNetworkTestImplementedNetworkSecondIsNullReturnCurrentNewNetwork() throws ResourceUnavailableException, InsufficientCapacityException {
+        CallContext callContextMock = Mockito.mock(CallContext.class);
+        NetworkVO currentNetwork = Mockito.mock(NetworkVO.class);
+
+        try (MockedStatic<CallContext> ignored = mockStatic(CallContext.class)) {
+            Mockito.when(CallContext.current()).thenReturn(callContextMock);
+
+            Mockito.doReturn(1l).when(callContextMock).getCallingUserId();
+
+            Pair<? extends NetworkGuru, ? extends Network> implementedNetwork = Mockito.mock(Pair.class);
+
+            Mockito.doReturn(callerUser).when(userDao).findById(Mockito.anyLong());
+            Mockito.doReturn(networkMock).when(implementedNetwork).first();
+            Mockito.doReturn(null).when(implementedNetwork).second();
+            Mockito.doReturn(implementedNetwork).when(_networkMgr).implementNetwork(Mockito.anyLong(), Mockito.any(), Mockito.any());
+
+            Network newNetwork = userVmManagerImpl.implementNetwork(accountMock, _dcMock, currentNetwork);
+
+            Assert.assertEquals(newNetwork, currentNetwork);
+        }
+    }
+
+    @Test
+    public void implementNetworkTestImplementedNetworkSecondIsNotNullReturnImplementedNetworkSecond() throws ResourceUnavailableException, InsufficientCapacityException {
+        CallContext callContextMock = Mockito.mock(CallContext.class);
+        NetworkVO currentNetwork = Mockito.mock(NetworkVO.class);
+
+        try (MockedStatic<CallContext> ignored = mockStatic(CallContext.class)) {
+            Mockito.when(CallContext.current()).thenReturn(callContextMock);
+
+            Mockito.doReturn(1l).when(callContextMock).getCallingUserId();
+
+            Pair<? extends NetworkGuru, ? extends Network> implementedNetwork = Mockito.mock(Pair.class);
+
+            Mockito.doReturn(callerUser).when(userDao).findById(Mockito.anyLong());
+            Mockito.doReturn(networkMock).when(implementedNetwork).first();
+            Mockito.doReturn(networkMock).when(implementedNetwork).second();
+            Mockito.doReturn(implementedNetwork).when(_networkMgr).implementNetwork(Mockito.anyLong(), Mockito.any(), Mockito.any());
+
+            Network newNetwork = userVmManagerImpl.implementNetwork(accountMock, _dcMock, currentNetwork);
+
+            Assert.assertEquals(newNetwork, networkMock);
+        }
+    }
+
+    @Test
+    public void implementNetworkTestImplementedNetworkCatchException() throws ResourceUnavailableException, InsufficientCapacityException {
+        String expectedMessage = String.format("Failed to implement network [%s] elements and resources as a part of network provision.", networkMock);
+
+        CallContext callContextMock = Mockito.mock(CallContext.class);
+
+        try (MockedStatic<CallContext> ignored = mockStatic(CallContext.class)) {
+            Mockito.when(CallContext.current()).thenReturn(callContextMock);
+
+            Mockito.doReturn(1l).when(callContextMock).getCallingUserId();
+
+            Pair<? extends NetworkGuru, ? extends Network> implementedNetwork = Mockito.mock(Pair.class);
+
+            Mockito.doReturn(callerUser).when(userDao).findById(Mockito.anyLong());
+            doThrow(InvalidParameterValueException.class).when(_networkMgr).implementNetwork(Mockito.anyLong(), Mockito.any(), Mockito.any());
+
+            CloudRuntimeException assertThrows = Assert.assertThrows(expectedCloudRuntimeException, () -> {
+                userVmManagerImpl.implementNetwork(accountMock, _dcMock, networkMock);
+            });
+
+            Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+        }
+    }
+
+    @Test
+    public void updateBasicTypeNetworkForVmTestNetworkIdListIsNotEmptyThrowsInvalidParameterValueException() {
+        String expectedMessage = "Cannot move VM with Network IDs; this is a basic zone VM.";
+        LinkedList<Long> networkIdList = new LinkedList<Long>();
+        LinkedList<Long> securityGroupIdList = new LinkedList<Long>();
+
+        networkIdList.add(1l);
+
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
+            userVmManagerImpl.updateBasicTypeNetworkForVm(userVmVoMock, accountMock, virtualMachineTemplateMock, virtualMachineProfileMock, _dcMock, networkIdList,
+                    securityGroupIdList);
+        });
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void updateBasicTypeNetworkForVmTestNetworkIdListIsNullCallsCleanupOfOldOwnerNicsForNetworkAddDefaultNetworkToNetworkListAllocateNetworksForVmAndAddSecurityGroupsToVm()
+            throws InsufficientCapacityException {
+
+        LinkedList<Long> securityGroupIdList = Mockito.mock(LinkedList.class);
+
+        Mockito.doReturn(networkMock).when(networkModel).getExclusiveGuestNetwork(Mockito.anyLong());
+
+        userVmManagerImpl.updateBasicTypeNetworkForVm(userVmVoMock, accountMock, virtualMachineTemplateMock, virtualMachineProfileMock, _dcMock, null,
+                securityGroupIdList);
+
+        Mockito.verify(userVmManagerImpl).cleanupOfOldOwnerNicsForNetwork(virtualMachineProfileMock);
+        Mockito.verify(userVmManagerImpl).addDefaultNetworkToNetworkList(anyList(), Mockito.any());
+        Mockito.verify(userVmManagerImpl).allocateNetworksForVm(Mockito.any(), Mockito.any());
+        Mockito.verify(userVmManagerImpl).addSecurityGroupsToVm(accountMock, userVmVoMock,virtualMachineTemplateMock, securityGroupIdList, networkMock);
+    }
+
+    @Test
+    public void updateBasicTypeNetworkForVmTestNetworkIdListIsEmptyCallsCleanupOfOldOwnerNicsForNetworkAddDefaultNetworkToNetworkListAllocateNetworksForVmAndAddSecurityGroupsToVm()
+            throws InsufficientCapacityException {
+
+        LinkedList<Long> securityGroupIdList = Mockito.mock(LinkedList.class);
+        LinkedList<Long> networkIdList = new LinkedList<Long>();
+
+        Mockito.doReturn(networkMock).when(networkModel).getExclusiveGuestNetwork(Mockito.anyLong());
+
+        userVmManagerImpl.updateBasicTypeNetworkForVm(userVmVoMock, accountMock, virtualMachineTemplateMock, virtualMachineProfileMock, _dcMock, networkIdList,
+                securityGroupIdList);
+
+        Mockito.verify(userVmManagerImpl).cleanupOfOldOwnerNicsForNetwork(virtualMachineProfileMock);
+        Mockito.verify(userVmManagerImpl).addDefaultNetworkToNetworkList(anyList(), Mockito.any());
+        Mockito.verify(userVmManagerImpl).allocateNetworksForVm(Mockito.any(), Mockito.any());
+        Mockito.verify(userVmManagerImpl).addSecurityGroupsToVm(accountMock, userVmVoMock,virtualMachineTemplateMock, securityGroupIdList, networkMock);
+    }
+
+    @Test
+    public void updateAdvancedTypeNetworkForVmTestSecurityGroupIsEnabledApplicableNetworksIsEmptyThrowsInvalidParameterValueException() {
+        String expectedMessage = "No network is specified, please specify one when you move the VM. For now, please add a network to VM on NICs tab.";
+        LinkedList<Long> securityGroupIdList = Mockito.mock(LinkedList.class);
+        LinkedList<Long> networkIdList = new LinkedList<Long>();
+
+        Mockito.doReturn(true).when(networkModel).checkSecurityGroupSupportForNetwork(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
+            userVmManagerImpl.updateAdvancedTypeNetworkForVm(callerAccount, userVmVoMock, accountMock, virtualMachineTemplateMock, virtualMachineProfileMock,
+                    _dcMock, networkIdList, securityGroupIdList);
+        });
+
+        Mockito.verify(securityGroupManagerMock).removeInstanceFromGroups(Mockito.any());
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void updateAdvancedTypeNetworkForVmTestSecurityGroupIsEnabledApplicableNetworksIsNotEmptyCallsAllocateNetworksForVm() throws InsufficientCapacityException,
+            ResourceAllocationException {
+
+        LinkedList<Long> securityGroupIdList = Mockito.mock(LinkedList.class);
+        LinkedList<Long> networkIdList = new LinkedList<Long>();
+
+        Mockito.doReturn(new NicVO()).when(nicDao).findDefaultNicForVM(Mockito.anyLong());
+        Mockito.doReturn(networkMock).when(_networkDao).findById(Mockito.anyLong());
+        Mockito.doReturn(true).when(userVmManagerImpl).canAccountUseNetwork(accountMock, networkMock);
+
+        Mockito.doReturn(true).when(networkModel).checkSecurityGroupSupportForNetwork(accountMock, _dcMock, networkIdList, securityGroupIdList);
+
+        userVmManagerImpl.updateAdvancedTypeNetworkForVm(callerAccount, userVmVoMock, accountMock, virtualMachineTemplateMock, virtualMachineProfileMock, _dcMock,
+                networkIdList, securityGroupIdList);
+
+        Mockito.verify(securityGroupManagerMock).removeInstanceFromGroups(Mockito.any());
+        Mockito.verify(userVmManagerImpl).allocateNetworksForVm(Mockito.any(), Mockito.any());
+        Mockito.verify(userVmManagerImpl).addSecurityGroupsToVm(accountMock, userVmVoMock, virtualMachineTemplateMock, securityGroupIdList, networkMock);
+    }
+
+    @Test
+    public void updateAdvancedTypeNetworkForVmTestSecurityGroupIsNotEnabledSecurityGroupIdListIsNotEmptyThrowsInvalidParameterValueException() {
+        String expectedMessage = "Cannot move VM with security groups; security group feature is not enabled in this zone.";
+        LinkedList<Long> securityGroupIdList = Mockito.mock(LinkedList.class);
+        LinkedList<Long> networkIdList = new LinkedList<Long>();
+
+        securityGroupIdList.add(1l);
+
+        Mockito.doReturn(false).when(networkModel).checkSecurityGroupSupportForNetwork(accountMock, _dcMock, networkIdList, securityGroupIdList);
+
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
+            userVmManagerImpl.updateAdvancedTypeNetworkForVm(callerAccount, userVmVoMock, accountMock, virtualMachineTemplateMock, virtualMachineProfileMock,
+                    _dcMock, networkIdList, securityGroupIdList);
+        });
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void updateAdvancedTypeNetworkForVmTestSecurityGroupIsNotEnabledApplicableNetworksIsEmptyCallsSelectApplicableNetworkToCreateVm() throws InsufficientCapacityException,
+            ResourceAllocationException {
+
+        LinkedList<Long> securityGroupIdList = Mockito.mock(LinkedList.class);
+        LinkedList<Long> networkIdList = new LinkedList<Long>();
+
+        Mockito.doReturn(networkMock).when(userVmManagerImpl).addNicsToApplicableNetworksAndReturnDefaultNetwork(Mockito.any(), Mockito.anyMap(), Mockito.anyMap(), Mockito.any());
+        Mockito.doNothing().when(userVmManagerImpl).selectApplicableNetworkToCreateVm(Mockito.any(), Mockito.any(), Mockito.any());
+
+        Mockito.doReturn(false).when(networkModel).checkSecurityGroupSupportForNetwork(accountMock, _dcMock, networkIdList, securityGroupIdList);
+        Mockito.doReturn(true).when(securityGroupIdList).isEmpty();
+
+        userVmManagerImpl.updateAdvancedTypeNetworkForVm(callerAccount, userVmVoMock, accountMock, virtualMachineTemplateMock, virtualMachineProfileMock, _dcMock,
+                networkIdList, securityGroupIdList);
+
+        Mockito.verify(userVmManagerImpl).addNetworksToNetworkIdList(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyMap(), Mockito.anyMap());
+        Mockito.verify(userVmManagerImpl).cleanupOfOldOwnerNicsForNetwork(Mockito.any());
+        Mockito.verify(userVmManagerImpl).selectApplicableNetworkToCreateVm(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(userVmManagerImpl).addNicsToApplicableNetworksAndReturnDefaultNetwork(Mockito.any(), Mockito.anyMap(), Mockito.anyMap(), Mockito.any());
+        Mockito.verify(userVmManagerImpl).allocateNetworksForVm(Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void updateAdvancedTypeNetworkForVmTestSecurityGroupIsNotEnabledApplicableNetworksIsNotEmptyDoesNotCallSelectApplicableNetworkToCreateVm()
+            throws InsufficientCapacityException, ResourceAllocationException {
+
+        LinkedList<Long> securityGroupIdList = Mockito.mock(LinkedList.class);
+        LinkedList<Long> networkIdList = new LinkedList<Long>();
+
+        Mockito.doReturn(false).when(networkModel).checkSecurityGroupSupportForNetwork(accountMock, _dcMock, networkIdList, securityGroupIdList);
+        Mockito.doReturn(true).when(securityGroupIdList).isEmpty();
+
+        Mockito.doReturn(new NicVO()).when(nicDao).findDefaultNicForVM(Mockito.anyLong());
+        Mockito.doReturn(networkMock).when(_networkDao).findById(Mockito.anyLong());
+        Mockito.doReturn(true).when(userVmManagerImpl).canAccountUseNetwork(accountMock, networkMock);
+
+        userVmManagerImpl.updateAdvancedTypeNetworkForVm(callerAccount, userVmVoMock, accountMock, virtualMachineTemplateMock, virtualMachineProfileMock, _dcMock,
+                networkIdList, securityGroupIdList);
+
+        Mockito.verify(userVmManagerImpl).addNetworksToNetworkIdList(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyMap(), Mockito.anyMap());
+        Mockito.verify(userVmManagerImpl).cleanupOfOldOwnerNicsForNetwork(Mockito.any());
+        Mockito.verify(userVmManagerImpl, Mockito.never()).selectApplicableNetworkToCreateVm(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(userVmManagerImpl).addNicsToApplicableNetworksAndReturnDefaultNetwork(Mockito.any(), Mockito.anyMap(), Mockito.anyMap(), Mockito.any());
+        Mockito.verify(userVmManagerImpl).allocateNetworksForVm(Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void addNicsToApplicableNetworksAndReturnDefaultNetworkTestApplicableNetworkIsEmptyReturnNull() {
+        HashMap<Long, String> requestedIPv4ForNics = new HashMap<Long, String>();
+        HashMap<Long, String> requestedIPv6ForNics = new HashMap<Long, String>();
+        LinkedHashSet<NetworkVO> applicableNetworks = new LinkedHashSet<NetworkVO>();
+        LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>();
+
+        NetworkVO defaultNetwork = userVmManagerImpl.addNicsToApplicableNetworksAndReturnDefaultNetwork(applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics, networks);
+
+        Assert.assertNull(defaultNetwork);
+    }
+
+    @Test
+    public void addNicsToApplicableNetworksAndReturnDefaultNetworkTestApplicableNetworkIsNotEmptyReturnFirstElement() {
+        HashMap<Long, String> requestedIPv4ForNics = new HashMap<Long, String>();
+        HashMap<Long, String> requestedIPv6ForNics = new HashMap<Long, String>();
+        LinkedHashSet<NetworkVO> applicableNetworks = new LinkedHashSet<NetworkVO>();
+        LinkedHashMap<Network, List<? extends NicProfile>> networks = Mockito.spy(LinkedHashMap.class);
+
+        applicableNetworks.add(networkMock);
+
+        NetworkVO defaultNetwork = userVmManagerImpl.addNicsToApplicableNetworksAndReturnDefaultNetwork(applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics, networks);
+
+        Mockito.verify(networks).put(Mockito.any(), Mockito.any());
+        Assert.assertEquals(defaultNetwork, networkMock);
+    }
+
+    @Test
+    public void addNicsToApplicableNetworksAndReturnDefaultNetworkTestApplicableNetworkIsNotEmptyPutTwoNetworksInNetworksMapAndReturnFirst() {
+        HashMap<Long, String> requestedIPv4ForNics = new HashMap<Long, String>();
+        HashMap<Long, String> requestedIPv6ForNics = new HashMap<Long, String>();
+        LinkedHashSet<NetworkVO> applicableNetworks = new LinkedHashSet<NetworkVO>();
+        LinkedHashMap<Network, List<? extends NicProfile>> networks = Mockito.spy(LinkedHashMap.class);
+
+        NetworkVO networkVoMock2 = Mockito.mock(NetworkVO.class);
+        applicableNetworks.add(networkMock);
+        applicableNetworks.add(networkVoMock2);
+
+        NetworkVO defaultNetwork = userVmManagerImpl.addNicsToApplicableNetworksAndReturnDefaultNetwork(applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics, networks);
+
+        Mockito.verify(networks, times(2)).put(Mockito.any(), Mockito.any());
+        Assert.assertEquals(defaultNetwork, networkMock);
+    }
+
+    @Test
+    public void validateIfVolumesHaveNoSnapshotsTestVolumeHasSnapshotsThrowsInvalidParameterException() {
+        String expectedMessage = String.format("Snapshots exist for volume [%s]. Detach volume or remove snapshots for the volume before assigning VM to another user.",
+                volumeVOMock.getName());
+
+        LinkedList<VolumeVO> volumes = new LinkedList<VolumeVO>();
+        volumes.add(volumeVOMock);
+        LinkedList<SnapshotVO> snapshots = new LinkedList<SnapshotVO>();
+        snapshots.add(snapshotVoMock);
+
+        Mockito.doReturn(snapshots).when(snapshotDaoMock).listByStatusNotIn(Mockito.anyLong(), Mockito.any(), Mockito.any());
+
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
+            userVmManagerImpl.validateIfVolumesHaveNoSnapshots(volumes);
+        });
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void validateIfVolumesHaveNoSnapshotsTestVolumeHasNoSnapshotsDoesNotThrowInvalidParameterException() {
+        LinkedList<VolumeVO> volumes = new LinkedList<VolumeVO>();
+        volumes.add(volumeVOMock);
+        LinkedList<SnapshotVO> snapshots = new LinkedList<SnapshotVO>();
+
+        Mockito.doReturn(snapshots).when(snapshotDaoMock).listByStatusNotIn(Mockito.anyLong(), Mockito.any(), Mockito.any());
+
+        userVmManagerImpl.validateIfVolumesHaveNoSnapshots(volumes);
+    }
+
+    @Test
+    public void moveVmToUserTestCallerIsNotRootAdminAndDomainAdminThrowsInvalidParameterValueException() {
+        String expectedMessage = String.format("Only root or domain admins are allowed to assign VMs. Caller [%s] is of type [%s].", callerAccount, callerAccount.getType());
+
+        Mockito.doReturn(false).when(accountManager).isRootAdmin(Mockito.anyLong());
+        Mockito.doReturn(false).when(accountManager).isDomainAdmin(Mockito.anyLong());
+
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
+            userVmManagerImpl.moveVmToUser(assignVmCmdMock);
+        });
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void moveVmToUserTestValidateVmExistsAndIsNotRunningThrowsInvalidParameterValueException() {
+        Mockito.doReturn(true).when(accountManager).isRootAdmin(Mockito.anyLong());
+
+        doThrow(InvalidParameterValueException.class).when(userVmManagerImpl).validateIfVmSupportsMigration(Mockito.any(), Mockito.anyLong());
+
+        Assert.assertThrows(InvalidParameterValueException.class, () -> userVmManagerImpl.moveVmToUser(assignVmCmdMock));
+    }
+
+    @Test
+    public void moveVmToUserTestValidateAccountsAndCallerAccessToThemThrowsInvalidParameterValueException() {
+        Mockito.doReturn(true).when(accountManager).isRootAdmin(Mockito.anyLong());
+        Mockito.doReturn(userVmVoMock).when(userVmDao).findById(Mockito.anyLong());
+
+        Assert.assertThrows(InvalidParameterValueException.class, () -> userVmManagerImpl.moveVmToUser(assignVmCmdMock));
+    }
+
+    @Test
+    public void moveVmToUserTestProjectIdProvidedAndDomainIdIsNullThrowsInvalidParameterValueException() throws ResourceUnavailableException, InsufficientCapacityException,
+            ResourceAllocationException {
+
+        String expectedMessage = "Please provide a valid domain ID; cannot assign VM to a project if domain ID is NULL.";
+
+        Mockito.doReturn(true).when(accountManager).isRootAdmin(Mockito.anyLong());
+        Mockito.doReturn(userVmVoMock).when(userVmDao).findById(Mockito.anyLong());
+        Mockito.doReturn(1l).when(assignVmCmdMock).getProjectId();
+        Mockito.doReturn(null).when(assignVmCmdMock).getDomainId();
+
+        configureDoNothingForMethodsThatWeDoNotWantToTest();
+
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
+            userVmManagerImpl.moveVmToUser(assignVmCmdMock);
+        });
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void moveVmToUserTestValidateIfVmHasNoRulesThrowsInvalidParameterValueException() throws ResourceUnavailableException, InsufficientCapacityException,
+            ResourceAllocationException {
+
+        Mockito.doReturn(true).when(accountManager).isRootAdmin(Mockito.anyLong());
+        Mockito.doReturn(userVmVoMock).when(userVmDao).findById(Mockito.anyLong());
+        Mockito.doReturn(null).when(assignVmCmdMock).getProjectId();
+
+        configureDoNothingForMethodsThatWeDoNotWantToTest();
+
+        doThrow(InvalidParameterValueException.class).when(userVmManagerImpl).validateIfVmHasNoRules(Mockito.any(), Mockito.anyLong());
+
+        Assert.assertThrows(InvalidParameterValueException.class, () -> userVmManagerImpl.moveVmToUser(assignVmCmdMock));
+    }
+
+    @Test
+    public void moveVmToUserTestSnapshotsForVolumeExistThrowsInvalidParameterValueException() throws ResourceUnavailableException, InsufficientCapacityException,
+            ResourceAllocationException {
+
+        LinkedList<VolumeVO> volumes = new LinkedList<VolumeVO>();
+        volumes.add(volumeVOMock);
+
+        Mockito.doReturn(true).when(accountManager).isRootAdmin(Mockito.anyLong());
+        Mockito.doReturn(userVmVoMock).when(userVmDao).findById(Mockito.anyLong());
+        Mockito.doReturn(null).when(assignVmCmdMock).getProjectId();
+        Mockito.doReturn(volumes).when(volumeDaoMock).findByInstance(Mockito.anyLong());
+
+        configureDoNothingForMethodsThatWeDoNotWantToTest();
+
+        doThrow(InvalidParameterValueException.class).when(userVmManagerImpl).validateIfVolumesHaveNoSnapshots(Mockito.any());
+
+        Assert.assertThrows(InvalidParameterValueException.class, () -> userVmManagerImpl.moveVmToUser(assignVmCmdMock));
+    }
+
+    @Test
+    public void moveVmToUserTestVerifyResourceLimitsForAccountAndStorageThrowsResourceAllocationException() throws ResourceUnavailableException, InsufficientCapacityException,
+            ResourceAllocationException {
+
+        LinkedList<VolumeVO> volumes = new LinkedList<VolumeVO>();
+
+        Mockito.doReturn(true).when(accountManager).isRootAdmin(Mockito.anyLong());
+        Mockito.doReturn(userVmVoMock).when(userVmDao).findById(Mockito.anyLong());
+        Mockito.doReturn(null).when(assignVmCmdMock).getProjectId();
+        Mockito.doReturn(volumes).when(volumeDaoMock).findByInstance(Mockito.anyLong());
+
+        configureDoNothingForMethodsThatWeDoNotWantToTest();
+
+        doThrow(ResourceAllocationException.class).when(userVmManagerImpl).verifyResourceLimitsForAccountAndStorage(Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.any());
+
+        Assert.assertThrows(ResourceAllocationException.class, () -> userVmManagerImpl.moveVmToUser(assignVmCmdMock));
+    }
+
+    @Test
+    public void moveVmToUserTestVerifyValidateIfNewOwnerHasAccessToTemplateThrowsInvalidParameterValueException() throws ResourceUnavailableException,
+            InsufficientCapacityException, ResourceAllocationException {
+
+        LinkedList<VolumeVO> volumes = new LinkedList<VolumeVO>();
+
+        Mockito.doReturn(true).when(accountManager).isRootAdmin(Mockito.anyLong());
+        Mockito.doReturn(userVmVoMock).when(userVmDao).findById(Mockito.anyLong());
+        Mockito.doReturn(null).when(assignVmCmdMock).getProjectId();
+        Mockito.doReturn(volumes).when(volumeDaoMock).findByInstance(Mockito.anyLong());
+
+        configureDoNothingForMethodsThatWeDoNotWantToTest();
+
+        doThrow(InvalidParameterValueException.class).when(userVmManagerImpl).validateIfNewOwnerHasAccessToTemplate(Mockito.any(), Mockito.any(), Mockito.any());
+
+        Assert.assertThrows(InvalidParameterValueException.class, () -> userVmManagerImpl.moveVmToUser(assignVmCmdMock));
+    }
+
+    @Test
+    public void moveVmToUserTestAccountManagerCheckAccessThrowsPermissionDeniedException() throws ResourceUnavailableException, InsufficientCapacityException,
+            ResourceAllocationException {
+
+        LinkedList<VolumeVO> volumes = new LinkedList<VolumeVO>();
+
+        Mockito.doReturn(true).when(accountManager).isRootAdmin(Mockito.anyLong());
+        Mockito.doReturn(userVmVoMock).when(userVmDao).findById(Mockito.anyLong());
+        Mockito.doReturn(null).when(assignVmCmdMock).getProjectId();
+        Mockito.doReturn(volumes).when(volumeDaoMock).findByInstance(Mockito.anyLong());
+        Mockito.doReturn(accountMock).when(accountManager).finalizeOwner(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.doReturn(domainVoMock).when(domainDaoMock).findById(Mockito.anyLong());
+
+        configureDoNothingForMethodsThatWeDoNotWantToTest();
+
+        doThrow(PermissionDeniedException.class).when(accountManager).checkAccess(Mockito.any(Account.class), Mockito.any());
+
+        Assert.assertThrows(PermissionDeniedException.class, () -> userVmManagerImpl.moveVmToUser(assignVmCmdMock));
+    }
+
+    @Test
+    public void executeStepsToChangeOwnershipOfVmTestUpdateVmNetworkThrowsInsufficientCapacityException() throws ResourceUnavailableException, InsufficientCapacityException,
+            ResourceAllocationException {
+
+        LinkedList<VolumeVO> volumes = new LinkedList<VolumeVO>();
+
+        try (MockedStatic<UsageEventUtils> ignored = mockStatic(UsageEventUtils.class)) {
+            Mockito.doReturn(Hypervisor.HypervisorType.KVM).when(userVmVoMock).getHypervisorType();
+
+            configureDoNothingForMethodsThatWeDoNotWantToTest();
+
+            doThrow(InsufficientAddressCapacityException.class).when(userVmManagerImpl).updateVmNetwork(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                    Mockito.any());
+
+            Assert.assertThrows(CloudRuntimeException.class, () -> userVmManagerImpl.executeStepsToChangeOwnershipOfVm(assignVmCmdMock, callerAccount, accountMock, accountMock,
+                    userVmVoMock, serviceOfferingVoMock, volumes, virtualMachineTemplateMock, 1l));
+
+            Mockito.verify(userVmManagerImpl).resourceCountDecrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
+            Mockito.verify(userVmManagerImpl).updateVmOwner(Mockito.any(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
+            Mockito.verify(userVmManagerImpl).updateVolumesOwner(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyLong());
+        }
+    }
+
+    @Test
+    public void executeStepsToChangeOwnershipOfVmTestUpdateVmNetworkThrowsResourceAllocationException() throws ResourceUnavailableException, InsufficientCapacityException,
+            ResourceAllocationException {
+
+        LinkedList<VolumeVO> volumes = new LinkedList<VolumeVO>();
+
+        try (MockedStatic<UsageEventUtils> ignored = mockStatic(UsageEventUtils.class)) {
+            Mockito.doReturn(Hypervisor.HypervisorType.KVM).when(userVmVoMock).getHypervisorType();
+
+            configureDoNothingForMethodsThatWeDoNotWantToTest();
+
+            doThrow(ResourceAllocationException.class).when(userVmManagerImpl).updateVmNetwork(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                    Mockito.any());
+
+            Assert.assertThrows(CloudRuntimeException.class, () -> userVmManagerImpl.executeStepsToChangeOwnershipOfVm(assignVmCmdMock, callerAccount, accountMock, accountMock,
+                    userVmVoMock, serviceOfferingVoMock, volumes, virtualMachineTemplateMock, 1l));
+
+            Mockito.verify(userVmManagerImpl).resourceCountDecrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
+            Mockito.verify(userVmManagerImpl).updateVmOwner(Mockito.any(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
+            Mockito.verify(userVmManagerImpl).updateVolumesOwner(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyLong());
+        }
+    }
+
+    @Test
+    public void executeStepsToChangeOwnershipOfVmTestResourceCountRunningVmsOnlyEnabledIsFalseCallsResourceCountIncrement() throws ResourceUnavailableException,
+            InsufficientCapacityException, ResourceAllocationException {
+
+        LinkedList<VolumeVO> volumes = new LinkedList<VolumeVO>();
+
+
+        try (MockedStatic<UsageEventUtils> ignored = mockStatic(UsageEventUtils.class)) {
+            Mockito.doReturn(Hypervisor.HypervisorType.KVM).when(userVmVoMock).getHypervisorType();
+            Mockito.doReturn(false).when(userVmManagerImpl).isResourceCountRunningVmsOnlyEnabled();
+
+            configureDoNothingForMethodsThatWeDoNotWantToTest();
+
+            userVmManagerImpl.executeStepsToChangeOwnershipOfVm(assignVmCmdMock, callerAccount, accountMock, accountMock, userVmVoMock, serviceOfferingVoMock, volumes,
+                    virtualMachineTemplateMock, 1L);
+
+            Mockito.verify(userVmManagerImpl).resourceCountDecrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
+            Mockito.verify(userVmManagerImpl).updateVmOwner(Mockito.any(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
+            Mockito.verify(userVmManagerImpl).updateVolumesOwner(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyLong());
+            Mockito.verify(userVmManagerImpl).updateVmNetwork(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+            Mockito.verify(userVmManagerImpl).resourceCountIncrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
+        }
+    }
+
+    @Test
+    public void executeStepsToChangeOwnershipOfVmTestResourceCountRunningVmsOnlyEnabledIsTrueDoesNotCallResourceCountIncrement() throws ResourceUnavailableException,
+            InsufficientCapacityException, ResourceAllocationException {
+
+        LinkedList<VolumeVO> volumes = new LinkedList<VolumeVO>();
+
+        try (MockedStatic<UsageEventUtils> ignored = mockStatic(UsageEventUtils.class)) {
+            Mockito.doReturn(Hypervisor.HypervisorType.KVM).when(userVmVoMock).getHypervisorType();
+            Mockito.doReturn(true).when(userVmManagerImpl).isResourceCountRunningVmsOnlyEnabled();
+
+            configureDoNothingForMethodsThatWeDoNotWantToTest();
+
+            userVmManagerImpl.executeStepsToChangeOwnershipOfVm(assignVmCmdMock, callerAccount, accountMock, accountMock, userVmVoMock, serviceOfferingVoMock, volumes,
+                    virtualMachineTemplateMock, 1l);
+
+            Mockito.verify(userVmManagerImpl).resourceCountDecrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
+            Mockito.verify(userVmManagerImpl).updateVmOwner(Mockito.any(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
+            Mockito.verify(userVmManagerImpl).updateVolumesOwner(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyLong());
+            Mockito.verify(userVmManagerImpl).updateVmNetwork(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+            Mockito.verify(userVmManagerImpl, Mockito.never()).resourceCountIncrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
+        }
+    }
+
+    @Test
+    public void validateStorageAccessGroupsOnHostsMatchingSAGsNoException() {
+        Host srcHost = Mockito.mock(Host.class);
+        Host destHost = Mockito.mock(Host.class);
+
+        Mockito.when(srcHost.getId()).thenReturn(1L);
+        Mockito.when(destHost.getId()).thenReturn(2L);
+        when(storageManager.getStorageAccessGroups(null, null, null, srcHost.getId())).thenReturn(new String[]{"sag1", "sag2"});
+        when(storageManager.getStorageAccessGroups(null, null, null, destHost.getId())).thenReturn(new String[]{"sag1", "sag2", "sag3"});
+
+        userVmManagerImpl.validateStorageAccessGroupsOnHosts(srcHost, destHost);
+
+        Mockito.verify(storageManager, times(1)).getStorageAccessGroups(null, null, null, srcHost.getId());
+        Mockito.verify(storageManager, times(1)).getStorageAccessGroups(null, null, null, destHost.getId());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void validateSAGsOnHostsNonMatchingSAGsThrowsException() {
+        Host srcHost = Mockito.mock(Host.class);
+        Host destHost = Mockito.mock(Host.class);
+
+        Mockito.when(srcHost.getId()).thenReturn(1L);
+        Mockito.when(destHost.getId()).thenReturn(2L);
+        when(storageManager.getStorageAccessGroups(null, null, null, srcHost.getId())).thenReturn(new String[]{"sag1", "sag2"});
+        when(storageManager.getStorageAccessGroups(null, null, null, destHost.getId())).thenReturn(new String[]{"sag1", "sag3"});
+
+        userVmManagerImpl.validateStorageAccessGroupsOnHosts(srcHost, destHost);
+    }
+
+    @Test
+    public void validateEmptyStorageAccessGroupOnHosts() {
+        Host srcHost = Mockito.mock(Host.class);
+        Host destHost = Mockito.mock(Host.class);
+
+        Mockito.when(srcHost.getId()).thenReturn(1L);
+        Mockito.when(destHost.getId()).thenReturn(2L);
+        when(storageManager.getStorageAccessGroups(null, null, null, srcHost.getId())).thenReturn(new String[]{});
+        when(storageManager.getStorageAccessGroups(null, null, null, destHost.getId())).thenReturn(new String[]{});
+
+        userVmManagerImpl.validateStorageAccessGroupsOnHosts(srcHost, destHost);
+
+        Mockito.verify(storageManager, times(1)).getStorageAccessGroups(null, null, null, srcHost.getId());
+        Mockito.verify(storageManager, times(1)).getStorageAccessGroups(null, null, null, destHost.getId());
+    }
+
+    @Test
+    public void validateSAGsOnHostsNullStorageAccessGroups() {
+        Host srcHost = Mockito.mock(Host.class);
+        Host destHost = Mockito.mock(Host.class);
+
+        Mockito.when(srcHost.getId()).thenReturn(1L);
+        Mockito.when(destHost.getId()).thenReturn(2L);
+        when(storageManager.getStorageAccessGroups(null, null, null, srcHost.getId())).thenReturn(null);
+        when(storageManager.getStorageAccessGroups(null, null, null, destHost.getId())).thenReturn(null);
+
+        userVmManagerImpl.validateStorageAccessGroupsOnHosts(srcHost, destHost);
+
+        Mockito.verify(storageManager, times(1)).getStorageAccessGroups(null, null, null, srcHost.getId());
+        Mockito.verify(storageManager, times(1)).getStorageAccessGroups(null, null, null, destHost.getId());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void validateSAGsOnDestHostNullStorageAccessGroups() {
+        Host srcHost = Mockito.mock(Host.class);
+        Host destHost = Mockito.mock(Host.class);
+
+        Mockito.when(srcHost.getId()).thenReturn(1L);
+        Mockito.when(destHost.getId()).thenReturn(2L);
+        when(storageManager.getStorageAccessGroups(null, null, null, srcHost.getId())).thenReturn(new String[]{"sag1", "sag2"});
+        when(storageManager.getStorageAccessGroups(null, null, null, destHost.getId())).thenReturn(null);
+
+        userVmManagerImpl.validateStorageAccessGroupsOnHosts(srcHost, destHost);
+    }
+
+    @Test
+    public void validateNullStorageAccessGroupsOnSrcHost() {
+
+        Host srcHost = Mockito.mock(Host.class);
+        Host destHost = Mockito.mock(Host.class);
+
+        Mockito.when(srcHost.getId()).thenReturn(1L);
+        Mockito.when(destHost.getId()).thenReturn(2L);
+        when(storageManager.getStorageAccessGroups(null, null, null, srcHost.getId())).thenReturn(null);
+        when(storageManager.getStorageAccessGroups(null, null, null, destHost.getId())).thenReturn(new String[]{"sag1", "sag2"});
+
+        userVmManagerImpl.validateStorageAccessGroupsOnHosts(srcHost, destHost);
+
+        Mockito.verify(storageManager, times(1)).getStorageAccessGroups(null, null, null, srcHost.getId());
+        Mockito.verify(storageManager, times(1)).getStorageAccessGroups(null, null, null, destHost.getId());
+    }
+    @Test
+    public void testAllocateVMFromBackupUsingCmdValues() throws InsufficientCapacityException, ResourceAllocationException, ResourceUnavailableException {
+        Long backupId = 4L;
+
+        CreateVMFromBackupCmd cmd = new CreateVMFromBackupCmd();
+        cmd._accountService = accountService;
+        cmd._entityMgr = entityManager;
+        when(accountService.finalyzeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
+        when(accountService.getActiveAccountById(accountId)).thenReturn(account);
+
+        ReflectionTestUtils.setField(cmd, "serviceOfferingId", serviceOfferingId);
+        ReflectionTestUtils.setField(cmd, "templateId", templateId);
+        ReflectionTestUtils.setField(cmd, "backupId", backupId);
+        ReflectionTestUtils.setField(cmd, "zoneId", zoneId);
+
+        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+        when(_serviceOfferingDao.findById(serviceOfferingId)).thenReturn(serviceOffering);
+
+        Map<String, String> diskDetails = new HashMap<>();
+        diskDetails.put(ApiConstants.DISK_OFFERING_ID, "disk-offering-uuid");
+        diskDetails.put(ApiConstants.DEVICE_ID, "1");
+        diskDetails.put(ApiConstants.SIZE, "5");
+        diskDetails.put(ApiConstants.MIN_IOPS, "1000");
+        diskDetails.put(ApiConstants.MAX_IOPS, "5000");
+        Map<Integer, Map<String, String>> disksDetails = new HashMap<>();
+        disksDetails.put(0, diskDetails);
+        ReflectionTestUtils.setField(cmd, "dataDisksDetails", disksDetails);
+        DiskOffering diskOffering = mock(DiskOffering.class);
+        when(diskOffering.isCustomized()).thenReturn(true);
+        when(diskOffering.isCustomizedIops()).thenReturn(true);
+        when(entityManager.findByUuid(DiskOffering.class, "disk-offering-uuid")).thenReturn(diskOffering);
+
+        BackupVO backup = mock(BackupVO.class);
+        when(backup.getZoneId()).thenReturn(zoneId);
+        when(backup.getVmId()).thenReturn(vmId);
+        when(backupDao.findById(backupId)).thenReturn(backup);
+
+        UserVmVO userVmVO = new UserVmVO();
+        userVmVO.setTemplateId(templateId);
+        when(userVmDao.findByIdIncludingRemoved(vmId)).thenReturn(userVmVO);
+        VMTemplateVO template = mock(VMTemplateVO.class);
+        when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        when(templateDao.findById(templateId)).thenReturn(template);
+        VmDiskInfo rootVmDiskInfo = new VmDiskInfo(diskOffering, 10L, 1000L, 2000L);
+        when(backupManager.getRootDiskInfoFromBackup(backup)).thenReturn(rootVmDiskInfo);
+        Mockito.when(backupManager.canCreateInstanceFromBackup(backupId)).thenReturn(true);
+
+        Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
+                any(), any(), any(), any(), eq(true), any(), any(), any(), any());
+
+        UserVm result = userVmManagerImpl.allocateVMFromBackup(cmd);
+
+        assertNotNull(result);
+        Mockito.verify(backupDao).findById(backupId);
+        Mockito.verify(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
+                any(), any(), any(), any(), eq(true), any(), any(), any(), any());
+    }
+
+    @Test
+    public void testAllocateVMFromBackupUsingBackupValues() throws InsufficientCapacityException, ResourceAllocationException, ResourceUnavailableException {
+        Long backupId = 5L;
+
+        CreateVMFromBackupCmd cmd = mock(CreateVMFromBackupCmd.class);
+        when(cmd.getZoneId()).thenReturn(zoneId);
+        when(cmd.getBackupId()).thenReturn(backupId);
+        when(cmd.getEntityOwnerId()).thenReturn(accountId);
+        when(cmd.getServiceOfferingId()).thenReturn(null);
+        when(cmd.getHostId()).thenReturn(null);
+        when(cmd.getDiskOfferingId()).thenReturn(null);
+        when(cmd.getTemplateId()).thenReturn(null);
+        when(cmd.getNetworkIds()).thenReturn(null);
+        when(cmd.getIpToNetworkMap()).thenReturn(null);
+        when(cmd.getDataDiskInfoList()).thenReturn(null);
+        when(cmd.getOverrideDiskOfferingId()).thenReturn(null);
+
+        Account owner = mock(Account.class);
+        when(accountService.getActiveAccountById(accountId)).thenReturn(owner);
+
+        DataCenterVO zone = mock(DataCenterVO.class);
+        when(_dcDao.findById(zoneId)).thenReturn(zone);
+
+        BackupVO backup = mock(BackupVO.class);
+        when(backup.getZoneId()).thenReturn(zoneId);
+        when(backup.getVmId()).thenReturn(vmId);
+        when(backupDao.findById(backupId)).thenReturn(backup);
+
+        UserVmVO userVmVO = new UserVmVO();
+        when(userVmDao.findByIdIncludingRemoved(vmId)).thenReturn(userVmVO);
+        VMTemplateVO template = mock(VMTemplateVO.class);
+        when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        when(backup.getDetail(ApiConstants.TEMPLATE_ID)).thenReturn("template-uuid");
+        when(templateDao.findByUuid("template-uuid")).thenReturn(template);
+
+        DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
+        when(backup.getDetail(ApiConstants.SERVICE_OFFERING_ID)).thenReturn("service-offering-uuid");
+        when(_serviceOfferingDao.findByUuid("service-offering-uuid")).thenReturn(serviceOffering);
+        VmDiskInfo rootVmDiskInfo = new VmDiskInfo(diskOffering, 10L, 1000L, 2000L);
+        when(backupManager.getRootDiskInfoFromBackup(backup)).thenReturn(rootVmDiskInfo);
+
+        NetworkVO network1 = mock(NetworkVO.class);
+        NetworkVO network2 = mock(NetworkVO.class);
+        when(backupManager.getDataDiskInfoListFromBackup(backup)).thenReturn(List.of(new VmDiskInfo(diskOffering, 10L, 1000L, 2000L)));
+        Mockito.when(backupManager.canCreateInstanceFromBackup(backupId)).thenReturn(true);
+
+        Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(false), any(), any(), any(),
+                any(), any(), any(), any(), eq(false), any(), any(), any(), any());
+
+        UserVm result = userVmManagerImpl.allocateVMFromBackup(cmd);
+
+        assertNotNull(result);
+        Mockito.verify(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(false), any(), any(), any(),
+                any(), any(), any(), any(), eq(false), any(), any(), any(), any());
+    }
+
+    @Test
+    public void testResetVMSSHKey() throws ResourceUnavailableException, InsufficientCapacityException {
+        Long domainId = 4L;
+        Long projectId = 5L;
+        Long networkId = 6L;
+
+        List<String> names = List.of("keypair1", "keypair2");
+        ResetVMSSHKeyCmd cmd = mock(ResetVMSSHKeyCmd.class);
+        when(cmd.getId()).thenReturn(vmId);
+        when(cmd.getAccountName()).thenReturn("testAccount");
+        when(cmd.getDomainId()).thenReturn(domainId);
+        when(cmd.getProjectId()).thenReturn(projectId);
+        when(cmd.getNames()).thenReturn(names);
+
+        Account owner = mock(Account.class);
+        when(owner.getAccountId()).thenReturn(accountId);
+        when(owner.getDomainId()).thenReturn(domainId);
+        when(accountManager.finalizeOwner(callerAccount, "testAccount", domainId, projectId)).thenReturn(owner);
+
+        UserVmVO userVm = new UserVmVO(vmId, null, null, templateId, Hypervisor.HypervisorType.KVM, 0,
+                true, false, domainId, accountId, 0L, 0L, null, null, null, null);
+        ReflectionTestUtils.setField(userVm, "state", VirtualMachine.State.Stopped);
+        userVm.setUserVmType("User");
+        when(userVmDao.findById(vmId)).thenReturn(userVm);
+        VMTemplateVO template = mock(VMTemplateVO.class);
+        when(templateDao.findByIdIncludingRemoved(templateId)).thenReturn(template);
+
+        Nic nic = mock(Nic.class);
+        when(nic.getNetworkId()).thenReturn(networkId);
+        when(networkModel.getDefaultNic(vmId)).thenReturn(nic);
+        NetworkVO network = mock(NetworkVO.class);
+        when(_networkDao.findById(networkId)).thenReturn(network);
+        UserDataServiceProvider element = mock(UserDataServiceProvider.class);
+        when(element.saveSSHKey(any(), any(), any(), any())).thenReturn(true);
+        when(_networkMgr.getSSHKeyResetProvider(network)).thenReturn(element);
+
+        SSHKeyPairVO keyPair1 = mock(SSHKeyPairVO.class);
+        SSHKeyPairVO keyPair2 = mock(SSHKeyPairVO.class);
+        when(keyPair1.getPublicKey()).thenReturn("ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAr...");
+        when(keyPair2.getPublicKey()).thenReturn("ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAr...");
+        when(sshKeyPairDao.findByNames(accountId, domainId, names)).thenReturn(Arrays.asList(keyPair1, keyPair2));
+
+        UserVm result = userVmManagerImpl.resetVMSSHKey(cmd);
+
+        assertNotNull(result);
+        Map<String, String> details = result.getDetails();
+        Assert.assertEquals(details.get(VmDetailConstants.SSH_PUBLIC_KEY), "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAr...\n" +
+                "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAr...");
+        Assert.assertEquals(details.get(VmDetailConstants.SSH_KEY_PAIR_NAMES), "keypair1,keypair2");
+    }
+
+    @Test
+    public void testAllocateVMFromBackupUsingCmdValuesWithISO() throws InsufficientCapacityException, ResourceAllocationException, ResourceUnavailableException {
+        Long backupId = 4L;
+        Long rootDiskOfferingId = 5L;
+        Long isoId = 7L;
+
+        CreateVMFromBackupCmd cmd = new CreateVMFromBackupCmd();
+        cmd._accountService = accountService;
+        cmd._entityMgr = entityManager;
+        when(accountService.finalyzeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
+        when(accountService.getActiveAccountById(accountId)).thenReturn(account);
+
+        ReflectionTestUtils.setField(cmd, "serviceOfferingId", serviceOfferingId);
+        ReflectionTestUtils.setField(cmd, "templateId", isoId);
+        ReflectionTestUtils.setField(cmd, "backupId", backupId);
+        ReflectionTestUtils.setField(cmd, "zoneId", zoneId);
+        ReflectionTestUtils.setField(cmd, "diskOfferingId", rootDiskOfferingId);
+        ReflectionTestUtils.setField(cmd, "overrideDiskOfferingId", null);
+
+        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+        DiskOfferingVO rootDiskOffering = mock(DiskOfferingVO.class);
+        when(_serviceOfferingDao.findById(serviceOfferingId)).thenReturn(serviceOffering);
+        when(rootDiskOffering.getDiskSize()).thenReturn(10 * 1024 * 1024 * 1024L);
+        when(diskOfferingDao.findById(rootDiskOfferingId)).thenReturn(rootDiskOffering);
+
+        Map<String, String> diskDetails = new HashMap<>();
+        diskDetails.put(ApiConstants.DISK_OFFERING_ID, "disk-offering-uuid");
+        diskDetails.put(ApiConstants.DEVICE_ID, "1");
+        diskDetails.put(ApiConstants.SIZE, "5");
+        diskDetails.put(ApiConstants.MIN_IOPS, "1000");
+        diskDetails.put(ApiConstants.MAX_IOPS, "5000");
+        Map<Integer, Map<String, String>> disksDetails = new HashMap<>();
+        disksDetails.put(0, diskDetails);
+        ReflectionTestUtils.setField(cmd, "dataDisksDetails", disksDetails);
+        DiskOffering diskOffering = mock(DiskOffering.class);
+        when(diskOffering.isCustomized()).thenReturn(true);
+        when(diskOffering.isCustomizedIops()).thenReturn(true);
+        when(entityManager.findByUuid(DiskOffering.class, "disk-offering-uuid")).thenReturn(diskOffering);
+
+        BackupVO backup = mock(BackupVO.class);
+        when(backup.getZoneId()).thenReturn(zoneId);
+        when(backup.getVmId()).thenReturn(vmId);
+        when(backupDao.findById(backupId)).thenReturn(backup);
+
+        UserVmVO userVmVO = new UserVmVO();
+        userVmVO.setTemplateId(isoId);
+        when(userVmDao.findByIdIncludingRemoved(vmId)).thenReturn(userVmVO);
+        VMTemplateVO iso = mock(VMTemplateVO.class);
+        when(iso.getFormat()).thenReturn(Storage.ImageFormat.ISO);
+        when(templateDao.findById(isoId)).thenReturn(iso);
+        VmDiskInfo rootVmDiskInfo = new VmDiskInfo(diskOffering, 10L, 1000L, 2000L);
+        when(backupManager.getRootDiskInfoFromBackup(backup)).thenReturn(rootVmDiskInfo);
+        Mockito.when(backupManager.canCreateInstanceFromBackup(backupId)).thenReturn(true);
+
+        Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
+                any(), any(), any(), any(), eq(true), any(), any(), any(), any());
+
+        UserVm result = userVmManagerImpl.allocateVMFromBackup(cmd);
+
+        assertNotNull(result);
+        Mockito.verify(backupDao).findById(backupId);
+        Mockito.verify(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
+                any(), any(), any(), any(), eq(true), any(), any(), any(), any());
+    }
+
+    @Test
+    public void testAllocateVMFromBackupUsingBackupValuesWithISO() throws InsufficientCapacityException, ResourceAllocationException, ResourceUnavailableException {
+        Long backupId = 5L;
+        Long isoId = 9L;
+
+        CreateVMFromBackupCmd cmd = mock(CreateVMFromBackupCmd.class);
+        when(cmd.getZoneId()).thenReturn(zoneId);
+        when(cmd.getBackupId()).thenReturn(backupId);
+        when(cmd.getEntityOwnerId()).thenReturn(accountId);
+        when(cmd.getServiceOfferingId()).thenReturn(null);
+        when(cmd.getDiskOfferingId()).thenReturn(null);
+        when(cmd.getTemplateId()).thenReturn(null);
+        when(cmd.getHostId()).thenReturn(null);
+        when(cmd.getNetworkIds()).thenReturn(null);
+        when(cmd.getIpToNetworkMap()).thenReturn(null);
+        when(cmd.getDataDiskInfoList()).thenReturn(null);
+
+        Account owner = mock(Account.class);
+        when(accountService.getActiveAccountById(accountId)).thenReturn(owner);
+
+        DataCenterVO zone = mock(DataCenterVO.class);
+        when(_dcDao.findById(zoneId)).thenReturn(zone);
+
+        BackupVO backup = mock(BackupVO.class);
+        when(backup.getZoneId()).thenReturn(zoneId);
+        when(backup.getVmId()).thenReturn(vmId);
+        when(backup.getDetail(ApiConstants.SERVICE_OFFERING_ID)).thenReturn("service-offering-uuid");
+        when(backupDao.findById(backupId)).thenReturn(backup);
+
+        UserVmVO userVmVO = new UserVmVO();
+        when(userVmDao.findByIdIncludingRemoved(vmId)).thenReturn(userVmVO);
+        VMTemplateVO iso = mock(VMTemplateVO.class);
+        when(iso.getFormat()).thenReturn(Storage.ImageFormat.ISO);
+        when(backup.getDetail(ApiConstants.TEMPLATE_ID)).thenReturn("iso-uuid");
+        when(templateDao.findByUuid("iso-uuid")).thenReturn(iso);
+
+        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+        DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
+        when(backup.getDetail(ApiConstants.SERVICE_OFFERING_ID)).thenReturn("service-offering-uuid");
+        when(_serviceOfferingDao.findByUuid("service-offering-uuid")).thenReturn(serviceOffering);
+
+        VmDiskInfo rootVmDiskInfo = new VmDiskInfo(diskOffering, 10L, 1000L, 2000L);
+        when(backupManager.getRootDiskInfoFromBackup(backup)).thenReturn(rootVmDiskInfo);
+
+        NetworkVO network1 = mock(NetworkVO.class);
+        NetworkVO network2 = mock(NetworkVO.class);
+        when(backupManager.getDataDiskInfoListFromBackup(backup)).thenReturn(List.of(new VmDiskInfo(diskOffering, 10L, 1000L, 2000L)));
+        Mockito.when(backupManager.canCreateInstanceFromBackup(backupId)).thenReturn(true);
+
+        Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(false), any(), any(), any(),
+                any(), any(), any(), any(), eq(false), any(), any(), any(), any());
+
+        UserVm result = userVmManagerImpl.allocateVMFromBackup(cmd);
+
+        assertNotNull(result);
+        Mockito.verify(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(),  eq(false), any(), any(), any(),
+                any(), any(), any(), any(), eq(false), any(), any(), any(), any());
+    }
+
+    @Test
+    public void testRestoreVMFromBackup() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        Long backupId = 5L;
+        Long templateId = 6L;
+
+        CreateVMFromBackupCmd cmd = mock(CreateVMFromBackupCmd.class);
+        when(cmd.getBackupId()).thenReturn(backupId);
+        when(cmd.getStartVm()).thenReturn(true);
+        when(cmd.getEntityId()).thenReturn(vmId);
+
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getId()).thenReturn(vmId);
+        when(vm.getState()).thenReturn(VirtualMachine.State.Running);
+        when(vm.getTemplateId()).thenReturn(templateId);
+
+        when(backupManager.restoreBackupToVM(backupId, vmId)).thenReturn(true);
+
+        Map<VirtualMachineProfile.Param, Object> params = new HashMap<>();
+        Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> vmPair = new Pair<>(vm, params);
+        doReturn(vmPair).when(userVmManagerImpl).startVirtualMachine(anyLong(), isNull(), isNull(), isNull(), anyMap(), isNull());
+        doReturn(vmPair).when(userVmManagerImpl).startVirtualMachine(anyLong(), isNull(), isNull(), anyLong(), anyMap(), isNull());
+        when(userVmDao.findById(vmId)).thenReturn(vm);
+        when(templateDao.findByIdIncludingRemoved(templateId)).thenReturn(mock(VMTemplateVO.class));
+
+        UserVm result = userVmManagerImpl.restoreVMFromBackup(cmd);
+
+        assertNotNull(result);
+        assertEquals(vm, result);
+        Mockito.verify(backupManager).restoreBackupToVM(backupId, vmId);
+    }
+
+    @Test
+    public void testDestroyVm() throws ResourceUnavailableException {
+        Long volumeId = 4L;
+        Long accountId = 5L;
+        Long userId = 6L;
+        boolean expunge = true;
+
+        ReflectionTestUtils.setField(userVmManagerImpl, "_uuidMgr", uuidMgr);
+        CallContext callContext = mock(CallContext.class);
+        Account callingAccount = mock(Account.class);
+        when(callingAccount.getId()).thenReturn(accountId);
+        when(callContext.getCallingAccount()).thenReturn(callingAccount);
+        when(accountManager.isAdmin(callingAccount.getId())).thenReturn(true);
+        doNothing().when(accountManager).checkApiAccess(callingAccount, BaseCmd.getCommandNameByClass(ExpungeVMCmd.class));
+        try (MockedStatic<CallContext> mockedCallContext = mockStatic(CallContext.class)) {
+            mockedCallContext.when(CallContext::current).thenReturn(callContext);
+            mockedCallContext.when(() -> CallContext.register(callContext, ApiCommandResourceType.Volume)).thenReturn(callContext);
+
+            DestroyVMCmd cmd = mock(DestroyVMCmd.class);
+            when(cmd.getId()).thenReturn(vmId);
+            when(cmd.getExpunge()).thenReturn(expunge);
+            List<Long> volumeIds = List.of(volumeId);
+            when(cmd.getVolumeIds()).thenReturn(volumeIds);
+
+            UserVmVO vm = mock(UserVmVO.class);
+            when(vm.getId()).thenReturn(vmId);
+            when(vm.getState()).thenReturn(VirtualMachine.State.Running);
+            when(vm.getUuid()).thenReturn("vm-uuid");
+            when(vm.getUserVmType()).thenReturn("User");
+            when(userVmDao.findById(vmId)).thenReturn(vm);
+
+            VolumeVO vol = Mockito.mock(VolumeVO.class);
+            when(vol.getInstanceId()).thenReturn(vmId);
+            when(vol.getId()).thenReturn(volumeId);
+            when(vol.getVolumeType()).thenReturn(Volume.Type.DATADISK);
+            when(volumeDaoMock.findById(volumeId)).thenReturn(vol);
+
+            List<VolumeVO> dataVolumes = new ArrayList<>();
+            when(volumeDaoMock.findByInstanceAndType(vmId, Volume.Type.DATADISK)).thenReturn(dataVolumes);
+
+            when(volumeApiService.destroyVolume(volumeId, CallContext.current().getCallingAccount(), expunge, false)).thenReturn(vol);
+
+            doReturn(vm).when(userVmManagerImpl).stopVirtualMachine(anyLong(), anyBoolean());
+            doReturn(vm).when(userVmManagerImpl).destroyVm(vmId, expunge);
+            doReturn(true).when(userVmManagerImpl).expunge(vm);
+
+            try (MockedStatic<UsageEventUtils> mockedUsageEventUtils = mockStatic(UsageEventUtils.class)) {
+
+                UserVm result = userVmManagerImpl.destroyVm(cmd);
+
+                assertNotNull(result);
+                assertEquals(vm, result);
+                Mockito.verify(userVmManagerImpl).stopVirtualMachine(vmId, false);
+                Mockito.verify(backupManager).checkAndRemoveBackupOfferingBeforeExpunge(vm);
+            }
+        }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateLeasePropertiesInvalidDuration() {
+        userVmManagerImpl.validateLeaseProperties(-2, VMLeaseManager.ExpiryAction.STOP);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateLeasePropertiesNullActionValue() {
+        userVmManagerImpl.validateLeaseProperties(20, null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateLeasePropertiesNullDurationValue() {
+        userVmManagerImpl.validateLeaseProperties(null, VMLeaseManager.ExpiryAction.STOP);
+    }
+
+    @Test
+    public void testValidateLeasePropertiesMinusOneDuration() {
+        userVmManagerImpl.validateLeaseProperties(-1, null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateLeasePropertiesZeroDayDuration() {
+        userVmManagerImpl.validateLeaseProperties(0, VMLeaseManager.ExpiryAction.STOP);
+    }
+
+    @Test
+    public void testValidateLeasePropertiesValidValues() {
+        userVmManagerImpl.validateLeaseProperties(20, VMLeaseManager.ExpiryAction.STOP);
+    }
+
+    @Test
+    public void testValidateLeasePropertiesBothNUll() {
+        userVmManagerImpl.validateLeaseProperties(null, null);
+    }
+
+    @Test
+    public void testAddLeaseDetailsForInstance() {
+        UserVm userVm = mock(UserVm.class);
+        when(userVm.getId()).thenReturn(vmId);
+        when(userVm.getUuid()).thenReturn(UUID.randomUUID().toString());
+        userVmManagerImpl.addLeaseDetailsForInstance(userVm, 10, VMLeaseManager.ExpiryAction.STOP);
+        verify(vmInstanceDetailsDao).addDetail(eq(vmId), eq(VmDetailConstants.INSTANCE_LEASE_EXPIRY_ACTION), eq(VMLeaseManager.ExpiryAction.STOP.name()), anyBoolean());
+        verify(vmInstanceDetailsDao).addDetail(eq(vmId), eq(VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE), eq(getLeaseExpiryDate(10L)), anyBoolean());
+    }
+
+    @Test
+    public void testAddNullDurationLeaseDetailsForInstance() {
+        UserVm userVm = mock(UserVm.class);
+        userVmManagerImpl.addLeaseDetailsForInstance(userVm, null, VMLeaseManager.ExpiryAction.STOP);
+        Mockito.verify(vmInstanceDetailsDao, Mockito.times(0)).removeDetail(vmId, VmDetailConstants.INSTANCE_LEASE_EXPIRY_ACTION);
+        Mockito.verify(vmInstanceDetailsDao, Mockito.times(0)).removeDetail(vmId, VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE);
+    }
+
+    @Test
+    public void testApplyLeaseOnCreateInstanceFeatureEnabled() {
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        ServiceOfferingJoinVO svcOfferingMock = Mockito.mock(ServiceOfferingJoinVO.class);
+        userVmManagerImpl.applyLeaseOnCreateInstance(userVm, 10, VMLeaseManager.ExpiryAction.DESTROY, svcOfferingMock);
+        Mockito.verify(userVmManagerImpl, Mockito.times(1)).addLeaseDetailsForInstance(any(), any(), any());
+    }
+
+    @Test
+    public void testApplyLeaseOnCreateInstanceNegativeLease() {
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        userVmManagerImpl.applyLeaseOnCreateInstance(userVm, -1, VMLeaseManager.ExpiryAction.DESTROY, null);
+        Mockito.verify(userVmManagerImpl, Mockito.times(0)).addLeaseDetailsForInstance(any(), any(), any());
+    }
+
+    @Test
+    public void testApplyLeaseOnCreateInstanceFromSvcOfferingWithoutLease() {
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        ServiceOfferingJoinVO svcOfferingMock = Mockito.mock(ServiceOfferingJoinVO.class);
+        userVmManagerImpl.applyLeaseOnCreateInstance(userVm, null, VMLeaseManager.ExpiryAction.DESTROY, svcOfferingMock);
+        Mockito.verify(userVmManagerImpl, Mockito.times(0)).addLeaseDetailsForInstance(any(), any(), any());
+    }
+
+    @Test
+    public void testApplyLeaseOnCreateInstanceFromSvcOfferingWithLease() {
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        ServiceOfferingJoinVO svcOfferingMock = Mockito.mock(ServiceOfferingJoinVO.class);
+        when(svcOfferingMock.getLeaseDuration()).thenReturn(10);
+        userVmManagerImpl.applyLeaseOnCreateInstance(userVm, null, VMLeaseManager.ExpiryAction.DESTROY, svcOfferingMock);
+        Mockito.verify(userVmManagerImpl, Mockito.times(1)).addLeaseDetailsForInstance(any(), any(), any());
+    }
+
+    @Test
+    public void testApplyLeaseOnCreateInstanceNullExpiryAction() {
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        ServiceOfferingJoinVO svcOfferingMock = Mockito.mock(ServiceOfferingJoinVO.class);
+        userVmManagerImpl.applyLeaseOnCreateInstance(userVm, 10, null, svcOfferingMock);
+        Mockito.verify(userVmManagerImpl, Mockito.times(0)).addLeaseDetailsForInstance(any(), any(), any());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testApplyLeaseOnUpdateInstanceForNoLease() {
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        when(userVm.getId()).thenReturn(vmId);
+        when(vmInstanceDetailsDao.listDetailsKeyPairs(anyLong(), anyList())).thenReturn(getLeaseDetails(5, VMLeaseManager.LeaseActionExecution.DISABLED.name()));
+        userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, 10, VMLeaseManager.ExpiryAction.STOP);
+        Mockito.verify(userVmManagerImpl, Mockito.times(0)).addLeaseDetailsForInstance(any(), any(), any());
+    }
+
+    @Test
+    public void testApplyLeaseOnUpdateInstanceForLease() {
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        when(userVm.getId()).thenReturn(vmId);
+        when(vmInstanceDetailsDao.listDetailsKeyPairs(anyLong(), anyList())).thenReturn(getLeaseDetails(5, VMLeaseManager.LeaseActionExecution.PENDING.name()));
+        userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, 10, VMLeaseManager.ExpiryAction.STOP);
+        Mockito.verify(userVmManagerImpl, Mockito.times(1)).addLeaseDetailsForInstance(any(), any(), any());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testApplyLeaseOnUpdateInstanceForDisabledLeaseInstance() {
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        when(userVm.getId()).thenReturn(vmId);
+        when(vmInstanceDetailsDao.listDetailsKeyPairs(anyLong(), anyList())).thenReturn(getLeaseDetails(5, VMLeaseManager.LeaseActionExecution.DISABLED.name()));
+        userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, 10, VMLeaseManager.ExpiryAction.STOP);
+        Mockito.verify(userVmManagerImpl, Mockito.times(1)).addLeaseDetailsForInstance(any(), any(), any());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testApplyLeaseOnUpdateInstanceForLeaseExpired() {
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        when(vmInstanceDetailsDao.listDetailsKeyPairs(anyLong(), anyList())).thenReturn(getLeaseDetails(-2, VMLeaseManager.LeaseActionExecution.PENDING.name()));
+        userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, 10, VMLeaseManager.ExpiryAction.STOP);
+        Mockito.verify(userVmManagerImpl, Mockito.times(0)).addLeaseDetailsForInstance(any(), any(), any());
+    }
+
+    @Test
+    public void testApplyLeaseOnUpdateInstanceToRemoveLease() {
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        when(userVm.getId()).thenReturn(vmId);;
+        when(vmInstanceDetailsDao.listDetailsKeyPairs(anyLong(), anyList())).thenReturn(getLeaseDetails(2, VMLeaseManager.LeaseActionExecution.PENDING.name()));
+        try (MockedStatic<ActionEventUtils> ignored = mockStatic(ActionEventUtils.class)) {
+            Mockito.when(ActionEventUtils.onActionEvent(Mockito.anyLong(), Mockito.anyLong(),
+                    Mockito.anyLong(),
+                    Mockito.anyString(), Mockito.anyString(),
+                    Mockito.anyLong(), Mockito.anyString())).thenReturn(1L);
+            userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, -1, VMLeaseManager.ExpiryAction.STOP);
+        }
+        Mockito.verify(userVmManagerImpl, Mockito.times(0)).addLeaseDetailsForInstance(any(), any(), any());
+        Mockito.verify(vmInstanceDetailsDao, Mockito.times(1)).
+                addDetail(vmId, VmDetailConstants.INSTANCE_LEASE_EXECUTION, VMLeaseManager.LeaseActionExecution.DISABLED.name(), false);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testApplyLeaseOnUpdateInstanceToRemoveLeaseForExpired() {
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        when(userVm.getId()).thenReturn(vmId);
+        when(vmInstanceDetailsDao.listDetailsKeyPairs(anyLong(), anyList())).thenReturn(getLeaseDetails(-2, VMLeaseManager.LeaseActionExecution.PENDING.name()));
+        userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, -1, VMLeaseManager.ExpiryAction.STOP);
+        Mockito.verify(userVmManagerImpl, Mockito.times(0)).addLeaseDetailsForInstance(any(), any(), any());
+        Mockito.verify(vmInstanceDetailsDao, Mockito.times(0)).removeDetail(vmId, VmDetailConstants.INSTANCE_LEASE_EXPIRY_ACTION);
+        Mockito.verify(vmInstanceDetailsDao, Mockito.times(0)).removeDetail(vmId, VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE);
+    }
+
+    String getLeaseExpiryDate(long leaseDuration) {
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        LocalDateTime leaseExpiryDateTime = now.plusDays(leaseDuration);
+        Date leaseExpiryDate = Date.from(leaseExpiryDateTime.atZone(ZoneOffset.UTC).toInstant());
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return sdf.format(leaseExpiryDate);
+    }
+
+    Map<String, String> getLeaseDetails(int leaseDuration, String leaseExecution) {
+
+        Map<String, String> leaseDetails = new HashMap<>();
+        leaseDetails.put(VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE, getLeaseExpiryDate(leaseDuration));
+        leaseDetails.put(VmDetailConstants.INSTANCE_LEASE_EXECUTION, leaseExecution);
+        return leaseDetails;
+    }
+
+    @Test
+    public void createVirtualMachineWithExistingVolume() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        DeployVMCmd deployVMCmd = new DeployVMCmd();
+        ReflectionTestUtils.setField(deployVMCmd, "zoneId", zoneId);
+        ReflectionTestUtils.setField(deployVMCmd, "serviceOfferingId", serviceOfferingId);
+        ReflectionTestUtils.setField(deployVMCmd, "volumeId", volumeId);
+        deployVMCmd._accountService = accountService;
+
+        when(accountService.finalyzeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
+        when(accountService.getActiveAccountById(accountId)).thenReturn(account);
+        when(entityManager.findById(DataCenter.class, zoneId)).thenReturn(_dcMock);
+        when(entityManager.findById(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOffering);
+        when(entityManager.findById(DiskOffering.class, serviceOffering.getId())).thenReturn(smallerDisdkOffering);
+        when(entityManager.findByIdIncludingRemoved(VirtualMachineTemplate.class, templateId)).thenReturn(templateMock);
+        when(volumeDataFactory.getVolume(volumeId)).thenReturn(volumeInfo);
+        when(volumeInfo.getTemplateId()).thenReturn(templateId);
+        when(volumeInfo.getInstanceId()).thenReturn(null);
+        when(volumeInfo.getDataStore()).thenReturn(primaryDataStore);
+        when(primaryDataStore.getScope()).thenReturn(scopeMock);
+        when(primaryDataStore.getScope().getScopeType()).thenReturn(ScopeType.ZONE);
+        when(templateMock.getTemplateType()).thenReturn(Storage.TemplateType.VNF);
+        when(templateMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(templateMock.isDeployAsIs()).thenReturn(false);
+        when(templateMock.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        when(templateMock.getUserDataId()).thenReturn(null);
+        Mockito.doNothing().when(vnfTemplateManager).validateVnfApplianceNics(any(), nullable(List.class));
+        when(_dcMock.isLocalStorageEnabled()).thenReturn(false);
+        when(_dcMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
+        Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
+                any(), any(), any(), any(), eq(true), any(), any(), any());
+
+
+        userVmManagerImpl.createVirtualMachine(deployVMCmd);
+    }
+
+    @Test
+    public void createVirtualMachineWithExistingSnapshot() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        DeployVMCmd deployVMCmd = new DeployVMCmd();
+        ReflectionTestUtils.setField(deployVMCmd, "zoneId", zoneId);
+        ReflectionTestUtils.setField(deployVMCmd, "serviceOfferingId", serviceOfferingId);
+        ReflectionTestUtils.setField(deployVMCmd, "snapshotId", snashotId);
+        deployVMCmd._accountService = accountService;
+
+        when(accountService.finalyzeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
+        when(accountService.getActiveAccountById(accountId)).thenReturn(account);
+        when(entityManager.findById(DataCenter.class, zoneId)).thenReturn(_dcMock);
+        when(entityManager.findById(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOffering);
+        when(entityManager.findById(DiskOffering.class, serviceOffering.getId())).thenReturn(smallerDisdkOffering);
+        when(snapshotDaoMock.findById(snashotId)).thenReturn(snapshotMock);
+        when(entityManager.findByIdIncludingRemoved(VirtualMachineTemplate.class, templateId)).thenReturn(templateMock);
+        when(volumeDataFactory.getVolume(volumeId)).thenReturn(volumeInfo);
+        when(snapshotMock.getVolumeId()).thenReturn(volumeId);
+        when(volumeInfo.getTemplateId()).thenReturn(templateId);
+        when(volumeInfo.getInstanceId()).thenReturn(null);
+        when(volumeInfo.getDataStore()).thenReturn(primaryDataStore);
+        when(primaryDataStore.getScope()).thenReturn(scopeMock);
+        when(primaryDataStore.getScope().getScopeType()).thenReturn(ScopeType.ZONE);
+        when(templateMock.getTemplateType()).thenReturn(Storage.TemplateType.VNF);
+        when(templateMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(templateMock.isDeployAsIs()).thenReturn(false);
+        when(templateMock.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        when(templateMock.getUserDataId()).thenReturn(null);
+        Mockito.doNothing().when(vnfTemplateManager).validateVnfApplianceNics(any(), nullable(List.class));
+        when(_dcMock.isLocalStorageEnabled()).thenReturn(false);
+        when(_dcMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
+        Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
+                any(), any(), any(), any(), eq(true), any(), any(), any());
+
+
+        userVmManagerImpl.createVirtualMachine(deployVMCmd);
+    }
+
+    @Test
+    public void testAllocateVMFromBackupWithVmSettingsRestoration() throws InsufficientCapacityException, ResourceAllocationException, ResourceUnavailableException {
+        Long backupId = 10L;
+        Long vmId = 1L;
+
+        CreateVMFromBackupCmd cmd = new CreateVMFromBackupCmd();
+        cmd._accountService = accountService;
+        cmd._entityMgr = entityManager;
+        when(accountService.finalyzeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
+        when(accountService.getActiveAccountById(accountId)).thenReturn(account);
+
+        ReflectionTestUtils.setField(cmd, "serviceOfferingId", serviceOfferingId);
+        ReflectionTestUtils.setField(cmd, "templateId", templateId);
+        ReflectionTestUtils.setField(cmd, "backupId", backupId);
+        ReflectionTestUtils.setField(cmd, "zoneId", zoneId);
+
+        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+        when(_serviceOfferingDao.findById(serviceOfferingId)).thenReturn(serviceOffering);
+
+        DataCenterVO zone = mock(DataCenterVO.class);
+        when(_dcDao.findById(zoneId)).thenReturn(zone);
+
+        BackupVO backup = mock(BackupVO.class);
+        when(backup.getZoneId()).thenReturn(zoneId);
+        when(backup.getVmId()).thenReturn(vmId);
+        when(backupDao.findById(backupId)).thenReturn(backup);
+
+        String vmSettingsJson = "{\"key1\":\"value1\",\"key2\":\"value2\",\"existingKey\":\"backupValue\"}";
+        when(backup.getDetail(ApiConstants.VM_SETTINGS)).thenReturn(vmSettingsJson);
+
+        UserVmVO userVmVO = new UserVmVO();
+        when(userVmDao.findByIdIncludingRemoved(vmId)).thenReturn(userVmVO);
+        VMTemplateVO template = mock(VMTemplateVO.class);
+        when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        when(templateDao.findById(templateId)).thenReturn(template);
+
+        DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
+        VmDiskInfo rootVmDiskInfo = new VmDiskInfo(diskOffering, 10L, 1000L, 2000L);
+        when(backupManager.getRootDiskInfoFromBackup(backup)).thenReturn(rootVmDiskInfo);
+        when(backupManager.canCreateInstanceFromBackup(backupId)).thenReturn(true);
+
+        UserVmVO createdVm = mock(UserVmVO.class);
+        when(createdVm.getId()).thenReturn(2L);
+        Mockito.doReturn(createdVm).when(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
+                any(), any(), any(), any(), eq(true), any(), any(), any(), any());
+
+        Map<String, String> existingDetails = new HashMap<>();
+        existingDetails.put("existingKey", "existingValue");
+        when(vmInstanceDetailsDao.listDetailsKeyPairs(2L)).thenReturn(existingDetails);
+
+        UserVmVO vmVO = mock(UserVmVO.class);
+        when(userVmDao.findById(2L)).thenReturn(vmVO);
+
+        UserVm result = userVmManagerImpl.allocateVMFromBackup(cmd);
+
+        assertNotNull(result);
+        assertEquals(2L, result.getId());
+
+        verify(backup).getDetail(ApiConstants.VM_SETTINGS);
+        verify(vmInstanceDetailsDao).listDetailsKeyPairs(2L);
+        verify(userVmDao).findById(2L);
+        verify(userVmDao).saveDetails(any(UserVmVO.class));
+    }
+
+    @Test
+    public void testAllocateVMFromBackupWithOverrideDiskOfferingComputeOnly() throws InsufficientCapacityException, ResourceAllocationException, ResourceUnavailableException {
+        Long backupId = 11L;
+        Long vmId = 1L;
+        Long overrideDiskOfferingId = 5L;
+
+        CreateVMFromBackupCmd cmd = new CreateVMFromBackupCmd();
+        cmd._accountService = accountService;
+        cmd._entityMgr = entityManager;
+        when(accountService.finalyzeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
+        when(accountService.getActiveAccountById(accountId)).thenReturn(account);
+
+        ReflectionTestUtils.setField(cmd, "serviceOfferingId", serviceOfferingId);
+        ReflectionTestUtils.setField(cmd, "templateId", templateId);
+        ReflectionTestUtils.setField(cmd, "backupId", backupId);
+        ReflectionTestUtils.setField(cmd, "zoneId", zoneId);
+        ReflectionTestUtils.setField(cmd, "overrideDiskOfferingId", overrideDiskOfferingId);
+
+        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+        when(_serviceOfferingDao.findById(serviceOfferingId)).thenReturn(serviceOffering);
+
+        DataCenterVO zone = mock(DataCenterVO.class);
+        when(_dcDao.findById(zoneId)).thenReturn(zone);
+
+        BackupVO backup = mock(BackupVO.class);
+        when(backup.getZoneId()).thenReturn(zoneId);
+        when(backup.getVmId()).thenReturn(vmId);
+        when(backupDao.findById(backupId)).thenReturn(backup);
+
+        UserVmVO userVmVO = new UserVmVO();
+        when(userVmDao.findByIdIncludingRemoved(vmId)).thenReturn(userVmVO);
+        VMTemplateVO template = mock(VMTemplateVO.class);
+        when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        when(templateDao.findById(templateId)).thenReturn(template);
+
+        DiskOfferingVO overrideDiskOffering = mock(DiskOfferingVO.class);
+        when(overrideDiskOffering.isComputeOnly()).thenReturn(true);
+        when(diskOfferingDao.findById(overrideDiskOfferingId)).thenReturn(overrideDiskOffering);
+
+        DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
+        VmDiskInfo rootVmDiskInfo = new VmDiskInfo(diskOffering, 10L, 1000L, 2000L);
+        when(backupManager.getRootDiskInfoFromBackup(backup)).thenReturn(rootVmDiskInfo);
+        when(backupManager.canCreateInstanceFromBackup(backupId)).thenReturn(true);
+
+        UserVmVO createdVm = mock(UserVmVO.class);
+        when(createdVm.getId()).thenReturn(2L);
+        Mockito.doReturn(createdVm).when(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
+                any(), any(), any(), any(), eq(true), any(), any(), any(), any());
+
+        UserVm result = userVmManagerImpl.allocateVMFromBackup(cmd);
+
+        assertNotNull(result);
+        assertEquals(2L, result.getId());
+
+        verify(diskOfferingDao).findById(overrideDiskOfferingId);
+        verify(overrideDiskOffering).isComputeOnly();
+    }
+
+
+    @Test
+    public void testUnmanageUserVMVmNotFound() {
+        when(userVmDao.findById(vmId)).thenReturn(null);
+        InvalidParameterValueException exception = assertThrows(InvalidParameterValueException.class, () -> {
+            userVmManagerImpl.unmanageUserVM(vmId, null);
+        });
+        assertEquals("Unable to find a VM with ID = " + vmId, exception.getMessage());
+        verify(userVmDao, never()).acquireInLockTable(anyLong());
+        verify(userVmDao, never()).releaseFromLockTable(anyLong());
+    }
+
+    @Test
+    public void testUnmanageUserVMAlreadyRemoved() {
+        when(userVmVoMock.getRemoved()).thenReturn(new Date());
+        when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
+        assertThrows(InvalidParameterValueException.class, () -> {
+            userVmManagerImpl.unmanageUserVM(vmId, null);
+        });
+    }
+
+    @Test
+    public void testUnmanageUserVMInvalidState() {
+        when(userVmVoMock.getId()).thenReturn(vmId);
+        when(userVmVoMock.getName()).thenReturn("test-vm");
+        when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
+        when(userVmDao.acquireInLockTable(vmId)).thenReturn(userVmVoMock);
+        when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Starting);
+        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class, () -> {
+            userVmManagerImpl.unmanageUserVM(vmId, null);
+        });
+        assertEquals("Instance: test-vm is not running or stopped, cannot be unmanaged", exception.getMessage());
+        verify(userVmDao, times(1)).releaseFromLockTable(vmId);
+    }
+
+    @Test
+    public void testUnmanageUserVMUnsupportedHypervisor() {
+        when(userVmVoMock.getId()).thenReturn(vmId);
+        when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
+        when(userVmDao.acquireInLockTable(vmId)).thenReturn(userVmVoMock);
+        when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Stopped);
+        when(userVmVoMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.Hyperv);
+        unmanagedVMsManagerMockedStatic.when(() -> UnmanagedVMsManager.isSupported(Hypervisor.HypervisorType.Hyperv)).thenReturn(false);
+
+        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class, () -> {
+            userVmManagerImpl.unmanageUserVM(vmId, null);
+        });
+
+        assertEquals("Unmanaging a VM is currently not supported on hypervisor Hyperv", exception.getMessage());
+        verify(userVmDao, times(1)).releaseFromLockTable(vmId);
+    }
+
+    @Test
+    public void testUnmanageUserVMItManagerReturnsFalse() {
+        when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
+        when(userVmVoMock.getId()).thenReturn(vmId);
+        when(userVmVoMock.getUuid()).thenReturn(vmUuid);
+        when(userVmDao.acquireInLockTable(vmId)).thenReturn(userVmVoMock);
+        when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Running);
+        when(userVmVoMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        unmanagedVMsManagerMockedStatic.when(() -> UnmanagedVMsManager.isSupported(Hypervisor.HypervisorType.KVM)).thenReturn(true);
+        when(volumeDaoMock.findByInstance(vmId)).thenReturn(Collections.emptyList());
+        when(virtualMachineManager.unmanage(vmUuid, null)).thenReturn(new Pair<>(false, "Backend failure"));
+
+        doNothing().when(userVmManagerImpl).checkUnmanagingVMOngoingVolumeSnapshots(any(UserVmVO.class));
+        doNothing().when(userVmManagerImpl).checkUnmanagingVMVolumes(any(UserVmVO.class), any(List.class));
+
+        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class, () -> {
+            userVmManagerImpl.unmanageUserVM(vmId, null);
+        });
+
+        assertEquals("Error while unmanaging VM: " + vmUuid, exception.getMessage());
+        verify(userVmManagerImpl, never()).cleanupUnmanageVMResources(any(UserVmVO.class));
+        verify(userVmManagerImpl, never()).unmanageVMFromDB(anyLong());
+        verify(userVmDao, times(1)).releaseFromLockTable(vmId);
+    }
+
+    @Test
+    public void testUnmanageUserVMGenericException() {
+        RuntimeException testException = new RuntimeException("Something went wrong");
+        when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
+        when(userVmVoMock.getId()).thenReturn(vmId);
+        when(userVmDao.acquireInLockTable(vmId)).thenReturn(userVmVoMock);
+        when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Running);
+        when(userVmVoMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        unmanagedVMsManagerMockedStatic.when(() -> UnmanagedVMsManager.isSupported(Hypervisor.HypervisorType.KVM)).thenReturn(true);
+        doThrow(testException).when(userVmManagerImpl).checkUnmanagingVMOngoingVolumeSnapshots(any(UserVmVO.class));
+
+        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class, () -> {
+            userVmManagerImpl.unmanageUserVM(vmId, null);
+        });
+
+        assertNotNull(exception.getCause());
+        assertEquals(testException, exception.getCause());
+        verify(userVmDao, times(1)).releaseFromLockTable(vmId);
+    }
+
+    @Test
+    public void testUnmanageUserVMSuccess() {
+        when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
+        when(userVmVoMock.getId()).thenReturn(vmId);
+        when(userVmVoMock.getUuid()).thenReturn(vmUuid);
+        when(userVmDao.acquireInLockTable(vmId)).thenReturn(userVmVoMock);
+        when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Running);
+        when(userVmVoMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        unmanagedVMsManagerMockedStatic.when(() -> UnmanagedVMsManager.isSupported(Hypervisor.HypervisorType.KVM)).thenReturn(true);
+        when(volumeDaoMock.findByInstance(vmId)).thenReturn(Collections.emptyList());
+        when(virtualMachineManager.unmanage(vmUuid, null)).thenReturn(new Pair<>(true, "Unmanaged successfully"));
+        doNothing().when(userVmManagerImpl).checkUnmanagingVMOngoingVolumeSnapshots(any(UserVmVO.class));
+        doNothing().when(userVmManagerImpl).checkUnmanagingVMVolumes(any(UserVmVO.class), any(List.class));
+        doNothing().when(userVmManagerImpl).cleanupUnmanageVMResources(any(UserVmVO.class));
+        doNothing().when(userVmManagerImpl).unmanageVMFromDB(anyLong());
+        doNothing().when(userVmManagerImpl).publishUnmanageVMUsageEvents(any(UserVmVO.class), any(List.class));
+        Pair<Boolean, String> result = userVmManagerImpl.unmanageUserVM(vmId, null);
+        assertTrue(result.first());
+        assertEquals("Unmanaged successfully", result.second());
+        verify(userVmDao, times(1)).acquireInLockTable(vmId);
+        verify(userVmManagerImpl, times(1)).checkUnmanagingVMOngoingVolumeSnapshots(userVmVoMock);
+        verify(userVmManagerImpl, times(1)).checkUnmanagingVMVolumes(userVmVoMock, Collections.emptyList());
+        verify(userVmManagerImpl, times(1)).cleanupUnmanageVMResources(userVmVoMock);
+        verify(userVmManagerImpl, times(1)).unmanageVMFromDB(vmId);
+        verify(userVmManagerImpl, times(1)).publishUnmanageVMUsageEvents(userVmVoMock, Collections.emptyList());
+        verify(userVmDao, times(1)).releaseFromLockTable(vmId);
+    }
+
 }

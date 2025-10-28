@@ -23,9 +23,12 @@ import javax.inject.Inject;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.VsphereStoragePolicyVO;
 import com.cloud.dc.dao.VsphereStoragePolicyDao;
+import com.cloud.storage.StorageManager;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.secret.dao.PassphraseDao;
 import org.apache.cloudstack.secret.PassphraseVO;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
@@ -50,7 +53,8 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DownloadAnswer;
@@ -80,11 +84,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 public class VolumeObject implements VolumeInfo {
-    private static final Logger s_logger = Logger.getLogger(VolumeObject.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     protected VolumeVO volumeVO;
     private StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
     protected DataStore dataStore;
@@ -112,11 +117,18 @@ public class VolumeObject implements VolumeInfo {
     VsphereStoragePolicyDao vsphereStoragePolicyDao;
     @Inject
     PassphraseDao passphraseDao;
+    @Inject
+    VolumeOrchestrationService
+    orchestrationService;
 
     private Object payload;
     private MigrationOptions migrationOptions;
     private boolean directDownload;
     private String vSphereStoragePolicyId;
+    private boolean followRedirects;
+
+    private List<String> checkpointPaths;
+    private Set<String> checkpointImageStoreUrls;
 
     private final List<Volume.State> volumeStatesThatShouldNotTransitWhenDataStoreRoleIsImage = Arrays.asList(Volume.State.Migrating, Volume.State.Uploaded, Volume.State.Copying,
       Volume.State.Expunged);
@@ -127,11 +139,15 @@ public class VolumeObject implements VolumeInfo {
 
     public VolumeObject() {
         _volStateMachine = Volume.State.getStateMachine();
+        this.followRedirects = StorageManager.DataStoreDownloadFollowRedirects.value();
     }
 
     protected void configure(DataStore dataStore, VolumeVO volumeVO) {
         this.volumeVO = volumeVO;
         this.dataStore = dataStore;
+        Pair<List<String>, Set<String>> volumeCheckPointPathsAndImageStoreUrls = orchestrationService.getVolumeCheckpointPathsAndImageStoreUrls(volumeVO.getId(), getHypervisorType());
+        this.checkpointPaths = volumeCheckPointPathsAndImageStoreUrls.first();
+        this.checkpointImageStoreUrls = volumeCheckPointPathsAndImageStoreUrls.second();
     }
 
     public static VolumeObject getVolumeObject(DataStore dataStore, VolumeVO volumeVO) {
@@ -231,7 +247,7 @@ public class VolumeObject implements VolumeInfo {
             }
         } catch (NoTransitionException e) {
             String errorMessage = String.format("Failed to transit volume %s to [%s] due to [%s].", volumeVO.getVolumeDescription(), event, e.getMessage());
-            s_logger.warn(errorMessage, e);
+            logger.warn(errorMessage, e);
             throw new CloudRuntimeException(errorMessage, e);
         }
         return result;
@@ -442,7 +458,7 @@ public class VolumeObject implements VolumeInfo {
         } catch (ConcurrentOperationException | NoTransitionException e) {
             String message = String.format("Failed to update %sto state [%s] due to [%s].", volumeVO == null ? "" : String.format("volume %s ", volumeVO.getVolumeDescription()),
               getMapOfEvents().get(event), e.getMessage());
-            s_logger.warn(message, e);
+            logger.warn(message, e);
             throw new CloudRuntimeException(message, e);
         } finally {
             expungeEntryOnOperationFailed(event, callExpungeEntry);
@@ -688,7 +704,7 @@ public class VolumeObject implements VolumeInfo {
         volumeDao.update(volumeVo.getId(), volumeVo);
 
         String newValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volumeVo, "path", "size", "format", "encryptFormat", "poolId");
-        s_logger.debug(String.format("Updated %s from %s to %s ", volumeVo.getVolumeDescription(), previousValues, newValues));
+        logger.debug(String.format("Updated %s from %s to %s ", volumeVo.getVolumeDescription(), previousValues, newValues));
     }
 
     protected void updateResourceCount(VolumeObjectTO newVolume, VolumeVO oldVolume) {
@@ -722,7 +738,7 @@ public class VolumeObject implements VolumeInfo {
         volumeStoreDao.update(volStore.getId(), volStore);
 
         String newValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volStore, "installPath", "size");
-        s_logger.debug(String.format("Updated volume_store_ref %s from %s to %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volStore, "id", "volumeId"),
+        logger.debug(String.format("Updated volume_store_ref %s from %s to %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volStore, "id", "volumeId"),
           previousValues, newValues));
     }
 
@@ -754,7 +770,7 @@ public class VolumeObject implements VolumeInfo {
         volumeStoreDao.update(volumeDataStoreVo.getId(), volumeDataStoreVo);
 
         String newValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volumeDataStoreVo, "installPath", "checksum");
-        s_logger.debug(String.format("Updated volume_store_ref %s from %s to %s.", ReflectionToStringBuilderUtils.
+        logger.debug(String.format("Updated volume_store_ref %s from %s to %s.", ReflectionToStringBuilderUtils.
           reflectOnlySelectedFields(volumeDataStoreVo, "id", "volumeId"), previousValues, newValues));
     }
     @Override
@@ -851,7 +867,7 @@ public class VolumeObject implements VolumeInfo {
 
     @Override
     public boolean delete() {
-        return dataStore == null ? true : dataStore.delete(this);
+        return dataStore == null || dataStore.delete(this);
     }
 
     @Override
@@ -896,15 +912,15 @@ public class VolumeObject implements VolumeInfo {
                     volumeVO.setPassphraseId(null);
                     volumeDao.persist(volumeVO);
 
-                    s_logger.debug(String.format("Checking to see if we can delete passphrase id %s", passphraseId));
+                    logger.debug("Checking to see if we can delete passphrase id {} for volume {}", passphraseId, volumeVO);
                     List<VolumeVO> volumes = volumeDao.listVolumesByPassphraseId(passphraseId);
 
                     if (volumes != null && !volumes.isEmpty()) {
-                        s_logger.debug("Other volumes use this passphrase, skipping deletion");
+                        logger.debug("Other volumes use this passphrase, skipping deletion");
                         return;
                     }
 
-                    s_logger.debug(String.format("Deleting passphrase %s", passphraseId));
+                    logger.debug(String.format("Deleting passphrase %s", passphraseId));
                     passphraseDao.remove(passphraseId);
                 }
             }
@@ -929,5 +945,32 @@ public class VolumeObject implements VolumeInfo {
     @Override
     public void setEncryptFormat(String encryptFormat) {
         volumeVO.setEncryptFormat(encryptFormat);
+    }
+
+    @Override
+    public boolean isDeleteProtection() {
+        return volumeVO.isDeleteProtection();
+    }
+
+    @Override
+    public boolean isFollowRedirects() {
+        return followRedirects;
+    }
+
+    @Override
+    public List<String> getCheckpointPaths() {
+        return checkpointPaths;
+    }
+
+    @Override
+    public Set<String> getCheckpointImageStoreUrls() {
+        return checkpointImageStoreUrls;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("VolumeObject %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "volumeVO", "dataStore"));
     }
 }

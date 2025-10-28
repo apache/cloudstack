@@ -30,7 +30,7 @@ import { ACCESS_TOKEN, APIS, SERVER_MANAGER, CURRENT_PROJECT } from '@/store/mut
 
 NProgress.configure({ showSpinner: false }) // NProgress Configuration
 
-const allowList = ['login', 'VerifyOauth'] // no redirect allowlist
+const allowList = ['login', 'VerifyOauth', 'forgotPassword', 'resetPassword'] // no redirect allowlist
 
 router.beforeEach((to, from, next) => {
   // start progress bar
@@ -112,7 +112,11 @@ router.beforeEach((to, from, next) => {
               } else {
                 next({ path: redirect })
               }
-              const project = vueProps.$localStorage.get(CURRENT_PROJECT)
+              var project = vueProps.$localStorage.get(CURRENT_PROJECT)
+              if (project == null) {
+                project = {}
+                store.commit('SET_PROJECT', project)
+              }
               store.dispatch('ToggleTheme', project.id === undefined ? 'light' : 'dark')
             })
           })

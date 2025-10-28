@@ -29,14 +29,10 @@ import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 @APICommand(name = "listZones", description = "Lists zones", responseObject = ZoneResponse.class, responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListZonesCmd extends BaseListCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(ListZonesCmd.class.getName());
-
-    private static final String s_name = "listzonesresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -70,6 +66,11 @@ public class ListZonesCmd extends BaseListCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN, description = "flag to display the resource image for the zones")
     private Boolean showIcon;
+
+    @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUP, type = CommandType.STRING,
+            description = "the name of the storage access group",
+            since = "4.21.0")
+    private String storageAccessGroup;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -111,14 +112,21 @@ public class ListZonesCmd extends BaseListCmd implements UserCmd {
         return  showIcon != null ? showIcon : false;
     }
 
+    public String getStorageAccessGroup() {
+        return storageAccessGroup;
+    }
+
+    public ListZonesCmd() {
+
+    }
+
+    public ListZonesCmd(String storageAccessGroup) {
+        this.storageAccessGroup = storageAccessGroup;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

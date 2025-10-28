@@ -22,6 +22,7 @@ import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Map;
 
+import com.cloud.cpu.CPU;
 import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -33,7 +34,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.exception.ResourceAllocationException;
 
@@ -42,11 +43,10 @@ import com.cloud.exception.ResourceAllocationException;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
-    public static final Logger s_logger = Logger.getLogger(GetUploadParamsForTemplateCmd.class.getName());
 
     private static final String s_name = "postuploadtemplateresponse";
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = true, description = "the display text of the template. This is usually used for display purposes.", length = 4096)
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the template. This is usually used for display purposes.", length = 4096)
     private String displayText;
 
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, required = true, description = "the target hypervisor for the template")
@@ -55,6 +55,11 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
     @Parameter(name = ApiConstants.OS_TYPE_ID, type = CommandType.UUID, entityType = GuestOSResponse.class, required = false,
             description = "the ID of the OS Type that best represents the OS of this template. Not required for VMware as the guest OS is obtained from the OVF file.")
     private Long osTypeId;
+
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "the CPU arch of the template. Valid options are: x86_64, aarch64",
+            since = "4.20")
+    private String arch;
 
     @Parameter(name = ApiConstants.BITS, type = CommandType.INTEGER, description = "32 or 64 bits support. 64 by default")
     private Integer bits;
@@ -94,8 +99,18 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
             description = "(VMware only) true if VM deployments should preserve all the configurations defined for this template", since = "4.15.1")
     private Boolean deployAsIs;
 
+    @Parameter(name=ApiConstants.FOR_CKS,
+            type = CommandType.BOOLEAN,
+            description = "if true, the templates would be available for deploying CKS clusters", since = "4.21.0")
+    protected Boolean forCks;
+
+    @Parameter(name = ApiConstants.TEMPLATE_TYPE, type = CommandType.STRING,
+            description = "the type of the template. Valid options are: USER/VNF (for all users) and SYSTEM/ROUTING/BUILTIN (for admins only).",
+            since = "4.22.0")
+    private String templateType;
+
     public String getDisplayText() {
-        return displayText;
+        return StringUtils.isBlank(displayText) ? getName() : displayText;
     }
 
     public String getHypervisor() {
@@ -163,6 +178,18 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
                 Boolean.TRUE.equals(deployAsIs);
     }
 
+    public boolean isForCks() {
+        return Boolean.TRUE.equals(forCks);
+    }
+
+    public CPU.CPUArch getArch() {
+        return CPU.CPUArch.fromType(arch);
+    }
+
+    public String getTemplateType() {
+        return templateType;
+    }
+
     @Override
     public void execute() throws ServerApiException {
         validateRequest();
@@ -171,7 +198,7 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (ResourceAllocationException | MalformedURLException e) {
-            s_logger.error("exception while registering template", e);
+            logger.error("exception while registering template", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "exception while registering template: " + e.getMessage());
         }
     }

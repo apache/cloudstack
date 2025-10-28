@@ -17,7 +17,6 @@
 
 package org.apache.cloudstack.api.command.user.autoscale;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -39,7 +38,6 @@ import com.cloud.network.as.Condition;
 @APICommand(name = "createCondition", description = "Creates a condition for VM auto scaling", responseObject = ConditionResponse.class, entityType = {Condition.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateConditionCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateConditionCmd.class.getName());
     private static final String s_name = "conditionresponse";
 
     // ///////////////////////////////////////////////////

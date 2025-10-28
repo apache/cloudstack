@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -54,7 +55,6 @@ public class GetUploadParamsForIsoCmd extends AbstractGetUploadParamsCmd {
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT,
             type = BaseCmd.CommandType.STRING,
-            required = true,
             description = "the display text of the ISO. This is usually used for display purposes.",
             length = 4096)
     private String displayText;
@@ -85,7 +85,7 @@ public class GetUploadParamsForIsoCmd extends AbstractGetUploadParamsCmd {
     }
 
     public String getDisplayText() {
-        return displayText;
+        return StringUtils.isBlank(displayText) ? getName() : displayText;
     }
 
     public Boolean isFeatured() {
@@ -104,6 +104,29 @@ public class GetUploadParamsForIsoCmd extends AbstractGetUploadParamsCmd {
         return osTypeId;
     }
 
+    public void setBootable(Boolean bootable) {
+        this.bootable = bootable;
+    }
+
+    public void setDisplayText(String displayText) {
+        this.displayText = displayText;
+    }
+
+    public void setFeatured(Boolean featured) {
+        this.featured = featured;
+    }
+
+    public void setPublicIso(Boolean publicIso) {
+        this.publicIso = publicIso;
+    }
+
+    public void setExtractable(Boolean extractable) {
+        this.extractable = extractable;
+    }
+
+    public void setOsTypeId(Long osTypeId) {
+        this.osTypeId = osTypeId;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -117,7 +140,7 @@ public class GetUploadParamsForIsoCmd extends AbstractGetUploadParamsCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (ResourceAllocationException | MalformedURLException e) {
-            s_logger.error("Exception while registering ISO", e);
+            logger.error("Exception while registering ISO", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Exception while registering ISO: " + e.getMessage());
         }
     }

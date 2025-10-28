@@ -131,5 +131,25 @@ public class OVAProcessorTest {
         Assert.assertEquals(virtualSize, processor.getVirtualSize(mockFile));
         Mockito.verify(mockFile, Mockito.times(0)).length();
     }
+    @Test
+    public void testProcessWithLargeFileSize() throws Exception {
+        String templatePath = "/tmp";
+        String templateName = "large_template";
+        long virtualSize = 10_000_000_000L;
+        long actualSize = 5_000_000_000L;
 
+        Mockito.when(mockStorageLayer.exists(Mockito.anyString())).thenReturn(true);
+        Mockito.when(mockStorageLayer.getSize(Mockito.anyString())).thenReturn(actualSize);
+        Mockito.doReturn(virtualSize).when(processor).getTemplateVirtualSize(Mockito.anyString(), Mockito.anyString());
+
+        try (MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class, (mock, context) -> {
+            Mockito.when(mock.execute()).thenReturn(null);
+        })) {
+            Processor.FormatInfo info = processor.process(templatePath, null, templateName);
+            Assert.assertEquals(Storage.ImageFormat.OVA, info.format);
+            Assert.assertEquals("actual size:", actualSize, info.size);
+            Assert.assertEquals("virtual size:", virtualSize, info.virtualSize);
+            Assert.assertEquals("template name:", templateName + ".ova", info.filename);
+        }
+    }
 }

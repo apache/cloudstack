@@ -16,8 +16,8 @@
 // under the License.
 package com.cloud.consoleproxy.vnc.network;
 
+import com.cloud.consoleproxy.ConsoleProxy;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -26,10 +26,8 @@ public class NioSocketTLSInputStream extends NioSocketInputStream {
 
     private final NioSocketSSLEngineManager sslEngineManager;
 
-    private static final Logger s_logger = Logger.getLogger(NioSocketTLSInputStream.class);
-
     public NioSocketTLSInputStream(NioSocketSSLEngineManager sslEngineManager, NioSocket socket) {
-        super(sslEngineManager.getSession().getApplicationBufferSize(), socket);
+        super(ConsoleProxy.defaultBufferSize, socket);
         this.sslEngineManager = sslEngineManager;
     }
 
@@ -42,7 +40,7 @@ public class NioSocketTLSInputStream extends NioSocketInputStream {
             }
             return readBytes;
         } catch (IOException e) {
-            s_logger.error(String.format("Error reading from SSL engine manager: %s", e.getMessage()), e);
+            logger.error(String.format("Error reading from SSL engine manager: %s", e.getMessage()), e);
         }
         return 0;
     }

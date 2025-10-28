@@ -18,8 +18,8 @@
 # under the License.
 
 import logging
-import CsHelper
-from CsDatabag import CsDataBag
+from . import CsHelper
+from .CsDatabag import CsDataBag
 
 
 class CsStaticRoutes(CsDataBag):

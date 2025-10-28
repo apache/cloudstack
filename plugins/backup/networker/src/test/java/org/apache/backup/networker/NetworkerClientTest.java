@@ -30,8 +30,11 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
+
 import com.cloud.vm.VMInstanceVO;
 import com.github.tomakehurst.wiremock.client.VerificationException;
+
+import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.BackupVO;
 import org.apache.cloudstack.backup.networker.NetworkerClient;
@@ -40,13 +43,16 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.mockito.Mockito;
+import org.springframework.test.util.ReflectionTestUtils;
+
 import com.github.tomakehurst.wiremock.client.BasicCredentials;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 public class NetworkerClientTest {
     private final String adminUsername = "administrator";
     private final String adminPassword = "password";
-    private final int port = 9399;
+    private final int port = 9400;
     private final String url =  "http://localhost:" + port + "/nwrestapi/v3";
     private NetworkerClient client;
     @Rule
@@ -58,6 +64,7 @@ public class NetworkerClientTest {
                         .willReturn(aResponse()
                         .withStatus(200)));
         client = new NetworkerClient(url, adminUsername, adminPassword, false, 60);
+        ReflectionTestUtils.setField(client, "backupManager", Mockito.mock(BackupManager.class));
     }
 
     @Test
@@ -87,7 +94,7 @@ public class NetworkerClientTest {
                                 "            \"comment\": \"-CSBKP-\",\n" +
                                 "            \"links\": [\n" +
                                 "                {\n" +
-                                "                    \"href\": \"http://localhost:9399/nwrestapi/v3/global/protectionpolicies/CSBRONZE\",\n" +
+                                "                    \"href\": \"http://localhost:9400/nwrestapi/v3/global/protectionpolicies/CSBRONZE\",\n" +
                                 "                    \"rel\": \"item\"\n" +
                                 "                }\n" +
                                 "            ],\n" +
@@ -108,7 +115,7 @@ public class NetworkerClientTest {
                                 "            \"comment\": \"-CSBKP-\",\n" +
                                 "            \"links\": [\n" +
                                 "                {\n" +
-                                "                    \"href\": \"http://localhost:9399/nwrestapi/v3/global/protectionpolicies/CSGOLD\",\n" +
+                                "                    \"href\": \"http://localhost:9400/nwrestapi/v3/global/protectionpolicies/CSGOLD\",\n" +
                                 "                    \"rel\": \"item\"\n" +
                                 "                }\n" +
                                 "            ],\n" +
@@ -129,7 +136,7 @@ public class NetworkerClientTest {
                                 "            \"comment\": \"-CSBKP-\",\n" +
                                 "            \"links\": [\n" +
                                 "                {\n" +
-                                "                    \"href\": \"http://localhost:9399/nwrestapi/v3/global/protectionpolicies/CSSILVER\",\n" +
+                                "                    \"href\": \"http://localhost:9400/nwrestapi/v3/global/protectionpolicies/CSSILVER\",\n" +
                                 "                    \"rel\": \"item\"\n" +
                                 "                }\n" +
                                 "            ],\n" +
@@ -210,7 +217,7 @@ public class NetworkerClientTest {
                                 "            \"level\": \"Manual\",\n" +
                                 "            \"links\": [\n" +
                                 "                {\n" +
-                                "                    \"href\": \"http://localhost:9399/nwrestapi/v3/global/backups/6034732f-00000006-7acd14e3-62cd14e3-00871500-5a80015d\",\n" +
+                                "                    \"href\": \"http://localhost:9400/nwrestapi/v3/global/backups/6034732f-00000006-7acd14e3-62cd14e3-00871500-5a80015d\",\n" +
                                 "                    \"rel\": \"item\"\n" +
                                 "                }\n" +
                                 "            ],\n" +
@@ -271,7 +278,7 @@ public class NetworkerClientTest {
                                 "            \"level\": \"Manual\",\n" +
                                 "            \"links\": [\n" +
                                 "                {\n" +
-                                "                    \"href\": \"http://localhost:9399/nwrestapi/v3/global/backups/98d29c5e-00000006-81ccda87-62ccda87-00801500-5a80015d\",\n" +
+                                "                    \"href\": \"http://localhost:9400/nwrestapi/v3/global/backups/98d29c5e-00000006-81ccda87-62ccda87-00801500-5a80015d\",\n" +
                                 "                    \"rel\": \"item\"\n" +
                                 "                }\n" +
                                 "            ],\n" +
@@ -332,7 +339,7 @@ public class NetworkerClientTest {
                                 "            \"level\": \"Manual\",\n" +
                                 "            \"links\": [\n" +
                                 "                {\n" +
-                                "                    \"href\": \"http://localhost:9399/nwrestapi/v3/global/backups/d371d629-00000006-84ccd61b-62ccd61b-007d1500-5a80015d\",\n" +
+                                "                    \"href\": \"http://localhost:9400/nwrestapi/v3/global/backups/d371d629-00000006-84ccd61b-62ccd61b-007d1500-5a80015d\",\n" +
                                 "                    \"rel\": \"item\"\n" +
                                 "                }\n" +
                                 "            ],\n" +

@@ -21,6 +21,8 @@
 
 ALTER TABLE `cloud`.`mshost` MODIFY COLUMN `state` varchar(25);
 
+UPDATE `cloud`.`network_offerings` SET conserve_mode=1 WHERE name='DefaultIsolatedNetworkOfferingForVpcNetworks';
+
 -- Invalidate existing console_session records
 UPDATE `cloud`.`console_session` SET removed=now();
 -- Modify acquired column in console_session to datetime type
@@ -43,6 +45,21 @@ CREATE TABLE IF NOT EXISTS `cloud`.`quarantined_ips` (
 
 -- create_public_parameter_on_roles. #6960
 ALTER TABLE `cloud`.`roles` ADD COLUMN `public_role` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'Indicates whether the role will be visible to all users (public) or only to root admins (private). If this parameter is not specified during the creation of the role its value will be defaulted to true (public).';
+
+-- Create heuristic table for dynamic allocating resources to the secondary storage
+CREATE TABLE IF NOT EXISTS `cloud`.`heuristics` (
+    `id` bigint(20) unsigned NOT NULL auto_increment,
+    `uuid` varchar(255) UNIQUE NOT NULL,
+    `name` text NOT NULL,
+    `description` text DEFAULT NULL,
+    `zone_id` bigint(20) unsigned NOT NULL COMMENT 'ID of the zone to apply the heuristic, foreign key to `data_center` table',
+    `type` varchar(255) NOT NULL,
+    `heuristic_rule` text NOT NULL COMMENT 'JS script that defines to which secondary storage the resource will be allocated.',
+    `created` datetime NOT NULL,
+    `removed` datetime DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_heuristics__zone_id` FOREIGN KEY(`zone_id`) REFERENCES `cloud`.`data_center`(`id`)
+);
 
 -- Add tables for VM Scheduler
 DROP TABLE IF EXISTS `cloud`.`vm_schedule`;
@@ -233,3 +250,76 @@ ALTER TABLE `cloud`.`storage_pool_tags` MODIFY tag text NOT NULL;
 ALTER TABLE `cloud`.`host_tags` ADD COLUMN is_tag_a_rule int(1) UNSIGNED not null DEFAULT 0;
 
 ALTER TABLE `cloud`.`host_tags` MODIFY tag text NOT NULL;
+
+DROP TABLE IF EXISTS `cloud`.`object_store`;
+CREATE TABLE `cloud`.`object_store` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `name` varchar(255) NOT NULL COMMENT 'name of object store',
+  `object_provider_name` varchar(255) NOT NULL COMMENT 'id of object_store_provider',
+  `url` varchar(255) NOT NULL COMMENT 'url of the object store',
+  `uuid` varchar(255) COMMENT 'uuid of object store',
+  `created` datetime COMMENT 'date the object store first signed on',
+  `removed` datetime COMMENT 'date removed if not null',
+  `total_size` bigint unsigned COMMENT 'storage total size statistics',
+  `used_bytes` bigint unsigned COMMENT 'storage available bytes statistics',
+  PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `cloud`.`object_store_details`;
+CREATE TABLE `cloud`.`object_store_details` (
+  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `store_id` bigint unsigned NOT NULL COMMENT 'store the detail is related to',
+  `name` varchar(255) NOT NULL COMMENT 'name of the detail',
+  `value` varchar(255) NOT NULL COMMENT 'value of the detail',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_object_store_details__store_id` FOREIGN KEY `fk_object_store__store_id`(`store_id`) REFERENCES `object_store`(`id`) ON DELETE CASCADE,
+  INDEX `i_object_store__name__value`(`name`(128), `value`(128))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `cloud`.`bucket`;
+CREATE TABLE `cloud`.`bucket` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `name` varchar(255) NOT NULL COMMENT 'name of bucket',
+  `object_store_id` varchar(255) NOT NULL COMMENT 'id of object_store',
+  `state` varchar(255) NOT NULL COMMENT 'state of the bucket',
+  `uuid` varchar(255) COMMENT 'uuid of bucket',
+  `domain_id` bigint unsigned NOT NULL COMMENT 'domain the bucket belongs to',
+  `account_id` bigint unsigned NOT NULL COMMENT 'owner of this bucket',
+  `size` bigint unsigned COMMENT 'total size of bucket objects',
+  `quota` bigint unsigned COMMENT 'Allocated bucket quota in GB',
+  `versioning` boolean COMMENT 'versioning enable/disable',
+  `encryption` boolean COMMENT 'encryption enable/disbale',
+  `object_lock` boolean COMMENT 'Lock objects in bucket',
+  `policy` varchar(255) COMMENT 'Bucket Access Policy',
+  `access_key` varchar(255) COMMENT 'Bucket Access Key',
+  `secret_key` varchar(255) COMMENT 'Bucket Secret Key',
+  `bucket_url` varchar(255) COMMENT 'URL to access bucket',
+  `created` datetime COMMENT 'date the bucket was created',
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `cloud`.`bucket_statistics`;
+CREATE TABLE `cloud`.`bucket_statistics` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `account_id` bigint unsigned NOT NULL COMMENT 'owner of this bucket',
+  `bucket_id` bigint unsigned NOT NULL COMMENT 'id of this bucket',
+  `size` bigint unsigned COMMENT 'total size of bucket objects',
+   PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `cloud_usage`.`bucket_statistics`;
+CREATE TABLE `cloud_usage`.`bucket_statistics` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `account_id` bigint unsigned NOT NULL COMMENT 'owner of this bucket',
+  `bucket_id` bigint unsigned NOT NULL COMMENT 'id of this bucket',
+  `size` bigint unsigned COMMENT 'total size of bucket objects',
+   PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Add remover account ID to quarantined IPs table.
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.quarantined_ips', 'remover_account_id', 'bigint(20) unsigned DEFAULT NULL COMMENT "ID of the account that removed the IP from quarantine, foreign key to `account` table"');
+
+-- Explicitly add support for VMware 8.0b (8.0.0.2), 8.0c (8.0.0.3)
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities` (uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported, vm_snapshot_enabled) values (UUID(), 'VMware', '8.0.0.2', 1024, 0, 59, 64, 1, 1);
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities` (uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported, vm_snapshot_enabled) values (UUID(), 'VMware', '8.0.0.3', 1024, 0, 59, 64, 1, 1);

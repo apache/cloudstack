@@ -16,7 +16,8 @@
 // under the License.
 package com.cloud.network;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
@@ -38,7 +39,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
 public class SshKeysDistriMonitor implements Listener {
-    private static final Logger s_logger = Logger.getLogger(SshKeysDistriMonitor.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     AgentManager _agentMgr;
     private ConfigurationDao _configDao;
 
@@ -58,9 +59,14 @@ public class SshKeysDistriMonitor implements Listener {
     }
 
     @Override
-    public synchronized boolean processDisconnect(long agentId, Status state) {
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("Agent disconnected, agent id: " + agentId + ", state: " + state + ". Will notify waiters");
+    public boolean processDisconnect(long agentId, Status state) {
+        return processDisconnect(agentId, null, null, state);
+    }
+
+    @Override
+    public synchronized boolean processDisconnect(long agentId, String uuid, String name, Status state) {
+        if (logger.isTraceEnabled())
+            logger.trace("Agent disconnected, agent [id: {}, uuid: {}, name: {}, state: {}]. Will notify waiters", agentId, uuid, name, state);
 
         return true;
     }
@@ -79,21 +85,23 @@ public class SshKeysDistriMonitor implements Listener {
 
     @Override
     public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
-        if (cmd instanceof StartupRoutingCommand) {
-            if (((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.KVM || ((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.XenServer ||
+        if (!(cmd instanceof StartupRoutingCommand) || cmd.isConnectionTransferred()) {
+            return;
+        }
+
+        if (((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.KVM || ((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.XenServer ||
                 ((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.LXC) {
-                /*TODO: Get the private/public keys here*/
+            /*TODO: Get the private/public keys here*/
 
-                String pubKey = _configDao.getValue("ssh.publickey");
-                String prvKey = _configDao.getValue("ssh.privatekey");
+            String pubKey = _configDao.getValue("ssh.publickey");
+            String prvKey = _configDao.getValue("ssh.privatekey");
 
-                try {
-                    ModifySshKeysCommand cmds = new ModifySshKeysCommand(pubKey, prvKey);
-                    Commands c = new Commands(cmds);
-                    _agentMgr.send(host.getId(), c, this);
-                } catch (AgentUnavailableException e) {
-                    s_logger.debug("Failed to send keys to agent: " + host.getId());
-                }
+            try {
+                ModifySshKeysCommand cmds = new ModifySshKeysCommand(pubKey, prvKey);
+                Commands c = new Commands(cmds);
+                _agentMgr.send(host.getId(), c, this);
+            } catch (AgentUnavailableException e) {
+                logger.debug("Failed to send keys to agent: {}", host);
             }
         }
     }
