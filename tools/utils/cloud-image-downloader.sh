@@ -30,13 +30,67 @@ TEMP_DIR=$(mktemp -d)
 # Make sure this directory exists before running the script.
 # Must be executed by the cloudstack user on machine hosting the public download site.
 # It will be publicly available at https://download.cloudstack.org/templates/cloud-images/
-DEST_DIR="~/repository/templates/cloud-images/"
+DEST_DIR="${HOME}/repository/templates/cloud-images"
 
 # The directory where log files will be stored.
 # Make sure this directory exists.
-LOG_DIR="~/log/cloud-image-downloader"
-LOG_FILE="${LOG_DIR}/run_$(date +%Y%m%d_%H%M%S).log"
-ERROR_LOG_FILE="${LOG_DIR}/error_$(date +%Y%m%d_%H%M%S).log"
+LOG_DIR="${HOME}/log/cloud-image-downloader"
+LOG_FILE="${LOG_DIR}/cloud-image-downloader_$(date +%Y%m%d_%H%M%S).log"
+LOG_RETENTION_DAYS=30
+
+LOGGER_TAG="cloud-image-downloader"
+LOGGER_FACILITY="user"
+
+log_message() {
+    local priority=$1
+    shift
+    local message="$*"
+    local timestamp=$(date +'%Y-%m-%d %H:%M:%S')
+
+    # Log to file
+    echo "${timestamp} [${priority}] ${message}" >> "$LOG_FILE"
+
+    # Log to console
+    echo "${timestamp} [${priority}] ${message}"
+
+    # Log to syslog using logger utility
+    logger -t "${LOGGER_TAG}" -p "${LOGGER_FACILITY}.${priority}" -- "${message}"
+}
+
+log_info() {
+    log_message "info" "$@"
+}
+
+log_warn() {
+    log_message "warning" "$@"
+}
+
+log_error() {
+    log_message "err" "$@"
+}
+
+cleanup_old_logs() {
+    log_info "Cleaning up log files older than ${LOG_RETENTION_DAYS} days..."
+
+    if [ ! -d "$LOG_DIR" ]; then
+        log_warn "Log directory does not exist: $LOG_DIR"
+        return
+    fi
+
+    local deleted_count=0
+
+    # Find and delete log files older than retention period
+    while IFS= read -r -d '' log_file; do
+        rm -f "$log_file"
+        deleted_count=$((deleted_count + 1))
+    done < <(find "$LOG_DIR" -name "*.log" -type f -mtime +${LOG_RETENTION_DAYS} -print0 2>/dev/null)
+
+    if [ $deleted_count -gt 0 ]; then
+        log_info "Deleted $deleted_count old log file(s)"
+    else
+        log_info "No old log files to delete"
+    fi
+}
 
 #-------------------------------------------------------------------------------
 # Image Definitions
@@ -87,25 +141,43 @@ declare -A IMAGE_DISTROS=(
     ["OL8U10_aarch64-kvm-b122.qcow2"]="oraclelinux"
 )
 
+#-------------------------------------------------------------------------------
+# Cleanup Handler
+#-------------------------------------------------------------------------------
+
+cleanup_on_exit() {
+    local exit_code=$?
+    if [ -d "$TEMP_DIR" ]; then
+        rm -rf "$TEMP_DIR"
+        log_info "Temporary directory $TEMP_DIR removed."
+    fi
+
+    if [ $exit_code -ne 0 ]; then
+        log_error "Script exited with error code: $exit_code"
+    fi
+}
+
+trap cleanup_on_exit EXIT INT TER
 
 #-------------------------------------------------------------------------------
 # Main Script Logic
 #-------------------------------------------------------------------------------
 
-# Function to log messages
-log() {
-    echo "$(date +'%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOG_FILE"
-}
+if ! command -v logger &> /dev/null; then
+    log_warn "logger utility not found - syslog logging disabled"
+fi
 
 # Ensure base destination and log directories exist
 mkdir -p "$DEST_DIR"
 mkdir -p "$LOG_DIR"
 
-log "Starting image download process."
-log "Temporary directory: $TEMP_DIR"
-log "Base destination directory: $DEST_DIR"
-log "Log file: $LOG_FILE"
-log "Error log file: $ERROR_LOG_FILE"
+# Clean up old logs first
+cleanup_old_logs
+
+log_info "Starting image download process."
+log_info "Temporary directory: $TEMP_DIR"
+log_info "Base destination directory: $DEST_DIR"
+log_info "Log file: $LOG_FILE"
 
 # Loop through the image URLs
 for filename in "${!IMAGE_URLS[@]}"; do
@@ -114,9 +186,7 @@ for filename in "${!IMAGE_URLS[@]}"; do
 
     # Check if a distro is defined for the file
     if [ -z "$distro" ]; then
-        error_message="No distribution directory defined for $filename. Skipping."
-        log "ERROR: $error_message"
-        echo "$(date +'%Y-%m-%d %H:%M:%S') - $error_message" >> "$ERROR_LOG_FILE"
+        log_error "No distribution directory defined for $filename. Skipping."
         continue
     fi
 
@@ -124,9 +194,9 @@ for filename in "${!IMAGE_URLS[@]}"; do
     temp_filepath="${TEMP_DIR}/${filename}"
     dest_filepath="${distro_dest_dir}/${filename}"
 
-    log "--------------------------------------------------"
-    log "Starting download for: $filename"
-    log "URL: $url"
+    log_info "--------------------------------------------------"
+    log_info "Starting download for: $filename"
+    log_info "URL: $url"
 
     # Download the file to the temporary directory
     wget --progress=bar:force:noscroll -O "$temp_filepath" "$url"
@@ -134,52 +204,49 @@ for filename in "${!IMAGE_URLS[@]}"; do
 
     if [ $download_status -ne 0 ]; then
         # Handle download failure
-        error_message="Failed to download $filename from $url. wget exit code: $download_status"
-        log "ERROR: $error_message"
-        echo "$(date +'%Y-%m-%d %H:%M:%S') - $error_message" >> "$ERROR_LOG_FILE"
+        log_error "Failed to download $filename from $url. wget exit code: $download_status"
     else
         # Handle download success
-        log "Successfully downloaded $filename to temporary location."
+        log_info "Successfully downloaded $filename to temporary location."
 
         # Ensure the specific distro directory exists
-        log "Ensuring destination directory exists: $distro_dest_dir"
+        log_info "Ensuring destination directory exists: $distro_dest_dir"
         mkdir -p "$distro_dest_dir"
 
         # Move the file to the destination directory, replacing any existing file
-        log "Moving $filename to $dest_filepath"
+        log_info "Moving $filename to $dest_filepath"
         mv -f "$temp_filepath" "$dest_filepath"
         move_status=$?
 
         if [ $move_status -ne 0 ]; then
-            error_message="Failed to move $filename to $dest_filepath. mv exit code: $move_status"
-            log "ERROR: $error_message"
-            echo "$(date +'%Y-%m-%d %H:%M:%S') - $error_message" >> "$ERROR_LOG_FILE"
+            log_error "Failed to move $filename to $dest_filepath. mv exit code: $move_status"
         else
-            log "Successfully moved $filename."
+            log_info "Successfully moved $filename."
         fi
     fi
 done
 
-log "Generate checksum"
+log_info "Generate checksum"
 # Create md5 checksum
 checksum_file="md5sum.txt"
 sha512_checksum_file="sha512sum.txt"
 
 cd "$DEST_DIR"
 find . -type f ! -iname '*.txt' -exec md5sum {} \; > "$checksum_file"
-find . -type f ! -iname '*.txt' -exec sha512sum {} \; > "$sha512_checksum_file"
 checksum_status=$?
 if [ $checksum_status -ne 0 ]; then
-    error_message="Failed to create md5 checksum. md5sum exit code: $checksum_status"
-    log "ERROR: $error_message"
-    echo "$(date +'%Y-%m-%d %H:%M:%S') - $error_message" >> "$ERROR_LOG_FILE"
+    log_error "Failed to create md5 checksum. md5sum exit code: $checksum_status"
 else
-    log "Successfully created checksum file: $checksum_file"
+    log_info "Successfully created checksum file: $checksum_file"
 fi
 
-log "--------------------------------------------------"
-log "Image download process finished."
+find . -type f ! -iname '*.txt' -exec sha512sum {} \; > "$sha512_checksum_file"
+sha512_checksum_status=$?
+if [ $sha512_checksum_status -ne 0 ]; then
+    log_error "Failed to create sha512 checksum. sha512sum exit code: $sha512_checksum_status"
+else
+    log_info "Successfully created checksum file: $sha512_checksum_file"
+fi
 
-# Clean up the temporary directory
-rm -rf "$TEMP_DIR"
-log "Temporary directory $TEMP_DIR removed.”
+log_info "--------------------------------------------------"
+log_info "Image download process finished."
