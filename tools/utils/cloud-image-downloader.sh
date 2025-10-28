@@ -182,4 +182,4 @@ log "Image download process finished."
 
 # Clean up the temporary directory
 rm -rf "$TEMP_DIR"
-log "Temporary directory $TEMP_DIR removed."
+log "Temporary directory $TEMP_DIR removed.”
