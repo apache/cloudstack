@@ -111,7 +111,7 @@ log "Error log file: $ERROR_LOG_FILE"
 for filename in "${!IMAGE_URLS[@]}"; do
     url="${IMAGE_URLS[$filename]}"
     distro="${IMAGE_DISTROS[$filename]}"
-    
+
     # Check if a distro is defined for the file
     if [ -z "$distro" ]; then
         error_message="No distribution directory defined for $filename. Skipping."
@@ -140,7 +140,7 @@ for filename in "${!IMAGE_URLS[@]}"; do
     else
         # Handle download success
         log "Successfully downloaded $filename to temporary location."
-        
+
         # Ensure the specific distro directory exists
         log "Ensuring destination directory exists: $distro_dest_dir"
         mkdir -p "$distro_dest_dir"
