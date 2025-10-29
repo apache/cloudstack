@@ -101,7 +101,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     ReservationDao reservationDao;
 
     private static final String LIST_PODS_HAVING_VMS_FOR_ACCOUNT =
-            "SELECT pod_id FROM cloud.vm_instance WHERE data_center_id = ? AND account_id = ? AND pod_id IS NOT NULL AND (state = 'Running' OR state = 'Stopped') "
+            "SELECT pod_id FROM cloud.vm_instance WHERE data_center_id = ? AND account_id = ? AND pod_id IS NOT NULL AND state IN ('Starting', 'Running', 'Stopped') "
                     + "GROUP BY pod_id HAVING count(id) > 0 ORDER BY count(id) DESC";
 
     private static final String VM_DETAILS = "select vm_instance.id, "
