@@ -48,6 +48,7 @@ from marvin.lib.common import (get_domain,
                                get_suitable_test_template,
                                get_test_ovf_templates,
                                list_hosts,
+                               list_storage_pools,
                                get_vm_vapp_configs)
 from marvin.codes import FAILED, PASS
 from nose.plugins.attrib import attr
@@ -1707,11 +1708,15 @@ class TestKVMLiveMigration(cloudstackTestCase):
 
         return target_hosts[0]
 
-    def get_target_pool(self, volid):
-        target_pools = StoragePool.listForMigration(self.apiclient, id=volid)
+    def get_target_pool(self, vol):
+        target_pools = StoragePool.listForMigration(self.apiclient, id=vol.id)
 
         if target_pools is None or len(target_pools) == 0:
             self.skipTest("Not enough storage pools found for migration")
+
+        source_pool = list_storage_pools(self.apiclient, id=vol.storageid)[0]
+        if source_pool.type == 'RBD' and target_pools[0].type == 'RBD':
+            self.skipTest("Live VM migration between RBD pools is unsupported")
 
         return target_pools[0]
 
@@ -1751,7 +1756,7 @@ class TestKVMLiveMigration(cloudstackTestCase):
 
         root_volume = self.get_vm_volumes(vm.id)[0]
 
-        target_pool = self.get_target_pool(root_volume.id)
+        target_pool = self.get_target_pool(root_volume)
 
         target_host = self.get_target_host(vm.id)
 
@@ -1789,9 +1794,9 @@ class TestKVMLiveMigration(cloudstackTestCase):
 
         root_volume = self.get_vm_volumes(vm.id)[0]
 
-        target_pool = self.get_target_pool(root_volume.id)
-        volume1.target_pool = self.get_target_pool(volume1.id)
-        volume2.target_pool = self.get_target_pool(volume2.id)
+        target_pool = self.get_target_pool(root_volume)
+        volume1.target_pool = self.get_target_pool(volume1)
+        volume2.target_pool = self.get_target_pool(volume2)
 
         target_host = self.get_target_host(vm.id)
 

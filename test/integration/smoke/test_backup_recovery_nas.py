@@ -51,7 +51,7 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
 
         cls.storage_pool = StoragePool.list(cls.api_client)[0]
         if cls.storage_pool.type.lower() != 'networkfilesystem':
-            cls.skipTest(cls, reason="Test can be run only if the primary storage is of type NFS")
+            cls.skipTest(cls, reason="Test can be run only if the primary storage is of type NFS. The pool type is %s " % cls.storage_pool.type)
 
         # Check backup configuration values, set them to enable the nas provider
         backup_enabled_cfg = Configurations.list(cls.api_client, name='backup.framework.enabled')
