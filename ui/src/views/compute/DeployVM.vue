@@ -879,6 +879,7 @@
 import { ref, reactive, toRaw, nextTick, h } from 'vue'
 import { Button } from 'ant-design-vue'
 import { api } from '@/api'
+import { isAdmin } from '@/role'
 import _ from 'lodash'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
 import store from '@/store'
@@ -1170,6 +1171,7 @@ export default {
       return _.map(this.affinityGroups, 'id')
     },
     params () {
+      const listAll = isAdmin()
       return {
         serviceOfferings: {
           list: 'listServiceOfferings',
@@ -1217,7 +1219,7 @@ export default {
             domainid: this.owner.domainid,
             projectid: this.owner.projectid,
             keyword: undefined,
-            listall: false
+            listall: listAll
           }
         },
         sshKeyPairs: {
@@ -1225,8 +1227,11 @@ export default {
           options: {
             page: 1,
             pageSize: 10,
+            account: this.owner.account,
+            domainid: this.owner.domainid,
+            projectid: this.owner.projectid,
             keyword: undefined,
-            listall: false
+            listall: listAll
           }
         },
         userDatas: {
@@ -1234,8 +1239,11 @@ export default {
           options: {
             page: 1,
             pageSize: 10,
+            account: this.owner.account,
+            domainid: this.owner.domainid,
+            projectid: this.owner.projectid,
             keyword: undefined,
-            listall: false
+            listall: listAll
           }
         },
         networks: {
