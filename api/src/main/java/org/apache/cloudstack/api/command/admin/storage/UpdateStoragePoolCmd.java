@@ -153,6 +153,8 @@ public class UpdateStoragePoolCmd extends BaseCmd {
         if (ObjectUtils.anyNotNull(name, capacityIops, capacityBytes, url, isTagARule, tags) ||
                 MapUtils.isNotEmpty(details)) {
             result = _storageService.updateStoragePool(this);
+        } else {
+            result = _storageService.getStoragePool(getId());
         }
 
         if (enabled != null) {
