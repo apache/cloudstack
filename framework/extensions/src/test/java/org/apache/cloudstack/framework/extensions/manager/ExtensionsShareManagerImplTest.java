@@ -324,7 +324,8 @@ public class ExtensionsShareManagerImplTest {
             digestHelperMock.when(() -> DigestHelper.calculateChecksum(any(File.class))).thenReturn("checksum123");
             doReturn(true).when(extensionsShareManager).packArchiveForDownload(eq(extension),
                     eq(extensionRootPath), any(Path.class));
-            ExtensionsShareManagerImpl.ArchiveInfo archiveInfo = extensionsShareManager.createArchiveForDownload(extension);
+            ExtensionsShareManagerImpl.ArchiveInfo archiveInfo =
+                    extensionsShareManager.createArchiveForDownload(extension);
             assertNotNull(archiveInfo);
             assertEquals(1024L, archiveInfo.getSize());
             assertEquals("checksum123", archiveInfo.getChecksum());

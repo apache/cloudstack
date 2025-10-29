@@ -31,6 +31,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -39,22 +40,40 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.extension.Extension;
+import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.extensions.ExtensionArchiveDataObject;
 import org.apache.cloudstack.framework.extensions.command.DownloadAndSyncExtensionFilesCommand;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.utils.filesystem.ArchiveUtil;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.cloudstack.utils.security.HMACSignUtil;
 import org.apache.cloudstack.utils.server.ServerPropertiesUtil;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.cluster.ClusterManager;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.server.ManagementService;
+import com.cloud.storage.Storage;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.HttpUtils;
 import com.cloud.utils.Pair;
@@ -63,8 +82,11 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.SecondaryStorageVmVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.SecondaryStorageVmDao;
 
-public class ExtensionsShareManagerImpl extends ManagerBase implements ExtensionsShareManager {
+public class ExtensionsShareManagerImpl extends ManagerBase implements ExtensionsShareManager, Configurable {
 
     protected static final String EXTENSIONS_SHARE_SUBDIR = "extensions";
     protected static final int DEFAULT_SHARE_LINK_VALIDITY_SECONDS = 3600; // 1 hour
@@ -75,11 +97,32 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
                     "Default is %s seconds", DEFAULT_SHARE_LINK_VALIDITY_SECONDS),
             false, ConfigKey.Scope.Global);
 
+    ConfigKey<Boolean> ShareDownloadUseSecondaryStorage = new ConfigKey<>("Advanced", Boolean.class,
+            "extension.share.download.use.secondary.storage", "false",
+            "Whether to use secondary storage for extension archive downloads. " +
+                    "If false, the management server serves the extension archives directly.",
+            false, ConfigKey.Scope.Global);
+
     @Inject
     ExtensionsFilesystemManager extensionsFilesystemManager;
 
     @Inject
     ClusterManager clusterManager;
+
+    @Inject
+    DataCenterDao dataCenterDao;
+
+    @Inject
+    SecondaryStorageVmDao secondaryStorageVmDao;
+
+    @Inject
+    DataStoreManager dataStoreManager;
+
+    @Inject
+    ManagementService managementService;
+
+    @Inject
+    EndPointSelector endPointSelector;
 
     private ScheduledExecutorService extensionShareCleanupExecutor;
     private int shareLinkValidityInterval;
@@ -409,23 +452,132 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
             return;
         }
         try (Stream<Path> paths = Files.list(sharePath)) {
-            paths.filter(p -> p.getFileName().toString().endsWith(".tgz"))
-                    .filter(p -> {
-                        try {
-                            return Files.getLastModifiedTime(p).toMillis() < cutoff;
-                        } catch (IOException e) {
-                            return false;
-                        }
-                    })
-                    .forEach(p -> {
-                        try {
-                            Files.delete(p);
-                            logger.debug("Deleted expired extension archive {}", p);
-                        } catch (IOException e) {
-                            logger.warn("Failed to delete expired extension archive {}", p, e);
-                        }
-                    });
+            paths.filter(p -> {
+                String name = p.getFileName().toString().toUpperCase();
+                    if (!name.endsWith(ArchiveUtil.ArchiveFormat.TGZ.name()) &&
+                            !name.endsWith(ArchiveUtil.ArchiveFormat.ZIP.name())) {
+                        return false;
+                    }
+                    try {
+                        return Files.getLastModifiedTime(p).toMillis() < cutoff;
+                    } catch (IOException e) {
+                        return false;
+                    }
+                })
+                .forEach(p -> {
+                    try {
+                        Files.delete(p);
+                        logger.debug("Deleted expired extension archive {}", p);
+                    } catch (IOException e) {
+                        logger.warn("Failed to delete expired extension archive {}", p, e);
+                    }
+                });
         }
+    }
+
+    static protected class DownloadExtensionArchiveOnSecondaryStorageContext<T> extends AsyncRpcContext<T> {
+        final Extension extension;
+        final ArchiveInfo archiveInfo;
+        final DataObject dataObject;
+        final AsyncCallFuture<DataObject> future;
+
+        public DownloadExtensionArchiveOnSecondaryStorageContext(AsyncCompletionCallback<T> callback,
+                Extension extension, ArchiveInfo archiveInfo, DataObject dataObject, AsyncCallFuture<DataObject> future) {
+            super(callback);
+            this.extension = extension;
+            this.archiveInfo = archiveInfo;
+            this.dataObject = dataObject;
+            this.future = future;
+        }
+    }
+
+    protected Void downloadExtensionArchiveOnSecondaryStorageAsyncCallback(
+            AsyncCallbackDispatcher<ExtensionsShareManagerImpl, CreateCmdResult> callback,
+            DownloadExtensionArchiveOnSecondaryStorageContext<CommandResult> context) {
+        CreateCmdResult result = callback.getResult();
+        DataObject dataObject = context.dataObject;
+        AsyncCallFuture<DataObject> future = context.future;
+        if (result == null || !result.isSuccess()) {
+            logger.debug("Failed to download extension archive to secondary storage: {}",
+                    result != null ? result.getResult() : "null result");
+            future.complete(null);
+            return null;
+        }
+        try {
+            ((ExtensionArchiveDataObject)dataObject).setPath(result.getPath());
+            dataObject.processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed);
+            future.complete(dataObject);
+        } catch (Exception e) {
+            logger.debug("Failed to update snapshot state", e);
+            future.complete(null);
+        }
+        return null;
+    }
+
+    protected AsyncCallFuture<DataObject> downloadExtensionArchiveOnSecondaryStorage(DataStore imageStore,
+             DataObject archiveOnStore, Extension extension, ArchiveInfo archiveInfo) {
+        AsyncCallFuture<DataObject> future = new AsyncCallFuture<>();
+        try {
+            DownloadExtensionArchiveOnSecondaryStorageContext<DataObject> context =
+                    new DownloadExtensionArchiveOnSecondaryStorageContext<>(null, extension, archiveInfo,
+                            archiveOnStore, future);
+            AsyncCallbackDispatcher<ExtensionsShareManagerImpl, CreateCmdResult> caller =
+                    AsyncCallbackDispatcher.create(this);
+            caller.setCallback(caller.getTarget().downloadExtensionArchiveOnSecondaryStorageAsyncCallback(
+                    null, null)).setContext(context);
+            imageStore.getDriver().createAsync(imageStore, archiveOnStore, caller);
+        } catch (CloudRuntimeException ex) {
+            future.complete(null);
+        }
+        return future;
+    }
+
+    protected Pair<Boolean, String> downloadExtensionViaSecondaryStorage(Extension extension, ArchiveInfo archiveInfo,
+             String downloadUrl) {
+        // Find an active zone, if not available return error
+        List<Long> zoneIds = dataCenterDao.listEnabledNonEdgeZoneIds();
+        if (CollectionUtils.isEmpty(zoneIds)) {
+            String msg = "No enabled zone found for extension download via secondary storage";
+            logger.error("{} for {}", msg, extension);
+            return new Pair<>(false, msg);
+        }
+        Long zoneId = null;
+        DataStore imageStore = null;
+        for (Long zid : zoneIds) {
+            List<SecondaryStorageVmVO> runningSSVMs =
+                    secondaryStorageVmDao.getSecStorageVmListInStates(null, zid, VirtualMachine.State.Running);
+            if (CollectionUtils.isEmpty(runningSSVMs)) {
+                continue;
+            }
+            DataStore store = dataStoreManager.getImageStoreWithFreeCapacity(zid);
+            if (store != null) {
+                zoneId = zid;
+                imageStore = store;
+                break;
+            }
+        }
+        if (ObjectUtils.anyNull(zoneId, imageStore)) {
+            String msg = "No secondary storage with sufficient capacity found for extension download";
+            logger.error("{} for {}", msg, extension, zoneId);
+            return new Pair<>(false, msg);
+        }
+        DataObject dataObject = new ExtensionArchiveDataObject(extension, imageStore, downloadUrl,
+                archiveInfo.getSize(), archiveInfo.getChecksum(), EXTENSIONS_SHARE_SUBDIR);
+        AsyncCallFuture<DataObject> future =
+                downloadExtensionArchiveOnSecondaryStorage(imageStore, dataObject, extension, archiveInfo);
+        try {
+            dataObject = future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            dataObject = null;
+        }
+        if (dataObject == null) {
+            String msg = "Failed to download extension archive to secondary storage";
+            logger.error("{} for {} to store {}", msg, extension, imageStore);
+            return new Pair<>(false, msg);
+        }
+        ImageStoreEntity imageStoreEntity = (ImageStoreEntity)imageStore;
+        String url = imageStoreEntity.createEntityExtractUrl(dataObject.getTO().getPath(), Storage.ImageFormat.ZIP, dataObject);
+        return new Pair<>(true, url);
     }
 
     @Override
@@ -457,6 +609,19 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
             extensionShareCleanupExecutor.shutdownNow();
         }
         return true;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return ExtensionsShareManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey[]{
+                ShareLinkValidityInterval,
+                ShareDownloadUseSecondaryStorage
+        };
     }
 
     @Override
@@ -545,14 +710,20 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
             logger.error("{} for {}", extension, msg, e);
             return new Pair<>(false, msg);
         }
+        String signedUrl;
         try {
-            String signedUrl = generateSignedArchiveUrl(managementServer, archiveInfo.getPath());
-            return new Pair<>(true, signedUrl);
+            signedUrl = generateSignedArchiveUrl(managementServer, archiveInfo.getPath());
         } catch (DecoderException | NoSuchAlgorithmException | InvalidKeyException e) {
             String msg = "Failed to generate signed URL";
             logger.error("{} for {} using {}", msg, extension, managementServer, e);
             return new Pair<>(false, msg);
         }
+        if (!ShareDownloadUseSecondaryStorage.value()) {
+            return new Pair<>(true, signedUrl);
+        }
+        Pair<Boolean, String> result = downloadExtensionViaSecondaryStorage(extension, archiveInfo, signedUrl);
+        FileUtil.deletePath(archiveInfo.getPath().toAbsolutePath().toString());
+        return result;
     }
 
     protected static class ArchiveInfo {

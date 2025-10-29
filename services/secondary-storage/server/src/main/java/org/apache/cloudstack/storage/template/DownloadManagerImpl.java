@@ -420,24 +420,27 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         return name;
     }
 
-    private String postLocalSnapshotSingleFileDownload(DownloadJob job, HttpTemplateDownloader td) {
+    private String postLocalSingleFileDownload(DownloadJob job, HttpTemplateDownloader td) {
         String name = getSnapshotInstallNameFromDownloadUrl(td.getDownloadUrl());
         final String downloadedFile = td.getDownloadLocalPath();
         final String resourcePath = job.getInstallPathPrefix();
         final String relativeResourcePath = job.getTmpltPath();
+        final String downloadType = job.getResourceType().name().toLowerCase();
         if (StringUtils.isEmpty(name)) {
             name = UUID.randomUUID().toString();
-            LOGGER.warn(String.format("Unable to retrieve install filename for snapshot download %s, using a random UUID", downloadedFile));
+            LOGGER.warn("Unable to retrieve install filename for {} download {}, using a random UUID",
+                    downloadType, downloadedFile);
         }
         Path srcPath = Paths.get(downloadedFile);
         Path destPath = Paths.get(resourcePath + File.separator + name);
         try {
-            LOGGER.debug(String.format("Trying to create missing directories (if any) to move snapshot %s.", destPath));
+            LOGGER.debug("Trying to create missing directories (if any) to move {} [{}].", downloadType,
+                    destPath);
             Files.createDirectories(destPath.getParent());
-            LOGGER.debug(String.format("Trying to move downloaded snapshot [%s] to [%s].", srcPath, destPath));
+            LOGGER.debug("Trying to move downloaded {} [{}] to [{}].", downloadType, srcPath, destPath);
             Files.move(srcPath, destPath, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            LOGGER.warn(String.format("Something is wrong while processing post snapshot download %s", resourcePath), e);
+            LOGGER.warn("Something is wrong while processing post {} download {}", downloadType, resourcePath, e);
             return "Unable process post snapshot download due to " + e.getMessage();
         }
         String installedPath = relativeResourcePath + File.separator + name;
@@ -446,9 +449,10 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         return null;
     }
 
-    private String postLocalSnapshotMultiFileDownload(DownloadJob job, SimpleHttpMultiFileDownloader td) {
+    private String postLocalMultiFileDownload(DownloadJob job, SimpleHttpMultiFileDownloader td) {
         Map<String, String> downloads = td.getDownloadedFilesMap();
         String installDir = null;
+        final String downloadType = job.getResourceType().name().toLowerCase();
         try {
             for (Map.Entry<String, String> entry : downloads.entrySet()) {
                 final String url = entry.getKey();
@@ -460,7 +464,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     job.setTmpltPath(job.getTmpltPath() + installDir);
                     installDir = job.getInstallPathPrefix() + installDir;
                     Path installPath = Paths.get(installDir);
-                    LOGGER.debug(String.format("Trying to create missing directories (if any) to move snapshot files at %s.", installDir));
+                    LOGGER.debug("Trying to create missing directories (if any) to move {} files at {}.",
+                            downloadType, installDir);
                     Files.createDirectories(installPath);
                 }
                 final String filePath = installDir + name;
@@ -469,22 +474,23 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                 }
                 Path srcPath = Paths.get(downloadedFile);
                 Path destPath = Paths.get(filePath);
-                LOGGER.debug(String.format("Trying to move downloaded snapshot file [%s] to [%s].", srcPath, destPath));
+                LOGGER.debug("Trying to move downloaded {} file [{}] to [{}].", downloadType, srcPath,
+                        destPath);
                 Files.move(srcPath, destPath, StandardCopyOption.REPLACE_EXISTING);
             }
             job.setTemplatePhysicalSize(td.getDownloadedBytes());
         } catch (IOException e) {
-            LOGGER.warn(String.format("Something is wrong while processing post snapshot download %s", job.getTmpltPath()), e);
+            LOGGER.warn("Something is wrong while processing post {} download {}", downloadType, job.getTmpltPath(), e);
             return "Unable process post snapshot download due to " + e.getMessage();
         }
         return null;
     }
 
-    private String postLocalSnapshotDownload(DownloadJob job, TemplateDownloader td) {
+    private String postLocalDownloadNoProcessingNeeded(DownloadJob job, TemplateDownloader td) {
         if (td instanceof HttpTemplateDownloader) {
-            return postLocalSnapshotSingleFileDownload(job, (HttpTemplateDownloader)td);
+            return postLocalSingleFileDownload(job, (HttpTemplateDownloader)td);
         } else if(td instanceof SimpleHttpMultiFileDownloader) {
-            return postLocalSnapshotMultiFileDownload(job, (SimpleHttpMultiFileDownloader)td);
+            return postLocalMultiFileDownload(job, (SimpleHttpMultiFileDownloader)td);
         }
         return null;
     }
@@ -500,21 +506,19 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         DownloadJob dnld = jobs.get(jobId);
         TemplateDownloader td = dnld.getTemplateDownloader();
         ResourceType resourceType = dnld.getResourceType();
-        if (ResourceType.SNAPSHOT.equals(resourceType)) {
-            return postLocalSnapshotDownload(dnld, td);
-        }
         String resourcePath = dnld.getInstallPathPrefix(); // path with mount directory
         String finalResourcePath = dnld.getTmpltPath(); // template download path on secondary storage
         File originalTemplate = new File(td.getDownloadLocalPath());
         if(StringUtils.isBlank(dnld.getChecksum())) {
-            if (logger.isInfoEnabled()) {
-                logger.info(String.format("No checksum available for '%s'", originalTemplate.getName()));
-            }
+            logger.info("No checksum available for '{}'", originalTemplate.getName());
         }
         // check or create checksum
-        String checksumErrorMessage = checkOrCreateTheChecksum(dnld, originalTemplate);
+        String checksumErrorMessage = checkAndUpdateChecksum(dnld, originalTemplate);
         if (checksumErrorMessage != null) {
             return checksumErrorMessage;
+        }
+        if (!resourceType.doesRequirePostDownloadProcessing()) {
+            return postLocalDownloadNoProcessingNeeded(dnld, td);
         }
 
         String result;
@@ -602,7 +606,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     }
 
     private void setPermissionsForTheDownloadedTemplate(String resourcePath, ResourceType resourceType) {
-        if (ResourceType.SNAPSHOT.equals(resourceType)) {
+        if (resourceType.doesRequirePostDownloadProcessing()) {
             return;
         }
         // Set permissions for template/volume.properties
@@ -616,25 +620,24 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         _storage.setWorldReadableAndWriteable(templateProperties);
     }
 
-    private String checkOrCreateTheChecksum(DownloadJob dnld, File targetFile) {
-        ChecksumValue oldValue = new ChecksumValue(dnld.getChecksum());
-        ChecksumValue newValue = null;
+    private String checkAndUpdateChecksum(DownloadJob job, File targetFile) {
+        final String downloadType = job.getResourceType().name().toLowerCase();
+        ChecksumValue oldValue = new ChecksumValue(job.getChecksum());
+        ChecksumValue newValue;
         try {
             newValue = computeCheckSum(oldValue.getAlgorithm(), targetFile);
-            if (logger.isDebugEnabled()) {
-                logger.debug(String.format("computed checksum: %s", newValue));
-            }
+            logger.debug("Computed {} checksum: {}", downloadType, newValue);
         } catch (NoSuchAlgorithmException e) {
-            return "checksum algorithm not recognised: " + oldValue.getAlgorithm();
+            return String.format("checksum algorithm not recognised: %s", oldValue.getAlgorithm());
         }
-        if (StringUtils.isNotBlank(dnld.getChecksum()) && !oldValue.equals(newValue)) {
-            return "checksum \"" + newValue + "\" didn't match the given value, \"" + oldValue + "\"";
+        if (StringUtils.isNotBlank(job.getChecksum()) && !oldValue.equals(newValue)) {
+            return String.format("checksum \"%s\" didn't match the given value, \"%s\"", newValue, oldValue);
         }
-        String checksum = newValue.toString();
+        String checksum = newValue == null ?  null : newValue.toString();
         if (checksum == null) {
-            logger.warn("Something wrong happened when try to calculate the checksum of downloaded template!");
+            logger.warn("Something wrong happened when try to calculate the checksum of downloaded {}}!", downloadType);
         }
-        dnld.setCheckSum(checksum);
+        job.setCheckSum(checksum);
         return null;
     }
 
@@ -721,7 +724,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             logger.warn("Unable to create " + tmpDir);
             return "Unable to create " + tmpDir;
         }
-        if (ResourceType.SNAPSHOT.equals(resourceType)) {
+        if (resourceType.doesRequirePostDownloadProcessing()) {
             return null;
         }
         // TO DO - define constant for volume properties.

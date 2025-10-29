@@ -42,6 +42,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
+import org.apache.cloudstack.storage.to.DownloadableArchiveObjectTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -235,6 +236,29 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
         }
     }
 
+    protected void initiateArchiveDownload(DataObject archive, AsyncCompletionCallback<DownloadAnswer> callback) {
+        DataStore store = archive.getDataStore();
+        start();
+        DownloadCommand cmd = new DownloadCommand((DownloadableArchiveObjectTO)(archive.getTO()),
+                getMaxArchiveSizeInBytes(), archive.getUri());
+        cmd.setProxy(getHttpProxy());
+        EndPoint ep = _epSelector.select(archive);
+        if (ep == null) {
+            String errMsg = "There is no secondary storage VM for downloading archive to image store " + store.getName();
+            logger.warn(errMsg);
+            throw new CloudRuntimeException(errMsg);
+        }
+        DownloadListener dl = new DownloadListener(ep, store, archive, _timer, this, cmd, callback);
+        ComponentContext.inject(dl);
+        try {
+            ep.sendMessageAsync(cmd, new UploadListener.Callback(ep.getId(), dl));
+        } catch (Exception e) {
+            logger.warn("Unable to start /resume download of snapshot {} to {}", archive, store, e);
+            dl.setDisconnected();
+            dl.scheduleStatusCheck(RequestType.GET_OR_RESTART);
+        }
+    }
+
     @Override
     public void downloadTemplateToStorage(DataObject template, AsyncCompletionCallback<DownloadAnswer> callback) {
         if(template != null) {
@@ -331,6 +355,17 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
         }
     }
 
+    @Override
+    public void downloadArchiveToStorage(DataObject archive, AsyncCompletionCallback<DownloadAnswer> callback) {
+        if (archive.getUri() != null) {
+            initiateArchiveDownload(archive, callback);
+        } else {
+            logger.info("Archive url is null, cannot download");
+            DownloadAnswer ans = new DownloadAnswer("Extension archive url is null", Status.UNKNOWN);
+            callback.complete(ans);
+        }
+    }
+
     private Long getMaxTemplateSizeInBytes() {
         try {
             return Long.parseLong(_configDao.getValue("max.template.iso.size")) * 1024L * 1024L * 1024L;
@@ -353,6 +388,10 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
         } catch (NumberFormatException e) {
             return null;
         }
+    }
+
+    private Long getMaxArchiveSizeInBytes() {
+        return 100 * 1024L * 1024L;
     }
 
     private Proxy getHttpProxy() {
