@@ -277,4 +277,10 @@ public class ConfigKey<T> {
         }
     }
 
+    public boolean hasValueInScope(String value) {
+        if (value != null && s_depot != null) {
+            return s_depot.doesConfigKeyAndValueExistInScope(_name, value, _scope);
+        }
+        return false;
+    }
 }
