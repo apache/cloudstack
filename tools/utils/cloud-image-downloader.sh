@@ -48,10 +48,7 @@ log_message() {
     local timestamp=$(date +'%Y-%m-%d %H:%M:%S')
 
     # Log to file
-    echo "${timestamp} [${priority}] ${message}" >> "$LOG_FILE"
-
-    # Log to console
-    echo "${timestamp} [${priority}] ${message}"
+    echo "${timestamp} [${priority}] ${message}” | tee ${LOG_FILE}
 
     # Log to syslog using logger utility
     logger -t "${LOGGER_TAG}" -p "${LOGGER_FACILITY}.${priority}" -- "${message}"
