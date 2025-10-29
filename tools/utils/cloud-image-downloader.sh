@@ -40,6 +40,7 @@ LOG_RETENTION_DAYS=30
 
 LOGGER_TAG="cloud-image-downloader"
 LOGGER_FACILITY="user"
+LOGGER_AVAILABLE=false
 
 log_message() {
     local priority=$1
@@ -48,10 +49,12 @@ log_message() {
     local timestamp=$(date +'%Y-%m-%d %H:%M:%S')
 
     # Log to file
-    echo "${timestamp} [${priority}] ${message}” | tee ${LOG_FILE}
+    echo "${timestamp} [${priority}] ${message}" | tee -a "${LOG_FILE}"
 
     # Log to syslog using logger utility
-    logger -t "${LOGGER_TAG}" -p "${LOGGER_FACILITY}.${priority}" -- "${message}"
+    if [ "${LOGGER_AVAILABLE}" = true ]; then
+        logger -t "${LOGGER_TAG}" -p "${LOGGER_FACILITY}.${priority}" -- "${message}"
+    fi
 }
 
 log_info() {
@@ -154,14 +157,14 @@ cleanup_on_exit() {
     fi
 }
 
-trap cleanup_on_exit EXIT INT TER
+trap cleanup_on_exit EXIT INT TERM
 
 #-------------------------------------------------------------------------------
 # Main Script Logic
 #-------------------------------------------------------------------------------
 
-if ! command -v logger &> /dev/null; then
-    log_warn "logger utility not found - syslog logging disabled"
+if command -v logger &> /dev/null; then
+    LOGGER_AVAILABLE=true
 fi
 
 # Ensure base destination and log directories exist
@@ -175,6 +178,13 @@ log_info "Starting image download process."
 log_info "Temporary directory: $TEMP_DIR"
 log_info "Base destination directory: $DEST_DIR"
 log_info "Log file: $LOG_FILE"
+
+# Inform about logger status
+if [ "${LOGGER_AVAILABLE}" = true ]; then
+    log_info "Syslog logging enabled (tag: ${LOGGER_TAG})"
+else
+    log_warn "Syslog logging disabled - logger utility not found"
+fi
 
 # Loop through the image URLs
 for filename in "${!IMAGE_URLS[@]}"; do
