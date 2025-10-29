@@ -1340,7 +1340,11 @@ public class LibvirtVMDef {
         @Override
         public String toString() {
             StringBuilder memBalloonBuilder = new StringBuilder();
-            memBalloonBuilder.append("<memballoon model='" + memBalloonModel + "'>\n");
+            memBalloonBuilder.append("<memballoon model='" + memBalloonModel + "'");
+            if (memBalloonModel != MemBalloonModel.NONE) {
+                memBalloonBuilder.append(" autodeflate='on' freePageReporting='on'");
+            }
+            memBalloonBuilder.append(">\n");
             if (StringUtils.isNotBlank(memBalloonStatsPeriod)) {
                 memBalloonBuilder.append("<stats period='" + memBalloonStatsPeriod +"'/>\n");
             }

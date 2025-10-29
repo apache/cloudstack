@@ -465,7 +465,7 @@ public class LibvirtVMDefTest extends TestCase {
 
     @Test
     public void memBalloonDefTestVirtio() {
-        String expectedXml = "<memballoon model='virtio'>\n<stats period='60'/>\n</memballoon>";
+        String expectedXml = "<memballoon model='virtio' autodeflate='on' freePageReporting='on'>\n<stats period='60'/>\n</memballoon>";
         MemBalloonDef memBalloonDef = new MemBalloonDef();
         memBalloonDef.defVirtioMemBalloon("60");
 
