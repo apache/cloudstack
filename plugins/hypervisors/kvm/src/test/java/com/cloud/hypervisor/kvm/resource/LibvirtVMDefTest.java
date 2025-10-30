@@ -478,6 +478,8 @@ public class LibvirtVMDefTest extends TestCase {
 
     @Test
     public void memBalloonDefTestVirtioOld() {
+        LibvirtVMDef.setGlobalQemuVersion(2006000L);
+        LibvirtVMDef.setGlobalLibvirtVersion(9008L);
         String expectedXml = "<memballoon model='virtio'>\n<stats period='60'/>\n</memballoon>";
         MemBalloonDef memBalloonDef = new MemBalloonDef();
         memBalloonDef.defVirtioMemBalloon("60");
