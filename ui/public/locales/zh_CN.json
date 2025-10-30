@@ -3792,7 +3792,7 @@
   "message.success.create.internallb": "\u5DF2\u6210\u529F\u521B\u5EFA\u5185\u90E8LB",
   "message.success.create.isolated.network": "\u5DF2\u6210\u529F\u521B\u5EFA\u9694\u79BB\u7F51\u7EDC",
   "message.success.create.keypair": "\u5DF2\u6210\u529F\u521B\u5EFA SSH \u5BC6\u94A5\u5BF9",
-  "message.success.create.kubernetes.cluter": "\u5DF2\u6210\u529F\u521B\u5EFA Kubernetes \u96C6\u7FA4",
+  "message.success.create.kubernetes.cluster": "\u5DF2\u6210\u529F\u521B\u5EFA Kubernetes \u96C6\u7FA4",
   "message.success.create.l2.network": "\u5DF2\u6210\u529F\u521B\u5EFA L2 \u7F51\u7EDC",
   "message.success.create.snapshot.from.vmsnapshot": "\u5DF2\u6210\u529F\u4ECE\u865A\u62DF\u673A\u5FEB\u7167\u521B\u5EFA\u5FEB\u7167",
   "message.success.create.user": "\u5DF2\u6210\u529F\u521B\u5EFA\u7528\u6237",
