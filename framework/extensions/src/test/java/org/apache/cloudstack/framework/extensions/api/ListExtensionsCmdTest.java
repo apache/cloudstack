@@ -19,6 +19,11 @@ package org.apache.cloudstack.framework.extensions.api;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -26,20 +31,29 @@ import java.util.EnumSet;
 import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.junit.Before;
+import org.apache.cloudstack.api.response.ExtensionResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
 
+@RunWith(MockitoJUnitRunner.class)
 public class ListExtensionsCmdTest {
 
-    private ListExtensionsCmd cmd;
 
-    @Before
-    public void setUp() {
-        cmd = new ListExtensionsCmd();
-    }
+    @Mock
+    private ExtensionsManager extensionsManager;
+
+    @Spy
+    @InjectMocks
+    private ListExtensionsCmd cmd;
 
     private void setPrivateField(String fieldName, Object value) {
         ReflectionTestUtils.setField(cmd, fieldName, value);
@@ -88,5 +102,15 @@ public class ListExtensionsCmdTest {
         List<String> detailsList = Arrays.asList("invalidValue");
         setPrivateField("details", detailsList);
         cmd.getDetails();
+    }
+
+    @Test
+    public void executeSetsListResponse() {
+        List<ExtensionResponse> responses = Arrays.asList(mock(ExtensionResponse.class));
+        when(extensionsManager.listExtensions(any(ListExtensionsCmd.class))).thenReturn(responses);
+        doNothing().when(cmd).setResponseObject(any());
+        cmd.execute();
+        verify(extensionsManager).listExtensions(cmd);
+        verify(cmd).setResponseObject(any(ListResponse.class));
     }
 }

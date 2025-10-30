@@ -39,22 +39,23 @@ import org.apache.cloudstack.api.response.ExtensionCustomActionResponse;
 import org.apache.cloudstack.extension.ExtensionCustomAction;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.commons.collections.MapUtils;
-import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+@RunWith(MockitoJUnitRunner.class)
 public class UpdateCustomActionCmdTest {
 
-    private UpdateCustomActionCmd cmd;
+    @Mock
     private ExtensionsManager extensionsManager;
 
-    @Before
-    public void setUp() {
-        cmd = Mockito.spy(new UpdateCustomActionCmd());
-        extensionsManager = mock(ExtensionsManager.class);
-        ReflectionTestUtils.setField(cmd, "extensionsManager", extensionsManager);
-    }
+    @Spy
+    @InjectMocks
+    private UpdateCustomActionCmd cmd;
 
     @Test
     public void idReturnsValueWhenSet() {

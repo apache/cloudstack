@@ -116,7 +116,7 @@ public class DigestHelperTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testChecksumSanityNoPrefixWrongAlgorithm() {
-        DigestHelper.validateChecksumString(SHA256_NO_PREFIX_CHECKSUM);
+        DigestHelper.validateChecksumString(SHA256_NO_PREFIX_CHECKSUM + "extra");
     }
 
     @Test

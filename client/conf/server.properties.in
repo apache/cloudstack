@@ -62,3 +62,19 @@ extensions.deployment.mode=@EXTENSIONSDEPLOYMENTMODE@
 # Thread pool configuration
 #threads.min=10
 #threads.max=500
+
+# These properties configure the share endpoint, which enables controlled file sharing through the management server.
+# They allow administrators to enable or disable sharing, set the base directory for shared files, define cache
+# behavior, restrict access to specific directories, and secure access with a secret key. This ensures flexible and
+# secure file sharing for different modules such as extensions, etc.
+# Enable or disable file sharing feature (true/false). Default is true
+share.enabled=true
+# The base directory from which files can be shared. Default is <HOME_DIRECTORY_OF_CLOUD_USER>/share
+# share.base.dir=
+# The cache control header value to be used for shared files. Default is public,max-age=86400,immutable
+# share.cache.control=public,max-age=86400,immutable
+# Allow or disallow directory listing when accessing a directory. Default is false
+# share.dir.allowed=false
+# Secret key for securing links using HMAC signature. If not set then links will not be signed. Default is change-me
+# It is recommended to change this value to a strong secret key in production
+share.secret=change-me

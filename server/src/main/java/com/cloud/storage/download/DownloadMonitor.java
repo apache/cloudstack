@@ -32,6 +32,8 @@ public interface DownloadMonitor extends Manager {
 
     public void downloadVolumeToStorage(DataObject volume, AsyncCompletionCallback<DownloadAnswer> callback);
 
-    void downloadSnapshotToStorage(DataObject volume, AsyncCompletionCallback<DownloadAnswer> callback);
+    void downloadSnapshotToStorage(DataObject snapshot, AsyncCompletionCallback<DownloadAnswer> callback);
+
+    void downloadArchiveToStorage(DataObject archive, AsyncCompletionCallback<DownloadAnswer> callback);
 
 }
