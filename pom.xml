@@ -1016,7 +1016,6 @@
                             <exclude>**/.vagrant</exclude>
                             <exclude>**/*.json</exclude>
                             <exclude>**/.checkstyle</exclude>
-                            <exclude>**/*.md</exclude>
                             <exclude>.java-version</exclude>
                             <exclude>.python-version</exclude>
                             <exclude>.idea/</exclude>
@@ -1026,10 +1025,8 @@
                             <exclude>.gitignore</exclude>
                             <exclude>.markdownlintignore</exclude>
                             <exclude>CHANGES.md</exclude>
-                            <exclude>CONTRIBUTING.md</exclude>
-                            <exclude>README.md</exclude>
-                            <exclude>INSTALL.md</exclude>
-                            <exclude>PRE-COMMIT.md</exclude>
+                            <exclude>ISSUE_TEMPLATE.md</exclude>
+                            <exclude>PULL_REQUEST_TEMPLATE.md</exclude>
                             <exclude>build/build.number</exclude>
                             <exclude>debian/cloudstack-agent.dirs</exclude>
                             <exclude>debian/cloudstack-usage.dirs</exclude>
@@ -1057,7 +1054,6 @@
                             <exclude>systemvm/agent/packages/**</exclude>
                             <exclude>systemvm/debian/**</exclude>
                             <exclude>test/integration/component/test_host_ha.sh</exclude>
-                            <exclude>test/systemvm/README.md</exclude>
                             <exclude>tools/appliance/*/template.json</exclude>
                             <exclude>tools/cli/cloudmonkey.egg-info/*</exclude>
                             <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
@@ -1071,6 +1067,8 @@
                             <exclude>tools/transifex/.tx/config</exclude>
                             <exclude>ui/.*</exclude>
                             <exclude>ui/.*/**</exclude>
+                            <exclude>ui/docs/full-test-plan.template.md</exclude>
+                            <exclude>ui/docs/smoke-test-plan.template.md</exclude>
                             <exclude>ui/src/assets/**</exclude>
                             <exclude>ui/public/**</exclude>
                             <exclude>ui/legacy/**</exclude>

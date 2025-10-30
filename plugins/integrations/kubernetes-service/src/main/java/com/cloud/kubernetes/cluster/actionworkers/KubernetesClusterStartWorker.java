@@ -749,7 +749,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         DeployDestination dest = null;
         try {
             VMTemplateVO clusterTemplate = templateDao.findById(kubernetesCluster.getTemplateId());
-            Map<String, DeployDestination> destinationMap = planKubernetesCluster(domainId, accountId, clusterTemplate.getHypervisorType());
+            Map<String, DeployDestination> destinationMap = planKubernetesCluster(domainId, accountId, clusterTemplate.getHypervisorType(), clusterTemplate.getArch());
             dest = destinationMap.get(WORKER.name());
         } catch (InsufficientCapacityException e) {
             logTransitStateAndThrow(Level.ERROR, String.format("Provisioning the cluster failed due to insufficient capacity in the Kubernetes cluster: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);

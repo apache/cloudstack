@@ -556,7 +556,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (cksIso == null) {
             return systemVMPreferredArchitecture;
         }
-        String cksIsoArchName = cksIso.getArch().name();
+        String cksIsoArchName = cksIso.getArch().getType();
         return cksIsoArchName.equals(systemVMPreferredArchitecture) ? systemVMPreferredArchitecture : cksIsoArchName;
     }
 
@@ -807,6 +807,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         VMTemplateVO template = ApiDBUtils.findTemplateById(kubernetesCluster.getTemplateId());
         if (template != null) {
             response.setTemplateId(template.getUuid());
+            response.setTemplateName(template.getName());
         }
         ServiceOfferingVO offering = serviceOfferingDao.findByIdIncludingRemoved(kubernetesCluster.getServiceOfferingId());
         if (offering != null) {

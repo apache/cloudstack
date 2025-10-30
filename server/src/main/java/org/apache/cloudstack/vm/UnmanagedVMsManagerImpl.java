@@ -1644,14 +1644,43 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     }
 
     private Pair<UnmanagedInstanceTO, Boolean> getSourceVmwareUnmanagedInstance(String vcenter, String datacenterName, String username,
-                                                                 String password, String clusterName, String sourceHostName,
-                                                                 String sourceVM) {
+                                                                                String password, String clusterName, String sourceHostName,
+                                                                                String sourceVM, ServiceOfferingVO serviceOffering) {
         HypervisorGuru vmwareGuru = hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.VMware);
 
         Map<String, String> params = createParamsForTemplateFromVmwareVmMigration(vcenter, datacenterName,
                 username, password, clusterName, sourceHostName, sourceVM);
+        addServiceOfferingDetailsToParams(params, serviceOffering);
 
         return vmwareGuru.getHypervisorVMOutOfBandAndCloneIfRequired(sourceHostName, sourceVM, params);
+    }
+
+    /**
+     * Add the minimum resources to check on the hypervisor source VM before converting the instance against the selected offering resources
+     * @param params sets the minimum CPU number, CPU speed and memory to be checked against the source VM
+     * @param serviceOffering service offering for the converted VM
+     */
+    protected void addServiceOfferingDetailsToParams(Map<String, String> params, ServiceOfferingVO serviceOffering) {
+        if (serviceOffering != null) {
+            serviceOfferingDao.loadDetails(serviceOffering);
+            Map<String, String> serviceOfferingDetails = serviceOffering.getDetails();
+
+            if (serviceOffering.getCpu() != null) {
+                params.put(VmDetailConstants.CPU_NUMBER, String.valueOf(serviceOffering.getCpu()));
+            } else if (MapUtils.isNotEmpty(serviceOfferingDetails) && serviceOfferingDetails.containsKey(ApiConstants.MIN_CPU_NUMBER)) {
+                params.put(VmDetailConstants.CPU_NUMBER, serviceOfferingDetails.get(ApiConstants.MIN_CPU_NUMBER));
+            }
+
+            if (serviceOffering.getSpeed() != null) {
+                params.put(VmDetailConstants.CPU_SPEED, String.valueOf(serviceOffering.getSpeed()));
+            }
+
+            if (serviceOffering.getRamSize() != null) {
+                params.put(VmDetailConstants.MEMORY, String.valueOf(serviceOffering.getRamSize()));
+            } else if (MapUtils.isNotEmpty(serviceOfferingDetails) && serviceOfferingDetails.containsKey(ApiConstants.MIN_MEMORY)) {
+                params.put(VmDetailConstants.MEMORY, serviceOfferingDetails.get(ApiConstants.MIN_MEMORY));
+            }
+        }
     }
 
     private String createOvfTemplateOfSourceVmwareUnmanagedInstance(String vcenter, String datacenterName, String username,
@@ -1734,7 +1763,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             // sourceVMwareInstance could be a cloned instance from sourceVMName, of the sourceVMName itself if its powered off.
             // isClonedInstance indicates if the VM is a clone of sourceVMName
 
-            Pair<UnmanagedInstanceTO, Boolean> sourceInstanceDetails = getSourceVmwareUnmanagedInstance(vcenter, datacenterName, username, password, clusterName, sourceHostName, sourceVMName);
+            Pair<UnmanagedInstanceTO, Boolean> sourceInstanceDetails = getSourceVmwareUnmanagedInstance(vcenter, datacenterName, username, password, clusterName, sourceHostName, sourceVMName, serviceOffering);
             sourceVMwareInstance = sourceInstanceDetails.first();
             isClonedInstance = sourceInstanceDetails.second();
 

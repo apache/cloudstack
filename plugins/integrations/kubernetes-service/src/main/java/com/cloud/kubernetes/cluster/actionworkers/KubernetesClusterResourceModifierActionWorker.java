@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.cpu.CPU;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.dc.DedicatedResourceVO;
@@ -177,7 +178,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     }
 
     protected DeployDestination plan(final long nodesCount, final DataCenter zone, final ServiceOffering offering,
-                                     final Long domainId, final Long accountId, final Hypervisor.HypervisorType hypervisorType) throws InsufficientServerCapacityException {
+                                     final Long domainId, final Long accountId, final Hypervisor.HypervisorType hypervisorType, CPU.CPUArch arch) throws InsufficientServerCapacityException {
         final int cpu_requested = offering.getCpu() * offering.getSpeed();
         final long ram_requested = offering.getRamSize() * 1024L * 1024L;
         boolean useDedicatedHosts = false;
@@ -201,6 +202,15 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         if (hypervisorType != null) {
             hosts = hosts.stream().filter(x -> x.getHypervisorType() == hypervisorType).collect(Collectors.toList());
         }
+        if (arch != null) {
+            hosts = hosts.stream().filter(x -> x.getArch().equals(arch)).collect(Collectors.toList());
+        }
+        if (CollectionUtils.isEmpty(hosts)) {
+            String msg = String.format("Cannot find enough capacity for Kubernetes cluster(requested cpu=%d memory=%s) with offering: %s hypervisor: %s and arch: %s",
+                    cpu_requested * nodesCount, toHumanReadableSize(ram_requested * nodesCount), offering.getName(), clusterTemplate.getHypervisorType().toString(), arch.getType());
+            logAndThrow(Level.WARN, msg, new InsufficientServerCapacityException(msg, DataCenter.class, zone.getId()));
+        }
+
         final Map<String, Pair<HostVO, Integer>> hosts_with_resevered_capacity = new ConcurrentHashMap<String, Pair<HostVO, Integer>>();
         for (HostVO h : hosts) {
             hosts_with_resevered_capacity.put(h.getUuid(), new Pair<HostVO, Integer>(h, 0));
@@ -254,8 +264,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             }
             return new DeployDestination(zone, null, null, null);
         }
-        String msg = String.format("Cannot find enough capacity for Kubernetes cluster(requested cpu=%d memory=%s) with offering: %s and hypervisor: %s",
-                cpu_requested * nodesCount, toHumanReadableSize(ram_requested * nodesCount), offering.getName(), clusterTemplate.getHypervisorType().toString());
+        String msg = String.format("Cannot find enough capacity for Kubernetes cluster(requested cpu=%d memory=%s) with offering: %s hypervisor: %s and arch: %s",
+                cpu_requested * nodesCount, toHumanReadableSize(ram_requested * nodesCount), offering.getName(), clusterTemplate.getHypervisorType().toString(), arch.getType());
 
         logger.warn(msg);
         throw new InsufficientServerCapacityException(msg, DataCenter.class, zone.getId());
@@ -265,7 +275,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
      * Plan Kubernetes Cluster Deployment
      * @return a map of DeployDestination per node type
      */
-    protected Map<String, DeployDestination> planKubernetesCluster(Long domainId, Long accountId, Hypervisor.HypervisorType hypervisorType) throws InsufficientServerCapacityException {
+    protected Map<String, DeployDestination> planKubernetesCluster(Long domainId, Long accountId, Hypervisor.HypervisorType hypervisorType, CPU.CPUArch arch) throws InsufficientServerCapacityException {
         Map<String, DeployDestination> destinationMap = new HashMap<>();
         DataCenter zone = dataCenterDao.findById(kubernetesCluster.getZoneId());
         if (logger.isDebugEnabled()) {
@@ -286,7 +296,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             if (logger.isDebugEnabled()) {
                 logger.debug("Checking deployment destination for {} nodes on Kubernetes cluster : {} in zone : {}", nodeType.name(), kubernetesCluster.getName(), zone.getName());
             }
-            DeployDestination planForNodeType = plan(nodes, zone, nodeOffering, domainId, accountId, hypervisorType);
+            DeployDestination planForNodeType = plan(nodes, zone, nodeOffering, domainId, accountId, hypervisorType, arch);
             destinationMap.put(nodeType.name(), planForNodeType);
         }
         return destinationMap;
@@ -322,7 +332,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         if (Objects.nonNull(domainId) && !listDedicatedHostsInDomain(domainId).isEmpty()) {
             DeployDestination dest = null;
             try {
-                Map<String, DeployDestination> destinationMap = planKubernetesCluster(domainId, accountId, vm.getHypervisorType());
+                Map<String, DeployDestination> destinationMap = planKubernetesCluster(domainId, accountId, vm.getHypervisorType(), clusterTemplate.getArch());
                 dest = destinationMap.get(nodeType.name());
             } catch (InsufficientCapacityException e) {
                 logTransitStateAndThrow(Level.ERROR, String.format("Provisioning the cluster failed due to insufficient capacity in the Kubernetes cluster: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);

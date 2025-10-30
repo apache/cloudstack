@@ -25,12 +25,32 @@ repos:
     hooks:
       - id: identity
       - id: check-hooks-apply
+  - repo: https://github.com/oxipng/oxipng
+    rev: v9.1.5
+    hooks:
+      - id: oxipng
+        name: run oxipng
+        description: optimize PNG images with lossless compression
+        args: ['-o', '4', '--strip', 'safe', '--alpha']
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.27.2
     hooks:
       - id: gitleaks
         name: run gitleaks
         description: detect hardcoded secrets
+  - repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.5.5
+    hooks:
+      - id: insert-license
+        name: add license for all Markdown files
+        files: \.md$
+        args:
+          - --comment-style
+          - '<!--|| -->'
+          - --license-filepath
+          - .github/workflows/license-templates/LICENSE.txt
+          - --fuzzy-match-generates-todo
+        exclude: ^(CHANGES|ISSUE_TEMPLATE|PULL_REQUEST_TEMPLATE)\.md$|^ui/docs/(full|smoke)-test-plan\.template\.md$
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
@@ -97,6 +117,14 @@ repos:
         args: [--config=.github/linters/.markdown-lint.yml]
         types: [markdown]
         files: \.(md|mdown|markdown)$
+  - repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.5.5
+    hooks:
+      - id: chmod
+        name: set file permissions
+        args: ['644']
+        files: \.md$
+        stages: [manual]
   - repo: https://github.com/adrienverge/yamllint
     rev: v1.37.1
     hooks:
