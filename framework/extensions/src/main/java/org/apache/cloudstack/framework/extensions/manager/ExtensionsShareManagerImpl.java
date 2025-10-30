@@ -40,6 +40,7 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -55,11 +56,15 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.extensions.ExtensionArchiveDataObject;
 import org.apache.cloudstack.framework.extensions.command.DownloadAndSyncExtensionFilesCommand;
+import org.apache.cloudstack.framework.extensions.dao.ExtensionDao;
+import org.apache.cloudstack.framework.extensions.dao.ExtensionDetailsDao;
+import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.utils.filesystem.ArchiveUtil;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.cloudstack.utils.security.HMACSignUtil;
 import org.apache.cloudstack.utils.server.ServerPropertiesUtil;
@@ -70,10 +75,14 @@ import org.apache.commons.lang3.ObjectUtils;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.cluster.ClusterManager;
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementService;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
+import com.cloud.storage.Upload;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.HttpUtils;
 import com.cloud.utils.Pair;
@@ -81,6 +90,9 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VirtualMachine;
@@ -119,10 +131,19 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
     DataStoreManager dataStoreManager;
 
     @Inject
+    ManagementServerHostDao managementServerHostDao;
+
+    @Inject
     ManagementService managementService;
 
     @Inject
     EndPointSelector endPointSelector;
+
+    @Inject
+    ExtensionDao extensionDao;
+
+    @Inject
+    ExtensionDetailsDao extensionDetailsDao;
 
     private ScheduledExecutorService extensionShareCleanupExecutor;
     private int shareLinkValidityInterval;
@@ -446,7 +467,7 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
         FileUtil.deleteRecursively(applyRoot);
     }
 
-    protected void  cleanupExtensionsShareFiles(long cutoff) throws IOException {
+    protected void cleanupExtensionsShareFilesOnMS(long cutoff) throws IOException {
         Path sharePath = getExtensionsSharePath();
         if (!Files.exists(sharePath) || !Files.isDirectory(sharePath)) {
             return;
@@ -472,6 +493,18 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
                         logger.warn("Failed to delete expired extension archive {}", p, e);
                     }
                 });
+        }
+    }
+
+    protected void cleanupExtensionsShareFilesOnSecondaryStorage(long cutoff) {
+        ManagementServerHostVO msHost = managementServerHostDao.findOneByLongestRuntime();
+        if (msHost == null || (msHost.getMsid() != ManagementServerNode.getManagementServerId())) {
+            logger.debug("Skipping the secondary storage extensions download files cleanup task on this management server");
+            return;
+        }
+        List<ExtensionVO> extensions = extensionDao.listAll();
+        for (ExtensionVO extension : extensions) {
+            cleanupExistingExtensionDownloadArchiveAndDetails(extension, cutoff);
         }
     }
 
@@ -532,6 +565,45 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
         return future;
     }
 
+    protected void cleanupExistingExtensionDownloadArchiveAndDetails(Extension extension, Long cutoff) {
+        Map<String, String> details = extensionDetailsDao.listDetailsKeyPairs(extension.getId(), false);
+        if (!details.containsKey("imagestoredownloadurl")) {
+            return;
+        }
+        final String url = details.get("imagestoredownloadurl");
+        final String storeIdStr = details.get(ApiConstants.IMAGE_STORE_ID);
+        final String timestampStr = details.get("imagestoredownloadurltimestamp");
+        final long timestamp = StringUtils.isNotBlank(timestampStr) ? Long.parseLong(timestampStr) : -1L;
+        if (cutoff != null && timestamp != -1L && timestamp >= cutoff) {
+            return;
+        }
+        final String installPath = details.get("imagestorepath");
+        final long storeId = StringUtils.isNotBlank(storeIdStr) ? Long.parseLong(storeIdStr) : -1L;
+        if (StringUtils.isNotBlank(url) && storeId != -1L && timestamp != -1L && StringUtils.isNotBlank(installPath)) {
+            try {
+                DataStore store = dataStoreManager.getDataStore(storeId, DataStoreRole.Image);
+                if (store != null) {
+                    ((ImageStoreEntity) store).deleteExtractUrl(installPath, url, Upload.Type.ARCHIVE);
+                }
+            } catch (CloudRuntimeException e) {
+                logger.warn("Failed to cleanup existing extension download archive for {}: {}", extension,
+                        e.getMessage());
+                if (cutoff == null) {
+                    return;
+                }
+            }
+        }
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                extensionDetailsDao.removeDetail(extension.getId(), "imagestoredownloadurl");
+                extensionDetailsDao.removeDetail(extension.getId(), "imagestoredownloadurltimestamp");
+                extensionDetailsDao.removeDetail(extension.getId(), ApiConstants.IMAGE_STORE_ID);
+                extensionDetailsDao.removeDetail(extension.getId(), "imagestorepath");
+            }
+        });
+    }
+
     protected Pair<Boolean, String> downloadExtensionViaSecondaryStorage(Extension extension, ArchiveInfo archiveInfo,
              String downloadUrl) {
         // Find an active zone, if not available return error
@@ -576,7 +648,19 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
             return new Pair<>(false, msg);
         }
         ImageStoreEntity imageStoreEntity = (ImageStoreEntity)imageStore;
-        String url = imageStoreEntity.createEntityExtractUrl(dataObject.getTO().getPath(), Storage.ImageFormat.ZIP, dataObject);
+        String installPath = dataObject.getTO().getPath();
+        String url = imageStoreEntity.createEntityExtractUrl(installPath, Storage.ImageFormat.ZIP, dataObject);
+        cleanupExistingExtensionDownloadArchiveAndDetails(extension, null);
+        final long imageStoreId = imageStore.getId();
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                extensionDetailsDao.addDetail(extension.getId(), "imagestoredownloadurl", url, false);
+                extensionDetailsDao.addDetail(extension.getId(), "imagestoredownloadurltimestamp", Long.toString(System.currentTimeMillis()), false);
+                extensionDetailsDao.addDetail(extension.getId(), ApiConstants.IMAGE_STORE_ID, Long.toString(imageStoreId), false);
+                extensionDetailsDao.addDetail(extension.getId(), "imagestorepath", installPath, false);
+            }
+        });
         return new Pair<>(true, url);
     }
 
@@ -751,7 +835,8 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
             try {
                 long expiryMillis = shareLinkValidityInterval * 1100L;
                 long cutoff = System.currentTimeMillis() - expiryMillis;
-                cleanupExtensionsShareFiles(cutoff);
+                cleanupExtensionsShareFilesOnMS(cutoff);
+                cleanupExtensionsShareFilesOnSecondaryStorage(cutoff);
             } catch (Exception e) {
                 logger.warn("Extensions share cleanup failed", e);
             }

@@ -724,7 +724,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             logger.warn("Unable to create " + tmpDir);
             return "Unable to create " + tmpDir;
         }
-        if (resourceType.doesRequirePostDownloadProcessing()) {
+        if (!resourceType.doesRequirePostDownloadProcessing()) {
             return null;
         }
         // TO DO - define constant for volume properties.

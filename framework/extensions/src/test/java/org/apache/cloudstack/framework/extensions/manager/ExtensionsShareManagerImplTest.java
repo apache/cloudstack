@@ -784,7 +784,7 @@ public class ExtensionsShareManagerImplTest {
         Files.setLastModifiedTime(validFile, FileTime.fromMillis(System.currentTimeMillis() + (cutoffDiff / 2)));
         try {
             doReturn(sharePath).when(extensionsShareManager).getExtensionsSharePath();
-            extensionsShareManager.cleanupExtensionsShareFiles(System.currentTimeMillis() - cutoffDiff);
+            extensionsShareManager.cleanupExtensionsShareFilesOnMS(System.currentTimeMillis() - cutoffDiff);
             assertFalse(Files.exists(expiredFile));
             assertTrue(Files.exists(validFile));
         } finally {
@@ -798,7 +798,7 @@ public class ExtensionsShareManagerImplTest {
         Path nonTgzFile = Files.createFile(sharePath.resolve("file.txt"));
         try {
             doReturn(sharePath).when(extensionsShareManager).getExtensionsSharePath();
-            extensionsShareManager.cleanupExtensionsShareFiles(System.currentTimeMillis());
+            extensionsShareManager.cleanupExtensionsShareFilesOnMS(System.currentTimeMillis());
             assertTrue(Files.exists(nonTgzFile));
         } finally {
             FileUtil.deleteRecursively(sharePath);
@@ -809,7 +809,7 @@ public class ExtensionsShareManagerImplTest {
     public void cleanupExtensionsShareFilesSkipsNonExistentSharePath() throws IOException {
         Path nonExistentPath = Path.of("/nonexistent/sharePath");
         doReturn(nonExistentPath).when(extensionsShareManager).getExtensionsSharePath();
-        extensionsShareManager.cleanupExtensionsShareFiles(System.currentTimeMillis());
+        extensionsShareManager.cleanupExtensionsShareFilesOnMS(System.currentTimeMillis());
         // No exception should be thrown
     }
 
