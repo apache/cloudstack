@@ -1102,4 +1102,42 @@ public class ConfigurationManagerImplTest {
 
         Assert.assertFalse(result);
     }
+
+    @Test
+    public void normalizedEmptyValueForConfigReturnsTrimmedValueWhenInputIsValid() {
+        String result = configurationManagerImplSpy.getNormalizedEmptyValueForConfig("someConfig", "  validValue  ", null);
+        Assert.assertEquals("validValue", result);
+    }
+
+    @Test
+    public void normalizedEmptyValueForConfigReturnsNullWhenInputIsNullAndNoConfigStorageId() {
+        String result = configurationManagerImplSpy.getNormalizedEmptyValueForConfig("someConfig", "null", null);
+        Assert.assertNull(result);
+    }
+
+    @Test
+    public void normalizedEmptyValueForConfigReturnsEmptyStringWhenInputIsNullAndConfigStorageIdProvided() {
+        String result = configurationManagerImplSpy.getNormalizedEmptyValueForConfig("someConfig", "null", 123L);
+        Assert.assertEquals("", result);
+    }
+
+    @Test
+    public void normalizedEmptyValueForConfigReturnsEmptyStringWhenKeyTypeIsStringAndInputIsEmpty() {
+        ConfigKey<String> mockKey = Mockito.mock(ConfigKey.class);
+        Mockito.when(mockKey.type()).thenReturn(String.class);
+        Mockito.doReturn(mockKey).when(configDepot).get("someConfig");
+
+        String result = configurationManagerImplSpy.getNormalizedEmptyValueForConfig("someConfig", "", null);
+        Assert.assertEquals("", result);
+    }
+
+    @Test
+    public void normalizedEmptyValueForConfigReturnsNullWhenKeyTypeIsNotStringAndInputIsEmpty() {
+        ConfigKey<Integer> mockKey = Mockito.mock(ConfigKey.class);
+        Mockito.when(mockKey.type()).thenReturn(Integer.class);
+        Mockito.doReturn(mockKey).when(configDepot).get("someConfig");
+
+        String result = configurationManagerImplSpy.getNormalizedEmptyValueForConfig("someConfig", "", null);
+        Assert.assertNull(result);
+    }
 }

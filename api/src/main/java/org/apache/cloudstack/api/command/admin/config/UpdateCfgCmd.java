@@ -150,7 +150,7 @@ public class UpdateCfgCmd extends BaseCmd {
             ConfigurationResponse response = _responseGenerator.createConfigurationResponse(cfg);
             response.setResponseName(getCommandName());
             response = setResponseScopes(response);
-            response = setResponseValue(response, cfg);
+            setResponseValue(response, cfg);
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update config");
@@ -161,15 +161,13 @@ public class UpdateCfgCmd extends BaseCmd {
      * Sets the configuration value in the response. If the configuration is in the `Hidden` or `Secure` categories, the value is encrypted before being set in the response.
      * @param response to be set with the configuration `cfg` value
      * @param cfg to be used in setting the response value
-     * @return the response with the configuration's value
      */
-    public ConfigurationResponse setResponseValue(ConfigurationResponse response, Configuration cfg) {
+    public void setResponseValue(ConfigurationResponse response, Configuration cfg) {
+        String value = cfg.getValue();
         if (cfg.isEncrypted()) {
-            response.setValue(DBEncryptionUtil.encrypt(getValue()));
-        } else {
-            response.setValue(getValue());
+            value = DBEncryptionUtil.encrypt(value);
         }
-        return response;
+        response.setValue(value);
     }
 
     /**
