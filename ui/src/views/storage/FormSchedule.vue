@@ -170,7 +170,10 @@
               </a-form-item>
             </a-col>
             <a-col :md="24" :lg="24" v-if="resourceType === 'Volume'">
-              <a-form-item :label="$t('label.usestoragereplication')" name="useStorageReplication" ref="useStorageReplication">
+              <a-form-item name="useStorageReplication" ref="useStorageReplication">
+                <template #label>
+                  <tooltip-label :title="$t('label.usestoragereplication')" :tooltip="apiParams.usestoragereplication.description" />
+                 </template>
                 <a-switch v-model:checked="form.useStorageReplication" />
               </a-form-item>
               <a-form-item v-if="isAdmin && form.useStorageReplication" ref="storageids" name="storageids">
@@ -305,6 +308,9 @@ export default {
       zones: [],
       storagePools: []
     }
+  },
+  beforeCreate () {
+    this.apiParams = this.$getApiParams('createSnapshotPolicy')
   },
   created () {
     this.initForm()

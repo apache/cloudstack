@@ -137,7 +137,10 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item :label="$t('label.usestoragereplication')" name="useStorageReplication" ref="useStorageReplication">
+          <a-form-item name="useStorageReplication" ref="useStorageReplication">
+            <template #label>
+              <tooltip-label :title="$t('label.usestoragereplication')" :tooltip="apiParams.usestoragereplication.description" />
+            </template>
             <a-switch v-model:checked="form.useStorageReplication" />
           </a-form-item>
           <a-form-item v-if="isAdmin && form.useStorageReplication" ref="storageid" name="storageid" :label="$t('label.storagepools')">
