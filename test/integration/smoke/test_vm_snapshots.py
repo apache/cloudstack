@@ -94,7 +94,6 @@ class TestVmSnapshot(cloudstackTestCase):
             serviceofferingid=cls.service_offering.id,
             mode=cls.zone.networktype
         )
-        cls._cleanup.append(cls.virtual_machine)
         volumes = list_volumes(
             cls.apiclient,
             virtualmachineid=cls.virtual_machine.id,
