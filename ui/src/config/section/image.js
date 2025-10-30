@@ -18,6 +18,7 @@
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 import { isZoneCreated } from '@/utils/zone'
+import kubernetesIcon from '@/assets/icons/kubernetes.svg?inline'
 
 export default {
   name: 'image',
@@ -367,7 +368,7 @@ export default {
     {
       name: 'kubernetesiso',
       title: 'label.kubernetes.isos',
-      icon: ['fa-solid', 'fa-dharmachakra'],
+      icon: kubernetesIcon,
       docHelp: 'plugins/cloudstack-kubernetes-service.html#kubernetes-supported-versions',
       permission: ['listKubernetesSupportedVersions'],
       searchFilters: ['zoneid', 'minimumsemanticversion', 'arch'],
