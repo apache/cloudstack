@@ -149,7 +149,7 @@ public class RestoreBackupCommand extends Command  {
     }
 
     public Integer getMountTimeout() {
-        return this.mountTimeout;
+        return this.mountTimeout == null ? 0 : this.mountTimeout;
     }
 
     public void setMountTimeout(Integer mountTimeout) {
