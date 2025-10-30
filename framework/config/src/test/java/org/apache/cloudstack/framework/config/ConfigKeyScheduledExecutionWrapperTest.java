@@ -25,6 +25,8 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -34,6 +36,8 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class ConfigKeyScheduledExecutionWrapperTest {
     private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1, new NamedThreadFactory("TestExecutor"));
+
+    protected static final int DELTA_WAIT_MS = 100;
 
     @Mock
     ConfigKey<Integer> configKey;
@@ -76,7 +80,7 @@ public class ConfigKeyScheduledExecutionWrapperTest {
 
     private void waitSeconds(int seconds) {
         try {
-            Thread.sleep(seconds * 1000L + 100);
+            Thread.sleep(seconds * 1000L + DELTA_WAIT_MS);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -144,8 +148,9 @@ public class ConfigKeyScheduledExecutionWrapperTest {
     }
 
     static class TestRunnable implements Runnable {
-        private Integer runCount = 0;
+        private final AtomicInteger runCount = new AtomicInteger(0);
         private int waitSeconds = 0;
+        private final AtomicLong resetMs = new AtomicLong(0);
 
         TestRunnable(int waitSeconds) {
             this.waitSeconds = waitSeconds;
@@ -156,7 +161,11 @@ public class ConfigKeyScheduledExecutionWrapperTest {
 
         @Override
         public void run() {
-            runCount++;
+            long resetMsVal = resetMs.get();
+            if (resetMsVal == 0 || System.currentTimeMillis() - resetMsVal > DELTA_WAIT_MS) {
+                runCount.incrementAndGet();
+            }
+            resetMs.set(0);
             if (waitSeconds > 0) {
                 try {
                     Thread.sleep(waitSeconds * 1000L);
@@ -167,11 +176,12 @@ public class ConfigKeyScheduledExecutionWrapperTest {
         }
 
         public int getRunCount() {
-            return this.runCount;
+            return this.runCount.get();
         }
 
         public void resetRunCount() {
-            this.runCount = 0;
+            this.runCount.set(0);
+            this.resetMs.set(System.currentTimeMillis());
         }
     }
 }
