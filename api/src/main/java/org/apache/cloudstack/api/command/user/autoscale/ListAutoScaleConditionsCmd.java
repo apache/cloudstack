@@ -23,34 +23,35 @@ import java.util.List;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
+import org.apache.cloudstack.api.response.ConditionResponse;
 import org.apache.cloudstack.api.response.CounterResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
-import com.cloud.network.as.Counter;
-import com.cloud.user.Account;
+import com.cloud.network.as.Condition;
 
-@APICommand(name = "listCounters", description = "List the counters for VM auto scaling", responseObject = CounterResponse.class,
+@APICommand(name = "listConditions", description = "List Conditions for VM auto scaling", responseObject = ConditionResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListCountersCmd extends BaseListCmd {
-    private static final String s_name = "counterresponse";
+public class ListAutoScaleConditionsCmd extends BaseListProjectAndAccountResourcesCmd {
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = CounterResponse.class, description = "ID of the Counter.")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ConditionResponse.class, required = false, description = "ID of the Condition.")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Name of the counter.")
-    private String name;
+    @Parameter(name = ApiConstants.COUNTER_ID,
+               type = CommandType.UUID,
+               entityType = CounterResponse.class,
+               required = false,
+               description = "Counter-id of the condition.")
+    private Long counterId;
 
-    @Parameter(name = ApiConstants.SOURCE, type = CommandType.STRING, description = "Source of the counter.")
-    private String source;
-
-    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "Network provider of the counter.", since = "4.18.0")
-    private String provider;
+    @Parameter(name = ApiConstants.POLICY_ID, type = CommandType.UUID, entityType = AutoScalePolicyResponse.class, description = "the ID of the policy")
+    private Long policyId;
 
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
@@ -58,16 +59,16 @@ public class ListCountersCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        List<? extends Counter> counters = null;
-        counters = _autoScaleService.listCounters(this);
-        ListResponse<CounterResponse> response = new ListResponse<CounterResponse>();
-        List<CounterResponse> ctrResponses = new ArrayList<CounterResponse>();
-        for (Counter ctr : counters) {
-            CounterResponse ctrResponse = _responseGenerator.createCounterResponse(ctr);
-            ctrResponses.add(ctrResponse);
+        List<? extends Condition> conditions = null;
+        conditions = _autoScaleService.listConditions(this);
+        ListResponse<ConditionResponse> response = new ListResponse<ConditionResponse>();
+        List<ConditionResponse> cndnResponses = new ArrayList<ConditionResponse>();
+        for (Condition cndn : conditions) {
+            ConditionResponse cndnResponse = _responseGenerator.createConditionResponse(cndn);
+            cndnResponses.add(cndnResponse);
         }
 
-        response.setResponses(ctrResponses);
+        response.setResponses(cndnResponses);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
@@ -76,29 +77,16 @@ public class ListCountersCmd extends BaseListCmd {
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
 
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     public Long getId() {
         return id;
     }
 
-    public String getName() {
-        return name;
+    public Long getCounterId() {
+        return counterId;
     }
 
-    public String getSource() {
-        return source;
+    public Long getPolicyId() {
+        return policyId;
     }
 
-    public String getProvider() {
-        return provider;
     }
-
-    @Override
-    public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM;
-    }
-}
