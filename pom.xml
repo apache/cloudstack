@@ -1038,15 +1038,19 @@
                             <exclude>dist/console-proxy/js/jquery.js</exclude>
                             <exclude>engine/schema/dist/**</exclude>
                             <exclude>plugins/hypervisors/hyperv/conf/agent.properties</exclude>
+                            <exclude>plugins/hypervisors/hyperv/conf/uefi.properties</exclude>
                             <exclude>plugins/hypervisors/hyperv/DotNet/ServerResource/**</exclude>
                             <exclude>scripts/installer/windows/acs_license.rtf</exclude>
                             <exclude>scripts/vm/systemvm/id_rsa.cloud</exclude>
                             <exclude>services/console-proxy/server/conf/agent.properties</exclude>
+                            <exclude>services/console-proxy/server/conf/uefi.properties</exclude>
                             <exclude>services/console-proxy/server/conf/environment.properties</exclude>
                             <exclude>services/console-proxy/server/js/jquery.js</exclude>
                             <exclude>services/secondary-storage/conf/agent.properties</exclude>
+                            <exclude>services/secondary-storage/conf/uefi.properties</exclude>
                             <exclude>services/secondary-storage/conf/environment.properties</exclude>
                             <exclude>systemvm/agent/conf/agent.properties</exclude>
+                            <exclude>systemvm/agent/conf/uefi.properties</exclude>
                             <exclude>systemvm/agent/conf/environment.properties</exclude>
                             <exclude>systemvm/agent/js/jquery.js</exclude>
                             <exclude>systemvm/agent/js/jquery.flot.navigate.js</exclude>
