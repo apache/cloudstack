@@ -344,7 +344,7 @@ public class SystemVmTemplateRegistrationTest {
     @Test(expected = CloudRuntimeException.class)
     public void testValidateTemplates_metadataTemplateFailure() {
         List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> list = new ArrayList<>();
-        list.add(new Pair<>(Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64));
+        list.add(new Pair<>(Hypervisor.HypervisorType.VMware, CPU.CPUArch.arm64));
         systemVmTemplateRegistration.validateTemplates(list);
     }
 
