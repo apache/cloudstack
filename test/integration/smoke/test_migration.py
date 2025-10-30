@@ -109,12 +109,14 @@ class TestNetworkMigration(cloudstackTestCase):
                     cls.api_client,
                     cls.test_data["service_offerings"]["tiny"]
             )
+            cls._cleanup.append(cls.service_offering)
 
             # Create Network offering without userdata
             cls.network_offering_nouserdata = NetworkOffering.create(
                     cls.api_client,
                     cls.test_data["network_offering"]
             )
+            cls._cleanup.append(cls.network_offering_nouserdata)
             # Enable Network offering
             cls.network_offering_nouserdata.update(cls.api_client,
                                                    state='Enabled')
@@ -124,6 +126,7 @@ class TestNetworkMigration(cloudstackTestCase):
                     cls.api_client,
                     cls.test_data["isolated_network_offering"]
             )
+            cls._cleanup.append(cls.network_offering_all)
             # Enable Network offering
             cls.network_offering_all.update(cls.api_client, state='Enabled')
 
@@ -131,20 +134,15 @@ class TestNetworkMigration(cloudstackTestCase):
                         cls.api_client,
                         cls.test_data["nw_offering_isolated_vpc"],
                         conservemode=False)
+            cls._cleanup.append(cls.native_vpc_network_offering)
             cls.native_vpc_network_offering.update(cls.api_client,
                                                    state='Enabled')
-
-            cls._cleanup = [
-                cls.service_offering,
-                cls.network_offering_nouserdata,
-                cls.network_offering_all,
-                cls.native_vpc_network_offering
-            ]
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.hypervisor = self.testClient.getHypervisorInfo()
         self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
         if not self.hypervisorNotSupported:
             self.account = Account.create(
                     self.apiclient,
@@ -152,26 +150,15 @@ class TestNetworkMigration(cloudstackTestCase):
                     admin=True,
                     domainid=self.domain.id
             )
-        self.cleanup = []
+            self.cleanup.append(self.account)
         return
 
     def tearDown(self):
-        try:
-            if not self.hypervisorNotSupported:
-                self.account.delete(self.apiclient)
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestNetworkMigration, self).tearDown()
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestNetworkMigration, cls).tearDownClass()
 
     def migrate_network(self, nw_off, network, resume=False):
         return network.migrate(self.api_client, nw_off.id, resume)
@@ -204,6 +191,7 @@ class TestNetworkMigration(cloudstackTestCase):
                 networkofferingid=self.network_offering_all.id,
                 zoneid=self.zone.id
         )
+        self.cleanup.append(isolated_network)
 
         self.migrate_network(
                 self.network_offering_nouserdata,
@@ -223,6 +211,8 @@ class TestNetworkMigration(cloudstackTestCase):
                 templateid=self.template.id,
                 zoneid=self.zone.id
         )
+        self.cleanup.append(deployVmResponse)
+
         vms = list_virtual_machines(
                 self.apiclient,
                 account=self.account.name,
@@ -262,6 +252,7 @@ class TestNetworkMigration(cloudstackTestCase):
         native_vpc_off = VpcOffering.create(
                 self.apiclient,
                 self.test_data["vpc_offering_reduced"])
+        self.cleanup.append(native_vpc_off)
 
         self.debug("Enabling the VPC offering created")
         native_vpc_off.update(self.apiclient, state='Enabled')
@@ -277,6 +268,8 @@ class TestNetworkMigration(cloudstackTestCase):
                 account=self.account.name,
                 domainid=self.account.domainid
         )
+        self.cleanup.append(vpc)
+
         self.debug("Creating native VPC Network Tier offering "
                    "with Static NAT service provider as VPCVR")
         native_tiernet_off = \
@@ -284,6 +277,7 @@ class TestNetworkMigration(cloudstackTestCase):
                                    self.test_data
                                    ["nw_offering_reduced_vpc"],
                                    conservemode=False)
+        self.cleanup.append(native_tiernet_off)
         native_tiernet_off.update(self.apiclient, state='Enabled')
 
         self.debug("Creating a VPC tier network with Static NAT service")
@@ -296,6 +290,7 @@ class TestNetworkMigration(cloudstackTestCase):
                                   gateway='10.1.1.1',
                                   vpcid=vpc.id if vpc else self.vpc.id
                                   )
+        self.cleanup.append(vpc_tier)
         self.debug("Created network with ID: %s" % vpc_tier.id)
 
         network_offering_map = \
@@ -323,6 +318,7 @@ class TestNetworkMigration(cloudstackTestCase):
                 templateid=self.template.id,
                 zoneid=self.zone.id
         )
+        self.cleanup.append(vm)
         self.debug('Created VM=%s in network=%s' %
                    (vm.id, native_tiernet_off.name))
 
