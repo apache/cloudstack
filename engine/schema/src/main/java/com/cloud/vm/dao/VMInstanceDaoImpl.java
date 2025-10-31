@@ -104,6 +104,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> LastHostAndStatesSearch;
     protected SearchBuilder<VMInstanceVO> VmsNotInClusterUsingPool;
     protected SearchBuilder<VMInstanceVO> IdsPowerStateSelectSearch;
+    GenericSearchBuilder<VMInstanceVO, Integer> CountByOfferingId;
 
     @Inject
     ResourceTagDao tagsDao;
@@ -344,6 +345,11 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
                 IdsPowerStateSelectSearch.entity().getPowerStateUpdateCount(),
                 IdsPowerStateSelectSearch.entity().getPowerStateUpdateTime());
         IdsPowerStateSelectSearch.done();
+
+        CountByOfferingId = createSearchBuilder(Integer.class);
+        CountByOfferingId.select(null, Func.COUNT, CountByOfferingId.entity().getId());
+        CountByOfferingId.and("serviceOfferingId", CountByOfferingId.entity().getServiceOfferingId(), Op.EQ);
+        CountByOfferingId.done();
     }
 
     @Override
@@ -1223,5 +1229,16 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         List<VMInstanceVO> vms = customSearch(sc, null);
         return vms.stream()
                 .collect(Collectors.toMap(VMInstanceVO::getInstanceName, VMInstanceVO::getId));
+    }
+
+    @Override
+    public int getVmCountByOfferingId(Long serviceOfferingId) {
+        if (serviceOfferingId == null) {
+            return 0;
+        }
+        SearchCriteria<Integer> sc = CountByOfferingId.create();
+        sc.setParameters("serviceOfferingId", serviceOfferingId);
+        List<Integer> count = customSearch(sc, null);
+        return count.get(0);
     }
 }
