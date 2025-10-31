@@ -275,14 +275,6 @@ export default {
       if (configrecord.type === 'WhitespaceSeparatedListWithOptions') {
         newValue = newValue.join(' ')
       }
-
-      // The updateConfiguration API expects a blank string to clean up the configuration value
-      if (
-        (['CSV', 'Order', 'WhitespaceSeparatedListWithOptions', 'String'].includes(configrecord.type) && newValue.length === 0)
-      ) {
-        newValue = ' '
-      }
-
       const params = {
         [this.scopeKey]: this.$route.params?.id,
         name: configrecord.name,
@@ -370,17 +362,6 @@ export default {
         }
         return 0
       }
-
-      if (configrecord.value?.trim().length === 0) {
-        if (['CSV', 'Order', 'WhitespaceSeparatedListWithOptions'].includes(configrecord.type)) {
-          return []
-        }
-
-        if (configrecord.type === 'String') {
-          return ''
-        }
-      }
-
       if (['Order', 'CSV'].includes(configrecord.type)) {
         if (configrecord.value && configrecord.value.length > 0) {
           return String(configrecord.value).split(',')
