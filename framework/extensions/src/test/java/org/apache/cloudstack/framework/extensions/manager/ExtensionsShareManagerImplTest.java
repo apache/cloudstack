@@ -376,7 +376,7 @@ public class ExtensionsShareManagerImplTest {
         Path archivePath = Path.of("/share/extensions/test-archive.tgz");
         String baseUrl = "http://abc";
         doReturn(baseUrl).when(extensionsShareManager).getManagementServerBaseUrl(managementServer);
-        try (MockedStatic<ServerPropertiesUtil> serverPropertiesUtilMock = mockStatic(ServerPropertiesUtil.class);
+        try (MockedStatic<ServerPropertiesUtil> serverPropertiesUtilMock = mockStatic(ServerPropertiesUtil.class, Mockito.CALLS_REAL_METHODS);
              MockedStatic<HMACSignUtil> hmacSignUtilMock = mockStatic(HMACSignUtil.class)) {
             serverPropertiesUtilMock.when(() -> ServerPropertiesUtil.getShareSecret()).thenReturn("secretKey");
             hmacSignUtilMock.when(() -> HMACSignUtil.generateSignature(anyString(), anyString()))
@@ -855,7 +855,7 @@ public class ExtensionsShareManagerImplTest {
         Pair<Boolean, String> result = extensionsShareManager.syncExtension(extension, sourceManagementServer,
                 targetManagementServers, files);
         assertFalse(result.first());
-        assertEquals("Failed to create archive", result.second());
+        assertEquals("Archive creation failed", result.second());
     }
 
     @Test
@@ -872,7 +872,7 @@ public class ExtensionsShareManagerImplTest {
         Pair<Boolean, String> result = extensionsShareManager.syncExtension(extension, sourceManagementServer,
                 targetManagementServers, files);
         assertFalse(result.first());
-        assertEquals("Failed to generate signed URL", result.second());
+        assertEquals("Signed URL generation failed", result.second());
     }
 
     @Test
@@ -981,7 +981,7 @@ public class ExtensionsShareManagerImplTest {
             doReturn(tmpArchive).when(extensionsFilesystemManager).getExtensionRootPath(extension);
             Pair<Boolean, String> result = extensionsShareManager.downloadAndApplyExtensionSync(extension, cmd);
             assertFalse(result.first());
-            assertTrue(result.second().contains("Failed to download/apply sync"));
+            assertTrue(result.second().startsWith("Download/apply sync for "));
         } finally {
             Files.deleteIfExists(tmpArchive);
         }
@@ -1008,7 +1008,7 @@ public class ExtensionsShareManagerImplTest {
                     any(Path.class));
             Pair<Boolean, String> result = extensionsShareManager.downloadAndApplyExtensionSync(extension, cmd);
             assertFalse(result.first());
-            assertTrue(result.second().contains("Failed to download/apply sync"));
+            assertTrue(result.second().startsWith("Download/apply sync for "));
         } finally {
             Files.deleteIfExists(tmpArchive);
         }
@@ -1037,7 +1037,7 @@ public class ExtensionsShareManagerImplTest {
                 .createArchiveForDownload(extension);
         Pair<Boolean, String> result = extensionsShareManager.downloadExtension(extension, managementServer);
         assertFalse(result.first());
-        assertEquals("Failed to create archive", result.second());
+        assertEquals("Archive creation failed", result.second());
     }
 
     @Test
@@ -1052,6 +1052,6 @@ public class ExtensionsShareManagerImplTest {
                 .generateSignedArchiveUrl(managementServer, archivePath);
         Pair<Boolean, String> result = extensionsShareManager.downloadExtension(extension, managementServer);
         assertFalse(result.first());
-        assertEquals("Failed to generate signed URL", result.second());
+        assertEquals("Signed URL generation failed", result.second());
     }
 }

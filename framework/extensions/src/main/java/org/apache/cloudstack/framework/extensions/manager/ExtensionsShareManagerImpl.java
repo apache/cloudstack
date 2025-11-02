@@ -102,6 +102,10 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
 
     protected static final String EXTENSIONS_SHARE_SUBDIR = "extensions";
     protected static final int DEFAULT_SHARE_LINK_VALIDITY_SECONDS = 3600; // 1 hour
+    protected static final String IMAGE_STORE_DOWNLOAD_URL_DETAIL_KEY = "imagestoredownloadurl";
+    protected static final String IMAGE_STORE_DOWNLOAD_TIMESTAMP_DETAIL_KEY = "imagestoredownloadtimestamp";
+    protected static final String IMAGE_STORE_DOWNLOAD_PATH_DETAIL_KEY = "imagestoredownloadpath";
+
 
     ConfigKey<Integer> ShareLinkValidityInterval = new ConfigKey<>("Advanced", Integer.class,
             "extension.share.link.validity.interval", String.valueOf(DEFAULT_SHARE_LINK_VALIDITY_SECONDS),
@@ -567,17 +571,17 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
 
     protected void cleanupExistingExtensionDownloadArchiveAndDetails(Extension extension, Long cutoff) {
         Map<String, String> details = extensionDetailsDao.listDetailsKeyPairs(extension.getId(), false);
-        if (!details.containsKey("imagestoredownloadurl")) {
+        if (!details.containsKey(IMAGE_STORE_DOWNLOAD_URL_DETAIL_KEY)) {
             return;
         }
-        final String url = details.get("imagestoredownloadurl");
+        final String url = details.get(IMAGE_STORE_DOWNLOAD_URL_DETAIL_KEY);
         final String storeIdStr = details.get(ApiConstants.IMAGE_STORE_ID);
-        final String timestampStr = details.get("imagestoredownloadurltimestamp");
+        final String timestampStr = details.get(IMAGE_STORE_DOWNLOAD_TIMESTAMP_DETAIL_KEY);
         final long timestamp = StringUtils.isNotBlank(timestampStr) ? Long.parseLong(timestampStr) : -1L;
         if (cutoff != null && timestamp != -1L && timestamp >= cutoff) {
             return;
         }
-        final String installPath = details.get("imagestorepath");
+        final String installPath = details.get(IMAGE_STORE_DOWNLOAD_PATH_DETAIL_KEY);
         final long storeId = StringUtils.isNotBlank(storeIdStr) ? Long.parseLong(storeIdStr) : -1L;
         if (StringUtils.isNotBlank(url) && storeId != -1L && timestamp != -1L && StringUtils.isNotBlank(installPath)) {
             try {
@@ -596,10 +600,10 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                extensionDetailsDao.removeDetail(extension.getId(), "imagestoredownloadurl");
-                extensionDetailsDao.removeDetail(extension.getId(), "imagestoredownloadurltimestamp");
+                extensionDetailsDao.removeDetail(extension.getId(), IMAGE_STORE_DOWNLOAD_URL_DETAIL_KEY);
+                extensionDetailsDao.removeDetail(extension.getId(), IMAGE_STORE_DOWNLOAD_TIMESTAMP_DETAIL_KEY);
                 extensionDetailsDao.removeDetail(extension.getId(), ApiConstants.IMAGE_STORE_ID);
-                extensionDetailsDao.removeDetail(extension.getId(), "imagestorepath");
+                extensionDetailsDao.removeDetail(extension.getId(), IMAGE_STORE_DOWNLOAD_PATH_DETAIL_KEY);
             }
         });
     }
@@ -655,10 +659,10 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                extensionDetailsDao.addDetail(extension.getId(), "imagestoredownloadurl", url, false);
-                extensionDetailsDao.addDetail(extension.getId(), "imagestoredownloadurltimestamp", Long.toString(System.currentTimeMillis()), false);
+                extensionDetailsDao.addDetail(extension.getId(), IMAGE_STORE_DOWNLOAD_URL_DETAIL_KEY, url, false);
+                extensionDetailsDao.addDetail(extension.getId(), IMAGE_STORE_DOWNLOAD_TIMESTAMP_DETAIL_KEY, Long.toString(System.currentTimeMillis()), false);
                 extensionDetailsDao.addDetail(extension.getId(), ApiConstants.IMAGE_STORE_ID, Long.toString(imageStoreId), false);
-                extensionDetailsDao.addDetail(extension.getId(), "imagestorepath", installPath, false);
+                extensionDetailsDao.addDetail(extension.getId(), IMAGE_STORE_DOWNLOAD_PATH_DETAIL_KEY, installPath, false);
             }
         });
         return new Pair<>(true, url);
@@ -716,7 +720,7 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
             try {
                 archiveInfo = createArchiveForSync(extension, files);
             } catch (IOException e) {
-                String msg = "Failed to create archive";
+                String msg = "Archive creation failed";
                 logger.error("{} for {}", extension, msg, e);
                 return new Pair<>(false, msg);
             }
@@ -724,7 +728,7 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
             try {
                 signedUrl = generateSignedArchiveUrl(sourceManagementServer, archiveInfo.getPath());
             } catch (DecoderException | NoSuchAlgorithmException | InvalidKeyException | CloudRuntimeException e) {
-                String msg = "Failed to generate signed URL";
+                String msg = "Signed URL generation failed";
                 logger.error("{} for {} using {}", msg, extension, sourceManagementServer, e);
                 return new Pair<>(false, msg);
             }
@@ -772,7 +776,7 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
 
             applyExtensionSync(extension, cmd.getSyncType(), tmpArchive, extensionRootPath);
         } catch (IOException e) {
-            String msg = String.format("Failed to download/apply sync for %s from %s: %s", extension,
+            String msg = String.format("Download/apply sync for %s from %s failed: %s", extension,
                     cmd.getDownloadUrl(), e.getMessage());
             logger.error(msg, e);
             return new Pair<>(false, msg);
@@ -790,7 +794,7 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
         try {
             archiveInfo = createArchiveForDownload(extension);
         } catch (IOException e) {
-            String msg = "Failed to create archive";
+            String msg = "Archive creation failed";
             logger.error("{} for {}", extension, msg, e);
             return new Pair<>(false, msg);
         }
@@ -798,7 +802,7 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
         try {
             signedUrl = generateSignedArchiveUrl(managementServer, archiveInfo.getPath());
         } catch (DecoderException | NoSuchAlgorithmException | InvalidKeyException e) {
-            String msg = "Failed to generate signed URL";
+            String msg = "Signed URL generation failed";
             logger.error("{} for {} using {}", msg, extension, managementServer, e);
             return new Pair<>(false, msg);
         }
