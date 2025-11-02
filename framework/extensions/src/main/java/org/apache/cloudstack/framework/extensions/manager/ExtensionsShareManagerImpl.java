@@ -287,7 +287,7 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
         final long expiresAtEpochSec = System.currentTimeMillis() / 1000L + shareLinkValidityInterval;
         final String secretKey = ServerPropertiesUtil.getShareSecret();
         String archiveName = archivePath.getFileName().toString();
-        String uriPath = String.format("/%s/%s/%s", ServerPropertiesUtil.SHARE_DIR, EXTENSIONS_SHARE_SUBDIR,
+        String uriPath = String.format("%s/%s/%s", ServerPropertiesUtil.getShareUriPath(), EXTENSIONS_SHARE_SUBDIR,
                 archiveName);
         String sig = "";
         if (StringUtils.isNotBlank(secretKey)) {

@@ -35,10 +35,10 @@ public class ServerPropertiesUtil {
     private static final Logger logger = LoggerFactory.getLogger(ServerPropertiesUtil.class);
     protected static final String PROPERTIES_FILE = "server.properties";
 
-    public static final String SHARE_ENABLED = "share.enabled";
+    private static final String CONTEXT_PATH = "context.path";
+    private static final String SHARE_ENABLED = "share.enabled";
     private static final String SHARE_BASE_DIR = "share.base.dir";
-    public static final String SHARE_CACHE_CONTROL = "share.cache.control";
-    public static final String SHARE_DIR_ALLOWED = "share.dir.allowed";
+    private static final String SHARE_CACHE_CONTROL = "share.cache.control";
     private static final String SHARE_SECRET = "share.secret";
 
     protected static final AtomicReference<Properties> propertiesRef = new AtomicReference<>();
@@ -78,15 +78,35 @@ public class ServerPropertiesUtil {
         return Boolean.parseBoolean(getProperty(SHARE_ENABLED, "true"));
     }
 
+    protected static boolean isMavenRun() {
+        String args = ManagementFactory.getRuntimeMXBean().getInputArguments().toString();
+        String sunCmd = System.getProperty("sun.java.command", "");
+        String combined = args + " " + sunCmd;
+
+        String[] mavenMarkers = new String[] {
+                "org.codehaus.plexus.classworlds.launcher.Launcher",
+                "org.apache.maven.wrapper.MavenWrapperMain",
+                "org.apache.maven.cli.MavenCli",
+                "org.apache.maven.surefire.booter.ForkedBooter",
+                "org.apache.maven.surefire.booter.SurefireBooter"
+        };
+        for (String marker : mavenMarkers) {
+            if (combined.contains(marker)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static String getShareBaseDirectory() {
         String shareBaseDir = getProperty(SHARE_BASE_DIR);
         if (StringUtils.isNotBlank(shareBaseDir)) {
             return shareBaseDir;
         }
-        boolean isMavenRun = ManagementFactory.getRuntimeMXBean().getInputArguments().toString().contains("org.codehaus.plexus.classworlds.launcher.Launcher");
-        if (isMavenRun) {
+        if (isMavenRun()) {
             // when running from maven, use a share directory from client/target in the current working directory
-            return System.getProperty("user.dir")  + File.separator + "client" + File.separator + "target" + File.separator + SHARE_DIR;
+            return String.format("%1$s%2$sclient%2$starget%2$s%3$s", System.getProperty("user.dir"), File.separator,
+                    SHARE_DIR);
         }
         return System.getProperty("user.home") + File.separator + SHARE_DIR;
     }
@@ -95,11 +115,16 @@ public class ServerPropertiesUtil {
         return getProperty(SHARE_CACHE_CONTROL, "public,max-age=86400,immutable");
     }
 
-    public static boolean getShareDirAllowed() {
-        return Boolean.parseBoolean(getProperty(SHARE_DIR_ALLOWED, "false"));
-    }
-
     public static String getShareSecret() {
         return getProperty(SHARE_SECRET);
+    }
+
+    public static String getShareUriPath() {
+        String sharePath = String.format("/%s", SHARE_DIR);
+        if (isMavenRun()) {
+            // when running from maven, share context is under root context - /client/share
+            return String.format("%s%s", getProperty(CONTEXT_PATH, ""), sharePath);
+        }
+        return sharePath;
     }
 }

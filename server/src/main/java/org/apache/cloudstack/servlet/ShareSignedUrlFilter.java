@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack;
+package org.apache.cloudstack.servlet;
 
 import java.io.IOException;
 import java.security.InvalidKeyException;
@@ -24,6 +24,7 @@ import java.time.Instant;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
@@ -31,16 +32,18 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.cloudstack.utils.security.HMACSignUtil;
+import org.apache.cloudstack.utils.server.ServerPropertiesUtil;
 import org.apache.commons.codec.DecoderException;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * HMAC token check: /share/...?...&exp=1699999999&sig=BASE64URL(HMACSHA256(path|exp))
  */
 public class ShareSignedUrlFilter implements Filter {
-    private final String secret;
 
-    public ShareSignedUrlFilter(String secret) {
-        this.secret = secret;
+    @Override
+    public void init(FilterConfig filterConfig) throws ServletException {
+        // nothing to do
     }
 
     @Override
@@ -48,6 +51,11 @@ public class ShareSignedUrlFilter implements Filter {
             throws IOException, ServletException {
         HttpServletRequest r = (HttpServletRequest) req;
         HttpServletResponse w = (HttpServletResponse) res;
+        String secret = ServerPropertiesUtil.getShareSecret();
+        if (StringUtils.isBlank(secret)) {
+            chain.doFilter(req, res);
+            return;
+        }
 
         String expStr = r.getParameter("exp");
         String sig = r.getParameter("sig");
@@ -80,5 +88,10 @@ public class ShareSignedUrlFilter implements Filter {
             return;
         }
         chain.doFilter(req, res);
+    }
+
+    @Override
+    public void destroy() {
+        // nothing to do
     }
 }

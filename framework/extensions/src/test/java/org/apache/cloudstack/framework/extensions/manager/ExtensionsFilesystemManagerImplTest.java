@@ -302,7 +302,7 @@ public class ExtensionsFilesystemManagerImplTest {
         Path rootPath = tempDir.toPath();
         Path file1 = Files.createFile(rootPath.resolve("file1.txt"));
         Path file2 = Files.createFile(rootPath.resolve("file2.txt"));
-        doReturn(rootPath).when(extensionsFilesystemManager).getExtensionRootPath(extensionName);
+        doReturn(rootPath).when(extensionsFilesystemManager).getExtensionRootPath(extensionName, "");
         doReturn(rootPath.toString()).when(extensionsFilesystemManager).getExtensionCheckedPath(extensionName, "");
 
         try (MockedStatic<DigestHelper> digestHelperMock = mockStatic(DigestHelper.class)) {
@@ -331,7 +331,7 @@ public class ExtensionsFilesystemManagerImplTest {
     public void getChecksumMapForExtensionHandlesIOExceptionDuringFileWalk() {
         String extensionName = "test-extension";
         Path rootPath = tempDir.toPath();
-        doReturn(rootPath).when(extensionsFilesystemManager).getExtensionRootPath(extensionName);
+        doReturn(rootPath).when(extensionsFilesystemManager).getExtensionRootPath(extensionName, "");
         doReturn(rootPath.toString()).when(extensionsFilesystemManager).getExtensionCheckedPath(extensionName, "");
         try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
             filesMock.when(() -> Files.walk(rootPath)).thenThrow(new IOException("File walk error"));
@@ -345,7 +345,7 @@ public class ExtensionsFilesystemManagerImplTest {
         String extensionName = "test-extension";
         Path rootPath = tempDir.toPath();
         Path file1 = Files.createFile(rootPath.resolve("file1.txt"));
-        doReturn(rootPath).when(extensionsFilesystemManager).getExtensionRootPath(extensionName);
+        doReturn(rootPath).when(extensionsFilesystemManager).getExtensionRootPath(extensionName, "");
         doReturn(rootPath.toString()).when(extensionsFilesystemManager).getExtensionCheckedPath(extensionName, "");
         try (MockedStatic<DigestHelper> digestHelperMock = mockStatic(DigestHelper.class)) {
             digestHelperMock.when(() -> DigestHelper.calculateChecksum(file1.toFile())).thenThrow(new CloudRuntimeException("Checksum error"));
@@ -358,7 +358,7 @@ public class ExtensionsFilesystemManagerImplTest {
     public void getChecksumMapForExtensionReturnsEmptyMapWhenNoFilesExist() {
         String extensionName = "test-extension";
         Path rootPath = tempDir.toPath();
-        doReturn(rootPath).when(extensionsFilesystemManager).getExtensionRootPath(extensionName);
+        doReturn(rootPath).when(extensionsFilesystemManager).getExtensionRootPath(extensionName, "");
         doReturn(rootPath.toString()).when(extensionsFilesystemManager).getExtensionCheckedPath(extensionName, "");
         try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
             filesMock.when(() -> Files.walk(rootPath)).thenReturn(Stream.empty());

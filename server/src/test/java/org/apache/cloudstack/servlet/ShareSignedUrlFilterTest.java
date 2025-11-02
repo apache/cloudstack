@@ -15,9 +15,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack;
+package org.apache.cloudstack.servlet;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -29,7 +30,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.cloudstack.utils.security.HMACSignUtil;
+import org.apache.cloudstack.utils.server.ServerPropertiesUtil;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 /**
  * Unit tests for {@link ShareSignedUrlFilter}.
@@ -39,11 +46,28 @@ import org.junit.Test;
  * - expired tokens outside the allowed time delta
  * - valid signatures when `exp` is within the allowed delta
  */
+
+@RunWith(MockitoJUnitRunner.class)
 public class ShareSignedUrlFilterTest {
+
+    private static final String SECRET = "secret";
+
+    MockedStatic<ServerPropertiesUtil> serverPropertiesUtilMock;
+
+    @Before
+    public void setup() {
+        serverPropertiesUtilMock = mockStatic(ServerPropertiesUtil.class);
+        serverPropertiesUtilMock.when(ServerPropertiesUtil::getShareSecret).thenReturn(SECRET);
+    }
+
+    @After
+    public void teardown() {
+        serverPropertiesUtilMock.close();
+    }
 
     @Test
     public void deniesRequestWhenExpParameterIsWithinDeltaButInvalid() throws Exception {
-        ShareSignedUrlFilter filter = new ShareSignedUrlFilter("secret");
+        ShareSignedUrlFilter filter = new ShareSignedUrlFilter();
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
         HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         FilterChain mockChain = mock(FilterChain.class);
@@ -59,15 +83,14 @@ public class ShareSignedUrlFilterTest {
 
     @Test
     public void allowsRequestWhenExpParameterIsValidAndWithinDelta() throws Exception {
-        String secret = "secret";
-        ShareSignedUrlFilter filter = new ShareSignedUrlFilter(secret);
+        ShareSignedUrlFilter filter = new ShareSignedUrlFilter();
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
         HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         FilterChain mockChain = mock(FilterChain.class);
 
         String exp = String.valueOf(Instant.now().getEpochSecond() + 50); // Within delta
         String data = "/share/resource|" + exp;
-        String validSignature = HMACSignUtil.generateSignature(data, secret);
+        String validSignature = HMACSignUtil.generateSignature(data, SECRET);
 
         when(mockRequest.getParameter("exp")).thenReturn(exp);
         when(mockRequest.getParameter("sig")).thenReturn(validSignature);
@@ -80,7 +103,7 @@ public class ShareSignedUrlFilterTest {
 
     @Test
     public void deniesRequestWhenExpParameterIsValidButOutsideDelta() throws Exception {
-        ShareSignedUrlFilter filter = new ShareSignedUrlFilter("secret");
+        ShareSignedUrlFilter filter = new ShareSignedUrlFilter();
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
         HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         FilterChain mockChain = mock(FilterChain.class);
@@ -97,7 +120,7 @@ public class ShareSignedUrlFilterTest {
 
     @Test
     public void deniesRequestWhenSignatureIsValidButExpParameterIsMissing() throws Exception {
-        ShareSignedUrlFilter filter = new ShareSignedUrlFilter("secret");
+        ShareSignedUrlFilter filter = new ShareSignedUrlFilter();
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
         HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         FilterChain mockChain = mock(FilterChain.class);
@@ -109,5 +132,16 @@ public class ShareSignedUrlFilterTest {
 
         verify(mockResponse).sendError(HttpServletResponse.SC_FORBIDDEN, "Missing token");
         verifyNoInteractions(mockChain);
+    }
+
+    @Test
+    public void allowsRequestWhenNoSecretIsConfigured() throws Exception {
+        serverPropertiesUtilMock.when(ServerPropertiesUtil::getShareSecret).thenReturn("");
+        ShareSignedUrlFilter filter = new ShareSignedUrlFilter();
+        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+        HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        FilterChain mockChain = mock(FilterChain.class);
+        filter.doFilter(mockRequest, mockResponse, mockChain);
+        verify(mockChain).doFilter(mockRequest, mockResponse);
     }
 }

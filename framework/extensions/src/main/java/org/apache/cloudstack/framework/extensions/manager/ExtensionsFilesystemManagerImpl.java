@@ -150,7 +150,12 @@ public class ExtensionsFilesystemManagerImpl extends ManagerBase implements Exte
         return (lastDot == -1) ? "" : name.substring(lastDot + 1);
     }
 
-    protected Path getExtensionRootPath(String extensionName) {
+    protected Path getExtensionRootPath(String extensionName, String extensionRelativePath) {
+        if (StringUtils.isNotBlank(extensionRelativePath)) {
+            Path extensionsPath = Paths.get(extensionsDirectory).toAbsolutePath().normalize();
+            Path relativePath = Paths.get(extensionRelativePath);
+            return extensionsPath.resolve(relativePath.getName(0)).normalize();
+        }
         final String normalizedName = Extension.getDirectoryName(extensionName);
         final String extensionDir = extensionsDirectory + File.separator + normalizedName;
         return Path.of(extensionDir);
@@ -187,7 +192,7 @@ public class ExtensionsFilesystemManagerImpl extends ManagerBase implements Exte
 
     @Override
     public Path getExtensionRootPath(Extension extension) {
-        return getExtensionRootPath(extension.getName());
+        return getExtensionRootPath(extension.getName(), extension.getRelativePath());
     }
 
     @Override
@@ -226,7 +231,7 @@ public class ExtensionsFilesystemManagerImpl extends ManagerBase implements Exte
             return null;
         }
         try {
-            Path rootPath = getExtensionRootPath(extensionName);
+            Path rootPath = getExtensionRootPath(extensionName, relativePath);
             Map<String, String> fileChecksums = new TreeMap<>();
             java.util.List<Path> files = new java.util.ArrayList<>();
             try (Stream<Path> stream = Files.walk(rootPath)) {

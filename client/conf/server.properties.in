@@ -73,8 +73,6 @@ share.enabled=true
 # share.base.dir=
 # The cache control header value to be used for shared files. Default is public,max-age=86400,immutable
 # share.cache.control=public,max-age=86400,immutable
-# Allow or disallow directory listing when accessing a directory. Default is false
-# share.dir.allowed=false
 # Secret key for securing links using HMAC signature. If not set then links will not be signed. Default is change-me
 # It is recommended to change this value to a strong secret key in production
 share.secret=change-me

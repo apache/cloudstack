@@ -34,6 +34,7 @@ import java.util.Properties;
 
 import javax.servlet.DispatcherType;
 
+import org.apache.cloudstack.servlet.ShareSignedUrlFilter;
 import org.apache.cloudstack.utils.server.ServerPropertiesUtil;
 import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
@@ -125,12 +126,6 @@ public class ServerDaemon implements Daemon {
     private int minThreads;
     private int maxThreads;
 
-    private boolean shareEnabled = false;
-    private String shareBaseDir;
-    private String shareCacheCtl;
-    private boolean shareDirList = false;
-    private String shareSecret;
-
     //////////////////////////////////////////////////
     /////////////// Public methods ///////////////////
     //////////////////////////////////////////////////
@@ -139,22 +134,6 @@ public class ServerDaemon implements Daemon {
         final ServerDaemon daemon = new ServerDaemon();
         daemon.init(null);
         daemon.start();
-    }
-
-    protected void initShareConfigFromProperties() {
-        setShareEnabled(ServerPropertiesUtil.getShareEnabled());
-        setShareBaseDir(ServerPropertiesUtil.getShareBaseDirectory());
-        setShareCacheCtl(ServerPropertiesUtil.getShareCacheControl());
-        setShareDirList(ServerPropertiesUtil.getShareDirAllowed());
-        setShareSecret(ServerPropertiesUtil.getShareSecret());
-
-        logger.info(String.format("/%s static context enabled=%s, baseDir=%s, dirList=%s, cacheCtl=%s, secret=%s",
-                ServerPropertiesUtil.SHARE_DIR,
-                shareEnabled,
-                shareBaseDir,
-                shareDirList,
-                shareCacheCtl,
-                (StringUtils.isNotBlank(shareSecret) ? "configured" : "not configured")));
     }
 
     @Override
@@ -189,7 +168,6 @@ public class ServerDaemon implements Daemon {
             setMaxFormKeys(Integer.valueOf(properties.getProperty(REQUEST_MAX_FORM_KEYS_KEY, String.valueOf(DEFAULT_REQUEST_MAX_FORM_KEYS))));
             setMinThreads(Integer.valueOf(properties.getProperty(THREADS_MIN, "10")));
             setMaxThreads(Integer.valueOf(properties.getProperty(THREADS_MAX, "500")));
-            initShareConfigFromProperties();
         } catch (final IOException e) {
             logger.warn("Failed to read configuration from server.properties file", e);
         } finally {
@@ -201,6 +179,13 @@ public class ServerDaemon implements Daemon {
         }
         logger.info(String.format("Initializing server daemon on %s, with http.enable=%s, http.port=%s, https.enable=%s, https.port=%s, context.path=%s",
                 bindInterface, httpEnable, httpPort, httpsEnable, httpsPort, contextPath));
+
+        if (ServerPropertiesUtil.getShareEnabled()) {
+            logger.info("/{} static context for file-sharing is enabled, baseDir={}, cacheCtl={}, secret={}",
+                    ServerPropertiesUtil.SHARE_DIR, ServerPropertiesUtil.getShareBaseDirectory(),
+                    ServerPropertiesUtil.getShareCacheControl(),
+                    (StringUtils.isNotBlank(ServerPropertiesUtil.getShareSecret()) ? "configured" : "not configured"));
+        }
     }
 
     @Override
@@ -332,12 +317,12 @@ public class ServerDaemon implements Daemon {
      * @return a configured Handler or null if disabled.
      */
     private Handler createShareContextHandler() throws IOException {
-        if (!shareEnabled) {
+        if (!ServerPropertiesUtil.getShareEnabled()) {
             logger.info("/{} context not mounted", ServerPropertiesUtil.SHARE_DIR);
             return null;
         }
 
-        final Path base = Paths.get(shareBaseDir);
+        final Path base = Paths.get(ServerPropertiesUtil.getShareBaseDirectory());
         Files.createDirectories(base);
 
         final ServletContextHandler shareCtx = new ServletContextHandler(ServletContextHandler.NO_SESSIONS);
@@ -346,9 +331,9 @@ public class ServerDaemon implements Daemon {
 
         // Efficient static file serving
         ServletHolder def = shareCtx.addServlet(DefaultServlet.class, "/*");
-        def.setInitParameter("dirAllowed", Boolean.toString(shareDirList));
+        def.setInitParameter("dirAllowed", "false");
         def.setInitParameter("etags", "true");
-        def.setInitParameter("cacheControl", shareCacheCtl);
+        def.setInitParameter("cacheControl", ServerPropertiesUtil.getShareCacheControl());
         def.setInitParameter("useFileMappedBuffer", "true");
         def.setInitParameter("acceptRanges", "true");
 
@@ -360,12 +345,8 @@ public class ServerDaemon implements Daemon {
                 "text/html", "text/plain", "text/css", "text/javascript",
                 "application/javascript", "application/json", "application/xml");
         gzipHandler.setHandler(shareCtx);
-
-        // Optional signed-URL guard (path + "|" + exp => HMAC-SHA256, base64url)
-        if (StringUtils.isNotBlank(shareSecret)) {
-            shareCtx.addFilter(new FilterHolder(new ShareSignedUrlFilter(shareSecret)),
-                    "/*", EnumSet.of(DispatcherType.REQUEST));
-        }
+        shareCtx.addFilter(new FilterHolder(new ShareSignedUrlFilter()), "/*",
+                EnumSet.of(DispatcherType.REQUEST));
 
         logger.info("Mounted /{} static context at baseDir={}", ServerPropertiesUtil.SHARE_DIR, base);
         return shareCtx;
@@ -505,25 +486,5 @@ public class ServerDaemon implements Daemon {
 
     public void setMaxThreads(int maxThreads) {
         this.maxThreads = maxThreads;
-    }
-
-    public void setShareEnabled(boolean shareEnabled) {
-        this.shareEnabled = shareEnabled;
-    }
-
-    public void setShareBaseDir(String shareBaseDir) {
-        this.shareBaseDir = shareBaseDir;
-    }
-
-    public void setShareCacheCtl(String shareCacheCtl) {
-        this.shareCacheCtl = shareCacheCtl;
-    }
-
-    public void setShareDirList(boolean shareDirList) {
-        this.shareDirList = shareDirList;
-    }
-
-    public void setShareSecret(String shareSecret) {
-        this.shareSecret = shareSecret;
     }
 }
