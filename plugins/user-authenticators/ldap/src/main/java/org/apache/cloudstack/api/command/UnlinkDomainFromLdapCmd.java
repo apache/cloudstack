@@ -35,11 +35,11 @@ import org.apache.cloudstack.ldap.LdapManager;
 
 import javax.inject.Inject;
 
-@APICommand(name = "unlinkDomainFromLdap", description = "remove the linkage of a cloudstack domain to group or OU in ldap",
+@APICommand(name = "unlinkDomainFromLdap", description = "remove the linkage of a Domain to a group or OU in ldap",
         responseObject = SuccessResponse.class, since = "4.23.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UnlinkDomainFromLdapCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = true, entityType = DomainResponse.class,
-            description = "The id of the domain which has to be linked to LDAP.")
+            description = "The id of the Domain which has to be unlinked from LDAP.")
     private Long domainId;
 
     @Inject
