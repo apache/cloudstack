@@ -194,12 +194,14 @@ class TestNetworkMigration(cloudstackTestCase):
         self.cleanup.append(isolated_network)
 
         self.migrate_network(
-                self.network_offering_nouserdata,
-                isolated_network, resume=False)
+            self.network_offering_nouserdata,
+            isolated_network,
+            resume=False)
 
         self.migrate_network(
-                self.network_offering_all,
-                isolated_network, resume=False)
+            self.network_offering_all,
+            isolated_network,
+            resume=False)
 
         deployVmResponse = VirtualMachine.create(
                 self.apiclient,
@@ -209,16 +211,14 @@ class TestNetworkMigration(cloudstackTestCase):
                 serviceofferingid=self.service_offering.id,
                 networkids=[str(isolated_network.id)],
                 templateid=self.template.id,
-                zoneid=self.zone.id
-        )
+                zoneid=self.zone.id)
         self.cleanup.append(deployVmResponse)
 
         vms = list_virtual_machines(
                 self.apiclient,
                 account=self.account.name,
                 domainid=self.account.domainid,
-                id=deployVmResponse.id
-        )
+                id=deployVmResponse.id)
         self.assertTrue(len(vms) > 0, "There are no Vms deployed in the account"
                                    " %s" % self.account.name)
         vm = vms[0]
@@ -227,12 +227,14 @@ class TestNetworkMigration(cloudstackTestCase):
         self.assertTrue(vm.state == "Running", "VM is not in Running state")
 
         self.migrate_network(
-                self.network_offering_nouserdata,
-                isolated_network, resume=False)
+            self.network_offering_nouserdata,
+            isolated_network,
+            resume=False)
 
         self.migrate_network(
-                self.network_offering_all,
-                isolated_network, resume=False)
+            self.network_offering_all,
+            isolated_network,
+            resume=False)
 
     @skipTestIf("hypervisorNotSupported")
     @attr(tags=["advanced", "smoke", "nativevpconly"],
