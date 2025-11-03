@@ -635,7 +635,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         }
         String checksum = newValue == null ?  null : newValue.toString();
         if (checksum == null) {
-            logger.warn("Something wrong happened when try to calculate the checksum of downloaded {}}!", downloadType);
+            logger.warn("Something wrong happened when try to calculate the checksum of downloaded {}!", downloadType);
         }
         job.setCheckSum(checksum);
         return null;
