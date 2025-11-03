@@ -1121,7 +1121,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     }
                 }
                 // this is clearing the operational reservations or vlans for the account
-                // this should have happened before and covours up the release issues for the vlans
+                // this should have happened before and covers up the release issues for the vlans
                 // but as it is purely operational and no business logic is involved we clean now
                 // as a last resort, to prevent allocation issue on the long run.
                 _dataCenterVnetDao.releaseForAccount(accountId);
