@@ -1065,7 +1065,7 @@ public class ExtensionsShareManagerImplTest {
     }
 
     @Test
-    public void downloadExtensionReturnsSignedUrlSuccessfully() throws Exception {
+    public void prepareExtensionDownloadReturnsSignedUrlSuccessfully() throws Exception {
         Extension extension = mock(Extension.class);
         ManagementServerHost managementServer = mock(ManagementServerHost.class);
         ExtensionsShareManagerImpl.ArchiveInfo archiveInfo = mock(ExtensionsShareManagerImpl.ArchiveInfo.class);
@@ -1074,24 +1074,24 @@ public class ExtensionsShareManagerImplTest {
         when(archiveInfo.getPath()).thenReturn(archivePath);
         doReturn("http://example.com/archive.zip").when(extensionsShareManager)
                 .generateSignedArchiveUrl(managementServer, archivePath);
-        Pair<Boolean, String> result = extensionsShareManager.downloadExtension(extension, managementServer);
+        Pair<Boolean, String> result = extensionsShareManager.prepareExtensionDownload(extension, managementServer);
         assertTrue(result.first());
         assertEquals("http://example.com/archive.zip", result.second());
     }
 
     @Test
-    public void downloadExtensionFailsWhenArchiveCreationThrowsIOException() throws Exception {
+    public void prepareExtensionDownloadFailsWhenArchiveCreationThrowsIOException() throws Exception {
         Extension extension = mock(Extension.class);
         ManagementServerHost managementServer = mock(ManagementServerHost.class);
         doThrow(new IOException("Archive creation failed")).when(extensionsShareManager)
                 .createArchiveForDownload(extension);
-        Pair<Boolean, String> result = extensionsShareManager.downloadExtension(extension, managementServer);
+        Pair<Boolean, String> result = extensionsShareManager.prepareExtensionDownload(extension, managementServer);
         assertFalse(result.first());
         assertEquals("Archive creation failed", result.second());
     }
 
     @Test
-    public void downloadExtensionFailsWhenSignedUrlGenerationThrowsException() throws Exception {
+    public void prepareExtensionDownloadFailsWhenSignedUrlGenerationThrowsException() throws Exception {
         Extension extension = mock(Extension.class);
         ManagementServerHost managementServer = mock(ManagementServerHost.class);
         ExtensionsShareManagerImpl.ArchiveInfo archiveInfo = mock(ExtensionsShareManagerImpl.ArchiveInfo.class);
@@ -1100,13 +1100,13 @@ public class ExtensionsShareManagerImplTest {
         when(archiveInfo.getPath()).thenReturn(archivePath);
         doThrow(new NoSuchAlgorithmException("HMAC error")).when(extensionsShareManager)
                 .generateSignedArchiveUrl(managementServer, archivePath);
-        Pair<Boolean, String> result = extensionsShareManager.downloadExtension(extension, managementServer);
+        Pair<Boolean, String> result = extensionsShareManager.prepareExtensionDownload(extension, managementServer);
         assertFalse(result.first());
         assertEquals("Signed URL generation failed", result.second());
     }
 
     @Test
-    public void downloadExtensionViaSecondaryStorageReturnsSuccessWhenZoneAndStorageAvailable()
+    public void prepareExtensionDownloadViaSecondaryStorageReturnsSuccessWhenZoneAndStorageAvailable()
             throws ExecutionException, InterruptedException {
         Extension extension = mock(Extension.class);
         ExtensionsShareManagerImpl.ArchiveInfo archiveInfo = mock(ExtensionsShareManagerImpl.ArchiveInfo.class);
@@ -1144,7 +1144,7 @@ public class ExtensionsShareManagerImplTest {
     }
 
     @Test
-    public void downloadExtensionViaSecondaryStorageReturnsFailureWhenNoZonesAvailable() {
+    public void prepareExtensionDownloadViaSecondaryStorageReturnsFailureWhenNoZonesAvailable() {
         Extension extension = mock(Extension.class);
         ExtensionsShareManagerImpl.ArchiveInfo archiveInfo = mock(ExtensionsShareManagerImpl.ArchiveInfo.class);
         String downloadUrl = "http://example.com/archive.zip";
@@ -1159,7 +1159,7 @@ public class ExtensionsShareManagerImplTest {
     }
 
     @Test
-    public void downloadExtensionViaSecondaryStorageReturnsFailureWhenNoStorageAvailable() {
+    public void prepareExtensionDownloadViaSecondaryStorageReturnsFailureWhenNoStorageAvailable() {
         Extension extension = mock(Extension.class);
         ExtensionsShareManagerImpl.ArchiveInfo archiveInfo = mock(ExtensionsShareManagerImpl.ArchiveInfo.class);
         String downloadUrl = "http://example.com/archive.zip";
@@ -1178,7 +1178,7 @@ public class ExtensionsShareManagerImplTest {
     }
 
     @Test
-    public void downloadExtensionViaSecondaryStorageReturnsFailureWhenDownloadFails() throws Exception {
+    public void downloadExtensionViaSecondaryStorageReturnsFailureWhenPrepareFailsDownload() throws Exception {
         Extension extension = mock(Extension.class);
         ExtensionsShareManagerImpl.ArchiveInfo archiveInfo = mock(ExtensionsShareManagerImpl.ArchiveInfo.class);
         when(archiveInfo.getSize()).thenReturn(1024L);
@@ -1313,7 +1313,7 @@ public class ExtensionsShareManagerImplTest {
     }
 
     @Test
-    public void downloadExtensionArchiveOnSecondaryStorageCompletesSuccessfully() {
+    public void prepareExtensionDownloadArchiveOnSecondaryStorageCompletesSuccessfully() {
         DataStore imageStore = mock(DataStore.class);
         DataStoreDriver imageStoreDriver = mock(DataStoreDriver.class);
         when(imageStore.getDriver()).thenReturn(imageStoreDriver);
@@ -1330,7 +1330,7 @@ public class ExtensionsShareManagerImplTest {
     }
 
     @Test
-    public void downloadExtensionArchiveOnSecondaryStorageHandlesCloudRuntimeException()
+    public void prepareExtensionDownloadArchiveOnSecondaryStorageHandlesCloudRuntimeException()
             throws ExecutionException, InterruptedException {
         DataStore imageStore = mock(DataStore.class);
         DataObject archiveOnStore = mock(DataObject.class);
@@ -1347,7 +1347,7 @@ public class ExtensionsShareManagerImplTest {
     }
 
     @Test
-    public void downloadExtensionArchiveAsyncCallbackCompletesSuccessfully()
+    public void prepareExtensionDownloadArchiveAsyncCallbackCompletesSuccessfully()
             throws ExecutionException, InterruptedException {
         CreateCmdResult result = mock(CreateCmdResult.class);
         when(result.isSuccess()).thenReturn(true);
@@ -1371,7 +1371,7 @@ public class ExtensionsShareManagerImplTest {
     }
 
     @Test
-    public void downloadExtensionArchiveAsyncCallbackHandlesNullResult()
+    public void prepareExtensionDownloadArchiveAsyncCallbackHandlesNullResult()
             throws ExecutionException, InterruptedException {
         AsyncCallFuture<DataObject> future = new AsyncCallFuture<>();
         ExtensionsShareManagerImpl.DownloadExtensionArchiveOnSecondaryStorageContext<CommandResult> context =
@@ -1388,7 +1388,7 @@ public class ExtensionsShareManagerImplTest {
     }
 
     @Test
-    public void downloadExtensionArchiveAsyncCallbackHandlesFailedResult()
+    public void prepareExtensionDownloadArchiveAsyncCallbackHandlesFailedResult()
             throws ExecutionException, InterruptedException {
         CreateCmdResult result = mock(CreateCmdResult.class);
         when(result.isSuccess()).thenReturn(false);

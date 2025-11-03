@@ -66,6 +66,7 @@ import org.apache.cloudstack.framework.extensions.api.AddCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.CreateExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.DeleteCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.DeleteExtensionCmd;
+import org.apache.cloudstack.framework.extensions.api.DownloadExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.ListCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.ListExtensionsCmd;
 import org.apache.cloudstack.framework.extensions.api.RegisterExtensionCmd;
@@ -74,10 +75,12 @@ import org.apache.cloudstack.framework.extensions.api.SyncExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.UnregisterExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateExtensionCmd;
+import org.apache.cloudstack.framework.extensions.api.response.DownloadExtensionResponse;
 import org.apache.cloudstack.framework.extensions.command.CleanupExtensionFilesCommand;
 import org.apache.cloudstack.framework.extensions.command.DownloadAndSyncExtensionFilesCommand;
 import org.apache.cloudstack.framework.extensions.command.ExtensionServerActionBaseCommand;
 import org.apache.cloudstack.framework.extensions.command.GetExtensionPathChecksumCommand;
+import org.apache.cloudstack.framework.extensions.command.PrepareDownloadExtensionFilesCommand;
 import org.apache.cloudstack.framework.extensions.command.PrepareExtensionPathCommand;
 import org.apache.cloudstack.framework.extensions.command.StartSyncExtensionFilesCommand;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionCustomActionDao;
@@ -260,6 +263,15 @@ public class ExtensionsManagerImplTest {
     }
 
     @Test
+    public void prepareExtensionPathOnCurrentServerReturnsFailure() {
+        doThrow(new CloudRuntimeException("Exception")).when(extensionsFilesystemManager).prepareExtensionPath(anyString(), anyBoolean(), any(Extension.Type.class), anyString());
+        Pair<Boolean, String> result = extensionsManager.prepareExtensionPathOnCurrentServer("name", true,
+                Extension.Type.Orchestrator, "entry");
+        assertFalse(result.first());
+        assertNotNull(result.second());
+    }
+
+    @Test
     public void cleanupExtensionFilesOnMSPeerReturnsTrueOnSuccess() {
         Extension ext = mock(Extension.class);
         ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
@@ -274,6 +286,57 @@ public class ExtensionsManagerImplTest {
     public void cleanupExtensionFilesOnCurrentServerReturnsSuccess() {
         Pair<Boolean, String> result = extensionsManager.cleanupExtensionFilesOnCurrentServer("name", "entry");
         assertTrue(result.first());
+    }
+
+    @Test
+    public void cleanupExtensionFilesAcrossServersCleansUpSuccessfullyWhenAllServersAreUp() {
+        Extension extension = mock(Extension.class);
+        ManagementServerHostVO currentServer = mock(ManagementServerHostVO.class);
+        ManagementServerHostVO peerServer = mock(ManagementServerHostVO.class);
+
+        when(extension.getName()).thenReturn("test-extension");
+        when(extension.getRelativePath()).thenReturn("relative/path");
+        when(currentServer.getMsid()).thenReturn(ManagementServerNode.getManagementServerId());
+        when(peerServer.getMsid()).thenReturn(2L);
+        when(managementServerHostDao.listBy(ManagementServerHost.State.Up)).thenReturn(List.of(currentServer, peerServer));
+        when(extensionsManager.cleanupExtensionFilesOnCurrentServer("test-extension", "relative/path")).thenReturn(new Pair<>(true, null));
+        when(extensionsManager.cleanupExtensionFilesOnMSPeer(extension, peerServer)).thenReturn(true);
+
+        extensionsManager.cleanupExtensionFilesAcrossServers(extension);
+
+        verify(extensionsManager).cleanupExtensionFilesOnCurrentServer("test-extension", "relative/path");
+        verify(extensionsManager, atLeastOnce()).cleanupExtensionFilesOnMSPeer(extension, peerServer);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void cleanupExtensionFilesAcrossServersThrowsWhenCleanupFailsOnCurrentServer() {
+        Extension extension = mock(Extension.class);
+        ManagementServerHostVO currentServer = mock(ManagementServerHostVO.class);
+
+        when(extension.getName()).thenReturn("test-extension");
+        when(extension.getRelativePath()).thenReturn("relative/path");
+        when(currentServer.getMsid()).thenReturn(ManagementServerNode.getManagementServerId());
+        when(managementServerHostDao.listBy(ManagementServerHost.State.Up)).thenReturn(List.of(currentServer));
+        when(extensionsManager.cleanupExtensionFilesOnCurrentServer("test-extension", "relative/path")).thenReturn(new Pair<>(false, null));
+
+        extensionsManager.cleanupExtensionFilesAcrossServers(extension);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void cleanupExtensionFilesAcrossServersThrowsWhenCleanupFailsOnPeerServer() {
+        Extension extension = mock(Extension.class);
+        ManagementServerHostVO currentServer = mock(ManagementServerHostVO.class);
+        ManagementServerHostVO peerServer = mock(ManagementServerHostVO.class);
+
+        when(extension.getName()).thenReturn("test-extension");
+        when(extension.getRelativePath()).thenReturn("relative/path");
+        when(currentServer.getMsid()).thenReturn(ManagementServerNode.getManagementServerId());
+        when(peerServer.getMsid()).thenReturn(2L);
+        when(managementServerHostDao.listBy(ManagementServerHost.State.Up)).thenReturn(List.of(currentServer, peerServer));
+        when(extensionsManager.cleanupExtensionFilesOnCurrentServer("test-extension", "relative/path")).thenReturn(new Pair<>(true, null));
+        when(extensionsManager.cleanupExtensionFilesOnMSPeer(extension, peerServer)).thenReturn(false);
+
+        extensionsManager.cleanupExtensionFilesAcrossServers(extension);
     }
 
     @Test
@@ -1820,6 +1883,39 @@ public class ExtensionsManagerImplTest {
     }
 
     @Test
+    public void handleExtensionServerCommands_StartSyncExtensionFilesCommand_ReturnsSuccessAnswer() {
+        StartSyncExtensionFilesCommand cmd = mock(StartSyncExtensionFilesCommand.class);
+        doReturn(new Pair<>(true, "sync123")).when(extensionsManager)
+                .startSyncExtensionFiles(cmd);
+
+        String json = extensionsManager.handleExtensionServerCommands(cmd);
+        assertTrue(json.contains("\"result\":true"));
+        assertTrue(json.contains("sync123"));
+    }
+
+    @Test
+    public void handleExtensionServerCommands_DownloadAndSyncExtensionFilesCommand_ReturnsSuccessAnswer() {
+        DownloadAndSyncExtensionFilesCommand cmd = mock(DownloadAndSyncExtensionFilesCommand.class);
+        doReturn(new Pair<>(false, "download-sync-123")).when(extensionsManager)
+                .downloadAndSyncExtensionFiles(cmd);
+
+        String json = extensionsManager.handleExtensionServerCommands(cmd);
+        assertTrue(json.contains("\"result\":false"));
+        assertTrue(json.contains("download-sync-123"));
+    }
+
+    @Test
+    public void handleExtensionServerCommands_PrepareDownloadExtensionFilesCommand_ReturnsSuccessAnswer() {
+        PrepareDownloadExtensionFilesCommand cmd = mock(PrepareDownloadExtensionFilesCommand.class);
+        doReturn(new Pair<>(false, "download-123")).when(extensionsManager)
+                .prepareDownloadExtensionFiles(cmd);
+
+        String json = extensionsManager.handleExtensionServerCommands(cmd);
+        assertTrue(json.contains("\"result\":false"));
+        assertTrue(json.contains("download-123"));
+    }
+
+    @Test
     public void handleExtensionServerCommands_UnsupportedCommand_ReturnsUnsupportedAnswer() {
         ExtensionServerActionBaseCommand cmd = mock(ExtensionServerActionBaseCommand.class);
         when(cmd.getExtensionName()).thenReturn("ext");
@@ -2124,7 +2220,7 @@ public class ExtensionsManagerImplTest {
         when(clusterManager.execute(eq("1"), eq(0L), anyString(), eq(true))).thenReturn("some");
         doReturn(new Pair<>(true, "Sync successful")).when(extensionsManager)
                 .getResultFromAnswersString("some", extension, sourceManagementServer, "sync");
-        Pair<Boolean, String> result =extensionsManager.syncExtensionUsingMSPeer(extension, sourceManagementServer,
+        Pair<Boolean, String> result = extensionsManager.syncExtensionUsingMSPeer(extension, sourceManagementServer,
                 targetManagementServers, files);
         assertTrue(result.first());
         assertEquals("Sync successful", result.second());
@@ -2418,5 +2514,234 @@ public class ExtensionsManagerImplTest {
             extensionsManager.syncExtension(cmd);
             verify(extensionsManager, never()).checkExtensionPathState(extension);
         }
+    }
+
+    @Test
+    public void downloadExtensionUsingMSPeerReturnsSuccessWhenDownloadSucceeds() {
+        ExtensionVO extension = mock(ExtensionVO.class);
+        ManagementServerHostVO managementServer = mock(ManagementServerHostVO.class);
+        when(managementServer.getMsid()).thenReturn(1L);
+        when(clusterManager.execute(eq("1"), eq(0L), anyString(), eq(true))).thenReturn("some");
+        doReturn(new Pair<>(true, "Download successful")).when(extensionsManager)
+                .getResultFromAnswersString("some", extension, managementServer, "download");
+
+        Pair<Boolean, String> result = extensionsManager.downloadExtensionUsingMSPeer(extension, managementServer);
+
+        assertTrue(result.first());
+        assertEquals("Download successful", result.second());
+    }
+
+    @Test
+    public void downloadExtensionUsingMSPeerReturnsFailureWhenDownloadFails() {
+        ExtensionVO extension = mock(ExtensionVO.class);
+        ManagementServerHostVO managementServer = mock(ManagementServerHostVO.class);
+        when(managementServer.getMsid()).thenReturn(1L);
+        when(clusterManager.execute(eq("1"), eq(0L), anyString(), eq(true))).thenReturn("some");
+        doReturn(new Pair<>(false, "Download failed")).when(extensionsManager)
+                .getResultFromAnswersString("some", extension, managementServer, "download");
+
+        Pair<Boolean, String> result = extensionsManager.downloadExtensionUsingMSPeer(extension, managementServer);
+
+        assertFalse(result.first());
+        assertEquals("Download failed", result.second());
+    }
+
+    @Test
+    public void downloadExtensionUsingMSPeerHandlesNullResponseFromClusterManager() {
+        ExtensionVO extension = mock(ExtensionVO.class);
+        ManagementServerHostVO managementServer = mock(ManagementServerHostVO.class);
+        when(managementServer.getMsid()).thenReturn(1L);
+        when(clusterManager.execute(eq("1"), eq(0L), anyString(), eq(true))).thenReturn(null);
+
+        Pair<Boolean, String> result = extensionsManager.downloadExtensionUsingMSPeer(extension, managementServer);
+
+        assertFalse(result.first());
+        assertEquals("Unknown error", result.second());
+    }
+
+    @Test
+    public void downloadExtensionUsingMSPeerHandlesEmptyResponseFromClusterManager() {
+        ExtensionVO extension = mock(ExtensionVO.class);
+        ManagementServerHostVO managementServer = mock(ManagementServerHostVO.class);
+        when(managementServer.getMsid()).thenReturn(1L);
+        when(clusterManager.execute(eq("1"), eq(0L), anyString(), eq(true))).thenReturn("");
+
+        Pair<Boolean, String> result = extensionsManager.downloadExtensionUsingMSPeer(extension, managementServer);
+
+        assertFalse(result.first());
+        assertEquals("Unknown error", result.second());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void downloadExtensionUsingMSPeerThrowsExceptionWhenClusterManagerFails() {
+        ExtensionVO extension = mock(ExtensionVO.class);
+        ManagementServerHostVO managementServer = mock(ManagementServerHostVO.class);
+        when(managementServer.getMsid()).thenReturn(1L);
+        when(clusterManager.execute(eq("1"), eq(0L), anyString(), eq(true)))
+            .thenThrow(new CloudRuntimeException("Cluster manager failure"));
+
+        extensionsManager.downloadExtensionUsingMSPeer(extension, managementServer);
+    }
+
+    @Test
+    public void prepareDownloadExtensionFilesReturnsFailureWhenExtensionNotFound() {
+        PrepareDownloadExtensionFilesCommand cmd = mock(PrepareDownloadExtensionFilesCommand.class);
+        when(cmd.getExtensionId()).thenReturn(1L);
+        when(extensionDao.findById(1L)).thenReturn(null);
+
+        Pair<Boolean, String> result = extensionsManager.prepareDownloadExtensionFiles(cmd);
+
+        assertFalse(result.first());
+        assertEquals("Unable to find extension with id: 1 for starting sync", result.second());
+    }
+
+    @Test
+    public void downloadExtensionFilesReturnsSuccessWhenExtensionExists() {
+        PrepareDownloadExtensionFilesCommand cmd = mock(PrepareDownloadExtensionFilesCommand.class);
+        ExtensionVO extension = mock(ExtensionVO.class);
+        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+        Pair<Boolean, String> expectedResult = new Pair<>(true, "Download successful");
+
+        when(cmd.getExtensionId()).thenReturn(1L);
+        when(extensionDao.findById(1L)).thenReturn(extension);
+        when(managementServerHostDao.findByMsid(ManagementServerNode.getManagementServerId())).thenReturn(msHost);
+        when(extensionsShareManager.prepareExtensionDownload(extension, msHost)).thenReturn(expectedResult);
+
+        Pair<Boolean, String> result = extensionsManager.prepareDownloadExtensionFiles(cmd);
+
+        assertTrue(result.first());
+        assertEquals("Download successful", result.second());
+    }
+
+    @Test
+    public void downloadExtensionFilesReturnsFailureWhenPrepareDownloadFails() {
+        PrepareDownloadExtensionFilesCommand cmd = mock(PrepareDownloadExtensionFilesCommand.class);
+        ExtensionVO extension = mock(ExtensionVO.class);
+        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+        Pair<Boolean, String> expectedResult = new Pair<>(false, "Download failed");
+
+        when(cmd.getExtensionId()).thenReturn(1L);
+        when(extensionDao.findById(1L)).thenReturn(extension);
+        when(managementServerHostDao.findByMsid(ManagementServerNode.getManagementServerId())).thenReturn(msHost);
+        when(extensionsShareManager.prepareExtensionDownload(extension, msHost)).thenReturn(expectedResult);
+
+        Pair<Boolean, String> result = extensionsManager.prepareDownloadExtensionFiles(cmd);
+
+        assertFalse(result.first());
+        assertEquals("Download failed", result.second());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void downloadExtensionThrowsWhenExtensionNotFound() {
+        DownloadExtensionCmd cmd = mock(DownloadExtensionCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(extensionDao.findById(1L)).thenReturn(null);
+
+        extensionsManager.downloadExtension(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void downloadExtensionThrowsWhenManagementServerNotFound() {
+        DownloadExtensionCmd cmd = mock(DownloadExtensionCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(cmd.getManagementServerId()).thenReturn(2L);
+        when(extensionDao.findById(1L)).thenReturn(mock(ExtensionVO.class));
+        when(managementServerHostDao.findById(2L)).thenReturn(null);
+
+        extensionsManager.downloadExtension(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void downloadExtensionThrowsWhenManagementServerNotUp() {
+        DownloadExtensionCmd cmd = mock(DownloadExtensionCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(cmd.getManagementServerId()).thenReturn(2L);
+        when(extensionDao.findById(1L)).thenReturn(mock(ExtensionVO.class));
+        ManagementServerHostVO managementServer = mock(ManagementServerHostVO.class);
+        when(managementServer.getState()).thenReturn(ManagementServerHost.State.Down);
+        when(managementServerHostDao.findById(2L)).thenReturn(managementServer);
+
+        extensionsManager.downloadExtension(cmd);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void downloadExtensionThrowsWhenDownloadFails() {
+        DownloadExtensionCmd cmd = mock(DownloadExtensionCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(cmd.getManagementServerId()).thenReturn(null);
+        ExtensionVO extension = mock(ExtensionVO.class);
+        when(extensionDao.findById(1L)).thenReturn(extension);
+        ManagementServerHostVO managementServer = mock(ManagementServerHostVO.class);
+        when(managementServer.getState()).thenReturn(ManagementServerHost.State.Up);
+        when(managementServer.getMsid()).thenReturn(ManagementServerNode.getManagementServerId());
+        when(managementServerHostDao.findByMsid(ManagementServerNode.getManagementServerId())).thenReturn(managementServer);
+        when(extensionsShareManager.prepareExtensionDownload(extension, managementServer)).thenReturn(new Pair<>(false, "Download failed"));
+
+        extensionsManager.downloadExtension(cmd);
+    }
+
+    @Test
+    public void downloadExtensionReturnsResponseWhenDownloadSucceeds() {
+        String extUuid = "ext-uuid";
+        String extName = "ext-name";
+        String msUuid = "ms-uuid";
+        String msName = "ms-name";
+        String url = "http://example.com";
+        DownloadExtensionCmd cmd = mock(DownloadExtensionCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(cmd.getManagementServerId()).thenReturn(null);
+        ExtensionVO extension = mock(ExtensionVO.class);
+        when(extension.getUuid()).thenReturn(extUuid);
+        when(extension.getName()).thenReturn(extName);
+        ManagementServerHostVO managementServer = mock(ManagementServerHostVO.class);
+        when(managementServer.getMsid()).thenReturn(12345L);
+        when(managementServer.getUuid()).thenReturn(msUuid);
+        when(managementServer.getName()).thenReturn(msName);
+        when(managementServer.getState()).thenReturn(ManagementServerHost.State.Up);
+        when(extensionDao.findById(1L)).thenReturn(extension);
+        when(managementServerHostDao.findByMsid(12345L)).thenReturn(managementServer);
+        when(extensionsShareManager.prepareExtensionDownload(extension, managementServer)).thenReturn(new Pair<>(true, url));
+
+        try (MockedStatic<ManagementServerNode> managementServerNodeMock = mockStatic(ManagementServerNode.class)) {
+            managementServerNodeMock.when(ManagementServerNode::getManagementServerId).thenReturn(12345L);
+            DownloadExtensionResponse response = extensionsManager.downloadExtension(cmd);
+
+            assertNotNull(response);
+            assertEquals(extUuid, response.getId());
+            assertEquals(extName, response.getName());
+            assertEquals(msUuid, response.getManagementServerId());
+            assertEquals(msName, response.getManagementServerName());
+            assertEquals(url, response.getUrl());
+        }
+    }
+
+    @Test
+    public void downloadExtensionReturnsResponseWhenDownloadSucceedsUsingMSPeer() {
+        String extUuid = "ext-uuid";
+        String extName = "ext-name";
+        String msUuid = "ms-uuid";
+        String msName = "ms-name";
+        String url = "http://example.com";
+        DownloadExtensionCmd cmd = mock(DownloadExtensionCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(cmd.getManagementServerId()).thenReturn(100L);
+        ExtensionVO extension = mock(ExtensionVO.class);
+        when(extension.getUuid()).thenReturn(extUuid);
+        when(extension.getName()).thenReturn(extName);
+        ManagementServerHostVO managementServer = mock(ManagementServerHostVO.class);
+        when(managementServer.getUuid()).thenReturn(msUuid);
+        when(managementServer.getName()).thenReturn(msName);
+        when(managementServer.getState()).thenReturn(ManagementServerHost.State.Up);
+        when(extensionDao.findById(1L)).thenReturn(extension);
+        when(managementServerHostDao.findById(anyLong())).thenReturn(managementServer);
+        doReturn(new Pair<>(true, url)).when(extensionsManager).downloadExtensionUsingMSPeer(extension, managementServer);
+        DownloadExtensionResponse response = extensionsManager.downloadExtension(cmd);
+
+        assertNotNull(response);
+        assertEquals(extUuid, response.getId());
+        assertEquals(extName, response.getName());
+        assertEquals(msUuid, response.getManagementServerId());
+        assertEquals(msName, response.getManagementServerName());
+        assertEquals(url, response.getUrl());
     }
 }

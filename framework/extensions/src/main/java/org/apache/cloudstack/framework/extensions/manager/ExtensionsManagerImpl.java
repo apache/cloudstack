@@ -78,10 +78,10 @@ import org.apache.cloudstack.framework.extensions.api.UpdateExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.response.DownloadExtensionResponse;
 import org.apache.cloudstack.framework.extensions.command.CleanupExtensionFilesCommand;
 import org.apache.cloudstack.framework.extensions.command.DownloadAndSyncExtensionFilesCommand;
-import org.apache.cloudstack.framework.extensions.command.DownloadExtensionFilesCommand;
 import org.apache.cloudstack.framework.extensions.command.ExtensionRoutingUpdateCommand;
 import org.apache.cloudstack.framework.extensions.command.ExtensionServerActionBaseCommand;
 import org.apache.cloudstack.framework.extensions.command.GetExtensionPathChecksumCommand;
+import org.apache.cloudstack.framework.extensions.command.PrepareDownloadExtensionFilesCommand;
 import org.apache.cloudstack.framework.extensions.command.PrepareExtensionPathCommand;
 import org.apache.cloudstack.framework.extensions.command.StartSyncExtensionFilesCommand;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionCustomActionDao;
@@ -1575,9 +1575,9 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             final DownloadAndSyncExtensionFilesCommand cmd = (DownloadAndSyncExtensionFilesCommand)command;
             Pair<Boolean, String> result = downloadAndSyncExtensionFiles(cmd);
             answer = new Answer(cmd, result.first(), result.second());
-        } else if (command instanceof DownloadExtensionFilesCommand) {
-            final DownloadExtensionFilesCommand cmd = (DownloadExtensionFilesCommand)command;
-            Pair<Boolean, String> result = downloadExtensionFiles(cmd);
+        } else if (command instanceof PrepareDownloadExtensionFilesCommand) {
+            final PrepareDownloadExtensionFilesCommand cmd = (PrepareDownloadExtensionFilesCommand)command;
+            Pair<Boolean, String> result = prepareDownloadExtensionFiles(cmd);
             answer = new Answer(cmd, result.first(), result.second());
         }
         final Answer[] answers = new Answer[1];
@@ -1767,13 +1767,13 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         logger.debug("Initiating download for {} using {}", extension, managementServer);
         final String msPeer = Long.toString(managementServer.getMsid());
         final Command[] cmds = new Command[1];
-        cmds[0] = new DownloadExtensionFilesCommand(
+        cmds[0] = new PrepareDownloadExtensionFilesCommand(
                 ManagementServerNode.getManagementServerId(), extension);
         String answersStr = clusterManager.execute(msPeer, 0L, GsonHelper.getGson().toJson(cmds), true);
         return getResultFromAnswersString(answersStr, extension, managementServer, "download");
     }
 
-    protected Pair<Boolean, String> downloadExtensionFiles(DownloadExtensionFilesCommand cmd) {
+    protected Pair<Boolean, String> prepareDownloadExtensionFiles(PrepareDownloadExtensionFilesCommand cmd) {
         final long extensionId = cmd.getExtensionId();
         final ExtensionVO extension = extensionDao.findById(extensionId);
         if (extension == null) {
@@ -1781,7 +1781,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             logger.error(msg);
             return new Pair<>(false, msg);
         }
-        return extensionsShareManager.downloadExtension(extension,
+        return extensionsShareManager.prepareExtensionDownload(extension,
                 managementServerHostDao.findByMsid(ManagementServerNode.getManagementServerId()));
     }
 
@@ -1803,7 +1803,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         if (ManagementServerNode.getManagementServerId() != managementServer.getMsid()) {
             result = downloadExtensionUsingMSPeer(extension, managementServer);
         } else {
-            result = extensionsShareManager.downloadExtension(extension, managementServer);
+            result = extensionsShareManager.prepareExtensionDownload(extension, managementServer);
         }
         if (result == null || !result.first()) {
             String msg = result == null ? "Null result received for download operation" : result.second();

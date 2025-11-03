@@ -19,9 +19,9 @@ package org.apache.cloudstack.framework.extensions.command;
 
 import org.apache.cloudstack.extension.Extension;
 
-public class DownloadExtensionFilesCommand extends ExtensionServerActionBaseCommand {
+public class PrepareDownloadExtensionFilesCommand extends ExtensionServerActionBaseCommand {
 
-    public DownloadExtensionFilesCommand(long msId, Extension extension) {
+    public PrepareDownloadExtensionFilesCommand(long msId, Extension extension) {
         super(msId, extension);
     }
 }

@@ -789,7 +789,7 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
     }
 
     @Override
-    public Pair<Boolean, String> downloadExtension(Extension extension, ManagementServerHost managementServer) {
+    public Pair<Boolean, String> prepareExtensionDownload(Extension extension, ManagementServerHost managementServer) {
         ArchiveInfo archiveInfo;
         try {
             archiveInfo = createArchiveForDownload(extension);

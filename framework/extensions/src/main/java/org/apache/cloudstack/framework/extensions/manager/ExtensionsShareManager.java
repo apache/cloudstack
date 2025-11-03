@@ -32,5 +32,5 @@ public interface ExtensionsShareManager {
 
     Pair<Boolean, String> downloadAndApplyExtensionSync(Extension extension, DownloadAndSyncExtensionFilesCommand cmd);
 
-    Pair<Boolean, String> downloadExtension(Extension extension, ManagementServerHost managementServer);
+    Pair<Boolean, String> prepareExtensionDownload(Extension extension, ManagementServerHost managementServer);
 }
