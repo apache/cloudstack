@@ -20,6 +20,7 @@ package org.apache.cloudstack.framework.extensions.manager;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,6 +32,9 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
@@ -43,11 +47,29 @@ import java.nio.file.attribute.FileTime;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.extension.Extension;
+import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
+import org.apache.cloudstack.framework.extensions.ExtensionArchiveDataObject;
 import org.apache.cloudstack.framework.extensions.command.DownloadAndSyncExtensionFilesCommand;
+import org.apache.cloudstack.framework.extensions.dao.ExtensionDao;
+import org.apache.cloudstack.framework.extensions.dao.ExtensionDetailsDao;
+import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
 import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.utils.filesystem.ArchiveUtil;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.cloudstack.utils.security.HMACSignUtil;
 import org.apache.cloudstack.utils.server.ServerPropertiesUtil;
@@ -62,12 +84,21 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.to.DataTO;
 import com.cloud.cluster.ClusterManager;
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Upload;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.HttpUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.SecondaryStorageVmVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.SecondaryStorageVmDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ExtensionsShareManagerImplTest {
@@ -77,6 +108,25 @@ public class ExtensionsShareManagerImplTest {
 
     @Mock
     ClusterManager clusterManager;
+
+    @Mock
+    DataCenterDao dataCenterDao;
+
+    @Mock
+    SecondaryStorageVmDao secondaryStorageVmDao;
+
+    @Mock
+    DataStoreManager dataStoreManager;
+
+    @Mock
+    ExtensionDao extensionDao;
+
+    @Mock
+    ExtensionDetailsDao extensionDetailsDao;
+
+    @Mock
+    ManagementServerHostDao managementServerHostDao;
+
 
     @Spy
     @InjectMocks
@@ -1053,5 +1103,350 @@ public class ExtensionsShareManagerImplTest {
         Pair<Boolean, String> result = extensionsShareManager.downloadExtension(extension, managementServer);
         assertFalse(result.first());
         assertEquals("Signed URL generation failed", result.second());
+    }
+
+    @Test
+    public void downloadExtensionViaSecondaryStorageReturnsSuccessWhenZoneAndStorageAvailable()
+            throws ExecutionException, InterruptedException {
+        Extension extension = mock(Extension.class);
+        ExtensionsShareManagerImpl.ArchiveInfo archiveInfo = mock(ExtensionsShareManagerImpl.ArchiveInfo.class);
+        when(archiveInfo.getSize()).thenReturn(1024L);
+        when(archiveInfo.getChecksum()).thenReturn("checksum123");
+        String downloadUrl = "http://example.com/archive.zip";
+
+        List<Long> zoneIds = List.of(1L, 2L);
+        when(dataCenterDao.listEnabledNonEdgeZoneIds()).thenReturn(zoneIds);
+
+        SecondaryStorageVmVO ssvm = mock(SecondaryStorageVmVO.class);
+        when(secondaryStorageVmDao.getSecStorageVmListInStates(null, 1L, VirtualMachine.State.Running))
+                .thenReturn(List.of(ssvm));
+
+        ImageStoreEntity imageStore = mock(ImageStoreEntity.class);
+        when(dataStoreManager.getImageStoreWithFreeCapacity(1L)).thenReturn(imageStore);
+
+        AsyncCallFuture<DataObject> future = mock(AsyncCallFuture.class);
+        DataObject dataObject = mock(DataObject.class);
+        DataTO dataTO = mock(DataTO.class);
+        when(dataObject.getTO()).thenReturn(dataTO);
+        when(dataTO.getPath()).thenReturn("path/to/archive.zip");
+        when(future.get()).thenReturn(dataObject);
+        doReturn(future).when(extensionsShareManager)
+                .downloadExtensionArchiveOnSecondaryStorage(eq(imageStore), any(DataObject.class), eq(extension),
+                        eq(archiveInfo));
+        doNothing().when(extensionsShareManager).cleanupExistingExtensionDownloadArchiveAndDetails(extension, null);
+        when(imageStore.createEntityExtractUrl(anyString(), any(), any())).thenReturn(downloadUrl);
+
+        Pair<Boolean, String> result = extensionsShareManager.downloadExtensionViaSecondaryStorage(extension,
+                archiveInfo, downloadUrl);
+
+        assertTrue(result.first());
+        assertEquals(downloadUrl, result.second());
+    }
+
+    @Test
+    public void downloadExtensionViaSecondaryStorageReturnsFailureWhenNoZonesAvailable() {
+        Extension extension = mock(Extension.class);
+        ExtensionsShareManagerImpl.ArchiveInfo archiveInfo = mock(ExtensionsShareManagerImpl.ArchiveInfo.class);
+        String downloadUrl = "http://example.com/archive.zip";
+
+        when(dataCenterDao.listEnabledNonEdgeZoneIds()).thenReturn(Collections.emptyList());
+
+        Pair<Boolean, String> result = extensionsShareManager.downloadExtensionViaSecondaryStorage(extension,
+                archiveInfo, downloadUrl);
+
+        assertFalse(result.first());
+        assertEquals("No enabled zone found for extension download via secondary storage", result.second());
+    }
+
+    @Test
+    public void downloadExtensionViaSecondaryStorageReturnsFailureWhenNoStorageAvailable() {
+        Extension extension = mock(Extension.class);
+        ExtensionsShareManagerImpl.ArchiveInfo archiveInfo = mock(ExtensionsShareManagerImpl.ArchiveInfo.class);
+        String downloadUrl = "http://example.com/archive.zip";
+
+        List<Long> zoneIds = List.of(1L);
+        when(dataCenterDao.listEnabledNonEdgeZoneIds()).thenReturn(zoneIds);
+
+        when(secondaryStorageVmDao.getSecStorageVmListInStates(null, 1L, VirtualMachine.State.Running))
+                .thenReturn(Collections.emptyList());
+
+        Pair<Boolean, String> result = extensionsShareManager.downloadExtensionViaSecondaryStorage(extension,
+                archiveInfo, downloadUrl);
+
+        assertFalse(result.first());
+        assertEquals("No secondary storage with sufficient capacity found for extension download", result.second());
+    }
+
+    @Test
+    public void downloadExtensionViaSecondaryStorageReturnsFailureWhenDownloadFails() throws Exception {
+        Extension extension = mock(Extension.class);
+        ExtensionsShareManagerImpl.ArchiveInfo archiveInfo = mock(ExtensionsShareManagerImpl.ArchiveInfo.class);
+        when(archiveInfo.getSize()).thenReturn(1024L);
+        when(archiveInfo.getChecksum()).thenReturn("checksum123");
+        String downloadUrl = "http://example.com/archive.zip";
+
+        List<Long> zoneIds = List.of(1L);
+        when(dataCenterDao.listEnabledNonEdgeZoneIds()).thenReturn(zoneIds);
+
+        SecondaryStorageVmVO ssvm = mock(SecondaryStorageVmVO.class);
+        when(secondaryStorageVmDao.getSecStorageVmListInStates(null, 1L, VirtualMachine.State.Running))
+                .thenReturn(List.of(ssvm));
+
+        ImageStoreEntity imageStore = mock(ImageStoreEntity.class);
+        when(dataStoreManager.getImageStoreWithFreeCapacity(1L)).thenReturn(imageStore);
+
+        AsyncCallFuture<DataObject> future = mock(AsyncCallFuture.class);
+        when(future.get()).thenReturn(null);
+        doReturn(future).when(extensionsShareManager)
+                .downloadExtensionArchiveOnSecondaryStorage(eq(imageStore), any(DataObject.class), eq(extension),
+                        eq(archiveInfo));
+
+        Pair<Boolean, String> result = extensionsShareManager.downloadExtensionViaSecondaryStorage(extension,
+                archiveInfo, downloadUrl);
+
+        assertFalse(result.first());
+        assertEquals("Failed to download extension archive to secondary storage", result.second());
+    }
+
+    @Test
+    public void cleanupExistingExtensionDownloadArchiveAndDetailsRemovesDetailsWhenUrlExists() {
+        Extension extension = mock(Extension.class);
+        when(extension.getId()).thenReturn(1L);
+
+        Map<String, String> details = Map.of(
+                ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_URL_DETAIL_KEY, "http://example.com/archive.zip",
+                ApiConstants.IMAGE_STORE_ID, "123",
+                ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_TIMESTAMP_DETAIL_KEY, "1000",
+                ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_PATH_DETAIL_KEY, "/path/to/archive.zip"
+        );
+        when(extensionDetailsDao.listDetailsKeyPairs(1L, false)).thenReturn(details);
+
+        ImageStoreEntity store = mock(ImageStoreEntity.class);
+        when(dataStoreManager.getDataStore(123L, DataStoreRole.Image)).thenReturn(store);
+
+        extensionsShareManager.cleanupExistingExtensionDownloadArchiveAndDetails(extension, null);
+
+        verify(store).deleteExtractUrl("/path/to/archive.zip", "http://example.com/archive.zip", Upload.Type.ARCHIVE);
+        verify(extensionDetailsDao).removeDetail(1L, ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_URL_DETAIL_KEY);
+        verify(extensionDetailsDao).removeDetail(1L, ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_TIMESTAMP_DETAIL_KEY);
+        verify(extensionDetailsDao).removeDetail(1L, ApiConstants.IMAGE_STORE_ID);
+        verify(extensionDetailsDao).removeDetail(1L, ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_PATH_DETAIL_KEY);
+    }
+
+    @Test
+    public void cleanupExistingExtensionDownloadArchiveAndDetailsSkipsWhenNoUrlExists() {
+        Extension extension = mock(Extension.class);
+        when(extension.getId()).thenReturn(1L);
+
+        Map<String, String> details = Map.of();
+        when(extensionDetailsDao.listDetailsKeyPairs(1L, false)).thenReturn(details);
+
+        extensionsShareManager.cleanupExistingExtensionDownloadArchiveAndDetails(extension, null);
+
+        verifyNoInteractions(dataStoreManager);
+        verify(extensionDetailsDao, never()).removeDetail(anyLong(), anyString());
+    }
+
+    @Test
+    public void cleanupExistingExtensionDownloadArchiveAndDetailsSkipsWhenCutoffNotMet() {
+        Extension extension = mock(Extension.class);
+        when(extension.getId()).thenReturn(1L);
+
+        Map<String, String> details = Map.of(
+                ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_URL_DETAIL_KEY, "http://example.com/archive.zip",
+                ApiConstants.IMAGE_STORE_ID, "123",
+                ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_TIMESTAMP_DETAIL_KEY, "2000",
+                ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_PATH_DETAIL_KEY, "/path/to/archive.zip"
+        );
+        when(extensionDetailsDao.listDetailsKeyPairs(1L, false)).thenReturn(details);
+
+        extensionsShareManager.cleanupExistingExtensionDownloadArchiveAndDetails(extension, 1500L);
+
+        verifyNoInteractions(dataStoreManager);
+        verify(extensionDetailsDao, never()).removeDetail(anyLong(), anyString());
+    }
+
+    @Test
+    public void cleanupExistingExtensionDownloadArchiveAndDetailsHandlesMissingStoreGracefully() {
+        Extension extension = mock(Extension.class);
+        when(extension.getId()).thenReturn(1L);
+
+        Map<String, String> details = Map.of(
+                ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_URL_DETAIL_KEY, "http://example.com/archive.zip",
+                ApiConstants.IMAGE_STORE_ID, "123",
+                ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_TIMESTAMP_DETAIL_KEY, "1000",
+                ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_PATH_DETAIL_KEY, "/path/to/archive.zip"
+        );
+        when(extensionDetailsDao.listDetailsKeyPairs(1L, false)).thenReturn(details);
+
+        when(dataStoreManager.getDataStore(123L, DataStoreRole.Image)).thenReturn(null);
+
+        extensionsShareManager.cleanupExistingExtensionDownloadArchiveAndDetails(extension, null);
+
+        verify(extensionDetailsDao).removeDetail(1L, ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_URL_DETAIL_KEY);
+        verify(extensionDetailsDao).removeDetail(1L, ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_TIMESTAMP_DETAIL_KEY);
+        verify(extensionDetailsDao).removeDetail(1L, ApiConstants.IMAGE_STORE_ID);
+        verify(extensionDetailsDao).removeDetail(1L, ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_PATH_DETAIL_KEY);
+    }
+
+    @Test
+    public void cleanupExistingExtensionDownloadArchiveAndDetailsHandlesCloudRuntimeException() {
+        Extension extension = mock(Extension.class);
+        when(extension.getId()).thenReturn(1L);
+
+        Map<String, String> details = Map.of(
+                ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_URL_DETAIL_KEY, "http://example.com/archive.zip",
+                ApiConstants.IMAGE_STORE_ID, "123",
+                ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_TIMESTAMP_DETAIL_KEY, "1000",
+                ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_PATH_DETAIL_KEY, "/path/to/archive.zip"
+        );
+        when(extensionDetailsDao.listDetailsKeyPairs(1L, false)).thenReturn(details);
+
+        DataStore store = mock(ImageStoreEntity.class);
+        when(dataStoreManager.getDataStore(123L, DataStoreRole.Image)).thenReturn(store);
+        doThrow(new CloudRuntimeException("Error")).when((ImageStoreEntity) store).deleteExtractUrl(
+                anyString(), anyString(), any());
+
+        extensionsShareManager.cleanupExistingExtensionDownloadArchiveAndDetails(extension, null);
+
+        verify(extensionDetailsDao, never()).removeDetail(anyLong(), anyString());
+    }
+
+    @Test
+    public void downloadExtensionArchiveOnSecondaryStorageCompletesSuccessfully() {
+        DataStore imageStore = mock(DataStore.class);
+        DataStoreDriver imageStoreDriver = mock(DataStoreDriver.class);
+        when(imageStore.getDriver()).thenReturn(imageStoreDriver);
+        DataObject archiveOnStore = mock(DataObject.class);
+        Extension extension = mock(Extension.class);
+        ExtensionsShareManagerImpl.ArchiveInfo archiveInfo = mock(ExtensionsShareManagerImpl.ArchiveInfo.class);
+
+        doNothing().when(imageStoreDriver).createAsync(eq(imageStore), eq(archiveOnStore), any());
+
+        AsyncCallFuture<DataObject> result = extensionsShareManager.downloadExtensionArchiveOnSecondaryStorage(
+                imageStore, archiveOnStore, extension, archiveInfo);
+
+        assertNotNull(result);
+    }
+
+    @Test
+    public void downloadExtensionArchiveOnSecondaryStorageHandlesCloudRuntimeException()
+            throws ExecutionException, InterruptedException {
+        DataStore imageStore = mock(DataStore.class);
+        DataObject archiveOnStore = mock(DataObject.class);
+        Extension extension = mock(Extension.class);
+        ExtensionsShareManagerImpl.ArchiveInfo archiveInfo = mock(ExtensionsShareManagerImpl.ArchiveInfo.class);
+
+        when(imageStore.getDriver()).thenThrow(new CloudRuntimeException("Error"));
+
+        AsyncCallFuture<DataObject> result = extensionsShareManager.downloadExtensionArchiveOnSecondaryStorage(
+                imageStore, archiveOnStore, extension, archiveInfo);
+
+        assertNotNull(result);
+        assertNull(result.get());
+    }
+
+    @Test
+    public void downloadExtensionArchiveAsyncCallbackCompletesSuccessfully()
+            throws ExecutionException, InterruptedException {
+        CreateCmdResult result = mock(CreateCmdResult.class);
+        when(result.isSuccess()).thenReturn(true);
+        when(result.getPath()).thenReturn("path/to/archive");
+
+        ExtensionArchiveDataObject dataObject = mock(ExtensionArchiveDataObject.class);
+        AsyncCallFuture<DataObject> future = new AsyncCallFuture<>();
+        ExtensionsShareManagerImpl.DownloadExtensionArchiveOnSecondaryStorageContext<CommandResult> context =
+                new ExtensionsShareManagerImpl.DownloadExtensionArchiveOnSecondaryStorageContext<>(
+                        null, null, null, dataObject, future);
+
+        AsyncCallbackDispatcher<ExtensionsShareManagerImpl, CreateCmdResult> callback =
+                mock(AsyncCallbackDispatcher.class);
+        when(callback.getResult()).thenReturn(result);
+
+        extensionsShareManager.downloadExtensionArchiveOnSecondaryStorageAsyncCallback(callback, context);
+
+        assertNotNull(future.get());
+        verify(dataObject).setPath("path/to/archive");
+        verify(dataObject).processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed);
+    }
+
+    @Test
+    public void downloadExtensionArchiveAsyncCallbackHandlesNullResult()
+            throws ExecutionException, InterruptedException {
+        AsyncCallFuture<DataObject> future = new AsyncCallFuture<>();
+        ExtensionsShareManagerImpl.DownloadExtensionArchiveOnSecondaryStorageContext<CommandResult> context =
+                new ExtensionsShareManagerImpl.DownloadExtensionArchiveOnSecondaryStorageContext<>(
+                        null, null, null, mock(DataObject.class), future);
+
+        AsyncCallbackDispatcher<ExtensionsShareManagerImpl, CreateCmdResult> callback =
+                mock(AsyncCallbackDispatcher.class);
+        when(callback.getResult()).thenReturn(null);
+
+        extensionsShareManager.downloadExtensionArchiveOnSecondaryStorageAsyncCallback(callback, context);
+
+        assertNull(future.get());
+    }
+
+    @Test
+    public void downloadExtensionArchiveAsyncCallbackHandlesFailedResult()
+            throws ExecutionException, InterruptedException {
+        CreateCmdResult result = mock(CreateCmdResult.class);
+        when(result.isSuccess()).thenReturn(false);
+        when(result.getResult()).thenReturn("Error");
+
+        AsyncCallFuture<DataObject> future = new AsyncCallFuture<>();
+        ExtensionsShareManagerImpl.DownloadExtensionArchiveOnSecondaryStorageContext<CommandResult> context =
+                new ExtensionsShareManagerImpl.DownloadExtensionArchiveOnSecondaryStorageContext<>(
+                        null, null, null, mock(DataObject.class), future);
+
+        AsyncCallbackDispatcher<ExtensionsShareManagerImpl, CreateCmdResult> callback = mock(AsyncCallbackDispatcher.class);
+        when(callback.getResult()).thenReturn(result);
+
+        extensionsShareManager.downloadExtensionArchiveOnSecondaryStorageAsyncCallback(callback, context);
+
+        assertNull(future.get());
+    }
+
+    @Test
+    public void cleanupExtensionsShareFilesOnSecondaryStorageSkipsWhenNoManagementServerHost() {
+        when(managementServerHostDao.findOneByLongestRuntime()).thenReturn(null);
+
+        extensionsShareManager.cleanupExtensionsShareFilesOnSecondaryStorage(1000L);
+
+        verifyNoInteractions(extensionDao);
+    }
+
+    @Test
+    public void cleanupExtensionsShareFilesOnSecondaryStorageSkipsWhenNotCurrentManagementServer() {
+        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+        when(msHost.getMsid()).thenReturn(12345L);
+        when(managementServerHostDao.findOneByLongestRuntime()).thenReturn(msHost);
+        try (MockedStatic<ManagementServerNode> managementServerNodeMock = mockStatic(ManagementServerNode.class)) {
+            managementServerNodeMock.when(ManagementServerNode::getManagementServerId).thenReturn(67890L);
+
+            extensionsShareManager.cleanupExtensionsShareFilesOnSecondaryStorage(1000L);
+
+            verifyNoInteractions(extensionDao);
+        }
+    }
+
+    @Test
+    public void cleanupExtensionsShareFilesOnSecondaryStorageProcessesAllExtensions() {
+        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+        when(msHost.getMsid()).thenReturn(12345L);
+        when(managementServerHostDao.findOneByLongestRuntime()).thenReturn(msHost);
+        try (MockedStatic<ManagementServerNode> managementServerNodeMock = mockStatic(ManagementServerNode.class)) {
+            managementServerNodeMock.when(ManagementServerNode::getManagementServerId).thenReturn(12345L);
+
+            ExtensionVO extension1 = mock(ExtensionVO.class);
+            ExtensionVO extension2 = mock(ExtensionVO.class);
+            when(extensionDao.listAll()).thenReturn(List.of(extension1, extension2));
+
+            extensionsShareManager.cleanupExtensionsShareFilesOnSecondaryStorage(1000L);
+
+            verify(extensionDao).listAll();
+            verify(extensionsShareManager).cleanupExistingExtensionDownloadArchiveAndDetails(extension1, 1000L);
+            verify(extensionsShareManager).cleanupExistingExtensionDownloadArchiveAndDetails(extension2, 1000L);
+        }
     }
 }
