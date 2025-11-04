@@ -77,6 +77,7 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -162,9 +163,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     }
 
     private String getTemplateStatus(TemplateJoinVO template) {
-        String templateStatus = null;
+        String templateStatus = "Processing";
         if (template.getDownloadState() != Status.DOWNLOADED) {
-            templateStatus = "Processing";
             if (template.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
                 if (template.getDownloadPercent() == 100) {
                     templateStatus = "Installing Template";
@@ -173,10 +173,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
                 }
             } else if (template.getDownloadState() == Status.BYPASSED) {
                 templateStatus = "Bypassed Secondary Storage";
-            } else if (template.getErrorString() == null) {
+            } else if (StringUtils.isNotBlank(template.getErrorString())) {
                 templateStatus = template.getTemplateState().toString();
-            } else {
-                templateStatus = template.getErrorString().trim();
             }
         } else if (template.getDownloadState() == Status.DOWNLOADED) {
             templateStatus = "Download Complete";
