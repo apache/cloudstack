@@ -174,12 +174,10 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             } else if (template.getDownloadState() == Status.BYPASSED) {
                 templateStatus = "Bypassed Secondary Storage";
             } else if (StringUtils.isNotBlank(template.getErrorString())) {
-                templateStatus = template.getTemplateState().toString();
+                templateStatus = template.getErrorString().trim();
             }
         } else if (template.getDownloadState() == Status.DOWNLOADED) {
             templateStatus = "Download Complete";
-        } else {
-            templateStatus = "Successfully Installed";
         }
         return templateStatus;
     }
