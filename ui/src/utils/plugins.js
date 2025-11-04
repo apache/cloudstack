@@ -551,12 +551,10 @@ export const dialogUtilPlugin = {
     }
 
     app.config.globalProperties.$notifyConfigurationValueChange = function (configRecord) {
-      console.log('1notifyConfigurationValueChange', configRecord, store.getters.userInfo?.roletype)
       if (!configRecord || configRecord.isdynamic || store.getters.userInfo?.roletype !== 'Admin') {
         return
       }
       const server = configRecord.group === 'Usage Server' ? 'usage' : 'mgmt'
-      console.log('2notifyConfigurationValueChange', configRecord, store.getters.userInfo?.roletype, server)
       this.$notification.warning({
         message: this.$t('label.status'),
         description: this.$t('message.restart.' + server + '.server')
