@@ -163,21 +163,20 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     }
 
     private String getTemplateStatus(TemplateJoinVO template) {
+        if (template.getDownloadState() == Status.DOWNLOADED) {
+            return "Download Complete";
+        }
         String templateStatus = "Processing";
-        if (template.getDownloadState() != Status.DOWNLOADED) {
-            if (template.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
-                if (template.getDownloadPercent() == 100) {
-                    templateStatus = "Installing Template";
-                } else {
-                    templateStatus = template.getDownloadPercent() + "% Downloaded";
-                }
-            } else if (template.getDownloadState() == Status.BYPASSED) {
-                templateStatus = "Bypassed Secondary Storage";
-            } else if (StringUtils.isNotBlank(template.getErrorString())) {
-                templateStatus = template.getErrorString().trim();
+        if (template.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
+            if (template.getDownloadPercent() == 100) {
+                templateStatus = "Installing Template";
+            } else {
+                templateStatus = template.getDownloadPercent() + "% Downloaded";
             }
-        } else if (template.getDownloadState() == Status.DOWNLOADED) {
-            templateStatus = "Download Complete";
+        } else if (template.getDownloadState() == Status.BYPASSED) {
+            templateStatus = "Bypassed Secondary Storage";
+        } else if (StringUtils.isNotBlank(template.getErrorString())) {
+            templateStatus = template.getErrorString().trim();
         }
         return templateStatus;
     }
