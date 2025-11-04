@@ -154,6 +154,7 @@ import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
@@ -271,6 +272,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Inject
     private UserVmManager userVmManager;
+    @Inject
+    ManagementService managementService;
 
     private List<? extends Discoverer> _discoverers;
 
@@ -1936,6 +1939,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public Host updateHost(final UpdateHostCmd cmd) throws NoTransitionException {
+        managementService.checkJsInterpretationAllowedIfNeededForParameterValue(ApiConstants.IS_TAG_A_RULE,
+                Boolean.TRUE.equals(cmd.getIsTagARule()));
+
         return updateHost(cmd.getId(), cmd.getName(), cmd.getOsCategoryId(),
                 cmd.getAllocationState(), cmd.getUrl(), cmd.getHostTags(), cmd.getIsTagARule(), cmd.getAnnotation(), false);
     }
