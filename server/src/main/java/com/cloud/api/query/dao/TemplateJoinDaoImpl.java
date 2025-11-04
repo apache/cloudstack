@@ -164,12 +164,15 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
 
     private String getTemplateStatus(TemplateJoinVO template) {
         if (template.getDownloadState() == Status.DOWNLOADED) {
-            return "Download Complete";
+            return "Successfully Installed";
         }
         String templateStatus = "Processing";
         if (template.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
             if (template.getDownloadPercent() == 100) {
                 templateStatus = "Installing Template";
+                if  (template.getFormat() == Storage.ImageFormat.ISO) {
+                    templateStatus = "Installing ISO";
+                }
             } else {
                 templateStatus = template.getDownloadPercent() + "% Downloaded";
             }
@@ -506,24 +509,9 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         // If the user is an admin, add the template download status
         if (isAdmin || caller.getId() == iso.getAccountId()) {
             // add download status
-            if (iso.getDownloadState() != Status.DOWNLOADED) {
-                String isoStatus = "Processing";
-                if (iso.getDownloadState() == Status.DOWNLOADED) {
-                    isoStatus = "Download Complete";
-                } else if (iso.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
-                    if (iso.getDownloadPercent() == 100) {
-                        isoStatus = "Installing ISO";
-                    } else {
-                        isoStatus = iso.getDownloadPercent() + "% Downloaded";
-                    }
-                } else if (iso.getDownloadState() == Status.BYPASSED) {
-                    isoStatus = "Bypassed Secondary Storage";
-                } else {
-                    isoStatus = iso.getErrorString();
-                }
-                isoResponse.setStatus(isoStatus);
-            } else {
-                isoResponse.setStatus("Successfully Installed");
+            String templateStatus = getTemplateStatus(iso);
+            if (templateStatus != null) {
+                isoResponse.setStatus(templateStatus);
             }
             isoResponse.setUrl(iso.getUrl());
             List<TemplateDataStoreVO> isosInStore = _templateStoreDao.listByTemplateNotBypassed(iso.getId());
