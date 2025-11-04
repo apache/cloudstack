@@ -2465,7 +2465,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             List<HostVO> hostsInZone = _hostDao.findByDataCenterId(zoneId);
             Set<Long> hostIdsInUseSet = hostIdsUsingStorageAccessGroups.stream().collect(Collectors.toSet());
 
-            boolean allInUseZone = hostsInZone.stream()
+            // allMatch returns true on empty stream, need to check whether collection is not empty first
+            boolean allInUseZone = !hostsInZone.isEmpty() && hostsInZone.stream()
                     .map(HostVO::getId)
                     .allMatch(hostIdsInUseSet::contains);
 
@@ -2479,7 +2480,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             List<HostVO> hostsInCluster = _hostDao.findByClusterId(clusterId, Type.Routing);
             Set<Long> hostIdsInUseSet = hostIdsUsingStorageAccessGroups.stream().collect(Collectors.toSet());
 
-            boolean allInUseCluster = hostsInCluster.stream()
+            // allMatch returns true on empty stream, need to check whether collection is not empty first
+            boolean allInUseCluster = !hostsInCluster.isEmpty() && hostsInCluster.stream()
                     .map(HostVO::getId)
                     .allMatch(hostIdsInUseSet::contains);
 
@@ -2493,7 +2495,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             List<HostVO> hostsInPod = _hostDao.findByPodId(podId, Type.Routing);
             Set<Long> hostIdsInUseSet = hostIdsUsingStorageAccessGroups.stream().collect(Collectors.toSet());
 
-            boolean allInUsePod = hostsInPod.stream()
+            // allMatch returns true on empty stream, need to check whether collection is not empty first
+            boolean allInUsePod = !hostsInPod.isEmpty() && hostsInPod.stream()
                     .map(HostVO::getId)
                     .allMatch(hostIdsInUseSet::contains);
 
