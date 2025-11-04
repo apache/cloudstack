@@ -557,7 +557,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         List<VpcOfferingJoinVO> vpcOfferingsForThisDomain = vpcOfferingJoinDao.findByDomainId(domainId);
         for (VpcOfferingJoinVO vpcOffering : vpcOfferingsForThisDomain) {
             int vpcCount = vpcDao.getVpcCountByOfferingId(vpcOffering.getId());
-            if (domainIdString.equals(vpcOffering.getDomainId()) && vpcCount == 0) {
+            if (vpcCount == 0) {
                 vpcOfferingDao.remove(vpcOffering.getId());
             } else {
                 vpcOfferingsDetailsToRemove.add(vpcOffering.getId());
@@ -573,7 +573,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         List<NetworkOfferingJoinVO> networkOfferingsForThisDomain = networkOfferingJoinDao.findByDomainId(domainId, false);
         for (NetworkOfferingJoinVO networkOffering : networkOfferingsForThisDomain) {
             int networkCount = networkDao.getNetworkCountByNetworkOffId(networkOffering.getId());
-            if (domainIdString.equals(networkOffering.getDomainId()) && networkCount == 0) {
+            if (networkCount == 0) {
                 networkOfferingDao.remove(networkOffering.getId());
             } else {
                 networkOfferingsDetailsToRemove.add(networkOffering.getId());
@@ -589,7 +589,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         List<ServiceOfferingJoinVO> serviceOfferingsForThisDomain = serviceOfferingJoinDao.findByDomainId(domainId);
         for (ServiceOfferingJoinVO serviceOffering : serviceOfferingsForThisDomain) {
             int vmCount = vmInstanceDao.getVmCountByOfferingId(serviceOffering.getId());
-            if (domainIdString.equals(serviceOffering.getDomainId()) && vmCount == 0) {
+            if (vmCount == 0) {
                 serviceOfferingDao.remove(serviceOffering.getId());
             } else {
                 serviceOfferingsDetailsToRemove.add(serviceOffering.getId());
@@ -605,7 +605,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         List<DiskOfferingJoinVO> diskOfferingsForThisDomain = diskOfferingJoinDao.findByDomainId(domainId);
         for (DiskOfferingJoinVO diskOffering : diskOfferingsForThisDomain) {
             int volumeCount = volumeDao.getVolumeCountByOfferingId(diskOffering.getId());
-            if (domainIdString.equals(diskOffering.getDomainId()) && volumeCount == 0) {
+            if (volumeCount == 0) {
                 diskOfferingDao.remove(diskOffering.getId());
             } else {
                 diskOfferingsDetailsToRemove.add(diskOffering.getId());

@@ -50,7 +50,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-
 import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.network.as.AutoScaleManager;
 import com.cloud.user.AccountManagerImpl;
