@@ -40,8 +40,10 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -87,6 +89,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.template.VnfTemplateManager;
@@ -465,6 +468,18 @@ public class UserVmManagerImplTest {
     private DiskOfferingVO largerDisdkOffering = prepareDiskOffering(10l * GiB_TO_BYTES, 2l, 10L, 20L);
     Class<InvalidParameterValueException> expectedInvalidParameterValueException = InvalidParameterValueException.class;
     Class<CloudRuntimeException> expectedCloudRuntimeException = CloudRuntimeException.class;
+
+
+    private void overrideDefaultConfigValue(final ConfigKey configKey, final Object o) {
+        try {
+            final String name = "_defaultValue";
+            Field f = ConfigKey.class.getDeclaredField(name);
+            f.setAccessible(true);
+            f.set(configKey, String.valueOf(o));
+        } catch (IllegalAccessException | NoSuchFieldException  e) {
+            Assert.fail("Failed to mock config " + configKey.key() + " value due to " + e.getMessage());
+        }
+    }
 
     @Before
     public void beforeTest() {
@@ -4175,4 +4190,49 @@ public class UserVmManagerImplTest {
         verify(userVmDao, times(1)).releaseFromLockTable(vmId);
     }
 
+    @Test
+    public void updateVmExtraConfigCleansUpWhenCleanupFlagIsTrue() {
+        UserVmVO userVm = mock(UserVmVO.class);
+        when(userVm.getUuid()).thenReturn("test-uuid");
+        when(userVm.getId()).thenReturn(1L);
+
+        userVmManagerImpl.updateVmExtraConfig(userVm, "someConfig", true);
+
+        verify(vmInstanceDetailsDao, times(1)).removeDetailsWithPrefix(1L, ApiConstants.EXTRA_CONFIG);
+        verifyNoMoreInteractions(vmInstanceDetailsDao);
+    }
+
+    @Test
+    public void updateVmExtraConfigAddsConfigWhenValidAndEnabled() {
+        UserVmVO userVm = mock(UserVmVO.class);
+        when(userVm.getUuid()).thenReturn("test-uuid");
+        when(userVm.getAccountId()).thenReturn(1L);
+        when(userVm.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        doNothing().when(userVmManagerImpl).persistExtraConfigKvm(anyString(), eq(userVm));
+        overrideDefaultConfigValue(UserVmManagerImpl.EnableAdditionalVmConfig, true);
+
+        userVmManagerImpl.updateVmExtraConfig(userVm, "validConfig", false);
+
+        verify(vmInstanceDetailsDao, never()).removeDetailsWithPrefix(anyLong(), anyString());
+        verify(userVmManagerImpl, times(1)).addExtraConfig(userVm, "validConfig");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void updateVmExtraConfigThrowsExceptionWhenConfigDisabled() {
+        UserVmVO userVm = mock(UserVmVO.class);
+        when(userVm.getAccountId()).thenReturn(1L);
+        overrideDefaultConfigValue(UserVmManagerImpl.EnableAdditionalVmConfig, false);
+
+        userVmManagerImpl.updateVmExtraConfig(userVm, "validConfig", false);
+    }
+
+    @Test
+    public void updateVmExtraConfigDoesNothingWhenExtraConfigIsBlank() {
+        UserVmVO userVm = mock(UserVmVO.class);
+
+        userVmManagerImpl.updateVmExtraConfig(userVm, "", false);
+
+        verify(vmInstanceDetailsDao, never()).removeDetailsWithPrefix(anyLong(), anyString());
+        verify(userVmManagerImpl, never()).addExtraConfig(any(UserVmVO.class), anyString());
+    }
 }

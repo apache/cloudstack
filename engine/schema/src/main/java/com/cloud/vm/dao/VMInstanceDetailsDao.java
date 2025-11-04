@@ -22,4 +22,5 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VMInstanceDetailVO;
 
 public interface VMInstanceDetailsDao extends GenericDao<VMInstanceDetailVO, Long>, ResourceDetailsDao<VMInstanceDetailVO> {
+    int removeDetailsWithPrefix(long vmId, String prefix);
 }
