@@ -51,6 +51,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
+import com.cloud.api.ApiServer;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -510,7 +511,7 @@ public class ParamProcessWorker implements DispatchWorker {
         }
         Long internalId = null;
         // If annotation's empty, the cmd existed before 3.x try conversion to long
-        final boolean isPre3x = annotation.since().isEmpty();
+        final boolean isPre3x = annotation.since().isEmpty() && !ApiServer.ApiDisallowInternalIds.value();
         // Match against Java's UUID regex to check if input is uuid string
         final boolean isUuid = UuidUtils.isUuid(uuid);
         // Enforce that it's uuid for newly added apis from version 3.x
