@@ -63,6 +63,7 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
+import com.cloud.host.Status;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
@@ -90,6 +91,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.template.VnfTemplateManager;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.vm.UnmanagedVMsManager;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
@@ -425,6 +429,15 @@ public class UserVmManagerImplTest {
 
     @Mock
     private VolumeDataFactory volumeDataFactory;
+
+    @Mock
+    private VolumeDataFactory volFactory;
+
+    @Mock
+    private VolumeOrchestrationService volumeMgr;
+
+    @Mock
+    private TemplateDataStoreDao templateDataStoreDao;
 
     @Mock
     private VolumeInfo volumeInfo;
@@ -1663,6 +1676,103 @@ public class UserVmManagerImplTest {
         Mockito.verify(userVmManagerImpl).addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecified(Mockito.any(), Mockito.any(), Mockito.eq(VmDetailConstants.CPU_SPEED), Mockito.any());
         Mockito.verify(userVmManagerImpl).addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecified(Mockito.any(), Mockito.any(), Mockito.eq(VmDetailConstants.MEMORY), Mockito.any());
         Mockito.verify(userVmManagerImpl).addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecified(Mockito.any(), Mockito.any(), Mockito.eq(VmDetailConstants.CPU_NUMBER), Mockito.any());
+    }
+
+    @Test
+    public void testRestoreVirtualMachineWhenHostRemoved() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        long vmId = 1L;
+        Long lastHostId = 42L;
+        Long newTemplateId = 2L;
+        boolean expunge = false;
+        Map<String, String> details = new HashMap<>();
+
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getId()).thenReturn(vmId);
+        when(vm.getAccountId()).thenReturn(accountId);
+        when(vm.getHostId()).thenReturn(null);
+        when(vm.getLastHostId()).thenReturn(lastHostId);
+        when(vm.getUuid()).thenReturn("test-uuid");
+        when(vm.getState()).thenReturn(VirtualMachine.State.Stopped);
+        when(vm.getTemplateId()).thenReturn(1L);
+        when(vm.getDataCenterId()).thenReturn(1L);
+        when(vm.isDisplay()).thenReturn(true);
+
+        CallContext mockCallContext = mock(CallContext.class);
+        when(mockCallContext.getCallingAccount()).thenReturn(accountMock);
+        when(mockCallContext.getCallingUserId()).thenReturn(1L);
+
+        CallContext mockVolumeContext = mock(CallContext.class);
+        when(CallContext.register(any(CallContext.class), any(ApiCommandResourceType.class))).thenReturn(mockVolumeContext);
+
+        when(accountDao.findById(accountId)).thenReturn(callerAccount);
+        when(accountDao.findByIdIncludingRemoved(accountId)).thenReturn(callerAccount);
+        when(callerAccount.getState()).thenReturn(Account.State.ENABLED);
+        VMTemplateVO template = mock(VMTemplateVO.class);
+        when(templateDao.findById(anyLong())).thenReturn(template);
+        when(templateDao.findByIdIncludingRemoved(anyLong())).thenReturn(template);
+        when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        when(template.getId()).thenReturn(1L);
+        when(template.getUuid()).thenReturn("template-uuid");
+        when(template.isDirectDownload()).thenReturn(false);
+        when(template.getSize()).thenReturn(10L * 1024 * 1024 * 1024L); // 10GB
+
+        TemplateDataStoreVO templateStore = mock(TemplateDataStoreVO.class);
+        when(templateDataStoreDao.findByTemplateZoneReady(1L, 1L)).thenReturn(templateStore);
+
+        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+        when(_serviceOfferingDao.findById(vmId, vm.getServiceOfferingId())).thenReturn(serviceOffering);
+
+        List<VolumeVO> rootVols = new ArrayList<>();
+        VolumeVO rootVol = mock(VolumeVO.class);
+        when(rootVol.getId()).thenReturn(10L);
+        when(rootVol.getState()).thenReturn(Volume.State.Ready);
+        when(rootVol.getPoolId()).thenReturn(5L);
+        when(rootVol.getTemplateId()).thenReturn(1L);
+        when(rootVol.getSize()).thenReturn(20L * 1024 * 1024 * 1024L); // 20GB
+        when(rootVol.getDiskOfferingId()).thenReturn(100L);
+        when(rootVol.isDisplay()).thenReturn(true);
+        rootVols.add(rootVol);
+        DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
+        when(diskOfferingDao.findById(100L)).thenReturn(diskOffering);
+
+        StoragePoolVO storagePool = mock(StoragePoolVO.class);
+        when(storagePool.isManaged()).thenReturn(true);
+        when(primaryDataStoreDao.findById(5L)).thenReturn(storagePool);
+        when(vmSnapshotDaoMock.findByVm(vmId)).thenReturn(new ArrayList<>());
+        when(volumeDaoMock.findByInstanceAndType(vmId, Volume.Type.ROOT)).thenReturn(rootVols);
+        when(userVmDao.findById(vmId)).thenReturn(vm);
+
+        HostVO host = mock(HostVO.class);
+        when(host.getStatus()).thenReturn(Status.Removed);
+        when(hostDao.findByIdIncludingRemoved(lastHostId)).thenReturn(host);
+        VolumeInfo volumeInfo = mock(VolumeInfo.class);
+        when(volFactory.getVolume(10L)).thenReturn(volumeInfo);
+        doNothing().when(resourceLimitMgr).checkVmResourceLimitsForTemplateChange(
+                any(Account.class), Mockito.anyBoolean(), any(ServiceOffering.class),
+                any(VMTemplateVO.class), any(VMTemplateVO.class), any(List.class));
+        doNothing().when(resourceLimitMgr).checkVolumeResourceLimitForDiskOfferingChange(
+                any(Account.class), Mockito.anyBoolean(), anyLong(), anyLong(),
+                any(DiskOffering.class), any(DiskOffering.class), any(List.class));
+
+        VolumeVO newVolume = mock(VolumeVO.class);
+        when(volumeMgr.allocateDuplicateVolume(any(VolumeVO.class), any(), anyLong()))
+                .thenReturn(newVolume);
+        when(newVolume.getId()).thenReturn(11L);
+        when(newVolume.getState()).thenReturn(Volume.State.Ready);
+        when(newVolume.getState()).thenReturn(Volume.State.Ready);
+        doReturn(20L * 1024 * 1024 * 1024L).when(userVmManagerImpl).getRootVolumeSizeForVmRestore(
+                any(Volume.class), any(VMTemplateVO.class), any(UserVmVO.class),
+                any(DiskOffering.class), anyMap(), Mockito.anyBoolean());
+
+        try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {
+            when(CallContext.current()).thenReturn(mockCallContext);
+
+            UserVm result = userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId, null, expunge, details);
+            assertNotNull(result);
+        }
+
+        Mockito.verify(userVmDao).findById(vmId);
+        Mockito.verify(hostDao).findByIdIncludingRemoved(lastHostId);
     }
 
     @Test

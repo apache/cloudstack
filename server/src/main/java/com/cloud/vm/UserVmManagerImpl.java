@@ -9267,14 +9267,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
 
             if (hostId != null) {
-                // default findById() won't search entries with removed field not null
-                Host host = _hostDao.findById(hostId);
-                if (host == null) {
-                    logger.warn("Host {} not found", hostId);
+                VolumeInfo volumeInfo = volFactory.getVolume(root.getId());
+                Host host = _hostDao.findByIdIncludingRemoved(hostId);
+
+                // host could be in removed state, in which case no operation is performed.
+                if (host.getStatus() == Status.Removed) {
+                    logger.warn("Host {} ({}) for VM {} ({}) removed on {}",
+                            host.getUuid(), host.getName(), vm.getUuid(), vm.getName(), host.getRemoved());
                     return;
                 }
-
-                VolumeInfo volumeInfo = volFactory.getVolume(root.getId());
 
                 final Command cmd;
 
