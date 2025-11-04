@@ -105,6 +105,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> VmsNotInClusterUsingPool;
     protected SearchBuilder<VMInstanceVO> IdsPowerStateSelectSearch;
     GenericSearchBuilder<VMInstanceVO, Integer> CountByOfferingId;
+    GenericSearchBuilder<VMInstanceVO, Integer> CountUserVmNotInDomain;
 
     @Inject
     ResourceTagDao tagsDao;
@@ -350,6 +351,13 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         CountByOfferingId.select(null, Func.COUNT, CountByOfferingId.entity().getId());
         CountByOfferingId.and("serviceOfferingId", CountByOfferingId.entity().getServiceOfferingId(), Op.EQ);
         CountByOfferingId.done();
+
+        CountUserVmNotInDomain = createSearchBuilder(Integer.class);
+        CountUserVmNotInDomain.select(null, Func.COUNT, CountUserVmNotInDomain.entity().getId());
+        CountUserVmNotInDomain.and("serviceOfferingId", CountUserVmNotInDomain.entity().getServiceOfferingId(), Op.EQ);
+        CountUserVmNotInDomain.and("domainIdsNotIn", CountUserVmNotInDomain.entity().getDomainId(), Op.NIN);
+        CountUserVmNotInDomain.done();
+
     }
 
     @Override
@@ -1238,6 +1246,18 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         }
         SearchCriteria<Integer> sc = CountByOfferingId.create();
         sc.setParameters("serviceOfferingId", serviceOfferingId);
+        List<Integer> count = customSearch(sc, null);
+        return count.get(0);
+    }
+
+    @Override
+    public int getVmCountByOfferingNotInDomain(Long serviceOfferingId, List<Long> domainIds) {
+        if (serviceOfferingId == null || CollectionUtils.isEmpty(domainIds)) {
+            return 0;
+        }
+        SearchCriteria<Integer> sc = CountUserVmNotInDomain.create();
+        sc.setParameters("serviceOfferingId", serviceOfferingId);
+        sc.setParameters("domainIdsNotIn", domainIds.toArray());
         List<Integer> count = customSearch(sc, null);
         return count.get(0);
     }
