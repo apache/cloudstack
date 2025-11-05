@@ -162,26 +162,52 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         _count = "select count(distinct temp_zone_pair) from template_view WHERE ";
     }
 
-    private String getTemplateStatus(TemplateJoinVO template) {
-        if (template.getDownloadState() == Status.DOWNLOADED) {
-            return "Successfully Installed";
+    private enum TemplateStatus {
+        SUCCESSFULLY_INSTALLED("Successfully Installed"),
+        INSTALLING_TEMPLATE("Installing Template"),
+        INSTALLING_ISO("Installing ISO"),
+        BYPASSED_SECONDARY_STORAGE("Bypassed Secondary Storage"),
+        PROCESSING("Processing"),
+        DOWNLOADING("%d%% Downloaded");
+
+        private final String status;
+        TemplateStatus(String status) {
+            this.status = status;
         }
-        String templateStatus = "Processing";
-        if (template.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
+        public String getStatus() {
+            return status;
+        }
+        // For statuses that have dynamic details (e.g. "75% Downloaded").
+        public String format(int percent) {
+            return String.format(status, percent);
+        }
+    }
+
+    private String getTemplateStatus(TemplateJoinVO template) {
+        if (template == null) {
+            return  null;
+        }
+
+        TemplateStatus templateStatus;
+        if (template.getDownloadState() == Status.DOWNLOADED) {
+            templateStatus = TemplateStatus.SUCCESSFULLY_INSTALLED;
+        } else if (template.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
             if (template.getDownloadPercent() == 100) {
-                templateStatus = "Installing Template";
-                if  (template.getFormat() == Storage.ImageFormat.ISO) {
-                    templateStatus = "Installing ISO";
+                templateStatus = TemplateStatus.INSTALLING_TEMPLATE;
+                if (Storage.ImageFormat.ISO == template.getFormat()) {
+                    templateStatus = TemplateStatus.INSTALLING_ISO;
                 }
             } else {
-                templateStatus = template.getDownloadPercent() + "% Downloaded";
+                return TemplateStatus.DOWNLOADING.format(template.getDownloadPercent());
             }
         } else if (template.getDownloadState() == Status.BYPASSED) {
-            templateStatus = "Bypassed Secondary Storage";
+            templateStatus = TemplateStatus.BYPASSED_SECONDARY_STORAGE;
         } else if (StringUtils.isNotBlank(template.getErrorString())) {
-            templateStatus = template.getErrorString().trim();
+            return template.getErrorString().trim();
+        } else {
+            templateStatus = TemplateStatus.PROCESSING;
         }
-        return templateStatus;
+        return templateStatus.getStatus();
     }
 
     @Override
