@@ -52,7 +52,7 @@ public class UnlinkDomainFromLdapCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         boolean rc = _ldapManager.unlinkDomainFromLdap(this);
-        SuccessResponse response = new SuccessResponse();
+        SuccessResponse response = new SuccessResponse(getCommandName());
         response.setSuccess(rc);
         if (rc) {
             response.setDisplayText("Domain unlinked from LDAP successfully");
