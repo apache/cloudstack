@@ -305,6 +305,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
         cmdList.add(LDAPRemoveCmd.class);
         cmdList.add(LinkDomainToLdapCmd.class);
         cmdList.add(LinkAccountToLdapCmd.class);
+        cmdList.add(UnlinkDomainFromLdapCmd.class);
         return cmdList;
     }
 
