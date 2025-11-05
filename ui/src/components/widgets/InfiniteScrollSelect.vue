@@ -58,6 +58,7 @@
     :filter-option="false"
     :loading="loading"
     show-search
+    allowClear
     placeholder="Select"
     @search="onSearchTimed"
     @popupScroll="onScroll"
