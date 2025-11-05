@@ -1031,7 +1031,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if (value == null) {
-            throw new InvalidParameterValueException(String.format(“The new value for the [%s] configuration must be given.", name));
+            throw new InvalidParameterValueException(String.format("The new value for the [%s] configuration must be given.", name));
         }
 
         validateIpAddressRelatedConfigValues(name, value);
