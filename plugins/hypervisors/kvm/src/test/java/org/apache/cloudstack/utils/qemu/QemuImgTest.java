@@ -162,7 +162,7 @@ public class QemuImgTest {
         try {
             QemuImg qemu = new QemuImg(0);
             qemu.create(file);
-            qemu.resize(file, endSize);
+            qemu.resize(file, endSize, null);
             Map<String, String> info = qemu.info(file);
 
             if (info == null) {
@@ -191,7 +191,7 @@ public class QemuImgTest {
         try {
             QemuImg qemu = new QemuImg(0);
             qemu.create(file);
-            qemu.resize(file, increment, true);
+            qemu.resize(file, increment, true, null);
             Map<String, String> info = qemu.info(file);
 
             if (info == null) {
@@ -219,7 +219,7 @@ public class QemuImgTest {
         try {
             QemuImg qemu = new QemuImg(0);
             qemu.create(file);
-            qemu.resize(file, increment, true);
+            qemu.resize(file, increment, true, null);
             Map<String, String> info = qemu.info(file);
 
             if (info == null) {
@@ -249,7 +249,7 @@ public class QemuImgTest {
         QemuImg qemu = new QemuImg(0);
         try {
             qemu.create(file);
-            qemu.resize(file, endSize);
+            qemu.resize(file, endSize, null);
         } finally {
             File f = new File(filename);
             f.delete();
@@ -265,7 +265,7 @@ public class QemuImgTest {
 
         QemuImg qemu = new QemuImg(0);
         qemu.create(file);
-        qemu.resize(file, 0);
+        qemu.resize(file, 0, null);
 
         File f = new File(filename);
         f.delete();
