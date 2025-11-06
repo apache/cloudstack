@@ -395,6 +395,17 @@ public class QemuImg {
         convert(srcFile, destFile, options, qemuObjects, srcImageOpts, snapshotName, forceSourceFormat, false);
     }
 
+    protected Map<String, String> getResizeOptionsFromConvertOptions(final Map<String, String> options) {
+        if (MapUtils.isEmpty(options)) {
+            return null;
+        }
+        Map<String, String> resizeOpts = new HashMap<>();
+        if (options.containsKey(PREALLOCATION)) {
+            resizeOpts.put(PREALLOCATION, options.get(PREALLOCATION));
+        }
+        return resizeOpts;
+    }
+
     /**
      * Converts an image from source to destination.
      *
@@ -485,11 +496,7 @@ public class QemuImg {
         }
 
         if (srcFile.getSize() < destFile.getSize()) {
-            Map<String, String> resizeOpts = new HashMap<>();
-            if (options.containsKey(PREALLOCATION)) {
-                resizeOpts.put(PREALLOCATION, options.get(PREALLOCATION));
-            }
-            this.resize(destFile, destFile.getSize(), resizeOpts);
+            this.resize(destFile, destFile.getSize(), getResizeOptionsFromConvertOptions(options));
         }
     }
 
@@ -696,7 +703,7 @@ public class QemuImg {
         }
     }
 
-    private void addScriptOptionsFromMap(Map<String, String> options, Script s) {
+    protected void addScriptOptionsFromMap(Map<String, String> options, Script s) {
         if (MapUtils.isEmpty(options)) {
             return;
         }
