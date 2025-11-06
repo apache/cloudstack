@@ -497,6 +497,7 @@
 "label.checksum": "Checksum",
 "label.choose.resource.icon": "Choose icon",
 "label.choose.saml.identity": "Choose SAML identity provider",
+"label.choose.isolation.method.public.ip.range": "Choose the proper isolation method for the public IP range in accordance with the zone. Valid options currently 'vlan' or 'vxlan', defaults to 'vlan'.",
 "label.cidr": "CIDR",
 "label.cidrsize": "CIDR size",
 "label.cidr.destination.network": "Destination Network CIDR",
