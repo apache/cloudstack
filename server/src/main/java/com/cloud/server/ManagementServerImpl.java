@@ -1410,7 +1410,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (vmInstanceDetailVO != null &&
                 (ApiConstants.BootMode.LEGACY.toString().equalsIgnoreCase(vmInstanceDetailVO.getValue()) ||
                         ApiConstants.BootMode.SECURE.toString().equalsIgnoreCase(vmInstanceDetailVO.getValue()))) {
-            logger.info(" Live Migration of UEFI enabled VM : " + vm.getInstanceName() + " is not supported");
+            logger.debug("{} VM is UEFI enabled, Checking for other UEFI enabled hosts as it can be live migrated to UEFI enabled host only.", vm.getInstanceName());
             if (CollectionUtils.isEmpty(filteredHosts)) {
                 filteredHosts = new ArrayList<>(allHosts);
             }
@@ -1420,6 +1420,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 return new Pair<>(false, null);
             }
             filteredHosts.removeIf(host -> !uefiEnabledHosts.contains(host.getId()));
+            if (filteredHosts.isEmpty()) {
+                logger.warn("No UEFI enabled hosts are available for the live migration of VM {}", vm.getInstanceName());
+            }
             return new Pair<>(!filteredHosts.isEmpty(), filteredHosts);
         }
         return new Pair<>(true, filteredHosts);
