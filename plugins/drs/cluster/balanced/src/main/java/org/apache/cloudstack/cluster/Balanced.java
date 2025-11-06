@@ -74,9 +74,21 @@ public class Balanced extends AdapterBase implements ClusterDrsAlgorithm {
             Map<Long, Ternary<Long, Long, Long>> hostCpuMap, Map<Long, Ternary<Long, Long, Long>> hostMemoryMap,
             Boolean requiresStorageMotion) throws ConfigurationException {
         Double preImbalance = ClusterDrsAlgorithm.getClusterImbalance(cluster.getId(), new ArrayList<>(hostCpuMap.values()), new ArrayList<>(hostMemoryMap.values()), null);
+        return getMetrics(cluster, vm, serviceOffering, destHost, hostCpuMap, hostMemoryMap, requiresStorageMotion, preImbalance);
+    }
+
+    @Override
+    public Ternary<Double, Double, Double> getMetrics(Cluster cluster, VirtualMachine vm,
+            ServiceOffering serviceOffering, Host destHost,
+            Map<Long, Ternary<Long, Long, Long>> hostCpuMap, Map<Long, Ternary<Long, Long, Long>> hostMemoryMap,
+            Boolean requiresStorageMotion, Double preImbalance) throws ConfigurationException {
+        // Use provided pre-imbalance if available, otherwise calculate it
+        if (preImbalance == null) {
+            preImbalance = ClusterDrsAlgorithm.getClusterImbalance(cluster.getId(), new ArrayList<>(hostCpuMap.values()), new ArrayList<>(hostMemoryMap.values()), null);
+        }
         Double postImbalance = getImbalancePostMigration(serviceOffering, vm, destHost, hostCpuMap, hostMemoryMap);
 
-        logger.debug("Cluster {} pre-imbalance: {} post-imbalance: {} Algorithm: {} VM: {} srcHost: {} destHost: {}",
+        logger.trace("Cluster {} pre-imbalance: {} post-imbalance: {} Algorithm: {} VM: {} srcHost: {} destHost: {}",
                 cluster, preImbalance, postImbalance, getName(), vm, vm.getHostId(), destHost);
 
         // This needs more research to determine the cost and benefit of a migration

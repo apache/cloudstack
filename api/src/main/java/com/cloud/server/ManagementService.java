@@ -71,6 +71,8 @@ import com.cloud.alert.Alert;
 import com.cloud.capacity.Capacity;
 import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan;
+import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -91,6 +93,7 @@ import com.cloud.utils.Ternary;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.VirtualMachineProfile;
 
 /**
  * Hopefully this is temporary.
@@ -451,6 +454,32 @@ public interface ManagementService {
     Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(Long vmId, Long startIndex, Long pageSize, String keyword);
 
     Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(VirtualMachine vm, Long startIndex, Long pageSize, String keyword, List<VirtualMachine> vmList);
+
+    /**
+     * Get technically compatible hosts for VM migration (storage, hypervisor, UEFI filtering).
+     * This is a helper method that can be used independently for caching in DRS planning.
+     *
+     * @param vm The virtual machine to migrate
+     * @param startIndex Starting index for pagination
+     * @param pageSize Page size for pagination
+     * @param keyword Keyword filter for host search
+     * @return Ternary containing: (all hosts with count, filtered compatible hosts, storage motion requirements map)
+     */
+    Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> getTechnicallyCompatibleHosts(
+            VirtualMachine vm, Long startIndex, Long pageSize, String keyword);
+
+    /**
+     * Apply affinity group constraints and other exclusion rules for VM migration.
+     * This is a helper method that can be used independently for per-iteration affinity checks in DRS.
+     *
+     * @param vm The virtual machine to migrate
+     * @param vmProfile The VM profile
+     * @param plan The deployment plan
+     * @param vmList List of VMs with current/simulated placements for affinity processing
+     * @return ExcludeList containing hosts to avoid
+     */
+    ExcludeList applyAffinityConstraints(VirtualMachine vm, VirtualMachineProfile vmProfile,
+            DeploymentPlan plan, List<VirtualMachine> vmList);
 
     /**
      * List storage pools for live migrating of a volume. The API returns list of all pools in the cluster to which the

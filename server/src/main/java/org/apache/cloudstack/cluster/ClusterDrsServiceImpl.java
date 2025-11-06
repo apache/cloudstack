@@ -24,6 +24,8 @@ import com.cloud.api.query.dao.HostJoinDao;
 import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.domain.Domain;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
@@ -51,6 +53,8 @@ import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -62,6 +66,8 @@ import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.response.ClusterDrsPlanMigrationResponse;
 import org.apache.cloudstack.api.response.ClusterDrsPlanResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
+import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.cluster.dao.ClusterDrsPlanDao;
 import org.apache.cloudstack.cluster.dao.ClusterDrsPlanMigrationDao;
 import org.apache.cloudstack.context.CallContext;
@@ -81,13 +87,16 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.stream.Collectors;
 
 import static com.cloud.org.Grouping.AllocationState.Disabled;
+import static org.apache.cloudstack.cluster.ClusterDrsAlgorithm.getClusterImbalance;
 
 public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsService, PluggableService {
 
@@ -124,6 +133,9 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
 
     @Inject
     ManagementServer managementServer;
+
+    @Inject
+    AffinityGroupVMMapDao affinityGroupVMMapDao;
 
     List<ClusterDrsAlgorithm> drsAlgorithms = new ArrayList<>();
 
@@ -357,10 +369,86 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                     serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()));
         }
 
+        // PHASE 1: Pre-compute technical compatibility (once per eligible VM - never changes)
+        Map<Long, List<? extends Host>> vmToCompatibleHostsCache = new HashMap<>();
+        Map<Long, Map<Host, Boolean>> vmToStorageMotionCache = new HashMap<>();
+
+        for (VirtualMachine vm : vmList) {
+            // Skip ineligible VMs
+            if (vm.getType().isUsedBySystem() ||
+                    vm.getState() != VirtualMachine.State.Running ||
+                    (MapUtils.isNotEmpty(vm.getDetails()) &&
+                     "true".equalsIgnoreCase(vm.getDetails().get(VmDetailConstants.SKIP_DRS)))) {
+                continue;
+            }
+
+            try {
+                Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> compatibility =
+                    managementServer.getTechnicallyCompatibleHosts(vm, 0L, 500L, null);
+
+                List<? extends Host> compatibleHosts = compatibility.second(); // Get filtered hosts
+                Map<Host, Boolean> requiresStorageMotion = compatibility.third();
+
+                if (compatibleHosts != null && !compatibleHosts.isEmpty()) {
+                    vmToCompatibleHostsCache.put(vm.getId(), compatibleHosts);
+                    vmToStorageMotionCache.put(vm.getId(), requiresStorageMotion);
+                }
+            } catch (Exception e) {
+                logger.debug("Could not get compatible hosts for VM {}: {}", vm, e.getMessage());
+            }
+        }
+
+        // Pre-fetch affinity group mappings for all eligible VMs (once, before iterations)
+        // This allows us to skip expensive affinity processing for VMs without affinity groups
+        Set<Long> vmsWithAffinityGroups = new HashSet<>();
+        for (VirtualMachine vm : vmList) {
+            if (vmToCompatibleHostsCache.containsKey(vm.getId())) {
+                // Check if VM has any affinity groups - if list is empty, VM has no affinity groups
+                List<AffinityGroupVMMapVO> affinityGroupMappings = affinityGroupVMMapDao.listByInstanceId(vm.getId());
+                if (affinityGroupMappings != null && !affinityGroupMappings.isEmpty()) {
+                    vmsWithAffinityGroups.add(vm.getId());
+                }
+            }
+        }
+
+        // PHASE 2: Iteration loop with affinity check per iteration
         while (iteration < maxIterations && algorithm.needsDrs(cluster, new ArrayList<>(hostCpuMap.values()),
                 new ArrayList<>(hostMemoryMap.values()))) {
+
+            logger.debug("Starting DRS iteration {} for cluster {}", iteration + 1, cluster);
+            // Re-evaluate affinity constraints with current (simulated) VM placements
+            Map<Long, ExcludeList> vmToExcludesMap = new HashMap<>();
+            for (VirtualMachine vm : vmList) {
+                if (vmToCompatibleHostsCache.containsKey(vm.getId())) {
+                    Host srcHost = hostMap.get(vm.getHostId());
+                    if (srcHost != null) {
+                        // Only call expensive applyAffinityConstraints for VMs with affinity groups
+                        // For VMs without affinity groups, create minimal ExcludeList (just source host)
+                        ExcludeList excludes;
+                        if (vmsWithAffinityGroups.contains(vm.getId())) {
+                            DataCenterDeployment plan = new DataCenterDeployment(
+                                srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(),
+                                null, null, null);
+                            VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vm, null,
+                                vmIdServiceOfferingMap.get(vm.getId()), null, null);
+
+                            excludes = managementServer.applyAffinityConstraints(
+                                vm, vmProfile, plan, vmList);
+                        } else {
+                            // VM has no affinity groups - create minimal ExcludeList (just source host)
+                            excludes = new ExcludeList();
+                            excludes.addHost(vm.getHostId());
+                        }
+                        vmToExcludesMap.put(vm.getId(), excludes);
+                    }
+                }
+            }
+
+            logger.debug("Completed affinity evaluation for DRS iteration {} for cluster {}", iteration + 1, cluster);
+
             Pair<VirtualMachine, Host> bestMigration = getBestMigration(cluster, algorithm, vmList,
-                    vmIdServiceOfferingMap, hostCpuMap, hostMemoryMap);
+                    vmIdServiceOfferingMap, hostCpuMap, hostMemoryMap,
+                    vmToCompatibleHostsCache, vmToStorageMotionCache, vmToExcludesMap);
             VirtualMachine vm = bestMigration.first();
             Host destHost = bestMigration.second();
             if (destHost == null || vm == null || originalHostIdVmIdMap.get(destHost.getId()).contains(vm.getId())) {
@@ -372,8 +460,6 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             ServiceOffering serviceOffering = vmIdServiceOfferingMap.get(vm.getId());
             migrationPlan.add(new Ternary<>(vm, hostMap.get(vm.getHostId()), hostMap.get(destHost.getId())));
 
-            hostVmMap.get(vm.getHostId()).remove(vm);
-            hostVmMap.get(destHost.getId()).add(vm);
             hostVmMap.get(vm.getHostId()).remove(vm);
             hostVmMap.get(destHost.getId()).add(vm);
 
@@ -429,6 +515,12 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
      * @param hostMemoryCapacityMap
      *         a map of host IDs to their corresponding memory
      *         capacity
+     * @param vmToCompatibleHostsCache
+     *         cached map of VM IDs to their compatible hosts
+     * @param vmToStorageMotionCache
+     *         cached map of VM IDs to storage motion requirements
+     * @param vmToExcludesMap
+     *         map of VM IDs to their ExcludeList (affinity constraints)
      *
      * @return a pair of the virtual machine and host that represent the best
      *         migration, or null if no migration is
@@ -438,32 +530,74 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             List<VirtualMachine> vmList,
             Map<Long, ServiceOffering> vmIdServiceOfferingMap,
             Map<Long, Ternary<Long, Long, Long>> hostCpuCapacityMap,
-            Map<Long, Ternary<Long, Long, Long>> hostMemoryCapacityMap) throws ConfigurationException {
+            Map<Long, Ternary<Long, Long, Long>> hostMemoryCapacityMap,
+            Map<Long, List<? extends Host>> vmToCompatibleHostsCache,
+            Map<Long, Map<Host, Boolean>> vmToStorageMotionCache,
+            Map<Long, ExcludeList> vmToExcludesMap) throws ConfigurationException {
+        // Pre-calculate cluster imbalance once per iteration (same for all VM-host combinations)
+        Double preImbalance = getClusterImbalance(cluster.getId(),
+                new ArrayList<>(hostCpuCapacityMap.values()),
+                new ArrayList<>(hostMemoryCapacityMap.values()),
+                null);
+
         double improvement = 0;
         Pair<VirtualMachine, Host> bestMigration = new Pair<>(null, null);
 
         for (VirtualMachine vm : vmList) {
             if (vm.getType().isUsedBySystem() || vm.getState() != VirtualMachine.State.Running ||
                     (MapUtils.isNotEmpty(vm.getDetails()) &&
-                            vm.getDetails().get(VmDetailConstants.SKIP_DRS).equalsIgnoreCase("true"))
+                            "true".equalsIgnoreCase(vm.getDetails().get(VmDetailConstants.SKIP_DRS)))
             ) {
                 continue;
             }
-            Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> hostsForMigrationOfVM = managementServer
-                    .listHostsForMigrationOfVM(
-                            vm, 0L, 500L, null, vmList);
-            List<? extends Host> compatibleDestinationHosts = hostsForMigrationOfVM.first().first();
-            List<? extends Host> suitableDestinationHosts = hostsForMigrationOfVM.second();
 
-            Map<Host, Boolean> requiresStorageMotion = hostsForMigrationOfVM.third();
+            // Use cached compatible hosts
+            List<? extends Host> compatibleHosts = vmToCompatibleHostsCache.get(vm.getId());
+            Map<Host, Boolean> requiresStorageMotion = vmToStorageMotionCache.get(vm.getId());
+            ExcludeList excludes = vmToExcludesMap.get(vm.getId());
 
-            for (Host destHost : compatibleDestinationHosts) {
-                if (!suitableDestinationHosts.contains(destHost) || cluster.getId() != destHost.getClusterId()) {
+            if (compatibleHosts == null || compatibleHosts.isEmpty()) {
+                continue;
+            }
+
+            ServiceOffering serviceOffering = vmIdServiceOfferingMap.get(vm.getId());
+            if (serviceOffering == null) {
+                continue;
+            }
+
+            // Pre-calculate VM resource requirements for quick capacity filtering
+            long vmCpu = (long) serviceOffering.getCpu() * serviceOffering.getSpeed();
+            long vmMemory = serviceOffering.getRamSize() * 1024L * 1024L;
+
+            for (Host destHost : compatibleHosts) {
+                if (cluster.getId() != destHost.getClusterId()) {
                     continue;
                 }
+
+                // Check affinity constraints
+                if (excludes != null && excludes.shouldAvoid(destHost)) {
+                    continue;
+                }
+
+                // Quick capacity pre-filter: skip hosts that don't have enough capacity
+                Ternary<Long, Long, Long> destHostCpu = hostCpuCapacityMap.get(destHost.getId());
+                Ternary<Long, Long, Long> destHostMemory = hostMemoryCapacityMap.get(destHost.getId());
+                if (destHostCpu == null || destHostMemory == null) {
+                    continue;
+                }
+
+                long destHostAvailableCpu = (destHostCpu.third() - destHostCpu.second()) - destHostCpu.first();
+                long destHostAvailableMemory = (destHostMemory.third() - destHostMemory.second()) - destHostMemory.first();
+
+                if (destHostAvailableCpu < vmCpu || destHostAvailableMemory < vmMemory) {
+                    continue; // Skip hosts without sufficient capacity
+                }
+
+                // getMetrics uses updated capacity maps - this is the real capacity check
+                // Pass pre-calculated pre-imbalance to avoid recalculating it for every VM-host combination
                 Ternary<Double, Double, Double> metrics = algorithm.getMetrics(cluster, vm,
-                        vmIdServiceOfferingMap.get(vm.getId()), destHost, hostCpuCapacityMap, hostMemoryCapacityMap,
-                        requiresStorageMotion.get(destHost));
+                        serviceOffering, destHost, hostCpuCapacityMap, hostMemoryCapacityMap,
+                        requiresStorageMotion.getOrDefault(destHost, false), preImbalance);
 
                 Double currentImprovement = metrics.first();
                 Double cost = metrics.second();

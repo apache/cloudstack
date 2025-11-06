@@ -86,6 +86,38 @@ public interface ClusterDrsAlgorithm extends Adapter {
             Boolean requiresStorageMotion) throws ConfigurationException;
 
     /**
+     * Determines the metrics for a given virtual machine and destination host in a DRS cluster.
+     * This overloaded version accepts a pre-calculated pre-imbalance value to avoid recalculating
+     * it for every VM-host combination within the same iteration.
+     *
+     * @param cluster
+     *         the cluster to check
+     * @param vm
+     *         the virtual machine to check
+     * @param serviceOffering
+     *         the service offering for the virtual machine
+     * @param destHost
+     *         the destination host for the virtual machine
+     * @param hostCpuMap
+     *         a map of host IDs to the Ternary of used, reserved and total CPU on each host
+     * @param hostMemoryMap
+     *         a map of host IDs to the Ternary of used, reserved and total memory on each host
+     * @param requiresStorageMotion
+     *         whether storage motion is required for the virtual machine
+     * @param preImbalance
+     *         the pre-calculated cluster imbalance before migration (null to calculate it)
+     *
+     * @return a ternary containing improvement, cost, benefit
+     */
+    default Ternary<Double, Double, Double> getMetrics(Cluster cluster, VirtualMachine vm, ServiceOffering serviceOffering,
+            Host destHost, Map<Long, Ternary<Long, Long, Long>> hostCpuMap,
+            Map<Long, Ternary<Long, Long, Long>> hostMemoryMap,
+            Boolean requiresStorageMotion, Double preImbalance) throws ConfigurationException {
+        // Default implementation delegates to the original method for backward compatibility
+        return getMetrics(cluster, vm, serviceOffering, destHost, hostCpuMap, hostMemoryMap, requiresStorageMotion);
+    }
+
+    /**
      * Calculates the imbalance of the cluster after a virtual machine migration.
      *
      * @param serviceOffering
