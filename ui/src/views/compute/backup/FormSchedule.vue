@@ -35,16 +35,16 @@
                   v-model:value="form.intervaltype"
                   button-style="solid"
                   @change="handleChangeIntervalType">
-                  <a-radio-button value="hourly">
+                  <a-radio-button value="hourly" :disabled="handleVisibleInterval('HOURLY')">
                     {{ $t('label.hourly') }}
                   </a-radio-button>
-                  <a-radio-button value="daily">
+                  <a-radio-button value="daily" :disabled="handleVisibleInterval('DAILY')">
                     {{ $t('label.daily') }}
                   </a-radio-button>
-                  <a-radio-button value="weekly">
+                  <a-radio-button value="weekly" :disabled="handleVisibleInterval('WEEKLY')">
                     {{ $t('label.weekly') }}
                   </a-radio-button>
-                  <a-radio-button value="monthly">
+                  <a-radio-button value="monthly" :disabled="handleVisibleInterval('MONTHLY')">
                     {{ $t('label.monthly') }}
                   </a-radio-button>
                 </a-radio-group>
@@ -157,7 +157,7 @@ export default {
       default: false
     },
     dataSource: {
-      type: Object,
+      type: Array,
       required: true
     },
     resource: {
@@ -238,6 +238,16 @@ export default {
         default:
           break
       }
+    },
+    handleVisibleInterval (intervalType) {
+      if (this.dataSource?.length === 0) {
+        return false
+      }
+      const dataSource = this.dataSource.filter(item => item.intervaltype === intervalType)
+      if (dataSource && dataSource.length > 0) {
+        return true
+      }
+      return false
     },
     handleSubmit (e) {
       if (this.actionLoading) return

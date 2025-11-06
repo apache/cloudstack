@@ -54,7 +54,7 @@ export default {
   data () {
     return {
       loading: false,
-      dataSource: {}
+      dataSource: []
     }
   },
   provide () {
@@ -69,11 +69,11 @@ export default {
   methods: {
     fetchData () {
       const params = {}
-      this.dataSource = {}
+      this.dataSource = []
       this.loading = true
       params.virtualmachineid = this.resource.id
       api('listBackupSchedule', params).then(json => {
-        this.dataSource = json.listbackupscheduleresponse.backupschedule || {}
+        this.dataSource = json.listbackupscheduleresponse.backupschedule || []
       }).finally(() => {
         this.loading = false
       })
