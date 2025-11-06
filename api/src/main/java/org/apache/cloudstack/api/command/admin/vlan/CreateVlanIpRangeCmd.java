@@ -38,6 +38,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Objects;
 
@@ -162,7 +163,7 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     }
 
     public String getVlan() {
-        if ((vlan == null || vlan.isEmpty()) && !isForNsx()) {
+        if (StringUtils.isBlank(vlan) && !isForNsx()) {
             vlan = "untagged";
         }
         return vlan;
