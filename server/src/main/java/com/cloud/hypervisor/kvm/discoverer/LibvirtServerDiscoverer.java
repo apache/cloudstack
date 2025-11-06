@@ -16,6 +16,28 @@
 // under the License.
 package com.cloud.hypervisor.kvm.discoverer;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.ADD_HOST_ON_SERVICE_RESTART_KVM;
+
+import java.net.InetAddress;
+import java.net.URI;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.agent.lb.IndirectAgentLB;
+import org.apache.cloudstack.ca.CAManager;
+import org.apache.cloudstack.ca.SetupCertificateCommand;
+import org.apache.cloudstack.direct.download.DirectDownloadManager;
+import org.apache.cloudstack.framework.ca.Certificate;
+import org.apache.cloudstack.utils.cache.LazyCache;
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -32,6 +54,7 @@ import com.cloud.exception.DiscoveredWithErrorException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
+import com.cloud.host.HostInfo;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -45,29 +68,11 @@ import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.trilead.ssh2.Connection;
-import org.apache.cloudstack.agent.lb.IndirectAgentLB;
-import org.apache.cloudstack.ca.CAManager;
-import org.apache.cloudstack.ca.SetupCertificateCommand;
-import org.apache.cloudstack.direct.download.DirectDownloadManager;
-import org.apache.cloudstack.framework.ca.Certificate;
-import org.apache.cloudstack.utils.security.KeyStoreUtils;
 
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.net.InetAddress;
-import java.net.URI;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import static com.cloud.configuration.ConfigurationManagerImpl.ADD_HOST_ON_SERVICE_RESTART_KVM;
 
 public abstract class LibvirtServerDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
     private final int _waitTime = 5; /* wait for 5 minutes */
@@ -88,6 +93,16 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
     private IndirectAgentLB indirectAgentLB;
     @Inject
     private HostDao hostDao;
+
+    private LazyCache<Long, HostVO> clusterExistingHostCache;
+
+    private HostVO getExistingHostForCluster(long clusterId) {
+        HostVO existingHostInCluster = _hostDao.findAnyStateHypervisorHostInCluster(clusterId);
+        if (existingHostInCluster != null) {
+            _hostDao.loadDetails(existingHostInCluster);
+        }
+        return existingHostInCluster;
+    }
 
     @Override
     public abstract Hypervisor.HypervisorType getHypervisorType();
@@ -226,7 +241,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
 
         // Set cluster GUID based on cluster ID if null
         if (cluster.getGuid() == null) {
-            cluster.setGuid(UUID.nameUUIDFromBytes(String.valueOf(clusterId).getBytes()).toString());
+            cluster.setGuid(UuidUtils.nameUUIDFromBytes(String.valueOf(clusterId).getBytes()).toString());
             _clusterDao.update(clusterId, cluster);
         }
 
@@ -244,7 +259,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             String hostname = uri.getHost();
             InetAddress ia = InetAddress.getByName(hostname);
             agentIp = ia.getHostAddress();
-            String guid = UUID.nameUUIDFromBytes(agentIp.getBytes()).toString();
+            String guid = UuidUtils.nameUUIDFromBytes(agentIp.getBytes()).toString();
 
             List<HostVO> existingHosts = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.Routing, dcId);
             if (existingHosts != null) {
@@ -425,6 +440,9 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             _kvmGuestNic = _kvmPrivateNic;
         }
 
+        clusterExistingHostCache = new LazyCache<>(32, 30,
+                this::getExistingHostForCluster);
+
         agentMgr.registerForHostEvents(this, true, false, false);
         _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
@@ -467,12 +485,10 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             throw new IllegalArgumentException("cannot add host, due to can't find cluster: " + host.getClusterId());
         }
 
-        List<HostVO> hostsInCluster = _resourceMgr.listAllHostsInCluster(clusterVO.getId());
-        if (!hostsInCluster.isEmpty()) {
-            HostVO oneHost = hostsInCluster.get(0);
-            _hostDao.loadDetails(oneHost);
-            String hostOsInCluster = oneHost.getDetail("Host.OS");
-            String hostOs = ssCmd.getHostDetails().get("Host.OS");
+        HostVO existingHostInCluster = clusterExistingHostCache.get(clusterVO.getId());
+        if (existingHostInCluster != null) {
+            String hostOsInCluster = existingHostInCluster.getDetail(HostInfo.HOST_OS);
+            String hostOs = ssCmd.getHostDetails().get(HostInfo.HOST_OS);
             if (!isHostOsCompatibleWithOtherHost(hostOsInCluster, hostOs)) {
                 String msg = String.format("host: %s with hostOS, \"%s\"into a cluster, in which there are \"%s\" hosts added", firstCmd.getPrivateIpAddress(), hostOs, hostOsInCluster);
                 if (hostOs != null && hostOs.startsWith(hostOsInCluster)) {

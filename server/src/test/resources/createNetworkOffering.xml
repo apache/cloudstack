@@ -50,13 +50,14 @@
     <bean id="ipv6ServiceImpl" class="com.cloud.network.Ipv6ServiceImpl" />
     <bean id="managementServiceConfigurationImpl" class="com.cloud.configuration.ManagementServiceConfigurationImpl" />
     <bean class="org.apache.cloudstack.networkoffering.ChildTestConfiguration" />
-    <bean id="UservmDetailsDaoImpl" class="com.cloud.vm.dao.UserVmDetailsDaoImpl" />
+    <bean id="UservmDetailsDaoImpl" class="com.cloud.vm.dao.VMInstanceDetailsDaoImpl" />
     <bean id="hostGpuGroupsDaoImpl" class="com.cloud.gpu.dao.HostGpuGroupsDaoImpl" />
     <bean id="vGPUTypesDaoImpl" class="com.cloud.gpu.dao.VGPUTypesDaoImpl" />
     <bean id="usageEventDaoImpl" class="com.cloud.event.dao.UsageEventDaoImpl" />
     <bean id="usageEventDetailsDaoImpl" class="com.cloud.event.dao.UsageEventDetailsDaoImpl" />
     <bean id="storagePoolHostDaoImpl" class="com.cloud.storage.dao.StoragePoolHostDaoImpl" />
     <bean id="storagePoolTagsDaoImpl" class="com.cloud.storage.dao.StoragePoolTagsDaoImpl" />
+    <bean id="storagePoolAndAccessGroupMapDaoImpl" class="com.cloud.storage.dao.StoragePoolAndAccessGroupMapDaoImpl" />
     <bean id="primaryDataStoreDaoImpl" class="org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl" />
     <bean id="userIpAddressDetailsDao" class="org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDaoImpl" />
     <bean id="loadBalancerVMMapDaoImpl" class="com.cloud.network.dao.LoadBalancerVMMapDaoImpl" />
@@ -73,7 +74,10 @@
     <bean id="configurationGroupDaoImpl" class="org.apache.cloudstack.framework.config.dao.ConfigurationGroupDaoImpl" />
     <bean id="configurationSubGroupDaoImpl" class="org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDaoImpl" />
     <bean id="nsxControllerDaoImpl" class="com.cloud.network.dao.NsxProviderDaoImpl" />
+    <bean id="netrisProviderDaoImpl" class="com.cloud.network.dao.NetrisProviderDaoImpl" />
+    <bean id="netrisServiceMock" class="org.apache.cloudstack.service.NetrisServiceMockTest" />
     <bean id="vlanDetailsDao" class="com.cloud.dc.dao.VlanDetailsDaoImpl" />
     <bean id="publicIpQuarantineDaoImpl" class="com.cloud.network.dao.PublicIpQuarantineDaoImpl" />
     <bean id="reservationDao" class="org.apache.cloudstack.reservation.dao.ReservationDaoImpl" />
+    <bean id="managementServerHostDao" class="com.cloud.cluster.dao.ManagementServerHostDaoImpl" />
 </beans>

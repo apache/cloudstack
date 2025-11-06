@@ -23,18 +23,18 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.api.ResourceDetail;
 
 @Entity
 @Table(name = "account_details")
-public class AccountDetailVO implements InternalIdentity {
+public class AccountDetailVO implements ResourceDetail {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private long id;
 
     @Column(name = "account_id")
-    private long accountId;
+    private long resourceId;
 
     @Column(name = "name")
     private String name;
@@ -46,13 +46,14 @@ public class AccountDetailVO implements InternalIdentity {
     }
 
     public AccountDetailVO(long accountId, String name, String value) {
-        this.accountId = accountId;
+        this.resourceId = accountId;
         this.name = name;
         this.value = value;
     }
 
-    public long getAccountId() {
-        return accountId;
+    @Override
+    public long getResourceId() {
+        return resourceId;
     }
 
     public String getName() {
@@ -61,6 +62,11 @@ public class AccountDetailVO implements InternalIdentity {
 
     public String getValue() {
         return value;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return true;
     }
 
     public void setValue(String value) {

@@ -31,6 +31,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.MemBalloonDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SCSIDef;
 import org.apache.cloudstack.utils.qemu.QemuObject;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -538,6 +539,16 @@ public class LibvirtVMDefTest extends TestCase {
     }
 
     @Test
+    public void testWatchDofDefNone() {
+        LibvirtVMDef.WatchDogDef.WatchDogModel model = LibvirtVMDef.WatchDogDef.WatchDogModel.NONE;
+        LibvirtVMDef.WatchDogDef.WatchDogAction action = LibvirtVMDef.WatchDogDef.WatchDogAction.RESET;
+        LibvirtVMDef.WatchDogDef def = new LibvirtVMDef.WatchDogDef(action, model);
+        String result = def.toString();
+        assertNotNull(result);
+        assertTrue(StringUtils.isBlank(result));
+    }
+
+    @Test
     public void testSCSIDef() {
         SCSIDef def = new SCSIDef((short)0, 0, 0, 9, 0, 4);
         String str = def.toString();
@@ -555,9 +566,20 @@ public class LibvirtVMDefTest extends TestCase {
         assertEquals("<cpu><topology sockets='4' cores='2' threads='1' /></cpu>", cpuModeDef.toString());
     }
 
+    @Test
     public void testTopologyNoInfo() {
         LibvirtVMDef.CpuModeDef cpuModeDef = new LibvirtVMDef.CpuModeDef();
         cpuModeDef.setTopology(-1, -1, 4);
         assertEquals("<cpu></cpu>", cpuModeDef.toString());
+    }
+
+    @Test
+    public void testTpmModel() {
+        LibvirtVMDef.TpmDef tpmDef = new LibvirtVMDef.TpmDef("tpm-tis", "2.0");
+        assertEquals(LibvirtVMDef.TpmDef.TpmModel.TIS, tpmDef.getModel());
+        assertEquals(LibvirtVMDef.TpmDef.TpmVersion.V2_0, tpmDef.getVersion());
+        assertEquals("<tpm model='tpm-tis'>\n" +
+                "<backend type='emulator' version='2.0'/>\n" +
+                "</tpm>\n", tpmDef.toString());
     }
 }

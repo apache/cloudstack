@@ -98,7 +98,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 
 export default {
   name: 'AddNiciraNvpDevice',
@@ -187,7 +187,7 @@ export default {
     },
     addNetworkServiceProvider (args) {
       return new Promise((resolve, reject) => {
-        api('addNetworkServiceProvider', args).then(async json => {
+        postAPI('addNetworkServiceProvider', args).then(async json => {
           this.$pollJob({
             jobId: json.addnetworkserviceproviderresponse.jobid,
             successMethod: (result) => {
@@ -208,7 +208,7 @@ export default {
     },
     addNiciraNvpDevice (args) {
       return new Promise((resolve, reject) => {
-        api('addNiciraNvpDevice', args).then(json => {
+        postAPI('addNiciraNvpDevice', args).then(json => {
           const jobId = json.addniciranvpdeviceresponse.jobid || null
           resolve(jobId)
         }).catch(error => {

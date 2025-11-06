@@ -57,7 +57,7 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicVO;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -124,13 +124,13 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             + "left join security_group on security_group_vm_map.security_group_id=security_group.id " + "left join nics on vm_instance.id=nics.instance_id "
             + "left join networks on nics.network_id=networks.id " + "left join user_ip_address on user_ip_address.vm_id=vm_instance.id " + "where vm_instance.id in (";
 
-    private static final String VMS_DETAIL_BY_NAME = "select vm_instance.instance_name, vm_instance.vm_type, vm_instance.id , user_vm_details.value, user_vm_details.name from vm_instance "
-            + "left join user_vm_details on vm_instance.id = user_vm_details.vm_id where (user_vm_details.name is null or user_vm_details.name = ? ) and vm_instance.instance_name in (";
+    private static final String VMS_DETAIL_BY_NAME = "select vm_instance.instance_name, vm_instance.vm_type, vm_instance.id , vm_instance_details.value, vm_instance_details.name from vm_instance "
+            + "left join vm_instance_details on vm_instance.id = vm_instance_details.vm_id where (vm_instance_details.name is null or vm_instance_details.name = ? ) and vm_instance.instance_name in (";
 
     private static final int VM_DETAILS_BATCH_SIZE = 100;
 
     @Inject
-    protected UserVmDetailsDao _detailsDao;
+    protected VMInstanceDetailsDao _detailsDao;
     @Inject
     protected NicDao _nicDao;
 
@@ -445,10 +445,10 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
         final Map<String, Boolean> visibilityMap = _detailsDao.listDetailsVisibility(vm.getId());
 
-        List<UserVmDetailVO> details = new ArrayList<UserVmDetailVO>();
+        List<VMInstanceDetailVO> details = new ArrayList<VMInstanceDetailVO>();
         for (Map.Entry<String, String> entry : detailsStr.entrySet()) {
             boolean display = !hiddenDetails.contains(entry.getKey()) && visibilityMap.getOrDefault(entry.getKey(), true);
-            details.add(new UserVmDetailVO(vm.getId(), entry.getKey(), entry.getValue(), display));
+            details.add(new VMInstanceDetailVO(vm.getId(), entry.getKey(), entry.getValue(), display));
         }
 
         _detailsDao.saveDetails(details);
@@ -755,7 +755,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
                 while (rs.next()) {
                     vmsDetailByNames.add(new Pair<Pair<String, VirtualMachine.Type>, Pair<Long, String>>(new Pair<String, VirtualMachine.Type>(
                             rs.getString("vm_instance.instance_name"), VirtualMachine.Type.valueOf(rs.getString("vm_type"))),
-                            new Pair<Long, String>(rs.getLong("vm_instance.id"), rs.getString("user_vm_details.value"))));
+                            new Pair<Long, String>(rs.getLong("vm_instance.id"), rs.getString("vm_instance_details.value"))));
                 }
             }
         } catch (SQLException e) {
@@ -821,6 +821,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
                 reservationDao.setResourceId(Resource.ResourceType.user_vm, userVM.getId());
                 reservationDao.setResourceId(Resource.ResourceType.cpu, userVM.getId());
                 reservationDao.setResourceId(Resource.ResourceType.memory, userVM.getId());
+                reservationDao.setResourceId(Resource.ResourceType.gpu, userVM.getId());
                 return userVM;
             });
         }

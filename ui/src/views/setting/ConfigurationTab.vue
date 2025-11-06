@@ -86,7 +86,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
 import Breadcrumb from '@/components/widgets/Breadcrumb'
 import OsLogo from '@/components/widgets/OsLogo'
@@ -176,7 +176,7 @@ export default {
       const params = {
         pagesize: -1
       }
-      api('listConfigurationGroups', params).then(response => {
+      getAPI('listConfigurationGroups', params).then(response => {
         this.groups = response.listconfigurationgroupsresponse.configurationgroup
       }).catch(error => {
         console.error(error)
@@ -206,7 +206,7 @@ export default {
         params.keyword = this.filter
       }
 
-      api('listConfigurations', params).then(response => {
+      getAPI('listConfigurations', params).then(response => {
         this.config = []
         let config = response.listconfigurationsresponse.configuration || []
         this.count = response.listconfigurationsresponse.count || 0

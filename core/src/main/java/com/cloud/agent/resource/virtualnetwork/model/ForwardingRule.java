@@ -26,18 +26,21 @@ public class ForwardingRule {
     private String sourcePortRange;
     private String destinationIpAddress;
     private String destinationPortRange;
+    private String sourceCidrList;
 
     public ForwardingRule() {
         // Empty constructor for (de)serialization
     }
 
-    public ForwardingRule(boolean revoke, String protocol, String sourceIpAddress, String sourcePortRange, String destinationIpAddress, String destinationPortRange) {
+    public ForwardingRule(boolean revoke, String protocol, String sourceIpAddress, String sourcePortRange, String destinationIpAddress, String destinationPortRange,
+                          String sourceCidrList) {
         this.revoke = revoke;
         this.protocol = protocol;
         this.sourceIpAddress = sourceIpAddress;
         this.sourcePortRange = sourcePortRange;
         this.destinationIpAddress = destinationIpAddress;
         this.destinationPortRange = destinationPortRange;
+        this.sourceCidrList = sourceCidrList;
     }
 
     public boolean isRevoke() {
@@ -86,6 +89,10 @@ public class ForwardingRule {
 
     public void setDestinationPortRange(String destinationPortRange) {
         this.destinationPortRange = destinationPortRange;
+    }
+
+    public String getSourceCidrList() {
+        return sourceCidrList;
     }
 
 }

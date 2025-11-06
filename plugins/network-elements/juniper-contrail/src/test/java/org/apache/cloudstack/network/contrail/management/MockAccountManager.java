@@ -237,6 +237,12 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
+    public boolean isResourceDomainAdmin(Long accountId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
     public boolean isNormalUser(long accountId) {
         // TODO Auto-generated method stub
         return false;
@@ -486,12 +492,12 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
-    public Map<String, String> getKeys(GetUserKeysCmd cmd){
+    public Pair<Boolean, Map<String, String>> getKeys(GetUserKeysCmd cmd){
         return null;
     }
 
     @Override
-    public Map<String, String> getKeys(Long userId) {
+    public Pair<Boolean, Map<String, String>> getKeys(Long userId) {
         return null;
     }
 
@@ -527,6 +533,14 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
 
     @Override
     public void checkApiAccess(Account account, String command) throws PermissionDeniedException {
+    }
 
+    @Override
+    public UserAccount clearUserTwoFactorAuthenticationInSetupStateOnLogin(UserAccount user) {
+        return null;
+    }
+
+    @Override
+    public void verifyCallerPrivilegeForUserOrAccountOperations(Account userAccount) {
     }
 }

@@ -573,6 +573,9 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 } else {
                     field.set(entity, rs.getLong(index));
                 }
+            } else if (field.getDeclaredAnnotation(Convert.class) != null) {
+                Object val = _conversionSupport.convertToEntityAttribute(field, rs.getObject(index));
+                field.set(entity, val);
             } else if (type.isEnum()) {
                 final Enumerated enumerated = field.getAnnotation(Enumerated.class);
                 final EnumType enumType = (enumerated == null) ? EnumType.STRING : enumerated.value();
@@ -677,9 +680,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 }
             } else if (type == byte[].class) {
                 field.set(entity, rs.getBytes(index));
-            } else if (field.getDeclaredAnnotation(Convert.class) != null) {
-                Object val = _conversionSupport.convertToEntityAttribute(field, rs.getObject(index));
-                field.set(entity, val);
             } else {
                 field.set(entity, rs.getObject(index));
             }
@@ -949,7 +949,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     }
 
     @DB()
-    protected List<T> listBy(SearchCriteria<T> sc, final Filter filter) {
+    public List<T> listBy(SearchCriteria<T> sc, final Filter filter) {
         sc = checkAndSetRemovedIsNull(sc);
         return listIncludingRemovedBy(sc, filter);
     }
@@ -1008,6 +1008,17 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     @Override
     @DB()
+    public List<T> listByUuids(final Collection<String> uuids) {
+        if (org.apache.commons.collections.CollectionUtils.isEmpty(uuids)) {
+            return Collections.emptyList();
+        }
+        SearchCriteria<T> sc = createSearchCriteria();
+        sc.addAnd("uuid", SearchCriteria.Op.IN, uuids.toArray());
+        return listBy(sc);
+    }
+
+    @Override
+    @DB()
     public T findByUuidIncludingRemoved(final String uuid) {
         SearchCriteria<T> sc = createSearchCriteria();
         sc.addAnd("uuid", SearchCriteria.Op.EQ, uuid);
@@ -1051,6 +1062,10 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     }
 
     protected T findById(ID id, boolean removed, Boolean lock) {
+        if (id == null) {
+            return null;
+        }
+
         StringBuilder sql = new StringBuilder(_selectByIdSql);
         if (!removed && _removed != null) {
             sql.append(" AND ").append(_removed.first());
@@ -1214,6 +1229,35 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         return executeList(sql.toString());
     }
 
+    private Object getIdObject() {
+        T entity = (T)_searchEnhancer.create();
+        try {
+            Method m = _entityBeanType.getMethod("getId");
+            return m.invoke(entity);
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ignored) {
+            logger.warn("Unable to get ID object for entity: {}", _entityBeanType.getSimpleName());
+        }
+        return null;
+    }
+
+    @Override
+    public List<ID> listAllIds() {
+        Object idObj = getIdObject();
+        if (idObj == null) {
+            return Collections.emptyList();
+        }
+        Class<ID> clazz = (Class<ID>)idObj.getClass();
+        GenericSearchBuilder<T, ID> sb = createSearchBuilder(clazz);
+        try {
+            Method m = sb.entity().getClass().getMethod("getId");
+            sb.selectFields(m.invoke(sb.entity()));
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ignored) {
+            return Collections.emptyList();
+        }
+        sb.done();
+        return customSearch(sb.create(), null);
+    }
+
     @Override
     public boolean expunge(final ID id) {
         final TransactionLegacy txn = TransactionLegacy.currentTxn();
@@ -1242,13 +1286,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             logger.error("DB Exception on: " + pstmt, e);
             throw new CloudRuntimeException("Unable to expunge on DB, due to: " + e.getLocalizedMessage());
         }
-    }
-
-    // FIXME: Does not work for joins.
-    @Override
-    public int expunge(final SearchCriteria<T> sc, long limit) {
-        Filter filter = new Filter(limit);
-        return expunge(sc, filter);
     }
 
     @Override
@@ -2448,4 +2485,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
     }
 
+    public static class SumCount {
+        public long sum;
+        public long count;
+
+        public SumCount() {
+        }
+    }
 }

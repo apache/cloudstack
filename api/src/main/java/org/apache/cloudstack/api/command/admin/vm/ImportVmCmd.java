@@ -144,16 +144,32 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
     private String clusterName;
 
     @Parameter(name = ApiConstants.CONVERT_INSTANCE_HOST_ID, type = CommandType.UUID, entityType = HostResponse.class,
-            description = "(only for importing VMs from VMware to KVM) optional - the host to perform the virt-v2v migration from VMware to KVM.")
+            description = "(only for importing VMs from VMware to KVM) optional - the host to perform the virt-v2v conversion from VMware to KVM.")
     private Long convertInstanceHostId;
+
+    @Parameter(name = ApiConstants.IMPORT_INSTANCE_HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, since = "4.19.2",
+            description = "(only for importing VMs from VMware to KVM) optional - the host to import the converted instance from VMware to KVM.")
+    private Long importInstanceHostId;
 
     @Parameter(name = ApiConstants.CONVERT_INSTANCE_STORAGE_POOL_ID, type = CommandType.UUID, entityType = StoragePoolResponse.class,
             description = "(only for importing VMs from VMware to KVM) optional - the temporary storage pool to perform the virt-v2v migration from VMware to KVM.")
     private Long convertStoragePoolId;
 
     @Parameter(name = ApiConstants.FORCE_MS_TO_IMPORT_VM_FILES, type = CommandType.BOOLEAN,
-            description = "(only for importing VMs from VMware to KVM) optional - if true, forces MS to import VM file(s) to temporary storage, else uses KVM Host if ovftool is available, falls back to MS if not.")
+            description = "(only for importing VMs from VMware to KVM) optional - if true, forces MS to export OVF from VMware to temporary storage, else uses KVM Host if ovftool is available, falls back to MS if not.")
     private Boolean forceMsToImportVmFiles;
+
+    @Parameter(name = ApiConstants.EXTRA_PARAMS,
+            type = CommandType.STRING,
+            since = "4.22",
+            description = "(only for importing VMs from VMware to KVM) optional - extra parameters to be passed on the virt-v2v command, if allowed by the administrator")
+    private String extraParams;
+
+    @Parameter(name = ApiConstants.FORCE_CONVERT_TO_POOL,
+            type = CommandType.BOOLEAN,
+            since = "4.22",
+            description = "(only for importing VMs from VMware to KVM) optional - if true, forces virt-v2v conversions to write directly on the provided storage pool (avoid using temporary conversion pool).")
+    private Boolean forceConvertToPool;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -199,6 +215,10 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
         return convertInstanceHostId;
     }
 
+    public Long getImportInstanceHostId() {
+        return importInstanceHostId;
+    }
+
     public Long getConvertStoragePoolId() {
         return convertStoragePoolId;
     }
@@ -238,6 +258,14 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
     @Override
     public String getEventType() {
         return EventTypes.EVENT_VM_IMPORT;
+    }
+
+    public String getExtraParams() {
+        return extraParams;
+    }
+
+    public boolean getForceConvertToPool() {
+        return BooleanUtils.toBooleanDefaultIfNull(forceConvertToPool, false);
     }
 
     @Override

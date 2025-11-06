@@ -42,7 +42,7 @@ public class PowerOperationTask implements Runnable {
 
     @Override
     public String toString() {
-        return String.format("[OOBM Task] Power operation:%s on Host:%d(%s)", powerOperation, host.getId(), host.getName());
+        return String.format("[OOBM Task] Power operation: %s on Host: %s", powerOperation, host);
     }
 
     @Override
@@ -50,8 +50,7 @@ public class PowerOperationTask implements Runnable {
         try {
             service.executePowerOperation(host, powerOperation, null);
         } catch (Exception e) {
-            logger.warn(String.format("Out-of-band management background task operation=%s for host %s failed with: %s",
-                    powerOperation.name(), host.getName(), e.getMessage()));
+            logger.warn("Out-of-band management background task operation={} for host {} failed with: {}", powerOperation.name(), host, e.getMessage());
 
             String eventMessage = String
                     .format("Error while issuing out-of-band management action %s for host: %s", powerOperation.name(), host.getName());

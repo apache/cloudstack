@@ -73,6 +73,9 @@ public class ListEventsCmd extends BaseListProjectAndAccountResourcesCmd {
     @Parameter(name = ApiConstants.ARCHIVED, type = CommandType.BOOLEAN, description = "true to list archived events otherwise false", since="4.19.0")
     private Boolean archived;
 
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "The state of the events", since="4.21.0")
+    private String state;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -119,6 +122,10 @@ public class ListEventsCmd extends BaseListProjectAndAccountResourcesCmd {
 
     public boolean getArchived() {
         return archived != null && archived;
+    }
+
+    public String getState() {
+        return state;
     }
 
     /////////////////////////////////////////////////////

@@ -18,15 +18,14 @@
 """
 # Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.cloudstackAPI import (stopSystemVm,
+from marvin.cloudstackAPI import (getDiagnosticsData, stopSystemVm,
                                   rebootSystemVm,
                                   destroySystemVm, updateConfiguration)
 from marvin.lib.utils import (cleanup_resources,
                               get_process_status,
                               get_host_credentials,
                               wait_until)
-from marvin.lib.base import (PhysicalNetwork,
-                             NetScaler, ImageStore)
+from marvin.lib.base import (PhysicalNetwork, NetScaler, ImageStore, UserData)
 from marvin.lib.common import (get_zone,
                                list_hosts,
                                list_ssvms,
@@ -35,6 +34,10 @@ from marvin.lib.common import (get_zone,
 from nose.plugins.attrib import attr
 import telnetlib
 import logging
+import base64
+import os
+import urllib
+import zipfile
 
 # Import System modules
 import time
@@ -988,6 +991,9 @@ class TestSSVMs(cloudstackTestCase):
 
         # Private IP Address of System VMs are allowed to change after reboot - CLOUDSTACK-7745
 
+        # Agent in Up state for a while after reboot, wait for the agent to Disconnect and back Up.
+        time.sleep(60)
+
         # Wait for the agent to be up
         self.waitForSystemVMAgent(cpvm_response.name)
 
@@ -1102,6 +1108,9 @@ class TestSSVMs(cloudstackTestCase):
             str(cpvm_response.state),
             "Check whether CPVM is running or not"
         )
+
+        # Agent in Up state for a while after reboot, wait for the agent to Disconnect and back Up.
+        time.sleep(60)
 
         # Wait for the agent to be up
         self.waitForSystemVMAgent(cpvm_response.name)

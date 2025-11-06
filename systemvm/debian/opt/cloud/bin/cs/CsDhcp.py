@@ -82,7 +82,7 @@ class CsDhcp(CsDataBag):
                 CsHelper.service("dnsmasq", "reload")
 
     def configure_server(self):
-        # self.conf.addeq("dhcp-hostsfile=%s" % DHCP_HOSTS)
+        self.conf.add("bind-interfaces", 0)
         idx = 0
         listen_address = ["127.0.0.1"]
         for i in self.devinfo:
@@ -110,7 +110,12 @@ class CsDhcp(CsDataBag):
             if gn.get_dns() and device:
                 sline = "dhcp-option=tag:interface-%s-%s,6" % (device, idx)
                 dns_list = [x for x in gn.get_dns() if x]
-                if self.config.is_dhcp() and not self.config.use_extdns():
+                if (self.config.is_vpc() or self.config.is_router()) and ('is_vr_guest_gateway' in gn.data and gn.data['is_vr_guest_gateway']):
+                  if gateway in dns_list:
+                    dns_list.remove(gateway)
+                  if gn.data['router_guest_ip'] != ip:
+                    dns_list.insert(0, ip)
+                elif self.config.is_dhcp() and not self.config.use_extdns():
                     guest_ip = self.config.address().get_guest_ip()
                     if guest_ip and guest_ip in dns_list and ip not in dns_list:
                         # Replace the default guest IP in VR with the ip in additional IP ranges, if shared network has multiple IP ranges.
@@ -139,12 +144,11 @@ class CsDhcp(CsDataBag):
             # Listen Address
             if self.cl.is_redundant():
                 listen_address.append(gateway)
-            else:
-                listen_address.append(ip)
+            listen_address.append(ip)
             # Add localized "data-server" records in /etc/hosts for VPC routers
-            if self.config.is_vpc() or self.config.is_router():
+            if (self.config.is_vpc() and gn.is_vr_guest_gateway()) or self.config.is_router():
                 self.add_host(gateway, "%s data-server" % CsHelper.get_hostname())
-            elif self.config.is_dhcp():
+            elif self.config.is_dhcp() or (self.config.is_vpc() and not gn.is_vr_guest_gateway()):
                 self.add_host(ip, "%s data-server" % CsHelper.get_hostname())
             idx += 1
 
@@ -227,7 +231,7 @@ class CsDhcp(CsDataBag):
         i = IPAddress(entry['ipv4_address'])
         # Calculate the device
         for v in self.devinfo:
-            if i > v['network'].network and i < v['network'].broadcast:
+            if i > v['network'].network and v['network'].broadcast and i < v['network'].broadcast:
                 v['dnsmasq'] = True
                 # Virtual Router
                 v['gateway'] = entry['default_gateway']

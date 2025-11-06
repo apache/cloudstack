@@ -65,7 +65,7 @@
 
 <script>
 
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import Status from '@/components/widgets/Status'
 import DetailsTab from '@/components/view/DetailsTab'
@@ -159,7 +159,7 @@ export default {
       if (this.$store.getters.listAllProjects) {
         params.projectid = '-1'
       }
-      api('listVirtualMachines', params).then(json => {
+      getAPI('listVirtualMachines', params).then(json => {
         this.virtualmachines = json.listvirtualmachinesresponse.virtualmachine || []
         this.vm = this.virtualmachines[0]
       })
@@ -175,7 +175,7 @@ export default {
         listsystemvms: 'true',
         listall: true
       }
-      api('listVolumes', params).then(json => {
+      getAPI('listVolumes', params).then(json => {
         this.volumes = json.listvolumesresponse.volume || []
         this.volume = this.volumes[0]
       })

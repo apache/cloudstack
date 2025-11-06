@@ -50,6 +50,7 @@
           <a-row justify="end">
             <a-col>
               <tooltip-button
+                v-if="'generateUsageRecords' in $store.getters.apis"
                 type="primary"
                 icon="hdd-outlined"
                 :tooltip="$t('label.usage.records.generate')"
@@ -58,6 +59,7 @@
             </a-col>&nbsp;&nbsp;
             <a-col>
               <tooltip-button
+                v-if="'removeRawUsageRecords' in $store.getters.apis"
                 type="danger"
                 icon="delete-outlined"
                 :tooltip="$t('label.usage.records.purge')"
@@ -70,7 +72,7 @@
     </a-card>
   </a-affix>
   <a-col>
-    <a-card size="small" :loading="serverMetricsLoading">
+    <a-card size="small" :loading="serverMetricsLoading" v-if="'listUsageServerMetrics' in $store.getters.apis">
       <a-row justify="space-around">
         <a-card-grid style="width: 30%; text-align: center; font-size: small;">
           <a-statistic
@@ -86,10 +88,10 @@
         <a-card-grid style="width: 35%; text-align: center; font-size: small;">
           <a-statistic
             :title="$t('label.lastheartbeat')"
-            :value="$toLocaleDate(serverStats.lastheartbeat)"
+            :value="serverStats.lastheartbeat ? $toLocaleDate(serverStats.lastheartbeat) : $t('label.never')"
             valueStyle="font-size: medium"
           />
-          <a-card-meta :description="getTimeSince(serverStats.collectiontime)" />
+          <a-card-meta v-if="!!serverStats.lastheartbeat" :description="getTimeSince(serverStats.collectiontime)" />
         </a-card-grid>
         <a-card-grid style="width: 35%; text-align: center; font-size: small;">
           <a-statistic
@@ -159,7 +161,7 @@
               />
             </a-form-item>
           </a-col>
-          <a-col :span="3">
+          <a-col :span="3" v-if="'listUsageTypes' in $store.getters.apis">
             <a-form-item
               ref="type"
               name="type"
@@ -173,7 +175,7 @@
               />
             </a-form-item>
           </a-col>
-          <a-col :span="3">
+          <a-col :span="3" v-if="'listUsageTypes' in $store.getters.apis">
             <a-form-item
               ref="id"
               name="id"
@@ -349,7 +351,7 @@ import { ref, reactive, toRaw } from 'vue'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import utc from 'dayjs/plugin/utc'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { toCsv } from '@/utils/util.js'
 import { mixinForm } from '@/utils/mixin'
 
@@ -501,8 +503,13 @@ export default {
       }
     },
     listUsageServerMetrics () {
+      if (!('listUsageServerMetrics' in this.$store.getters.apis)) {
+        this.serverMetricsLoading = false
+        return
+      }
+
       this.serverMetricsLoading = true
-      api('listUsageServerMetrics').then(json => {
+      getAPI('listUsageServerMetrics').then(json => {
         this.stats = []
         if (json && json.listusageservermetricsresponse && json.listusageservermetricsresponse.usageMetrics) {
           this.serverStats = json.listusageservermetricsresponse.usageMetrics
@@ -542,7 +549,7 @@ export default {
       }
     },
     getDomains () {
-      api('listDomains', { listAll: true }).then(json => {
+      getAPI('listDomains', { listAll: true }).then(json => {
         if (json && json.listdomainsresponse && json.listdomainsresponse.domain) {
           this.domains = [{ id: null, value: '' }, ...json.listdomainsresponse.domain.map(x => {
             return {
@@ -566,7 +573,7 @@ export default {
           this.formRef.value.resetFields('domain')
         }
       }
-      api('listAccounts', params).then(json => {
+      getAPI('listAccounts', params).then(json => {
         if (json && json.listaccountsresponse && json.listaccountsresponse.account) {
           this.accounts = [{ id: null, value: '' }, ...json.listaccountsresponse.account.map(x => {
             return {
@@ -619,7 +626,7 @@ export default {
         this.loading = false
         return
       }
-      api('listUsageRecords', params).then(json => {
+      getAPI('listUsageRecords', params).then(json => {
         if (json && json.listusagerecordsresponse) {
           this.usageRecords = json?.listusagerecordsresponse?.usagerecord || []
           this.totalUsageRecords = json?.listusagerecordsresponse?.count || 0
@@ -637,7 +644,11 @@ export default {
       })
     },
     getUsageTypes () {
-      api('listUsageTypes').then(json => {
+      if (!('listUsageTypes' in this.$store.getters.apis)) {
+        return
+      }
+
+      getAPI('listUsageTypes').then(json => {
         if (json && json.listusagetypesresponse && json.listusagetypesresponse.usagetype) {
           this.usageTypes = [{ id: null, value: '' }, ...json.listusagetypesresponse.usagetype.map(x => {
             return {
@@ -692,6 +703,7 @@ export default {
             title = this.$t('label.view')
             break
           case 'virtualmachinename':
+            title = this.$t('label.virtualmachinename')
             dataIndex = 'name'
             break
           default:
@@ -722,7 +734,7 @@ export default {
         this.downloadStatus = 'active'
         this.loading = true
         var params = this.getParams(1, 0) // to get count
-        api('listUsageRecords', params).then(json => {
+        getAPI('listUsageRecords', params).then(json => {
           if (Object.getOwnPropertyNames(json.listusagerecordsresponse).length === 0 || json.listusagerecordsresponse.count === 0) {
             this.$notifyError({
               response: { data: null },
@@ -775,7 +787,7 @@ export default {
     },
     fetchUsageRecords (params) {
       return new Promise((resolve, reject) => {
-        api('listUsageRecords', params).then(json => {
+        getAPI('listUsageRecords', params).then(json => {
           return resolve(json.listusagerecordsresponse.usagerecord)
         }).catch(error => {
           return reject(error)
@@ -783,7 +795,7 @@ export default {
       })
     },
     getAllUsageRecordColumns () {
-      api('listApis', { name: 'listUsageRecords' }).then(json => {
+      getAPI('listApis', { name: 'listUsageRecords' }).then(json => {
         if (json && json.listapisresponse && json.listapisresponse.api) {
           var apiResponse = json.listapisresponse.api.filter(x => x.name === 'listUsageRecords')[0].response
           this.usageRecordKeys = []
@@ -800,7 +812,7 @@ export default {
       return this.$toLocaleDate(dayjs(date))
     },
     generateUsageRecords () {
-      api('generateUsageRecords').then(json => {
+      postAPI('generateUsageRecords').then(json => {
         this.$message.success(this.$t('label.usage.records.generated'))
       }).catch(error => {
         this.$notifyError(error)
@@ -812,7 +824,7 @@ export default {
       var params = {
         interval: this.purgeDays
       }
-      api('removeRawUsageRecords', params).then(json => {
+      postAPI('removeRawUsageRecords', params).then(json => {
         this.$message.success(this.$t('label.purge.usage.records.success'))
       }).catch(error => {
         this.$message.error(this.$t('label.purge.usage.records.error') + ': ' + error.message)

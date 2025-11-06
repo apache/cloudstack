@@ -25,7 +25,7 @@ import com.cloud.utils.db.GenericDao;
 
 public interface QuotaCreditsDao extends GenericDao<QuotaCreditsVO, Long> {
 
-    List<QuotaCreditsVO> findCredits(long accountId, long domainId, Date startDate, Date endDate);
+    List<QuotaCreditsVO> findCredits(Long accountId, Long domainId, Date startDate, Date endDate, boolean recursive);
 
     QuotaCreditsVO saveCredits(QuotaCreditsVO credits);
 

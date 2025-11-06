@@ -27,7 +27,7 @@ import com.google.gson.annotations.SerializedName;
 public class StatsResponse extends BaseResponse {
 
     @SerializedName("timestamp")
-    @Param(description = "the time when the VM stats were collected. The format is \"yyyy-MM-dd hh:mm:ss\"")
+    @Param(description = "the time when the VM stats were collected. The format is 'yyyy-MM-dd hh:mm:ss'")
     private Date timestamp;
 
     @SerializedName("cpuused")

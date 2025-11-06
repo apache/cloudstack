@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.BackupOfferingResponse;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
@@ -75,6 +76,25 @@ public class ListBackupsCmd extends BaseListProjectAndAccountResourcesCmd {
             description = "list backups by zone id")
     private Long zoneId;
 
+    @Parameter(name = ApiConstants.NAME,
+            type = CommandType.STRING,
+            since = "4.21.0",
+            description = "list backups by name")
+    private String name;
+
+    @Parameter(name = ApiConstants.BACKUP_OFFERING_ID,
+            type = CommandType.UUID,
+            entityType = BackupOfferingResponse.class,
+            since = "4.21.0",
+            description = "list backups by backup offering")
+    private Long backupOfferingId;
+
+    @Parameter(name = ApiConstants.LIST_VM_DETAILS,
+            type = CommandType.BOOLEAN,
+            since = "4.21.0",
+            description = "list backups with VM details")
+    private Boolean listVmDetails;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -87,8 +107,20 @@ public class ListBackupsCmd extends BaseListProjectAndAccountResourcesCmd {
         return vmId;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public Long getBackupOfferingId() {
+        return backupOfferingId;
+    }
+
     public Long getZoneId() {
         return zoneId;
+    }
+
+    public Boolean getListVmDetails() {
+        return listVmDetails;
     }
 
     /////////////////////////////////////////////////////
@@ -101,7 +133,7 @@ public class ListBackupsCmd extends BaseListProjectAndAccountResourcesCmd {
             if (backup == null) {
                 continue;
             }
-            BackupResponse backupResponse = _responseGenerator.createBackupResponse(backup);
+            BackupResponse backupResponse = backupManager.createBackupResponse(backup, this.getListVmDetails());
             responses.add(backupResponse);
         }
         final ListResponse<BackupResponse> response = new ListResponse<>();

@@ -54,6 +54,10 @@ public class KubernetesSupportedVersionResponse extends BaseResponse {
     @Param(description = "the state of the binaries ISO for Kubernetes supported version")
     private String isoState;
 
+    @SerializedName(ApiConstants.ARCH)
+    @Param(description = "the arch of the binaries ISO for Kubernetes supported version", since = "4.20.1")
+    private String isoArch;
+
     @SerializedName(ApiConstants.ZONE_ID)
     @Param(description = "the id of the zone in which Kubernetes supported version is available")
     private String zoneId;
@@ -136,6 +140,14 @@ public class KubernetesSupportedVersionResponse extends BaseResponse {
 
     public void setIsoState(String isoState) {
         this.isoState = isoState;
+    }
+
+    public String getIsoArch() {
+        return isoArch;
+    }
+
+    public void setIsoArch(String isoArch) {
+        this.isoArch = isoArch;
     }
 
     public String getZoneId() {

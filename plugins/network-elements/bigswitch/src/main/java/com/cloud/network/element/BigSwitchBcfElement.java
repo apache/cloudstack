@@ -192,18 +192,18 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
     }
 
     private boolean canHandle(Network network, Service service) {
-        logger.debug("Checking if BigSwitchBcfElement can handle service " + service.getName() + " on network " + network.getDisplayText());
+        logger.debug(String.format("Checking if BigSwitchBcfElement can handle service %s on network %s", service.getName(), network));
         if (network.getBroadcastDomainType() != BroadcastDomainType.Vlan) {
             return false;
         }
 
         if (!_networkModel.isProviderForNetwork(getProvider(), network.getId())) {
-            logger.debug("BigSwitchBcfElement is not a provider for network " + network.getDisplayText());
+            logger.debug(String.format("BigSwitchBcfElement is not a provider for network %s", network));
             return false;
         }
 
         if (!_ntwkSrvcDao.canProviderSupportServiceInNetwork(network.getId(), service, BcfConstants.BIG_SWITCH_BCF)) {
-            logger.debug("BigSwitchBcfElement can't provide the " + service.getName() + " service on network " + network.getDisplayText());
+            logger.debug(String.format("BigSwitchBcfElement can't provide the %s service on network %s", service.getName(), network));
             return false;
         }
 
@@ -237,7 +237,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         // get arguments for CreateBcfAttachmentCommand
         // determine whether this is VPC network or stand-alone network
         Vpc vpc = null;
-        if(network.getVpcId()!=null){
+        if (network.getVpcId() != null) {
             vpc = _vpcDao.acquireInLockTable(network.getVpcId());
         }
 
@@ -264,7 +264,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         String vmwareVswitchLabel = _networkModel.getDefaultGuestTrafficLabel(zoneId, HypervisorType.VMware);
         String[] labelArray = null;
         String vswitchName = null;
-        if(vmwareVswitchLabel!=null){
+        if (vmwareVswitchLabel != null) {
             labelArray=vmwareVswitchLabel.split(",");
             vswitchName = labelArray[0];
         }
@@ -273,9 +273,9 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         //   kvm: ivs port name
         //   vmware: specific portgroup naming convention
         String pgName = "";
-        if (dest.getHost().getHypervisorType() == HypervisorType.KVM){
+        if (dest.getHost().getHypervisorType() == HypervisorType.KVM) {
             pgName = hostname;
-        } else if (dest.getHost().getHypervisorType() == HypervisorType.VMware){
+        } else if (dest.getHost().getHypervisorType() == HypervisorType.VMware) {
             pgName = hostname + "-" + vswitchName;
         }
 
@@ -306,7 +306,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         String nicId = nic.getUuid();
 
         String tenantId;
-        if(network.getVpcId()!=null) {
+        if (network.getVpcId() != null) {
             tenantId = network.getNetworkDomain();
         } else {
             tenantId = networkId;
@@ -421,11 +421,11 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         final PhysicalNetworkServiceProviderVO ntwkSvcProvider =
             _physicalNetworkServiceProviderDao.findByServiceProvider(physicalNetwork.getId(), networkDevice.getNetworkServiceProvder());
         if (ntwkSvcProvider == null) {
-            throw new CloudRuntimeException("Network Service Provider: " + networkDevice.getNetworkServiceProvder() + " is not enabled in the physical network: " +
-                physicalNetworkId + "to add this device");
+            throw new CloudRuntimeException(String.format("Network Service Provider: %s is not enabled in the physical network: %s to add this device",
+                    networkDevice.getNetworkServiceProvder(), physicalNetwork));
         } else if (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Shutdown) {
-            throw new CloudRuntimeException("Network Service Provider: " + ntwkSvcProvider.getProviderName() + " is in shutdown state in the physical network: " +
-                physicalNetworkId + "to add this device");
+            throw new CloudRuntimeException(String.format("Network Service Provider: %s is in shutdown state in the physical network: %s to add this device",
+                    ntwkSvcProvider.getProviderName(), physicalNetwork));
         }
         ntwkSvcProvider.setFirewallServiceProvided(true);
         ntwkSvcProvider.setGatewayServiceProvided(true);
@@ -439,16 +439,16 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
 
         DataCenterVO zone = _zoneDao.findById(physicalNetwork.getDataCenterId());
         String zoneName;
-        if(zone!= null){
+        if (zone != null) {
             zoneName = zone.getName();
         } else {
             zoneName = String.valueOf(zoneId);
         }
 
         Boolean natNow =  _bcfUtils.isNatEnabled();
-        if (!nat && natNow){
+        if (!nat && natNow) {
             throw new CloudRuntimeException("NAT is enabled in existing controller. Enable NAT for new controller or remove existing controller first.");
-        } else if (nat && !natNow){
+        } else if (nat && !natNow) {
             throw new CloudRuntimeException("NAT is disabled in existing controller. Disable NAT for new controller or remove existing controller first.");
         }
 
@@ -527,7 +527,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         Long bigswitchBcfDeviceId = cmd.getBigSwitchBcfDeviceId();
         BigSwitchBcfDeviceVO bigswitchBcfDevice = _bigswitchBcfDao.findById(bigswitchBcfDeviceId);
         if (bigswitchBcfDevice == null) {
-            throw new InvalidParameterValueException("Could not find a BigSwitch Controller with id " + bigswitchBcfDevice);
+            throw new InvalidParameterValueException(String.format("Could not find a BigSwitch Controller with id %d", bigswitchBcfDeviceId));
         }
 
         HostVO bigswitchHost = _hostDao.findById(bigswitchBcfDevice.getHostId());
@@ -554,7 +554,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         if (bigswitchBcfDeviceId != null) {
             BigSwitchBcfDeviceVO bigswitchBcfDevice = _bigswitchBcfDao.findById(bigswitchBcfDeviceId);
             if (bigswitchBcfDevice == null) {
-                throw new InvalidParameterValueException("Could not find BigSwitch controller with id: " + bigswitchBcfDevice);
+                throw new InvalidParameterValueException(String.format("Could not find BigSwitch controller with id: %d", bigswitchBcfDeviceId));
             }
             responseList.add(bigswitchBcfDevice);
         } else {
@@ -582,7 +582,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         BigSwitchBcfResource bcfResource = (BigSwitchBcfResource) resource;
         bcfUtilsInit();
 
-        if(_bcfUtils.getTopology()!=null){
+        if (_bcfUtils.getTopology() != null) {
             bcfResource.setTopology(_bcfUtils.getTopology());
         }
 
@@ -621,7 +621,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         _bcfUtils.listACLbyNetwork(network);
 
         Vpc vpc = null;
-        if(network.getVpcId()!=null){
+        if (network.getVpcId() != null) {
             vpc = _vpcDao.acquireInLockTable(network.getVpcId());
         }
 
@@ -635,11 +635,11 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
             tenantId = network.getUuid();
         }
 
-        for (StaticNat rule: rules){
+        for (StaticNat rule: rules) {
             String srcIp = _ipAddressDao.findById(rule.getSourceIpAddressId()).getAddress().addr();
             String dstIp = rule.getDestIpAddress();
             String mac = rule.getSourceMacAddress();
-            if(!rule.isForRevoke()) {
+            if (!rule.isForRevoke()) {
                 logger.debug("BCF enables static NAT for public IP: " + srcIp + " private IP " + dstIp
                         + " mac " + mac);
                 CreateBcfStaticNatCommand cmd = new CreateBcfStaticNatCommand(
@@ -671,13 +671,13 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         SubnetUtils utils;
         String cidr = null;
         List<String> cidrList;
-        for(NetworkACLItem r: rules){
-            if(r.getState()==NetworkACLItem.State.Revoke){
+        for (NetworkACLItem r: rules) {
+            if (r.getState() == NetworkACLItem.State.Revoke) {
                 continue;
             }
             cidrList = r.getSourceCidrList();
-            if(cidrList != null){
-                if(cidrList.size()>1 || !r.getSourcePortEnd().equals(r.getSourcePortStart())){
+            if (cidrList != null) {
+                if (cidrList.size() > 1 || !r.getSourcePortEnd().equals(r.getSourcePortStart())) {
                     throw new ResourceUnavailableException("One CIDR and one port only please.",
                             Network.class, network.getId());
                 } else {
@@ -688,7 +688,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
                 cidr = "";
             } else {
                 utils = new SubnetUtils(cidr);
-                if(!utils.getInfo().getNetworkAddress().equals(utils.getInfo().getAddress())){
+                if (!utils.getInfo().getNetworkAddress().equals(utils.getInfo().getAddress())) {
                     throw new ResourceUnavailableException("Invalid CIDR in Network ACL rule.",
                             Network.class, network.getId());
                 }
@@ -710,13 +710,13 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         SubnetUtils utils;
         String cidr = null;
         List<String> cidrList;
-        for(FirewallRule r: rules){
-            if(r.getState()==FirewallRule.State.Revoke){
+        for (FirewallRule r: rules) {
+            if (r.getState() == FirewallRule.State.Revoke) {
                 continue;
             }
             cidrList = r.getSourceCidrList();
-            if(cidrList != null){
-                if(cidrList.size()>1 || !r.getSourcePortEnd().equals(r.getSourcePortStart())){
+            if (cidrList != null) {
+                if (cidrList.size()>1 || !r.getSourcePortEnd().equals(r.getSourcePortStart())) {
                     throw new ResourceUnavailableException("One CIDR and one port only please.",
                             Network.class, network.getId());
                 } else {
@@ -727,7 +727,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
                 cidr = "";
             } else {
                 utils = new SubnetUtils(cidr);
-                if(!utils.getInfo().getNetworkAddress().equals(utils.getInfo().getAddress())){
+                if (!utils.getInfo().getNetworkAddress().equals(utils.getInfo().getAddress())) {
                     throw new ResourceUnavailableException("Invalid CIDR in Firewall rule.",
                             Network.class, network.getId());
                 }
@@ -741,7 +741,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         bcfUtilsInit();
 
         Vpc vpc = null;
-        if(network.getVpcId()!=null){
+        if (network.getVpcId() != null) {
             vpc = _vpcDao.acquireInLockTable(network.getVpcId());
         }
 
@@ -756,23 +756,23 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         UpdateBcfRouterCommand cmd = new UpdateBcfRouterCommand(tenantId);
 
         List<AclData> aclList = _bcfUtils.listACLbyNetwork(network);
-        for(AclData acl: aclList){
+        for (AclData acl: aclList) {
             cmd.addAcl(acl);
         }
 
-        if(vpc != null){
+        if (vpc != null) {
             cmd.setPublicIp(_bcfUtils.getPublicIpByVpc(vpc));
         } else {
             cmd.setPublicIp(_bcfUtils.getPublicIpByNetwork(network));
         }
 
         BcfAnswer answer = _bcfUtils.sendBcfCommandWithNetworkSyncCheck(cmd, network);
-        if(answer != null && !answer.getResult()){
+        if (answer != null && !answer.getResult()) {
             throw new IllegalArgumentException("Illegal router update arguments");
         }
     }
 
-    private void bcfUtilsInit(){
+    private void bcfUtilsInit() {
         if (_bcfUtils == null) {
             _bcfUtils = new BigSwitchBcfUtils(_networkDao, _nicDao,
                     _vmDao, _hostDao, _vpcDao, _bigswitchBcfDao,

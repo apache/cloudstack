@@ -96,6 +96,7 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         routerResponse.setZoneId(router.getDataCenterUuid());
         routerResponse.setName(router.getName());
         routerResponse.setTemplateId(router.getTemplateUuid());
+        routerResponse.setArch(router.getArch().getType());
         VMTemplateVO template = ApiDBUtils.findTemplateById(router.getTemplateId());
         if (template != null) {
             routerResponse.setTemplateName(template.getName());
@@ -213,10 +214,6 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
 
         // populate owner.
         ApiResponseHelper.populateOwner(routerResponse, router);
-
-        routerResponse.setDomainId(router.getDomainUuid());
-        routerResponse.setDomainName(router.getDomainName());
-        routerResponse.setDomainPath(router.getDomainPath());
 
         routerResponse.setZoneName(router.getDataCenterName());
         routerResponse.setDns1(router.getDns1());

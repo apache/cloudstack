@@ -196,8 +196,7 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
         final Answer answer = agentMgr.easySend(destHost.getId(), cmd);
 
         if (answer == null || !answer.getResult()) {
-            String errMsg = "Error interacting with host (related to CreateStoragePoolCommand)" +
-                    (StringUtils.isNotBlank(answer.getDetails()) ? ": " + answer.getDetails() : "");
+            String errMsg = String.format("Error interacting with host %s (related to CreateStoragePoolCommand)%s", destHost, (answer != null && StringUtils.isNotBlank(answer.getDetails())) ? ": " + answer.getDetails() : "");
 
             logger.error(errMsg);
 
@@ -238,8 +237,7 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
         final Answer answer = agentMgr.easySend(srcHost.getId(), cmd);
 
         if (answer == null || !answer.getResult()) {
-            String errMsg = "Error interacting with host (related to DeleteStoragePoolCommand)" +
-                    (StringUtils.isNotBlank(answer.getDetails()) ? ": " + answer.getDetails() : "");
+            String errMsg = String.format("Error interacting with host %s (related to DeleteStoragePoolCommand)%s", srcHost, (answer != null && StringUtils.isNotBlank(answer.getDetails())) ? ": " + answer.getDetails() : "");
 
             logger.error(errMsg);
 
@@ -281,8 +279,8 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
                 final Answer answer = agentMgr.easySend(destHost.getId(), cmd);
 
                 if (answer == null || !answer.getResult()) {
-                    String errMsg = "Error interacting with host (related to handleManagedVolumesAfterFailedMigration)" +
-                            (StringUtils.isNotBlank(answer.getDetails()) ? ": " + answer.getDetails() : "");
+                    String errMsg = String.format("Error interacting with host %s (related to handleManagedVolumesAfterFailedMigration)%s",
+                            destHost, answer != null && (StringUtils.isNotBlank(answer.getDetails())) ? ": " + answer.getDetails() : "");
 
                     logger.error(errMsg);
 
@@ -346,7 +344,7 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
                 logger.error("Migration with storage of vm " + vm + " to host " + destHost + " failed.");
                 throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost);
             } else if (!receiveAnswer.getResult()) {
-                logger.error("Migration with storage of vm " + vm + " failed. Details: " + receiveAnswer.getDetails());
+                logger.error(String.format("Migration with storage of vm %s to host %s failed. Details: %s", vm, destHost, receiveAnswer.getDetails()));
                 throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost);
             }
 
@@ -362,7 +360,7 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
             } else if (!sendAnswer.getResult()) {
                 handleManagedVolumesAfterFailedMigration(volumeToPool, destHost);
 
-                logger.error("Migration with storage of vm " + vm + " failed. Details: " + sendAnswer.getDetails());
+                logger.error(String.format("Migration with storage of vm %s failed to host %s. Details: %s", vm, destHost, sendAnswer.getDetails()));
                 throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost);
             }
 
@@ -370,10 +368,10 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
             MigrateWithStorageCompleteAnswer answer = (MigrateWithStorageCompleteAnswer)agentMgr.send(destHost.getId(), command);
 
             if (answer == null) {
-                logger.error("Migration with storage of vm " + vm + " failed.");
+                logger.error(String.format("Migration with storage of vm %s to host %s failed.", vm, destHost));
                 throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost);
             } else if (!answer.getResult()) {
-                logger.error("Migration with storage of vm " + vm + " failed. Details: " + answer.getDetails());
+                logger.error(String.format("Migration with storage of vm %s to host %s failed. Details: %s", vm, destHost, answer.getDetails()));
                 throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost);
             } else {
                 // Update the volume details after migration.
@@ -403,10 +401,10 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
             MigrateWithStorageCommand command = new MigrateWithStorageCommand(to, volumeToFilerto);
             MigrateWithStorageAnswer answer = (MigrateWithStorageAnswer)agentMgr.send(destHost.getId(), command);
             if (answer == null) {
-                logger.error("Migration with storage of vm " + vm + " failed.");
+                logger.error(String.format("Migration with storage of vm %s to host %s failed.", vm, destHost));
                 throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost);
             } else if (!answer.getResult()) {
-                logger.error("Migration with storage of vm " + vm + " failed. Details: " + answer.getDetails());
+                logger.error(String.format("Migration with storage of vm %s to host %s failed. Details: %s", vm, destHost, answer.getDetails()));
                 throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost + ". " + answer.getDetails());
             } else {
                 // Update the volume details after migration.

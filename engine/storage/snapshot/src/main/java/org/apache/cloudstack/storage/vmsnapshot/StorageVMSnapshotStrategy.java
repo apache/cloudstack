@@ -95,8 +95,6 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
     @Inject
     VMSnapshotDetailsDao vmSnapshotDetailsDao;
 
-    private static final String STORAGE_SNAPSHOT = "kvmStorageSnapshot";
-
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
        return super.configure(name, params);
@@ -181,7 +179,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                 thawAnswer = (FreezeThawVMAnswer) agentMgr.send(hostId, thawCmd);
                 if (thawAnswer != null && thawAnswer.getResult()) {
                     logger.info(String.format(
-                            "Virtual machne is thawed. The freeze of virtual machine took %s milliseconds.",
+                            "Virtual machine is thawed. The freeze of virtual machine took %s milliseconds.",
                             TimeUnit.MILLISECONDS.convert(elapsedTime(startFreeze), TimeUnit.NANOSECONDS)));
                 }
             } else {
@@ -356,12 +354,25 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
 
     @Override
     public StrategyPriority canHandle(Long vmId, Long rootPoolId, boolean snapshotMemory) {
-        if (SnapshotManager.VmStorageSnapshotKvm.value() && !snapshotMemory) {
-            UserVmVO vm = userVmDao.findById(vmId);
-            if (vm.getState() == VirtualMachine.State.Running) {
-                return StrategyPriority.HYPERVISOR;
-            }
+        UserVmVO vm = userVmDao.findById(vmId);
+        String cantHandleLog = String.format("Storage VM snapshot strategy cannot handle VM snapshot for [%s]", vm);
+
+        if (CollectionUtils.isNotEmpty(vmSnapshotDao.findByVmAndByType(vmId, VMSnapshot.Type.DiskAndMemory))) {
+            logger.debug("{} as it has VM snapshots with disk and memory.", cantHandleLog);
+            return StrategyPriority.CANT_HANDLE;
         }
+
+        if (!VirtualMachine.State.Running.equals(vm.getState())) {
+            logger.debug("{} as the VM is not running.", cantHandleLog);
+            return StrategyPriority.CANT_HANDLE;
+        }
+
+        if (SnapshotManager.VmStorageSnapshotKvm.value() && !snapshotMemory) {
+            return StrategyPriority.HYPERVISOR;
+        }
+
+        logger.debug("{} as {}.", () -> cantHandleLog, () -> snapshotMemory ? "A VM snapshot with memory was requested" :
+                String.format("%s is false", SnapshotManager.VmStorageSnapshotKvm.key()));
         return StrategyPriority.CANT_HANDLE;
     }
 
@@ -427,9 +438,14 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         String snapshotName = vmSnapshot.getId() + "_" + vol.getUuid();
         SnapshotVO snapshot = new SnapshotVO(vol.getDataCenterId(), vol.getAccountId(), vol.getDomainId(), vol.getId(), vol.getDiskOfferingId(),
                               snapshotName, (short) Snapshot.Type.GROUP.ordinal(),  Snapshot.Type.GROUP.name(),  vol.getSize(), vol.getMinIops(),  vol.getMaxIops(), Hypervisor.HypervisorType.KVM, null);
+        VMSnapshotOptions options = ((VMSnapshotVO) vmSnapshot).getOptions();
+        boolean quiescevm = false;
+        if (options != null) {
+            quiescevm = options.needQuiesceVM();
+        }
 
         snapshot = snapshotDao.persist(snapshot);
-        vol.addPayload(setPayload(vol, snapshot));
+        vol.addPayload(setPayload(vol, snapshot, quiescevm));
         SnapshotInfo snapshotInfo = snapshotDataFactory.getSnapshot(snapshot.getId(), vol.getDataStore());
         snapshotInfo.addPayload(vol.getpayload());
         SnapshotStrategy snapshotStrategy = storageStrategyFactory.getSnapshotStrategy(snapshotInfo, SnapshotOperation.TAKE);
@@ -447,14 +463,14 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         return snapshotInfo;
     }
 
-    protected CreateSnapshotPayload setPayload(VolumeInfo vol, SnapshotVO snapshotCreate) {
+    protected CreateSnapshotPayload setPayload(VolumeInfo vol, SnapshotVO snapshotCreate, boolean quiescevm) {
         CreateSnapshotPayload payload = new CreateSnapshotPayload();
         payload.setSnapshotId(snapshotCreate.getId());
         payload.setSnapshotPolicyId(SnapshotVO.MANUAL_POLICY_ID);
         payload.setLocationType(snapshotCreate.getLocationType());
         payload.setAccount(accountService.getAccount(vol.getAccountId()));
         payload.setAsyncBackup(false);
-        payload.setQuiescevm(false);
+        payload.setQuiescevm(quiescevm);
         return payload;
     }
 }

@@ -605,6 +605,15 @@ public class TransactionLegacy implements Closeable {
         return _conn;
     }
 
+    public static void refreshConnections(final short dbId) {
+        if (dbId != CLOUD_DB) {
+            return;
+        }
+        if (s_ds instanceof HikariDataSource) {
+            ((HikariDataSource)s_ds).getHikariPoolMXBean().softEvictConnections();
+        }
+    }
+
     protected boolean takeOver(final String name, final boolean create) {
         if (_stack.size() != 0) {
             if (!create) {

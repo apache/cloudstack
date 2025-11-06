@@ -242,7 +242,7 @@ class VmwareVmImplementer {
                     String mac = networkModel.getNextAvailableMacAddressInNetwork(networkId);
                     nicTo.setMac(mac);
                 } catch (InsufficientAddressCapacityException e) {
-                    throw new CloudRuntimeException("unable to allocate mac address on network: " + networkId);
+                    throw new CloudRuntimeException(String.format("unable to allocate mac address on network %s with id %d", network, networkId));
                 }
                 nicTo.setDns1(publicNicProfile.getIPv4Dns1());
                 nicTo.setDns2(publicNicProfile.getIPv4Dns2());

@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.BackupVO;
 import org.apache.cloudstack.backup.networker.api.NetworkerBackup;
@@ -45,6 +46,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
+import javax.inject.Inject;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
@@ -65,6 +67,9 @@ import java.util.List;
 import static org.apache.cloudstack.backup.NetworkerBackupProvider.BACKUP_IDENTIFIER;
 
 public class NetworkerClient {
+    @Inject
+    BackupManager backupManager;
+
     private static final Logger LOG = LogManager.getLogger(NetworkerClient.class);
     private final URI apiURI;
     private final String apiName;
@@ -267,6 +272,8 @@ public class NetworkerClient {
             backup.setAccountId(vm.getAccountId());
             backup.setDomainId(vm.getDomainId());
             backup.setZoneId(vm.getDataCenterId());
+            backup.setName(backupManager.getBackupNameFromVM(vm));
+
             return backup;
         } catch (final IOException e) {
             LOG.error("Failed to register backup from EMC Networker due to:", e);
@@ -298,7 +305,7 @@ public class NetworkerClient {
     public ArrayList<String> getBackupsForVm(VirtualMachine vm) {
         SimpleDateFormat formatterDateTime = new SimpleDateFormat("yyy-MM-dd'T'HH:mm:ss");
 
-        LOG.debug("Trying to list EMC Networker backups for VM " + vm.getName());
+        LOG.debug(String.format("Trying to list EMC Networker backups for VM %s", vm));
         try {
             final HttpResponse response = get("/global/backups/?q=name:" + vm.getName());
             checkResponseOK(response);
@@ -310,7 +317,7 @@ public class NetworkerClient {
                 return backupsTaken;
             }
             for (final NetworkerBackup backup : networkerBackups.getBackups()) {
-                LOG.debug("Found Backup " + backup.getId());
+                LOG.debug(String.format("Found Backup %s", backup));
                 // Backups that have expired on the EMC Networker but not removed yet will not be added
                 try {
                     Date backupRetentionTime = formatterDateTime.parse(backup.getRetentionTime());
@@ -345,7 +352,7 @@ public class NetworkerClient {
                 return policies;
             }
             for (final ProtectionPolicy protectionPolicy : protectionPolicies.getProtectionPolicies()) {
-                LOG.debug("Found Protection Policy:" + protectionPolicy.getName());
+                LOG.debug(String.format("Found Protection Policy: %s", protectionPolicy));
                 policies.add(new NetworkerBackupOffering(protectionPolicy.getName(), protectionPolicy.getResourceId().getId()));
             }
             return policies;

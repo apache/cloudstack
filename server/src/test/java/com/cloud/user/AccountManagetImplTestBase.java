@@ -29,6 +29,7 @@ import com.cloud.network.dao.AccountGuestVlanMapDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
+import com.cloud.network.dao.SslCertDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.dao.SecurityGroupDao;
@@ -66,6 +67,7 @@ import org.apache.cloudstack.engine.service.api.OrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
+import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
 import org.apache.cloudstack.resourcedetail.dao.UserDetailsDao;
 import org.junit.After;
@@ -196,6 +198,10 @@ public class AccountManagetImplTestBase {
     SSHKeyPairDao _sshKeyPairDao;
     @Mock
     UserDataDao userDataDao;
+    @Mock
+    SslCertDao sslCertDao;
+    @Mock
+    NetworkPermissionDao networkPermissionDaoMock;
 
     @Spy
     @InjectMocks
@@ -206,6 +212,9 @@ public class AccountManagetImplTestBase {
     AccountService _accountService;
     @Mock
     RoutedIpv4Manager routedIpv4Manager;
+
+    @Mock
+    Account accountMock;
 
     @Before
     public void setup() {

@@ -30,7 +30,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { postAPI } from '@/api'
 
 export default {
   name: 'CloudianPlugin',
@@ -45,7 +45,7 @@ export default {
   methods: {
     doSso () {
       this.showError = false
-      api('cloudianSsoLogin').then(json => {
+      postAPI('cloudianSsoLogin').then(json => {
         const url = json.cloudianssologinresponse.cloudianssologin.url
         const cmcWindow = window.open(url, 'CMCWindow')
         cmcWindow.focus()

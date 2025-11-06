@@ -56,8 +56,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -150,7 +150,7 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
 
         lenient().when(_domainMgr.getDomain(nullable(Long.class))).thenReturn(domain);
 
-        Mockito.doReturn(true).when(_vmMgr).expunge(any(UserVmVO.class));
+        lenient().doReturn(true).when(_vmMgr).expunge(any(UserVmVO.class));
 
     }
 
@@ -192,6 +192,7 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
     public void destroyedVMRootVolumeUsageEvent()
             throws SecurityException, IllegalArgumentException, ReflectiveOperationException, AgentUnavailableException, ConcurrentOperationException, CloudException {
         lenient().doReturn(vm).when(_vmMgr).destroyVm(nullable(Long.class), nullable(Boolean.class));
+        Mockito.doNothing().when(accountManagerImpl).verifyCallerPrivilegeForUserOrAccountOperations((Account) any());
         List<UsageEventVO> emittedEvents = deleteUserAccountRootVolumeUsageEvents(true);
         Assert.assertEquals(0, emittedEvents.size());
     }

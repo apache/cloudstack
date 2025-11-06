@@ -16,13 +16,21 @@
 // under the License.
 package com.cloud.hypervisor.kvm.storage;
 
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.storage.formatinspector.Qcow2Inspector;
+import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
+import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.cloudstack.utils.qemu.QemuImgException;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.libvirt.LibvirtException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class KVMPhysicalDisk {
     private String path;
@@ -32,10 +40,17 @@ public class KVMPhysicalDisk {
     private String vmName;
     private boolean useAsTemplate;
 
-    public static String RBDStringBuilder(String monHost, int monPort, String authUserName, String authSecret, String image) {
-        String rbdOpts;
+    public static final String RBD_DEFAULT_DATA_POOL = "rbd_default_data_pool";
 
-        rbdOpts = "rbd:" + image;
+    public static String RBDStringBuilder(KVMStoragePool storagePool, String image) {
+        String monHost = storagePool.getSourceHost();
+        int monPort = storagePool.getSourcePort();
+        String authUserName = storagePool.getAuthUserName();
+        String authSecret = storagePool.getAuthSecret();
+        Map<String, String> details = storagePool.getDetails();
+        String dataPool = (details == null) ? null : details.get(RBD_DEFAULT_DATA_POOL);
+
+        String rbdOpts = "rbd:" + image;
         rbdOpts += ":mon_host=" + composeOptionForMonHosts(monHost, monPort);
 
         if (authUserName == null) {
@@ -44,6 +59,10 @@ public class KVMPhysicalDisk {
             rbdOpts += ":auth_supported=cephx";
             rbdOpts += ":id=" + authUserName;
             rbdOpts += ":key=" + authSecret;
+        }
+
+        if (dataPool != null) {
+            rbdOpts += String.format(":rbd_default_data_pool=%s", dataPool);
         }
 
         rbdOpts += ":rbd_default_format=2";
@@ -69,6 +88,31 @@ public class KVMPhysicalDisk {
             return hostIp.replaceAll("\\:", "\\\\:");
         }
         return hostIp;
+    }
+
+    public static long getVirtualSizeFromFile(String path) {
+        try {
+            QemuImg qemu = new QemuImg(0);
+            QemuImgFile qemuFile = new QemuImgFile(path);
+            Map<String, String> info = qemu.info(qemuFile);
+            if (info.containsKey(QemuImg.VIRTUAL_SIZE)) {
+                return Long.parseLong(info.get(QemuImg.VIRTUAL_SIZE));
+            } else {
+                throw new CloudRuntimeException("Unable to determine virtual size of volume at path " + path);
+            }
+        } catch (QemuImgException | LibvirtException ex) {
+            throw new CloudRuntimeException("Error when inspecting volume at path " + path, ex);
+        }
+    }
+
+    public static void checkQcow2File(String path) {
+        if (ImageStoreUtil.isCorrectExtension(path, "qcow2")) {
+            try {
+                Qcow2Inspector.validateQcow2File(path);
+            } catch (RuntimeException e) {
+                throw new CloudRuntimeException("The volume file at path " + path + " is not a valid QCOW2. Error: " + e.getMessage());
+            }
+        }
     }
 
     private PhysicalDiskFormat format;

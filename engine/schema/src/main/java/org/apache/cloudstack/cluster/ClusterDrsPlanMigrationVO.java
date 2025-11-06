@@ -20,6 +20,7 @@
 package org.apache.cloudstack.cluster;
 
 import org.apache.cloudstack.jobs.JobInfo;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -64,6 +65,13 @@ public class ClusterDrsPlanMigrationVO implements ClusterDrsPlanMigration {
 
     protected ClusterDrsPlanMigrationVO() {
 
+    }
+
+    @Override
+    public String toString() {
+        return String.format("ClusterDrsPlanMigration %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "planId", "vmId", "jobId"));
     }
 
     public long getId() {

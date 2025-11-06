@@ -142,7 +142,7 @@ public class BrocadeVcsGuestNetworkGuru extends GuestNetworkGuru {
 
             if (answer == null || !answer.getResult()) {
                 logger.error("CreateNetworkCommand failed");
-                logger.error("Unable to create network " + network.getId());
+                logger.error(String.format("Unable to create network %s", network));
                 return null;
             }
 
@@ -179,7 +179,7 @@ public class BrocadeVcsGuestNetworkGuru extends GuestNetworkGuru {
 
             if (answer == null || !answer.getResult()) {
                 logger.error("AssociateMacToNetworkCommand failed");
-                throw new InsufficientVirtualNetworkCapacityException("Unable to associate mac " + interfaceMac + " to network " + network.getId(), DataCenter.class, dc.getId());
+                throw new InsufficientVirtualNetworkCapacityException(String.format("Unable to associate mac %s to network %s", interfaceMac, network), DataCenter.class, dc.getId());
             }
         }
 
@@ -204,7 +204,7 @@ public class BrocadeVcsGuestNetworkGuru extends GuestNetworkGuru {
 
             if (answer == null || !answer.getResult()) {
                 logger.error("DisassociateMacFromNetworkCommand failed");
-                logger.error("Unable to disassociate mac " + interfaceMac + " from network " + network.getId());
+                logger.error(String.format("Unable to disassociate mac %s from network %s", interfaceMac, network));
                 return;
             }
         }
@@ -232,7 +232,7 @@ public class BrocadeVcsGuestNetworkGuru extends GuestNetworkGuru {
         if (brocadeVcsNetworkVlanMapping != null) {
             vlanTag = brocadeVcsNetworkVlanMapping.getVlanId();
         } else {
-            logger.error("Not able to find vlanId for network " + network.getId());
+            logger.error(String.format("Not able to find vlanId for network %s", network));
             return false;
         }
 
@@ -250,7 +250,7 @@ public class BrocadeVcsGuestNetworkGuru extends GuestNetworkGuru {
 
             if (answer == null || !answer.getResult()) {
                 logger.error("DeleteNetworkCommand failed");
-                logger.error("Unable to delete network " + network.getId());
+                logger.error(String.format("Unable to delete network %s", network));
                 return false;
             }
         }

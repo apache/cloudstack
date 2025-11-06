@@ -21,6 +21,12 @@ import java.util.List;
 public interface IndirectAgentLB {
 
     /**
+     * Return list of management server addresses from host setting
+     * @return management servers string list
+     */
+    List<String> getManagementServerList();
+
+    /**
      * Return list of management server addresses after applying configured lb algorithm
      * for a host in a zone.
      * @param hostId host id (if present)
@@ -31,13 +37,25 @@ public interface IndirectAgentLB {
     List<String> getManagementServerList(Long hostId, Long dcId, List<Long> orderedHostIdList);
 
     /**
-     * Compares received management server list against expected list for a host in a zone.
+     * Return list of management server addresses after applying the lb algorithm
+     * for a host in a zone.
+     * @param hostId host id (if present)
+     * @param dcId zone id
+     * @param orderedHostIdList (optional) list of ordered host id list
+     * @param lbAlgorithm lb algorithm
+     * @return management servers string list
+     */
+    List<String> getManagementServerList(Long hostId, Long dcId, List<Long> orderedHostIdList, String lbAlgorithm);
+
+    /**
+     * Compares received management server list against expected list for a host in a zone and LB algorithm.
      * @param hostId host id
      * @param dcId zone id
      * @param receivedMSHosts received management server list
-     * @return true if mgmtHosts is up to date, false if not
+     * @param lbAlgorithm received LB algorithm
+     * @return true if mgmtHosts and LB algorithm are up to date, false if not
      */
-    boolean compareManagementServerList(Long hostId, Long dcId, List<String> receivedMSHosts, String lbAlgorithm);
+    boolean compareManagementServerListAndLBAlgorithm(Long hostId, Long dcId, List<String> receivedMSHosts, String lbAlgorithm);
 
     /**
      * Returns the configure LB algorithm
@@ -45,12 +63,19 @@ public interface IndirectAgentLB {
      */
     String getLBAlgorithmName();
 
+    void checkLBAlgorithmName(String lbAlgorithm);
+
     /**
      * Returns the configured LB preferred host check interval (if applicable at cluster scope)
      * @return returns interval in seconds
      */
     Long getLBPreferredHostCheckInterval(Long clusterId);
 
-    void propagateMSListToAgents();
+    void propagateMSListToAgents(boolean triggerHostLB);
 
+    void propagateMSListToAgentsInCluster(Long clusterId);
+
+    boolean haveAgentBasedHosts(long msId, boolean excludeHostsInMaintenance);
+
+    boolean migrateAgents(String fromMsUuid, long fromMsId, String lbAlgorithm, long timeoutDurationInMs, boolean excludeHostsInMaintenance);
 }

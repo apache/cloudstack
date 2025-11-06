@@ -26,6 +26,7 @@ import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.util.HypervisorTypeConverter;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -117,6 +118,9 @@ public class StoragePoolVO implements StoragePool {
 
     @Column(name = "capacity_iops", updatable = true, nullable = true)
     private Long capacityIops;
+
+    @Column(name = "used_iops", updatable = true, nullable = true)
+    private Long usedIops;
 
     @Column(name = "hypervisor")
     @Convert(converter = HypervisorTypeConverter.class)
@@ -255,6 +259,14 @@ public class StoragePoolVO implements StoragePool {
         return capacityIops;
     }
 
+    public Long getUsedIops() {
+        return usedIops;
+    }
+
+    public void setUsedIops(Long usedIops) {
+        this.usedIops = usedIops;
+    }
+
     @Override
     public Long getClusterId() {
         return clusterId;
@@ -370,7 +382,7 @@ public class StoragePoolVO implements StoragePool {
 
     @Override
     public String toString() {
-        return new StringBuilder("Pool[").append(id).append("|").append(poolType).append("]").toString();
+        return String.format("StoragePool %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "name", "poolType"));
     }
 
     @Override

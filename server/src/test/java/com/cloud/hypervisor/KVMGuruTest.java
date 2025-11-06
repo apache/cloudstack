@@ -114,7 +114,7 @@ public class KVMGuruTest {
 
     @Before
     public void setup() throws UnsupportedEncodingException {
-        Mockito.when(vmTO.getLimitCpuUse()).thenReturn(true);
+        Mockito.when(vmTO.isLimitCpuUse()).thenReturn(true);
         Mockito.when(vmProfile.getVirtualMachine()).thenReturn(vm);
         Mockito.when(vm.getHostId()).thenReturn(hostId);
         Mockito.when(hostDao.findById(hostId)).thenReturn(host);
@@ -156,7 +156,7 @@ public class KVMGuruTest {
 
     @Test
     public void testSetVmQuotaPercentageNotCPULimit() {
-        Mockito.when(vmTO.getLimitCpuUse()).thenReturn(false);
+        Mockito.when(vmTO.isLimitCpuUse()).thenReturn(false);
         guru.setVmQuotaPercentage(vmTO, vmProfile);
         Mockito.verify(vmProfile, Mockito.never()).getVirtualMachine();
         Mockito.verify(vmTO, Mockito.never()).setCpuQuotaPercentage(Mockito.anyDouble());

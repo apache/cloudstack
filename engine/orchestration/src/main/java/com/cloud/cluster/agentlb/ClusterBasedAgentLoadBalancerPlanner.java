@@ -26,6 +26,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.cluster.ManagementServerHostVO;
 import org.springframework.stereotype.Component;
 
 import com.cloud.host.Host;
@@ -43,15 +44,17 @@ public class ClusterBasedAgentLoadBalancerPlanner extends AdapterBase implements
     HostDao _hostDao = null;
 
     @Override
-    public List<HostVO> getHostsToRebalance(long msId, int avLoad) {
+    public List<HostVO> getHostsToRebalance(ManagementServerHostVO ms, int avLoad) {
+        long msId = ms.getMsid();
         QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
         sc.and(sc.entity().getType(), Op.EQ, Host.Type.Routing);
         sc.and(sc.entity().getManagementServerId(), Op.EQ, msId);
         List<HostVO> allHosts = sc.list();
 
         if (allHosts.size() <= avLoad) {
-            logger.debug("Agent load = " + allHosts.size() + " for management server " + msId + " doesn't exceed average system agent load = " + avLoad +
-                "; so it doesn't participate in agent rebalancing process");
+            logger.debug("Agent load = {} for management server {} doesn't exceed average " +
+                    "system agent load = {}; so it doesn't participate in agent rebalancing process",
+                    allHosts.size(), ms, avLoad);
             return null;
         }
 
@@ -62,8 +65,9 @@ public class ClusterBasedAgentLoadBalancerPlanner extends AdapterBase implements
         List<HostVO> directHosts = sc.list();
 
         if (directHosts.isEmpty()) {
-            logger.debug("No direct agents in status " + Status.Up + " exist for the management server " + msId +
-                "; so it doesn't participate in agent rebalancing process");
+            logger.debug("No direct agents in status {} exist for the management server " +
+                            "{}; so it doesn't participate in agent rebalancing process",
+                    Status.Up, ms);
             return null;
         }
 
@@ -88,8 +92,9 @@ public class ClusterBasedAgentLoadBalancerPlanner extends AdapterBase implements
         int hostsLeft = directHosts.size();
         List<HostVO> hostsToReturn = new ArrayList<HostVO>();
 
-        logger.debug("Management server " + msId + " can give away " + hostsToGive + " as it currently owns " + allHosts.size() +
-            " and the average agent load in the system is " + avLoad + "; finalyzing list of hosts to give away...");
+        logger.debug("Management server {} can give away {} as it currently owns {} and the " +
+                "average agent load in the system is {}; finalyzing list of hosts to give away...",
+                ms, hostsToGive, allHosts.size(), avLoad);
         for (Long cluster : hostToClusterMap.keySet()) {
             List<HostVO> hostsInCluster = hostToClusterMap.get(cluster);
             hostsLeft = hostsLeft - hostsInCluster.size();
@@ -113,7 +118,7 @@ public class ClusterBasedAgentLoadBalancerPlanner extends AdapterBase implements
             }
         }
 
-        logger.debug("Management server " + msId + " is ready to give away " + hostsToReturn.size() + " hosts");
+        logger.debug("Management server {} is ready to give away {} hosts", ms, hostsToReturn.size());
         return hostsToReturn;
     }
 

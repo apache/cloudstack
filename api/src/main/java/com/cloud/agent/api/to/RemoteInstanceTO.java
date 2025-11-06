@@ -27,6 +27,7 @@ public class RemoteInstanceTO implements Serializable {
 
     private Hypervisor.HypervisorType hypervisorType;
     private String instanceName;
+    private String instancePath;
 
     // VMware Remote Instances parameters (required for exporting OVA through ovftool)
     // TODO: cloud.agent.transport.Request#getCommands() cannot handle gsoc decode for polymorphic classes
@@ -44,9 +45,10 @@ public class RemoteInstanceTO implements Serializable {
         this.instanceName = instanceName;
     }
 
-    public RemoteInstanceTO(String instanceName, String vcenterHost, String vcenterUsername, String vcenterPassword, String datacenterName) {
+    public RemoteInstanceTO(String instanceName, String instancePath, String vcenterHost, String vcenterUsername, String vcenterPassword, String datacenterName) {
         this.hypervisorType = Hypervisor.HypervisorType.VMware;
         this.instanceName = instanceName;
+        this.instancePath = instancePath;
         this.vcenterHost = vcenterHost;
         this.vcenterUsername = vcenterUsername;
         this.vcenterPassword = vcenterPassword;
@@ -59,6 +61,10 @@ public class RemoteInstanceTO implements Serializable {
 
     public String getInstanceName() {
         return this.instanceName;
+    }
+
+    public String getInstancePath() {
+        return this.instancePath;
     }
 
     public String getVcenterUsername() {

@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.framework.config.dao;
 
+import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
@@ -67,4 +68,6 @@ public interface ConfigurationDao extends GenericDao<ConfigurationVO, String> {
     boolean update(String name, String category, String value);
 
     void invalidateCache();
+
+    List<ConfigurationVO> searchPartialConfigurations();
 }

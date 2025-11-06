@@ -16,29 +16,6 @@
 // under the License.
 package com.cloud.agent;
 
-import com.cloud.agent.Agent.ExitStatus;
-import com.cloud.agent.dao.StorageComponent;
-import com.cloud.agent.dao.impl.PropertiesStorage;
-import com.cloud.agent.properties.AgentProperties;
-import com.cloud.agent.properties.AgentPropertiesFileHandler;
-import com.cloud.resource.ServerResource;
-import com.cloud.utils.LogUtils;
-import com.cloud.utils.ProcessUtil;
-import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.backoff.BackoffAlgorithm;
-import com.cloud.utils.backoff.impl.ConstantTimeBackoff;
-import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.commons.daemon.Daemon;
-import org.apache.commons.daemon.DaemonContext;
-import org.apache.commons.daemon.DaemonInitException;
-import org.apache.commons.lang.math.NumberUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.core.config.Configurator;
-
-import javax.naming.ConfigurationException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -53,6 +30,31 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 
+import javax.naming.ConfigurationException;
+
+import org.apache.commons.daemon.Daemon;
+import org.apache.commons.daemon.DaemonContext;
+import org.apache.commons.daemon.DaemonInitException;
+import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
+
+import com.cloud.agent.Agent.ExitStatus;
+import com.cloud.agent.dao.StorageComponent;
+import com.cloud.agent.dao.impl.PropertiesStorage;
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
+import com.cloud.resource.ServerResource;
+import com.cloud.utils.LogUtils;
+import com.cloud.utils.ProcessUtil;
+import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.backoff.BackoffAlgorithm;
+import com.cloud.utils.backoff.impl.ConstantTimeBackoff;
+import com.cloud.utils.exception.CloudRuntimeException;
+
 public class AgentShell implements IAgentShell, Daemon {
     protected static Logger LOGGER = LogManager.getLogger(AgentShell.class);
 
@@ -64,6 +66,7 @@ public class AgentShell implements IAgentShell, Daemon {
     private String _zone;
     private String _pod;
     private String _host;
+    private List<String> _avoidHosts;
     private String _privateIp;
     private int _port;
     private int _proxyPort;
@@ -74,9 +77,9 @@ public class AgentShell implements IAgentShell, Daemon {
     private volatile boolean _exit = false;
     private int _pingRetries;
     private final List<Agent> _agents = new ArrayList<Agent>();
-    private String hostToConnect;
     private String connectedHost;
     private Long preferredHostCheckInterval;
+    private boolean connectionTransfer = false;
     protected AgentProperties agentProperties = new AgentProperties();
 
     public AgentShell() {
@@ -118,7 +121,7 @@ public class AgentShell implements IAgentShell, Daemon {
         if (_hostCounter >= hosts.length) {
             _hostCounter = 0;
         }
-        hostToConnect = hosts[_hostCounter % hosts.length];
+        String hostToConnect = hosts[_hostCounter % hosts.length];
         _hostCounter++;
         return hostToConnect;
     }
@@ -140,10 +143,9 @@ public class AgentShell implements IAgentShell, Daemon {
     }
 
     @Override
-    public void updateConnectedHost() {
-        connectedHost = hostToConnect;
+    public void updateConnectedHost(String connectedHost) {
+        this.connectedHost = connectedHost;
     }
-
 
     @Override
     public void resetHostCounter() {
@@ -161,6 +163,16 @@ public class AgentShell implements IAgentShell, Daemon {
             _host = host.split(hostLbAlgorithmSeparator)[0];
             resetHostCounter();
         }
+    }
+
+    @Override
+    public void setAvoidHosts(List<String> avoidHosts) {
+        _avoidHosts = avoidHosts;
+    }
+
+    @Override
+    public List<String> getAvoidHosts() {
+        return _avoidHosts;
     }
 
     @Override
@@ -213,6 +225,14 @@ public class AgentShell implements IAgentShell, Daemon {
             _storage.persist(prefix + "." + name, value);
         else
             _storage.persist(name, value);
+    }
+
+    public boolean isConnectionTransfer() {
+        return connectionTransfer;
+    }
+
+    public void setConnectionTransfer(boolean connectionTransfer) {
+        this.connectionTransfer = connectionTransfer;
     }
 
     void loadProperties() throws ConfigurationException {
@@ -406,7 +426,9 @@ public class AgentShell implements IAgentShell, Daemon {
 
         LOGGER.info("Defaulting to the constant time backoff algorithm");
         _backoff = new ConstantTimeBackoff();
-        _backoff.configure("ConstantTimeBackoff", new HashMap<String, Object>());
+        Map<String, Object> map = new HashMap<>();
+        map.put("seconds", _properties.getProperty("backoff.seconds"));
+        _backoff.configure("ConstantTimeBackoff", map);
     }
 
     private void launchAgent() throws ConfigurationException {
@@ -453,6 +475,11 @@ public class AgentShell implements IAgentShell, Daemon {
         Agent agent = new Agent(this, getNextAgentId(), resource);
         _agents.add(agent);
         agent.start();
+    }
+
+    @Override
+    public Integer getSslHandshakeTimeout() {
+        return AgentPropertiesFileHandler.getPropertyValue(AgentProperties.SSL_HANDSHAKE_TIMEOUT);
     }
 
     public synchronized int getNextAgentId() {

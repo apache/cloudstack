@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command;
 
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -32,6 +33,7 @@ import javax.inject.Inject;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaConfigureEmailCmd extends BaseCmd {
 
+    @ACL
     @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, required = true,
             description = "Account ID for which to configure quota template email or min balance")
     private long accountId;

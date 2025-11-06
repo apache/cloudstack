@@ -21,6 +21,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
+import com.cloud.offering.ServiceOffering;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import com.cloud.gpu.VgpuProfileVO;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
@@ -28,6 +34,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.to.GPUDeviceTO;
+import com.cloud.cpu.CPU;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodCluster;
@@ -61,6 +68,17 @@ public interface ResourceManager extends ResourceService, Configurable {
                     + "To force-stop VMs, choose 'ForceStop' strategy",
             true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.Select, "Error,Migration,ForceStop");
 
+    ConfigKey<String> SystemVmPreferredArchitecture = new ConfigKey<>(
+            String.class,
+            "system.vm.preferred.architecture",
+            "Advanced",
+            CPU.CPUArch.getDefault().getType(),
+            "Preferred architecture for the system VMs including virtual routers",
+            true,
+            ConfigKey.Scope.Zone, null, null, null, null, null,
+            ConfigKey.Kind.Select,
+            "," + CPU.CPUArch.getTypesAsCSV());
+
     /**
      * Register a listener for different types of resource life cycle events.
      * There can only be one type of listener per type of host.
@@ -84,6 +102,8 @@ public interface ResourceManager extends ResourceService, Configurable {
     public void unregisterResourceStateAdapter(String name);
 
     public Host createHostAndAgent(Long hostId, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, boolean forRebalance);
+
+    public Host createHostAndAgent(Long hostId, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, boolean forRebalance, boolean isTransferredConnection);
 
     public Host addHost(long zoneId, ServerResource resource, Type hostType, Map<String, String> hostDetails);
 
@@ -138,13 +158,13 @@ public interface ResourceManager extends ResourceService, Configurable {
 
     public List<HostVO> listAllHostsInOneZoneNotInClusterByHypervisors(List<HypervisorType> types, long dcId, long clusterId);
 
-    public List<HypervisorType> listAvailHypervisorInZone(Long hostId, Long zoneId);
+    public List<HypervisorType> listAvailHypervisorInZone(Long zoneId);
 
     public HostVO findHostByGuid(String guid);
 
     public HostVO findHostByName(String name);
 
-    HostStats getHostStatistics(long hostId);
+    HostStats getHostStatistics(Host host);
 
     Long getGuestOSCategoryId(long hostId);
 
@@ -178,29 +198,34 @@ public interface ResourceManager extends ResourceService, Configurable {
      */
     boolean isHostGpuEnabled(long hostId);
 
-    /**
-     * Check if host has GPU devices available
-     * @param hostId the host to be checked
-     * @param groupName: gpuCard name
-     * @param vgpuType the VGPU type
-     * @return true when the host has the capacity with given VGPU type
-     */
-    boolean isGPUDeviceAvailable(long hostId, String groupName, String vgpuType);
+    boolean isGPUDeviceAvailable(ServiceOffering offering, Host host, Long vmId);
 
     /**
      * Get available GPU device
-     * @param hostId the host to be checked
-     * @param groupName: gpuCard name
-     * @param vgpuType the VGPU type
+     *
+     * @param vm          the vm for which GPU device is requested
+     * @param vgpuProfile the VGPU profile
+     * @param gpuCount
+     * @return GPUDeviceTO[]
+     */
+    GPUDeviceTO getGPUDevice(VirtualMachine vm, long hostId, VgpuProfileVO vgpuProfile, int gpuCount);
+
+    /**
+     * Get available GPU device
+     *
+     * @param hostId    the host to be checked
+     * @param groupName gpuCard name
+     * @param vgpuType  the VGPU type
      * @return GPUDeviceTO[]
      */
     GPUDeviceTO getGPUDevice(long hostId, String groupName, String vgpuType);
 
     /**
      * Return listof available GPU devices
-     * @param hostId, the host to be checked
-     * @param groupName: gpuCard name
-     * @param vgpuType the VGPU type
+     *
+     * @param hostId    the host to be checked
+     * @param groupName gpuCard name
+     * @param vgpuType  the VGPU type
      * @return List of HostGpuGroupsVO.
      */
     List<HostGpuGroupsVO> listAvailableGPUDevice(long hostId, String groupName, String vgpuType);
@@ -213,6 +238,16 @@ public interface ResourceManager extends ResourceService, Configurable {
     void updateGPUDetails(long hostId, HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails);
 
     /**
+     * Update GPU device details (post VM deployment)
+     *
+     * @param vm          the VirtualMachine object
+     * @param gpuDeviceTO GPU device details
+     */
+    void updateGPUDetailsForVmStop(VirtualMachine vm, GPUDeviceTO gpuDeviceTO);
+
+    void updateGPUDetailsForVmStart(long hostId, long vmId, GPUDeviceTO gpuDevice);
+
+    /**
      * Get GPU details for a host
      * @param host, the Host object
      * @return Details of groupNames and enabled VGPU type with remaining capacity.
@@ -222,4 +257,12 @@ public interface ResourceManager extends ResourceService, Configurable {
     HostVO findOneRandomRunningHostByHypervisor(HypervisorType type, Long dcId);
 
     boolean cancelMaintenance(final long hostId);
+
+    void updateStoragePoolConnectionsOnHosts(Long poolId, List<String> storageAccessGroups);
+
+    List<HostVO> getEligibleUpHostsInClusterForStorageConnection(PrimaryDataStoreInfo primaryStore);
+
+    List<HostVO> getEligibleUpAndEnabledHostsInClusterForStorageConnection(PrimaryDataStoreInfo primaryStore);
+
+    List<HostVO> getEligibleUpAndEnabledHostsInZoneForStorageConnection(DataStore dataStore, long zoneId, HypervisorType hypervisorType);
 }

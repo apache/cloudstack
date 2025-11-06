@@ -303,7 +303,6 @@ public class KvmNonManagedStorageSystemDataMotionTest {
         Mockito.lenient().when(dataStoreVO.getId()).thenReturn(0l);
 
         ImageStoreEntity destDataStore = Mockito.mock(ImageStoreImpl.class);
-        Mockito.doReturn(0l).when(destDataStore).getId();
 
         Answer copyCommandAnswer = Mockito.mock(Answer.class);
 

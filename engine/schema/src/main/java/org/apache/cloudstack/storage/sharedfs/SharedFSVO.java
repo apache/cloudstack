@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.UUID;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -118,6 +119,13 @@ public class SharedFSVO implements SharedFS {
         this.fsType = fsType;
         this.serviceOfferingId = serviceOfferingId;
         this.uuid = UUID.randomUUID().toString();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("SharedFS %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name"));
     }
 
     @Override

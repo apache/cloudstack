@@ -96,7 +96,7 @@ public class DataCenterResourceManagerImpl implements DataCenterResourceManager 
     public EngineClusterVO loadCluster(String uuid) {
         EngineClusterVO cluster = _clusterDao.findByUuid(uuid);
         if (cluster == null) {
-            throw new InvalidParameterValueException("Pod does not exist");
+            throw new InvalidParameterValueException("Cluster does not exist");
         }
         return cluster;
     }

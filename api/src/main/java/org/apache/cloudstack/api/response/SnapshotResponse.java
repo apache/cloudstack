@@ -107,6 +107,10 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "physical size of backedup snapshot on image store")
     private long physicalSize;
 
+    @SerializedName(ApiConstants.CHAIN_SIZE)
+    @Param(description = "chain size of snapshot including all parent snapshots. Shown only for incremental snapshots if snapshot.show.chain.size setting is set to true", since = "4.21.0")
+    private Long chainSize;
+
     @SerializedName(ApiConstants.ZONE_ID)
     @Param(description = "id of the availability zone")
     private String zoneId;
@@ -242,6 +246,10 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
 
     public void setPhysicalSize(long physicalSize) {
         this.physicalSize = physicalSize;
+    }
+
+    public void setChainSize(long chainSize) {
+        this.chainSize = chainSize;
     }
 
     @Override

@@ -327,16 +327,14 @@ IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
                 // allocate a load balancer device for the network
                 lbDeviceVO = allocateNCCResourceForNetwork(guestConfig);
                 if (lbDeviceVO == null) {
-                    String msg = "failed to allocate Netscaler ControlCenter Resource for the zone in the network "
-                            + guestConfig.getId();
+                    String msg = String.format("failed to allocate Netscaler ControlCenter Resource for the zone in the network %s", guestConfig);
                     logger.error(msg);
                     throw new InsufficientNetworkCapacityException(msg, DataCenter.class,
                             guestConfig.getDataCenterId());
                 }
             }
             netscalerControlCenter = _hostDao.findById(lbDeviceVO.getId());
-            logger.debug("Allocated Netscaler Control Center device:" + lbDeviceVO.getId() + " for the network: "
-                    + guestConfig.getId());
+            logger.debug("Allocated Netscaler Control Center device: {} for the network: {}", lbDeviceVO, guestConfig);
         } else {
             // find the load balancer device allocated for the network
 

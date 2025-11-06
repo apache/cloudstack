@@ -67,6 +67,7 @@ import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.server.ConfigurationServer;
@@ -124,6 +125,9 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     UsageEventDao _usageEventDao;
     @Inject
     ConfigurationDao _configDao;
+    @Inject
+    VpcManager vpcManager;
+
     List<RemoteAccessVPNServiceProvider> _vpnServiceProviders;
 
     @Inject
@@ -181,7 +185,11 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
             Long networkId = ipAddress.getAssociatedWithNetworkId();
             if (networkId != null) {
-                _networkMgr.checkIpForService(ipAddress, Service.Vpn, null);
+                if (ipAddress.isForRouter()) {
+                    logger.debug("The IP address is reserved for Domain Router, skipping the check now");
+                } else {
+                    _networkMgr.checkIpForService(ipAddress, Service.Vpn, null);
+                }
             }
 
             final Long vpcId = ipAddress.getVpcId();
@@ -218,6 +226,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
             Pair<String, Integer> cidr = null;
 
             if (networkId != null) {
+                Network network = _networkMgr.getNetwork(networkId);
                 long ipAddressOwner = ipAddr.getAccountId();
                 vpnVO = _remoteAccessVpnDao.findByAccountAndNetwork(ipAddressOwner, networkId);
                 if (vpnVO != null) {
@@ -225,16 +234,17 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                         return vpnVO;
                     }
 
-                    throw new InvalidParameterValueException(String.format("A remote access VPN already exists for the account [%s].", ipAddressOwner));
+                    throw new InvalidParameterValueException(String.format("A remote access VPN already exists for the network %s.", network));
                 }
-                Network network = _networkMgr.getNetwork(networkId);
                 if (!_networkMgr.areServicesSupportedInNetwork(network.getId(), Service.Vpn)) {
                     throw new InvalidParameterValueException("Vpn service is not supported in network id=" + ipAddr.getAssociatedWithNetworkId());
                 }
                 cidr = NetUtils.getCidr(network.getCidr());
+                validateIpAddressForVpnServiceOnNetwork(network, ipAddress);
             } else {
                 Vpc vpc = _vpcDao.findById(vpcId);
                 cidr = NetUtils.getCidr(vpc.getCidr());
+                validateIpAddressForVpnServiceOnVpc(vpc, ipAddress);
             }
 
             String[] guestIpRange = NetUtils.getIpRangeFromCidr(cidr.first(), cidr.second());
@@ -257,10 +267,56 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                 if (forDisplay != null) {
                     remoteAccessVpnVO.setDisplay(forDisplay);
                 }
-                return _remoteAccessVpnDao.persist(remoteAccessVpnVO);
+                remoteAccessVpnVO = _remoteAccessVpnDao.persist(remoteAccessVpnVO);
+                if (vpcId != null) {
+                    try {
+                        vpcManager.applyStaticRouteForVpcVpnIfNeeded(vpcId, false);
+                    } catch (ResourceUnavailableException | CloudRuntimeException e) {
+                        logger.error("Unable to apply static routes for vpc " + vpcId + " due to " + e.getMessage());
+                    }
+                }
+                return remoteAccessVpnVO;
             });
         } finally {
             _ipAddressDao.releaseFromLockTable(publicIpId);
+        }
+    }
+
+    private void validateIpAddressForVpnServiceOnNetwork(Network network, IPAddressVO ipAddress) {
+        Long networkId = network.getId();
+        if (_networkMgr.isProviderSupportServiceInNetwork(networkId, Service.Vpn, Network.Provider.VirtualRouter)) {
+            // if VR is the VPN provider,
+            // (1) if VR is Source NAT, the IP address must be used as Source NAT
+            // (2) if VR is not Source NAT, the IP address must not be used as Source NAT
+            boolean isVRSourceNat = _networkMgr.isProviderSupportServiceInNetwork(networkId, Service.SourceNat, Network.Provider.VirtualRouter);
+            if (isVRSourceNat && !ipAddress.isSourceNat()) {
+                throw new InvalidParameterValueException("Vpn service can only be configured on the Source NAT IP of network id=" + ipAddress.getAssociatedWithNetworkId());
+            }
+            if (!isVRSourceNat && ipAddress.isSourceNat()) {
+                throw new InvalidParameterValueException("Vpn service can not be configured on the Source NAT IP of network id=" + ipAddress.getAssociatedWithNetworkId());
+            }
+            if (!isVRSourceNat) {
+                throw new InvalidParameterValueException("Currently it is not supported to create Vpn service on a non-Source NAT IP of network id=" + ipAddress.getAssociatedWithNetworkId());
+            }
+        }
+    }
+
+    private void validateIpAddressForVpnServiceOnVpc(Vpc vpc, IPAddressVO ipAddress) {
+        Long vpcId = vpc.getId();
+        if (vpcManager.isProviderSupportServiceInVpc(vpcId, Service.Vpn, Network.Provider.VPCVirtualRouter)) {
+            // if VPC VR is the VPN provider,
+            // (1) if VPC VR is Source NAT, the IP address must be used as Source NAT
+            // (2) if VPC VR is not Source NAT, the IP address must not be used as Source NAT
+            boolean isVpcVRSourceNat = vpcManager.isProviderSupportServiceInVpc(vpcId, Service.SourceNat, Network.Provider.VPCVirtualRouter);
+            if (isVpcVRSourceNat && !ipAddress.isSourceNat()) {
+                throw new InvalidParameterValueException("Vpn service can only be configured on the Source NAT IP of VPC id=" + ipAddress.getVpcId());
+            }
+            if (!isVpcVRSourceNat) {
+                IPAddressVO ipAddressForVpcVR = vpcManager.getIpAddressForVpcVr(vpc, ipAddress, true);
+                if (!vpcManager.configStaticNatForVpcVr(vpc, ipAddressForVpcVR)) {
+                    throw new CloudRuntimeException("Failed to enable static nat for VPC VR as part of remote access vpn creation");
+                }
+            }
         }
     }
 
@@ -329,8 +385,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         }catch (ResourceUnavailableException ex) {
             vpn.setState(prevState);
             _remoteAccessVpnDao.update(vpn.getId(), vpn);
-            logger.debug("Failed to stop the vpn " + vpn.getId() + " , so reverted state to "+
-                    RemoteAccessVpn.State.Running);
+            logger.debug("Failed to stop the vpn {}, so reverted state to {}", vpn, RemoteAccessVpn.State.Running);
             success = false;
         } finally {
             if (success|| forceCleanup) {
@@ -365,6 +420,14 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                         Transaction.execute(new TransactionCallbackNoReturn() {
                             @Override
                             public void doInTransactionWithoutResult(TransactionStatus status) {
+                                if (vpn.getVpcId() != null) {
+                                    try {
+                                        vpcManager.applyStaticRouteForVpcVpnIfNeeded(vpn.getVpcId(), false);
+                                    } catch (ResourceUnavailableException | CloudRuntimeException e) {
+                                        logger.error("Unable to apply static routes for vpc " + vpn.getVpcId() + " due to " + e.getMessage());
+                                    }
+                                }
+
                                 _remoteAccessVpnDao.remove(vpn.getId());
 
                                 List<VpnUserVO> vpnUsers = _vpnUsersDao.listByAccount(vpn.getAccountId());
@@ -435,10 +498,10 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
     @DB
     @Override
-    public boolean removeVpnUser(long vpnOwnerId, String username, Account caller) {
-        final VpnUserVO user = _vpnUsersDao.findByAccountAndUsername(vpnOwnerId, username);
+    public boolean removeVpnUser(Account vpnOwner, String username, Account caller) {
+        final VpnUserVO user = _vpnUsersDao.findByAccountAndUsername(vpnOwner.getId(), username);
         if (user == null) {
-            String errorMessage = String.format("Could not find VPN user=[%s]. VPN owner id=[%s]", username, vpnOwnerId);
+            String errorMessage = String.format("Could not find VPN user=[%s]. VPN owner=[%s]", username, vpnOwner);
             logger.debug(errorMessage);
             throw new InvalidParameterValueException(errorMessage);
         }
@@ -521,14 +584,14 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     }
 
     @DB
-    private boolean removeVpnUserWithoutRemoteAccessVpn(long vpnOwnerId, String userName) {
-        VpnUserVO vpnUser = _vpnUsersDao.findByAccountAndUsername(vpnOwnerId, userName);
+    private boolean removeVpnUserWithoutRemoteAccessVpn(Account vpnOwner, String userName) {
+        VpnUserVO vpnUser = _vpnUsersDao.findByAccountAndUsername(vpnOwner.getId(), userName);
         if (vpnUser == null) {
-            logger.error(String.format("VPN user not found with ownerId: %d and username: %s", vpnOwnerId, userName));
+            logger.error("VPN user not found with owner: {} and username: {}", vpnOwner, userName);
             return false;
         }
         if (!State.Revoke.equals(vpnUser.getState())) {
-            logger.error(String.format("VPN user with ownerId: %d and username: %s is not in revoked state, current state: %s", vpnOwnerId, userName, vpnUser.getState()));
+            logger.error("VPN user with owner: {} and username: {} is not in revoked state, current state: {}", vpnOwner, userName, vpnUser.getState());
             return false;
         }
         return _vpnUsersDao.remove(vpnUser.getId());
@@ -546,7 +609,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
         if (CollectionUtils.isEmpty(vpns)) {
             if (forRemove) {
-                return removeVpnUserWithoutRemoteAccessVpn(vpnOwnerId, userName);
+                return removeVpnUserWithoutRemoteAccessVpn(owner, userName);
             }
             logger.warn(String.format("Unable to apply VPN user due to there are no remote access VPNs configured on %s to apply VPN user.", owner.toString()));
             return true;
@@ -578,7 +641,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                             if (indexUser == users.size()) {
                                 indexUser = 0;
                             }
-                            logger.debug("VPN User " + users.get(indexUser) + (result == null ? " is set on " : (" couldn't be set due to " + result) + " on ") + vpn.getUuid());
+                            logger.debug("VPN User {}{}{}", users.get(indexUser), result == null ? " is set on " : (" couldn't be set due to " + result) + " on ", vpn);
                             if (result == null) {
                                 if (finals[indexUser] == null) {
                                     finals[indexUser] = true;

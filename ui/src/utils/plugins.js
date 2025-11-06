@@ -17,8 +17,8 @@
 
 import _ from 'lodash'
 import { i18n } from '@/locales'
-import { api } from '@/api'
-import { message, notification } from 'ant-design-vue'
+import { getAPI } from '@/api'
+import { message, notification, Modal } from 'ant-design-vue'
 import eventBus from '@/config/eventBus'
 import store from '@/store'
 import { sourceToken } from '@/utils/request'
@@ -32,6 +32,7 @@ export const pollJobPlugin = {
        * @param {String} [name='']
        * @param {String} [title='']
        * @param {String} [description='']
+       * @param {Boolean} [showSuccessMessage=true]
        * @param {String} [successMessage=Success]
        * @param {Function} [successMethod=() => {}]
        * @param {String} [errorMessage=Error]
@@ -49,6 +50,7 @@ export const pollJobPlugin = {
         name = '',
         title = '',
         description = '',
+        showSuccessMessage = true,
         successMessage = i18n.global.t('label.success'),
         successMethod = () => {},
         errorMessage = i18n.global.t('label.error'),
@@ -88,22 +90,26 @@ export const pollJobPlugin = {
       })
 
       options.originalPage = options.originalPage || this.$router.currentRoute.value.path
-      api('queryAsyncJobResult', { jobId }).then(json => {
+      getAPI('queryAsyncJobResult', { jobId }).then(json => {
         const result = json.queryasyncjobresultresponse
         eventBus.emit('update-job-details', { jobId, resourceId })
         if (result.jobstatus === 1) {
-          var content = successMessage
-          if (successMessage === 'Success' && action && action.label) {
-            content = i18n.global.t(action.label)
+          if (showSuccessMessage) {
+            var content = successMessage
+            if (successMessage === 'Success' && action && action.label) {
+              content = i18n.global.t(action.label)
+            }
+            if (name) {
+              content = content + ' - ' + name
+            }
+            message.success({
+              content,
+              key: jobId,
+              duration: 2
+            })
+          } else {
+            message.destroy(jobId)
           }
-          if (name) {
-            content = content + ' - ' + name
-          }
-          message.success({
-            content,
-            key: jobId,
-            duration: 2
-          })
           store.dispatch('AddHeaderNotice', {
             key: jobId,
             title,
@@ -338,7 +344,7 @@ export const showIconPlugin = {
       if (resource) {
         resourceType = resource
       }
-      if (['zone', 'zones', 'template', 'iso', 'account', 'accountuser', 'vm', 'domain', 'project', 'vpc', 'guestnetwork'].includes(resourceType)) {
+      if (['zone', 'zones', 'template', 'iso', 'account', 'accountuser', 'vm', 'domain', 'project', 'vpc', 'guestnetwork', 'guestoscategory'].includes(resourceType)) {
         return true
       } else {
         return false
@@ -384,6 +390,8 @@ export const resourceTypePlugin = {
           return 'kubernetes'
         case 'KubernetesSupportedVersion':
           return 'kubernetesiso'
+        case 'ExtensionCustomAction':
+          return 'customaction'
         case 'SystemVm':
         case 'PhysicalNetwork':
         case 'Backup':
@@ -412,6 +420,8 @@ export const resourceTypePlugin = {
         case 'VpnCustomerGateway':
         case 'AutoScaleVmGroup':
         case 'QuotaTariff':
+        case 'GuestOsCategory':
+        case 'Extension':
           return resourceType.toLowerCase()
       }
       return ''
@@ -421,6 +431,9 @@ export const resourceTypePlugin = {
       var routePath = this.$getRouteFromResourceType(resourceType)
       if (!routePath) return ''
       var route = this.$router.resolve('/' + routePath)
+      if (routePath === 'kubernetes') {
+        return route?.meta?.icon[0]
+      }
       return route?.meta?.icon || ''
     }
   }
@@ -522,4 +535,76 @@ export function createPathBasedOnVmType (vmtype, virtualmachineid) {
   }
 
   return path + virtualmachineid
+}
+
+export const dialogUtilPlugin = {
+  install (app) {
+    app.config.globalProperties.$resetConfigurationValueConfirm = function (configRecord, callback) {
+      Modal.confirm({
+        title: i18n.global.t('label.reset.config.value'),
+        content: `${i18n.global.t('message.confirm.reset.configuration.value').replace('%x', configRecord.name)}`,
+        okText: i18n.global.t('label.yes'),
+        cancelText: i18n.global.t('label.no'),
+        okType: 'primary',
+        onOk: () => callback(configRecord)
+      })
+    }
+  }
+}
+
+export const cpuArchitectureUtilPlugin = {
+  install (app) {
+    app.config.globalProperties.$fetchCpuArchitectureTypes = function () {
+      const architectures = [
+        { id: 'x86_64', name: 'Intel/AMD 64 bits (x86_64)' },
+        { id: 'aarch64', name: 'ARM 64 bits (aarch64)' }
+      ]
+      return architectures.map(item => ({ ...item, description: item.name }))
+    }
+  }
+}
+
+export const imagesUtilPlugin = {
+  install (app) {
+    app.config.globalProperties.$fetchTemplateTypes = function (hypervisor) {
+      const baseTypes = ['USER']
+      if (hypervisor === 'External') {
+        return baseTypes.map(type => ({ id: type, name: type, description: type }))
+      }
+      baseTypes.push('VNF')
+      const adminTypes = ['SYSTEM', 'BUILTIN', 'ROUTING']
+      const types = [...baseTypes]
+      if (store.getters.userInfo?.roletype === 'Admin') {
+        types.push(...adminTypes)
+      }
+      return types.map(type => ({ id: type, name: type, description: type }))
+    }
+  }
+}
+
+export const extensionsUtilPlugin = {
+  install (app) {
+    app.config.globalProperties.$fetchCustomActionRoleTypes = function () {
+      const roleTypes = []
+      const roleTypesList = ['Admin', 'Resource Admin', 'Domain Admin', 'User']
+      roleTypesList.forEach((item) => {
+        roleTypes.push({
+          id: item.replace(' ', ''),
+          description: item
+        })
+      })
+      return roleTypes
+    }
+  }
+}
+
+export const backupUtilPlugin = {
+  install (app) {
+    app.config.globalProperties.$isBackupProviderSupportsQuiesceVm = function (provider) {
+      if (!provider && typeof provider !== 'string') {
+        return false
+      }
+      return ['nas'].includes(provider.toLowerCase())
+    }
+  }
 }

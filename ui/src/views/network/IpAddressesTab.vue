@@ -207,7 +207,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import BulkActionView from '@/components/view/BulkActionView'
@@ -282,10 +282,12 @@ export default {
       acquireLoading: false,
       acquireIp: null,
       listPublicIpAddress: [],
-      changeSourceNat: false
+      changeSourceNat: false,
+      zoneExtNetProvider: ''
     }
   },
-  created () {
+  async created () {
+    await this.fetchZones()
     this.fetchData()
   },
   watch: {
@@ -321,12 +323,25 @@ export default {
       } else {
         params.associatednetworkid = this.resource.id
       }
+      if (['nsx', 'netris'].includes(this.zoneExtNetProvider?.toLowerCase())) {
+        params.forprovider = true
+      }
       this.fetchLoading = true
-      api('listPublicIpAddresses', params).then(json => {
+      getAPI('listPublicIpAddresses', params).then(json => {
         this.totalIps = json.listpublicipaddressesresponse.count || 0
         this.ips = json.listpublicipaddressesresponse.publicipaddress || []
       }).finally(() => {
         this.fetchLoading = false
+      })
+    },
+    fetchZones () {
+      return new Promise((resolve, reject) => {
+        getAPI('listZones', {
+          id: this.resource.zoneid
+        }).then(json => {
+          this.zoneExtNetProvider = json?.listzonesresponse?.zone?.[0]?.provider || null
+          resolve(this.zoneExtNetProvider)
+        }).catch(reject)
       })
     },
     fetchListPublicIpAddress () {
@@ -338,7 +353,10 @@ export default {
           forvirtualnetwork: true,
           allocatedonly: false
         }
-        api('listPublicIpAddresses', params).then(json => {
+        if (['nsx', 'netris'].includes(this.zoneExtNetProvider?.toLowerCase())) {
+          params.forprovider = true
+        }
+        getAPI('listPublicIpAddresses', params).then(json => {
           const listPublicIps = json.listpublicipaddressesresponse.publicipaddress || []
           resolve(listPublicIps)
         }).catch(reject)
@@ -368,7 +386,7 @@ export default {
       params.sourcenatipaddress = this.sourceNatIp.ipaddress
       params.id = this.resource.id
       this.settingsourcenat = true
-      api('updateNetwork', params).then(response => {
+      postAPI('updateNetwork', params).then(response => {
         this.fetchData()
       }).catch(error => {
         this.$notification.error({
@@ -386,7 +404,7 @@ export default {
       params.sourcenatipaddress = this.sourceNatIp.ipaddress
       params.id = this.resource.id
       this.settingsourcenat = true
-      api('updateVPC', params).then(response => {
+      postAPI('updateVPC', params).then(response => {
         this.fetchData()
       }).catch(error => {
         this.$notification.error({
@@ -436,7 +454,7 @@ export default {
       params.ipaddress = this.acquireIp
       this.acquireLoading = true
 
-      api('associateIpAddress', params).then(response => {
+      postAPI('associateIpAddress', params).then(response => {
         this.$pollJob({
           jobId: response.associateipaddressresponse.jobid,
           successMessage: `${this.$t('message.success.acquire.ip')} ${this.$t('label.for')} ${this.resource.name}`,
@@ -490,7 +508,7 @@ export default {
     },
     releaseIpAddress (ip) {
       this.fetchLoading = true
-      api('disassociateIpAddress', {
+      postAPI('disassociateIpAddress', {
         id: ip.id
       }).then(response => {
         const jobId = response.disassociateipaddressresponse.jobid

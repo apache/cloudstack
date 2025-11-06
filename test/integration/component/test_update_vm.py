@@ -186,7 +186,7 @@ class TestUpdateVirtualMachine(cloudstackTestCase):
         vm_db_id = dbresult[0][0]
         self.debug("VM has database id %d" % vm_db_id)
 
-        self.dbclient.execute("insert into user_vm_details (vm_id, name, value, display) values (%d,'%s','HOST', 0)" % (vm_db_id, hidden_detail_name))
+        self.dbclient.execute("insert into vm_instance_details (vm_id, name, value, display) values (%d,'%s','HOST', 0)" % (vm_db_id, hidden_detail_name))
 
         vm = self.listVmById(self.virtual_machine.id)
         self.debug("VirtualMachine fetched with details: %s of type %s" % (vm.details, type(vm.details)))
@@ -227,7 +227,7 @@ class TestUpdateVirtualMachine(cloudstackTestCase):
 
 
     def detailInDatabase(self, vm_id, detail_name):
-        dbresult = self.dbclient.execute("select id from user_vm_details where vm_id=%s and name='%s'" % (vm_id, detail_name))
+        dbresult = self.dbclient.execute("select id from vm_instance_details where vm_id=%s and name='%s'" % (vm_id, detail_name))
         self.debug("Detail %s for VM %s: %s" % (detail_name, vm_id, dbresult))
         if validateList(dbresult)[0] == PASS:
             return True

@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.admin.domain;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.junit.Assert;
 import org.junit.Test;
@@ -71,7 +72,17 @@ public class ListDomainsCmdTest {
         cmd._resourceLimitService = resourceLimitService;
         ReflectionTestUtils.setField(cmd, "tag", "abc");
         cmd.updateDomainResponse(List.of(Mockito.mock(DomainResponse.class)));
-        Mockito.verify(resourceLimitService, Mockito.times(1)).updateTaggedResourceLimitsAndCountsForDomains(Mockito.any(), Mockito.any());
+        Mockito.verify(resourceLimitService).updateTaggedResourceLimitsAndCountsForDomains(Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void testUpdateDomainResponseWithDomainsMinDetails() {
+        ListDomainsCmd cmd = new ListDomainsCmd();
+        ReflectionTestUtils.setField(cmd, "viewDetails", List.of(ApiConstants.DomainDetails.min.toString()));
+        cmd._resourceLimitService = resourceLimitService;
+        ReflectionTestUtils.setField(cmd, "tag", "abc");
+        cmd.updateDomainResponse(List.of(Mockito.mock(DomainResponse.class)));
+        Mockito.verify(resourceLimitService, Mockito.never()).updateTaggedResourceLimitsAndCountsForDomains(Mockito.any(), Mockito.any());
     }
 
 }

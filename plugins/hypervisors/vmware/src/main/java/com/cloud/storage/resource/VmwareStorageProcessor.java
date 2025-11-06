@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
-import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplianceCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
@@ -101,6 +101,7 @@ import com.cloud.template.TemplateManager;
 import com.cloud.utils.LogUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine.PowerState;
@@ -493,8 +494,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
                                                                             boolean createSnapshot, String nfsVersion, String configuration) throws Exception {
         String secondaryMountPoint = mountService.getMountPoint(secondaryStorageUrl, nfsVersion);
 
-        logger.info(String.format("Init copy of template [name: %s, path in secondary storage: %s, configuration: %s] in secondary storage [url: %s, mount point: %s] to primary storage.",
-                templateName, templatePathAtSecondaryStorage, configuration, secondaryStorageUrl, secondaryMountPoint));
+        logger.info(String.format("Init copy of template [uuid: %s, name: %s, path in secondary storage: %s, configuration: %s] in secondary storage [url: %s, mount point: %s] to primary storage.",
+                templateUuid, templateName, templatePathAtSecondaryStorage, configuration, secondaryStorageUrl, secondaryMountPoint));
 
         String srcOVAFileName =
                 VmwareStorageLayoutHelper.getTemplateOnSecStorageFilePath(secondaryMountPoint, templatePathAtSecondaryStorage, templateName,
@@ -682,9 +683,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     String[] legacyCloudStackLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairManagedDatastorePath(dsMo, null,
                             managedStoragePoolRootVolumeName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, false);
 
-                    dsMo.moveDatastoreFile(vmwareLayoutFilePair[0], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[0], dcMo.getMor(), true);
+                    VmwareStorageLayoutHelper.moveDatastoreFile(dsMo, vmwareLayoutFilePair[0], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[0], dcMo.getMor(), true);
                     for (int i=1; i<vmwareLayoutFilePair.length; i++) {
-                        dsMo.moveDatastoreFile(vmwareLayoutFilePair[i], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[i], dcMo.getMor(), true);
+                        VmwareStorageLayoutHelper.moveDatastoreFile(dsMo, vmwareLayoutFilePair[i], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[i], dcMo.getMor(), true);
                     }
 
                     String folderToDelete = dsMo.getDatastorePath(managedStoragePoolRootVolumeName, true);
@@ -814,7 +815,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         existingVm.detachAllDisksAndDestroy();
                     }
                     logger.info("ROOT Volume from deploy-as-is template, cloning template");
-                    cloneVMFromTemplate(hyperHost, template.getPath(), vmName, primaryStore.getUuid());
+                    cloneVMFromTemplate(hyperHost, template, volume, vmName, primaryStore.getUuid());
                 } else {
                     logger.info("ROOT Volume from deploy-as-is template, volume already created at this point");
                 }
@@ -945,7 +946,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             String[] legacyCloudStackLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkFileBaseName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, !_fullCloneFlag);
 
             for (int i = 0; i < vmwareLayoutFilePair.length; i++) {
-                dsMo.moveDatastoreFile(vmwareLayoutFilePair[i], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[i], dcMo.getMor(), true);
+                VmwareStorageLayoutHelper.moveDatastoreFile(dsMo, vmwareLayoutFilePair[i], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[i], dcMo.getMor(), true);
             }
 
             logger.info("detach disks from volume-wrapper VM and destroy {}", vmdkName);
@@ -1222,10 +1223,10 @@ public class VmwareStorageProcessor implements StorageProcessor {
             // Get VMDK filename
             String templateVMDKName = "";
             File[] files = new File(installFullPath).listFiles();
-            if(files != null) {
+            if (files != null) {
                 for(File file : files) {
                     String fileName = file.getName();
-                    if(fileName.toLowerCase().startsWith(templateUniqueName) && fileName.toLowerCase().endsWith(".vmdk")) {
+                    if (fileName.toLowerCase().startsWith(templateUniqueName) && fileName.toLowerCase().endsWith(".vmdk")) {
                         templateVMDKName += fileName;
                         break;
                     }
@@ -1856,16 +1857,16 @@ public class VmwareStorageProcessor implements StorageProcessor {
             CopyCmdAnswer answer = null;
 
             try {
-                if(vmName != null) {
+                if (vmName != null) {
                     vmMo = hyperHost.findVmOnHyperHost(vmName);
                     if (vmMo == null) {
-                        if(logger.isDebugEnabled()) {
+                        if (logger.isDebugEnabled()) {
                             logger.debug("Unable to find owner VM for BackupSnapshotCommand on host " + hyperHost.getHyperHostName() + ", will try within datacenter");
                         }
                         vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
                     }
                 }
-                if(vmMo == null) {
+                if (vmMo == null) {
                     dsMo = new DatastoreMO(hyperHost.getContext(), morDs);
                     workerVMName = hostService.getWorkerName(context, cmd, 0, dsMo);
                     vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, workerVMName, null);
@@ -1899,10 +1900,10 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     String secondaryMountPoint = mountService.getMountPoint(secondaryStorageUrl, _nfsVersion);
                     String snapshotDir =  destSnapshot.getPath() + "/" + snapshotBackupUuid;
                     File[] files = new File(secondaryMountPoint + "/" + snapshotDir).listFiles();
-                    if(files != null) {
+                    if (files != null) {
                         for(File file : files) {
                             String fileName = file.getName();
-                            if(fileName.toLowerCase().startsWith(snapshotBackupUuid) && fileName.toLowerCase().endsWith(".vmdk")) {
+                            if (fileName.toLowerCase().startsWith(snapshotBackupUuid) && fileName.toLowerCase().endsWith(".vmdk")) {
                                 physicalSize = new File(secondaryMountPoint + "/" + snapshotDir + "/" + fileName).length();
                                 break;
                             }
@@ -2286,7 +2287,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
     private String getSecondaryDatastoreUUID(String storeUrl) {
         String uuid = null;
         try{
-            uuid=UUID.nameUUIDFromBytes(storeUrl.getBytes("UTF-8")).toString();
+            uuid=UuidUtils.nameUUIDFromBytes(storeUrl.getBytes("UTF-8")).toString();
         }catch(UnsupportedEncodingException e){
             logger.warn("Failed to create UUID from string " + storeUrl + ". Bad storeUrl or UTF-8 encoding error." );
         }
@@ -2534,7 +2535,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     if (vmMo != null) {
                         if (logger.isInfoEnabled()) {
                             if (deployAsIs) {
-                                logger.info("Destroying root volume " + vol.getPath() + " of deploy-as-is VM " + vmName);
+                                logger.info(String.format("Destroying root volume %s of deploy-as-is VM %s", vol, vmName));
                             } else {
                                 logger.info("Destroy root volume and VM itself. vmName " + vmName);
                             }
@@ -2585,7 +2586,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         }
                     } else if (deployAsIs) {
                         if (logger.isInfoEnabled()) {
-                            logger.info("Destroying root volume " + vol.getPath() + " of already removed deploy-as-is VM " + vmName);
+                            logger.info(String.format("Destroying root volume %s of already removed deploy-as-is VM %s", vol, vmName));
                         }
                         // The disks of the deploy-as-is VM have been detached from the VM and moved to root folder
                         String deployAsIsRootDiskPath = dsMo.searchFileInSubFolders(vol.getPath() + VmwareResource.VMDK_EXTENSION,
@@ -3651,7 +3652,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
             workerVm.tagAsWorkerVM();
 
-            if(!primaryDsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
+            if (!primaryDsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
                 HypervisorHostHelper.createBaseFolderInDatastore(primaryDsMo, primaryDsMo.getDataCenterMor());
                 workerVm.moveAllVmDiskFiles(primaryDsMo, HypervisorHostHelper.VSPHERE_DATASTORE_BASE_FOLDER, false);
             }
@@ -3740,10 +3741,10 @@ public class VmwareStorageProcessor implements StorageProcessor {
     private String deriveTemplateUuidOnHost(VmwareHypervisorHost hyperHost, String storeIdentifier, String templateName) {
         String templateUuid;
         try {
-            templateUuid = UUID.nameUUIDFromBytes((templateName + "@" + storeIdentifier + "-" + hyperHost.getMor().getValue()).getBytes("UTF-8")).toString();
+            templateUuid = UuidUtils.nameUUIDFromBytes((templateName + "@" + storeIdentifier + "-" + hyperHost.getMor().getValue()).getBytes("UTF-8")).toString();
         } catch(UnsupportedEncodingException e){
             logger.warn("unexpected encoding error, using default Charset: " + e.getLocalizedMessage());
-            templateUuid = UUID.nameUUIDFromBytes((templateName + "@" + storeIdentifier + "-" + hyperHost.getMor().getValue()).getBytes(Charset.defaultCharset()))
+            templateUuid = UuidUtils.nameUUIDFromBytes((templateName + "@" + storeIdentifier + "-" + hyperHost.getMor().getValue()).getBytes(Charset.defaultCharset()))
                     .toString();
         }
         templateUuid = templateUuid.replaceAll("-", "");
@@ -3775,7 +3776,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     @Override
-    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplainceCommand cmd) {
+    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplianceCommand cmd) {
         String primaryStorageNameLabel = cmd.getStoragePool().getUuid();
         String storagePolicyId = cmd.getStoragePolicyId();
         VmwareContext context = hostService.getServiceContext(cmd);
@@ -3791,14 +3792,14 @@ public class VmwareStorageProcessor implements StorageProcessor {
             DatastoreMO primaryDsMo = new DatastoreMO(hyperHost.getContext(), morPrimaryDs);
             boolean isDatastoreStoragePolicyComplaint = primaryDsMo.isDatastoreStoragePolicyComplaint(storagePolicyId);
 
-            String failedMessage = String.format("DataStore %s is not complaince with storage policy id %s", primaryStorageNameLabel, storagePolicyId);
+            String failedMessage = String.format("DataStore %s is not compliance with storage policy id %s", primaryStorageNameLabel, storagePolicyId);
             if (!isDatastoreStoragePolicyComplaint)
                 return new Answer(cmd, isDatastoreStoragePolicyComplaint, failedMessage);
             else
                 return new Answer(cmd, isDatastoreStoragePolicyComplaint, null);
         } catch (Throwable e) {
             hostService.createLogMessageException(e, cmd);
-            String details = String.format("Exception while checking if datastore [%s] is storage policy [%s] complaince due to: [%s]", primaryStorageNameLabel, storagePolicyId, VmwareHelper.getExceptionMessage(e));
+            String details = String.format("Exception while checking if datastore [%s] is storage policy [%s] compliance due to: [%s]", primaryStorageNameLabel, storagePolicyId, VmwareHelper.getExceptionMessage(e));
             return new Answer(cmd, false, details);
         }
     }
@@ -3811,8 +3812,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
     /**
      * Return the cloned VM from the template
      */
-    public VirtualMachineMO cloneVMFromTemplate(VmwareHypervisorHost hyperHost, String templateName, String cloneName, String templatePrimaryStoreUuid) {
+    public VirtualMachineMO cloneVMFromTemplate(VmwareHypervisorHost hyperHost, TemplateObjectTO template, VolumeObjectTO volume, String cloneName, String templatePrimaryStoreUuid) {
         try {
+            String templateName = template.getPath();
             VmwareContext context = hyperHost.getContext();
             DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
             VirtualMachineMO templateMo = dcMo.findVm(templateName);
@@ -3826,6 +3828,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 throw new CloudRuntimeException("Unable to find datastore in vSphere");
             }
             logger.info("Cloning VM " + cloneName + " from template " + templateName + " into datastore " + templatePrimaryStoreUuid);
+            if (template.getSize() != null) {
+                _fullCloneFlag = volume.getSize() > template.getSize() ? true : _fullCloneFlag;
+            }
             if (!_fullCloneFlag) {
                 createVMLinkedClone(templateMo, dcMo, cloneName, morDatastore, morPool, null);
             } else {
@@ -3859,7 +3864,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             String volumePath = volumeTO.getPath();
             if (!file.getFileBaseName().equalsIgnoreCase(volumePath)) {
                 if (logger.isInfoEnabled()) {
-                    logger.info("Detected disk-chain top file change on volume: " + volumeTO.getId() + " " + volumePath + " -> " + file.getFileBaseName());
+                    logger.info(String.format("Detected disk-chain top file change on volume: %s -> %s", volumeTO, file.getFileBaseName()));
                 }
                 volumePathChangeObserved = true;
                 volumePath = file.getFileBaseName();
@@ -3871,7 +3876,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             if (diskDatastoreMoFromVM != null) {
                 String actualPoolUuid = diskDatastoreMoFromVM.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID);
                 if (!actualPoolUuid.equalsIgnoreCase(primaryStore.getUuid())) {
-                    logger.warn(String.format("Volume %s found to be in a different storage pool %s", volumePath, actualPoolUuid));
+                    logger.warn(String.format("Volume %s found to be in a different storage pool %s", volumeTO, actualPoolUuid));
                     datastoreChangeObserved = true;
                     volumeTO.setDataStoreUuid(actualPoolUuid);
                     volumeTO.setChainInfo(_gson.toJson(matchingExistingDisk));

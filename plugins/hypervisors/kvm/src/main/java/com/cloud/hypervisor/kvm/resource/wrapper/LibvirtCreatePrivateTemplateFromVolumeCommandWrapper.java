@@ -108,9 +108,7 @@ public final class LibvirtCreatePrivateTemplateFromVolumeCommandWrapper extends 
             } else {
                 logger.debug("Converting RBD disk " + disk.getPath() + " into template " + command.getUniqueName());
 
-                final QemuImgFile srcFile =
-                        new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(primary.getSourceHost(), primary.getSourcePort(), primary.getAuthUserName(),
-                                primary.getAuthSecret(), disk.getPath()));
+                final QemuImgFile srcFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(primary, disk.getPath()));
                 srcFile.setFormat(PhysicalDiskFormat.RAW);
 
                 final QemuImgFile destFile = new QemuImgFile(tmpltPath + "/" + command.getUniqueName() + ".qcow2");

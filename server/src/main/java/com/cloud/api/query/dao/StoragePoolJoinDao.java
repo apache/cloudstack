@@ -28,6 +28,8 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 public interface StoragePoolJoinDao extends GenericDao<StoragePoolJoinVO, Long> {
 
+    StoragePoolResponse newMinimalStoragePoolResponse(StoragePoolJoinVO pool);
+
     StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO host, boolean customStats);
 
     StoragePoolResponse setStoragePoolResponse(StoragePoolResponse response, StoragePoolJoinVO host);

@@ -27,7 +27,6 @@ import com.cloud.utils.db.GenericDaoBase;
 public class GuestOSCategoryDaoImpl extends GenericDaoBase<GuestOSCategoryVO, Long> implements GuestOSCategoryDao {
 
     protected GuestOSCategoryDaoImpl() {
-
     }
 
     @Override

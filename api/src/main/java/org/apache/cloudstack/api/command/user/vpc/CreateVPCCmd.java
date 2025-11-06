@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpc;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -125,6 +126,10 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
     @Parameter(name=ApiConstants.AS_NUMBER, type=CommandType.LONG, since = "4.20.0", description="the AS Number of the VPC tiers")
     private Long asNumber;
 
+    @Parameter(name=ApiConstants.USE_VIRTUAL_ROUTER_IP_RESOLVER, type=CommandType.BOOLEAN,
+            description="(optional) for NSX based VPCs: when set to true, use the VR IP as nameserver, otherwise use DNS1 and DNS2")
+    private Boolean useVrIpResolver;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -203,6 +208,10 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     public Long getAsNumber() {
         return asNumber;
+    }
+
+    public boolean getUseVrIpResolver() {
+        return BooleanUtils.toBoolean(useVrIpResolver);
     }
 
     /////////////////////////////////////////////////////

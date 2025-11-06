@@ -54,7 +54,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import _ from 'lodash'
 
 export default {
@@ -154,7 +154,7 @@ export default {
       this.items = []
       this.fetchLoading = true
 
-      api('listSecurityGroups', params).then(json => {
+      getAPI('listSecurityGroups', params).then(json => {
         const items = json.listsecuritygroupsresponse.securitygroup || []
         this.rowCount = json.listsecuritygroupsresponse.count || 0
         if (items && items.length > 0) {

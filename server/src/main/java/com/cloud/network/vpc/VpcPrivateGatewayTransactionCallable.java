@@ -21,6 +21,7 @@ import java.util.concurrent.Callable;
 
 import javax.inject.Inject;
 
+import com.cloud.network.dao.NetworkDao;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
@@ -40,6 +41,8 @@ public class VpcPrivateGatewayTransactionCallable implements Callable<Boolean> {
     private VpcGatewayDao _vpcGatewayDao;
     @Inject
     private PrivateIpDao _privateIpDao;
+    @Inject
+    private NetworkDao networkDao;
 
     private PrivateGateway gateway;
     private boolean deleteNetwork = true;
@@ -54,7 +57,7 @@ public class VpcPrivateGatewayTransactionCallable implements Callable<Boolean> {
 
                 final List<PrivateIpVO> privateIps = _privateIpDao.listByNetworkId(networkId);
                 if (privateIps.size() > 1 || !privateIps.get(0).getIpAddress().equalsIgnoreCase(gateway.getIp4Address())) {
-                    logger.debug("Not removing network id=" + gateway.getNetworkId() + " as it has private ip addresses for other gateways");
+                    logger.debug("Not removing network {} as it has private ip addresses for other gateways", networkDao.findById(gateway.getNetworkId()));
                     deleteNetwork = false;
                 }
 

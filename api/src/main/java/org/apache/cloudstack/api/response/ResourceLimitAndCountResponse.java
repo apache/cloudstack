@@ -48,6 +48,12 @@ public interface ResourceLimitAndCountResponse {
 
     public void setMemoryAvailable(String memoryAvailable);
 
+    public void setGpuLimit(String gpuLimit);
+
+    public void setGpuTotal(Long gpuTotal);
+
+    public void setGpuAvailable(String gpuAvailable);
+
     public void setPrimaryStorageLimit(String primaryStorageLimit);
 
     public void setPrimaryStorageTotal(Long primaryStorageTotal);
@@ -83,6 +89,30 @@ public interface ResourceLimitAndCountResponse {
     public void setSnapshotTotal(Long snapshotTotal);
 
     public void setSnapshotAvailable(String snapshotAvailable);
+
+    public void setBackupLimit(String backupLimit);
+
+    public void setBackupTotal(Long backupTotal);
+
+    public void setBackupAvailable(String backupAvailable);
+
+    public void setBackupStorageLimit(String backupStorageLimit);
+
+    public void setBackupStorageTotal(Long backupStorageTotal);
+
+    public void setBackupStorageAvailable(String backupStorageAvailable);
+
+    void setBucketLimit(String bucketLimit);
+
+    void setBucketTotal(Long bucketTotal);
+
+    void setBucketAvailable(String bucketAvailable);
+
+    void setObjectStorageLimit(String objectStorageLimit);
+
+    void setObjectStorageTotal(Long objectStorageTotal);
+
+    void setObjectStorageAvailable(String objectStorageAvailable);
 
     public void setTemplateLimit(String templateLimit);
 

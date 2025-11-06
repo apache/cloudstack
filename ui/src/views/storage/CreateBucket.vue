@@ -42,7 +42,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item name="quota" ref="quota" :label="$t('label.quotagb')">
+        <a-form-item name="quota" ref="quota" :label="$t('label.quotagib')">
           <a-input
             v-model:value="form.quota"
             :placeholder="$t('label.quota')"/>
@@ -91,7 +91,7 @@
 </template>
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 
@@ -125,7 +125,8 @@ export default {
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('label.required') }],
-        objectstore: [{ required: true, message: this.$t('label.required') }]
+        objectstore: [{ required: true, message: this.$t('label.required') }],
+        quota: [{ required: true, message: this.$t('label.required') }]
       })
     },
     fetchData () {
@@ -133,7 +134,7 @@ export default {
     },
     listObjectStores () {
       this.loading = true
-      api('listObjectStoragePools').then(json => {
+      getAPI('listObjectStoragePools').then(json => {
         this.objectstores = json.listobjectstoragepoolsresponse.objectstore || []
         if (this.objectstores.length > 0) {
           this.form.objectstore = this.objectstores[0].id
@@ -162,7 +163,7 @@ export default {
           policy: values.policy
         }
         this.loading = true
-        api('createBucket', data).then(response => {
+        postAPI('createBucket', data).then(response => {
           this.$pollJob({
             jobId: response.createbucketresponse.jobid,
             title: this.$t('label.create.bucket'),

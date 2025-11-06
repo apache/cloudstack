@@ -17,17 +17,23 @@
 package com.cloud.network.guru;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
 import javax.inject.Inject;
 
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import com.cloud.user.dao.AccountDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.configuration.Config;
@@ -121,6 +127,14 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     Ipv6AddressManager ipv6AddressManager;
     @Inject
     DomainRouterDao domainRouterDao;
+    @Inject
+    public NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
+    @Inject
+    public AccountDao accountDao;
+    @Inject
+    public DomainDao domainDao;
+    @Inject
+    RoutedIpv4Manager routedIpv4Manager;
 
     Random _rand = new Random(System.currentTimeMillis());
 
@@ -201,7 +215,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
         }
         if (methods.isEmpty()) {
             // The empty isolation method is assumed to be VLAN
-            logger.debug("Empty physical isolation type for physical network " + physicalNetwork.getUuid());
+            logger.debug("Empty physical isolation type for physical network {}", physicalNetwork);
             methods = new ArrayList<String>(1);
             methods.add("VLAN".toLowerCase());
         }
@@ -297,7 +311,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     public void deallocate(final Network network, final NicProfile nic, final VirtualMachineProfile vm) {
         if (network.getSpecifyIpRanges()) {
             if (logger.isDebugEnabled()) {
-                logger.debug("Deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIPv4Address());
+                logger.debug("Deallocate network: {}, nic: {}", network, nic);
             }
 
             final IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIPv4Address());
@@ -321,7 +335,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
         }
 
         if (pNetwork.getVnet() == null) {
-            throw new CloudRuntimeException("Could not find vlan range for physical Network " + physicalNetworkId + ".");
+            throw new CloudRuntimeException(String.format("Could not find vlan range for physical Network %s.", pNetwork));
         }
         Integer lowestVlanTag = null;
         final List<Pair<Integer, Integer>> vnetList = pNetwork.getVnet();
@@ -437,7 +451,8 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
                     if (network.getGuestType() != GuestType.L2 && vm.getType() == VirtualMachine.Type.DomainRouter) {
                         Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, null);
                         if (placeholderNic != null) {
-                            logger.debug("Nic got an ip address " + placeholderNic.getIPv4Address() + " stored in placeholder nic for the network " + network);
+                            logger.debug("Nic {} got an ip address {} stored in placeholder nic " +
+                                    "for the network {}", nic, placeholderNic.getIPv4Address(), network);
                             guestIp = placeholderNic.getIPv4Address();
                         }
                     }
@@ -514,11 +529,15 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
             return; // Nothing to do here if the uri is null already
         }
 
-        if ((profile.getBroadcastDomainType() == BroadcastDomainType.Vlan || profile.getBroadcastDomainType() == BroadcastDomainType.Vxlan) && !offering.isSpecifyVlan()) {
-            logger.debug("Releasing vnet for the network id=" + profile.getId());
+        if ((profile.getBroadcastDomainType() == BroadcastDomainType.Vlan || profile.getBroadcastDomainType() == BroadcastDomainType.Vxlan || profile.getBroadcastDomainType() == BroadcastDomainType.Netris) && !offering.isSpecifyVlan()) {
+            logger.debug("Releasing vnet for the network: {}", profile);
             _dcDao.releaseVnet(BroadcastDomainType.getValue(profile.getBroadcastUri()), profile.getDataCenterId(), profile.getPhysicalNetworkId(), profile.getAccountId(),
                     profile.getReservationId());
-            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), profile.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_RELEASE,
+            String eventType = EventTypes.EVENT_ZONE_VLAN_RELEASE;
+            if (Arrays.asList(BroadcastDomainType.Vxlan, BroadcastDomainType.Netris).contains(profile.getBroadcastDomainType())) {
+                eventType = EventTypes.EVENT_ZONE_VXLAN_RELEASE;
+            }
+            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), profile.getAccountId(), EventVO.LEVEL_INFO, eventType,
                     "Released Zone Vnet: " + BroadcastDomainType.getValue(profile.getBroadcastUri()) + " for Network: " + profile.getId(),
                     profile.getDataCenterId(), ApiCommandResourceType.Zone.toString(), 0);
         }
@@ -569,5 +588,25 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
             network.setRouterIpv6(userSpecified.getRouterIpv6());
         }
         return network;
+    }
+
+    public void getOrCreateIpv4SubnetForGuestNetwork(NetworkOffering offering, NetworkVO config, Network userSpecified, Account owner) {
+        if (NetworkOffering.NetworkMode.ROUTED.equals(offering.getNetworkMode()) && !offering.isForVpc()) {
+            if (userSpecified.getCidr() != null) {
+                routedIpv4Manager.getOrCreateIpv4SubnetForGuestNetwork(config, userSpecified.getCidr());
+            } else {
+                if (userSpecified.getNetworkCidrSize() == null) {
+                    throw new InvalidParameterValueException("The network CIDR or CIDR size must be specified.");
+                }
+                Ipv4GuestSubnetNetworkMap subnet = routedIpv4Manager.getOrCreateIpv4SubnetForGuestNetwork(owner.getDomainId(), owner.getAccountId(), config.getDataCenterId(), userSpecified.getNetworkCidrSize());
+                if (subnet != null) {
+                    final String[] cidrTuple = subnet.getSubnet().split("\\/");
+                    config.setGateway(NetUtils.getIpRangeStartIpFromCidr(cidrTuple[0], Long.parseLong(cidrTuple[1])));
+                    config.setCidr(subnet.getSubnet());
+                } else {
+                    throw new InvalidParameterValueException("Failed to allocate a CIDR with requested size.");
+                }
+            }
+        }
     }
 }

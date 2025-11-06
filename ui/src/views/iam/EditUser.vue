@@ -81,6 +81,16 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item v-if="isRootAdmin" ref="apikeyaccess" name="apikeyaccess">
+          <template #label>
+            <tooltip-label :title="$t('label.apikeyaccess')" :tooltip="apiParams.apikeyaccess.description"/>
+          </template>
+          <a-radio-group v-model:value="form.apikeyaccess" buttonStyle="solid">
+            <a-radio-button value="ENABLED">Enabled</a-radio-button>
+            <a-radio-button value="INHERIT">Inherit</a-radio-button>
+            <a-radio-button value="DISABLED">Disabled</a-radio-button>
+          </a-radio-group>
+        </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
           <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -92,7 +102,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -127,6 +137,11 @@ export default {
   created () {
     this.initForm()
     this.fetchData()
+  },
+  computed: {
+    isRootAdmin () {
+      return this.$store.getters.userInfo?.roletype === 'Admin'
+    }
   },
   methods: {
     initForm () {
@@ -187,13 +202,14 @@ export default {
           username: values.username,
           email: values.email,
           firstname: values.firstname,
-          lastname: values.lastname
+          lastname: values.lastname,
+          apikeyaccess: values.apikeyaccess
         }
         if (this.isValidValueForKey(values, 'timezone') && values.timezone.length > 0) {
           params.timezone = values.timezone
         }
 
-        api('updateUser', params).then(response => {
+        postAPI('updateUser', params).then(response => {
           this.$emit('refresh-data')
           this.$notification.success({
             message: this.$t('label.edit.user'),

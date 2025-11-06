@@ -34,8 +34,6 @@ import org.apache.cloudstack.api.response.ZoneResponse;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListZonesCmd extends BaseListCmd implements UserCmd {
 
-    private static final String s_name = "listzonesresponse";
-
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -68,6 +66,11 @@ public class ListZonesCmd extends BaseListCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN, description = "flag to display the resource image for the zones")
     private Boolean showIcon;
+
+    @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUP, type = CommandType.STRING,
+            description = "the name of the storage access group",
+            since = "4.21.0")
+    private String storageAccessGroup;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -109,14 +112,21 @@ public class ListZonesCmd extends BaseListCmd implements UserCmd {
         return  showIcon != null ? showIcon : false;
     }
 
+    public String getStorageAccessGroup() {
+        return storageAccessGroup;
+    }
+
+    public ListZonesCmd() {
+
+    }
+
+    public ListZonesCmd(String storageAccessGroup) {
+        this.storageAccessGroup = storageAccessGroup;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

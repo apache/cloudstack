@@ -24,6 +24,7 @@ import java.util.List;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO.Step;
 import org.apache.cloudstack.jobs.JobInfo;
@@ -32,6 +33,8 @@ import org.apache.commons.collections.CollectionUtils;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -223,5 +226,18 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
         SearchCriteria<VmWorkJobVO> sc = sb.create();
         sc.setParameters("vmIds", vmIds.toArray());
         return batchExpunge(sc, batchSize);
+    }
+
+    @Override
+    public List<Long> listVmIdsWithPendingJob() {
+        GenericSearchBuilder<VmWorkJobVO, Long> sb = createSearchBuilder(Long.class);
+        SearchBuilder<AsyncJobVO> asyncJobSearch = _baseJobDao.createSearchBuilder();
+        asyncJobSearch.and("status", asyncJobSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        sb.join("asyncJobSearch", asyncJobSearch, sb.entity().getId(), asyncJobSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        sb.and("removed", sb.entity().getRemoved(), Op.NULL);
+        sb.selectFields(sb.entity().getVmInstanceId());
+        SearchCriteria<Long> sc = sb.create();
+        sc.setJoinParameters("asyncJobSearch", "status", JobInfo.Status.IN_PROGRESS);
+        return customSearch(sc, null);
     }
 }

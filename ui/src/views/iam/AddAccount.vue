@@ -191,7 +191,7 @@
 </template>
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
 import ResourceIcon from '@/components/view/ResourceIcon'
@@ -293,7 +293,7 @@ export default {
       params.pagesize = 100
       params.page = page
       var count
-      api(apiToCall, params).then(json => {
+      getAPI(apiToCall, params).then(json => {
         const listDomains = json.listdomainsresponse.domain
         count = json.listdomainsresponse.count
         this.domainsList = this.domainsList.concat(listDomains)
@@ -309,7 +309,7 @@ export default {
       this.roleLoading = true
       const params = {}
       params.state = 'enabled'
-      api('listRoles', params).then(response => {
+      getAPI('listRoles', params).then(response => {
         this.roles = response.listrolesresponse.role || []
         this.form.roleid = this.roles[0].id
         if (this.isDomainAdmin()) {
@@ -333,7 +333,7 @@ export default {
     },
     fetchIdps () {
       this.idpLoading = true
-      api('listIdps').then(response => {
+      getAPI('listIdps').then(response => {
         this.idps = response.listidpsresponse.idp || []
         this.form.samlentity = this.idps[0].id || ''
       }).finally(() => {
@@ -366,7 +366,7 @@ export default {
           params.networkdomain = values.networkdomain
         }
 
-        api('createAccount', {}, 'POST', params).then(response => {
+        postAPI('createAccount', params).then(response => {
           this.$emit('refresh-data')
           this.$notification.success({
             message: this.$t('label.create.account'),
@@ -375,7 +375,7 @@ export default {
           const users = response.createaccountresponse.account.user
           if (values.samlenable && users) {
             for (var i = 0; i < users.length; i++) {
-              api('authorizeSamlSso', {
+              postAPI('authorizeSamlSso', {
                 enable: values.samlenable,
                 entityid: values.samlentity,
                 userid: users[i].id

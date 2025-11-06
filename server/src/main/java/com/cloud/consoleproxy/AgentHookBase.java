@@ -20,6 +20,7 @@ package com.cloud.consoleproxy;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Date;
+import java.util.Objects;
 
 import org.apache.cloudstack.consoleproxy.ConsoleAccessManager;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -41,13 +42,13 @@ import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupProxyCommand;
 import com.cloud.agent.api.proxy.StartConsoleProxyAgentHttpHandlerCommand;
-import com.cloud.configuration.Config;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.servlet.ConsoleProxyPasswordBasedEncryptor;
 import com.cloud.servlet.ConsoleProxyServlet;
 import com.cloud.utils.Ternary;
@@ -89,6 +90,7 @@ public abstract class AgentHookBase implements AgentHook {
 
         String ticketInUrl = cmd.getTicket();
         String sessionUuid = cmd.getSessionUuid();
+        String clientAddress = cmd.getClientAddress();
 
         if (ticketInUrl == null) {
             logger.error("Access ticket could not be found, you could be running an old version of console proxy. vmId: " + cmd.getVmId());
@@ -111,7 +113,7 @@ public abstract class AgentHookBase implements AgentHook {
             }
 
             logger.debug(String.format("Acquiring session [%s] as it was just used.", sessionUuid));
-            consoleAccessManager.acquireSession(sessionUuid);
+            consoleAccessManager.acquireSession(sessionUuid, clientAddress);
 
             if (!ticket.equals(ticketInUrl)) {
                 Date now = new Date();
@@ -160,8 +162,12 @@ public abstract class AgentHookBase implements AgentHook {
 
         String sid = cmd.getSid();
         if (sid == null || !sid.equals(vm.getVncPassword())) {
-            logger.warn("sid " + sid + " in url does not match stored sid.");
-            return new ConsoleAccessAuthenticationAnswer(cmd, false);
+            if (Hypervisor.HypervisorType.External.equals(vm.getHypervisorType())) {
+                logger.debug("{} is on External hypervisor, skip checking sid", vm.getHypervisorType());
+            } else {
+                logger.warn("sid {} in url does not match stored sid.", sid);
+                return new ConsoleAccessAuthenticationAnswer(cmd, false);
+            }
         }
 
         if (cmd.isReauthenticating()) {
@@ -212,10 +218,16 @@ public abstract class AgentHookBase implements AgentHook {
 
             byte[] ksBits = null;
 
-            String consoleProxyUrlDomain = _configDao.getValue(Config.ConsoleProxyUrlDomain.key());
-            String consoleProxySslEnabled = _configDao.getValue(ConsoleProxyManager.ConsoleProxySslEnabled.key());
-            if (!StringUtils.isEmpty(consoleProxyUrlDomain) && !StringUtils.isEmpty(consoleProxySslEnabled)
-                    && consoleProxySslEnabled.equalsIgnoreCase("true")) {
+            HostVO consoleProxyHost = findConsoleProxyHost(startupCmd);
+
+            if (Objects.isNull(consoleProxyHost)) {
+                throw new IllegalStateException("Console proxy host is null");
+            }
+
+            Long datacenterId = consoleProxyHost.getDataCenterId();
+            String consoleProxyUrlDomain = ConsoleProxyManager.ConsoleProxyUrlDomain.valueIn(datacenterId);
+            Boolean consoleProxySslEnabled = ConsoleProxyManager.ConsoleProxySslEnabled.valueIn(datacenterId);
+            if (!StringUtils.isEmpty(consoleProxyUrlDomain) && Boolean.TRUE.equals(consoleProxySslEnabled)) {
                 ksBits = _ksMgr.getKeystoreBits(ConsoleProxyManager.CERTIFICATE_NAME, ConsoleProxyManager.CERTIFICATE_NAME, storePassword);
                 //ks manager raises exception if ksBits are null, hence no need to explicltly handle the condition
             } else {
@@ -226,9 +238,6 @@ public abstract class AgentHookBase implements AgentHook {
             cmd.setEncryptorPassword(getEncryptorPassword());
             cmd.setIsSourceIpCheckEnabled(Boolean.parseBoolean(_configDao.getValue(ConsoleProxyManager.NoVncConsoleSourceIpCheckEnabled.key())));
 
-            HostVO consoleProxyHost = findConsoleProxyHost(startupCmd);
-
-            assert (consoleProxyHost != null);
             if (consoleProxyHost != null) {
                 Answer answer = _agentMgr.send(consoleProxyHost.getId(), cmd);
                 if (answer == null || !answer.getResult()) {

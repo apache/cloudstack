@@ -908,6 +908,7 @@ class CsVmMetadata(CsDataBag):
             if os.path.exists(metamanifest):
                 fh = open(metamanifest, "a+")
                 self.__exflock(fh)
+                fh.seek(0)
                 if file not in fh.read():
                     fh.write(file + '\n')
                 self.__unflock(fh)
@@ -932,6 +933,7 @@ class CsVmMetadata(CsDataBag):
         if os.path.exists(htaccessFile):
             fh = open(htaccessFile, "a+")
             self.__exflock(fh)
+            fh.seek(0)
             if entry not in fh.read():
                 fh.write(entry + '\n')
             self.__unflock(fh)
@@ -969,6 +971,7 @@ class CsVmMetadata(CsDataBag):
 
             fh = open(htaccessFile, "a+")
             self.__exflock(fh)
+            fh.seek(0)
             if entry not in fh.read():
                 fh.write(entry + '\n')
 
@@ -1021,13 +1024,19 @@ class CsSite2SiteVpn(CsDataBag):
             local_ip = self.dbag[vpn]['local_public_ip']
             dev = CsHelper.get_device(local_ip)
 
+            if not self.config.has_public_network():
+                interface = self.config.address().get_guest_if_by_network_id()
+                if interface:
+                    dev = interface.get_device()
+                    local_ip = interface.get_ip()
+
             if dev == "":
                 logging.error("Request for ipsec to %s not possible because ip is not configured", local_ip)
                 continue
 
             CsHelper.start_if_stopped("ipsec")
-            self.configure_iptables(dev, self.dbag[vpn])
-            self.configure_ipsec(self.dbag[vpn])
+            self.configure_iptables(dev, local_ip, self.dbag[vpn])
+            self.configure_ipsec(local_ip, self.dbag[vpn])
 
         # Delete vpns that are no longer in the configuration
         for ip in self.confips:
@@ -1043,10 +1052,10 @@ class CsSite2SiteVpn(CsDataBag):
         os.remove(vpnsecretsfile)
         CsHelper.execute("ipsec reload")
 
-    def configure_iptables(self, dev, obj):
-        self.fw.append(["", "front", "-A INPUT -i %s -p udp -m udp --dport 500 -s %s -d %s -j ACCEPT" % (dev, obj['peer_gateway_ip'], obj['local_public_ip'])])
-        self.fw.append(["", "front", "-A INPUT -i %s -p udp -m udp --dport 4500 -s %s -d %s -j ACCEPT" % (dev, obj['peer_gateway_ip'], obj['local_public_ip'])])
-        self.fw.append(["", "front", "-A INPUT -i %s -p esp -s %s -d %s -j ACCEPT" % (dev, obj['peer_gateway_ip'], obj['local_public_ip'])])
+    def configure_iptables(self, dev, local_ip, obj):
+        self.fw.append(["", "front", "-A INPUT -i %s -p udp -m udp --dport 500 -s %s -d %s -j ACCEPT" % (dev, obj['peer_gateway_ip'], local_ip)])
+        self.fw.append(["", "front", "-A INPUT -i %s -p udp -m udp --dport 4500 -s %s -d %s -j ACCEPT" % (dev, obj['peer_gateway_ip'], local_ip)])
+        self.fw.append(["", "front", "-A INPUT -i %s -p esp -s %s -d %s -j ACCEPT" % (dev, obj['peer_gateway_ip'], local_ip)])
         self.fw.append(["nat", "front", "-A POSTROUTING -t nat -o %s -m mark --mark 0x525 -j ACCEPT" % dev])
         for net in obj['peer_guest_cidr_list'].lstrip().rstrip().split(','):
             self.fw.append(["mangle", "front",
@@ -1058,7 +1067,7 @@ class CsSite2SiteVpn(CsDataBag):
             self.fw.append(["mangle", "",
                             "-A INPUT -s %s -d %s -j MARK --set-xmark 0x524/0xffffffff" % (net, obj['local_guest_cidr'])])
 
-    def configure_ipsec(self, obj):
+    def configure_ipsec(self, local_ip, obj):
         leftpeer = obj['local_public_ip']
         rightpeer = obj['peer_gateway_ip']
         peerlist = obj['peer_guest_cidr_list'].replace(' ', '')
@@ -1080,7 +1089,8 @@ class CsSite2SiteVpn(CsDataBag):
         file.repopulate()  # This avoids issues when switching off split_connections or removing subnets with split_connections == true
         file.add("#conn for vpn-%s" % rightpeer, 0)
         file.search("conn ", "conn vpn-%s" % rightpeer)
-        file.addeq(" left=%s" % leftpeer)
+        file.addeq(" left=%s" % local_ip)
+        file.addeq(" leftid=%s" % leftpeer)
         file.addeq(" leftsubnet=%s" % obj['local_guest_cidr'])
         file.addeq(" right=%s" % rightpeer)
         file.addeq(" rightsubnet=%s" % peerlist)
@@ -1100,7 +1110,7 @@ class CsSite2SiteVpn(CsDataBag):
             file.addeq(" dpddelay=30")
             file.addeq(" dpdtimeout=120")
             file.addeq(" dpdaction=restart")
-        if splitconnections and peerlistarr.count > 1:
+        if splitconnections and len(peerlistarr) > 1:
             logging.debug('Splitting connections for rightsubnets %s' % peerlistarr)
             for peeridx in range(1, len(peerlistarr)):
                 logging.debug('Adding split connection -%d for subnet %s' % (peeridx + 1, peerlistarr[peeridx]))
@@ -1221,9 +1231,16 @@ class CsRemoteAccessVpn(CsDataBag):
                 logging.debug("Enabling remote access vpn on " + public_ip)
 
                 CsHelper.start_if_stopped("ipsec")
-                self.configure_l2tpIpsec(public_ip, self.dbag[public_ip])
+
                 logging.debug("Remote accessvpn  data bag %s",  self.dbag)
-                self.remoteaccessvpn_iptables(public_ip, self.dbag[public_ip])
+                if not self.config.has_public_network():
+                    interface = self.config.address().get_guest_if_by_network_id()
+                    if interface:
+                        self.configure_l2tpIpsec(interface.get_ip(), self.dbag[public_ip])
+                        self.remoteaccessvpn_iptables(interface.get_device(), interface.get_ip(), self.dbag[public_ip])
+                else:
+                    self.configure_l2tpIpsec(public_ip, self.dbag[public_ip])
+                    self.remoteaccessvpn_iptables(self.dbag[public_ip]['public_interface'], public_ip, self.dbag[public_ip])
 
                 CsHelper.execute("ipsec update")
                 CsHelper.execute("systemctl start xl2tpd")
@@ -1248,6 +1265,7 @@ class CsRemoteAccessVpn(CsDataBag):
         # Left
         l2tpfile = CsFile(l2tpconffile)
         l2tpfile.addeq(" left=%s" % left)
+        l2tpfile.addeq(" leftid=%s" % obj['vpn_server_ip'])
         l2tpfile.commit()
 
         secret = CsFile(vpnsecretfilte)
@@ -1264,8 +1282,7 @@ class CsRemoteAccessVpn(CsDataBag):
         xl2tpoptions.search("ms-dns ", "ms-dns %s" % localip)
         xl2tpoptions.commit()
 
-    def remoteaccessvpn_iptables(self, publicip, obj):
-        publicdev = obj['public_interface']
+    def remoteaccessvpn_iptables(self, publicdev, publicip, obj):
         localcidr = obj['local_cidr']
         local_ip = obj['local_ip']
 
@@ -1467,7 +1484,10 @@ class CsForwardingRules(CsDataBag):
         self.fw.append(["filter", "", fw7])
 
     def forward_vpc(self, rule):
-        fw_prerout_rule = "-A PREROUTING -d %s/32 " % (rule["public_ip"])
+        fw_prerout_rule = "-A PREROUTING"
+        if "source_cidr_list" in rule and rule["source_cidr_list"]:
+            fw_prerout_rule += " -s %s" % rule["source_cidr_list"]
+        fw_prerout_rule += " -d %s/32" % rule["public_ip"]
         if not rule["protocol"] == "any":
             fw_prerout_rule += " -m %s -p %s" % (rule["protocol"], rule["protocol"])
         if not rule["public_ports"] == "any":
@@ -1476,7 +1496,10 @@ class CsForwardingRules(CsDataBag):
         if not rule["internal_ports"] == "any":
             fw_prerout_rule += ":" + self.portsToString(rule["internal_ports"], "-")
 
-        fw_output_rule = "-A OUTPUT -d %s/32" % rule["public_ip"]
+        fw_output_rule = "-A OUTPUT"
+        if "source_cidr_list" in rule and rule["source_cidr_list"]:
+            fw_output_rule += " -s %s" % rule["source_cidr_list"]
+        fw_output_rule += " -d %s/32" % rule["public_ip"]
         if not rule["protocol"] == "any":
             fw_output_rule += " -m %s -p %s" % (rule["protocol"], rule["protocol"])
         if not rule["public_ports"] == "any":
@@ -1640,7 +1663,7 @@ def main(argv):
                                ("dhcp",                {"process_iptables": False, "executor": [CsDhcp("dhcpentry", config)]}),
                                ("load_balancer",       {"process_iptables": True,  "executor": []}),
                                ("monitor_service",     {"process_iptables": False, "executor": [CsMonitor("monitorservice", config)]}),
-                               ("static_routes",       {"process_iptables": False, "executor": [CsStaticRoutes("staticroutes", config)]})
+                               ("static_routes",       {"process_iptables": True, "executor": [CsStaticRoutes("staticroutes", config)]})
                                ])
 
     if not config.is_vpc():

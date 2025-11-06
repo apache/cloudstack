@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.PrivateGatewayResponse;
 import org.apache.cloudstack.api.response.StaticRouteResponse;
+import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
@@ -45,9 +46,21 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.GATEWAY_ID,
                type = CommandType.UUID,
                entityType = PrivateGatewayResponse.class,
-               required = true,
-               description = "the gateway id we are creating static route for")
+               description = "the gateway id we are creating static route for. Mutually exclusive with the nexthop parameter")
     private Long gatewayId;
+
+    @Parameter(name = ApiConstants.VPC_ID,
+            type = CommandType.UUID,
+            entityType = VpcResponse.class,
+            description = "the vpc id for which the static route is created. This is required for nexthop parameter",
+            since = "4.21.0")
+    private Long vpcId;
+
+    @Parameter(name = ApiConstants.NEXT_HOP,
+            type = CommandType.STRING,
+            description = "the next hop of static route. Mutually exclusive with the gatewayid parameter",
+            since = "4.21.0")
+    private String nextHop;
 
     @Parameter(name = ApiConstants.CIDR, required = true, type = CommandType.STRING, description = "static route cidr")
     private String cidr;
@@ -55,8 +68,16 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    public long getGatewayId() {
+    public Long getGatewayId() {
         return gatewayId;
+    }
+
+    public Long getVpcId() {
+        return vpcId;
+    }
+
+    public String getNextHop() {
+        return nextHop;
     }
 
     public String getCidr() {
@@ -69,7 +90,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
     @Override
     public void create() throws ResourceAllocationException {
         try {
-            StaticRoute result = _vpcService.createStaticRoute(getGatewayId(), getCidr());
+            StaticRoute result = _vpcService.createStaticRoute(getGatewayId(), getVpcId(), getNextHop(), getCidr());
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());
         } catch (NetworkRuleConflictException ex) {
@@ -114,11 +135,8 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        VpcGateway gateway = _entityMgr.findById(VpcGateway.class, gatewayId);
-        if (gateway == null) {
-            throw new InvalidParameterValueException("Invalid gateway id is specified");
-        }
-        return _entityMgr.findById(Vpc.class, gateway.getVpcId()).getAccountId();
+        Long vpcId = getSyncObjId();
+        return _entityMgr.findById(Vpc.class, vpcId).getAccountId();
     }
 
     @Override
@@ -128,11 +146,20 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
 
     @Override
     public Long getSyncObjId() {
-        VpcGateway gateway = _entityMgr.findById(VpcGateway.class, gatewayId);
-        if (gateway == null) {
-            throw new InvalidParameterValueException("Invalid id is specified for the gateway");
+        if (gatewayId != null) {
+            VpcGateway gateway = _entityMgr.findById(VpcGateway.class, gatewayId);
+            if (gateway == null) {
+                throw new InvalidParameterValueException("Invalid id is specified for the gateway");
+            }
+            return gateway.getVpcId();
+        } else if (vpcId != null) {
+            Vpc vpc = _entityMgr.findById(Vpc.class, vpcId);
+            if (vpc == null) {
+                throw new InvalidParameterValueException("Invalid vpc id is specified");
+            }
+            return vpc.getId();
         }
-        return gateway.getVpcId();
+        throw new InvalidParameterValueException("One of vpcId or gatewayId must be specified");
     }
 
     @Override

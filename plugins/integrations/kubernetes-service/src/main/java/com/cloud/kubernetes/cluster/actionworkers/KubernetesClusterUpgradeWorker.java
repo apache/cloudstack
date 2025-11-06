@@ -20,7 +20,10 @@ package com.cloud.kubernetes.cluster.actionworkers;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
+import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
@@ -40,7 +43,7 @@ import com.cloud.utils.ssh.SshHelper;
 
 public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorker {
 
-    private List<UserVm> clusterVMs = new ArrayList<>();
+    protected List<UserVm> clusterVMs = new ArrayList<>();
     private KubernetesSupportedVersion upgradeVersion;
     private final String upgradeScriptFilename = "upgrade-kubernetes.sh";
     private File upgradeScriptFile;
@@ -65,12 +68,12 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
         String nodeAddress = (index > 0 && sshPort == 22) ? vm.getPrivateIpAddress() : publicIpAddress;
         SshHelper.scpTo(nodeAddress, nodeSshPort, getControlNodeLoginUser(), sshKeyFile, null,
                 "~/", upgradeScriptFile.getAbsolutePath(), "0755");
-        String cmdStr = String.format("sudo ./%s %s %s %s %s",
+        String cmdStr = String.format("sudo ./%s %s %s %s %s %s",
                 upgradeScriptFile.getName(),
                 upgradeVersion.getSemanticVersion(),
                 index == 0 ? "true" : "false",
                 KubernetesVersionManagerImpl.compareSemanticVersions(upgradeVersion.getSemanticVersion(), "1.15.0") < 0 ? "true" : "false",
-                Hypervisor.HypervisorType.VMware.equals(vm.getHypervisorType()));
+                Hypervisor.HypervisorType.VMware.equals(vm.getHypervisorType()), Objects.isNull(kubernetesCluster.getCniConfigId()));
         return SshHelper.sshExecute(nodeAddress, nodeSshPort, getControlNodeLoginUser(), sshKeyFile, null,
                 cmdStr,
                 10000, 10000, 10 * 60 * 1000);
@@ -85,8 +88,7 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
             }
             Pair<Boolean, String> result;
             if (logger.isInfoEnabled()) {
-                logger.info(String.format("Upgrading node on VM %s in Kubernetes cluster %s with Kubernetes version(%s) ID: %s",
-                        vm.getDisplayName(), kubernetesCluster.getName(), upgradeVersion.getSemanticVersion(), upgradeVersion.getUuid()));
+                logger.info("Upgrading node on VM {} in Kubernetes cluster {} with Kubernetes version {}", vm, kubernetesCluster, upgradeVersion);
             }
             String errorMessage = String.format("Failed to upgrade Kubernetes cluster : %s, unable to drain Kubernetes node on VM : %s", kubernetesCluster.getName(), vm.getDisplayName());
             for (int retry = KubernetesClusterService.KubernetesClusterUpgradeRetries.value(); retry >= 0; retry--) {
@@ -145,12 +147,11 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
                     logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, unable to get control Kubernetes node on VM : %s in ready state", kubernetesCluster.getName(), vm.getDisplayName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
                 }
             }
-            if (!KubernetesClusterUtil.clusterNodeVersionMatches(upgradeVersion.getSemanticVersion(), publicIpAddress, sshPort, getControlNodeLoginUser(), getManagementServerSshPublicKeyFile(), hostName, upgradeTimeoutTime, 15000)) {
+            if (!KubernetesClusterUtil.clusterNodeVersionMatches(upgradeVersion.getSemanticVersion(), publicIpAddress, sshPort, getControlNodeLoginUser(), getManagementServerSshPublicKeyFile(), hostName, upgradeTimeoutTime, 15000, vm.getId(), kubernetesClusterVmMapDao)) {
                 logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, unable to get Kubernetes node on VM : %s upgraded to version %s", kubernetesCluster.getName(), vm.getDisplayName(), upgradeVersion.getSemanticVersion()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
             }
             if (logger.isInfoEnabled()) {
-                logger.info(String.format("Successfully upgraded node on VM %s in Kubernetes cluster %s with Kubernetes version(%s) ID: %s",
-                        vm.getDisplayName(), kubernetesCluster.getName(), upgradeVersion.getSemanticVersion(), upgradeVersion.getUuid()));
+                logger.info("Successfully upgraded node on VM {} in Kubernetes cluster {} with Kubernetes version {}", vm, kubernetesCluster, upgradeVersion);
             }
         }
     }
@@ -158,19 +159,20 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
     public boolean upgradeCluster() throws CloudRuntimeException {
         init();
         if (logger.isInfoEnabled()) {
-            logger.info(String.format("Upgrading Kubernetes cluster : %s", kubernetesCluster.getName()));
+            logger.info("Upgrading Kubernetes cluster: {}", kubernetesCluster);
         }
         upgradeTimeoutTime = System.currentTimeMillis() + KubernetesClusterService.KubernetesClusterUpgradeTimeout.value() * 1000;
         Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
         publicIpAddress = publicIpSshPort.first();
         sshPort = publicIpSshPort.second();
         if (StringUtils.isEmpty(publicIpAddress)) {
-            logAndThrow(Level.ERROR, String.format("Upgrade failed for Kubernetes cluster : %s, unable to retrieve associated public IP", kubernetesCluster.getName()));
+            logAndThrow(Level.ERROR, String.format("Upgrade failed for Kubernetes cluster: %s, unable to retrieve associated public IP", kubernetesCluster));
         }
         clusterVMs = getKubernetesClusterVMs();
         if (CollectionUtils.isEmpty(clusterVMs)) {
-            logAndThrow(Level.ERROR, String.format("Upgrade failed for Kubernetes cluster : %s, unable to retrieve VMs for cluster", kubernetesCluster.getName()));
+            logAndThrow(Level.ERROR, String.format("Upgrade failed for Kubernetes cluster: %s, unable to retrieve VMs for cluster", kubernetesCluster));
         }
+        filterOutManualUpgradeNodesFromClusterUpgrade();
         retrieveScriptFiles();
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.UpgradeRequested);
         attachIsoKubernetesVMs(clusterVMs, upgradeVersion);
@@ -185,5 +187,15 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         }
         return updated;
+    }
+
+    protected void filterOutManualUpgradeNodesFromClusterUpgrade() {
+        if (CollectionUtils.isEmpty(clusterVMs)) {
+            return;
+        }
+        clusterVMs = clusterVMs.stream().filter(x -> {
+            KubernetesClusterVmMapVO mapVO = kubernetesClusterVmMapDao.getClusterMapFromVmId(x.getId());
+            return mapVO != null && !mapVO.isManualUpgrade();
+        }).collect(Collectors.toList());
     }
 }

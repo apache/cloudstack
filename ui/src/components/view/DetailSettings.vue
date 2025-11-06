@@ -39,7 +39,7 @@
           <a-auto-complete
             class="detail-input"
             ref="keyElm"
-            :filterOption="filterOption"
+            :filterOption="(input, option) => filterOption(input, option, 'key')"
             v-model:value="newKey"
             :options="detailKeys"
             :placeholder="$t('label.name')"
@@ -51,7 +51,7 @@
             disabled />
           <a-auto-complete
             class="detail-input"
-            :filterOption="filterOption"
+            :filterOption="(input, option) => filterOption(input, option, 'value')"
             v-model:value="newValue"
             :options="detailValues"
             :placeholder="$t('label.value')"
@@ -128,7 +128,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
@@ -176,7 +176,7 @@ export default {
         if (this.detailOptions[this.newKey]) {
           return { value: this.detailOptions[this.newKey] }
         } else {
-          return ''
+          return []
         }
       }
       return this.detailOptions[this.newKey].map(value => {
@@ -188,7 +188,12 @@ export default {
     this.updateResource(this.resource)
   },
   methods: {
-    filterOption (input, option) {
+    filterOption (input, option, filterType) {
+      if ((filterType === 'key' && !this.newKey) ||
+        (filterType === 'value' && !this.newValue)) {
+        return true
+      }
+
       return (
         option.value.toUpperCase().indexOf(input.toUpperCase()) >= 0
       )
@@ -204,11 +209,11 @@ export default {
           return { name: k, value: resource.details[k], edit: false }
         })
       }
-      api('listDetailOptions', { resourcetype: this.resourceType, resourceid: resource.id }).then(json => {
+      getAPI('listDetailOptions', { resourcetype: this.resourceType, resourceid: resource.id }).then(json => {
         this.detailOptions = json.listdetailoptionsresponse.detailoptions.details
       })
       this.disableSettings = (this.$route.meta.name === 'vm' && resource.state !== 'Stopped')
-      api('listTemplates', { templatefilter: 'all', id: resource.templateid }).then(json => {
+      getAPI('listTemplates', { templatefilter: 'all', id: resource.templateid }).then(json => {
         this.deployasistemplate = json.listtemplatesresponse.template[0].deployasis
       })
     },
@@ -286,7 +291,7 @@ export default {
       var params = { id: this.resource.id }
       params = Object.assign(params, this.getDetailsParam(this.details))
       this.loading = true
-      api(apiName, params).then(json => {
+      postAPI(apiName, params).then(json => {
         var details = {}
         if (this.resourceType === 'UserVm' && json.updatevirtualmachineresponse.virtualmachine.details) {
           details = json.updatevirtualmachineresponse.virtualmachine.details

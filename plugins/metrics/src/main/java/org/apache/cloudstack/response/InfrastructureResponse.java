@@ -47,6 +47,10 @@ public class InfrastructureResponse extends BaseResponse {
     @Param(description = "Number of images stores")
     private Integer imageStores;
 
+    @SerializedName("backuprepositories")
+    @Param(description = "Number of backup repositories", since = "4.22.0")
+    private Integer backupRepositories;
+
     @SerializedName("objectstores")
     @Param(description = "Number of object stores")
     private Integer objectStores;
@@ -101,6 +105,10 @@ public class InfrastructureResponse extends BaseResponse {
 
     public void setImageStores(final Integer imageStores) {
         this.imageStores = imageStores;
+    }
+
+    public void setBackupRepositories(Integer backupRepositories) {
+        this.backupRepositories = backupRepositories;
     }
 
     public void setSystemvms(final Integer systemvms) {

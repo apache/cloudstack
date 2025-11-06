@@ -20,14 +20,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.capacity.CapacityVO;
+import com.cloud.configuration.ConfigurationManager;
+import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -67,7 +72,7 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.host.dao.HostDetailsDao;
 
@@ -93,7 +98,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
     @Inject
     protected UserVmDao vmDao;
     @Inject
-    protected UserVmDetailsDao vmDetailsDao;
+    protected VMInstanceDetailsDao vmDetailsDao;
     @Inject
     protected VMInstanceDao vmInstanceDao;
     @Inject
@@ -133,7 +138,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         //check if datacenter is in avoid set
         if (avoid.shouldAvoid(dc)) {
             if (logger.isDebugEnabled()) {
-                logger.debug("DataCenter id = '" + dc.getId() + "' provided is in avoid set, DeploymentPlanner cannot allocate the VM, returning.");
+                logger.debug("DataCenter {} provided is in avoid set, DeploymentPlanner cannot allocate the VM, returning.", dc);
             }
             return null;
         }
@@ -141,8 +146,8 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         List<Long> clusterList = new ArrayList<>();
         if (plan.getClusterId() != null) {
             Long clusterIdSpecified = plan.getClusterId();
-            logger.debug("Searching resources only under specified Cluster: " + clusterIdSpecified);
             ClusterVO cluster = clusterDao.findById(plan.getClusterId());
+            logger.debug("Searching resources only under specified Cluster: {}", cluster != null ? cluster : clusterIdSpecified);
             if (cluster != null) {
                 if (avoid.shouldAvoid(cluster)) {
                     logger.debug("The specified cluster is in avoid set, returning.");
@@ -158,9 +163,9 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         } else if (plan.getPodId() != null) {
             //consider clusters under this pod only
             Long podIdSpecified = plan.getPodId();
-            logger.debug("Searching resources only under specified Pod: " + podIdSpecified);
 
             HostPodVO pod = podDao.findById(podIdSpecified);
+            logger.debug("Searching resources only under specified Pod: {}", pod != null ? pod : podIdSpecified);
             if (pod != null) {
                 if (avoid.shouldAvoid(pod)) {
                     logger.debug("The specified pod is in avoid set, returning.");
@@ -176,7 +181,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
                 return null;
             }
         } else {
-            logger.debug("Searching all possible resources under this Zone: " + plan.getDataCenterId());
+            logger.debug("Searching all possible resources under this Zone: {}", dcDao.findById(plan.getDataCenterId()));
 
             boolean applyAllocationAtPods = Boolean.parseBoolean(configDao.getValue(Config.ApplyAllocationAlgorithmToPods.key()));
             if (applyAllocationAtPods) {
@@ -198,8 +203,13 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
                 }
 
             }
-            // In case of non-GPU VMs, protect GPU enabled Hosts and prefer VM deployment on non-GPU Hosts.
-            if (((serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString()) == null) && !(hostGpuGroupsDao.listHostIds().isEmpty())) || nonUefiVMDeploy) {
+            // In case of non-GPU VMs, protect GPU enabled Hosts and prefer VM deployment on
+            // non-GPU Hosts.
+            if (((offering.getVgpuProfileId() == null &&
+                  serviceOfferingDetailsDao.findDetail(offering.getId(),
+                          GPU.Keys.vgpuType.toString()) == null)
+                 && !(hostGpuGroupsDao.listHostIds().isEmpty())) || nonUefiVMDeploy
+            ) {
                 int requiredCpu = offering.getCpu() * offering.getSpeed();
                 long requiredRam = offering.getRamSize() * 1024L * 1024L;
                 reorderClustersBasedOnImplicitTags(clusterList, requiredCpu, requiredRam);
@@ -457,17 +467,14 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
             logger.debug("Listing clusters in order of aggregate capacity, that have (at least one host with) enough CPU and RAM capacity under this " +
                 (isZone ? "Zone: " : "Pod: ") + id);
         }
-        String capacityTypeToOrder = configDao.getValue(Config.HostCapacityTypeToOrderClusters.key());
-        short capacityType = Capacity.CAPACITY_TYPE_CPU;
-        if ("RAM".equalsIgnoreCase(capacityTypeToOrder)) {
-            capacityType = Capacity.CAPACITY_TYPE_MEMORY;
-        }
 
-        List<Long> clusterIdswithEnoughCapacity = capacityDao.listClustersInZoneOrPodByHostCapacities(id, vmId, requiredCpu, requiredRam, capacityType, isZone);
+        List<Long> clusterIdswithEnoughCapacity = capacityDao.listClustersInZoneOrPodByHostCapacities(id, vmId, requiredCpu, requiredRam, isZone);
         if (logger.isTraceEnabled()) {
             logger.trace("ClusterId List having enough CPU and RAM capacity: " + clusterIdswithEnoughCapacity);
         }
-        Pair<List<Long>, Map<Long, Double>> result = capacityDao.orderClustersByAggregateCapacity(id, vmId, capacityType, isZone);
+
+
+        Pair<List<Long>, Map<Long, Double>> result = getOrderedClustersByCapacity(id, vmId, isZone);
         List<Long> clusterIdsOrderedByAggregateCapacity = result.first();
         //only keep the clusters that have enough capacity to host this VM
         if (logger.isTraceEnabled()) {
@@ -491,17 +498,12 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         if (logger.isDebugEnabled()) {
             logger.debug("Listing pods in order of aggregate capacity, that have (at least one host with) enough CPU and RAM capacity under this Zone: " + zoneId);
         }
-        String capacityTypeToOrder = configDao.getValue(Config.HostCapacityTypeToOrderClusters.key());
-        short capacityType = Capacity.CAPACITY_TYPE_CPU;
-        if ("RAM".equalsIgnoreCase(capacityTypeToOrder)) {
-            capacityType = Capacity.CAPACITY_TYPE_MEMORY;
-        }
-
-        List<Long> podIdswithEnoughCapacity = capacityDao.listPodsByHostCapacities(zoneId, requiredCpu, requiredRam, capacityType);
+        List<Long> podIdswithEnoughCapacity = capacityDao.listPodsByHostCapacities(zoneId, requiredCpu, requiredRam);
         if (logger.isTraceEnabled()) {
             logger.trace("PodId List having enough CPU and RAM capacity: " + podIdswithEnoughCapacity);
         }
-        Pair<List<Long>, Map<Long, Double>> result = capacityDao.orderPodsByAggregateCapacity(zoneId, capacityType);
+
+        Pair<List<Long>, Map<Long, Double>> result = getOrderedPodsByCapacity(zoneId);
         List<Long> podIdsOrderedByAggregateCapacity = result.first();
         //only keep the clusters that have enough capacity to host this VM
         if (logger.isTraceEnabled()) {
@@ -515,6 +517,104 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
 
         return result;
 
+    }
+
+    private Pair<List<Long>, Map<Long, Double>> getOrderedPodsByCapacity(long zoneId) {
+        double cpuToMemoryWeight = ConfigurationManager.HostCapacityTypeCpuMemoryWeight.value();
+        short capacityType = getHostCapacityTypeToOrderCluster(
+                configDao.getValue(Config.HostCapacityTypeToOrderClusters.key()), cpuToMemoryWeight);
+
+        logger.debug("CapacityType: {} is used for Pod ordering", getCapacityTypeName(capacityType));
+        if (capacityType >= 0) { // for capacityType other than COMBINED
+            return capacityDao.orderPodsByAggregateCapacity(zoneId, capacityType);
+        }
+        List<CapacityVO> capacities = capacityDao.listPodCapacityByCapacityTypes(zoneId, List.of(Capacity.CAPACITY_TYPE_CPU, Capacity.CAPACITY_TYPE_MEMORY));
+        Map<Long, Double> podsByCombinedCapacities = getPodByCombinedCapacities(capacities, cpuToMemoryWeight);
+        return new Pair<>(new ArrayList<>(podsByCombinedCapacities.keySet()), podsByCombinedCapacities);
+    }
+
+    // order pods by combining cpu and memory capacity considering cpuToMemoeryWeight
+    public Map<Long, Double> getPodByCombinedCapacities(List<CapacityVO> capacities, double cpuToMemoryWeight) {
+        Map<Long, Double> podByCombinedCapacity = new HashMap<>();
+        for (CapacityVO capacityVO : capacities) {
+            boolean isCPUCapacity = capacityVO.getCapacityType() == Capacity.CAPACITY_TYPE_CPU;
+            long podId = capacityVO.getPodId();
+            double applicableWeight = isCPUCapacity ? cpuToMemoryWeight : 1 - cpuToMemoryWeight;
+            String overCommitRatioParam = isCPUCapacity ? ApiConstants.CPU_OVERCOMMIT_RATIO : ApiConstants.MEMORY_OVERCOMMIT_RATIO;
+            ClusterDetailsVO overCommitRatioVO = clusterDetailsDao.findDetail(capacityVO.getClusterId(), overCommitRatioParam);
+            float overCommitRatio = Float.parseFloat(overCommitRatioVO.getValue());
+            double capacityMetric = applicableWeight *
+                    (capacityVO.getUsedCapacity() + capacityVO.getReservedCapacity())/(capacityVO.getTotalCapacity() * overCommitRatio);
+            podByCombinedCapacity.merge(podId, capacityMetric, Double::sum);
+        }
+        return podByCombinedCapacity.entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByValue())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+    }
+
+
+    private Pair<List<Long>, Map<Long, Double>> getOrderedClustersByCapacity(long id, long vmId, boolean isZone) {
+        double cpuToMemoryWeight = ConfigurationManager.HostCapacityTypeCpuMemoryWeight.value();
+        short capacityType = getHostCapacityTypeToOrderCluster(
+                configDao.getValue(Config.HostCapacityTypeToOrderClusters.key()), cpuToMemoryWeight);
+
+        logger.debug("CapacityType: {} is used for Cluster ordering", getCapacityTypeName(capacityType));
+        if (capacityType >= 0) { // for capacityType other than COMBINED
+            return capacityDao.orderClustersByAggregateCapacity(id, vmId, capacityType, isZone);
+        }
+
+        Long zoneId = isZone ? id : null;
+        Long podId = isZone ? null : id;
+        List<CapacityVO> capacities = capacityDao.listClusterCapacityByCapacityTypes(zoneId, podId,
+                List.of(Capacity.CAPACITY_TYPE_CPU, Capacity.CAPACITY_TYPE_MEMORY));
+
+        Map<Long, Double> clusterByCombinedCapacities = getClusterByCombinedCapacities(capacities, cpuToMemoryWeight);
+        return new Pair<>(new ArrayList<>(clusterByCombinedCapacities.keySet()), clusterByCombinedCapacities);
+    }
+
+    public static String getCapacityTypeName(short capacityType) {
+        switch (capacityType) {
+            case 0: return ApiConstants.RAM;
+            case 1: return ApiConstants.CPU;
+            case -1: return ApiConstants.COMBINED_CAPACITY_ORDERING;
+            default: return "UNKNOWN";
+        }
+    }
+
+    public Map<Long, Double> getClusterByCombinedCapacities(List<CapacityVO> capacities, double cpuToMemoryWeight) {
+        Map<Long, Double> clusterByCombinedCapacity = new HashMap<>();
+        for (CapacityVO capacityVO : capacities) {
+            boolean isCPUCapacity = capacityVO.getCapacityType() == Capacity.CAPACITY_TYPE_CPU;
+            long clusterId = capacityVO.getClusterId();
+            double applicableWeight = isCPUCapacity ? cpuToMemoryWeight : 1 - cpuToMemoryWeight;
+            String overCommitRatioParam = isCPUCapacity ? ApiConstants.CPU_OVERCOMMIT_RATIO : ApiConstants.MEMORY_OVERCOMMIT_RATIO;
+            ClusterDetailsVO overCommitRatioVO = clusterDetailsDao.findDetail(clusterId, overCommitRatioParam);
+            float overCommitRatio = Float.parseFloat(overCommitRatioVO.getValue());
+            double capacityMetric = applicableWeight *
+                    (capacityVO.getUsedCapacity() + capacityVO.getReservedCapacity())/(capacityVO.getTotalCapacity() * overCommitRatio);
+            clusterByCombinedCapacity.merge(clusterId, capacityMetric, Double::sum);
+        }
+        return clusterByCombinedCapacity.entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByValue())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+    }
+
+    public static short getHostCapacityTypeToOrderCluster(String capacityTypeToOrder, double cpuToMemoryWeight) {
+        if (ApiConstants.RAM.equalsIgnoreCase(capacityTypeToOrder)) {
+            return CapacityVO.CAPACITY_TYPE_MEMORY;
+        }
+        if (ApiConstants.COMBINED_CAPACITY_ORDERING.equalsIgnoreCase(capacityTypeToOrder)) {
+            if (cpuToMemoryWeight == 1.0) {
+                return CapacityVO.CAPACITY_TYPE_CPU;
+            }
+            if (cpuToMemoryWeight == 0.0) {
+                return CapacityVO.CAPACITY_TYPE_MEMORY;
+            }
+            return -1; // represents COMBINED
+        }
+        return CapacityVO.CAPACITY_TYPE_CPU;
     }
 
     private void removeClustersWithoutMatchingTag(List<Long> clusterListForVmAllocation, String hostTagOnOffering) {
@@ -550,7 +650,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
     public boolean canHandle(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid) {
         // check what the ServiceOffering says. If null, check the global config
         ServiceOffering offering = vm.getServiceOffering();
-        if (vm.getHypervisorType() != HypervisorType.BareMetal) {
+        if (vm.getHypervisorType() != HypervisorType.BareMetal && vm.getHypervisorType() != HypervisorType.External) {
             if (offering != null && offering.getDeploymentPlanner() != null) {
                 if (offering.getDeploymentPlanner().equals(getName())) {
                     return true;

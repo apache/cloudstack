@@ -398,7 +398,7 @@ CREATE TABLE `cloud`.`op_lock` (
   `waiters` int NOT NULL DEFAULT 0 COMMENT 'How many have the thread acquired this lock (reentrant)',
   PRIMARY KEY (`key`),
   INDEX `i_op_lock__mac_ip_thread`(`mac`, `ip`, `thread`)
-) ENGINE=Memory DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`configuration` (
   `category` varchar(255) NOT NULL DEFAULT 'Advanced',
@@ -1793,7 +1793,7 @@ CREATE TABLE `cloud`.`op_nwgrp_work` (
   INDEX `i_op_nwgrp_work__taken`(`taken`),
   INDEX `i_op_nwgrp_work__step`(`step`),
   INDEX `i_op_nwgrp_work__seq_no`(`seq_no`)
-) ENGINE=MEMORY DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`op_vm_ruleset_log` (
   `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',

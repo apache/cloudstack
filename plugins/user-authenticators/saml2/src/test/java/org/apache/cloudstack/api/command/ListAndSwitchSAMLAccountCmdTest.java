@@ -213,7 +213,6 @@ public class ListAndSwitchSAMLAccountCmdTest extends TestCase {
         loginCmdResponse.set2FAenabled("false");
         Mockito.when(apiServer.loginUser(nullable(HttpSession.class), nullable(String.class), nullable(String.class),
                 nullable(Long.class), nullable(String.class), nullable(InetAddress.class), nullable(Map.class))).thenReturn(loginCmdResponse);
-        Mockito.doNothing().when(resp).sendRedirect(nullable(String.class));
         try {
             cmd.authenticate("command", params, session, null, HttpUtils.RESPONSE_TYPE_JSON, new StringBuilder(), req, resp);
         } catch (ServerApiException exception) {
@@ -221,7 +220,6 @@ public class ListAndSwitchSAMLAccountCmdTest extends TestCase {
         } finally {
             // accountService should have been called 4 times by now, for this case twice and 2 for cases above
             Mockito.verify(accountService, Mockito.times(4)).getUserAccountById(Mockito.anyLong());
-            Mockito.verify(resp, Mockito.times(1)).sendRedirect(anyString());
         }
     }
 

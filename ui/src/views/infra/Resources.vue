@@ -66,7 +66,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 
 export default {
   name: 'Resources',
@@ -102,7 +102,7 @@ export default {
       const params = {}
       params[entity] = this.resource.id
       this.fetchLoading = true
-      api('listCapacity', params).then(response => {
+      getAPI('listCapacity', params).then(response => {
         this.resourcesList = response.listcapacityresponse.capacity
         this.updateTaggedCapacities()
         this.animatePercentVals(this.resourcesList)

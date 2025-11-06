@@ -18,6 +18,7 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.snapshot.VMSnapshot;
 
 public interface VMSnapshotStrategy {
@@ -44,4 +45,6 @@ public interface VMSnapshotStrategy {
      * @return true if vm snapshot removed from DB, false if not.
      */
     boolean deleteVMSnapshotFromDB(VMSnapshot vmSnapshot, boolean unmanage);
+
+    void updateOperationFailed(VMSnapshot vmSnapshot) throws NoTransitionException;
 }

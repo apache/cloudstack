@@ -18,6 +18,8 @@ package org.apache.cloudstack.framework.config;
 
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 
+import com.cloud.utils.Pair;
+
 /**
  *
  * This method is used by individual storage for configuration
@@ -30,5 +32,8 @@ public interface ScopedConfigStorage {
 
     default String getConfigValue(long id, ConfigKey<?> key) {
         return getConfigValue(id, key.key());
+    }
+    default Pair<Scope, Long> getParentScope(long id) {
+        return null;
     }
 }

@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -42,6 +43,22 @@ import com.cloud.user.Account;
 public interface VpcManager {
     ConfigKey<Integer> VpcMaxNetworks = new ConfigKey<>("Advanced", Integer.class, "vpc.max.networks", "3",
             "Maximum number of networks per VPC.", true, ConfigKey.Scope.Account);
+    ConfigKey<Boolean> VpcTierNamePrepend = new ConfigKey<>(Boolean.class,
+            "vpc.tier.name.prepend",
+            ConfigKey.CATEGORY_NETWORK,
+            "false",
+            "Whether to prepend the VPC name to the VPC tier network name",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+    ConfigKey<String> VpcTierNamePrependDelimiter = new ConfigKey<>(String.class,
+            "vpc.tier.name.prepend.delimiter",
+            ConfigKey.CATEGORY_NETWORK,
+            " ",
+            "Delimiter string to use between the VPC and the VPC tier name",
+            true,
+            ConfigKey.Scope.Global,
+            null);
 
     /**
      * Returns all the Guest networks that are part of VPC
@@ -85,6 +102,8 @@ public interface VpcManager {
      * @param networkId
      */
     void unassignIPFromVpcNetwork(long ipId, long networkId);
+
+    void unassignIPFromVpcNetwork(final IPAddressVO ip, final Network network);
 
     /**
      * Creates guest network in the VPC
@@ -178,4 +197,20 @@ public interface VpcManager {
      * @return
      */
     boolean isSrcNatIpRequired(long vpcOfferingId);
+
+    boolean isSrcNatIpRequiredForVpcVr(long vpcOfferingId);
+
+    List<StaticRouteVO> getVpcStaticRoutes(Long vpcId);
+
+    List<StaticRouteProfile> getVpcStaticRoutes(List<? extends StaticRoute> routes);
+
+    boolean isProviderSupportServiceInVpc(long vpcId, Service service, Provider provider);
+
+    IPAddressVO getIpAddressForVpcVr(Vpc vpc, IPAddressVO ipAddress, boolean allocateIpIfNeeded);
+
+    boolean configStaticNatForVpcVr(Vpc vpc, IPAddressVO ipAddress);
+
+    void reconfigStaticNatForVpcVr(Long vpcId);
+
+    boolean applyStaticRouteForVpcVpnIfNeeded(Long vpcId, boolean updateAllVpn) throws ResourceUnavailableException;
 }

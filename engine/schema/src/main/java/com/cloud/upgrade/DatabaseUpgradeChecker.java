@@ -88,6 +88,9 @@ import com.cloud.upgrade.dao.Upgrade41800to41810;
 import com.cloud.upgrade.dao.Upgrade41810to41900;
 import com.cloud.upgrade.dao.Upgrade41900to41910;
 import com.cloud.upgrade.dao.Upgrade41910to42000;
+import com.cloud.upgrade.dao.Upgrade42000to42010;
+import com.cloud.upgrade.dao.Upgrade42010to42100;
+import com.cloud.upgrade.dao.Upgrade42100to42200;
 import com.cloud.upgrade.dao.Upgrade420to421;
 import com.cloud.upgrade.dao.Upgrade421to430;
 import com.cloud.upgrade.dao.Upgrade430to440;
@@ -230,6 +233,9 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 .next("4.18.1.0", new Upgrade41810to41900())
                 .next("4.19.0.0", new Upgrade41900to41910())
                 .next("4.19.1.0", new Upgrade41910to42000())
+                .next("4.20.0.0", new Upgrade42000to42010())
+                .next("4.20.1.0", new Upgrade42010to42100())
+                .next("4.21.0.0", new Upgrade42100to42200())
                 .build();
     }
 
@@ -374,6 +380,9 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             throw new CloudRuntimeException(errorMessage, e);
         } finally {
             txn.close();
+        }
+        if (upgrade.refreshPoolConnectionsAfterUpgrade()) {
+            TransactionLegacy.refreshConnections(TransactionLegacy.CLOUD_DB);
         }
         return version;
     }

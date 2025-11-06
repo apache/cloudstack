@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.Site2SiteVpnGatewayResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -44,8 +45,15 @@ public class CreateVpnGatewayCmd extends BaseAsyncCreateCmd {
                type = CommandType.UUID,
                entityType = VpcResponse.class,
                required = true,
-               description = "public ip address id of the vpn gateway")
+               description = "id of the vpc")
     private Long vpcId;
+
+    @Parameter(name = ApiConstants.IP_ADDRESS_ID,
+            type = CommandType.UUID,
+            entityType = IPAddressResponse.class,
+            description = "the public IP address ID for which VPN gateway is being enabled. By default the source NAT IP or router IP will be used.",
+            since = "4.21.0")
+    private Long ipAddressId;
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the vpn to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
@@ -56,6 +64,10 @@ public class CreateVpnGatewayCmd extends BaseAsyncCreateCmd {
 
     public Long getVpcId() {
         return vpcId;
+    }
+
+    public Long getIpAddressId() {
+        return ipAddressId;
     }
 
     @Deprecated

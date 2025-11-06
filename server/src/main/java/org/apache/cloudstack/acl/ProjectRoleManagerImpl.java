@@ -160,7 +160,7 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
             return null;
         }
         if (!(role.getProjectId().equals(projectId))) {
-            logger.warn(String.format("Project role : %s doesn't belong to the project" + role.getName()));
+            logger.warn("Project role: {} doesn't belong to the project", role);
             return null;
         }
         return role;

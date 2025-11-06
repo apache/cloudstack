@@ -60,7 +60,7 @@ public class PrivateGatewayRules extends RuleApplier {
 
             final NetworkHelper networkHelper = visitor.getVirtualNetworkApplianceFactory().getNetworkHelper();
             if (!networkHelper.checkRouterVersion(_router)) {
-                logger.warn("Router requires upgrade. Unable to send command to router: " + _router.getId());
+                logger.warn("Router requires upgrade. Unable to send command to router: {}", _router);
                 return false;
             }
             final VirtualMachineManager itMgr = visitor.getVirtualNetworkApplianceFactory().getItMgr();

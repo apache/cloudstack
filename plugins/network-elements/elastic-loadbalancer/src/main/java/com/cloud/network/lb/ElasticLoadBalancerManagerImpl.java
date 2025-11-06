@@ -32,8 +32,11 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.userdata.UserDataManager;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
@@ -100,6 +103,9 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
+import static com.cloud.network.router.VirtualNetworkApplianceManager.VirtualRouterUserData;
+import static com.cloud.vm.VirtualMachineManager.SystemVmEnableUserData;
+
 @Component
 public class ElasticLoadBalancerManagerImpl extends ManagerBase implements ElasticLoadBalancerManager, VirtualMachineGuru {
 
@@ -135,6 +141,8 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
     private ElasticLbVmMapDao _elbVmMapDao;
     @Inject
     private NicDao _nicDao;
+    @Inject
+    private UserDataManager userDataManager;
 
     String _instance;
 
@@ -201,7 +209,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         NetworkOffering offering = _networkOfferingDao.findById(guestNetworkId);
         String maxconn = null;
         if (offering.getConcurrentConnections() == null) {
-            maxconn = _configDao.getValue(Config.NetworkLBHaproxyMaxConn.key());
+            maxconn = NetworkOrchestrationService.NETWORK_LB_HAPROXY_MAX_CONN.value().toString();
         } else {
             maxconn = offering.getConcurrentConnections().toString();
         }
@@ -247,7 +255,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         DomainRouterVO elbVm = findElbVmForLb(rules.get(0));
 
         if (elbVm == null) {
-            logger.warn("Unable to apply lb rules, ELB vm  doesn't exist in the network " + network.getId());
+            logger.warn("Unable to apply lb rules, ELB vm doesn't exist in the network {}", network);
             throw new ResourceUnavailableException("Unable to apply lb rules", DataCenter.class, network.getDataCenterId());
         }
 
@@ -267,10 +275,10 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
             }
             return applyLBRules(elbVm, lbRules, network.getId());
         } else if (elbVm.getState() == State.Stopped || elbVm.getState() == State.Stopping) {
-            logger.debug("ELB VM is in " + elbVm.getState() + ", so not sending apply LoadBalancing rules commands to the backend");
+            logger.debug(String.format("ELB VM %s is in %s, so not sending apply LoadBalancing rules commands to the backend", elbVm, elbVm.getState()));
             return true;
         } else {
-            logger.warn("Unable to apply loadbalancing rules, ELB VM is not in the right state " + elbVm.getState());
+            logger.warn(String.format("Unable to apply loadbalancing rules, ELB VM %s is not in the right state %s", elbVm, elbVm.getState()));
             throw new ResourceUnavailableException("Unable to apply loadbalancing rules, ELB VM is not in the right state", VirtualRouter.class, elbVm.getId());
         }
     }
@@ -476,6 +484,19 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         }
         String msPublicKey = _configDao.getValue("ssh.publickey");
         buf.append(" authorized_key=").append(VirtualMachineGuru.getEncodedMsPublicKey(msPublicKey));
+
+        if (SystemVmEnableUserData.valueIn(dc.getId())) {
+            String userDataUuid = VirtualRouterUserData.valueIn(dc.getId());
+            try {
+                String userData = userDataManager.validateAndGetUserDataForSystemVM(userDataUuid);
+                if (StringUtils.isNotBlank(userData)) {
+                    buf.append(" userdata=").append(userData);
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to load user data for the elastic lb vm, ignored", e);
+            }
+        }
+
         if (logger.isDebugEnabled()) {
             logger.debug("Boot Args for " + profile + ": " + buf.toString());
         }

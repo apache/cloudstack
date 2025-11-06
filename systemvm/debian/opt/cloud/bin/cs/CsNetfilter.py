@@ -232,6 +232,8 @@ class CsNetfilters(object):
         if hook == "input" or hook == "output":
             CsHelper.execute("nft add rule %s %s %s icmpv6 type { echo-request, echo-reply, \
                 nd-neighbor-solicit, nd-router-advert, nd-neighbor-advert } accept" % (address_family, table, chain))
+        elif hook == "forward":
+            CsHelper.execute("nft add rule %s %s %s ct state established,related accept" % (address_family, table, chain))
 
     def add_ip4_chain(self, address_family, table, chain, hook, action):
         chain_policy = ""
@@ -379,7 +381,7 @@ class CsNetfilter(object):
         return self.rule
 
     def to_str(self, delete=False):
-        """ Convert the rule back into aynactically correct iptables command """
+        """ Convert the rule back into syntactically correct iptables command """
         # Order is important
         order = ['-A', '-s', '-d', '!_-d', '-i', '!_-i', '-p', '-m', '-m2', '--icmp-type', '--state',
                  '--dport', '--destination-port', '-o', '!_-o', '-j', '--set-xmark', '--checksum',

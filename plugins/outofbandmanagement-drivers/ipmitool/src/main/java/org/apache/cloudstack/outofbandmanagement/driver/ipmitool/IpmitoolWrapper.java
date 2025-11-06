@@ -27,6 +27,7 @@ import org.apache.cloudstack.utils.process.ProcessResult;
 import org.apache.cloudstack.utils.process.ProcessRunner;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+
 import org.joda.time.Duration;
 
 import java.util.ArrayList;
@@ -34,7 +35,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 public final class IpmitoolWrapper {
-    protected Logger logger = LogManager.getLogger(getClass());
+    Logger logger = LogManager.getLogger(getClass());
 
     private final ProcessRunner RUNNER;
 
@@ -110,12 +111,12 @@ public final class IpmitoolWrapper {
         return ipmiToolCommands.build();
     }
 
+    /**
+     * Expected usersList string contains legends on first line and users on rest
+     * ID Name  Callin Link Auth IPMI Msg Channel Priv Limit
+     * 1  admin true   true true ADMINISTRATOR
+     */
     public String findIpmiUser(final String usersList, final String username) {
-        /**
-         * Expected usersList string contains legends on first line and users on rest
-         * ID Name  Callin Link Auth IPMI Msg Channel Priv Limit
-         * 1  admin true   true true ADMINISTRATOR
-         */
 
         // Assuming user 'ID' index on 1st position
         int idIndex = 0;
@@ -157,25 +158,31 @@ public final class IpmitoolWrapper {
     public OutOfBandManagementDriverResponse executeCommands(final List<String> commands, final Duration timeOut) {
         final ProcessResult result = RUNNER.executeCommands(commands, timeOut);
         if (logger.isTraceEnabled()) {
-            List<String> cleanedCommands = new ArrayList<String>();
-            int maskNextCommand = 0;
-            for (String command : commands) {
-                if (maskNextCommand > 0) {
-                    cleanedCommands.add("**** ");
-                    maskNextCommand--;
-                    continue;
-                }
-                if (command.equalsIgnoreCase("-P")) {
-                    maskNextCommand = 1;
-                } else if (command.toLowerCase().endsWith("password")) {
-                    maskNextCommand = 2;
-                }
-                cleanedCommands.add(command);
-            }
-            logger.trace("Executed ipmitool process with commands: " + StringUtils.join(cleanedCommands, ", ") +
-                      "\nIpmitool execution standard output: " + result.getStdOutput() +
-                      "\nIpmitool execution error output: " + result.getStdError());
+            List<String> cleanedCommands = getSanatisedCommandStrings(commands);
+            logger.trace("Executed ipmitool process with commands: {}\nIpmitool execution standard output: {}\nIpmitool execution error output: {}",
+                    StringUtils.join(cleanedCommands, ", "),
+                    result.getStdOutput(),
+                    result.getStdError());
         }
         return new OutOfBandManagementDriverResponse(result.getStdOutput(), result.getStdError(), result.isSuccess());
+    }
+
+    List<String> getSanatisedCommandStrings(List<String> commands) {
+        List<String> cleanedCommands = new ArrayList<>();
+        int maskNextCommand = 0;
+        for (String command : commands) {
+            if (maskNextCommand > 0) {
+                cleanedCommands.add("**** ");
+                maskNextCommand--;
+                continue;
+            }
+            if (command.equalsIgnoreCase("-P")) {
+                maskNextCommand = 1;
+            } else if (command.toLowerCase().endsWith("password")) {
+                maskNextCommand = 2;
+            }
+            cleanedCommands.add(command);
+        }
+        return cleanedCommands;
     }
 }

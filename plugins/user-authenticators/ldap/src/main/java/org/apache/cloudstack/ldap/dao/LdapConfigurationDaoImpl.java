@@ -48,6 +48,7 @@ public class LdapConfigurationDaoImpl extends GenericDaoBase<LdapConfigurationVO
         listGlobalConfigurationsSearch.done();
 
         listDomainConfigurationsSearch = createSearchBuilder();
+        listDomainConfigurationsSearch.and("id", listDomainConfigurationsSearch.entity().getId(), SearchCriteria.Op.EQ);
         listDomainConfigurationsSearch.and("hostname", listDomainConfigurationsSearch.entity().getHostname(), Op.EQ);
         listDomainConfigurationsSearch.and("port", listDomainConfigurationsSearch.entity().getPort(), Op.EQ);
         listDomainConfigurationsSearch.and("domain_id", listDomainConfigurationsSearch.entity().getDomainId(), Op.EQ);
@@ -63,31 +64,35 @@ public class LdapConfigurationDaoImpl extends GenericDaoBase<LdapConfigurationVO
 
     @Override
     public LdapConfigurationVO find(String hostname, int port, Long domainId) {
-        SearchCriteria<LdapConfigurationVO> sc = getSearchCriteria(hostname, port, domainId, false);
+        SearchCriteria<LdapConfigurationVO> sc = getSearchCriteria(null, hostname, port, domainId, false);
         return findOneBy(sc);
     }
 
     @Override
     public LdapConfigurationVO find(String hostname, int port, Long domainId, boolean listAll) {
-        SearchCriteria<LdapConfigurationVO> sc = getSearchCriteria(hostname, port, domainId, listAll);
+        SearchCriteria<LdapConfigurationVO> sc = getSearchCriteria(null, hostname, port, domainId, listAll);
         return findOneBy(sc);
     }
 
     @Override
     public Pair<List<LdapConfigurationVO>, Integer> searchConfigurations(final String hostname, final int port, final Long domainId) {
-        SearchCriteria<LdapConfigurationVO> sc = getSearchCriteria(hostname, port, domainId, false);
+        SearchCriteria<LdapConfigurationVO> sc = getSearchCriteria(null, hostname, port, domainId, false);
         return searchAndCount(sc, null);
     }
 
     @Override
-    public Pair<List<LdapConfigurationVO>, Integer> searchConfigurations(final String hostname, final int port, final Long domainId, final boolean listAll) {
-        SearchCriteria<LdapConfigurationVO> sc = getSearchCriteria(hostname, port, domainId, listAll);
+    public Pair<List<LdapConfigurationVO>, Integer> searchConfigurations(final Long id, final String hostname, final int port, final Long domainId, final boolean listAll) {
+        SearchCriteria<LdapConfigurationVO> sc = getSearchCriteria(id, hostname, port, domainId, listAll);
         return searchAndCount(sc, null);
     }
 
-    private SearchCriteria<LdapConfigurationVO> getSearchCriteria(String hostname, int port, Long domainId,boolean listAll) {
+    private SearchCriteria<LdapConfigurationVO> getSearchCriteria(Long id, String hostname, int port, Long domainId,boolean listAll) {
         SearchCriteria<LdapConfigurationVO> sc;
-        if (domainId != null) {
+        if (id != null) {
+            // If id is present, ignore all other parameters
+            sc = listDomainConfigurationsSearch.create();
+            sc.setParameters("id", id);
+        } else if (domainId != null) {
             // If domainid is present, ignore listall
             sc = listDomainConfigurationsSearch.create();
             sc.setParameters("domain_id", domainId);

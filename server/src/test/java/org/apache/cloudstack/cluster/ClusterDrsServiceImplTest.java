@@ -199,7 +199,7 @@ public class ClusterDrsServiceImplTest {
 
         Mockito.when(hostDao.findByClusterId(1L)).thenReturn(hostList);
         Mockito.when(vmInstanceDao.listByClusterId(1L)).thenReturn(vmList);
-        Mockito.when(balancedAlgorithm.needsDrs(Mockito.anyLong(), Mockito.anyList(), Mockito.anyList())).thenReturn(
+        Mockito.when(balancedAlgorithm.needsDrs(Mockito.any(), Mockito.anyList(), Mockito.anyList())).thenReturn(
                 true, false);
         Mockito.when(
                 clusterDrsService.getBestMigration(Mockito.any(Cluster.class), Mockito.any(ClusterDrsAlgorithm.class),
@@ -213,7 +213,7 @@ public class ClusterDrsServiceImplTest {
 
         Mockito.verify(hostDao, Mockito.times(1)).findByClusterId(1L);
         Mockito.verify(vmInstanceDao, Mockito.times(1)).listByClusterId(1L);
-        Mockito.verify(balancedAlgorithm, Mockito.times(2)).needsDrs(Mockito.anyLong(), Mockito.anyList(),
+        Mockito.verify(balancedAlgorithm, Mockito.times(2)).needsDrs(Mockito.any(), Mockito.anyList(),
                 Mockito.anyList());
 
         assertEquals(1, iterations.size());
@@ -391,10 +391,10 @@ public class ClusterDrsServiceImplTest {
                 new Ternary<>(new Pair<>(List.of(destHost), 1), List.of(destHost), Map.of(destHost, false)));
         Mockito.when(managementServer.listHostsForMigrationOfVM(vm2, 0L, 500L, null, vmList)).thenReturn(
                 new Ternary<>(new Pair<>(List.of(destHost), 1), List.of(destHost), Map.of(destHost, false)));
-        Mockito.when(balancedAlgorithm.getMetrics(cluster.getId(), vm1, serviceOffering, destHost, new HashMap<>(),
+        Mockito.when(balancedAlgorithm.getMetrics(cluster, vm1, serviceOffering, destHost, new HashMap<>(),
                 new HashMap<>(), false)).thenReturn(new Ternary<>(1.0, 0.5, 1.5));
 
-        Mockito.when(balancedAlgorithm.getMetrics(cluster.getId(), vm2, serviceOffering, destHost, new HashMap<>(),
+        Mockito.when(balancedAlgorithm.getMetrics(cluster, vm2, serviceOffering, destHost, new HashMap<>(),
                 new HashMap<>(), false)).thenReturn(new Ternary<>(1.0, 2.5, 1.5));
 
         Pair<VirtualMachine, Host> bestMigration = clusterDrsService.getBestMigration(cluster, balancedAlgorithm,

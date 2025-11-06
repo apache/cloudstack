@@ -95,7 +95,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -143,7 +143,7 @@ export default {
     },
     fetchZone () {
       this.zones.loading = true
-      api('listZones', { available: true, showicon: true }).then(json => {
+      getAPI('listZones', { available: true, showicon: true }).then(json => {
         this.zones.opts = json.listzonesresponse.zone || []
       }).catch(error => {
         this.$notifyError(error)
@@ -157,7 +157,7 @@ export default {
         return
       }
       this.externals.loading = true
-      api('listBackupProviderOfferings', { zoneid: zoneId }).then(json => {
+      getAPI('listBackupProviderOfferings', { zoneid: zoneId }).then(json => {
         this.externals.opts = json.listbackupproviderofferingsresponse.backupoffering || []
       }).catch(error => {
         this.$notifyError(error)
@@ -182,7 +182,7 @@ export default {
         params.allowuserdrivenbackups = values.allowuserdrivenbackups
         this.loading = true
         const title = this.$t('label.import.offering')
-        api('importBackupOffering', params).then(json => {
+        postAPI('importBackupOffering', params).then(json => {
           const jobId = json.importbackupofferingresponse.jobid
           if (jobId) {
             this.$pollJob({

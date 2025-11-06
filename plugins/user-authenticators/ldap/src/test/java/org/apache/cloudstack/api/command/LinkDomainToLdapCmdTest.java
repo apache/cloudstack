@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command;
 
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
+import com.cloud.user.DomainService;
 import com.cloud.user.User;
 import com.cloud.user.UserAccountVO;
 import org.apache.cloudstack.acl.RoleType;
@@ -44,6 +45,8 @@ public class LinkDomainToLdapCmdTest implements LdapConfigurationChanger
     LdapManager ldapManager;
     @Mock
     AccountService accountService;
+    @Mock
+    DomainService domainService;
 
     LinkDomainToLdapCmd linkDomainToLdapCmd;
 
@@ -52,6 +55,7 @@ public class LinkDomainToLdapCmdTest implements LdapConfigurationChanger
         linkDomainToLdapCmd = new LinkDomainToLdapCmd();
         setHiddenField(linkDomainToLdapCmd, "_ldapManager", ldapManager);
         setHiddenField(linkDomainToLdapCmd, "_accountService", accountService);
+        setHiddenField(linkDomainToLdapCmd, "_domainService", domainService);
     }
 
     @After

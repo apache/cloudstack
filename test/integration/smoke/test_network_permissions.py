@@ -733,12 +733,17 @@ class TestNetworkPermissions(cloudstackTestCase):
         self.exec_command("self.user_apiclient", command, expected=False)
         self.exec_command("self.otheruser_apiclient", command, expected=True)
 
-        # 22. Destroy vm2, should succeed by vm owner
+        # 22. Start VM before destroying, to recreate ROOT volume that was deleted as part of restore operation
+        command = """self.virtual_machine.start({apiclient})"""
+        self.exec_command("self.user_apiclient", command, expected=False)
+        self.exec_command("self.otheruser_apiclient", command, expected=True)
+
+        # 23. Destroy vm2, should succeed by vm owner
         command = """self.virtual_machine.delete({apiclient}, expunge=False)"""
         self.exec_command("self.user_apiclient", command, expected=False)
         self.exec_command("self.otheruser_apiclient", command, expected=True)
 
-        # 23. Recover vm2, should succeed by vm owner
+        # 24. Recover vm2, should succeed by vm owner
         allow_expunge_recover_vm = Configurations.list(self.apiclient, name="allow.user.expunge.recover.vm")[0].value
         self.logger.debug("Global configuration allow.user.expunge.recover.vm = %s", allow_expunge_recover_vm)
         if allow_expunge_recover_vm == "true":
@@ -746,12 +751,12 @@ class TestNetworkPermissions(cloudstackTestCase):
             self.exec_command("self.user_apiclient", command, expected=False)
             self.exec_command("self.otheruser_apiclient", command, expected=True)
 
-        # 24. Destroy vm2, should succeed by vm owner
+        # 25. Destroy vm2, should succeed by vm owner
         command = """self.virtual_machine.delete({apiclient}, expunge=False)"""
         self.exec_command("self.user_apiclient", command, expected=False)
         self.exec_command("self.otheruser_apiclient", command, expected=True)
 
-        # 25. Expunge vm2, should succeed by vm owner
+        # 26. Expunge vm2, should succeed by vm owner
         if allow_expunge_recover_vm == "true":
             command = """self.virtual_machine.expunge({apiclient})"""
             self.exec_command("self.user_apiclient", command, expected=False)
@@ -759,7 +764,7 @@ class TestNetworkPermissions(cloudstackTestCase):
         else:
             self.virtual_machine.expunge(self.apiclient)
 
-        # 26. Reset network permissions, should succeed by network owner
+        # 27. Reset network permissions, should succeed by network owner
         command = """self.reset_network_permission({apiclient}, self.user_network, expected=True)"""
         self.exec_command("self.otheruser_apiclient", command, expected=False)
         self.exec_command("self.user_apiclient", command, expected=True)

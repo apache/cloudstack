@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
@@ -27,6 +29,8 @@ import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 import org.springframework.stereotype.Component;
 
+import com.cloud.storage.ImageStore;
+import com.cloud.utils.Pair;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -36,6 +40,8 @@ import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 public class ImageStoreDetailsDaoImpl extends ResourceDetailsDaoBase<ImageStoreDetailVO> implements ImageStoreDetailsDao, ScopedConfigStorage {
+    @Inject
+    ImageStoreDao imageStoreDao;
 
     protected final SearchBuilder<ImageStoreDetailVO> storeSearch;
 
@@ -67,7 +73,7 @@ public class ImageStoreDetailsDaoImpl extends ResourceDetailsDaoBase<ImageStoreD
         sc.setParameters("store", storeId);
 
         List<ImageStoreDetailVO> details = listBy(sc);
-        Map<String, String> detailsMap = new HashMap<String, String>();
+        Map<String, String> detailsMap = new HashMap<>();
         for (ImageStoreDetailVO detail : details) {
             String name = detail.getName();
             String value = detail.getValue();
@@ -111,8 +117,23 @@ public class ImageStoreDetailsDaoImpl extends ResourceDetailsDaoBase<ImageStoreD
     }
 
     @Override
+    public String getConfigValue(long id, ConfigKey<?> key) {
+        ImageStoreDetailVO vo = findDetail(id, key.key());
+        return vo == null ? null : getActualValue(vo);
+    }
+
+    @Override
     public void addDetail(long resourceId, String key, String value, boolean display) {
         super.addDetail(new ImageStoreDetailVO(resourceId, key, value, display));
+    }
+
+    @Override
+    public Pair<Scope, Long> getParentScope(long id) {
+        ImageStore store = imageStoreDao.findById(id);
+        if (store == null) {
+            return null;
+        }
+        return new Pair<>(getScope().getParent(), store.getDataCenterId());
     }
 
 }

@@ -80,7 +80,7 @@ public class HostAffinityProcessor extends AffinityProcessorBase implements Affi
      */
     protected void processAffinityGroup(AffinityGroupVMMapVO vmGroupMapping, DeploymentPlan plan, VirtualMachine vm, List<VirtualMachine> vmList) {
         AffinityGroupVO group = _affinityGroupDao.findById(vmGroupMapping.getAffinityGroupId());
-        logger.debug("Processing affinity group " + group.getName() + " for VM Id: " + vm.getId());
+        logger.debug("Processing affinity group {} for VM {}", group, vm);
 
         List<Long> groupVMIds = _affinityGroupVMMapDao.listVmIdsByAffinityGroup(group.getId());
         groupVMIds.remove(vm.getId());

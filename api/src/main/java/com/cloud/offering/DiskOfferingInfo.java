@@ -31,6 +31,13 @@ public class DiskOfferingInfo {
         _diskOffering = diskOffering;
     }
 
+    public DiskOfferingInfo(DiskOffering diskOffering, Long size, Long minIops, Long maxIops) {
+        _diskOffering = diskOffering;
+        _size = size;
+        _minIops = minIops;
+        _maxIops = maxIops;
+    }
+
     public void setDiskOffering(DiskOffering diskOffering) {
         _diskOffering = diskOffering;
     }

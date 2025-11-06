@@ -71,7 +71,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 
 export default {
   name: 'RestoreAttachBackupVolume',
@@ -118,7 +118,7 @@ export default {
     },
     fetchVirtualMachine () {
       this.virtualMachineOptions.loading = true
-      api('listVirtualMachines', { zoneid: this.resource.zoneid }).then(json => {
+      getAPI('listVirtualMachines', { zoneid: this.resource.zoneid }).then(json => {
         this.virtualMachineOptions.opts = json.listvirtualmachinesresponse.virtualmachine || []
       }).catch(error => {
         this.$notifyError(error)
@@ -156,7 +156,7 @@ export default {
 
         this.actionLoading = true
         const title = this.$t('label.restore.volume.attach')
-        api('restoreVolumeFromBackupAndAttachToVM', params).then(json => {
+        postAPI('restoreVolumeFromBackupAndAttachToVM', params).then(json => {
           const jobId = json.restorevolumefrombackupandattachtovmresponse.jobid || null
           if (jobId) {
             this.$pollJob({

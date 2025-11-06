@@ -174,6 +174,6 @@ class CsFile:
         self.new_config = list(temp_config)
 
     def compare(self, o):
-        result = (isinstance(o, self.__class__) and set(self.config) == set(o.config))
+        result = (isinstance(o, self.__class__) and self.config == o.config)
         logging.debug("Comparison of CsFiles content is ==> %s" % result)
         return result

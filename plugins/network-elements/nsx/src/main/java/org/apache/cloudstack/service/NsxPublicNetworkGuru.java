@@ -17,7 +17,6 @@
 package org.apache.cloudstack.service;
 
 import com.cloud.dc.VlanDetailsVO;
-import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -31,11 +30,7 @@ import com.cloud.network.guru.PublicNetworkGuru;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.network.vpc.VpcOfferingVO;
 import com.cloud.network.vpc.VpcVO;
-import com.cloud.network.vpc.dao.VpcDao;
-import com.cloud.network.vpc.dao.VpcOfferingDao;
-import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
@@ -56,19 +51,9 @@ import java.util.stream.Collectors;
 public class NsxPublicNetworkGuru extends PublicNetworkGuru {
 
     @Inject
-    private VlanDetailsDao vlanDetailsDao;
-    @Inject
-    private VpcDao vpcDao;
-    @Inject
-    private VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
-    @Inject
     private NsxControllerUtils nsxControllerUtils;
     @Inject
     private NsxService nsxService;
-    @Inject
-    private VpcOfferingDao vpcOfferingDao;
-    @Inject
-    private NetworkOfferingDao offeringDao;
 
     protected Logger logger = LogManager.getLogger(getClass());
 
@@ -78,7 +63,8 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
 
     @Override
     protected boolean canHandle(NetworkOffering offering) {
-        return isMyTrafficType(offering.getTrafficType()) && offering.isSystemOnly() && offering.isForNsx();
+        boolean isForNsx = networkModel.isProviderForNetworkOffering(Network.Provider.Nsx, offering.getId());
+        return isMyTrafficType(offering.getTrafficType()) && offering.isSystemOnly() && isForNsx;
     }
 
     @Override
@@ -116,7 +102,7 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
         // For NSX, use VR Public IP != Source NAT
         List<IPAddressVO> ips = _ipAddressDao.listByAssociatedVpc(vpc.getId(), true);
         if (CollectionUtils.isEmpty(ips)) {
-            String err = String.format("Cannot find a source NAT IP for the VPC %s", vpc.getName());
+            String err = String.format("Cannot find a source NAT IP for the VPC %s", vpc);
             logger.error(err);
             throw new CloudRuntimeException(err);
         }
@@ -136,10 +122,10 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
                 boolean sourceNatEnabled = !NetworkOffering.NetworkMode.ROUTED.equals(vpcVO.getNetworkMode()) &&
                         vpcOfferingServiceMapDao.areServicesSupportedByVpcOffering(vpc.getVpcOfferingId(), services);
 
-                logger.info(String.format("Creating Tier 1 Gateway for VPC %s", vpc.getName()));
+                logger.info("Creating Tier 1 Gateway for VPC {}", vpc);
                 boolean result = nsxService.createVpcNetwork(dataCenterId, accountId, domainId, resourceId, vpc.getName(), sourceNatEnabled);
                 if (!result) {
-                    String msg = String.format("Error creating Tier 1 Gateway for VPC %s", vpc.getName());
+                    String msg = String.format("Error creating Tier 1 Gateway for VPC %s", vpc);
                     logger.error(msg);
                     throw new CloudRuntimeException(msg);
                 }

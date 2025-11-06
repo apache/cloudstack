@@ -27,6 +27,7 @@ public class ConsoleAccessAuthenticationCommand extends AgentControlCommand {
     private String _sid;
     private String _ticket;
     private String sessionUuid;
+    private String clientAddress;
 
     private boolean _isReauthenticating;
 
@@ -35,13 +36,14 @@ public class ConsoleAccessAuthenticationCommand extends AgentControlCommand {
     }
 
     public ConsoleAccessAuthenticationCommand(String host, String port, String vmId, String sid, String ticket,
-                                              String sessiontkn) {
+                                              String sessiontkn, String clientAddress) {
         _host = host;
         _port = port;
         _vmId = vmId;
         _sid = sid;
         _ticket = ticket;
         sessionUuid = sessiontkn;
+        this.clientAddress = clientAddress;
     }
 
     public String getHost() {
@@ -78,5 +80,13 @@ public class ConsoleAccessAuthenticationCommand extends AgentControlCommand {
 
     public void setSessionUuid(String sessionUuid) {
         this.sessionUuid = sessionUuid;
+    }
+
+    public String getClientAddress() {
+        return clientAddress;
+    }
+
+    public void setClientAddress(String clientAddress) {
+        this.clientAddress = clientAddress;
     }
 }

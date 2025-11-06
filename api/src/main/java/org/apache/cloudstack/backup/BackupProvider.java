@@ -17,12 +17,13 @@
 package org.apache.cloudstack.backup;
 
 import java.util.List;
-import java.util.Map;
 
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 
 public interface BackupProvider {
+
+    Boolean crossZoneInstanceCreationEnabled(BackupOffering backupOffering);
 
     /**
      * Returns the unique name of the provider
@@ -49,22 +50,21 @@ public interface BackupProvider {
 
     /**
      * Assign a VM to a backup offering or policy
-     * @param vm
-     * @param backup
-     * @param policy
-     * @return
+     * @param vm the machine to back up
+     * @param backupOffering the SLA definition for the backup
+     * @return succeeded?
      */
     boolean assignVMToBackupOffering(VirtualMachine vm, BackupOffering backupOffering);
 
     /**
      * Removes a VM from a backup offering or policy
-     * @param vm
-     * @return
+     * @param vm the machine to stop backing up
+     * @return succeeded?
      */
     boolean removeVMFromBackupOffering(VirtualMachine vm);
 
     /**
-     * Whether the provide will delete backups on removal of VM from the offfering
+     * Whether the provider will delete backups on removal of VM from the offering
      * @return boolean result
      */
     boolean willDeleteBackupsOnOfferingRemoval();
@@ -72,18 +72,22 @@ public interface BackupProvider {
     /**
      * Starts and creates an adhoc backup process
      * for a previously registered VM backup
-     * @param backup
-     * @return
+     *
+     * @param vm        the machine to make a backup of
+     * @param quiesceVM instance will be quiesced for checkpointing for backup. Applicable only to NAS plugin.
+     * @return the result and {code}Backup{code} {code}Object{code}
      */
-    boolean takeBackup(VirtualMachine vm);
+    Pair<Boolean, Backup> takeBackup(VirtualMachine vm, Boolean quiesceVM);
 
     /**
      * Delete an existing backup
-     * @param backuo The backup to exclude
+     * @param backup The backup to exclude
      * @param forced Indicates if backup will be force removed or not
-     * @return
+     * @return succeeded?
      */
     boolean deleteBackup(Backup backup, boolean forced);
+
+    Pair<Boolean, String> restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid);
 
     /**
      * Restore VM from backup
@@ -93,20 +97,44 @@ public interface BackupProvider {
     /**
      * Restore a volume from a backup
      */
-    Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid, Pair<String, VirtualMachine.State> vmNameAndState);
+    Pair<Boolean, String> restoreBackedUpVolume(Backup backup, Backup.VolumeInfo backupVolumeInfo, String hostIp, String dataStoreUuid, Pair<String, VirtualMachine.State> vmNameAndState);
 
     /**
-     * Returns backup metrics for a list of VMs in a zone
-     * @param zoneId
-     * @param vms
-     * @return
+     * Syncs backup metrics (backup size, protected size) from the plugin and stores it within the provider
+     * @param zoneId the zone for which to return metrics
      */
-    Map<VirtualMachine, Backup.Metric> getBackupMetrics(Long zoneId, List<VirtualMachine> vms);
+    void syncBackupMetrics(Long zoneId);
 
     /**
-     * This method should reconcile and create backup entries for any backups created out-of-band
-     * @param vm
-     * @param metric
+     * Returns a list of Backup.RestorePoint
+     * @param vm the machine to get the restore points for
      */
-    void syncBackups(VirtualMachine vm, Backup.Metric metric);
+    List<Backup.RestorePoint> listRestorePoints(VirtualMachine vm);
+
+    /**
+     * Creates and returns an entry in the backups table by getting the information from restorePoint and vm.
+     *
+     * @param restorePoint the restore point to create a backup for
+     * @param vm           The machine for which to create a backup
+     */
+    Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm);
+
+    /**
+     * Returns if the backup provider supports creating new instance from backup
+     */
+    boolean supportsInstanceFromBackup();
+
+    /**
+     * Returns the backup storage usage (Used, Total) for a backup provider
+     * @param zoneId the zone for which to return metrics
+     * @return a pair of Used size and Total size for the backup storage
+     */
+    Pair<Long, Long> getBackupStorageStats(Long zoneId);
+
+    /**
+     * Gets the backup storage usage (Used, Total) from the plugin and stores it in db
+     * @param zoneId the zone for which to return metrics
+     */
+    void syncBackupStorageStats(Long zoneId);
+
 }

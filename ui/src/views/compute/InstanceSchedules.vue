@@ -253,7 +253,7 @@
 <script>
 
 import { reactive, ref, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import ListView from '@/components/view/ListView'
 import Status from '@/components/widgets/Status'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -373,7 +373,7 @@ export default {
       this.showAddModal()
     },
     removeVMSchedule (schedule) {
-      api('deleteVMSchedule', {
+      postAPI('deleteVMSchedule', {
         id: schedule.id,
         virtualmachineid: this.virtualmachine.id
       }).then(() => {
@@ -429,7 +429,7 @@ export default {
           command = 'updateVMSchedule'
         }
 
-        api(command, params).then(response => {
+        postAPI(command, params).then(response => {
           this.$notification.success({
             message: this.$t('label.schedule'),
             description: this.$t('message.success.config.vm.schedule')
@@ -485,7 +485,7 @@ export default {
         listall: true
       }
       this.tabLoading = true
-      api('listVMSchedule', params).then(json => {
+      getAPI('listVMSchedule', params).then(json => {
         this.schedules = []
         this.totalCount = json?.listvmscheduleresponse?.count || 0
         this.schedules = json?.listvmscheduleresponse?.vmschedule || []

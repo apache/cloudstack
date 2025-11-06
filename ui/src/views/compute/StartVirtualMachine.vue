@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout" v-ctrl-enter="handleSubmit">
+  <div class="form-layout">
     <a-spin :spinning="loading">
       <a-alert type="warning">
         <template #message>{{ $t('message.action.start.instance') }}</template>
@@ -93,7 +93,7 @@
             <template #label>
               <tooltip-label :title="$t('label.considerlasthost')" :tooltip="apiParams.considerlasthost.description"/>
             </template>
-            <a-switch v-model:checked="form.considerlasthost" />
+            <a-switch v-model:checked="form.considerlasthost" v-focus="true"/>
           </a-form-item>
         </div>
 
@@ -115,7 +115,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -151,6 +151,12 @@ export default {
       this.fetchHosts()
     }
   },
+  mounted () {
+    document.addEventListener('keydown', this.handleKeyPress)
+  },
+  beforeUnmount () {
+    document.removeEventListener('keydown', this.handleKeyPress)
+  },
   methods: {
     initForm () {
       this.formRef = ref()
@@ -163,7 +169,7 @@ export default {
       this.pods = []
       this.podsLoading = true
       const params = { zoneid: this.resource.zoneid }
-      api('listPods', params).then(json => {
+      getAPI('listPods', params).then(json => {
         this.pods = json.listpodsresponse.pod || []
         if (this.pods.length === 0) {
           this.$notification.error({
@@ -182,7 +188,7 @@ export default {
       if (podid) {
         params.podid = podid
       }
-      api('listClusters', params).then(json => {
+      getAPI('listClusters', params).then(json => {
         this.clusters = json.listclustersresponse.cluster || []
         if (this.clusters.length === 0) {
           this.$notification.error({
@@ -204,7 +210,7 @@ export default {
       if (clusterid) {
         params.clusterid = clusterid
       }
-      api('listHosts', params).then(json => {
+      getAPI('listHosts', params).then(json => {
         this.hosts = json.listhostsresponse.host || []
         if (this.hosts.length === 0) {
           this.$notification.error({
@@ -237,11 +243,11 @@ export default {
           id: this.resource.id
         }
         for (const key in values) {
-          if (values[key]) {
+          if (values[key] || values[key] === false) {
             params[key] = values[key]
           }
         }
-        api('startVirtualMachine', params).then(json => {
+        postAPI('startVirtualMachine', params).then(json => {
           const jobId = json.startvirtualmachineresponse.jobid
           this.$pollJob({
             jobId,
@@ -264,6 +270,12 @@ export default {
     },
     closeAction () {
       this.$emit('close-action')
+    },
+    handleKeyPress (event) {
+      event.preventDefault()
+      if ((event.code === 'Enter' || event.code === 'NumpadEnter') && event.ctrlKey === true) {
+        this.handleSubmit(event)
+      }
     }
   }
 }

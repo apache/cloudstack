@@ -358,8 +358,15 @@ public class AgentShellTest {
         AgentShell shell = new AgentShell();
         shell.setHosts("test");
         shell.getNextHost();
-        shell.updateConnectedHost();
+        shell.updateConnectedHost("test");
 
         Assert.assertEquals(expected, shell.getConnectedHost());
+    }
+
+    @Test
+    public void testGetSslHandshakeTimeout() {
+        Integer expected = 1;
+        agentPropertiesFileHandlerMocked.when(() -> AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.SSL_HANDSHAKE_TIMEOUT))).thenReturn(expected);
+        Assert.assertEquals(expected, agentShellSpy.getSslHandshakeTimeout());
     }
 }

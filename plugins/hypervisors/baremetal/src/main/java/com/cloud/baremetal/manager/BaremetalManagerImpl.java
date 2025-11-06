@@ -98,10 +98,10 @@ public class BaremetalManagerImpl extends ManagerBase implements BaremetalManage
 
       if (newState == State.Starting) {
         host.setDetail("vmName", vo.getInstanceName());
-        logger.debug("Add vmName " + host.getDetail("vmName") + " to host " + host.getId() + " details");
+        logger.debug(String.format("Add vmName %s to host %s details", host.getDetail("vmName"), host));
       } else {
         if (host.getDetail("vmName") != null && host.getDetail("vmName").equalsIgnoreCase(vo.getInstanceName())) {
-          logger.debug("Remove vmName " + host.getDetail("vmName") + " from host " + host.getId() + " details");
+          logger.debug(String.format("Remove vmName %s from host %s details", host.getDetail("vmName"), host));
           host.getDetails().remove("vmName");
         }
       }
@@ -142,13 +142,13 @@ public class BaremetalManagerImpl extends ManagerBase implements BaremetalManage
         }
 
         if (State.Starting != vm.getState()) {
-            throw new CloudRuntimeException(String.format("baremetal instance[name:%s, state:%s] is not in state of Starting", vmName, vm.getState()));
+            throw new CloudRuntimeException(String.format("baremetal instance %s [state:%s] is not in state of Starting", vm, vm.getState()));
         }
 
         vm.setState(State.Running);
         vm.setLastHostId(vm.getHostId());
         vmDao.update(vm.getId(), vm);
-        logger.debug(String.format("received baremetal provision done notification for vm[id:%s name:%s] running on host[mac:%s, ip:%s]",
-                vm.getId(), vm.getInstanceName(), host.getPrivateMacAddress(), host.getPrivateIpAddress()));
+        logger.debug(String.format("received baremetal provision done notification for vm %s running on host %s [mac:%s, ip:%s]",
+                vm, host, host.getPrivateMacAddress(), host.getPrivateIpAddress()));
     }
 }

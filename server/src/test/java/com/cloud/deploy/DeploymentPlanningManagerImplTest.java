@@ -39,6 +39,7 @@ import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.gpu.GPU;
 import com.cloud.gpu.dao.HostGpuGroupsDao;
+import com.cloud.gpu.dao.VgpuProfileDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -79,7 +80,7 @@ import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -182,7 +183,7 @@ public class DeploymentPlanningManagerImplTest {
     DedicatedResourceDao _dedicatedDao;
 
     @Inject
-    UserVmDetailsDao vmDetailsDao;
+    VMInstanceDetailsDao vmDetailsDao;
 
     @Inject
     VMTemplateDao templateDao;
@@ -889,9 +890,9 @@ public class DeploymentPlanningManagerImplTest {
         Pair<Host, Map<Volume, StoragePool>> potentialResources = new Pair<>(host, suitableVolumeStoragePoolMap);
 
         Mockito.when(capacityMgr.checkIfHostReachMaxGuestLimit(host)).thenReturn(false);
-        Mockito.when(capacityMgr.checkIfHostHasCpuCapability(ArgumentMatchers.anyLong(), ArgumentMatchers.anyInt(), ArgumentMatchers.anyInt())).thenReturn(true);
+        Mockito.when(capacityMgr.checkIfHostHasCpuCapability(ArgumentMatchers.any(Host.class), ArgumentMatchers.anyInt(), ArgumentMatchers.anyInt())).thenReturn(true);
         Mockito.when(capacityMgr.checkIfHostHasCapacity(
-                ArgumentMatchers.anyLong(),
+            ArgumentMatchers.any(),
                 ArgumentMatchers.anyInt(),
                 ArgumentMatchers.anyLong(),
                 ArgumentMatchers.anyBoolean(),
@@ -902,7 +903,7 @@ public class DeploymentPlanningManagerImplTest {
         Mockito.when(serviceOfferingDetailsDao.findDetail(vmProfile.getServiceOfferingId(), GPU.Keys.vgpuType.toString())).thenReturn(null);
 
         Mockito.doReturn(true).when(_dpm).checkVmProfileAndHost(vmProfile, host);
-        Mockito.doReturn(true).when(_dpm).checkIfHostFitsPlannerUsage(ArgumentMatchers.anyLong(), ArgumentMatchers.nullable(PlannerResourceUsage.class));
+        Mockito.doReturn(true).when(_dpm).checkIfHostFitsPlannerUsage(ArgumentMatchers.any(Host.class), ArgumentMatchers.nullable(PlannerResourceUsage.class));
         Mockito.when(clusterDetailsDao.findDetail(ArgumentMatchers.anyLong(), ArgumentMatchers.anyString())).thenReturn(new ClusterDetailsVO(clusterId, "mock", "1"));
 
         DeploymentClusterPlanner planner = Mockito.spy(new FirstFitPlanner());
@@ -1114,8 +1115,8 @@ public class DeploymentPlanningManagerImplTest {
         }
 
         @Bean
-        public UserVmDetailsDao userVmDetailsDao() {
-            return Mockito.mock(UserVmDetailsDao.class);
+        public VMInstanceDetailsDao vmInstanceDetailsDao() {
+            return Mockito.mock(VMInstanceDetailsDao.class);
         }
 
         @Bean
@@ -1151,6 +1152,11 @@ public class DeploymentPlanningManagerImplTest {
         @Bean
         public VMTemplateDao vmTemplateDao() {
             return Mockito.mock(VMTemplateDao.class);
+        }
+
+        @Bean
+        public VgpuProfileDao vgpuProfileDao() {
+            return Mockito.mock(VgpuProfileDao.class);
         }
 
         public static class Library implements TypeFilter {
@@ -1218,7 +1224,7 @@ public class DeploymentPlanningManagerImplTest {
             throw new RuntimeException(e);
         }
         List<Long> allClusters = List.of(101L, 102L, 103L, 104L);
-        Mockito.when(_clusterDao.listAllClusters(Mockito.anyLong())).thenReturn(allClusters);
+        Mockito.when(_clusterDao.listAllClusterIds(Mockito.anyLong())).thenReturn(allClusters);
         if (mockVolumes) {
             VolumeVO vol1 = Mockito.mock(VolumeVO.class);
             Mockito.when(vol1.getPoolId()).thenReturn(1L);

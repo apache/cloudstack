@@ -103,13 +103,21 @@
               </a-select>
             </a-form-item>
           </a-col>
+          <a-col :md="24" :lg="24" v-if="hasOstypeidChanged()">
+            <a-form-item name="forceupdateostype" ref="forceupdateostype">
+              <template #label>
+                <tooltip-label :title="$t('label.force.update.os.type')" :tooltip="apiParams.forceupdateostype.description"/>
+              </template>
+              <a-switch v-model:checked="form.forceupdateostype" />
+            </a-form-item>
+          </a-col>
         </a-row>
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
             <a-form-item
               name="userdataid"
               ref="userdataid"
-              :label="$t('label.userdata')">
+              :label="$t('label.user.data')">
               <a-select
                 showSearch
                 optionFilterProp="label"
@@ -128,7 +136,7 @@
           <a-col :md="24" :lg="12">
             <a-form-item ref="userdatapolicy" name="userdatapolicy">
               <template #label>
-                <tooltip-label :title="$t('label.userdatapolicy')" :tooltip="$t('label.userdatapolicy.tooltip')"/>
+                <tooltip-label :title="$t('label.user.data.policy')" :tooltip="$t('label.user.data.policy.tooltip')"/>
               </template>
               <a-select
                 showSearch
@@ -151,6 +159,12 @@
           </template>
           <a-switch v-model:checked="form.isdynamicallyscalable" />
         </a-form-item>
+        <a-form-item name="forcks" ref="forcks">
+          <template #label>
+            <tooltip-label :title="$t('label.forcks')" :tooltip="apiParams.forcks.description"/>
+          </template>
+          <a-switch v-model:checked="form.forcks" />
+        </a-form-item>
         <a-form-item name="templatetype" ref="templatetype" v-if="isAdmin">
           <template #label>
             <tooltip-label :title="$t('label.templatetype')" :tooltip="apiParams.templatetype.description"/>
@@ -172,8 +186,8 @@
             v-model:value="form.templatetype"
             :placeholder="apiParams.templatetype.description"
             @change="val => { selectedTemplateType = val }">
-            <a-select-option v-for="opt in templatetypes" :key="opt">
-              {{ opt }}
+            <a-select-option v-for="opt in templatetypes" :key="opt.id">
+              {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -217,7 +231,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -233,7 +247,7 @@ export default {
   },
   data () {
     return {
-      templatetypes: ['BUILTIN', 'USER', 'SYSTEM', 'ROUTING', 'VNF'],
+      templatetypes: [],
       emptyAllowedFields: ['templatetag'],
       rootDisk: {},
       nicAdapterType: {},
@@ -245,7 +259,8 @@ export default {
       userdataid: null,
       userdatapolicy: null,
       userdatapolicylist: {},
-      architectureTypes: {}
+      architectureTypes: {},
+      originalOstypeid: null
     }
   },
   beforeCreate () {
@@ -255,6 +270,7 @@ export default {
   },
   created () {
     this.initForm()
+    this.templatetypes = this.$fetchTemplateTypes(this.resource.hypervisor)
     this.rootDisk.loading = false
     this.rootDisk.opts = []
     this.nicAdapterType.loading = false
@@ -274,7 +290,7 @@ export default {
         displaytext: [{ required: true, message: this.$t('message.error.required.input') }],
         ostypeid: [{ required: true, message: this.$t('message.error.select') }]
       })
-      const resourceFields = ['name', 'displaytext', 'architecture', 'passwordenabled', 'ostypeid', 'isdynamicallyscalable', 'userdataid', 'userdatapolicy']
+      const resourceFields = ['name', 'displaytext', 'architecture', 'passwordenabled', 'ostypeid', 'isdynamicallyscalable', 'userdataid', 'userdatapolicy', 'forcks']
       if (this.isAdmin) {
         resourceFields.push('templatetype')
         resourceFields.push('templatetag')
@@ -288,6 +304,10 @@ export default {
               break
             case 'userdatapolicy':
               this.userdatapolicy = fieldValue
+              break
+            case 'ostypeid':
+              this.form[field] = fieldValue
+              this.originalOstypeid = fieldValue
               break
             default:
               this.form[field] = fieldValue
@@ -310,7 +330,7 @@ export default {
     },
     fetchData () {
       this.fetchOsTypes()
-      this.fetchArchitectureTypes()
+      this.architectureTypes.opts = this.$fetchCpuArchitectureTypes()
       this.fetchRootDiskControllerTypes(this.resource.hypervisor)
       this.fetchNicAdapterTypes()
       this.fetchKeyboardTypes()
@@ -328,25 +348,12 @@ export default {
       params.listAll = true
       this.osTypes.opts = []
       this.osTypes.loading = true
-      api('listOsTypes', params).then(json => {
+      getAPI('listOsTypes', params).then(json => {
         const listOsTypes = json.listostypesresponse.ostype
         this.osTypes.opts = listOsTypes
       }).finally(() => {
         this.osTypes.loading = false
       })
-    },
-    fetchArchitectureTypes () {
-      this.architectureTypes.opts = []
-      const typesList = []
-      typesList.push({
-        id: 'x86_64',
-        description: 'AMD 64 bits (x86_64)'
-      })
-      typesList.push({
-        id: 'aarch64',
-        description: 'ARM 64 bits (aarch64)'
-      })
-      this.architectureTypes.opts = typesList
     },
     fetchRootDiskControllerTypes (hyperVisor) {
       const controller = []
@@ -479,7 +486,7 @@ export default {
       this.userdata.opts = []
       this.userdata.loading = true
 
-      api('listUserData', params).then(json => {
+      getAPI('listUserData', params).then(json => {
         const userdataIdAndName = []
         const userdataOpts = json.listuserdataresponse.userdata
         userdataIdAndName.push({
@@ -517,7 +524,8 @@ export default {
           }
           params[key] = values[key]
         }
-        api('updateTemplate', params).then(json => {
+        params.forceupdateostype = this.form.forceupdateostype || false
+        postAPI('updateTemplate', params).then(json => {
           if (this.userdataid !== null) {
             this.linkUserdataToTemplate(this.userdataid, json.updatetemplateresponse.template.id, this.userdatapolicy)
           }
@@ -546,13 +554,16 @@ export default {
       if (userdatapolicy) {
         params.userdatapolicy = userdatapolicy
       }
-      api('linkUserDataToTemplate', params).then(json => {
+      postAPI('linkUserDataToTemplate', params).then(json => {
         this.closeAction()
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.loading = false
       })
+    },
+    hasOstypeidChanged () {
+      return this.form.ostypeid !== this.originalOstypeid
     }
   }
 }

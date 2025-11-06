@@ -23,10 +23,14 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.to.GPUDeviceTO;
+import com.cloud.cpu.CPU;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.gpu.VgpuProfileVO;
+import com.cloud.gpu.dao.VgpuProfileDao;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.user.Account;
@@ -77,7 +81,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public abstract class HypervisorGuruBase extends AdapterBase implements HypervisorGuru, Configurable {
@@ -102,13 +106,15 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     protected
     VMInstanceDao virtualMachineDao;
     @Inject
-    private UserVmDetailsDao _userVmDetailsDao;
+    private VMInstanceDetailsDao _vmInstanceDetailsDao;
     @Inject
     private NicSecondaryIpDao _nicSecIpDao;
     @Inject
     private ResourceManager _resourceMgr;
     @Inject
     protected ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
+    @Inject
+    protected VgpuProfileDao vgpuProfileDao;
     @Inject
     protected ServiceOfferingDao serviceOfferingDao;
     @Inject
@@ -206,7 +212,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
             }
             to.setNicSecIps(secIps);
         } else {
-            logger.warn("Unabled to load NicVO for NicProfile " + profile.getId());
+            logger.warn("Unabled to load NicVO for NicProfile {}", profile);
             //Workaround for dynamically created nics
             //FixMe: uuid and secondary IPs can be made part of nic profile
             to.setUuid(UUID.randomUUID().toString());
@@ -307,13 +313,20 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setNics(nics);
         to.setDisks(vmProfile.getDisks().toArray(new DiskTO[vmProfile.getDisks().size()]));
 
-        if (vmProfile.getTemplate().getBits() == 32) {
-            to.setArch("i686");
+        CPU.CPUArch templateArch = vmProfile.getTemplate().getArch();
+        if (templateArch != null) {
+            to.setArch(templateArch.getType());
         } else {
-            to.setArch("x86_64");
+            if (vmProfile.getTemplate().getBits() == 32) {
+                to.setArch(CPU.CPUArch.x86.getType());
+            } else if("s390x".equals(System.getProperty("os.arch"))) {
+                to.setArch("s390x");
+            } else {
+                to.setArch(CPU.CPUArch.amd64.getType());
+            }
         }
 
-        Map<String, String> detailsInVm = _userVmDetailsDao.listDetailsKeyPairs(vm.getId());
+        Map<String, String> detailsInVm = _vmInstanceDetailsDao.listDetailsKeyPairs(vm.getId());
         if (detailsInVm != null) {
             to.setDetails(detailsInVm);
             addExtraConfig(detailsInVm, to, vm.getAccountId(), vm.getHypervisorType());
@@ -323,9 +336,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
         // Set GPU details
         ServiceOfferingDetailsVO offeringDetail = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString());
-        if (offeringDetail != null) {
-            ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.pciDevice.toString());
-            to.setGpuDevice(_resourceMgr.getGPUDevice(vm.getHostId(), groupName.getValue(), offeringDetail.getValue()));
+        if (offering.getVgpuProfileId() != null || offeringDetail != null) {
+                to.setGpuDevice(getGpuDevice(offering, offeringDetail, vm, vmProfile.getHostId()));
         }
 
         // Workaround to make sure the TO has the UUID we need for Niciri integration
@@ -342,6 +354,21 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
         return to;
     }
+
+    private GPUDeviceTO getGpuDevice(ServiceOffering offering, ServiceOfferingDetailsVO offeringDetail, VirtualMachine vm, long hostId) {
+        if (offering.getVgpuProfileId() != null) {
+            VgpuProfileVO vgpuProfile = vgpuProfileDao.findById(offering.getVgpuProfileId());
+            if (vgpuProfile != null) {
+                int gpuCount = offering.getGpuCount() != null ? offering.getGpuCount() : 1;
+                return _resourceMgr.getGPUDevice(vm, hostId, vgpuProfile, gpuCount);
+            }
+        } else if (offeringDetail != null) {
+            ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.pciDevice.toString());
+            return _resourceMgr.getGPUDevice(vm.getHostId(), groupName.getValue(), offeringDetail.getValue());
+        }
+        return null;
+    }
+
 
     protected Long findClusterOfVm(VirtualMachine vm) {
         HostVO host = hostDao.findById(vm.getHostId());

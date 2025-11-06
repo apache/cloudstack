@@ -76,7 +76,7 @@
       <div class="form" v-if="userdataid">
         <div class="form__item">
           <div class="form__label">
-            <tooltip-label :title="$t('label.userdataid')"/>
+            <tooltip-label :title="$t('label.user.data.id')"/>
           </div>
           {{ userdataid }}
         </div>
@@ -84,7 +84,7 @@
       <div class="form" v-if="userdataname">
         <div class="form__item">
           <div class="form__label">
-            <tooltip-label :title="$t('label.userdataname')"/>
+            <tooltip-label :title="$t('label.user.data.name')"/>
           </div>
           {{ userdataname }}
         </div>
@@ -92,7 +92,7 @@
       <div class="form" v-if="userdatadetails">
         <div class="form__item">
           <div class="form__label">
-            <tooltip-label :title="$t('label.userdatadetails')"/>
+            <tooltip-label :title="$t('label.user.data.details')"/>
           </div>
           {{ userdatadetails }}
         </div>
@@ -100,7 +100,7 @@
       <div class="form" v-if="userdatapolicy">
         <div class="form__item">
           <div class="form__label">
-            <tooltip-label :title="$t('label.userdatapolicy')"/>
+            <tooltip-label :title="$t('label.user.data.policy')"/>
           </div>
           {{ userdatapolicy }}
         </div>
@@ -108,7 +108,7 @@
       <div class="form">
         <div class="form__item">
           <div class="form__label">
-            <tooltip-label :title="$t('label.userdata')" :tooltip="createAutoScaleVmProfileApiParams.userdata.description"/>
+            <tooltip-label :title="$t('label.user.data')" :tooltip="createAutoScaleVmProfileApiParams.userdata.description"/>
           </div>
           <a-textarea v-model:value="userdata" rows="5" :disabled="true">
           </a-textarea>
@@ -124,7 +124,7 @@
         <div class="form__item">
           <a-button ref="submit" :disabled="!('updateAutoScaleVmProfile' in $store.getters.apis) || resource.state !== 'DISABLED'" type="primary" @click="showUpdateUserDataForm = true">
             <template #icon><solution-outlined /></template>
-            {{ $t('label.reset.userdata.on.autoscale.vm.group') }}
+            {{ $t('label.reset.user.data.on.autoscale.vm.group') }}
           </a-button>
         </div>
       </div>
@@ -291,7 +291,7 @@
 
     <a-modal
       :visible="showUpdateUserDataForm"
-      :title="$t('label.reset.userdata.on.autoscale.vm.group')"
+      :title="$t('label.reset.user.data.on.autoscale.vm.group')"
       :closable="true"
       :maskClosable="false"
       :footer="null"
@@ -307,7 +307,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { isAdmin, isAdminOrDomainAdmin } from '@/role'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -409,7 +409,7 @@ export default {
       this.fetchData()
     },
     fetchUserData () {
-      api('listUsers', {
+      getAPI('listUsers', {
         domainid: this.resource.domainid,
         account: this.resource.account
       }).then(json => {
@@ -424,10 +424,11 @@ export default {
       }
       if (isAdmin()) {
         params.templatefilter = 'all'
+        params.isready = true
       } else {
         params.templatefilter = 'executable'
       }
-      api('listTemplates', params).then(json => {
+      getAPI('listTemplates', params).then(json => {
         this.templatesList = json.listtemplatesresponse?.template || []
       })
     },
@@ -439,14 +440,14 @@ export default {
       if (isAdminOrDomainAdmin()) {
         params.isrecursive = 'true'
       }
-      api('listServiceOfferings', params).then(json => {
+      getAPI('listServiceOfferings', params).then(json => {
         this.serviceOfferingsList = json.listserviceofferingsresponse?.serviceoffering || []
         this.serviceOfferingsList = this.serviceOfferingsList.filter(offering => !offering.iscustomized)
       })
     },
     fetchData () {
       this.loading = true
-      api('listAutoScaleVmProfiles', {
+      getAPI('listAutoScaleVmProfiles', {
         listAll: true,
         id: this.resource.vmprofileid
       }).then(response => {
@@ -572,7 +573,7 @@ export default {
         params['otherdeployparams[' + j + '].value'] = paramValueToAdd
       }
 
-      api('updateAutoScaleVmProfile', params).then(response => {
+      postAPI('updateAutoScaleVmProfile', params).then(response => {
         this.$pollJob({
           jobId: response.updateautoscalevmprofileresponse.jobid,
           successMethod: (result) => {
@@ -600,7 +601,7 @@ export default {
       const args = params
       const data = {}
 
-      api('updateAutoScaleVmProfile', args, httpMethod, data).then(response => {
+      postAPI('updateAutoScaleVmProfile', args, httpMethod, data).then(response => {
         this.$pollJob({
           jobId: response.updateautoscalevmprofileresponse.jobid,
           successMethod: (result) => {

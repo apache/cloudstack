@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.cpu.CPU;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -148,6 +149,11 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
           since = "4.19.0")
     private String accountName;
 
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "the CPU arch of the template. Valid options are: x86_64, aarch64. Defaults to x86_64",
+            since = "4.20.2")
+    private String arch;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -232,6 +238,10 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     public String getAccountName() {
         return accountName;
+    }
+
+    public CPU.CPUArch getArch() {
+        return CPU.CPUArch.fromType(arch);
     }
 
     // ///////////////////////////////////////////////////

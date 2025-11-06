@@ -123,17 +123,17 @@ public class ImageStoreServiceImpl extends ManagerBase implements ImageStoreServ
                 continue;
             }
             if (store.isReadonly()) {
-                logger.warn("Secondary storage: "+ id + " cannot be considered for migration as has read-only permission, Skipping it... ");
+                logger.warn("Secondary storage: {} cannot be considered for migration as has read-only permission, Skipping it... ", store);
                 continue;
             }
 
             if (!store.getProviderName().equals(DataStoreProvider.NFS_IMAGE)) {
-                logger.warn("Destination image store : " + store.getName() + " not NFS based. Store not suitable for migration!");
+                logger.warn("Destination image store : {} not NFS based. Store not suitable for migration!", store);
                 continue;
             }
 
             if (srcStoreDcId != null && store.getDataCenterId() != null && !srcStoreDcId.equals(store.getDataCenterId())) {
-                logger.warn("Source and destination stores are not in the same zone. Skipping destination store: " + store.getName());
+                logger.warn("Source and destination stores are not in the same zone. Skipping destination store: {}", store);
                 continue;
             }
 

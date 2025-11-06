@@ -24,7 +24,7 @@ public final class TemplateConstants {
     public static final String DEFAULT_SNAPSHOT_ROOT_DIR = "snapshots";
     public static final String DEFAULT_VOLUME_ROOT_DIR = "volumes";
     public static final String DEFAULT_TMPLT_FIRST_LEVEL_DIR = "tmpl/";
-
+    public static final String DEFAULT_CHECKPOINT_ROOT_DIR = "checkpoints";
     public static final String DEFAULT_SYSTEM_VM_TEMPLATE_PATH = "template/tmpl/1/";
 
     public static final int DEFAULT_TMPLT_COPY_PORT = 80;

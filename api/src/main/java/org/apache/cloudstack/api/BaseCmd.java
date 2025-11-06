@@ -39,6 +39,7 @@ import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.gpu.GpuService;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
@@ -94,6 +95,7 @@ import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.UUIDManager;
 import com.cloud.vm.UserVmService;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.snapshot.VMSnapshotService;
 
 public abstract class BaseCmd {
@@ -129,6 +131,8 @@ public abstract class BaseCmd {
     public ProjectRoleService projRoleService;
     @Inject
     public UserVmService _userVmService;
+    @Inject
+    public GpuService gpuService;
     @Inject
     public ManagementService _mgr;
     @Inject
@@ -483,5 +487,15 @@ public abstract class BaseCmd {
             }
         }
         return detailsMap;
+    }
+
+    public Map<String, String> convertExternalDetailsToMap(Map externalDetails) {
+        Map<String, String> customparameterMap = convertDetailsToMap(externalDetails);
+        Map<String, String> details = new HashMap<>();
+        for (String key : customparameterMap.keySet()) {
+            String value = customparameterMap.get(key);
+            details.put(VmDetailConstants.EXTERNAL_DETAIL_PREFIX + key, value);
+        }
+        return details;
     }
 }

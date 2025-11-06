@@ -23,7 +23,15 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.org.Cluster;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VMInstanceDetailVO;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -54,6 +62,12 @@ public class RollingMaintenanceManagerImplTest {
     HostVO host4;
     @Mock
     Cluster cluster;
+    @Mock
+    VMInstanceVO vm;
+    @Mock
+    ServiceOfferingDao serviceOfferingDao;
+    @Mock
+    VMInstanceDetailsDao vmInstanceDetailsDao;
 
     @Spy
     @InjectMocks
@@ -171,5 +185,51 @@ public class RollingMaintenanceManagerImplTest {
         Assert.assertEquals(host1, skipped.get(0).getHost());
 
         Assert.assertEquals(1, hosts.size());
+    }
+
+    @Test
+    public void testGetComputeResourcesCpuSpeedAndRamSize_ForNormalOffering() {
+        ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
+        Mockito.when(serviceOffering.isDynamic()).thenReturn(false);
+        Mockito.when(serviceOffering.getCpu()).thenReturn(1);
+        Mockito.when(serviceOffering.getSpeed()).thenReturn(500);
+        Mockito.when(serviceOffering.getRamSize()).thenReturn(512);
+
+        Mockito.when(vm.getServiceOfferingId()).thenReturn(1L);
+        Mockito.when(serviceOfferingDao.findById(1L)).thenReturn(serviceOffering);
+
+        Ternary<Integer, Integer, Integer> cpuSpeedAndRamSize = manager.getComputeResourcesCpuSpeedAndRamSize(vm);
+
+        Assert.assertEquals(1, cpuSpeedAndRamSize.first().intValue());
+        Assert.assertEquals(500, cpuSpeedAndRamSize.second().intValue());
+        Assert.assertEquals(512, cpuSpeedAndRamSize.third().intValue());
+    }
+
+    @Test
+    public void testGetComputeResourcesCpuSpeedAndRamSize_ForCustomOffering() {
+        ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
+        Mockito.when(serviceOffering.isDynamic()).thenReturn(true);
+        Mockito.when(serviceOffering.getCpu()).thenReturn(null);
+        Mockito.when(serviceOffering.getSpeed()).thenReturn(null);
+        Mockito.when(serviceOffering.getRamSize()).thenReturn(null);
+
+        List<VMInstanceDetailVO> vmDetails = new ArrayList<>();
+        VMInstanceDetailVO cpuDetail = new VMInstanceDetailVO(1L, VmDetailConstants.CPU_NUMBER, "2",  false);
+        vmDetails.add(cpuDetail);
+        VMInstanceDetailVO speedDetail = new VMInstanceDetailVO(1L, VmDetailConstants.CPU_SPEED, "1000",  false);
+        vmDetails.add(speedDetail);
+        VMInstanceDetailVO ramSizeDetail = new VMInstanceDetailVO(1L, VmDetailConstants.MEMORY, "1024",  false);
+        vmDetails.add(ramSizeDetail);
+
+        Mockito.when(vm.getId()).thenReturn(1L);
+        Mockito.when(vm.getServiceOfferingId()).thenReturn(1L);
+        Mockito.when(serviceOfferingDao.findById(1L)).thenReturn(serviceOffering);
+        Mockito.when(vmInstanceDetailsDao.listDetails(1L)).thenReturn(vmDetails);
+
+        Ternary<Integer, Integer, Integer> cpuSpeedAndRamSize = manager.getComputeResourcesCpuSpeedAndRamSize(vm);
+
+        Assert.assertEquals(2, cpuSpeedAndRamSize.first().intValue());
+        Assert.assertEquals(1000, cpuSpeedAndRamSize.second().intValue());
+        Assert.assertEquals(1024, cpuSpeedAndRamSize.third().intValue());
     }
 }
