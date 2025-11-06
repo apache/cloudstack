@@ -21,6 +21,7 @@ import java.util.EnumSet;
 import java.util.List;
 
 
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.configuration.Resource;
 import com.cloud.user.AccountManager;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -79,9 +80,7 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
         if (domain.getParentUuid() != null) {
             domainResponse.setParentDomainId(domain.getParentUuid());
         }
-        StringBuilder domainPath = new StringBuilder("ROOT");
-        (domainPath.append(domain.getPath())).deleteCharAt(domainPath.length() - 1);
-        domainResponse.setPath(domainPath.toString());
+        domainResponse.setPath(ApiResponseHelper.getPrettyDomainPath(domain.getPath()));
         if (domain.getParent() != null) {
             domainResponse.setParentDomainName(domain.getParentName());
         }

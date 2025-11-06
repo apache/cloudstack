@@ -3670,6 +3670,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 String[] offeringTagsArray = (offeringTags == null || offeringTags.isEmpty()) ? new String[0] : offeringTags.split(",");
                 if (!CollectionUtils.isSubCollection(Arrays.asList(requiredTagsArray), Arrays.asList(offeringTagsArray))) {
                     iteratorForTagsChecking.remove();
+                    count--;
                 }
             }
         }
@@ -5647,7 +5648,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         //Validation - 1.3
         if (resourceIdStr != null) {
-            resourceId = resourceManagerUtil.getResourceId(resourceIdStr, resourceType);
+            resourceId = resourceManagerUtil.getResourceId(resourceIdStr, resourceType, true);
         }
 
         List<? extends ResourceDetail> detailList = new ArrayList<>();

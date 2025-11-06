@@ -118,7 +118,7 @@ import org.apache.cloudstack.secstorage.HeuristicVO;
 import org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDao;
 import org.apache.cloudstack.secstorage.heuristics.Heuristic;
 import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
-import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplianceCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.SyncVolumePathAnswer;
 import org.apache.cloudstack.storage.command.SyncVolumePathCommand;
@@ -220,6 +220,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ManagementServer;
+import com.cloud.server.ManagementService;
 import com.cloud.server.StatsCollector;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.Storage.ImageFormat;
@@ -413,6 +414,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     ResourceManager _resourceMgr;
     @Inject
     StorageManager storageManager;
+    @Inject
+    ManagementService managementService;
 
     protected List<StoragePoolDiscoverer> _discoverers;
 
@@ -1029,6 +1032,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new PermissionDeniedException(String.format("Cannot perform this operation, Zone is currently disabled: %s", zone));
         }
 
+        managementService.checkJsInterpretationAllowedIfNeededForParameterValue(ApiConstants.IS_TAG_A_RULE,
+                Boolean.TRUE.equals(cmd.isTagARule()));
+
         Map<String, Object> params = new HashMap<>();
         params.put("zoneId", zone.getId());
         params.put("clusterId", clusterId);
@@ -1211,6 +1217,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     public PrimaryDataStoreInfo updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException {
         // Input validation
         Long id = cmd.getId();
+
+        managementService.checkJsInterpretationAllowedIfNeededForParameterValue(ApiConstants.IS_TAG_A_RULE,
+                Boolean.TRUE.equals(cmd.isTagARule()));
 
         StoragePoolVO pool = _storagePoolDao.findById(id);
         if (pool == null) {
@@ -3046,6 +3055,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     StoragePoolVO storagePoolVO = _storagePoolDao.findByUuid(datastoreName);
                     if (storagePoolVO != null) {
                         volumeVO.setPoolId(storagePoolVO.getId());
+                        volumeVO.setPoolType(storagePoolVO.getPoolType());
                     } else {
                         logger.warn("Unable to find datastore {} while updating the new datastore of the volume {}", datastoreName, volumeVO);
                     }
@@ -3069,7 +3079,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     }
 
-    private void updateStoragePoolHostVOAndBytes(StoragePool pool, long hostId, ModifyStoragePoolAnswer mspAnswer) {
+    @Override
+    public void updateStoragePoolHostVOAndBytes(StoragePool pool, long hostId, ModifyStoragePoolAnswer mspAnswer) {
         StoragePoolHostVO poolHost = _storagePoolHostDao.findByPoolHost(pool.getId(), hostId);
         if (poolHost == null) {
             poolHost = new StoragePoolHostVO(pool.getId(), hostId, mspAnswer.getPoolInfo().getLocalPath().replaceAll("//", "/"));
@@ -3079,8 +3090,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         StoragePoolVO poolVO = _storagePoolDao.findById(pool.getId());
-        poolVO.setUsedBytes(mspAnswer.getPoolInfo().getCapacityBytes() - mspAnswer.getPoolInfo().getAvailableBytes());
-        poolVO.setCapacityBytes(mspAnswer.getPoolInfo().getCapacityBytes());
+        if (!Storage.StoragePoolType.StorPool.equals(poolVO.getPoolType())) {
+            poolVO.setUsedBytes(mspAnswer.getPoolInfo().getCapacityBytes() - mspAnswer.getPoolInfo().getAvailableBytes());
+            poolVO.setCapacityBytes(mspAnswer.getPoolInfo().getCapacityBytes());
+        }
 
         _storagePoolDao.update(pool.getId(), poolVO);
     }
@@ -3611,7 +3624,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
         try {
             StorageFilerTO storageFilerTO = new StorageFilerTO(pool);
-            CheckDataStoreStoragePolicyComplainceCommand cmd = new CheckDataStoreStoragePolicyComplainceCommand(storagePolicyVO.getPolicyId(), storageFilerTO);
+            CheckDataStoreStoragePolicyComplianceCommand cmd = new CheckDataStoreStoragePolicyComplianceCommand(storagePolicyVO.getPolicyId(), storageFilerTO);
             long targetHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(hostIds.get(0), cmd);
             return _agentMgr.send(targetHostId, cmd);
         } catch (AgentUnavailableException e) {
@@ -4025,7 +4038,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             DataStoreRole.Image, store.getId());
                     if (CollectionUtils.isEmpty(stores)) {
                         List<Pair<HypervisorType, CPU.CPUArch>> hypervisorTypes =
-                                _clusterDao.listDistinctHypervisorsArchAcrossClusters(zoneId);
+                                _clusterDao.listDistinctHypervisorsAndArchExcludingExternalType(zoneId);
                         TransactionLegacy txn = TransactionLegacy.open("AutomaticTemplateRegister");
                         SystemVmTemplateRegistration systemVmTemplateRegistration = new SystemVmTemplateRegistration();
                         String filePath = null;
@@ -4048,7 +4061,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                 }
                             }
                         } catch (Exception e) {
-                            logger.error("Failed to register systemVM template(s)");
+                            logger.error("Failed to register systemVM template(s) due to: ", e);
                         } finally {
                             SystemVmTemplateRegistration.unmountStore(filePath);
                             txn.close();

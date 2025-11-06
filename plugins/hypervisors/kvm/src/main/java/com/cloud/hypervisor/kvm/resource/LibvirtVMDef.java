@@ -65,7 +65,7 @@ public class LibvirtVMDef {
             }
         }
 
-        enum BootType {
+        public enum BootType {
             UEFI("UEFI"), BIOS("BIOS");
 
             String _type;
@@ -80,7 +80,7 @@ public class LibvirtVMDef {
             }
         }
 
-        enum BootMode {
+        public enum BootMode {
             LEGACY("LEGACY"), SECURE("SECURE");
 
             String _mode;
@@ -707,7 +707,7 @@ public class LibvirtVMDef {
         }
 
         public enum DiskCacheMode {
-            NONE("none"), WRITEBACK("writeback"), WRITETHROUGH("writethrough");
+            NONE("none"), WRITEBACK("writeback"), WRITETHROUGH("writethrough"), HYPERVISOR_DEFAULT("default");
             String _diskCacheMode;
 
             DiskCacheMode(String cacheMode) {

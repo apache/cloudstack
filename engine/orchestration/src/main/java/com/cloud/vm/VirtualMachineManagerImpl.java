@@ -71,6 +71,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManag
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.ca.Certificate;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -150,11 +151,13 @@ import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
+import com.cloud.agent.api.UnmanageInstanceCommand;
 import com.cloud.agent.api.UnregisterVMCommand;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmNetworkStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.DpdkTO;
 import com.cloud.agent.api.to.GPUDeviceTO;
@@ -1482,6 +1485,21 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         volumeMgr.prepare(vmProfile, dest);
                     }
 
+                    if (params != null) {
+                        Boolean returnAfterVolumePrepare = (Boolean) params.get(VirtualMachineProfile.Param.ReturnAfterVolumePrepare);
+                        if (Boolean.TRUE.equals(returnAfterVolumePrepare)) {
+                            logger.info("Returning from VM start command execution for VM {} as requested. Volumes are prepared and ready.", vm.getUuid());
+
+                            if (!changeState(vm, Event.AgentReportStopped, destHostId, work, Step.Done)) {
+                                logger.error("Unable to transition to a new state. VM uuid: {}, VM oldstate: {}, Event: {}", vm, vm.getState(), Event.AgentReportStopped);
+                                throw new ConcurrentOperationException(String.format("Failed to deploy VM %s", vm));
+                            }
+
+                            logger.debug("Volume preparation completed for VM {} (VM state set to Stopped)", vm);
+                            return;
+                        }
+                    }
+
                     if (!reuseVolume) {
                         reuseVolume = true;
                     }
@@ -2001,7 +2019,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public boolean unmanage(String vmUuid) {
+    public Pair<Boolean, String> unmanage(String vmUuid, Long paramHostId) {
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
         if (vm == null || vm.getRemoved() != null) {
             throw new CloudRuntimeException("Could not find VM with id = " + vmUuid);
@@ -2014,6 +2032,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throw new ConcurrentOperationException(msg);
         }
 
+        Long agentHostId = vm.getHostId();
+        if (HypervisorType.KVM.equals(vm.getHypervisorType())) {
+            agentHostId = persistDomainForKVM(vm, paramHostId);
+        }
         Boolean result = Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
@@ -2037,21 +2059,66 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 return true;
             }
         });
+        HostVO host = ApiDBUtils.findHostById(agentHostId);
+        if (host == null) {
+            return new Pair<>(result, null);
+        }
+        logger.debug("Selected host UUID: {} to unmanage Instance: {}.", host.getUuid(), vm.getName());
+        ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, Domain.ROOT_DOMAIN, EventTypes.EVENT_VM_UNMANAGE,
+                String.format("Successfully unmanaged Instance: %s (ID: %s) on host ID: %s", vm.getName(), vm.getUuid(), host.getUuid()),
+                vm.getId(), ApiCommandResourceType.VirtualMachine.toString());
+        return new Pair<>(result, host.getUuid());
+    }
 
-        return BooleanUtils.isTrue(result);
+    Long persistDomainForKVM(VMInstanceVO vm, Long paramHostId) {
+        Long agentHostId = vm.getHostId();
+        String vmName = vm.getName();
+        UnmanageInstanceCommand unmanageInstanceCommand;
+        if (State.Stopped.equals(vm.getState())) {
+            if (paramHostId == null) {
+                Pair<Long, Long> clusterAndHostId = findClusterAndHostIdForVm(vm, false);
+                agentHostId = clusterAndHostId.second();
+                if (agentHostId == null) {
+                    String errorMsg = "No available host to persist domain XML for Instance: " + vmName;
+                    logger.debug(errorMsg);
+                    throw new CloudRuntimeException(errorMsg);
+                }
+            } else {
+                agentHostId = paramHostId;
+            }
+            unmanageInstanceCommand = new UnmanageInstanceCommand(prepVmSpecForUnmanageCmd(vm.getId(), agentHostId)); // reconstruct vmSpec for stopped instance
+        } else {
+            unmanageInstanceCommand = new UnmanageInstanceCommand(vmName);
+            unmanageInstanceCommand.setConfigDriveAttached(vmInstanceDetailsDao.findDetail(vm.getId(), VmDetailConstants.CONFIG_DRIVE_LOCATION) != null);
+        }
+
+        logger.debug("Selected host ID: {} to persist domain XML for Instance: {}.", agentHostId, vmName);
+        try {
+            Answer answer = _agentMgr.send(agentHostId, unmanageInstanceCommand);
+            if (!answer.getResult()) {
+                String errorMsg = "Failed to persist domain XML for Instance: " + vmName + " on host ID: " + agentHostId;
+                logger.debug(errorMsg);
+                throw new CloudRuntimeException(errorMsg);
+            }
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            String errorMsg = "Failed to send command to persist domain XML for Instance: " + vmName + " on host ID: " + agentHostId;
+            logger.error(errorMsg, e);
+            throw new CloudRuntimeException(errorMsg);
+        }
+        return agentHostId;
     }
 
     /**
      * Clean up VM snapshots (if any) from DB
      */
-    private void unmanageVMSnapshots(VMInstanceVO vm) {
+    void unmanageVMSnapshots(VMInstanceVO vm) {
         _vmSnapshotMgr.deleteVMSnapshotsFromDB(vm.getId(), true);
     }
 
     /**
      * Clean up volumes for a VM to be unmanaged from CloudStack
      */
-    private void unmanageVMVolumes(VMInstanceVO vm) {
+    void unmanageVMVolumes(VMInstanceVO vm) {
         final Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
         if (hostId != null) {
             volumeMgr.revokeAccess(vm.getId(), hostId);
@@ -2069,7 +2136,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      * - If 'unmanage.vm.preserve.nics' = true: then the NICs are not removed but still Allocated, to preserve MAC addresses
      * - If 'unmanage.vm.preserve.nics' = false: then the NICs are removed while unmanaging
      */
-    private void unmanageVMNics(VirtualMachineProfile profile, VMInstanceVO vm) {
+    void unmanageVMNics(VirtualMachineProfile profile, VMInstanceVO vm) {
         logger.debug("Cleaning up NICs of {}.", vm.toString());
         Boolean preserveNics = UnmanagedVMsManager.UnmanageVMPreserveNic.valueIn(vm.getDataCenterId());
         if (BooleanUtils.isTrue(preserveNics)) {
@@ -2792,6 +2859,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
             volume.setPath(result.getPath());
             volume.setPoolId(pool.getId());
+            volume.setPoolType(pool.getPoolType());
             if (result.getChainInfo() != null) {
                 volume.setChainInfo(result.getChainInfo());
             }
@@ -4004,6 +4072,62 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         vmTo.setEnterHardwareSetup(enterSetup == null ? false : enterSetup);
     }
 
+    /**
+     * This method helps constructing vmSpec for Unmanage operation for Stopped Instance
+     * @param vmId
+     * @param hostId
+     * @return VirtualMachineTO
+     */
+    protected VirtualMachineTO prepVmSpecForUnmanageCmd(Long vmId, Long hostId) {
+        final VMInstanceVO vm = _vmDao.findById(vmId);
+        final Account owner = _entityMgr.findById(Account.class, vm.getAccountId());
+        final ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
+        final VirtualMachineTemplate template = _entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, vm.getTemplateId());
+        Host host = _hostDao.findById(hostId);
+        VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, template, offering, owner, null);
+        updateOverCommitRatioForVmProfile(vmProfile, host.getClusterId());
+        final List<NicVO> nics = _nicsDao.listByVmId(vmProfile.getId());
+        Collections.sort(nics, (nic1, nic2) -> {
+            Long nicId1 = Long.valueOf(nic1.getDeviceId());
+            Long nicId2 = Long.valueOf(nic2.getDeviceId());
+            return nicId1.compareTo(nicId2);
+        });
+
+        for (final NicVO nic : nics) {
+            final Network network = _networkModel.getNetwork(nic.getNetworkId());
+            final NicProfile nicProfile =
+                    new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null, _networkModel.isSecurityGroupSupportedInNetwork(network),
+                            _networkModel.getNetworkTag(vmProfile.getHypervisorType(), network));
+            vmProfile.addNic(nicProfile);
+        }
+
+        List<VolumeVO> volumes = _volsDao.findUsableVolumesForInstance(vmId);
+        for (VolumeVO vol: volumes) {
+            VolumeInfo volumeInfo = volumeDataFactory.getVolume(vol.getId());
+            DataTO dataTO = volumeInfo.getTO();
+            DiskTO disk = storageMgr.getDiskWithThrottling(dataTO, vol.getVolumeType(), vol.getDeviceId(), vol.getPath(), vm.getServiceOfferingId(), vol.getDiskOfferingId());
+            vmProfile.addDisk(disk);
+        }
+
+        Map<String, String> details = vmInstanceDetailsDao.listDetailsKeyPairs(vmId,
+                List.of(VirtualMachineProfile.Param.BootType.getName(), VirtualMachineProfile.Param.BootMode.getName(),
+                        VirtualMachineProfile.Param.UefiFlag.getName()));
+
+        if (details.containsKey(VirtualMachineProfile.Param.BootType.getName())) {
+            vmProfile.getParameters().put(VirtualMachineProfile.Param.BootType, details.get(VirtualMachineProfile.Param.BootType.getName()));
+        }
+
+        if (details.containsKey(VirtualMachineProfile.Param.BootMode.getName())) {
+            vmProfile.getParameters().put(VirtualMachineProfile.Param.BootMode, details.get(VirtualMachineProfile.Param.BootMode.getName()));
+        }
+
+        if (details.containsKey(VirtualMachineProfile.Param.UefiFlag.getName())) {
+            vmProfile.getParameters().put(VirtualMachineProfile.Param.UefiFlag, details.get(VirtualMachineProfile.Param.UefiFlag.getName()));
+        }
+
+        return toVmTO(vmProfile);
+    }
+
     protected VirtualMachineTO getVmTO(Long vmId) {
         final VMInstanceVO vm = _vmDao.findById(vmId);
         final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
@@ -5121,7 +5245,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 VmConfigDriveLabel, VmConfigDriveOnPrimaryPool, VmConfigDriveForceHostCacheUse, VmConfigDriveUseHostCacheOnUnsupportedPool,
                 HaVmRestartHostUp, ResourceCountRunningVMsonly, AllowExposeHypervisorHostname, AllowExposeHypervisorHostnameAccountLevel, SystemVmRootDiskSize,
                 AllowExposeDomainInMetadata, MetadataCustomCloudName, VmMetadataManufacturer, VmMetadataProductName,
-                VmSyncPowerStateTransitioning
+                VmSyncPowerStateTransitioning, SystemVmEnableUserData
         };
     }
 
@@ -6170,8 +6294,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         host = host == null ? _hostDao.findById(hostId) : host;
         if (host != null) {
             clusterId = host.getClusterId();
+            return new Pair<>(clusterId, hostId);
         }
-        return new Pair<>(clusterId, hostId);
+        return findClusterAndHostIdForVmFromVolumes(vm.getId());
     }
 
     private Pair<Long, Long> findClusterAndHostIdForVm(VirtualMachine vm) {

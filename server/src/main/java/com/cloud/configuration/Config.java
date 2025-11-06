@@ -25,7 +25,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
@@ -256,14 +255,6 @@ public enum Config {
             "8081",
             "Load Balancer(haproxy) stats port number.",
             null),
-    NetworkLBHaproxyMaxConn(
-            "Network",
-            ManagementServer.class,
-            Integer.class,
-            "network.loadbalancer.haproxy.max.conn",
-            "4096",
-            "Load Balancer(haproxy) maximum number of concurrent connections(global max)",
-            null),
     NetworkRouterRpFilter(
             "Network",
             ManagementServer.class,
@@ -404,96 +395,6 @@ public enum Config {
             "service monitoring in router enable/disable option, default false", null),
 
 
-    // Console Proxy
-    ConsoleProxyCapacityStandby(
-            "Console Proxy",
-            AgentManager.class,
-            String.class,
-            "consoleproxy.capacity.standby",
-            "10",
-            "The minimal number of console proxy viewer sessions that system is able to serve immediately(standby capacity)",
-            null),
-    ConsoleProxyCapacityScanInterval(
-            "Console Proxy",
-            AgentManager.class,
-            String.class,
-            "consoleproxy.capacityscan.interval",
-            "30000",
-            "The time interval(in millisecond) to scan whether or not system needs more console proxy to ensure minimal standby capacity",
-            null),
-    ConsoleProxyCmdPort(
-            "Console Proxy",
-            AgentManager.class,
-            Integer.class,
-            "consoleproxy.cmd.port",
-            "8001",
-            "Console proxy command port that is used to communicate with management server",
-            null),
-    ConsoleProxyRestart(
-        "Console Proxy",
-        AgentManager.class,
-        Boolean.class,
-        "consoleproxy.restart",
-        "true",
-        "Console proxy restart flag, defaulted to true",
-        null),
-    ConsoleProxyUrlDomain(
-        "Console Proxy",
-        AgentManager.class,
-        String.class,
-        "consoleproxy.url.domain",
-        "",
-        "Console proxy url domain",
-        "domainName,privateip"),
-    ConsoleProxySessionMax(
-            "Console Proxy",
-            AgentManager.class,
-            Integer.class,
-            "consoleproxy.session.max",
-            String.valueOf(ConsoleProxyManager.DEFAULT_PROXY_CAPACITY),
-            "The max number of viewer sessions console proxy is configured to serve for",
-            null),
-    ConsoleProxySessionTimeout(
-            "Console Proxy",
-            AgentManager.class,
-            Integer.class,
-            "consoleproxy.session.timeout",
-            "300000",
-            "Timeout(in milliseconds) that console proxy tries to maintain a viewer session before it times out the session for no activity",
-            null),
-    ConsoleProxyDisableRpFilter(
-            "Console Proxy",
-            AgentManager.class,
-            Boolean.class,
-            "consoleproxy.disable.rpfilter",
-            "true",
-            "disable rp_filter on console proxy VM public interface",
-            null),
-    ConsoleProxyLaunchMax(
-            "Console Proxy",
-            AgentManager.class,
-            Integer.class,
-            "consoleproxy.launch.max",
-            "10",
-            "maximum number of console proxy instances per zone can be launched",
-            null),
-    ConsoleProxyManagementState(
-            "Console Proxy",
-            AgentManager.class,
-            String.class,
-            "consoleproxy.management.state",
-            com.cloud.consoleproxy.ConsoleProxyManagementState.Auto.toString(),
-            "console proxy service management state",
-            null),
-    ConsoleProxyManagementLastState(
-            "Console Proxy",
-            AgentManager.class,
-            String.class,
-            "consoleproxy.management.state.last",
-            com.cloud.consoleproxy.ConsoleProxyManagementState.Auto.toString(),
-            "last console proxy service management state",
-            null),
-
     // Snapshots
 
     SnapshotPollInterval(
@@ -504,7 +405,6 @@ public enum Config {
             "300",
             "The time interval in seconds when the management server polls for snapshots to be scheduled.",
             null),
-    KVMSnapshotEnabled("Hidden", SnapshotManager.class, Boolean.class, "kvm.snapshot.enabled", "false", "Whether volume snapshot is enabled on running instances on a KVM host", null),
 
     // Advanced
     EventPurgeInterval(
@@ -1587,14 +1487,6 @@ public enum Config {
             "false",
             "Should be set to true, if there will be multiple NetScaler devices providing EIP service in a zone",
             null),
-    ConsoleProxyServiceOffering(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "consoleproxy.service.offering",
-            null,
-            "Uuid of the service offering used by console proxy; if NULL - system offering will be used",
-            null),
     SecondaryStorageServiceOffering(
             "Advanced",
             ManagementServer.class,
@@ -1799,6 +1691,7 @@ public enum Config {
 
     SSVMPSK("Hidden", ManagementServer.class, String.class, "upload.post.secret.key", "", "PSK with SSVM", null);
 
+
     private final String _category;
     private final Class<?> _componentClass;
     private final Class<?> _type;
@@ -1812,11 +1705,11 @@ public enum Config {
 
     private static final HashMap<Integer, List<Config>> s_scopeLevelConfigsMap = new HashMap<>();
     static {
-        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Zone.getBitValue(), new ArrayList<Config>());
-        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Cluster.getBitValue(), new ArrayList<Config>());
-        s_scopeLevelConfigsMap.put(ConfigKey.Scope.StoragePool.getBitValue(), new ArrayList<Config>());
-        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Account.getBitValue(), new ArrayList<Config>());
-        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Global.getBitValue(), new ArrayList<Config>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Zone.getBitValue(), new ArrayList<>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Cluster.getBitValue(), new ArrayList<>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.StoragePool.getBitValue(), new ArrayList<>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Account.getBitValue(), new ArrayList<>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Global.getBitValue(), new ArrayList<>());
 
         for (Config c : Config.values()) {
             //Creating group of parameters per each level (zone/cluster/pool/account)
@@ -1829,23 +1722,22 @@ public enum Config {
         }
     }
 
-    private static final HashMap<String, List<Config>> Configs = new HashMap<String, List<Config>>();
+    private static final HashMap<String, List<Config>> Configs = new HashMap<>();
     static {
         // Add categories
-        Configs.put("Alert", new ArrayList<Config>());
-        Configs.put("Storage", new ArrayList<Config>());
-        Configs.put("Snapshots", new ArrayList<Config>());
-        Configs.put("Network", new ArrayList<Config>());
-        Configs.put("Usage", new ArrayList<Config>());
-        Configs.put("Console Proxy", new ArrayList<Config>());
-        Configs.put("Advanced", new ArrayList<Config>());
-        Configs.put("Usage", new ArrayList<Config>());
-        Configs.put("Developer", new ArrayList<Config>());
-        Configs.put("Hidden", new ArrayList<Config>());
-        Configs.put("Account Defaults", new ArrayList<Config>());
-        Configs.put("Domain Defaults", new ArrayList<Config>());
-        Configs.put("Project Defaults", new ArrayList<Config>());
-        Configs.put("Secure", new ArrayList<Config>());
+        Configs.put("Account Defaults", new ArrayList<>());
+        Configs.put("Advanced", new ArrayList<>());
+        Configs.put("Alert", new ArrayList<>());
+        Configs.put("Console Proxy", new ArrayList<>());
+        Configs.put("Developer", new ArrayList<>());
+        Configs.put("Domain Defaults", new ArrayList<>());
+        Configs.put("Hidden", new ArrayList<>());
+        Configs.put("Network", new ArrayList<>());
+        Configs.put("Secure", new ArrayList<>());
+        Configs.put("Snapshots", new ArrayList<>());
+        Configs.put("Storage", new ArrayList<>());
+        Configs.put("Usage", new ArrayList<>());
+        Configs.put("Project Defaults", new ArrayList<>());
 
         // Add values into HashMap
         for (Config c : Config.values()) {
@@ -1856,11 +1748,11 @@ public enum Config {
         }
     }
 
-    private Config(String category, Class<?> componentClass, Class<?> type, String name, String defaultValue, String description, String range) {
+    Config(String category, Class<?> componentClass, Class<?> type, String name, String defaultValue, String description, String range) {
         this(category, componentClass, type, name, defaultValue, description, range, null, null);
     }
 
-    private Config(String category, Class<?> componentClass, Class<?> type, String name, String defaultValue, String description, String range, ConfigKey.Kind kind, String options) {
+    Config(String category, Class<?> componentClass, Class<?> type, String name, String defaultValue, String description, String range, ConfigKey.Kind kind, String options) {
         _category = category;
         _componentClass = componentClass;
         _type = type;
@@ -1965,7 +1857,7 @@ public enum Config {
 
     public static List<String> getCategories() {
         Object[] keys = Configs.keySet().toArray();
-        List<String> categories = new ArrayList<String>();
+        List<String> categories = new ArrayList<>();
         for (Object key : keys) {
             categories.add((String)key);
         }

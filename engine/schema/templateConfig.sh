@@ -94,5 +94,5 @@ PARENTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )/dist/systemvm-
 mkdir -p $PARENTPATH
 METADATAFILE=${PARENTPATH}"metadata.ini"
 echo > $METADATAFILE
-SOURCEFILE=${PARENTPATH}'md5sum.txt'
+SOURCEFILE=${PARENTPATH}'sha512sum.txt'
 createMetadataFile

@@ -1030,31 +1030,51 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         return adapter.delete(new TemplateProfile(userId, template, zoneId));
     }
 
+    private Boolean templateIsUnusedInPool(VMTemplateStoragePoolVO templatePoolVO) {
+        VMTemplateVO template = _tmpltDao.findByIdIncludingRemoved(templatePoolVO.getTemplateId());
+
+        // If this is a routing template, consider it in use
+        if (template.getTemplateType() == TemplateType.SYSTEM) {
+            return false;
+        }
+
+        // If the template is not yet downloaded to the pool, consider it in use
+        if (templatePoolVO.getDownloadState() != Status.DOWNLOADED) {
+            return false;
+        }
+
+        if (template.getFormat() == ImageFormat.ISO || _volumeDao.isAnyVolumeActivelyUsingTemplateOnPool(template.getId(), templatePoolVO.getPoolId())) {
+            return false;
+        }
+        return true;
+    }
+
     @Override
     public List<VMTemplateStoragePoolVO> getUnusedTemplatesInPool(StoragePoolVO pool) {
         List<VMTemplateStoragePoolVO> unusedTemplatesInPool = new ArrayList<VMTemplateStoragePoolVO>();
         List<VMTemplateStoragePoolVO> allTemplatesInPool = _tmpltPoolDao.listByPoolId(pool.getId());
 
         for (VMTemplateStoragePoolVO templatePoolVO : allTemplatesInPool) {
-            VMTemplateVO template = _tmpltDao.findByIdIncludingRemoved(templatePoolVO.getTemplateId());
-
-            // If this is a routing template, consider it in use
-            if (template.getTemplateType() == TemplateType.SYSTEM) {
-                continue;
-            }
-
-            // If the template is not yet downloaded to the pool, consider it in
-            // use
-            if (templatePoolVO.getDownloadState() != Status.DOWNLOADED) {
-                continue;
-            }
-
-            if (template.getFormat() != ImageFormat.ISO && !_volumeDao.isAnyVolumeActivelyUsingTemplateOnPool(template.getId(), pool.getId())) {
+            if (templateIsUnusedInPool(templatePoolVO)) {
                 unusedTemplatesInPool.add(templatePoolVO);
             }
         }
-
         return unusedTemplatesInPool;
+    }
+
+    @Override
+    public void evictTemplateFromStoragePoolsForZones(Long templateId, List<Long> zoneIds) {
+        List<Long> poolIds = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(zoneIds)) {
+            List<StoragePoolVO> pools = _poolDao.listByDataCenterIds(zoneIds);
+            poolIds = pools.stream().map(StoragePoolVO::getId).collect(Collectors.toList());
+        }
+        List<VMTemplateStoragePoolVO> templateStoragePoolVOS = _tmpltPoolDao.listByPoolIdsAndTemplate(poolIds, templateId);
+        for (VMTemplateStoragePoolVO templateStoragePoolVO: templateStoragePoolVOS) {
+            if (templateIsUnusedInPool(templateStoragePoolVO)) {
+                evictTemplateFromStoragePool(templateStoragePoolVO);
+            }
+        }
     }
 
     @Override
@@ -1692,18 +1712,17 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             if (store == null) {
                 throw new CloudRuntimeException("cannot find an image store for zone " + zoneId);
             }
-            AsyncCallFuture<TemplateApiResult> future = null;
+            AsyncCallFuture<TemplateApiResult> future;
 
             if (snapshotId != null) {
                 DataStoreRole dataStoreRole = snapshotHelper.getDataStoreRole(snapshot, zoneId);
-                kvmSnapshotOnlyInPrimaryStorage = snapshotHelper.isKvmSnapshotOnlyInPrimaryStorage(snapshot, dataStoreRole, zoneId);
-
                 snapInfo = _snapshotFactory.getSnapshotWithRoleAndZone(snapshotId, dataStoreRole, zoneId);
-                boolean kvmIncrementalSnapshot = SnapshotManager.kvmIncrementalSnapshot.valueIn(_hostDao.findClusterIdByVolumeInfo(snapInfo.getBaseVolume()));
 
-                boolean skipCopyToSecondary = false;
-                boolean keepOnPrimary = snapshotHelper.isStorageSupportSnapshotToTemplate(snapInfo);
-                if (keepOnPrimary) {
+                boolean storageSupportsSnapshotToTemplate = snapshotHelper.isStorageSupportSnapshotToTemplate(snapInfo);
+                if (storageSupportsSnapshotToTemplate) {
+                    kvmSnapshotOnlyInPrimaryStorage = snapshotHelper.isKvmSnapshotOnlyInPrimaryStorage(snapshot, dataStoreRole, zoneId);
+                    logger.debug("Creating template from snapshot for storage supporting snapshot to template, with dataStore role {} and on primary storage: {}", dataStoreRole, kvmSnapshotOnlyInPrimaryStorage);
+
                     ImageStoreVO imageStore = _imgStoreDao.findOneByZoneAndProtocol(zoneId, "nfs");
                     if (imageStore == null) {
                         throw new CloudRuntimeException(String.format("Could not find an NFS secondary storage pool on zone %s to use as a temporary location " +
@@ -1713,15 +1732,23 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     if (dataStore != null) {
                         store = dataStore;
                     }
-                } else if (dataStoreRole == DataStoreRole.Image) {
-                    snapInfo = snapshotHelper.backupSnapshotToSecondaryStorageIfNotExists(snapInfo, dataStoreRole, snapshot, kvmSnapshotOnlyInPrimaryStorage);
-                    _accountMgr.checkAccess(caller, null, true, snapInfo);
-                    DataStore snapStore = snapInfo.getDataStore();
+                } else {
+                    dataStoreRole = snapshotHelper.getDataStoreRole(snapshot);
+                    kvmSnapshotOnlyInPrimaryStorage = snapshotHelper.isKvmSnapshotOnlyInPrimaryStorage(snapshot, dataStoreRole);
+                    snapInfo = _snapshotFactory.getSnapshotWithRoleAndZone(snapshotId, dataStoreRole, zoneId);
+                    logger.debug("Creating template from snapshot, with dataStore role {} and on primary storage: {}", dataStoreRole, kvmSnapshotOnlyInPrimaryStorage);
+                    if (dataStoreRole == DataStoreRole.Image || kvmSnapshotOnlyInPrimaryStorage) {
+                        snapInfo = snapshotHelper.backupSnapshotToSecondaryStorageIfNotExists(snapInfo, dataStoreRole, snapshot, kvmSnapshotOnlyInPrimaryStorage);
+                        _accountMgr.checkAccess(caller, null, true, snapInfo);
+                        DataStore snapStore = snapInfo.getDataStore();
 
-                    if (snapStore != null) {
-                        store = snapStore; // pick snapshot image store to create template
+                        if (snapStore != null) {
+                            store = snapStore; // pick snapshot image store to create template
+                        }
                     }
                 }
+
+                boolean kvmIncrementalSnapshot = SnapshotManager.kvmIncrementalSnapshot.valueIn(_hostDao.findClusterIdByVolumeInfo(snapInfo.getBaseVolume()));
                 if (kvmIncrementalSnapshot && DataStoreRole.Image.equals(dataStoreRole)) {
                     snapInfo = snapshotHelper.convertSnapshotIfNeeded(snapInfo);
                 }
@@ -1829,7 +1856,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         if (cmd.getTemplateTag() != null) {
-            if (!_accountService.isRootAdmin(caller)) {
+            if (!CallContext.current().isCallingAccountRootAdmin()) {
                 throw new PermissionDeniedException("Parameter templatetag can only be specified by a Root Admin, permission denied");
             }
         }
@@ -2177,7 +2204,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         // do a permission check
         _accountMgr.checkAccess(account, AccessType.OperateEntry, true, template);
         if (cmd.isRoutingType() != null) {
-            if (!_accountService.isRootAdmin(account)) {
+            if (!CallContext.current().isCallingAccountRootAdmin()) {
                 throw new PermissionDeniedException("Parameter isrouting can only be specified by a Root Admin, permission denied");
             }
         }
@@ -2332,7 +2359,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     public TemplateType validateTemplateType(BaseCmd cmd, boolean isAdmin, boolean isCrossZones, HypervisorType hypervisorType) {
-        if (!(cmd instanceof UpdateTemplateCmd) && !(cmd instanceof RegisterTemplateCmd)) {
+        if (!(cmd instanceof UpdateTemplateCmd) && !(cmd instanceof RegisterTemplateCmd) && !(cmd instanceof GetUploadParamsForTemplateCmd)) {
             return null;
         }
         TemplateType templateType = null;
@@ -2344,6 +2371,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         } else if (cmd instanceof RegisterTemplateCmd) {
             newType = ((RegisterTemplateCmd)cmd).getTemplateType();
             isRoutingType = ((RegisterTemplateCmd)cmd).isRoutingType();
+        } else if (cmd instanceof GetUploadParamsForTemplateCmd) {
+            newType = ((GetUploadParamsForTemplateCmd)cmd).getTemplateType();
+            isRoutingType = ((GetUploadParamsForTemplateCmd)cmd).isRoutingType();
         }
         if (newType != null) {
             try {
@@ -2427,7 +2457,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {AllowPublicUserTemplates, TemplatePreloaderPoolSize, ValidateUrlIsResolvableBeforeRegisteringTemplate};
+        return new ConfigKey<?>[] {AllowPublicUserTemplates,
+                TemplatePreloaderPoolSize,
+                ValidateUrlIsResolvableBeforeRegisteringTemplate,
+                TemplateDeleteFromPrimaryStorage};
     }
 
     public List<TemplateAdapter> getTemplateAdapters() {

@@ -2795,6 +2795,8 @@ public class VolumeServiceImpl implements VolumeService {
         } catch (CloudRuntimeException cre) {
             logger.error("Take snapshot: {} failed", volume, cre);
             throw cre;
+        } catch (UnsupportedOperationException ex) {
+            throw ex;
         } catch (Exception e) {
             if (logger.isDebugEnabled()) {
                 logger.debug("unknown exception while taking snapshot for volume {} was caught", volume, e);

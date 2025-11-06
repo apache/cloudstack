@@ -315,14 +315,14 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             , "enables/disables checking of ipaddresses from a proxy set header. See \"proxy.header.names\" for the headers to allow."
             , true
             , ConfigKey.Scope.Global);
-    static final ConfigKey<String> listOfForwardHeaders = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK
+    public static final ConfigKey<String> listOfForwardHeaders = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK
             , String.class
             , "proxy.header.names"
             , "X-Forwarded-For,HTTP_CLIENT_IP,HTTP_X_FORWARDED_FOR"
             , "a list of names to check for allowed ipaddresses from a proxy set header. See \"proxy.cidr\" for the proxies allowed to set these headers."
             , true
             , ConfigKey.Scope.Global);
-    static final ConfigKey<String> proxyForwardList = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK
+    public static final ConfigKey<String> proxyForwardList = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK
             , String.class
             , "proxy.cidr"
             , ""

@@ -404,7 +404,7 @@ public class SystemVmTemplateRegistrationTest {
             Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.KVM;
             CPU.CPUArch arch = CPU.CPUArch.getDefault();
             hypervisorArchList.add(new Pair<>(hypervisorType, arch));
-            doReturn(hypervisorArchList).when(clusterDao).listDistinctHypervisorsArchAcrossClusters(zoneId);
+            doReturn(hypervisorArchList).when(clusterDao).listDistinctHypervisorsAndArchExcludingExternalType(zoneId);
             SystemVmTemplateRegistration.MetadataTemplateDetails details =
                     Mockito.mock(SystemVmTemplateRegistration.MetadataTemplateDetails.class);
             String name = "existing";
