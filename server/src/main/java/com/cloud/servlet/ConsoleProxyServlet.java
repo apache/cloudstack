@@ -534,7 +534,7 @@ public class ConsoleProxyServlet extends HttpServlet {
             // if api/secret key are passed to the parameters
             if ((signature == null) || (apiKey == null)) {
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("expired session, missing signature, or missing apiKey -- ignoring request...sig: " + signature + ", apiKey: " + apiKey);
+                    LOGGER.debug("expired session, missing signature, or missing apiKey -- ignoring request");
                 }
                 return false; // no signature, bad request
             }

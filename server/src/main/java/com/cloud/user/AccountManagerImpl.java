@@ -3006,7 +3006,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
             if ((signature == null) || (timestamp == 0L)) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Missing parameters in login request, signature = " + signature + ", timestamp = " + timestamp);
+                    logger.debug("Missing parameters in login request, signature present: " + 
+                     (signature != null) + ", timestamp = " + timestamp);
                 }
                 return null;
             }
