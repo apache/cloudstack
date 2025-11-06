@@ -3934,7 +3934,7 @@ public class UserVmManagerImplTest {
         CreateVMFromBackupCmd cmd = new CreateVMFromBackupCmd();
         cmd._accountService = accountService;
         cmd._entityMgr = entityManager;
-        when(accountService.finalyzeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
+        when(accountService.finalizeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
         when(accountService.getActiveAccountById(accountId)).thenReturn(account);
 
         ReflectionTestUtils.setField(cmd, "serviceOfferingId", serviceOfferingId);
@@ -4000,7 +4000,7 @@ public class UserVmManagerImplTest {
         CreateVMFromBackupCmd cmd = new CreateVMFromBackupCmd();
         cmd._accountService = accountService;
         cmd._entityMgr = entityManager;
-        when(accountService.finalyzeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
+        when(accountService.finalizeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
         when(accountService.getActiveAccountById(accountId)).thenReturn(account);
 
         ReflectionTestUtils.setField(cmd, "serviceOfferingId", serviceOfferingId);
