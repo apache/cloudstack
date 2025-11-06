@@ -47,7 +47,7 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
 
     @Override
     public boolean isEligible(final Host host) {
-       if (outOfBandManagementService.isOutOfBandManagementEnabled(host)){
+       if (outOfBandManagementService.isOutOfBandManagementEnabled(host)) {
             return !isInMaintenanceMode(host) && !isDisabled(host) &&
                     hostActivityChecker.getNeighbors(host).length > 0 &&
                     (Hypervisor.HypervisorType.KVM.equals(host.getHypervisorType()) ||
@@ -57,45 +57,54 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
     }
 
     @Override
-    public boolean isHealthy(final Host r) throws HACheckerException {
-        return hostActivityChecker.isHealthy(r);
+    public boolean isHealthy(final Host host) throws HACheckerException {
+        return hostActivityChecker.isHealthy(host);
     }
 
     @Override
-    public boolean hasActivity(final Host r, final DateTime suspectTime) throws HACheckerException {
-        return hostActivityChecker.isActive(r, suspectTime);
+    public boolean hasActivity(final Host host, final DateTime suspectTime) throws HACheckerException {
+        return hostActivityChecker.isActive(host, suspectTime);
     }
 
     @Override
-    public boolean recover(Host r) throws HARecoveryException {
+    public boolean recover(Host host) throws HARecoveryException {
         try {
-            if (outOfBandManagementService.isOutOfBandManagementEnabled(r)){
-                final OutOfBandManagementResponse resp = outOfBandManagementService.executePowerOperation(r, PowerOperation.RESET, null);
+            if (outOfBandManagementService.isOutOfBandManagementEnabled(host)) {
+                final OutOfBandManagementResponse resp = outOfBandManagementService.executePowerOperation(host, PowerOperation.RESET, null);
                 return resp.getSuccess();
             } else {
-                logger.warn("OOBM recover operation failed for the host {}", r);
+                logger.warn("OOBM recover operation failed for the host {}", host);
                 return false;
             }
-        } catch (Exception e){
-            logger.warn("OOBM service is not configured or enabled for this host {} error is {}", r, e.getMessage());
-            throw new HARecoveryException(String.format(" OOBM service is not configured or enabled for this host %s", r), e);
+        } catch (Exception e) {
+            String msg = "Failed to recover host " + host;
+            if (host != null && !outOfBandManagementService.isOutOfBandManagementEnabledForHost(host.getId())) {
+                msg = "OOBM service is not configured or enabled for this host " + host;
+            }
+
+            logger.warn("{}, error is {}", msg, e.getMessage());
+            throw new HARecoveryException(msg, e);
         }
     }
 
     @Override
-    public boolean fence(Host r) throws HAFenceException {
-
+    public boolean fence(Host host) throws HAFenceException {
         try {
-            if (outOfBandManagementService.isOutOfBandManagementEnabled(r)){
-                final OutOfBandManagementResponse resp = outOfBandManagementService.executePowerOperation(r, PowerOperation.OFF, null);
+            if (outOfBandManagementService.isOutOfBandManagementEnabled(host)){
+                final OutOfBandManagementResponse resp = outOfBandManagementService.executePowerOperation(host, PowerOperation.OFF, null);
                 return resp.getSuccess();
             } else {
-                logger.warn("OOBM fence operation failed for this host {}", r);
+                logger.warn("OOBM fence operation failed for this host {}", host);
                 return false;
             }
-        } catch (Exception e){
-            logger.warn("OOBM service is not configured or enabled for this host {} error is {}", r, e.getMessage());
-            throw new HAFenceException(String.format("OBM service is not configured or enabled for this host %s", r.getName()), e);
+        } catch (Exception e) {
+            String msg = "Failed to fence host " + host;
+            if (host != null && !outOfBandManagementService.isOutOfBandManagementEnabledForHost(host.getId())) {
+                msg = "OOBM service is not configured or enabled for this host " + host;
+            }
+
+            logger.warn("{}, error is {}", msg, e.getMessage());
+            throw new HAFenceException(msg, e);
         }
     }
 
