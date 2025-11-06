@@ -102,7 +102,8 @@ public class UriUtils {
         return file.toURI().toString();
     }
 
-    // a simple URI component helper (Note: it does not deal with URI paramemeter area)
+    // a simple URI component helper (Note: it does not deal with URI paramemeter
+    // area)
     public static String encodeURIComponent(String url) {
         int schemeTail = url.indexOf("://");
 
@@ -136,7 +137,8 @@ public class UriUtils {
     }
 
     public static boolean hostAndPathPresent(URI uri) {
-        return !(uri.getHost() == null || uri.getHost().trim().isEmpty() || uri.getPath() == null || uri.getPath().trim().isEmpty());
+        return !(uri.getHost() == null || uri.getHost().trim().isEmpty() || uri.getPath() == null
+                || uri.getPath().trim().isEmpty());
     }
 
     public static boolean cifsCredentialsPresent(URI uri) {
@@ -171,7 +173,8 @@ public class UriUtils {
                 String value = null;
                 if ("password".equalsIgnoreCase(param.getName()) &&
                         param.getValue() != null) {
-                    value = encrypt ? DBEncryptionUtil.encrypt(param.getValue()) : DBEncryptionUtil.decrypt(param.getValue());
+                    value = encrypt ? DBEncryptionUtil.encrypt(param.getValue())
+                            : DBEncryptionUtil.decrypt(param.getValue());
                 } else {
                     value = param.getValue();
                 }
@@ -216,7 +219,7 @@ public class UriUtils {
     // Get the size of a file from URL response header.
     public static long getRemoteSize(String url, Boolean followRedirect) {
         long remoteSize = 0L;
-        final String[] methods = new String[]{"HEAD", "GET"};
+        final String[] methods = new String[] { "HEAD", "GET" };
         IllegalArgumentException exception = null;
         // Attempting first a HEAD request to avoid downloading the whole file. If
         // it fails (for example with S3 presigned URL), fallback on a standard GET
@@ -225,7 +228,7 @@ public class UriUtils {
             HttpURLConnection httpConn = null;
             try {
                 URI uri = new URI(url);
-                httpConn = (HttpURLConnection)uri.toURL().openConnection();
+                httpConn = (HttpURLConnection) uri.toURL().openConnection();
                 httpConn.setRequestMethod(method);
                 httpConn.setConnectTimeout(2000);
                 httpConn.setReadTimeout(5000);
@@ -268,16 +271,25 @@ public class UriUtils {
 
     /**
      * Verifies whether the provided URL is valid.
-     * @param skipHostCheck if false, this function will verify whether the provided URL is resolvable, if it is a legal address and if it does not use IPv6 (configured by `skipIpv6Check`). If any of these conditions are false, an exception will be thrown.
-     * @param skipIpv6Check if false, this function will verify whether the host uses IPv6 and, if it does, an exception will be thrown. This check is also skipped if `skipHostCheck` is true.
+     * 
+     * @param skipHostCheck if false, this function will verify whether the provided
+     *                      URL is resolvable, if it is a legal address and if it
+     *                      does not use IPv6 (configured by `skipIpv6Check`). If
+     *                      any of these conditions are false, an exception will be
+     *                      thrown.
+     * @param skipIpv6Check if false, this function will verify whether the host
+     *                      uses IPv6 and, if it does, an exception will be thrown.
+     *                      This check is also skipped if `skipHostCheck` is true.
      * @return a pair containing the host and the corresponding port.
      * @throws IllegalArgumentException if the provided URL is invalid.
      */
-    public static Pair<String, Integer> validateUrl(String format, String url, boolean skipHostCheck, boolean skipIpv6Check) throws IllegalArgumentException {
+    public static Pair<String, Integer> validateUrl(String format, String url, boolean skipHostCheck,
+            boolean skipIpv6Check) throws IllegalArgumentException {
         try {
             URI uri = new URI(url);
             if ((uri.getScheme() == null) ||
-                    (!uri.getScheme().equalsIgnoreCase("http") && !uri.getScheme().equalsIgnoreCase("https") && !uri.getScheme().equalsIgnoreCase("file"))) {
+                    (!uri.getScheme().equalsIgnoreCase("http") && !uri.getScheme().equalsIgnoreCase("https")
+                            && !uri.getScheme().equalsIgnoreCase("file"))) {
                 throw new IllegalArgumentException("Unsupported scheme for url: " + url);
             }
 
@@ -305,21 +317,26 @@ public class UriUtils {
     }
 
     /**
-     * Verifies whether the provided host is valid. Throws an `IllegalArgumentException` if:
+     * Verifies whether the provided host is valid. Throws an
+     * `IllegalArgumentException` if:
      * <ul>
-     *     <li>The host is not resolvable;</li>
-     *     <li>The host address is illegal (any local, link local, loopback or multicast address);</li>
-     *     <li>The host uses IPv6. This check is skipped if `skipIv6Check` is set to true.</li>
+     * <li>The host is not resolvable;</li>
+     * <li>The host address is illegal (any local, link local, loopback or multicast
+     * address);</li>
+     * <li>The host uses IPv6. This check is skipped if `skipIv6Check` is set to
+     * true.</li>
      * </ul>
      */
     private static void checkHost(String host, boolean skipIpv6Check) {
         try {
             InetAddress hostAddr = InetAddress.getByName(host);
-            if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress()) {
+            if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress()
+                    || hostAddr.isMulticastAddress()) {
                 throw new IllegalArgumentException("Illegal host specified in URL.");
             }
             if (!skipIpv6Check && hostAddr instanceof Inet6Address) {
-                throw new IllegalArgumentException(String.format("IPv6 addresses are not supported (%s).", hostAddr.getHostAddress()));
+                throw new IllegalArgumentException(
+                        String.format("IPv6 addresses are not supported (%s).", hostAddr.getHostAddress()));
             }
         } catch (UnknownHostException uhe) {
             throw new IllegalArgumentException(String.format("Unable to resolve %s.", host));
@@ -327,14 +344,16 @@ public class UriUtils {
     }
 
     /**
-     * Add element to priority list examining node attributes: priority (for urls) and type (for checksums)
+     * Add element to priority list examining node attributes: priority (for urls)
+     * and type (for checksums)
      */
-    protected static void addPriorityListElementExaminingNode(String tagName, Node node, List<Pair<String, Integer>> priorityList) {
+    protected static void addPriorityListElementExaminingNode(String tagName, Node node,
+            List<Pair<String, Integer>> priorityList) {
         Integer priority = Integer.MAX_VALUE;
         String first = node.getTextContent();
         if (node.hasAttributes()) {
             NamedNodeMap attributes = node.getAttributes();
-            for (int k=0; k<attributes.getLength(); k++) {
+            for (int k = 0; k < attributes.getLength(); k++) {
                 Node attr = attributes.item(k);
                 if (tagName.equals("url") && attr.getNodeName().equals("priority")) {
                     String prio = attr.getNodeValue().replace("\"", "");
@@ -370,7 +389,8 @@ public class UriUtils {
     }
 
     /**
-     * Retrieve values from XML documents ordered by ascending priority for each tag name
+     * Retrieve values from XML documents ordered by ascending priority for each tag
+     * name
      */
     public static Map<String, List<String>> getMultipleValuesFromXML(InputStream is, String[] tagNames) {
         Map<String, List<String>> returnValues = new HashMap<String, List<String>>();
@@ -400,7 +420,8 @@ public class UriUtils {
     }
 
     /**
-     * Get list of urls on metalink ordered by ascending priority (for those which priority tag is not defined, highest priority value is assumed)
+     * Get list of urls on metalink ordered by ascending priority (for those which
+     * priority tag is not defined, highest priority value is assumed)
      */
     public static List<String> getMetalinkUrls(String metalinkUrl) {
         HttpClient httpClient = getHttpClient();
@@ -417,7 +438,7 @@ public class UriUtils {
         try {
             InputStream is = getMethod.getResponseBodyAsStream();
             if (status == HttpStatus.SC_OK) {
-                Map<String, List<String>> metalinkUrlsMap = getMultipleValuesFromXML(is, new String[] {"url"});
+                Map<String, List<String>> metalinkUrlsMap = getMultipleValuesFromXML(is, new String[] { "url" });
                 if (metalinkUrlsMap.containsKey("url")) {
                     List<String> metalinkUrls = metalinkUrlsMap.get("url");
                     urls.addAll(metalinkUrls);
@@ -450,16 +471,16 @@ public class UriUtils {
         return builder.build();
     }
 
-    private final static Map<String, Set<String>> SUPPORTED_EXTENSIONS_BY_FORMAT =
-            ImmutableMap.<String, Set<String>>builder()
-                        .put("vhd", buildExtensionSet(false, "vhd"))
-                        .put("vhdx", buildExtensionSet(false, "vhdx"))
-                        .put("qcow2", buildExtensionSet(true, "qcow2", "img"))
-                        .put("ova", buildExtensionSet(true, "ova"))
-                        .put("tar", buildExtensionSet(false, "tar"))
-                        .put("raw", buildExtensionSet(false, "img", "raw"))
-                        .put("vmdk", buildExtensionSet(false, "vmdk"))
-                        .put("iso", buildExtensionSet(true, "iso"))
+    private final static Map<String, Set<String>> SUPPORTED_EXTENSIONS_BY_FORMAT = ImmutableMap
+            .<String, Set<String>>builder()
+            .put("vhd", buildExtensionSet(false, "vhd"))
+            .put("vhdx", buildExtensionSet(false, "vhdx"))
+            .put("qcow2", buildExtensionSet(true, "qcow2", "img"))
+            .put("ova", buildExtensionSet(true, "ova"))
+            .put("tar", buildExtensionSet(false, "tar"))
+            .put("raw", buildExtensionSet(false, "img", "raw"))
+            .put("vmdk", buildExtensionSet(false, "vmdk"))
+            .put("iso", buildExtensionSet(true, "iso"))
             .build();
 
     public final static Set<String> getSupportedExtensions(String format) {
@@ -471,24 +492,23 @@ public class UriUtils {
         final String lowerCaseUri = uripath.toLowerCase();
 
         final boolean unknownExtensionForFormat = SUPPORTED_EXTENSIONS_BY_FORMAT.get(format.toLowerCase())
-                                                                                .stream()
-                                                                                .noneMatch(lowerCaseUri::endsWith);
+                .stream()
+                .noneMatch(lowerCaseUri::endsWith);
 
         if (unknownExtensionForFormat) {
-            final Predicate<Set<String>> uriMatchesAnyExtension =
-                    supportedExtensions -> supportedExtensions.stream()
-                                                              .anyMatch(lowerCaseUri::endsWith);
+            final Predicate<Set<String>> uriMatchesAnyExtension = supportedExtensions -> supportedExtensions.stream()
+                    .anyMatch(lowerCaseUri::endsWith);
 
             boolean unknownExtension = SUPPORTED_EXTENSIONS_BY_FORMAT.values()
-                                                                     .stream()
-                                                                     .noneMatch(uriMatchesAnyExtension);
+                    .stream()
+                    .noneMatch(uriMatchesAnyExtension);
 
             if (unknownExtension) {
                 throw new IllegalArgumentException("Please specify a valid " + format.toLowerCase());
             }
 
             throw new IllegalArgumentException("Please specify a valid URL. "
-                                                       + "URL:" + uripath + " is an invalid for the format " + format.toLowerCase());
+                    + "URL:" + uripath + " is an invalid for the format " + format.toLowerCase());
         }
     }
 
@@ -500,8 +520,10 @@ public class UriUtils {
             if ((user != null) && (password != null)) {
                 httpclient.getParams().setAuthenticationPreemptive(true);
                 Credentials defaultcreds = new UsernamePasswordCredentials(user, password);
-                httpclient.getState().setCredentials(new AuthScope(hostAndPort.first(), hostAndPort.second(), AuthScope.ANY_REALM), defaultcreds);
-                LOGGER.info("Added username=" + user + ", password=" + password + "for host " + hostAndPort.first() + ":" + hostAndPort.second());
+                httpclient.getState().setCredentials(
+                        new AuthScope(hostAndPort.first(), hostAndPort.second(), AuthScope.ANY_REALM), defaultcreds);
+                LOGGER.info("Added username=" + user + ", password=****** " + "for host " + hostAndPort.first() + ":"
+                        + hostAndPort.second());
             }
             // Execute the method.
             GetMethod method = new GetMethod(url);
@@ -521,6 +543,7 @@ public class UriUtils {
 
     /**
      * Expands a given vlan URI to a list of vlan IDs
+     * 
      * @param vlanAuthority the URI part without the vlan:// scheme
      * @return returns list of vlan integer ids
      */
@@ -529,7 +552,7 @@ public class UriUtils {
         if (StringUtils.isEmpty(vlanAuthority)) {
             return expandedVlans;
         }
-        for (final String vlanPart: vlanAuthority.split(",")) {
+        for (final String vlanPart : vlanAuthority.split(",")) {
             if (StringUtils.isEmpty(vlanPart)) {
                 continue;
             }
@@ -554,6 +577,7 @@ public class UriUtils {
 
     /**
      * Checks if given vlan URI authorities overlap
+     * 
      * @param vlanRange1
      * @param vlanRange2
      * @return true if they overlap
@@ -652,10 +676,10 @@ public class UriUtils {
         String hostInfo = (firstAt == -1) ? url : StringUtils.substring(url, firstAt + 1, url.length());
 
         int firstSlash = StringUtils.indexOf(hostInfo, "/");
-        int lastColon = StringUtils.lastIndexOf(hostInfo,":");
-        int lastSquareBracket = StringUtils.lastIndexOf(hostInfo,"]");
-        int endOfHost = lastColon == -1 ? (firstSlash > 0 ? firstSlash : hostInfo.length() + 1) :
-                (lastSquareBracket > lastColon ? lastSquareBracket + 1 : lastColon);
+        int lastColon = StringUtils.lastIndexOf(hostInfo, ":");
+        int lastSquareBracket = StringUtils.lastIndexOf(hostInfo, "]");
+        int endOfHost = lastColon == -1 ? (firstSlash > 0 ? firstSlash : hostInfo.length() + 1)
+                : (lastSquareBracket > lastColon ? lastSquareBracket + 1 : lastColon);
         String storageHosts = StringUtils.substring(hostInfo, 0, endOfHost);
         String firstHost = storageHosts.split(",")[0];
         String strAfterHosts = StringUtils.substring(hostInfo, endOfHost);
