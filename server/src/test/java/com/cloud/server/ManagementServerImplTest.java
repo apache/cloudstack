@@ -1134,10 +1134,6 @@ public class ManagementServerImplTest {
         DiskOfferingVO diskOffering = mockSharedDiskOffering(1L);
         Mockito.when(diskOfferingDao.findById(volume.getDiskOfferingId())).thenReturn(diskOffering);
 
-        // No UEFI detail - VM is NOT UEFI-enabled
-        Mockito.when(userVmDetailsDao.findDetail(vm.getId(), ApiConstants.BootType.UEFI.toString()))
-            .thenReturn(null);
-
         // Mock searchForServers for cluster-scoped search
         HostVO host1 = mockHost(101L, 1L, 1L, 1L, HypervisorType.KVM);
         HostVO host2 = mockHost(102L, 1L, 1L, 1L, HypervisorType.KVM);
@@ -1206,7 +1202,7 @@ public class ManagementServerImplTest {
         List<HostVO> uefiCompatibleHosts = List.of(host1);
         Pair<Boolean, List<HostVO>> uefiFilterResult = new Pair<>(true, uefiCompatibleHosts);
         Mockito.doReturn(uefiFilterResult).when(spy).filterUefiHostsForMigration(
-            Mockito.anyList(), Mockito.isNull(), Mockito.any());
+            Mockito.anyList(), Mockito.anyList(), Mockito.any());
 
         // Setup other mocks
         Mockito.when(dpdkHelper.isVMDpdkEnabled(vm.getId())).thenReturn(false);
@@ -1351,7 +1347,7 @@ public class ManagementServerImplTest {
         // This simulates the scenario where UEFI VM has no compatible hosts
         Pair<Boolean, List<HostVO>> uefiFilterResult = new Pair<>(false, null);
         Mockito.doReturn(uefiFilterResult).when(spy).filterUefiHostsForMigration(
-            Mockito.anyList(), Mockito.isNull(), Mockito.any());
+            Mockito.anyList(), Mockito.anyList(), Mockito.any());
 
         // Note: No other mocks needed because when filterUefiHostsForMigration returns false,
         // the method returns early and doesn't proceed to host allocation or other processing
@@ -1747,7 +1743,7 @@ public class ManagementServerImplTest {
         // Set up mocks without volume since there are no volumes
         Pair<Boolean, List<HostVO>> uefiResult = new Pair<>(true, hosts);
         Mockito.doReturn(uefiResult).when(spy).filterUefiHostsForMigration(
-            Mockito.anyList(), Mockito.isNull(), Mockito.any());
+            Mockito.anyList(), Mockito.anyList(), Mockito.any());
         Mockito.when(dpdkHelper.isVMDpdkEnabled(vm.getId())).thenReturn(false);
         Mockito.when(affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId())).thenReturn(0L);
         DataCenterVO dc = Mockito.mock(DataCenterVO.class);
@@ -2174,10 +2170,6 @@ public class ManagementServerImplTest {
         // 1. Version with filteredHosts list (used when canMigrateWithStorage = true)
         Mockito.when(hostAllocator.allocateTo(Mockito.any(), Mockito.any(), Mockito.any(),
             Mockito.any(), Mockito.anyList(), Mockito.anyInt(), Mockito.anyBoolean()))
-            .thenReturn(new ArrayList<>(targetHosts));
-        // 2. Version without filteredHosts list (used when canMigrateWithStorage = false)
-        Mockito.when(hostAllocator.allocateTo(Mockito.any(), Mockito.any(), Mockito.any(),
-            Mockito.any(), Mockito.anyInt(), Mockito.anyBoolean()))
             .thenReturn(new ArrayList<>(targetHosts));
     }
 
