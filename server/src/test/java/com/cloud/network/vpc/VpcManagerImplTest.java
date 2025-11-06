@@ -397,7 +397,6 @@ public class VpcManagerImplTest {
         Mockito.when(networkOfferingServiceMapDao.listByNetworkOfferingId(anyLong())).thenReturn(serviceMap);
         Mockito.when(vpcMock.getCidr()).thenReturn("10.0.0.0/8");
         Mockito.when(vpcMock.getNetworkDomain()).thenReturn("cs1cloud.internal");
-        Mockito.when(manager.existsVpcDomainRouterWithSufficientNicCapacity(VPC_ID)).thenReturn(true);
         Mockito.doNothing().when(manager).checkIfVpcNumberOfTiersIsNotExceeded(Mockito.anyLong(), Mockito.any());
 
         manager.validateNewVpcGuestNetwork("10.10.10.0/24", "10.10.10.1", accountMock, vpcMock, "cs1cloud.internal");
@@ -612,46 +611,41 @@ public class VpcManagerImplTest {
     @Test
     public void existsVpcDomainRouterWithSufficientNicCapacityTestUnavailableRoutersReturnsFalse() {
         Mockito.when(networkDao.countVpcNetworks(vpcId)).thenReturn(7L);
-        Mockito.when(routerDao.findOneByVpcId(vpcId)).thenReturn(domainRouterVOMock);
         Mockito.when(domainRouterVOMock.getId()).thenReturn(1L);
+        Mockito.when(domainRouterVOMock.getVpcId()).thenReturn(vpcId);
         Mockito.when(domainRouterJoinDaoMock.countDefaultNetworksById(1L)).thenReturn(2);
         Mockito.when(networkOrchestrationServiceMock.getVirtualMachineMaxNicsValue(domainRouterVOMock)).thenReturn(9);
 
-        boolean result = manager.existsVpcDomainRouterWithSufficientNicCapacity(vpcId);
+        boolean result = manager.existsVpcDomainRouterWithSufficientNicCapacity(domainRouterVOMock);
 
         Assert.assertFalse(result);
     }
 
     @Test
     public void existsVpcDomainRouterWithSufficientNicCapacityTestRouterIncompatibleHypervisorTypeReturnsTrue() {
-        Mockito.when(routerDao.findOneByVpcId(vpcId)).thenReturn(domainRouterVOMock);
         Mockito.when(domainRouterVOMock.getId()).thenReturn(1L);
         Mockito.when(domainRouterJoinDaoMock.countDefaultNetworksById(1L)).thenReturn(2);
         Mockito.when(networkOrchestrationServiceMock.getVirtualMachineMaxNicsValue(domainRouterVOMock)).thenReturn(null);
 
-        boolean result = manager.existsVpcDomainRouterWithSufficientNicCapacity(vpcId);
+        boolean result = manager.existsVpcDomainRouterWithSufficientNicCapacity(domainRouterVOMock);
 
         Assert.assertTrue(result);
     }
 
     @Test
     public void existsVpcDomainRouterWithSufficientNicCapacityTestAvailableRouterReturnsTrue() {
-        Mockito.when(networkDao.countVpcNetworks(vpcId)).thenReturn(6L);
-        Mockito.when(routerDao.findOneByVpcId(vpcId)).thenReturn(domainRouterVOMock);
         Mockito.when(domainRouterVOMock.getId()).thenReturn(1L);
         Mockito.when(domainRouterJoinDaoMock.countDefaultNetworksById(1L)).thenReturn(2);
         Mockito.when(networkOrchestrationServiceMock.getVirtualMachineMaxNicsValue(domainRouterVOMock)).thenReturn(9);
 
-        boolean result = manager.existsVpcDomainRouterWithSufficientNicCapacity(vpcId);
+        boolean result = manager.existsVpcDomainRouterWithSufficientNicCapacity(domainRouterVOMock);
 
         Assert.assertTrue(result);
     }
 
     @Test
     public void existsVpcDomainRouterWithSufficientNicCapacityTestNullRouterReturnsFalse() {
-        Mockito.when(routerDao.findOneByVpcId(vpcId)).thenReturn(null);
-
-        boolean result = manager.existsVpcDomainRouterWithSufficientNicCapacity(vpcId);
+        boolean result = manager.existsVpcDomainRouterWithSufficientNicCapacity(domainRouterVOMock);
 
         Assert.assertFalse(result);
     }
@@ -667,7 +661,8 @@ public class VpcManagerImplTest {
     @Test
     public void checkIfVpcHasDomainRouterWithSufficientNicCapacityTestDomainRoutersWithoutCapacityThrowsCloudRuntimeException() {
         Mockito.doReturn(vpcId).when(vpcMock).getId();
-        Mockito.doReturn(false).when(manager).existsVpcDomainRouterWithSufficientNicCapacity(vpcId);
+        Mockito.doReturn(domainRouterVOMock).when(routerDao).findOneByVpcId(vpcId);
+        Mockito.doReturn(false).when(manager).existsVpcDomainRouterWithSufficientNicCapacity(domainRouterVOMock);
 
         Assert.assertThrows(CloudRuntimeException.class, () -> manager.checkIfVpcHasDomainRouterWithSufficientNicCapacity(vpcMock));
     }

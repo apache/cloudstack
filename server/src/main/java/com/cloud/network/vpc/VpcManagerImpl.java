@@ -2228,15 +2228,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         });
     }
 
-    protected boolean existsVpcDomainRouterWithSufficientNicCapacity(long vpcId) {
-        DomainRouterVO vpcDomainRouter = routerDao.findOneByVpcId(vpcId);
-
-        if (vpcDomainRouter == null) {
-            return false;
-        }
-
+    protected boolean existsVpcDomainRouterWithSufficientNicCapacity(DomainRouterVO vpcDomainRouter) {
         int countRouterDefaultNetworks = domainRouterJoinDao.countDefaultNetworksById(vpcDomainRouter.getId());
-        long countVpcNetworks = _ntwkDao.countVpcNetworks(vpcId);
+        long countVpcNetworks = _ntwkDao.countVpcNetworks(vpcDomainRouter.getVpcId());
 
         Integer routerMaxNicsValue = networkOrchestrationService.getVirtualMachineMaxNicsValue(vpcDomainRouter);
 
@@ -2259,7 +2253,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     protected void checkIfVpcHasDomainRouterWithSufficientNicCapacity(Vpc vpc) {
-        if (!existsVpcDomainRouterWithSufficientNicCapacity(vpc.getId())) {
+        DomainRouterVO vpcDomainRouter = routerDao.findOneByVpcId(vpc.getId());
+        if (vpcDomainRouter == null) {
+            logger.warn("No virtual router found for VPC {}. Skipping VR NIC capacity check.", vpc.getUuid());
+            return;
+        }
+
+        if (!existsVpcDomainRouterWithSufficientNicCapacity(vpcDomainRouter)) {
             logger.warn("Failed to create a new VPC Guest Network because no virtual routers were found with sufficient NIC capacity. The number of VPC Guest networks cannot exceed the number of NICs a virtual router can have.");
             throw new CloudRuntimeException(String.format("No available virtual router found to deploy new Guest Network on VPC [%s].", vpc.getName()));
         }
