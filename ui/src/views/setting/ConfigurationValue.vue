@@ -328,6 +328,9 @@ export default {
         [this.scopeKey]: this.$route.params?.id,
         name: configrecord.name
       }
+      if (this.scopeKey === 'domainid' && !params[this.scopeKey]) {
+        params[this.scopeKey] = this.resource?.id
+      }
       postAPI('resetConfiguration', params).then(json => {
         this.editableValue = this.getEditableValue(json.resetconfigurationresponse.configuration)
         this.actualValue = this.editableValue
