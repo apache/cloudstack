@@ -42,10 +42,14 @@ import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.mom.webhook.dao.WebhookDao;
 import org.apache.cloudstack.mom.webhook.dao.WebhookDeliveryDao;
+import org.apache.cloudstack.mom.webhook.dao.WebhookFilterDao;
 import org.apache.cloudstack.mom.webhook.vo.WebhookDeliveryVO;
+import org.apache.cloudstack.mom.webhook.vo.WebhookFilterVO;
 import org.apache.cloudstack.mom.webhook.vo.WebhookVO;
+import org.apache.cloudstack.utils.cache.LazyCache;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.webhook.WebhookHelper;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.api.query.vo.EventJoinVO;
@@ -75,13 +79,17 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
     @Inject
     WebhookDao webhookDao;
     @Inject
-    protected WebhookDeliveryDao webhookDeliveryDao;
+    WebhookDeliveryDao webhookDeliveryDao;
+    @Inject
+    WebhookFilterDao webhookFilterDao;
     @Inject
     ManagementServerHostDao managementServerHostDao;
     @Inject
     DomainDao domainDao;
     @Inject
     AccountManager accountManager;
+
+    private LazyCache<Long, List<WebhookFilterVO>> webhookFiltersCache;
 
     protected WebhookDeliveryThread getDeliveryJob(Event event, Webhook webhook, Pair<Integer, Integer> configs) {
         WebhookDeliveryThread.WebhookDeliveryContext<WebhookDeliveryThread.WebhookDeliveryResult> context =
@@ -97,13 +105,74 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
         return job;
     }
 
+    protected String getEventValueByFilterType(Event event, WebhookFilter.Type filterType) {
+        if (WebhookFilter.Type.EventType.equals(filterType)) {
+            return event.getEventType();
+        }
+        return null;
+    }
+
+    protected boolean isValueMatchingFilter(String eventValue, WebhookFilter.MatchType matchType, String filterValue) {
+        switch (matchType) {
+            case Exact:
+                return eventValue.equals(filterValue);
+            case Prefix:
+                return eventValue.startsWith(filterValue);
+            case Suffix:
+                return eventValue.endsWith(filterValue);
+            case Contains:
+                return eventValue.contains(filterValue);
+            default:
+                return false;
+        }
+    }
+
+    protected boolean isEventMatchingFilters(Event event, List<? extends WebhookFilter> filters) {
+        if (CollectionUtils.isEmpty(filters)) {
+            return true;
+        }
+
+        boolean hasAnyInclude = false;
+        boolean anyIncludeMatched = false;
+
+        // First pass: short-circuit on any Exclude match; track Include presence/match
+        for (WebhookFilter f : filters) {
+            final WebhookFilter.Type type = f.getType();
+            String eventValue = getEventValueByFilterType(event, type);
+
+            if (f.getMode() == WebhookFilter.Mode.Exclude) {
+                if (eventValue != null && isValueMatchingFilter(eventValue, f.getMatchType(), f.getValue())) {
+                    logger.trace("{} matched Exclude {}, webhook delivery will be skipped", event, f);
+                    return false;
+                }
+                continue;
+            }
+
+            if (f.getMode() == WebhookFilter.Mode.Include) {
+                hasAnyInclude = true;
+                if (!anyIncludeMatched && eventValue != null &&
+                        isValueMatchingFilter(eventValue, f.getMatchType(), f.getValue())) {
+                    logger.trace("{} matched Include {}", event, f);
+                    anyIncludeMatched = true;
+                }
+            }
+        }
+
+        // If there were includes, we must have matched at least one; otherwise allow by default
+        if (hasAnyInclude && !anyIncludeMatched) {
+            return false;
+        }
+
+        return true;
+    }
+
     protected List<Runnable> getDeliveryJobs(Event event) throws EventBusException {
         List<Runnable> jobs = new ArrayList<>();
         if (!EventCategory.ACTION_EVENT.getName().equals(event.getEventCategory())) {
             return jobs;
         }
         if (event.getResourceAccountId() == null) {
-            logger.warn("Skipping delivering event {} to any webhook as account ID is missing", event);
+            logger.warn("Skipping delivering {} to any webhook as account ID is missing", event);
             throw new EventBusException(String.format("Account missing for the event ID: %s", event.getEventUuid()));
         }
         List<Long> domainIds = new ArrayList<>();
@@ -115,6 +184,11 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
                 webhookDao.listByEnabledForDelivery(event.getResourceAccountId(), domainIds);
         Map<Long, Pair<Integer, Integer>> domainConfigs = new HashMap<>();
         for (WebhookVO webhook : webhooks) {
+            List<? extends WebhookFilter> filters = webhookFiltersCache.get(webhook.getId());
+            if (!isEventMatchingFilters(event, filters)) {
+                logger.debug("Skipping delivering {} to {} as it doesn't match filters", event, webhook);
+                continue;
+            }
             if (!domainConfigs.containsKey(webhook.getDomainId())) {
                 domainConfigs.put(webhook.getDomainId(),
                         new Pair<>(WebhookDeliveryTries.valueIn(webhook.getDomainId()),
@@ -207,6 +281,10 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+         webhookFiltersCache = new LazyCache<>(
+                 16, 60,
+                (webhookId) -> webhookFilterDao.listByWebhook(webhookId)
+         );
         try {
             webhookJobExecutor = Executors.newFixedThreadPool(WebhookDeliveryThreadPoolSize.value(),
                     new NamedThreadFactory(WEBHOOK_JOB_POOL_THREAD_PREFIX));
@@ -295,6 +373,11 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
             throw new CloudRuntimeException("Failed to execute test webhook delivery");
         }
         return webhookDeliveryVO;
+    }
+
+    @Override
+    public void invalidateWebhookFiltersCache(long webhookId) {
+        webhookFiltersCache.invalidate(webhookId);
     }
 
     @Override

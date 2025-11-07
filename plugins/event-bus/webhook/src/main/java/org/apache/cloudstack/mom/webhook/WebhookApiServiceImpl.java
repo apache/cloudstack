@@ -29,23 +29,31 @@ import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.mom.webhook.api.command.user.AddWebhookFilterCmd;
 import org.apache.cloudstack.mom.webhook.api.command.user.CreateWebhookCmd;
 import org.apache.cloudstack.mom.webhook.api.command.user.DeleteWebhookCmd;
 import org.apache.cloudstack.mom.webhook.api.command.user.DeleteWebhookDeliveryCmd;
+import org.apache.cloudstack.mom.webhook.api.command.user.DeleteWebhookFilterCmd;
 import org.apache.cloudstack.mom.webhook.api.command.user.ExecuteWebhookDeliveryCmd;
 import org.apache.cloudstack.mom.webhook.api.command.user.ListWebhookDeliveriesCmd;
+import org.apache.cloudstack.mom.webhook.api.command.user.ListWebhookFiltersCmd;
 import org.apache.cloudstack.mom.webhook.api.command.user.ListWebhooksCmd;
 import org.apache.cloudstack.mom.webhook.api.command.user.UpdateWebhookCmd;
 import org.apache.cloudstack.mom.webhook.api.response.WebhookDeliveryResponse;
+import org.apache.cloudstack.mom.webhook.api.response.WebhookFilterResponse;
 import org.apache.cloudstack.mom.webhook.api.response.WebhookResponse;
 import org.apache.cloudstack.mom.webhook.dao.WebhookDao;
 import org.apache.cloudstack.mom.webhook.dao.WebhookDeliveryDao;
 import org.apache.cloudstack.mom.webhook.dao.WebhookDeliveryJoinDao;
+import org.apache.cloudstack.mom.webhook.dao.WebhookFilterDao;
 import org.apache.cloudstack.mom.webhook.dao.WebhookJoinDao;
 import org.apache.cloudstack.mom.webhook.vo.WebhookDeliveryJoinVO;
 import org.apache.cloudstack.mom.webhook.vo.WebhookDeliveryVO;
+import org.apache.cloudstack.mom.webhook.vo.WebhookFilterVO;
 import org.apache.cloudstack.mom.webhook.vo.WebhookJoinVO;
 import org.apache.cloudstack.mom.webhook.vo.WebhookVO;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -83,6 +91,8 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
     WebhookDeliveryDao webhookDeliveryDao;
     @Inject
     WebhookDeliveryJoinDao webhookDeliveryJoinDao;
+    @Inject
+    WebhookFilterDao webhookFilterDao;
     @Inject
     ManagementServerHostDao managementServerHostDao;
     @Inject
@@ -223,6 +233,25 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         String error = String.format("Payload URL: %s is already in use by another webhook", payloadUrl);
         logger.error(String.format("%s: %s for Account [%s]", error, webhookVO, owner));
         throw new InvalidParameterValueException(error);
+    }
+
+    protected WebhookFilterResponse createWebhookFilterResponse(WebhookFilter webhookFilter, WebhookVO webhookVO) {
+        WebhookFilterResponse response = new WebhookFilterResponse();
+        response.setObjectName("webhookfilter");
+        response.setId(webhookFilter.getUuid());
+        if (webhookVO == null) {
+            webhookVO = webhookDao.findById(webhookFilter.getWebhookId());
+        }
+        if (webhookVO != null) {
+            response.setWebhookId(webhookVO.getUuid());
+            response.setWebhookName(webhookVO.getName());
+        }
+        response.setType(webhookFilter.getType().toString());
+        response.setMode(webhookFilter.getMode().toString());
+        response.setMatchType(webhookFilter.getMatchType().toString());
+        response.setValue(webhookFilter.getValue());
+        response.setCreated(webhookFilter.getCreated());
+        return response;
     }
 
     @Override
@@ -427,7 +456,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
             updateNeeded = true;
         }
         if (sslVerification != null) {
-            if (Boolean.TRUE.equals(sslVerification) && !HttpConstants.HTTPS.equalsIgnoreCase(uri.getScheme())) {
+            if (sslVerification && !HttpConstants.HTTPS.equalsIgnoreCase(uri.getScheme())) {
                 throw new InvalidParameterValueException(
                         String.format("SSL verification can be specified only for HTTPS URLs, %s", payloadUrl));
             }
@@ -507,8 +536,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
 
     @Override
     public WebhookDeliveryResponse executeWebhookDelivery(ExecuteWebhookDeliveryCmd cmd) throws CloudRuntimeException {
-        final CallContext ctx = CallContext.current();
-        final Account caller = ctx.getCallingAccount();
+        final Account caller = CallContext.current().getCallingAccount();
         final Long deliveryId = cmd.getId();
         final Long webhookId = cmd.getWebhookId();
         final String payloadUrl = getNormalizedPayloadUrl(cmd.getPayloadUrl());
@@ -520,6 +548,10 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         if (ObjectUtils.allNull(deliveryId, webhookId) && StringUtils.isBlank(payloadUrl)) {
             throw new InvalidParameterValueException(String.format("One of the %s, %s or %s must be specified",
                     ApiConstants.ID, ApiConstants.WEBHOOK_ID, ApiConstants.PAYLOAD_URL));
+        }
+        if (deliveryId != null && webhookId != null) {
+            throw new InvalidParameterValueException(
+                    String.format("Only one of the %s or %s can be specified", ApiConstants.ID, ApiConstants.WEBHOOK_ID));
         }
         WebhookDeliveryVO existingDelivery = null;
         WebhookVO webhook = null;
@@ -545,8 +577,11 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
                 webhook.setSecretKey(secretKey);
             }
             if (sslVerification != null) {
-                webhook.setSslVerification(Boolean.TRUE.equals(sslVerification));
+                webhook.setSslVerification(sslVerification);
             }
+        }
+        if (webhook != null) {
+            accountManager.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, false, webhook);
         }
         if (ObjectUtils.allNull(deliveryId, webhookId)) {
             webhook = new WebhookVO(owner.getDomainId(), owner.getId(), payloadUrl, secretKey,
@@ -560,6 +595,80 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
     }
 
     @Override
+    public ListResponse<WebhookFilterResponse> listWebhookFilters(ListWebhookFiltersCmd cmd) throws CloudRuntimeException {
+        Pair<List<WebhookFilterVO>, Integer> filtersAndCount = webhookFilterDao.searchBy(cmd.getId(), cmd.getWebhookId(),
+                        cmd.getStartIndex(), cmd.getPageSizeVal());
+        List<WebhookFilterResponse> responsesList = new ArrayList<>();
+        WebhookVO webhookVO = null;
+        if (filtersAndCount.second() > 0) {
+            webhookVO = webhookDao.findById(filtersAndCount.first().get(0).getWebhookId());
+        }
+        for (WebhookFilterVO filter : filtersAndCount.first()) {
+            WebhookFilterResponse response = createWebhookFilterResponse(filter, webhookVO);
+            responsesList.add(response);
+        }
+        ListResponse<WebhookFilterResponse> response = new ListResponse<>();
+        response.setResponses(responsesList, responsesList.size());
+        return response;
+    }
+
+    @Override
+    public WebhookFilterResponse addWebhookFilter(AddWebhookFilterCmd cmd) throws CloudRuntimeException {
+        final Account caller = CallContext.current().getCallingAccount();
+        final long id = cmd.getId();
+        final String typeStr = cmd.getType();
+        final String modeStr = cmd.getMode();
+        final String matchTypeStr = cmd.getMatchType();
+        final String value = cmd.getValue();
+        WebhookVO webhook = webhookDao.findById(id);
+        if (webhook == null) {
+            throw new InvalidParameterValueException("Unable to find the webhook with the specified ID");
+        }
+        accountManager.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, false, webhook);
+        WebhookFilter.Type type = EnumUtils.getEnum(WebhookFilter.Type.class, typeStr, WebhookFilter.Type.EventType);
+        WebhookFilter.Mode mode = WebhookFilter.Mode.Include;
+        if (StringUtils.isNotBlank(modeStr)) {
+            mode = EnumUtils.getEnumIgnoreCase(WebhookFilter.Mode.class, modeStr);
+            if (mode == null) {
+                throw new InvalidParameterValueException("Invalid mode specified");
+            }
+        }
+        WebhookFilter.MatchType matchType = WebhookFilter.MatchType.Exact;
+        if (StringUtils.isNotBlank(matchTypeStr)) {
+            matchType = EnumUtils.getEnumIgnoreCase(WebhookFilter.MatchType.class, matchTypeStr);
+            if (matchType == null) {
+                throw new InvalidParameterValueException("Invalid match type specified");
+            }
+        }
+        WebhookFilterVO webhookFilter = new WebhookFilterVO(webhook.getId(), type, mode, matchType, value);
+        List<? extends WebhookFilter> existingFilters = webhookFilterDao.listByWebhook(webhook.getId());
+        if (CollectionUtils.isNotEmpty(existingFilters)) {
+            webhookFilter.isConflicting(existingFilters);
+        }
+        webhookFilter = webhookFilterDao.persist(webhookFilter);
+        webhookService.invalidateWebhookFiltersCache(webhook.getId());
+        return createWebhookFilterResponse(webhookFilter, webhook);
+    }
+
+    @Override
+    public int deleteWebhookFilter(DeleteWebhookFilterCmd cmd) throws CloudRuntimeException {
+        final Account caller = CallContext.current().getCallingAccount();
+        final Pair<List<WebhookFilterVO>, Integer> filtersAndCount =
+                webhookFilterDao.searchBy(cmd.getId(), cmd.getWebhookId(), 0L, 1L);
+        if (filtersAndCount.second() == 0) {
+            return 0;
+        }
+        final long webhookId = filtersAndCount.first().get(0).getWebhookId();
+        Webhook webhook = webhookDao.findById(webhookId);
+        accountManager.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, false, webhook);
+        int result = webhookFilterDao.delete(cmd.getId(), webhookId);
+        if (result > 0) {
+            webhookService.invalidateWebhookFiltersCache(webhookId);
+        }
+        return result;
+    }
+
+    @Override
     public List<Class<?>> getCommands() {
         List<Class<?>> cmdList = new ArrayList<>();
         cmdList.add(CreateWebhookCmd.class);
@@ -569,6 +678,9 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         cmdList.add(ListWebhookDeliveriesCmd.class);
         cmdList.add(DeleteWebhookDeliveryCmd.class);
         cmdList.add(ExecuteWebhookDeliveryCmd.class);
+        cmdList.add(ListWebhookFiltersCmd.class);
+        cmdList.add(AddWebhookFilterCmd.class);
+        cmdList.add(DeleteWebhookFilterCmd.class);
         return cmdList;
     }
 }

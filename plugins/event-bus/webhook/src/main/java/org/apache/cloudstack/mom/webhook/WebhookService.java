@@ -60,4 +60,5 @@ public interface WebhookService extends PluggableService, Configurable {
     void handleEvent(Event event) throws EventBusException;
     WebhookDelivery executeWebhookDelivery(WebhookDelivery delivery, Webhook webhook, String payload)
             throws CloudRuntimeException;
+    void invalidateWebhookFiltersCache(long webhookId);
 }
