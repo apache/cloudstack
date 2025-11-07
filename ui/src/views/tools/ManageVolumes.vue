@@ -380,6 +380,7 @@
                 optionValueKey="id"
                 optionLabelKey="path"
                 defaultIcon="block-outlined"
+                allowClear="true"
                 @change-option-value="changeDomain" />
             </a-form-item>
 
@@ -396,6 +397,7 @@
                 optionValueKey="name"
                 optionLabelKey="name"
                 defaultIcon="team-outlined"
+                allowClear="true"
                 @change-option-value="changeAccount" />
               <span v-if="importForm.accountError" class="required">{{ $t('label.required') }}</span>
             </a-form-item>
@@ -413,6 +415,7 @@
                 optionValueKey="id"
                 optionLabelKey="name"
                 defaultIcon="project-outlined"
+                allowClear="true"
                 @change-option-value="changeProject" />
               <span v-if="importForm.projectError" class="required">{{ $t('label.required') }}</span>
             </a-form-item>

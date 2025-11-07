@@ -41,8 +41,10 @@
   - optionValueKey (String, optional): Property to use as the value for options (e.g., 'name'). Default is 'id'
   - optionLabelKey (String, optional): Property to use as the label for options (e.g., 'name'). Default is 'name'
   - defaultOption (Object, optional): Preselected object to include initially
+  - allowClear (Boolean, optional): Whether to allow clearing the selection. Default is false
   - showIcon (Boolean, optional): Whether to show icon for the options. Default is true
   - defaultIcon (String, optional): Icon to be shown when there is no resource icon for the option. Default is 'cloud-outlined'
+  - selectFirstOption (Boolean, optional): Whether to automatically select the first option when options are loaded. Default is false
 
   Events:
   - @change-option-value (Function): Emits the selected option value(s) when value(s) changes. Do not use @change as it will give warnings and may not work
@@ -58,7 +60,7 @@
     :filter-option="false"
     :loading="loading"
     show-search
-    allowClear
+    :allowClear="allowClear"
     placeholder="Select"
     @search="onSearchTimed"
     @popupScroll="onScroll"
@@ -78,7 +80,7 @@
     </template>
     <a-select-option v-for="option in options" :key="option.id" :value="option[optionValueKey]">
       <span>
-        <span v-if="showIcon">
+        <span v-if="showIcon && option.id !== null && option.id !== undefined">
           <resource-icon v-if="option.icon && option.icon.base64image" :image="option.icon.base64image" size="1x" style="margin-right: 5px"/>
           <render-icon v-else :icon="defaultIcon" style="margin-right: 5px" />
         </span>
@@ -125,6 +127,10 @@ export default {
       type: Object,
       default: null
     },
+    allowClear: {
+      type: Boolean,
+      default: false
+    },
     showIcon: {
       type: Boolean,
       default: true
@@ -136,6 +142,10 @@ export default {
     pageSize: {
       type: Number,
       default: null
+    },
+    selectFirstOption: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -148,7 +158,8 @@ export default {
       searchTimer: null,
       scrollHandlerAttached: false,
       preselectedOptionValue: null,
-      successiveFetches: 0
+      successiveFetches: 0,
+      hasAutoSelectedFirst: false
     }
   },
   created () {
@@ -211,6 +222,7 @@ export default {
       }).finally(() => {
         if (this.successiveFetches === 0) {
           this.loading = false
+          this.autoSelectFirstOptionIfNeeded()
         }
       })
     },
@@ -246,6 +258,36 @@ export default {
     resetPreselectedOptionValue () {
       this.preselectedOptionValue = null
       this.successiveFetches = 0
+    },
+    autoSelectFirstOptionIfNeeded () {
+      if (!this.selectFirstOption || this.hasAutoSelectedFirst) {
+        return
+      }
+      // Don't auto-select if there's a preselected value being fetched
+      if (this.preselectedOptionValue) {
+        return
+      }
+      const currentValue = this.$attrs.value
+      if (currentValue !== undefined && currentValue !== null && currentValue !== '') {
+        return
+      }
+      if (this.options.length === 0) {
+        return
+      }
+      if (this.searchQuery && this.searchQuery.length > 0) {
+        return
+      }
+      // Only auto-select after initial load is complete (no more successive fetches)
+      if (this.successiveFetches > 0) {
+        return
+      }
+      const firstOption = this.options[0]
+      if (firstOption) {
+        const firstValue = firstOption[this.optionValueKey]
+        this.hasAutoSelectedFirst = true
+        this.$emit('change-option-value', firstValue)
+        this.$emit('change-option', firstOption)
+      }
     },
     onSearchTimed (value) {
       clearTimeout(this.searchTimer)

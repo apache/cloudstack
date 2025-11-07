@@ -76,6 +76,8 @@
             optionValueKey="id"
             optionLabelKey="path"
             defaultIcon="block-outlined"
+            :defaultOption="{ id: null, path: ''}"
+            allowClear="true"
             :placeholder="apiParams.domainid.description"
             @change-option-value="handleDomainChanged" />
         </a-form-item>

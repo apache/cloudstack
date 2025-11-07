@@ -55,6 +55,7 @@
             optionValueKey="id"
             optionLabelKey="name"
             defaultIcon="global-outlined"
+            selectFirstOption="true"
             @change-option-value="handleZoneChange" />
         </a-form-item>
         <a-form-item name="format" ref="format">
@@ -85,6 +86,8 @@
             optionValueKey="id"
             optionLabelKey="displaytext"
             defaultIcon="hdd-outlined"
+            :defaultOption="{ id: null, displaytext: ''}"
+            allowClear="true"
             @change-option="onChangeDiskOffering" />
         </a-form-item>
         <a-form-item name="checksum" ref="checksum">
@@ -108,6 +111,7 @@
             optionValueKey="id"
             optionLabelKey="path"
             defaultIcon="block-outlined"
+            allowClear="true"
             :placeholder="$t('label.domainid')"
             @change-option-value="handleDomainChange" />
         </a-form-item>
@@ -124,6 +128,7 @@
             optionLabelKey="name"
             defaultIcon="team-outlined"
             :placeholder="$t('label.account')"
+            allowClear="true"
             @change-option-value="handleAccountChange" />
         </a-form-item>
         <div :span="24" class="action-button">
@@ -190,14 +195,8 @@ export default {
       }
     },
     accountsApiParams () {
-      if (!this.form.domainid) {
-        return {
-          listall: true,
-          showicon: true
-        }
-      }
       return {
-        domainid: this.form.domainid,
+        domainid: this.form?.domainid || null,
         showicon: true
       }
     }

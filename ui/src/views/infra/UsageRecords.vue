@@ -130,6 +130,8 @@
                     optionLabelKey="path"
                     defaultIcon="block-outlined"
                     :placeholder="$t('label.domain')"
+                    :defaultOption="{ id: null, path: ''}"
+                    :allowClear="true"
                     style="width: 100%;"
                     @change-option-value="handleDomainChange"
                     @change-option="handleDomainOptionChange" />
@@ -163,6 +165,8 @@
                 defaultIcon="team-outlined"
                 :placeholder="$t('label.account')"
                 :disabled="form.isRecursive"
+                :defaultOption="{ id: null, name: ''}"
+                allowClear="true"
                 @change-option-value="selectAccount"
                 @change-option="selectAccountOption" />
             </a-form-item>
@@ -455,7 +459,6 @@ export default {
         }
       }
       return {
-        listall: true,
         domainid: this.form.domain
       }
     }

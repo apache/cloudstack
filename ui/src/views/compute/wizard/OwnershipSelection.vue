@@ -166,31 +166,15 @@ export default {
 
       this.emitChangeEvent()
     },
-    handleDomainOptionChange (option) {
-      this.selectedDomainOption = option
-      // Note: Override filtering is not implemented in InfiniteScrollSelect migration
-      // If override.domains filtering is needed, it should be handled at a higher level
-      // or by using a custom filtering mechanism
-    },
     handleAccountChange (accountName) {
       this.selectedAccount = accountName
       this.selectedProject = null
       this.emitChangeEvent()
     },
-    handleAccountOptionChange (option) {
-      this.selectedAccountOption = option
-      // Note: Override filtering is not implemented in InfiniteScrollSelect migration
-      // If override.accounts filtering is needed, it should be handled at a higher level
-    },
     handleProjectChange (projectId) {
       this.selectedProject = projectId
       this.selectedAccount = null
       this.emitChangeEvent()
-    },
-    handleProjectOptionChange (option) {
-      this.selectedProjectOption = option
-      // Note: Override filtering is not implemented in InfiniteScrollSelect migration
-      // If override.projects filtering is needed, it should be handled at a higher level
     },
     emitChangeEvent () {
       this.$emit('fetch-owner', this)

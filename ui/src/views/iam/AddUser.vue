@@ -98,6 +98,7 @@
             optionValueKey="id"
             optionLabelKey="path"
             defaultIcon="block-outlined"
+            :selectFirstOption="true"
             :placeholder="apiParams.domainid.description"
             @change-option-value="handleDomainChange" />
         </a-form-item>
@@ -209,15 +210,9 @@ export default {
       }
     },
     accountsApiParams () {
-      if (!this.form.domainid) {
-        return {
-          showicon: true,
-          listall: true
-        }
-      }
       return {
         showicon: true,
-        domainid: this.form.domainid
+        domainid: this.form?.domainid || null
       }
     }
   },

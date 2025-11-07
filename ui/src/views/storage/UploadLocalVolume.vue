@@ -65,6 +65,7 @@
             optionValueKey="id"
             optionLabelKey="name"
             defaultIcon="global-outlined"
+            selectFirstOption="true"
             @change-option-value="handleZoneChange" />
         </a-form-item>
         <a-form-item name="diskofferingid" ref="diskofferingid">
@@ -79,6 +80,8 @@
             optionValueKey="id"
             optionLabelKey="displaytext"
             defaultIcon="hdd-outlined"
+            :defaultOption="{ id: null, displaytext: ''}"
+            allowClear="true"
             :placeholder="apiParams.diskofferingid.description"
             @change-option="onChangeDiskOffering" />
         </a-form-item>
@@ -120,6 +123,7 @@
             optionLabelKey="path"
             defaultIcon="block-outlined"
             :placeholder="$t('label.domainid')"
+            allowClear="true"
             @change-option-value="handleDomainChange" />
         </a-form-item>
         <a-form-item name="account" ref="account" v-if="'listDomains' in $store.getters.apis">
@@ -134,6 +138,7 @@
             optionValueKey="name"
             optionLabelKey="name"
             defaultIcon="team-outlined"
+            allowClear="true"
             :placeholder="$t('label.account')"
             @change-option-value="handleAccountChange" />
         </a-form-item>

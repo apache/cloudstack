@@ -81,6 +81,7 @@
             optionValueKey="id"
             optionLabelKey="path"
             defaultIcon="block-outlined"
+            allowClear="true"
             :placeholder="apiParams.domainid.description"
             @change-option-value="handleDomainChange" />
         </a-form-item>
@@ -96,6 +97,7 @@
             optionValueKey="name"
             optionLabelKey="name"
             defaultIcon="team-outlined"
+            allowClear="true"
             :placeholder="apiParams.account.description" />
         </a-form-item>
 
