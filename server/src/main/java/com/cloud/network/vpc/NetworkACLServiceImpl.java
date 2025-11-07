@@ -32,9 +32,12 @@ import com.cloud.network.dao.NetrisProviderDao;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.element.NetrisProviderVO;
 import com.cloud.network.element.NsxProviderVO;
+
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
+import org.apache.cloudstack.api.command.user.network.ImportNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLListsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 import org.apache.cloudstack.api.command.user.network.MoveNetworkAclItemCmd;
@@ -79,6 +82,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.google.protobuf.Api;
 
 @Component
 public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLService {
@@ -1059,6 +1063,110 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             return ruleBeingMoved;
         }
         return moveRuleToTheTop(ruleBeingMoved, allRules);
+    }
+
+    @Override
+    public List<NetworkACLItem> importNetworkACLRules(ImportNetworkACLCmd cmd) throws ResourceUnavailableException {
+        long aclId = cmd.getAclId();
+        Map<Object, Object> rules = cmd.getRules();
+        List<NetworkACLItem> createdRules = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+        for (Map.Entry<Object, Object> entry : rules.entrySet()) {
+            try {
+                Map<String, Object> ruleMap = (Map<String, Object>) entry.getValue();
+                NetworkACLItem item = createACLRuleFromMap(ruleMap, aclId);
+                createdRules.add(item);
+            } catch (Exception ex) {
+                String error = "Failed to import rule at index " + entry.getKey() + ": " + ex.getMessage();
+                errors.add(error);
+                logger.error(error, ex);
+            }
+        }
+        // no rules got imported
+        if (createdRules.isEmpty() && !errors.isEmpty()) {
+            logger.error("Failed to import any ACL rules. Errors: {}", String.join("; ", errors));
+            throw new CloudRuntimeException("Failed to import any ACL rules.");
+        }
+
+        // apply ACL to network
+        if (!createdRules.isEmpty()) {
+            applyNetworkACL(aclId);
+        }
+        return createdRules;
+    }
+
+    private NetworkACLItem createACLRuleFromMap(Map<String, Object> ruleMap, long aclId) {
+        String protocol = (String) ruleMap.get(ApiConstants.PROTOCOL);
+        if (protocol == null || protocol.trim().isEmpty()) {
+            throw new InvalidParameterValueException("Protocol is required");
+        }
+        String action = (String) ruleMap.getOrDefault(ApiConstants.ACTION, "deny");
+        String trafficType = (String) ruleMap.getOrDefault(ApiConstants.TRAFFIC_TYPE, NetworkACLItem.TrafficType.Ingress);
+
+        // Create ACL rule using the service
+        CreateNetworkACLCmd cmd = new CreateNetworkACLCmd();
+        cmd.setAclId(aclId);
+        cmd.setProtocol(protocol.toLowerCase());
+        cmd.setAction(action.toLowerCase());
+        cmd.setTrafficType(trafficType.toLowerCase());
+
+
+        // Optional parameters
+        if (ruleMap.containsKey(ApiConstants.CIDR_LIST)) {
+            Object cidrObj = ruleMap.get(ApiConstants.CIDR_LIST);
+            List<String> cidrList = new ArrayList<>();
+            if (cidrObj instanceof String) {
+                for (String cidr : ((String) cidrObj).split(",")) {
+                    cidrList.add(cidr.trim());
+                }
+            } else if (cidrObj instanceof List) {
+                cidrList.addAll((List<String>) cidrObj);
+            }
+            cmd.setCidrlist(cidrList);
+        }
+
+        if (ruleMap.containsKey(ApiConstants.START_PORT)) {
+            cmd.setPublicStartPort(parseInt(ruleMap.get(ApiConstants.START_PORT)));
+        }
+
+        if (ruleMap.containsKey(ApiConstants.END_PORT)) {
+            cmd.setPublicEndPort(parseInt(ruleMap.get(ApiConstants.END_PORT)));
+        }
+
+        if (ruleMap.containsKey(ApiConstants.NUMBER)) {
+            cmd.setNumber(parseInt(ruleMap.get(ApiConstants.NUMBER)));
+        }
+
+        if (ruleMap.containsKey(ApiConstants.ICMP_TYPE)) {
+            cmd.setIcmpType(parseInt(ruleMap.get(ApiConstants.ICMP_TYPE)));
+        }
+
+        if (ruleMap.containsKey(ApiConstants.ICMP_CODE)) {
+            cmd.setIcmpCode(parseInt(ruleMap.get(ApiConstants.ICMP_CODE)));
+        }
+
+        if (ruleMap.containsKey(ApiConstants.ACL_REASON)) {
+            cmd.setReason((String) ruleMap.get(ApiConstants.ACL_REASON));
+        }
+
+        return createNetworkACLItem(cmd);
+    }
+
+    private Integer parseInt(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Integer) {
+            return (Integer) value;
+        }
+        if (value instanceof String) {
+            try {
+                return Integer.parseInt((String) value);
+            } catch (NumberFormatException e) {
+                throw new InvalidParameterValueException("Invalid integer value: " + value);
+            }
+        }
+        throw new InvalidParameterValueException("Cannot convert to integer: " + value);
     }
 
     /**
