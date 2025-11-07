@@ -45,7 +45,7 @@ public final class CitrixUpdateHostPasswordCommandWrapper extends CommandWrapper
 
         Pair<Boolean, String> result;
         try {
-            logger.debug("Executing password update command on host: " + hostIp + " for user: " + username);
+            logger.debug("Executing password update command on host: {} for user: {}”, hostIp, username);
             final String hostPassword = citrixResourceBase.getPwdFromQueue();
             result = xenServerUtilitiesHelper.executeSshWrapper(hostIp, 22, username, null, hostPassword, cmdLine.toString());
         } catch (final Exception e) {
