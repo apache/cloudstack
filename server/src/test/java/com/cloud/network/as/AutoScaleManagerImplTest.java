@@ -2520,12 +2520,14 @@ public class AutoScaleManagerImplTest {
         when(asVmGroupMock.getNextVmSeq()).thenReturn(1L);
         when(templateMock.getGuestOSId()).thenReturn(1L);
         Pair<String, String> result = autoScaleManagerImplSpy.getNextVmHostAndDisplayName(asVmGroupMock, templateMock);
-        String vmHostNamePattern = AutoScaleManagerImpl.VM_HOSTNAME_PREFIX + vmGroupName +
-                "-" + asVmGroupMock.getNextVmSeq() + "-[a-z]{6}";
-        Assert.assertTrue(result.second().matches(vmHostNamePattern));
+        String vmHostNamePattern = AutoScaleManagerImpl.WINDOWS_VM_HOSTNAME_PREFIX + "[a-z]{6}";
+        Assert.assertTrue(result.first().matches(vmHostNamePattern));
         Assert.assertEquals(15, result.first().length());
-        Assert.assertTrue(result.second().endsWith(result.first()));
-
+        String vmDisplayHostNamePattern = AutoScaleManagerImpl.VM_HOSTNAME_PREFIX + vmGroupName +
+                "-" + asVmGroupMock.getNextVmSeq() + "-[a-z]{6}";
+        Assert.assertTrue(result.second().matches(vmDisplayHostNamePattern));
+        Assert.assertTrue(result.second().length() <= 63);
+        Assert.assertTrue(result.second().endsWith(result.first().split("-")[2]));
     }
 
     @Test
@@ -2564,58 +2566,5 @@ public class AutoScaleManagerImplTest {
                 "-" + asVmGroupMock.getNextVmSeq() + "-[a-z]{6}";
         Assert.assertTrue(result.first().matches(vmHostNamePattern));
         Assert.assertEquals(result.first(), result.second());
-    }
-
-    @Test
-    public void trimsValidWindowsHostName() {
-        AutoScaleManagerImpl manager = new AutoScaleManagerImpl();
-        String result = manager.getTrimmedHostNameForWindows("ValidVMName1234");
-        Assert.assertEquals("ValidVMName1234", result);
-    }
-
-    @Test
-    public void trimsInvalidCharactersFromHostName() {
-        AutoScaleManagerImpl manager = new AutoScaleManagerImpl();
-        String result = manager.getTrimmedHostNameForWindows("Invalid@Host#Name!");
-        Assert.assertEquals("InvalidHostName", result);
-    }
-
-    @Test
-    public void ensuresHostNameStartsWithLetter() {
-        AutoScaleManagerImpl manager = new AutoScaleManagerImpl();
-        String result = manager.getTrimmedHostNameForWindows("123456789012345");
-        Assert.assertTrue(Character.isLetter(result.charAt(0)));
-    }
-
-    @Test
-    public void prefixesWithLetterIfNoLetterExists() {
-        AutoScaleManagerImpl manager = new AutoScaleManagerImpl();
-        String result = manager.getTrimmedHostNameForWindows("1234567890-12345");
-        Assert.assertEquals("a34567890-12345", result);
-    }
-
-    @Test
-    public void trimsHostNameToLastMaxCharacters() {
-        String name = "ThisIsAReallyLongHost-Name_1234";
-        AutoScaleManagerImpl manager = new AutoScaleManagerImpl();
-        String result = manager.getTrimmedHostNameForWindows(name);
-        String normalized = name.replace("_", "");
-        Assert.assertEquals(normalized
-                        .substring(normalized.length() - AutoScaleManagerImpl.MAX_WINDOWS_VM_HOSTNAME_LENGTH),
-                result);
-    }
-
-    @Test
-    public void handlesEmptyHostName() {
-        AutoScaleManagerImpl manager = new AutoScaleManagerImpl();
-        String result = manager.getTrimmedHostNameForWindows("");
-        Assert.assertEquals("", result);
-    }
-
-    @Test
-    public void handlesHostNameWithOnlyMostlyInvalidCharacters() {
-        AutoScaleManagerImpl manager = new AutoScaleManagerImpl();
-        String result = manager.getTrimmedHostNameForWindows("@#$%^&*()   1");
-        Assert.assertEquals("a1", result);
     }
 }

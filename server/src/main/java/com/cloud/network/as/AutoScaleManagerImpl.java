@@ -195,9 +195,6 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManager, AutoScaleService, Configurable {
-    // Windows OS has a limit of 15 characters for hostname
-    // https://learn.microsoft.com/en-us/troubleshoot/windows-server/active-directory/naming-conventions-for-computer-domain-site-ou
-    protected static final int MAX_WINDOWS_VM_HOSTNAME_LENGTH = 15;
 
     @Inject
     protected DispatchChainFactory dispatchChainFactory = null;
@@ -302,6 +299,10 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
     protected static final String VM_HOSTNAME_PREFIX = "autoScaleVm-";
     protected static final int VM_HOSTNAME_RANDOM_SUFFIX_LENGTH = 6;
+
+    // Windows OS has a limit of 15 characters for hostname
+    // https://learn.microsoft.com/en-us/troubleshoot/windows-server/active-directory/naming-conventions-for-computer-domain-site-ou
+    protected static final String WINDOWS_VM_HOSTNAME_PREFIX = "as-WinVm-";
 
     private static final Long DEFAULT_HOST_ID = -1L;
 
@@ -1974,25 +1975,6 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
     }
 
-    protected String getTrimmedHostNameForWindows(String name) {
-        String valid = name.replaceAll("[^a-zA-Z0-9-]", "");
-        String hostName = valid.length() > MAX_WINDOWS_VM_HOSTNAME_LENGTH ?
-                valid.substring(valid.length() - MAX_WINDOWS_VM_HOSTNAME_LENGTH) :
-                valid;
-        if (!hostName.isEmpty() && !Character.isLetter(hostName.charAt(0))) {
-            for (int i = 0; i < hostName.length(); i++) {
-                if (Character.isLetter(hostName.charAt(i))) {
-                    hostName = hostName.charAt(i) + hostName.substring(i + 1);
-                    break;
-                }
-            }
-            if (!Character.isLetter(hostName.charAt(0))) {
-                hostName = "a" + hostName.substring(hostName.length() < MAX_WINDOWS_VM_HOSTNAME_LENGTH ? 0 : 1);
-            }
-        }
-        return hostName;
-    }
-
     protected boolean isWindowsOs(VirtualMachineTemplate template) {
         GuestOSVO guestOSVO = guestOSDao.findById(template.getGuestOSId());
         if (guestOSVO == null) {
@@ -2007,15 +1989,15 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
     protected Pair<String, String> getNextVmHostAndDisplayName(AutoScaleVmGroupVO asGroup, VirtualMachineTemplate template) {
         boolean isWindows = isWindowsOs(template);
-        String vmHostNameSuffix = "-" + asGroup.getNextVmSeq() + "-" +
-                RandomStringUtils.random(VM_HOSTNAME_RANDOM_SUFFIX_LENGTH, 0, 0, true, false, (char[])null, new SecureRandom()).toLowerCase();
+        String winVmHostNameSuffix = RandomStringUtils.random(VM_HOSTNAME_RANDOM_SUFFIX_LENGTH, 0, 0, true, false, (char[])null, new SecureRandom()).toLowerCase();
+        String vmHostNameSuffix = "-" + asGroup.getNextVmSeq() + "-" + winVmHostNameSuffix;
         // Truncate vm group name because max length of vm name is 63
         int subStringLength = Math.min(asGroup.getName().length(), 63 - VM_HOSTNAME_PREFIX.length() - vmHostNameSuffix.length());
         String name = VM_HOSTNAME_PREFIX + asGroup.getName().substring(0, subStringLength) + vmHostNameSuffix;
-        if (!isWindows || name.length() <= MAX_WINDOWS_VM_HOSTNAME_LENGTH) {
+        if (!isWindows) {
             return new Pair<>(name, name);
         }
-        return new Pair<>(getTrimmedHostNameForWindows(name), name);
+        return new Pair<>(WINDOWS_VM_HOSTNAME_PREFIX + winVmHostNameSuffix, name);
     }
 
     @Override
