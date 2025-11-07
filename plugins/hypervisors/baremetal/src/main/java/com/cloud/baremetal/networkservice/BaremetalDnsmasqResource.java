@@ -49,7 +49,7 @@ public class BaremetalDnsmasqResource extends BaremetalDhcpResourceBase {
             logger.debug(String.format("Trying to connect to DHCP server(IP=%1$s, username=%2$s, password=%3$s)", _ip, _username, "******"));
             sshConnection = SSHCmdHelper.acquireAuthorizedConnection(_ip, _username, _password);
             if (sshConnection == null) {
-                throw new ConfigurationException(String.format("Cannot connect to DHCP server(IP=%1$s, username=%2$s, password=%3$s", _ip, _username, "******"));
+                throw new ConfigurationException(String.format("Cannot connect to DHCP server(IP=%1$s, username=%2$s, password=******", _ip, _username));
             }
 
             if (!SSHCmdHelper.sshExecuteCmd(sshConnection, "[ -f '/usr/sbin/dnsmasq' ]")) {
