@@ -44,6 +44,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.command.admin.cluster.GenerateClusterDrsPlanCmd;
 import org.apache.cloudstack.api.response.ClusterDrsPlanMigrationResponse;
 import org.apache.cloudstack.api.response.ClusterDrsPlanResponse;
@@ -116,6 +117,9 @@ public class ClusterDrsServiceImplTest {
 
     @Mock
     private VMInstanceDao vmInstanceDao;
+
+    @Mock
+    private AffinityGroupVMMapDao affinityGroupVMMapDao;
 
     @Spy
     @InjectMocks
@@ -421,14 +425,9 @@ public class ClusterDrsServiceImplTest {
         Mockito.when(serviceOfferingDao.findByIdIncludingRemoved(Mockito.anyLong(), Mockito.anyLong())).thenReturn(serviceOffering);
         Mockito.when(hostJoinDao.searchByIds(Mockito.any())).thenReturn(List.of(hostJoin1));
 
-        // Return empty compatible hosts list
-        Mockito.when(managementServer.getTechnicallyCompatibleHosts(Mockito.eq(vm1), Mockito.anyLong(),
-                Mockito.anyLong(), Mockito.any())).thenReturn(
-                new Ternary<>(new Pair<>(new ArrayList<>(), 0), new ArrayList<>(), new HashMap<>()));
-
         List<Ternary<VirtualMachine, Host, Host>> result = clusterDrsService.getDrsPlan(cluster, 5);
         assertEquals(0, result.size());
-        Mockito.verify(managementServer, Mockito.times(1)).getTechnicallyCompatibleHosts(Mockito.eq(vm1), Mockito.anyLong(), Mockito.anyLong(), Mockito.any());
+        Mockito.verify(managementServer, Mockito.times(1)).listHostsForMigrationOfVM(Mockito.eq(vm1), Mockito.anyLong(), Mockito.anyLong(), Mockito.any(), Mockito.anyList());
     }
 
     @Test
@@ -471,14 +470,10 @@ public class ClusterDrsServiceImplTest {
         Mockito.when(serviceOfferingDao.findByIdIncludingRemoved(Mockito.anyLong(), Mockito.anyLong())).thenReturn(serviceOffering);
         Mockito.when(hostJoinDao.searchByIds(Mockito.any())).thenReturn(List.of(hostJoin1));
 
-        // Throw exception during compatibility check
-        Mockito.when(managementServer.getTechnicallyCompatibleHosts(Mockito.eq(vm1), Mockito.anyLong(),
-                Mockito.anyLong(), Mockito.any())).thenThrow(new RuntimeException("Test exception"));
-
         List<Ternary<VirtualMachine, Host, Host>> result = clusterDrsService.getDrsPlan(cluster, 5);
         assertEquals(0, result.size());
         // Exception should be caught and logged, not propagated
-        Mockito.verify(managementServer, Mockito.times(1)).getTechnicallyCompatibleHosts(Mockito.eq(vm1), Mockito.anyLong(), Mockito.anyLong(), Mockito.any());
+        Mockito.verify(managementServer, Mockito.times(1)).listHostsForMigrationOfVM(Mockito.eq(vm1), Mockito.anyLong(), Mockito.anyLong(), Mockito.any(), Mockito.anyList());
     }
 
     @Test
@@ -489,9 +484,6 @@ public class ClusterDrsServiceImplTest {
 
         HostVO host1 = Mockito.mock(HostVO.class);
         Mockito.when(host1.getId()).thenReturn(1L);
-        Mockito.when(host1.getDataCenterId()).thenReturn(1L);
-        Mockito.when(host1.getPodId()).thenReturn(1L);
-        Mockito.when(host1.getClusterId()).thenReturn(1L);
 
         VMInstanceVO vm1 = Mockito.mock(VMInstanceVO.class);
         Mockito.when(vm1.getId()).thenReturn(1L);
@@ -525,11 +517,6 @@ public class ClusterDrsServiceImplTest {
         Mockito.when(hostJoinDao.searchByIds(Mockito.any())).thenReturn(List.of(hostJoin1));
 
         HostVO compatibleHost = Mockito.mock(HostVO.class);
-        Mockito.when(managementServer.getTechnicallyCompatibleHosts(Mockito.eq(vm1), Mockito.anyLong(),
-                Mockito.anyLong(), Mockito.any())).thenReturn(
-                new Ternary<>(new Pair<>(List.of(compatibleHost), 1), List.of(compatibleHost), Map.of(compatibleHost, false)));
-        Mockito.when(managementServer.applyAffinityConstraints(Mockito.any(), Mockito.any(),
-                Mockito.any(), Mockito.anyList())).thenReturn(Mockito.mock(com.cloud.deploy.DeploymentPlanner.ExcludeList.class));
 
         // Return null migration (no best migration found)
         Mockito.doReturn(new Pair<>(null, null)).when(clusterDrsService).getBestMigration(
@@ -549,9 +536,6 @@ public class ClusterDrsServiceImplTest {
 
         HostVO host1 = Mockito.mock(HostVO.class);
         Mockito.when(host1.getId()).thenReturn(1L);
-        Mockito.when(host1.getDataCenterId()).thenReturn(1L);
-        Mockito.when(host1.getPodId()).thenReturn(1L);
-        Mockito.when(host1.getClusterId()).thenReturn(1L);
 
         HostVO host2 = Mockito.mock(HostVO.class);
         Mockito.when(host2.getId()).thenReturn(2L);
@@ -611,11 +595,6 @@ public class ClusterDrsServiceImplTest {
         Mockito.when(hostJoinDao.searchByIds(Mockito.any())).thenReturn(List.of(hostJoin1, hostJoin2));
 
         HostVO compatibleHost = Mockito.mock(HostVO.class);
-        Mockito.when(managementServer.getTechnicallyCompatibleHosts(Mockito.any(), Mockito.anyLong(),
-                Mockito.anyLong(), Mockito.any())).thenReturn(
-                new Ternary<>(new Pair<>(List.of(compatibleHost), 1), List.of(compatibleHost), Map.of(compatibleHost, false)));
-        Mockito.when(managementServer.applyAffinityConstraints(Mockito.any(), Mockito.any(),
-                Mockito.any(), Mockito.anyList())).thenReturn(Mockito.mock(com.cloud.deploy.DeploymentPlanner.ExcludeList.class));
 
         // Return migrations for first two iterations, then null
         Mockito.doReturn(new Pair<>(vm1, host2), new Pair<>(vm2, host2), new Pair<>(null, null))
@@ -637,9 +616,6 @@ public class ClusterDrsServiceImplTest {
 
         HostVO host1 = Mockito.mock(HostVO.class);
         Mockito.when(host1.getId()).thenReturn(1L);
-        Mockito.when(host1.getDataCenterId()).thenReturn(1L);
-        Mockito.when(host1.getPodId()).thenReturn(1L);
-        Mockito.when(host1.getClusterId()).thenReturn(1L);
 
         HostVO host2 = Mockito.mock(HostVO.class);
         Mockito.when(host2.getId()).thenReturn(2L);
@@ -687,11 +663,6 @@ public class ClusterDrsServiceImplTest {
         Mockito.when(hostJoinDao.searchByIds(Mockito.any())).thenReturn(List.of(hostJoin1, hostJoin2));
 
         HostVO compatibleHost = Mockito.mock(HostVO.class);
-        Mockito.when(managementServer.getTechnicallyCompatibleHosts(Mockito.eq(vm1), Mockito.anyLong(),
-                Mockito.anyLong(), Mockito.any())).thenReturn(
-                new Ternary<>(new Pair<>(List.of(compatibleHost), 1), List.of(compatibleHost), Map.of(compatibleHost, false)));
-        Mockito.when(managementServer.applyAffinityConstraints(Mockito.any(), Mockito.any(),
-                Mockito.any(), Mockito.anyList())).thenReturn(Mockito.mock(com.cloud.deploy.DeploymentPlanner.ExcludeList.class));
 
         // Return migration to original host (host1) - should break the loop
         Mockito.doReturn(new Pair<>(vm1, host1)).when(clusterDrsService).getBestMigration(
@@ -885,21 +856,27 @@ public class ClusterDrsServiceImplTest {
         vmToExcludesMap.put(vm1.getId(), Mockito.mock(com.cloud.deploy.DeploymentPlanner.ExcludeList.class));
         vmToExcludesMap.put(vm2.getId(), Mockito.mock(com.cloud.deploy.DeploymentPlanner.ExcludeList.class));
 
-        // Create capacity maps with dummy data for getClusterImbalance
+        // Create capacity maps with dummy data for getClusterImbalance (include both source and dest hosts)
         Map<Long, Ternary<Long, Long, Long>> hostCpuCapacityMap = new HashMap<>();
-        hostCpuCapacityMap.put(destHost.getId(), new Ternary<>(1000L, 0L, 2000L));
+        hostCpuCapacityMap.put(host.getId(), new Ternary<>(2000L, 0L, 3000L)); // Source host
+        hostCpuCapacityMap.put(destHost.getId(), new Ternary<>(1000L, 0L, 2000L)); // Dest host
         Map<Long, Ternary<Long, Long, Long>> hostMemoryCapacityMap = new HashMap<>();
-        hostMemoryCapacityMap.put(destHost.getId(), new Ternary<>(1024L * 1024L * 1024L, 0L, 2L * 1024L * 1024L * 1024L));
+        hostMemoryCapacityMap.put(host.getId(), new Ternary<>(2L * 1024L * 1024L * 1024L, 0L, 3L * 1024L * 1024L * 1024L)); // Source host
+        hostMemoryCapacityMap.put(destHost.getId(), new Ternary<>(1024L * 1024L * 1024L, 0L, 2L * 1024L * 1024L * 1024L)); // Dest host
 
-        // Mock getMetrics for vm1 (better improvement - should be selected)
-        Mockito.when(balancedAlgorithm.getMetrics(cluster, vm1, serviceOffering, destHost, hostCpuCapacityMap,
-                hostMemoryCapacityMap, false, 0.0)).thenReturn(new Ternary<>(1.0, 0.5, 1.5));
+        // Mock getMetrics for the optimized 10-parameter version used by getBestMigration
+        // Return better improvement for vm1, worse for vm2
+        Mockito.doReturn(new Ternary<>(1.0, 0.5, 1.5)).when(balancedAlgorithm).getMetrics(
+                Mockito.eq(cluster), Mockito.eq(vm1), Mockito.any(ServiceOffering.class),
+                Mockito.eq(destHost), Mockito.eq(hostCpuCapacityMap), Mockito.eq(hostMemoryCapacityMap), Mockito.any(Boolean.class),
+                Mockito.any(Double.class), Mockito.any(double[].class), Mockito.any(Map.class));
+        Mockito.doReturn(new Ternary<>(0.5, 2.5, 1.5)).when(balancedAlgorithm).getMetrics(
+                Mockito.eq(cluster), Mockito.eq(vm2), Mockito.any(ServiceOffering.class),
+                Mockito.eq(destHost), Mockito.eq(hostCpuCapacityMap), Mockito.eq(hostMemoryCapacityMap), Mockito.any(Boolean.class),
+                Mockito.any(Double.class), Mockito.any(double[].class), Mockito.any(Map.class));
 
-        // Mock getMetrics for vm2 (worse improvement)
-        Mockito.when(balancedAlgorithm.getMetrics(cluster, vm2, serviceOffering, destHost, hostCpuCapacityMap,
-                hostMemoryCapacityMap, false, 0.0)).thenReturn(new Ternary<>(1.0, 2.5, 1.5));
 
-        Pair<VirtualMachine, Host> bestMigration = clusterDrsService.getBestMigration(cluster, balancedAlgorithm,
+                Pair<VirtualMachine, Host> bestMigration = clusterDrsService.getBestMigration(cluster, balancedAlgorithm,
                 vmList, vmIdServiceOfferingMap, hostCpuCapacityMap, hostMemoryCapacityMap,
                 vmToCompatibleHostsCache, vmToStorageMotionCache, vmToExcludesMap);
 

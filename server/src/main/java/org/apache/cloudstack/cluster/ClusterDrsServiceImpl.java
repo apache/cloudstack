@@ -97,6 +97,8 @@ import java.util.stream.Collectors;
 
 import static com.cloud.org.Grouping.AllocationState.Disabled;
 import static org.apache.cloudstack.cluster.ClusterDrsAlgorithm.getClusterImbalance;
+import static org.apache.cloudstack.cluster.ClusterDrsAlgorithm.getClusterDrsMetric;
+import static org.apache.cloudstack.cluster.ClusterDrsAlgorithm.getMetricValue;
 
 public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsService, PluggableService {
 
@@ -369,7 +371,9 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                     serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()));
         }
 
-        // PHASE 1: Pre-compute technical compatibility (once per eligible VM - never changes)
+        // PHASE 1: Pre-compute suitable hosts (once per eligible VM - never changes)
+        // Use listHostsForMigrationOfVM to get hosts validated by getCapableSuitableHosts
+        // This ensures DRS uses the same validation as "find host for migration" command
         Map<Long, List<? extends Host>> vmToCompatibleHostsCache = new HashMap<>();
         Map<Long, Map<Host, Boolean>> vmToStorageMotionCache = new HashMap<>();
 
@@ -383,18 +387,20 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             }
 
             try {
-                Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> compatibility =
-                    managementServer.getTechnicallyCompatibleHosts(vm, 0L, 500L, null);
+                // Use listHostsForMigrationOfVM to get suitable hosts (validated by getCapableSuitableHosts)
+                // This ensures the same validation as the "find host for migration" command
+                Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> hostsForMigration =
+                    managementServer.listHostsForMigrationOfVM(vm, 0L, 500L, null, vmList);
 
-                List<? extends Host> compatibleHosts = compatibility.second(); // Get filtered hosts
-                Map<Host, Boolean> requiresStorageMotion = compatibility.third();
+                List<? extends Host> suitableHosts = hostsForMigration.second(); // Get suitable hosts (validated by HostAllocator)
+                Map<Host, Boolean> requiresStorageMotion = hostsForMigration.third();
 
-                if (compatibleHosts != null && !compatibleHosts.isEmpty()) {
-                    vmToCompatibleHostsCache.put(vm.getId(), compatibleHosts);
+                if (suitableHosts != null && !suitableHosts.isEmpty()) {
+                    vmToCompatibleHostsCache.put(vm.getId(), suitableHosts);
                     vmToStorageMotionCache.put(vm.getId(), requiresStorageMotion);
                 }
             } catch (Exception e) {
-                logger.debug("Could not get compatible hosts for VM {}: {}", vm, e.getMessage());
+                logger.debug("Could not get suitable hosts for VM {}: {}", vm, e.getMessage());
             }
         }
 
@@ -540,6 +546,35 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                 new ArrayList<>(hostMemoryCapacityMap.values()),
                 null);
 
+        // Pre-calculate base metrics array once per iteration for optimized imbalance calculation
+        // This reduces complexity from O(V × H × H) to O(V × H) per iteration
+        String metricType = getClusterDrsMetric(cluster.getId());
+        Map<Long, Ternary<Long, Long, Long>> baseMetricsMap = "cpu".equals(metricType) ? hostCpuCapacityMap : hostMemoryCapacityMap;
+        double[] baseMetricsArray = new double[baseMetricsMap.size()];
+        Map<Long, Integer> hostIdToIndexMap = new HashMap<>();
+
+        int index = 0;
+        for (Map.Entry<Long, Ternary<Long, Long, Long>> entry : baseMetricsMap.entrySet()) {
+            Long hostId = entry.getKey();
+            Ternary<Long, Long, Long> metrics = entry.getValue();
+            long used = metrics.first();
+            long actualTotal = metrics.third() - metrics.second();
+            long free = actualTotal - metrics.first();
+            Double metricValue = getMetricValue(cluster.getId(), used, free, actualTotal, null);
+            if (metricValue != null) {
+                baseMetricsArray[index] = metricValue;
+                hostIdToIndexMap.put(hostId, index);
+                index++;
+            }
+        }
+
+        // Trim array if some values were null
+        if (index < baseMetricsArray.length) {
+            double[] trimmed = new double[index];
+            System.arraycopy(baseMetricsArray, 0, trimmed, 0, index);
+            baseMetricsArray = trimmed;
+        }
+
         double improvement = 0;
         Pair<VirtualMachine, Host> bestMigration = new Pair<>(null, null);
 
@@ -594,10 +629,11 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                 }
 
                 // getMetrics uses updated capacity maps - this is the real capacity check
-                // Pass pre-calculated pre-imbalance to avoid recalculating it for every VM-host combination
+                // Pass pre-calculated pre-imbalance and base metrics array for optimized calculation
                 Ternary<Double, Double, Double> metrics = algorithm.getMetrics(cluster, vm,
                         serviceOffering, destHost, hostCpuCapacityMap, hostMemoryCapacityMap,
-                        requiresStorageMotion.getOrDefault(destHost, false), preImbalance);
+                        requiresStorageMotion.getOrDefault(destHost, false), preImbalance,
+                        baseMetricsArray, hostIdToIndexMap);
 
                 Double currentImprovement = metrics.first();
                 Double cost = metrics.second();

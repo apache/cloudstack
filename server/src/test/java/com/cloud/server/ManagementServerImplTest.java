@@ -883,7 +883,7 @@ public class ManagementServerImplTest {
 
         setupMigrationMocks(vm, srcHost, hosts, volume, true);
 
-        // Verify this doesn't throw exception - system VMs should be migrateable
+        // Verify this doesn't throw exception - system VMs should be migratable
         Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> result =
             spy.listHostsForMigrationOfVM(1L, 0L, 20L, null);
 

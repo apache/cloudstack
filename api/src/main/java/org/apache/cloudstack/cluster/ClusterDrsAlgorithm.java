@@ -22,7 +22,6 @@ package org.apache.cloudstack.cluster;
 import com.cloud.host.Host;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
-import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Adapter;
 import com.cloud.vm.VirtualMachine;
@@ -39,6 +38,10 @@ import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMetricTy
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMetricUseRatio;
 
 public interface ClusterDrsAlgorithm extends Adapter {
+    // Reusable stateless calculator objects (thread-safe) - created once, reused for all calculations
+    // Apache Commons Math Mean and StandardDeviation are stateless and thread-safe
+    Mean MEAN_CALCULATOR = new Mean();
+    StandardDeviation STDDEV_CALCULATOR = new StandardDeviation(false);
 
     /**
      * Determines whether a DRS operation is needed for a given cluster and host-VM
@@ -59,111 +62,118 @@ public interface ClusterDrsAlgorithm extends Adapter {
     boolean needsDrs(Cluster cluster, List<Ternary<Long, Long, Long>> cpuList,
                      List<Ternary<Long, Long, Long>> memoryList) throws ConfigurationException;
 
-
     /**
-     * Determines the metrics for a given virtual machine and destination host in a DRS cluster.
+     * Calculates the metrics (improvement, cost, benefit) for migrating a VM to a destination host. Improvement is
+     * calculated based on the change in cluster imbalance before and after the migration.
      *
-     * @param clusterId
-     *         the ID of the cluster to check
-     * @param vm
-     *         the virtual machine to check
-     * @param serviceOffering
-     *         the service offering for the virtual machine
-     * @param destHost
-     *         the destination host for the virtual machine
-     * @param hostCpuMap
-     *         a map of host IDs to the Ternary of used, reserved and total CPU on each host
-     * @param hostMemoryMap
-     *         a map of host IDs to the Ternary of used, reserved and total memory on each host
-     * @param requiresStorageMotion
-     *         whether storage motion is required for the virtual machine
-     *
+     * @param cluster the cluster to check
+     * @param vm the virtual machine to check
+     * @param serviceOffering the service offering for the virtual machine
+     * @param destHost the destination host for the virtual machine
+     * @param hostCpuMap a map of host IDs to the Ternary of used, reserved and total CPU on each host
+     * @param hostMemoryMap a map of host IDs to the Ternary of used, reserved and total memory on each host
+     * @param requiresStorageMotion whether storage motion is required for the virtual machine
+     * @param preImbalance the pre-calculated cluster imbalance before migration (null to calculate it)
+     * @param baseMetricsArray pre-calculated array of all host metrics before migration
+     * @param hostIdToIndexMap mapping from host ID to index in the metrics array
      * @return a ternary containing improvement, cost, benefit
      */
     Ternary<Double, Double, Double> getMetrics(Cluster cluster, VirtualMachine vm, ServiceOffering serviceOffering,
             Host destHost, Map<Long, Ternary<Long, Long, Long>> hostCpuMap,
             Map<Long, Ternary<Long, Long, Long>> hostMemoryMap,
-            Boolean requiresStorageMotion) throws ConfigurationException;
+            Boolean requiresStorageMotion, Double preImbalance,
+            double[] baseMetricsArray, Map<Long, Integer> hostIdToIndexMap) throws ConfigurationException;
 
     /**
-     * Determines the metrics for a given virtual machine and destination host in a DRS cluster.
-     * This overloaded version accepts a pre-calculated pre-imbalance value to avoid recalculating
-     * it for every VM-host combination within the same iteration.
+     * Calculates the cluster imbalance after migrating a VM to a destination host.
      *
-     * @param cluster
-     *         the cluster to check
-     * @param vm
-     *         the virtual machine to check
-     * @param serviceOffering
-     *         the service offering for the virtual machine
-     * @param destHost
-     *         the destination host for the virtual machine
-     * @param hostCpuMap
-     *         a map of host IDs to the Ternary of used, reserved and total CPU on each host
-     * @param hostMemoryMap
-     *         a map of host IDs to the Ternary of used, reserved and total memory on each host
-     * @param requiresStorageMotion
-     *         whether storage motion is required for the virtual machine
-     * @param preImbalance
-     *         the pre-calculated cluster imbalance before migration (null to calculate it)
-     *
-     * @return a ternary containing improvement, cost, benefit
+     * @param vm the virtual machine being migrated
+     * @param destHost the destination host for the virtual machine
+     * @param clusterId the cluster ID
+     * @param vmMetric the VM's resource consumption metric
+     * @param baseMetricsArray pre-calculated array of all host metrics before migration
+     * @param hostIdToIndexMap mapping from host ID to index in the metrics array
+     * @return the cluster imbalance after migration
      */
-    default Ternary<Double, Double, Double> getMetrics(Cluster cluster, VirtualMachine vm, ServiceOffering serviceOffering,
-            Host destHost, Map<Long, Ternary<Long, Long, Long>> hostCpuMap,
-            Map<Long, Ternary<Long, Long, Long>> hostMemoryMap,
-            Boolean requiresStorageMotion, Double preImbalance) throws ConfigurationException {
-        // Default implementation delegates to the original method for backward compatibility
-        return getMetrics(cluster, vm, serviceOffering, destHost, hostCpuMap, hostMemoryMap, requiresStorageMotion);
-    }
+    default Double getImbalancePostMigration(VirtualMachine vm,
+            Host destHost, Long clusterId, long vmMetric, double[] baseMetricsArray,
+            Map<Long, Integer> hostIdToIndexMap, Map<Long, Ternary<Long, Long, Long>> hostCpuMap,
+            Map<Long, Ternary<Long, Long, Long>> hostMemoryMap) {
+        // Create a copy of the base array and adjust only the two affected hosts
+        double[] adjustedMetrics = new double[baseMetricsArray.length];
+        System.arraycopy(baseMetricsArray, 0, adjustedMetrics, 0, baseMetricsArray.length);
 
-    /**
-     * Calculates the imbalance of the cluster after a virtual machine migration.
-     *
-     * @param serviceOffering
-     *         the service offering for the virtual machine
-     * @param vm
-     *         the virtual machine being migrated
-     * @param destHost
-     *         the destination host for the virtual machine
-     * @param hostCpuMap
-     *         a map of host IDs to the Ternary of used, reserved and total CPU on each host
-     * @param hostMemoryMap
-     *         a map of host IDs to the Ternary of used, reserved and total memory on each host
-     *
-     * @return a pair containing the CPU and memory imbalance of the cluster after the migration
-     */
-    default Double getImbalancePostMigration(ServiceOffering serviceOffering, VirtualMachine vm,
-            Host destHost, Map<Long, Ternary<Long, Long, Long>> hostCpuMap,
-            Map<Long, Ternary<Long, Long, Long>> hostMemoryMap) throws ConfigurationException {
-        Pair<Long, Map<Long, Ternary<Long, Long, Long>>> pair = getHostMetricsMapAndType(destHost.getClusterId(), serviceOffering, hostCpuMap, hostMemoryMap);
-        long vmMetric = pair.first();
-        Map<Long, Ternary<Long, Long, Long>> hostMetricsMap = pair.second();
+        long destHostId = destHost.getId();
+        long vmHostId = vm.getHostId();
 
-        List<Double> list = new ArrayList<>();
-        for (Long hostId : hostMetricsMap.keySet()) {
-            list.add(getMetricValuePostMigration(destHost.getClusterId(), hostMetricsMap.get(hostId), vmMetric, hostId, destHost.getId(), vm.getHostId()));
+        // Adjust source host (remove VM resources)
+        Integer sourceIndex = hostIdToIndexMap.get(vmHostId);
+        if (sourceIndex != null && sourceIndex < adjustedMetrics.length) {
+            Map<Long, Ternary<Long, Long, Long>> sourceMetricsMap = getClusterDrsMetric(clusterId).equals("cpu") ? hostCpuMap : hostMemoryMap;
+            Ternary<Long, Long, Long> sourceMetrics = sourceMetricsMap.get(vmHostId);
+            if (sourceMetrics != null) {
+                adjustedMetrics[sourceIndex] = getMetricValuePostMigration(clusterId, sourceMetrics, vmMetric, vmHostId, destHostId, vmHostId);
+            }
         }
-        return getImbalance(list);
+
+        // Adjust destination host (add VM resources)
+        Integer destIndex = hostIdToIndexMap.get(destHostId);
+        if (destIndex != null && destIndex < adjustedMetrics.length) {
+            Map<Long, Ternary<Long, Long, Long>> destMetricsMap = getClusterDrsMetric(clusterId).equals("cpu") ? hostCpuMap : hostMemoryMap;
+            Ternary<Long, Long, Long> destMetrics = destMetricsMap.get(destHostId);
+            if (destMetrics != null) {
+                adjustedMetrics[destIndex] = getMetricValuePostMigration(clusterId, destMetrics, vmMetric, destHostId, destHostId, vmHostId);
+            }
+        }
+
+        return calculateImbalance(adjustedMetrics);
     }
 
-    private Pair<Long, Map<Long, Ternary<Long, Long, Long>>> getHostMetricsMapAndType(Long clusterId,
-            ServiceOffering serviceOffering, Map<Long, Ternary<Long, Long, Long>> hostCpuMap,
-            Map<Long, Ternary<Long, Long, Long>> hostMemoryMap) throws ConfigurationException {
+    /**
+     * Calculate imbalance from a double array. Imbalance is defined as standard deviation divided by mean.
+     *
+     * Uses reusable stateless calculator objects to avoid object creation overhead.
+     * @param values array of metric values
+     * @return calculated imbalance
+     */
+    private static double calculateImbalance(double[] values) {
+        if (values == null || values.length == 0) {
+            return 0.0;
+        }
+        // Reuse static final calculator objects (thread-safe, stateless)
+        double mean = MEAN_CALCULATOR.evaluate(values);
+        if (mean == 0.0) {
+            return 0.0; // Avoid division by zero
+        }
+        double stdDev = STDDEV_CALCULATOR.evaluate(values, mean);
+        return stdDev / mean;
+    }
+
+    /**
+     * Helper method to get VM metric based on cluster configuration.
+     */
+    static long getVmMetric(ServiceOffering serviceOffering, Long clusterId) throws ConfigurationException {
         String metric = getClusterDrsMetric(clusterId);
-        Pair<Long, Map<Long, Ternary<Long, Long, Long>>> pair;
         switch (metric) {
             case "cpu":
-                pair = new Pair<>((long) serviceOffering.getCpu() * serviceOffering.getSpeed(), hostCpuMap);
-                break;
+                return (long) serviceOffering.getCpu() * serviceOffering.getSpeed();
             case "memory":
-                pair = new Pair<>(serviceOffering.getRamSize() * 1024L * 1024L, hostMemoryMap);
-                break;
+                return serviceOffering.getRamSize() * 1024L * 1024L;
             default:
                 throw new ConfigurationException(
                         String.format("Invalid metric: %s for cluster: %d", metric, clusterId));
         }
-        return pair;
+    }
+
+    /**
+     * Helper method to calculate metrics from pre and post imbalance values.
+     * Subclasses can override this to implement different improvement calculations.
+     */
+    default Ternary<Double, Double, Double> calculateMetricsFromImbalances(Double preImbalance, Double postImbalance) {
+        final double improvement = preImbalance - postImbalance;
+        final double cost = 0.0;
+        final double benefit = 1.0;
+        return new Ternary<>(improvement, cost, benefit);
     }
 
     private Double getMetricValuePostMigration(Long clusterId, Ternary<Long, Long, Long> metrics, long vmMetric,
@@ -183,9 +193,26 @@ public interface ClusterDrsAlgorithm extends Adapter {
     }
 
     private static Double getImbalance(List<Double> metricList) {
-        Double clusterMeanMetric = getClusterMeanMetric(metricList);
-        Double clusterStandardDeviation = getClusterStandardDeviation(metricList, clusterMeanMetric);
-        return clusterStandardDeviation / clusterMeanMetric;
+        if (metricList == null || metricList.isEmpty()) {
+            return 0.0;
+        }
+        // Convert List<Double> to double[] once, avoiding repeated conversions
+        double[] values = new double[metricList.size()];
+        int index = 0;
+        for (Double value : metricList) {
+            if (value != null) {
+                values[index++] = value;
+            }
+        }
+
+        // Trim array if some values were null
+        if (index < values.length) {
+            double[] trimmed = new double[index];
+            System.arraycopy(values, 0, trimmed, 0, index);
+            values = trimmed;
+        }
+
+        return calculateImbalance(values);
     }
 
     static String getClusterDrsMetric(long clusterId) {
@@ -211,36 +238,6 @@ public interface ClusterDrsAlgorithm extends Adapter {
                 }
         }
         return null;
-    }
-
-    /**
-     * Mean is the average of a collection or set of metrics. In context of a DRS
-     * cluster, the cluster metrics defined as the average metrics value for some
-     * metric (such as CPU, memory etc.) for every resource such as host.
-     * Cluster Mean Metric, mavg = (∑mi) / N, where mi is a measurable metric for a
-     * resource ‘i’ in a cluster with total N number of resources.
-     */
-    static Double getClusterMeanMetric(List<Double> metricList) {
-        return new Mean().evaluate(metricList.stream().mapToDouble(i -> i).toArray());
-    }
-
-    /**
-     * Standard deviation is defined as the square root of the absolute squared sum
-     * of difference of a metric from its mean for every resource divided by the
-     * total number of resources. In context of the DRS, the cluster standard
-     * deviation is the standard deviation based on a metric of resources in a
-     * cluster such as for the allocation or utilisation CPU/memory metric of hosts
-     * in a cluster.
-     * Cluster Standard Deviation, σc = sqrt((∑∣mi−mavg∣^2) / N), where mavg is the
-     * mean metric value and mi is a measurable metric for some resource ‘i’ in the
-     * cluster with total N number of resources.
-     */
-    static Double getClusterStandardDeviation(List<Double> metricList, Double mean) {
-        if (mean != null) {
-            return new StandardDeviation(false).evaluate(metricList.stream().mapToDouble(i -> i).toArray(), mean);
-        } else {
-            return new StandardDeviation(false).evaluate(metricList.stream().mapToDouble(i -> i).toArray());
-        }
     }
 
     static boolean getDrsMetricUseRatio(long clusterId) {
