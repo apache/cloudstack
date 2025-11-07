@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -610,10 +611,29 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 logger.error("invalid request, no command sent");
                 if (logger.isTraceEnabled()) {
                     logger.trace("dumping request parameters");
-                    for (final  Object key : params.keySet()) {
-                        final String keyStr = (String)key;
-                        final String[] value = (String[])params.get(key);
-                        logger.trace("   key: " + keyStr + ", value: " + ((value == null) ? "'null'" : value[0]));
+
+                    // define sensitive fields that need to be masked in the logs
+                    Set<String> sensitiveFields = new HashSet<>(Arrays.asList(
+                        "password", "secretkey", "apikey", "token",
+                        "sessionkey", "accesskey", "signature",
+                        "authorization", "credential", "secret"
+                    ));
+
+                    for (final Object key : params.keySet()) {
+                        final String keyStr = (String) key;
+                        final String[] value = (String[]) params.get(key);
+
+                        boolean isSensitive = sensitiveFields.stream()
+                            .anyMatch(field -> keyStr.toLowerCase().contains(field));
+
+                        String logValue;
+                        if (isSensitive) {
+                            logValue = "******"; // mask sensitive values
+                        } else {
+                            logValue = (value == null) ? "'null'" : value[0];
+                        }
+
+                        logger.trace("   key: " + keyStr + ", value: " + logValue);
                     }
                 }
                 throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "Invalid request, no command sent");
