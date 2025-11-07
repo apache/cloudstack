@@ -151,7 +151,7 @@ public class BaremetalPingPxeResource extends BaremetalPxeResourceBase {
             sshConnection.connect(null, 60000, 60000);
             if (!sshConnection.authenticateWithPassword(_username, _password)) {
                 logger.debug("SSH Failed to authenticate");
-                throw new ConfigurationException(String.format("Cannot connect to PING PXE server(IP=%1$s, username=%2$s, password=%3$s", _ip, _username, "******"));
+                throw new ConfigurationException(String.format("Cannot connect to PING PXE server(IP=%1$s, username=%2$s, password=******", _ip, _username));
             }
 
             String script =
