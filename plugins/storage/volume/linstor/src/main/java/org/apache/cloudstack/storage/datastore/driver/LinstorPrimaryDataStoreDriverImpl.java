@@ -1063,9 +1063,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             Answer answer = copyVolume(srcData, dstData);
             res = new CopyCommandResult(null, answer);
         } else {
-            Answer answer = new Answer(null, false, "noimpl");
-            res = new CopyCommandResult(null, answer);
-            res.setResult("Not implemented yet");
+            throw new CloudRuntimeException("Not implemented for Linstor primary storage.");
         }
         callback.complete(res);
     }
@@ -1203,8 +1201,8 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 if (optEP.isPresent()) {
                     answer = optEP.get().sendMessage(cmd);
                 } else {
-                    answer = new Answer(cmd, false, "Unable to get matching Linstor endpoint.");
                     deleteResourceDefinition(pool, rscName);
+                    throw new CloudRuntimeException("Unable to get matching Linstor endpoint.");
                 }
             } catch (ApiException exc) {
                 logger.error("copy template failed: ", exc);
@@ -1246,7 +1244,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 answer = optEP.get().sendMessage(cmd);
             }
             else {
-                answer = new Answer(cmd, false, "Unable to get matching Linstor endpoint.");
+                throw new CloudRuntimeException("Unable to get matching Linstor endpoint.");
             }
         } catch (ApiException exc) {
             logger.error("copy volume failed: ", exc);
@@ -1285,8 +1283,8 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 snapshotObject.setPath(devName);
                 origCmd.setSrcTO(snapshotObject.getTO());
                 answer = optEPAny.get().sendMessage(origCmd);
-            } else{
-                answer = new Answer(origCmd, false, "Unable to get matching Linstor endpoint.");
+            } else {
+                throw new CloudRuntimeException("Unable to get matching Linstor endpoint.");
             }
         } finally {
             // delete the temporary resource, noop if already gone
