@@ -1466,8 +1466,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      * @param keyword Keyword filter for host search
      * @return Ternary containing: (all hosts with count, filtered compatible hosts, storage motion requirements map)
      */
-    @Override
-    public Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> getTechnicallyCompatibleHosts(
+    Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> getTechnicallyCompatibleHosts(
             final VirtualMachine vm,
             final Long startIndex,
             final Long pageSize,
@@ -1475,9 +1474,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         // GPU check
         if (_serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
-            logger.info(" Live Migration of GPU enabled VM : " + vm.getInstanceName() + " is not supported");
-            return new Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>(
-                    new Pair<>(new ArrayList<>(), 0), new ArrayList<>(), new HashMap<>());
+            logger.info("Live Migration of GPU enabled VM : {} is not supported", vm);
+            return new Ternary<>(new Pair<>(new ArrayList<>(), 0), new ArrayList<>(), new HashMap<>());
         }
 
         final long srcHostId = vm.getHostId();
@@ -1574,8 +1572,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
 
             if (CollectionUtils.isEmpty(filteredHosts)) {
-                return new Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>(
-                        new Pair<>(allHosts, allHostsPair.second()), new ArrayList<>(), new HashMap<>());
+                return new Ternary<>(new Pair<>(allHosts, allHostsPair.second()), new ArrayList<>(), new HashMap<>());
             }
         } else {
             final Long cluster = srcHost.getClusterId();
@@ -1591,13 +1588,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Pair<List<? extends Host>, Integer> allHostsPairResult = new Pair<>(allHosts, allHostsPair.second());
         Pair<Boolean, List<HostVO>> uefiFilteredResult = filterUefiHostsForMigration(allHosts, filteredHosts, vm);
         if (!uefiFilteredResult.first()) {
-            return new Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>(
-                    allHostsPairResult, new ArrayList<>(), new HashMap<>());
+            return new Ternary<>(allHostsPairResult, new ArrayList<>(), new HashMap<>());
         }
         filteredHosts = uefiFilteredResult.second();
 
-        return new Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>(
-                allHostsPairResult, filteredHosts, requiresStorageMotion);
+        return new Ternary<>(allHostsPairResult, filteredHosts, requiresStorageMotion);
     }
 
     /**

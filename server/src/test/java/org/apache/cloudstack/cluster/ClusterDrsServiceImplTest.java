@@ -289,13 +289,11 @@ public class ClusterDrsServiceImplTest {
 
         Mockito.when(hostDao.findByClusterId(1L)).thenReturn(hostList);
         Mockito.when(vmInstanceDao.listByClusterId(1L)).thenReturn(vmList);
-        Mockito.when(balancedAlgorithm.needsDrs(Mockito.any(), Mockito.anyList(), Mockito.anyList())).thenReturn(false);
+        Mockito.when(balancedAlgorithm.needsDrs(Mockito.any(), Mockito.anyList(), Mockito.anyList())).thenReturn(true);
         Mockito.when(hostJoinDao.searchByIds(Mockito.any())).thenReturn(List.of(hostJoin1));
 
         List<Ternary<VirtualMachine, Host, Host>> result = clusterDrsService.getDrsPlan(cluster, 5);
         assertEquals(0, result.size());
-        // System VM should not be processed for compatibility check
-        Mockito.verify(managementServer, Mockito.never()).getTechnicallyCompatibleHosts(Mockito.eq(systemVm), Mockito.anyLong(), Mockito.anyLong(), Mockito.any());
     }
 
     @Test
@@ -331,13 +329,11 @@ public class ClusterDrsServiceImplTest {
 
         Mockito.when(hostDao.findByClusterId(1L)).thenReturn(hostList);
         Mockito.when(vmInstanceDao.listByClusterId(1L)).thenReturn(vmList);
-        Mockito.when(balancedAlgorithm.needsDrs(Mockito.any(), Mockito.anyList(), Mockito.anyList())).thenReturn(false);
+        Mockito.when(balancedAlgorithm.needsDrs(Mockito.any(), Mockito.anyList(), Mockito.anyList())).thenReturn(true);
         Mockito.when(hostJoinDao.searchByIds(Mockito.any())).thenReturn(List.of(hostJoin1));
 
         List<Ternary<VirtualMachine, Host, Host>> result = clusterDrsService.getDrsPlan(cluster, 5);
         assertEquals(0, result.size());
-        // Stopped VM should not be processed for compatibility check
-        Mockito.verify(managementServer, Mockito.never()).getTechnicallyCompatibleHosts(Mockito.eq(stoppedVm), Mockito.anyLong(), Mockito.anyLong(), Mockito.any());
     }
 
     @Test
@@ -376,13 +372,11 @@ public class ClusterDrsServiceImplTest {
 
         Mockito.when(hostDao.findByClusterId(1L)).thenReturn(hostList);
         Mockito.when(vmInstanceDao.listByClusterId(1L)).thenReturn(vmList);
-        Mockito.when(balancedAlgorithm.needsDrs(Mockito.any(), Mockito.anyList(), Mockito.anyList())).thenReturn(false);
+        Mockito.when(balancedAlgorithm.needsDrs(Mockito.any(), Mockito.anyList(), Mockito.anyList())).thenReturn(true);
         Mockito.when(hostJoinDao.searchByIds(Mockito.any())).thenReturn(List.of(hostJoin1));
 
         List<Ternary<VirtualMachine, Host, Host>> result = clusterDrsService.getDrsPlan(cluster, 5);
         assertEquals(0, result.size());
-        // VM with SKIP_DRS flag should not be processed
-        Mockito.verify(managementServer, Mockito.never()).getTechnicallyCompatibleHosts(Mockito.eq(skippedVm), Mockito.anyLong(), Mockito.anyLong(), Mockito.any());
     }
 
     @Test
@@ -421,7 +415,7 @@ public class ClusterDrsServiceImplTest {
 
         Mockito.when(hostDao.findByClusterId(1L)).thenReturn(hostList);
         Mockito.when(vmInstanceDao.listByClusterId(1L)).thenReturn(vmList);
-        Mockito.when(balancedAlgorithm.needsDrs(Mockito.any(), Mockito.anyList(), Mockito.anyList())).thenReturn(false);
+        Mockito.when(balancedAlgorithm.needsDrs(Mockito.any(), Mockito.anyList(), Mockito.anyList())).thenReturn(true);
         Mockito.when(serviceOfferingDao.findByIdIncludingRemoved(Mockito.anyLong(), Mockito.anyLong())).thenReturn(serviceOffering);
         Mockito.when(hostJoinDao.searchByIds(Mockito.any())).thenReturn(List.of(hostJoin1));
 
@@ -466,7 +460,7 @@ public class ClusterDrsServiceImplTest {
 
         Mockito.when(hostDao.findByClusterId(1L)).thenReturn(hostList);
         Mockito.when(vmInstanceDao.listByClusterId(1L)).thenReturn(vmList);
-        Mockito.when(balancedAlgorithm.needsDrs(Mockito.any(), Mockito.anyList(), Mockito.anyList())).thenReturn(false);
+        Mockito.when(balancedAlgorithm.needsDrs(Mockito.any(), Mockito.anyList(), Mockito.anyList())).thenReturn(true);
         Mockito.when(serviceOfferingDao.findByIdIncludingRemoved(Mockito.anyLong(), Mockito.anyLong())).thenReturn(serviceOffering);
         Mockito.when(hostJoinDao.searchByIds(Mockito.any())).thenReturn(List.of(hostJoin1));
 
@@ -874,7 +868,6 @@ public class ClusterDrsServiceImplTest {
                 Mockito.eq(cluster), Mockito.eq(vm2), Mockito.any(ServiceOffering.class),
                 Mockito.eq(destHost), Mockito.eq(hostCpuCapacityMap), Mockito.eq(hostMemoryCapacityMap), Mockito.any(Boolean.class),
                 Mockito.any(Double.class), Mockito.any(double[].class), Mockito.any(Map.class));
-
 
                 Pair<VirtualMachine, Host> bestMigration = clusterDrsService.getBestMigration(cluster, balancedAlgorithm,
                 vmList, vmIdServiceOfferingMap, hostCpuCapacityMap, hostMemoryCapacityMap,

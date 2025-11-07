@@ -85,7 +85,7 @@ public class Balanced extends AdapterBase implements ClusterDrsAlgorithm {
                 cluster.getId(), ClusterDrsAlgorithm.getVmMetric(serviceOffering, cluster.getId()),
                 baseMetricsArray, hostIdToIndexMap, hostCpuMap, hostMemoryMap);
 
-        logger.trace("Cluster {} pre-imbalance: {} post-imbalance: {} Algorithm: {} VM: {} srcHost ID: {} destHost: {} (optimized)",
+        logger.trace("Cluster {} pre-imbalance: {} post-imbalance: {} Algorithm: {} VM: {} srcHost ID: {} destHost: {}",
                 cluster, preImbalance, postImbalance, getName(), vm, vm.getHostId(), destHost);
 
         return calculateMetricsFromImbalances(preImbalance, postImbalance);

@@ -1480,12 +1480,19 @@ public class ManagementServerImplTest {
             Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> result =
                 spy.listHostsForMigrationOfVM(1L, 0L, 20L, null);
 
+            // Verify hypervisor is in supported hypervisors list
+            Mockito.verify(hypervisorCapabilitiesDao).isStorageMotionSupported(hypervisorType, version);
+
             // Verify validation passed for this hypervisor
             Assert.assertNotNull("Result should not be null for " + hypervisorType, result);
-            Assert.assertEquals("Should have 2 total hosts for " + hypervisorType,
+            Assert.assertEquals("Should return 2 total hosts for " + hypervisorType,
                 Integer.valueOf(2), result.first().second());
             Assert.assertEquals("Should have 2 suitable hosts for " + hypervisorType,
                 2, result.second().size());
+            Assert.assertTrue("Host 101 should be available for " + hypervisorType,
+                result.second().stream().anyMatch(h -> h.getId() == 101L));
+            Assert.assertTrue("Host 102 should be available for " + hypervisorType,
+                result.second().stream().anyMatch(h -> h.getId() == 102L));
 
             // Reset mocks for next iteration
             Mockito.reset(vmInstanceDao, hostDao, serviceOfferingDetailsDao, volumeDao,
@@ -1883,170 +1890,6 @@ public class ManagementServerImplTest {
             result.second().stream().anyMatch(h -> h.getId() == 101L));
     }
 
-    @Test
-    public void testListHostsForMigrationOfVMOvmHypervisor() {
-        // Test OVM hypervisor support
-        VMInstanceVO vm = mockRunningVM(1L, HypervisorType.Ovm);
-
-        Account caller = mockRootAdminAccount();
-        Mockito.doReturn(caller).when(spy).getCaller();
-        Mockito.when(vmInstanceDao.findById(1L)).thenReturn(vm);
-        Mockito.when(serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()))
-            .thenReturn(null);
-
-        HostVO srcHost = mockHost(100L, 1L, 1L, 1L, HypervisorType.Ovm);
-        Mockito.when(hostDao.findById(vm.getHostId())).thenReturn(srcHost);
-
-        Mockito.when(hypervisorCapabilitiesDao.isStorageMotionSupported(HypervisorType.Ovm, null))
-            .thenReturn(false);
-
-        ServiceOfferingVO offering = Mockito.mock(ServiceOfferingVO.class);
-        Mockito.when(offeringDao.findById(vm.getId(), vm.getServiceOfferingId())).thenReturn(offering);
-
-        VolumeVO volume = mockVolume(1L, 1L);
-        Mockito.when(volumeDao.findCreatedByInstance(vm.getId())).thenReturn(List.of(volume));
-
-        DiskOfferingVO diskOffering = mockSharedDiskOffering(1L);
-        Mockito.when(diskOfferingDao.findById(volume.getDiskOfferingId())).thenReturn(diskOffering);
-
-        // Mock searchForServers for cluster-scoped search
-        HostVO host1 = mockHost(101L, 1L, 1L, 1L, HypervisorType.Ovm);
-        HostVO host2 = mockHost(102L, 1L, 1L, 1L, HypervisorType.Ovm);
-        List<HostVO> hosts = List.of(host1, host2);
-        Pair<List<HostVO>, Integer> hostsPair = new Pair<>(hosts, 2);
-        Mockito.doReturn(hostsPair).when(spy).searchForServers(
-            Mockito.anyLong(), Mockito.anyLong(), Mockito.isNull(), Mockito.any(Type.class),
-            Mockito.isNull(), Mockito.isNull(), Mockito.isNull(), Mockito.anyLong(),
-            Mockito.isNull(), Mockito.isNull(), Mockito.isNull(), Mockito.isNull(),
-            Mockito.isNull(), Mockito.isNull(), Mockito.anyLong());
-
-        setupMigrationMocks(vm, srcHost, hosts, volume);
-
-        Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> result =
-            spy.listHostsForMigrationOfVM(1L, 0L, 20L, null);
-
-        // Verify OVM is in supported hypervisors list
-        Mockito.verify(hypervisorCapabilitiesDao).isStorageMotionSupported(HypervisorType.Ovm, null);
-
-        // Verify response
-        Assert.assertNotNull(result);
-        Assert.assertEquals("Should return 2 total hosts for OVM", Integer.valueOf(2), result.first().second());
-        Assert.assertEquals("Should have 2 suitable hosts for OVM", 2, result.second().size());
-        Assert.assertTrue("Host 101 should be available",
-            result.second().stream().anyMatch(h -> h.getId() == 101L));
-        Assert.assertTrue("Host 102 should be available",
-            result.second().stream().anyMatch(h -> h.getId() == 102L));
-    }
-
-    @Test
-    public void testListHostsForMigrationOfVMHypervHypervisor() {
-        // Test Hyperv hypervisor support
-        VMInstanceVO vm = mockRunningVM(1L, HypervisorType.Hyperv);
-
-        Account caller = mockRootAdminAccount();
-        Mockito.doReturn(caller).when(spy).getCaller();
-        Mockito.when(vmInstanceDao.findById(1L)).thenReturn(vm);
-        Mockito.when(serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()))
-            .thenReturn(null);
-
-        HostVO srcHost = mockHost(100L, 1L, 1L, 1L, HypervisorType.Hyperv);
-        Mockito.when(hostDao.findById(vm.getHostId())).thenReturn(srcHost);
-
-        Mockito.when(hypervisorCapabilitiesDao.isStorageMotionSupported(HypervisorType.Hyperv, null))
-            .thenReturn(false);
-
-        ServiceOfferingVO offering = Mockito.mock(ServiceOfferingVO.class);
-        Mockito.when(offeringDao.findById(vm.getId(), vm.getServiceOfferingId())).thenReturn(offering);
-
-        VolumeVO volume = mockVolume(1L, 1L);
-        Mockito.when(volumeDao.findCreatedByInstance(vm.getId())).thenReturn(List.of(volume));
-
-        DiskOfferingVO diskOffering = mockSharedDiskOffering(1L);
-        Mockito.when(diskOfferingDao.findById(volume.getDiskOfferingId())).thenReturn(diskOffering);
-
-        // Mock searchForServers for cluster-scoped search
-        HostVO host1 = mockHost(101L, 1L, 1L, 1L, HypervisorType.Hyperv);
-        HostVO host2 = mockHost(102L, 1L, 1L, 1L, HypervisorType.Hyperv);
-        List<HostVO> hosts = List.of(host1, host2);
-        Pair<List<HostVO>, Integer> hostsPair = new Pair<>(hosts, 2);
-        Mockito.doReturn(hostsPair).when(spy).searchForServers(
-            Mockito.anyLong(), Mockito.anyLong(), Mockito.isNull(), Mockito.any(Type.class),
-            Mockito.isNull(), Mockito.isNull(), Mockito.isNull(), Mockito.anyLong(),
-            Mockito.isNull(), Mockito.isNull(), Mockito.isNull(), Mockito.isNull(),
-            Mockito.isNull(), Mockito.isNull(), Mockito.anyLong());
-
-        setupMigrationMocks(vm, srcHost, hosts, volume);
-
-        Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> result =
-            spy.listHostsForMigrationOfVM(1L, 0L, 20L, null);
-
-        // Verify Hyperv is in supported hypervisors list
-        Mockito.verify(hypervisorCapabilitiesDao).isStorageMotionSupported(HypervisorType.Hyperv, null);
-
-        // Verify response
-        Assert.assertNotNull(result);
-        Assert.assertEquals("Should return 2 total hosts for Hyperv", Integer.valueOf(2), result.first().second());
-        Assert.assertEquals("Should have 2 suitable hosts for Hyperv", 2, result.second().size());
-        Assert.assertTrue("Host 101 should be available",
-            result.second().stream().anyMatch(h -> h.getId() == 101L));
-        Assert.assertTrue("Host 102 should be available",
-            result.second().stream().anyMatch(h -> h.getId() == 102L));
-    }
-
-    @Test
-    public void testListHostsForMigrationOfVMOvm3Hypervisor() {
-        // Test Ovm3 hypervisor support
-        VMInstanceVO vm = mockRunningVM(1L, HypervisorType.Ovm3);
-
-        Account caller = mockRootAdminAccount();
-        Mockito.doReturn(caller).when(spy).getCaller();
-        Mockito.when(vmInstanceDao.findById(1L)).thenReturn(vm);
-        Mockito.when(serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()))
-            .thenReturn(null);
-
-        HostVO srcHost = mockHost(100L, 1L, 1L, 1L, HypervisorType.Ovm3);
-        Mockito.when(hostDao.findById(vm.getHostId())).thenReturn(srcHost);
-
-        Mockito.when(hypervisorCapabilitiesDao.isStorageMotionSupported(HypervisorType.Ovm3, null))
-            .thenReturn(false);
-
-        ServiceOfferingVO offering = Mockito.mock(ServiceOfferingVO.class);
-        Mockito.when(offeringDao.findById(vm.getId(), vm.getServiceOfferingId())).thenReturn(offering);
-
-        VolumeVO volume = mockVolume(1L, 1L);
-        Mockito.when(volumeDao.findCreatedByInstance(vm.getId())).thenReturn(List.of(volume));
-
-        DiskOfferingVO diskOffering = mockSharedDiskOffering(1L);
-        Mockito.when(diskOfferingDao.findById(volume.getDiskOfferingId())).thenReturn(diskOffering);
-
-        // Mock searchForServers for cluster-scoped search
-        HostVO host1 = mockHost(101L, 1L, 1L, 1L, HypervisorType.Ovm3);
-        HostVO host2 = mockHost(102L, 1L, 1L, 1L, HypervisorType.Ovm3);
-        List<HostVO> hosts = List.of(host1, host2);
-        Pair<List<HostVO>, Integer> hostsPair = new Pair<>(hosts, 2);
-        Mockito.doReturn(hostsPair).when(spy).searchForServers(
-            Mockito.anyLong(), Mockito.anyLong(), Mockito.isNull(), Mockito.any(Type.class),
-            Mockito.isNull(), Mockito.isNull(), Mockito.isNull(), Mockito.anyLong(),
-            Mockito.isNull(), Mockito.isNull(), Mockito.isNull(), Mockito.isNull(),
-            Mockito.isNull(), Mockito.isNull(), Mockito.anyLong());
-
-        setupMigrationMocks(vm, srcHost, hosts, volume);
-
-        Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> result =
-            spy.listHostsForMigrationOfVM(1L, 0L, 20L, null);
-
-        // Verify Ovm3 is in supported hypervisors list
-        Mockito.verify(hypervisorCapabilitiesDao).isStorageMotionSupported(HypervisorType.Ovm3, null);
-
-        // Verify response
-        Assert.assertNotNull(result);
-        Assert.assertEquals("Should return 2 total hosts for Ovm3", Integer.valueOf(2), result.first().second());
-        Assert.assertEquals("Should have 2 suitable hosts for Ovm3", 2, result.second().size());
-        Assert.assertTrue("Host 101 should be available",
-            result.second().stream().anyMatch(h -> h.getId() == 101L));
-        Assert.assertTrue("Host 102 should be available",
-            result.second().stream().anyMatch(h -> h.getId() == 102L));
-    }
 
     @Test
     public void testListHostsForMigrationOfVMWithNullKeyword() {
@@ -2180,7 +2023,6 @@ public class ManagementServerImplTest {
     private VMInstanceVO mockVM(Long id, HypervisorType hypervisorType, State state) {
         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
         when(vm.getId()).thenReturn(id);
-        when(vm.getInstanceName()).thenReturn("VM-" + id);
         when(vm.getState()).thenReturn(state);
         when(vm.getHypervisorType()).thenReturn(hypervisorType);
         when(vm.getHostId()).thenReturn(100L);

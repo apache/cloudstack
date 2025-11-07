@@ -25,6 +25,7 @@ import com.cloud.org.Cluster;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Adapter;
 import com.cloud.vm.VirtualMachine;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 
@@ -38,8 +39,7 @@ import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMetricTy
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMetricUseRatio;
 
 public interface ClusterDrsAlgorithm extends Adapter {
-    // Reusable stateless calculator objects (thread-safe) - created once, reused for all calculations
-    // Apache Commons Math Mean and StandardDeviation are stateless and thread-safe
+
     Mean MEAN_CALCULATOR = new Mean();
     StandardDeviation STDDEV_CALCULATOR = new StandardDeviation(false);
 
@@ -130,7 +130,8 @@ public interface ClusterDrsAlgorithm extends Adapter {
     }
 
     /**
-     * Calculate imbalance from a double array. Imbalance is defined as standard deviation divided by mean.
+     * Calculate imbalance from an array of metric values.
+     * Imbalance is defined as standard deviation divided by mean.
      *
      * Uses reusable stateless calculator objects to avoid object creation overhead.
      * @param values array of metric values
@@ -140,7 +141,7 @@ public interface ClusterDrsAlgorithm extends Adapter {
         if (values == null || values.length == 0) {
             return 0.0;
         }
-        // Reuse static final calculator objects (thread-safe, stateless)
+
         double mean = MEAN_CALCULATOR.evaluate(values);
         if (mean == 0.0) {
             return 0.0; // Avoid division by zero
@@ -167,9 +168,11 @@ public interface ClusterDrsAlgorithm extends Adapter {
 
     /**
      * Helper method to calculate metrics from pre and post imbalance values.
-     * Subclasses can override this to implement different improvement calculations.
      */
     default Ternary<Double, Double, Double> calculateMetricsFromImbalances(Double preImbalance, Double postImbalance) {
+        // This needs more research to determine the cost and benefit of a migration
+        // TODO: Cost should be a factor of the VM size and the host capacity
+        // TODO: Benefit should be a factor of the VM size and the host capacity and the number of VMs on the host
         final double improvement = preImbalance - postImbalance;
         final double cost = 0.0;
         final double benefit = 1.0;
@@ -193,7 +196,7 @@ public interface ClusterDrsAlgorithm extends Adapter {
     }
 
     private static Double getImbalance(List<Double> metricList) {
-        if (metricList == null || metricList.isEmpty()) {
+        if (CollectionUtils.isEmpty(metricList)) {
             return 0.0;
         }
         // Convert List<Double> to double[] once, avoiding repeated conversions

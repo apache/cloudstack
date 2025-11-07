@@ -77,6 +77,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.time.DateUtils;
 
@@ -411,7 +412,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             if (vmToCompatibleHostsCache.containsKey(vm.getId())) {
                 // Check if VM has any affinity groups - if list is empty, VM has no affinity groups
                 List<AffinityGroupVMMapVO> affinityGroupMappings = affinityGroupVMMapDao.listByInstanceId(vm.getId());
-                if (affinityGroupMappings != null && !affinityGroupMappings.isEmpty()) {
+                if (CollectionUtils.isNotEmpty(affinityGroupMappings)) {
                     vmsWithAffinityGroups.add(vm.getId());
                 }
             }
@@ -591,7 +592,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             Map<Host, Boolean> requiresStorageMotion = vmToStorageMotionCache.get(vm.getId());
             ExcludeList excludes = vmToExcludesMap.get(vm.getId());
 
-            if (compatibleHosts == null || compatibleHosts.isEmpty()) {
+            if (CollectionUtils.isEmpty(compatibleHosts)) {
                 continue;
             }
 
