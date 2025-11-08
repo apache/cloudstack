@@ -500,7 +500,8 @@ public class UriUtils {
             if ((user != null) && (password != null)) {
                 httpclient.getParams().setAuthenticationPreemptive(true);
                 Credentials defaultcreds = new UsernamePasswordCredentials(user, password);
-                httpclient.getState().setCredentials(new AuthScope(hostAndPort.first(), hostAndPort.second(), AuthScope.ANY_REALM), defaultcreds);
+                httpclient.getState().setCredentials(
+                        new AuthScope(hostAndPort.first(), hostAndPort.second(), AuthScope.ANY_REALM), defaultcreds);
                 LOGGER.info("Added username=" + user + ", password=****** " + "for host " + hostAndPort.first() + ":" + hostAndPort.second());
             }
             // Execute the method.
