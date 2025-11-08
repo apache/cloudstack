@@ -382,6 +382,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         WebhookVO webhook = new WebhookVO(name, description, state, domainId, owner.getId(), payloadUrl, secretKey,
                 sslVerification, scope);
         webhook = webhookDao.persist(webhook);
+        webhookService.invalidateWebhooksCache();
         return createWebhookResponse(webhook.getId());
     }
 
@@ -394,7 +395,11 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
             throw new InvalidParameterValueException("Unable to find the webhook with the specified ID");
         }
         accountManager.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, false, webhook);
-        return webhookDao.remove(id);
+        boolean removed = webhookDao.remove(id);
+        if (removed) {
+            webhookService.invalidateWebhooksCache();
+        }
+        return removed;
     }
 
     @Override
@@ -473,6 +478,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         if (updateNeeded && !webhookDao.update(id, webhook)) {
             return null;
         }
+        webhookService.invalidateWebhooksCache();
         return createWebhookResponse(webhook.getId());
     }
 

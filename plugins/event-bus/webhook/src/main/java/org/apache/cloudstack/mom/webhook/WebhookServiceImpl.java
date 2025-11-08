@@ -89,6 +89,7 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
     @Inject
     AccountManager accountManager;
 
+    private LazyCache<org.apache.commons.lang3.tuple.Pair<Long, List<Long>>, List<WebhookVO>> webhooksCache;
     private LazyCache<Long, List<WebhookFilterVO>> webhookFiltersCache;
 
     protected WebhookDeliveryThread getDeliveryJob(Event event, Webhook webhook, Pair<Integer, Integer> configs) {
@@ -181,7 +182,7 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
             domainIds.addAll(domainDao.getDomainParentIds(event.getResourceDomainId()));
         }
         List<WebhookVO> webhooks =
-                webhookDao.listByEnabledForDelivery(event.getResourceAccountId(), domainIds);
+                webhooksCache.get(org.apache.commons.lang3.tuple.Pair.of(event.getResourceAccountId(), domainIds));
         Map<Long, Pair<Integer, Integer>> domainConfigs = new HashMap<>();
         for (WebhookVO webhook : webhooks) {
             List<? extends WebhookFilter> filters = webhookFiltersCache.get(webhook.getId());
@@ -281,10 +282,14 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-         webhookFiltersCache = new LazyCache<>(
+        webhooksCache = new LazyCache<>(
                  16, 60,
+                (key) -> webhookDao.listByEnabledForDelivery(key.getLeft(), key.getRight())
+        );
+        webhookFiltersCache = new LazyCache<>(
+                16, 60,
                 (webhookId) -> webhookFilterDao.listByWebhook(webhookId)
-         );
+        );
         try {
             webhookJobExecutor = Executors.newFixedThreadPool(WebhookDeliveryThreadPoolSize.value(),
                     new NamedThreadFactory(WEBHOOK_JOB_POOL_THREAD_PREFIX));
@@ -373,6 +378,11 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
             throw new CloudRuntimeException("Failed to execute test webhook delivery");
         }
         return webhookDeliveryVO;
+    }
+
+    @Override
+    public void invalidateWebhooksCache() {
+        webhooksCache.clear();
     }
 
     @Override

@@ -54,9 +54,10 @@ public class WebhookApiServiceImplTest {
     WebhookJoinDao webhookJoinDao;
     @Mock
     AccountManager accountManager;
-
     @Mock
     DomainDao domainDao;
+    @Mock
+    WebhookService webhookService;
 
     @InjectMocks
     WebhookApiServiceImpl webhookApiServiceImpl = new WebhookApiServiceImpl();
