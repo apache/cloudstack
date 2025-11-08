@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.logsws.logreader;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.apache.cloudstack.framework.websocket.server.common.WebSocketSession;
@@ -38,9 +39,15 @@ public class FilteredLogTailerListener extends TailerListenerAdapter {
         if (isFilterEmpty) {
             return true;
         }
-        if (isLastLineValid && !line.startsWith("2025")) {
+
+        // ToDo: Improve. If the last line was valid and the current line does not start with YEAR-MONTH-
+        //  consider it valid
+        String logLinePrefix = String.format("%d-%02d-", LocalDate.now().getYear(),
+                LocalDate.now().getMonthValue());
+        if (isLastLineValid && !line.startsWith(logLinePrefix)) {
             return true;
         }
+
         for (String filter : filters) {
             if (line.contains(filter)) {
                 return true;

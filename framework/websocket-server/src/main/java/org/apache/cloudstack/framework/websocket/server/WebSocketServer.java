@@ -124,11 +124,11 @@ public final class WebSocketServer {
             return null;
         }
         String keystoreFile = ServerPropertiesUtil.getProperty(ServerPropertiesUtil.KEY_KEYSTORE_FILE);
-        String keystorePassword = ServerPropertiesUtil.getProperty(ServerPropertiesUtil.KEY_KEYSTORE_FILE);
+        String keystorePassword = ServerPropertiesUtil.getProperty(ServerPropertiesUtil.KEY_KEYSTORE_PASSWORD);
         if (StringUtils.isBlank(keystoreFile) || StringUtils.isBlank(keystorePassword)) {
             throw new IllegalArgumentException("SSL is enabled but keystore file or password is not configured");
         }
-        if (Files.exists(Path.of(keystoreFile))) {
+        if (!Files.exists(Path.of(keystoreFile))) {
             throw new IllegalArgumentException(String.format("SSL is enabled but keystore file does not exist: %s",
                     keystoreFile));
         }

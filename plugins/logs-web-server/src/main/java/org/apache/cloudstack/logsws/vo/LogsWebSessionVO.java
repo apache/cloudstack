@@ -49,7 +49,7 @@ public class LogsWebSessionVO implements LogsWebSession {
     @Column(name = "uuid")
     private String uuid;
 
-    @Column(name = "filter", columnDefinition = "json")
+    @Column(name = "filters", columnDefinition = "json")
     @Convert(converter = StringListJsonConverter.class)
     private List<String> filters;
 

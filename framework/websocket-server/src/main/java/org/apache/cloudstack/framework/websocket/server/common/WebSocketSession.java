@@ -21,6 +21,8 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 
 public interface WebSocketSession {
+    String ATTR_REMOTE_ADDR = "remoteAddress";
+
     String id();
 
     String path();

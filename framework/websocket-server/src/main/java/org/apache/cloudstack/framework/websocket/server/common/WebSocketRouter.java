@@ -289,7 +289,7 @@ public final class WebSocketRouter {
 
     public static String stripWebSocketPathPrefix(String path) {
         if (StringUtils.isNotBlank(path) && path.startsWith(WebSocketRouter.WEBSOCKET_PATH_PREFIX)) {
-            return path.replaceFirst(WebSocketRouter.WEBSOCKET_PATH_PREFIX, "/");
+            return path.replaceFirst(WebSocketRouter.WEBSOCKET_PATH_PREFIX, "");
         }
         return path;
     }

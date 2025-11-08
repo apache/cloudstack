@@ -28,6 +28,9 @@
         @close="closeAction"
       >
       <template #extra>
+        <a-switch
+          v-model:checked="showRawLogs"
+          style="margin-right: 12px" />
         <a-button type="primary" @click="onDownload" v-if="webSocketsValid">{{ $t('label.download') }}</a-button>
       </template>
         <!-- Draggable handle at the top of the drawer content -->
@@ -38,7 +41,7 @@
         <!-- Container that holds both the scrollable content and the fixed footer -->
         <div class="drawer-container">
           <div class="header">
-            <a-row :gutter="[16, 8]" style="width: 100%; margin-bottom: 16px">
+            <a-row :gutter="[16, 8]" style="width: 100%; margin-bottom: 16px" v-if="!showRawLogs">
               <a-col :xs="24" :sm="16">
                 <tooltip-label :title="$t('label.source')" :tooltip="'Sources'" />
                 <a-select
@@ -82,8 +85,8 @@
           <div class="content_wrapper">
             <div
               v-if="showRawLogs"
-              class="content"
-              v-html="webSocketData">
+              class="content">
+              {{ webSocketData }}
             </div>
             <a-table
               v-else
@@ -149,7 +152,8 @@ export default {
       webSocketData: '',
       selectedLogType: undefined,
       dataSource: [],
-      logLevels: ['CRITICAL', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE']
+      logLevels: ['CRITICAL', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE'],
+      showRawLogs: false
     }
   },
   watch: {
@@ -164,9 +168,6 @@ export default {
     }
   },
   computed: {
-    showRawLogs () {
-      return false
-    },
     showSourceOnlyWhenMultiple () {
       return true
     },
@@ -273,13 +274,22 @@ export default {
     },
     prepareAndOpenWebSockets (webSocketsDetails) {
       var opts = []
+      const currentWsProto = window.location.protocol === 'https:' ? 'wss://' : 'ws://'
+      const currentHost = window.location.host
       for (var ws of webSocketsDetails) {
+        const base = ws.host
+          ? `${currentWsProto}${ws.host}${ws.port ? `:${ws.port}` : ''}`
+          : `${currentWsProto}${currentHost}`
+        let url = base + ws.path
+        if (!ws.host) {
+          url += `&serverid=${ws.managementserverid}&port=${ws.port}`
+        }
         var opt = {
           key: ws.managementserverid,
           id: ws.managementserverid,
           name: ws.managementservername,
           title: ws.managementservername,
-          webSocketUrl: (ws.ssl ? 'wss://' : 'ws://') + ws.host + ':' + ws.port + ws.path,
+          webSocketUrl: url,
           webSocket: null,
           logsErrorCount: 0,
           logsWarningCount: 0
@@ -348,7 +358,7 @@ export default {
         return
       }
       this.dataSource.push(this.parseLogLine(data, opt.id, opt.name))
-      this.webSocketData += '<br>' + data
+      this.webSocketData += '\n' + data
     },
     formatLogAndUpdateData (opt, data) {
       if (data.startsWith('Connection idle')) {

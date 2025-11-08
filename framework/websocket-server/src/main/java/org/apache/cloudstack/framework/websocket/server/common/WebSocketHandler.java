@@ -22,9 +22,9 @@ import java.nio.ByteBuffer;
 public interface WebSocketHandler {
     void onOpen(WebSocketSession s);
 
-    void onText(WebSocketSession s, String text);
+    void onTextMessage(WebSocketSession s, String text);
 
-    void onBinary(WebSocketSession s, ByteBuffer bin);
+    void onBinaryMessage(WebSocketSession s, ByteBuffer bin);
 
     void onClose(WebSocketSession s, int code, String reason);
 

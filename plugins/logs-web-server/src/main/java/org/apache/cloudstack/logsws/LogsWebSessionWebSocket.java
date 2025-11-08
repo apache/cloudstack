@@ -31,6 +31,7 @@ public class LogsWebSessionWebSocket {
         this.managementServerHost = managementServerHost;
         this.port = port;
         this.path = path;
+        this.ssl = ssl;
     }
 
     public ManagementServerHostVO getManagementServerHost() {

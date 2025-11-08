@@ -62,7 +62,7 @@ public class WebSocketServerRoutingHandler extends SimpleChannelInboundHandler<W
             final URI uri = URI.create(requestUri);
             final String rawQuery = uri.getQuery();
             String path = uri.getPath();
-            LOGGER.debug("WebSocket connection for path: {}, query: {}", path, rawQuery);
+            LOGGER.trace("WebSocket connection for path: {}, query: {}", path, rawQuery);
 
             path = WebSocketRouter.stripWebSocketPathPrefix(uri.getPath());
 
@@ -80,7 +80,7 @@ public class WebSocketServerRoutingHandler extends SimpleChannelInboundHandler<W
             }
 
             session = new NettyWebSocketSession(ctx.channel(), path, QueryUtils.parse(rawQuery));
-            session.setAttr("remoteAddress", String.valueOf(ctx.channel().remoteAddress()));
+            session.setAttr(WebSocketSession.ATTR_REMOTE_ADDR, String.valueOf(ctx.channel().remoteAddress()));
 
             try {
                 handler.onOpen(session);
@@ -104,10 +104,10 @@ public class WebSocketServerRoutingHandler extends SimpleChannelInboundHandler<W
         }
         try {
             if (frame instanceof TextWebSocketFrame) {
-                handler.onText(session, ((TextWebSocketFrame) frame).text());
+                handler.onTextMessage(session, ((TextWebSocketFrame) frame).text());
             } else if (frame instanceof BinaryWebSocketFrame) {
                 ByteBuffer buf = frame.content().nioBuffer();
-                handler.onBinary(session, buf);
+                handler.onBinaryMessage(session, buf);
             } else if (frame instanceof CloseWebSocketFrame) {
                 CloseWebSocketFrame c = (CloseWebSocketFrame) frame.retain();
                 handler.onClose(session, c.statusCode(), c.reasonText());

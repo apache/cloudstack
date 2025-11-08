@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.Map;
 
 import javax.servlet.ServletException;
-import javax.servlet.UnavailableException;
 
 import org.apache.cloudstack.framework.websocket.server.common.WebSocketHandler;
 import org.apache.cloudstack.framework.websocket.server.common.WebSocketRouter;
@@ -31,6 +30,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.websocket.api.Session;
+import org.eclipse.jetty.websocket.api.UpgradeRequest;
 import org.eclipse.jetty.websocket.servlet.ServletUpgradeRequest;
 import org.eclipse.jetty.websocket.servlet.ServletUpgradeResponse;
 import org.eclipse.jetty.websocket.servlet.WebSocketCreator;
@@ -63,16 +63,13 @@ public class JettyWebSocketServlet extends WebSocketServlet {
         LOGGER.info("Initializing JettyWebSocketServlet");
         if (!isWebSocketServletEnabled()) {
             enabled = false;
-            String msg = "WebSocket Server is not enabled, embedded WebSocket Server will not be running";
-            LOGGER.info(msg);
-            throw new UnavailableException(msg);
+            LOGGER.info("WebSocket Server is not enabled, embedded WebSocket Server will not be running");
         }
         Integer port = getWebSocketServletPort();
         if (port == null) {
             enabled = false;
-            String msg = "WebSocket Server port is configured, embedded WebSocket Server will not be running";
-            LOGGER.info(msg);
-            throw new UnavailableException(msg);
+            LOGGER.info("WebSocket Server port is configured, embedded WebSocket Server will not be running");
+            return;
         }
         enabled = true;
         LOGGER.info("Embedded WebSocket Server initialized at {}/* with port: {}",
@@ -155,16 +152,23 @@ public class JettyWebSocketServlet extends WebSocketServlet {
         }
 
         @Override
-        public void onWebSocketConnect(Session jettySess) {
-            super.onWebSocketConnect(jettySess);
-            this.session = JettyWebSocketSession.adapt(jettySess, routePath, parse(rawQuery));
+        public void onWebSocketConnect(Session jettySession) {
+            super.onWebSocketConnect(jettySession);
+            this.session = JettyWebSocketSession.adapt(jettySession, routePath, parse(rawQuery));
+            UpgradeRequest request = jettySession.getUpgradeRequest();
+            String remoteAddr = request.getHeader("X-Forwarded-For");
+            if (remoteAddr == null) {
+                remoteAddr = jettySession.getRemoteAddress().getAddress().getHostAddress();
+            }
+            this.session.setAttr(WebSocketSession.ATTR_REMOTE_ADDR, remoteAddr);
             try {
+
                 handler.onOpen(session);
             } catch (Throwable t) {
                 try {
                     handler.onError(session, t);
                 } finally {
-                    jettySess.close();
+                    jettySession.close();
                 }
             }
         }
@@ -172,7 +176,7 @@ public class JettyWebSocketServlet extends WebSocketServlet {
         @Override
         public void onWebSocketText(String message) {
             try {
-                handler.onText(session, message);
+                handler.onTextMessage(session, message);
             } catch (Throwable t) {
                 handler.onError(session, t);
             }
@@ -181,7 +185,7 @@ public class JettyWebSocketServlet extends WebSocketServlet {
         @Override
         public void onWebSocketBinary(byte[] payload, int offset, int len) {
             try {
-                handler.onBinary(session, java.nio.ByteBuffer.wrap(payload, offset, len));
+                handler.onBinaryMessage(session, java.nio.ByteBuffer.wrap(payload, offset, len));
             } catch (Throwable t) {
                 handler.onError(session, t);
             }

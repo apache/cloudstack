@@ -32,7 +32,7 @@ import org.apache.cloudstack.logsws.LogsWebSession;
 import org.apache.cloudstack.logsws.api.response.LogsWebSessionResponse;
 
 @APICommand(name = "listLogsWebSessions",
-        description = "Lists logs web sessions",
+        description = "Lists Logs Web Sessions",
         responseObject = LogsWebSessionResponse.class,
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = {LogsWebSession.class},
@@ -48,7 +48,7 @@ public class ListLogsWebSessionsCmd extends BaseListAccountResourcesCmd {
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
             entityType = LogsWebSessionResponse.class,
-            description = "The ID of the logs web session")
+            description = "The ID of the Logs Web Session")
     private Long id;
 
     /////////////////////////////////////////////////////
