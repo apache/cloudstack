@@ -45,7 +45,7 @@
               </template>
               <a-select
                 style="margin-left: 0"
-                :value="addFilterForm.matchtype"
+                v-model:value="addFilterForm.matchtype"
                 placeholder="Select match type"
                 allow-clear>
                 <a-select-option value="exact">{{ $t('label.exact') }}</a-select-option>
@@ -187,7 +187,7 @@ export default {
   created () {
     this.updateColumns()
     this.pageSize = this.pageSizeOptions[0] * 1
-    this.resetAddFilterForm()
+    this.initAddFilterForm()
     this.fetchData()
   },
   watch: {
@@ -253,7 +253,7 @@ export default {
         this.columns[this.columns.length - 1].customFilterDropdown = true
       }
     },
-    resetAddFilterForm () {
+    initAddFilterForm () {
       this.addFormRef = ref()
       this.addFilterForm = reactive({
         mode: 'include',
@@ -263,6 +263,11 @@ export default {
       this.addFormRules = reactive({
         value: [{ required: true, message: this.$t('message.error.required.input') }]
       })
+    },
+    resetAddFilterForm () {
+      if (this.addFormRef.value) {
+        this.addFormRef.value.resetFields()
+      }
     },
     addFilter (e) {
       e.preventDefault()
