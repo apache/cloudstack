@@ -70,8 +70,7 @@ public class Script implements Callable<String> {
     private boolean avoidLoggingCommand = false;
     private final Set<Integer> sensitiveArgIndices = new HashSet<>();
 
-    private static final ScheduledExecutorService s_executors = Executors.newScheduledThreadPool(10,
-            new NamedThreadFactory("Script"));
+    private static final ScheduledExecutorService s_executors = Executors.newScheduledThreadPool(10, new NamedThreadFactory("Script"));
 
     String _workDir;
     ArrayList<String> _command;
