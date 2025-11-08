@@ -30,8 +30,10 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -66,8 +68,10 @@ public class Script implements Callable<String> {
 
     private boolean _passwordCommand = false;
     private boolean avoidLoggingCommand = false;
+    private final Set<Integer> sensitiveArgIndices = new HashSet<>();
 
-    private static final ScheduledExecutorService s_executors = Executors.newScheduledThreadPool(10, new NamedThreadFactory("Script"));
+    private static final ScheduledExecutorService s_executors = Executors.newScheduledThreadPool(10,
+            new NamedThreadFactory("Script"));
 
     String _workDir;
     ArrayList<String> _command;
@@ -143,6 +147,11 @@ public class Script implements Callable<String> {
         _command.add(param);
     }
 
+    public void addSensitive(String param) {
+        _command.add(param);
+        sensitiveArgIndices.add(_command.size() - 1);
+    }
+
     public Script set(String name, String value) {
         _command.add(name);
         _command.add(value);
@@ -161,7 +170,7 @@ public class Script implements Callable<String> {
             if (sanitizeViCmdParameter(cmd, builder) || sanitizeRbdFileFormatCmdParameter(cmd, builder)) {
                 continue;
             }
-            if (obscureParam) {
+            if (obscureParam || sensitiveArgIndices.contains(i)) {
                 builder.append("******").append(" ");
                 obscureParam = false;
             } else {
@@ -238,12 +247,16 @@ public class Script implements Callable<String> {
     public String execute(OutputInterpreter interpreter) {
         String[] command = _command.toArray(new String[_command.size()]);
         String commandLine = buildCommandLine(command);
-        if (_logger.isDebugEnabled() && !avoidLoggingCommand) {
+        if (_logger.isDebugEnabled() && !avoidLoggingCommand && sensitiveArgIndices.isEmpty()) {
             _logger.debug(String.format("Executing command [%s].", commandLine.split(KeyStoreUtils.KS_FILENAME)[0]));
         }
 
         try {
-            _logger.trace(String.format("Creating process for command [%s].", commandLine));
+            if (sensitiveArgIndices.isEmpty()) {
+                _logger.trace(String.format("Creating process for command [%s].", commandLine));
+            } else {
+                _logger.trace("Creating process for command with sensitive arguments.");
+            }
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.redirectErrorStream(true);
             if (_workDir != null)
@@ -261,48 +274,126 @@ public class Script implements Callable<String> {
             _thread = Thread.currentThread();
             ScheduledFuture<String> future = null;
             if (_timeout > 0) {
-                _logger.trace(String.format("Scheduling the execution of command [%s] with a timeout of [%s] milliseconds.", commandLine, _timeout));
+                if (sensitiveArgIndices.isEmpty()) {
+                    _logger.trace(String.format(
+                            "Scheduling the execution of command [%s] with a timeout of [%s] milliseconds.",
+                            commandLine, _timeout));
+                } else {
+                    _logger.trace(String.format(
+                            "Scheduling the execution of command with sensitive arguments with a timeout of [%s] milliseconds.",
+                            _timeout));
+                }
                 future = s_executors.schedule(this, _timeout, TimeUnit.MILLISECONDS);
             }
 
             long processPid = _process.pid();
             Task task = null;
             if (interpreter != null && interpreter.drain()) {
-                _logger.trace(String.format("Executing interpreting task of process [%s] for command [%s].", processPid, commandLine));
+                if (sensitiveArgIndices.isEmpty()) {
+                    _logger.trace(String.format("Executing interpreting task of process [%s] for command [%s].",
+                            processPid, commandLine));
+                } else {
+                    _logger.trace(String.format(
+                            "Executing interpreting task of process [%s] for command with sensitive arguments.",
+                            processPid));
+                }
                 task = new Task(interpreter, ir);
                 s_executors.execute(task);
             }
 
             while (true) {
-                _logger.trace(String.format("Attempting process [%s] execution for command [%s] with timeout [%s].", processPid, commandLine, _timeout));
+                if (sensitiveArgIndices.isEmpty()) {
+                    _logger.trace(String.format("Attempting process [%s] execution for command [%s] with timeout [%s].",
+                            processPid, commandLine, _timeout));
+                } else {
+                    _logger.trace(String.format(
+                            "Attempting process [%s] execution for command with sensitive arguments with timeout [%s].",
+                            processPid, _timeout));
+                }
                 try {
                     if (_process.waitFor(_timeout, TimeUnit.MILLISECONDS)) {
-                        _logger.trace(String.format("Process [%s] execution for command [%s] completed within timeout period [%s].", processPid, commandLine,
-                                _timeout));
+                        if (sensitiveArgIndices.isEmpty()) {
+                            _logger.trace(String.format(
+                                    "Process [%s] execution for command [%s] completed within timeout period [%s].",
+                                    processPid, commandLine,
+                                    _timeout));
+                        } else {
+                            _logger.trace(String.format(
+                                    "Process [%s] execution for command with sensitive arguments completed within timeout period [%s].",
+                                    processPid,
+                                    _timeout));
+                        }
                         if (_process.exitValue() == 0) {
-                            _logger.debug(String.format("Successfully executed process [%s] for command [%s].", processPid, commandLine));
+                            if (sensitiveArgIndices.isEmpty()) {
+                                _logger.debug(String.format("Successfully executed process [%s] for command [%s].",
+                                        processPid, commandLine));
+                            } else {
+                                _logger.debug(String.format(
+                                        "Successfully executed process [%s] for command with sensitive arguments.",
+                                        processPid));
+                            }
                             if (interpreter != null) {
                                 if (interpreter.drain()) {
-                                    _logger.trace(String.format("Returning task result of process [%s] for command [%s].", processPid, commandLine));
+                                    if (sensitiveArgIndices.isEmpty()) {
+                                        _logger.trace(
+                                                String.format("Returning task result of process [%s] for command [%s].",
+                                                        processPid, commandLine));
+                                    } else {
+                                        _logger.trace(String.format(
+                                                "Returning task result of process [%s] for command with sensitive arguments.",
+                                                processPid));
+                                    }
                                     return task.getResult();
                                 }
-                                _logger.trace(String.format("Returning interpretation of process [%s] for command [%s].", processPid, commandLine));
+                                if (sensitiveArgIndices.isEmpty()) {
+                                    _logger.trace(
+                                            String.format("Returning interpretation of process [%s] for command [%s].",
+                                                    processPid, commandLine));
+                                } else {
+                                    _logger.trace(String.format(
+                                            "Returning interpretation of process [%s] for command with sensitive arguments.",
+                                            processPid));
+                                }
                                 return interpreter.interpret(ir);
                             } else {
                                 // null return exitValue apparently
-                                _logger.trace(String.format("Process [%s] for command [%s] exited with value [%s].", processPid, commandLine,
-                                        _process.exitValue()));
+                                if (sensitiveArgIndices.isEmpty()) {
+                                    _logger.trace(String.format("Process [%s] for command [%s] exited with value [%s].",
+                                            processPid, commandLine,
+                                            _process.exitValue()));
+                                } else {
+                                    _logger.trace(String.format(
+                                            "Process [%s] for command with sensitive arguments exited with value [%s].",
+                                            processPid,
+                                            _process.exitValue()));
+                                }
                                 return String.valueOf(_process.exitValue());
                             }
                         } else {
-                            _logger.warn(String.format("Execution of process [%s] for command [%s] failed.", processPid, commandLine));
+                            if (sensitiveArgIndices.isEmpty()) {
+                                _logger.warn(String.format("Execution of process [%s] for command [%s] failed.",
+                                        processPid, commandLine));
+                            } else {
+                                _logger.warn(String.format(
+                                        "Execution of process [%s] for command with sensitive arguments failed.",
+                                        processPid));
+                            }
                             break;
                         }
                     }
                 } catch (InterruptedException e) {
                     if (!_isTimeOut) {
-                        _logger.debug(String.format("Exception [%s] occurred; however, it was not a timeout. Therefore, proceeding with the execution of process [%s] for command "
-                                + "[%s].", e.getMessage(), processPid, commandLine), e);
+                        if (sensitiveArgIndices.isEmpty()) {
+                            _logger.debug(String.format(
+                                    "Exception [%s] occurred; however, it was not a timeout. Therefore, proceeding with the execution of process [%s] for command "
+                                            + "[%s].",
+                                    e.getMessage(), processPid, commandLine), e);
+                        } else {
+                            _logger.debug(String.format(
+                                    "Exception [%s] occurred; however, it was not a timeout. Therefore, proceeding with the execution of process [%s] for command "
+                                            + "with sensitive arguments.",
+                                    e.getMessage(), processPid), e);
+                        }
                         continue;
                     }
                 } finally {
@@ -315,18 +406,33 @@ public class Script implements Callable<String> {
                 TimedOutLogger log = new TimedOutLogger(_process);
                 Task timedoutTask = new Task(log, ir);
 
-                _logger.trace(String.format("Running timed out task of process [%s] for command [%s].", processPid, commandLine));
-                timedoutTask.run();
-                if (!_passwordCommand) {
-                    _logger.warn(String.format("Process [%s] for command [%s] timed out. Output is [%s].", processPid, commandLine, timedoutTask.getResult()));
+                if (sensitiveArgIndices.isEmpty()) {
+                    _logger.trace(String.format("Running timed out task of process [%s] for command [%s].", processPid,
+                            commandLine));
                 } else {
-                    _logger.warn(String.format("Process [%s] for command [%s] timed out.", processPid, commandLine));
+                    _logger.trace(String.format(
+                            "Running timed out task of process [%s] for command with sensitive arguments.",
+                            processPid));
+                }
+                timedoutTask.run();
+                if (!_passwordCommand && sensitiveArgIndices.isEmpty()) {
+                    _logger.warn(String.format("Process [%s] for command [%s] timed out. Output is [%s].", processPid,
+                            commandLine, timedoutTask.getResult()));
+                } else {
+                    _logger.warn(
+                            String.format("Process [%s] for command with sensitive arguments timed out.", processPid));
                 }
 
                 return ERR_TIMEOUT;
             }
 
-            _logger.debug(String.format("Exit value of process [%s] for command [%s] is [%s].", processPid, commandLine, _process.exitValue()));
+            if (sensitiveArgIndices.isEmpty()) {
+                _logger.debug(String.format("Exit value of process [%s] for command [%s] is [%s].", processPid,
+                        commandLine, _process.exitValue()));
+            } else {
+                _logger.debug(String.format("Exit value of process [%s] for command with sensitive arguments is [%s].",
+                        processPid, _process.exitValue()));
+            }
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(_process.getInputStream()), 128);
 
@@ -337,19 +443,49 @@ public class Script implements Callable<String> {
                 error = String.valueOf(_process.exitValue());
             }
 
-            _logger.warn(String.format("Process [%s] for command [%s] encountered the error: [%s].", processPid, commandLine, error));
+            if (sensitiveArgIndices.isEmpty()) {
+                _logger.warn(String.format("Process [%s] for command [%s] encountered the error: [%s].", processPid,
+                        commandLine, error));
+            } else {
+                _logger.warn(
+                        String.format("Process [%s] for command with sensitive arguments encountered the error: [%s].",
+                                processPid, error));
+            }
 
             return error;
         } catch (SecurityException ex) {
-            _logger.warn(String.format("Exception [%s] occurred. This may be due to an attempt of executing command [%s] as non root.", ex.getMessage(), commandLine),
-                    ex);
+            if (sensitiveArgIndices.isEmpty()) {
+                _logger.warn(String.format(
+                        "Exception [%s] occurred. This may be due to an attempt of executing command [%s] as non root.",
+                        ex.getMessage(), commandLine),
+                        ex);
+            } else {
+                _logger.warn(String.format(
+                        "Exception [%s] occurred. This may be due to an attempt of executing command with sensitive data as non root.",
+                        ex.getMessage()),
+                        ex);
+            }
             return stackTraceAsString(ex);
         } catch (Exception ex) {
-            _logger.warn(String.format("Exception [%s] occurred when attempting to run command [%s].", ex.getMessage(), commandLine), ex);
+            if (sensitiveArgIndices.isEmpty()) {
+                _logger.warn(String.format("Exception [%s] occurred when attempting to run command [%s].",
+                        ex.getMessage(), commandLine), ex);
+            } else {
+                _logger.warn(
+                        String.format("Exception [%s] occurred when attempting to run a command with sensitive data.",
+                                ex.getMessage()),
+                        ex);
+            }
             return stackTraceAsString(ex);
         } finally {
             if (_process != null) {
-                _logger.trace(String.format("Destroying process [%s] for command [%s].", _process.pid(), commandLine));
+                if (sensitiveArgIndices.isEmpty()) {
+                    _logger.trace(
+                            String.format("Destroying process [%s] for command [%s].", _process.pid(), commandLine));
+                } else {
+                    _logger.trace(String.format("Destroying process [%s] for a command with sensitive data.",
+                            _process.pid()));
+                }
                 IOUtils.closeQuietly(_process.getErrorStream());
                 IOUtils.closeQuietly(_process.getOutputStream());
                 IOUtils.closeQuietly(_process.getInputStream());
@@ -361,8 +497,9 @@ public class Script implements Callable<String> {
     public String executeIgnoreExitValue(OutputInterpreter interpreter, int exitValue) {
         String[] command = _command.toArray(new String[_command.size()]);
 
-        if (_logger.isDebugEnabled()) {
-            _logger.debug(String.format("Executing: %s", buildCommandLine(command).split(KeyStoreUtils.KS_FILENAME)[0]));
+        if (_logger.isDebugEnabled() && sensitiveArgIndices.isEmpty()) {
+            _logger.debug(
+                    String.format("Executing: %s", buildCommandLine(command).split(KeyStoreUtils.KS_FILENAME)[0]));
         }
 
         try {
@@ -437,10 +574,11 @@ public class Script implements Callable<String> {
                 Task timedoutTask = new Task(log, ir);
 
                 timedoutTask.run();
-                if (!_passwordCommand) {
-                    _logger.warn(String.format("Timed out: %s.  Output is: %s", buildCommandLine(command), timedoutTask.getResult()));
+                if (!_passwordCommand && sensitiveArgIndices.isEmpty()) {
+                    _logger.warn(String.format("Timed out: %s.  Output is: %s", buildCommandLine(command),
+                            timedoutTask.getResult()));
                 } else {
-                    _logger.warn(String.format("Timed out: %s", buildCommandLine(command)));
+                    _logger.warn(String.format("Timed out: %s", "command with sensitive data"));
                 }
 
                 return ERR_TIMEOUT;
@@ -465,7 +603,11 @@ public class Script implements Callable<String> {
             _logger.warn("Security Exception....not running as root?", ex);
             return stackTraceAsString(ex);
         } catch (Exception ex) {
-            _logger.warn(String.format("Exception: %s", buildCommandLine(command)), ex);
+            if (sensitiveArgIndices.isEmpty()) {
+                _logger.warn(String.format("Exception: %s", buildCommandLine(command)), ex);
+            } else {
+                _logger.warn("Exception on command with sensitive data.", ex);
+            }
             return stackTraceAsString(ex);
         } finally {
             if (_process != null) {
@@ -514,9 +656,9 @@ public class Script implements Callable<String> {
                 } catch (Exception ex) {
                     result = stackTraceAsString(ex);
                 } finally {
-                        done = true;
-                        notifyAll();
-                        IOUtils.closeQuietly(reader);
+                    done = true;
+                    notifyAll();
+                    IOUtils.closeQuietly(reader);
                 }
             }
         }
