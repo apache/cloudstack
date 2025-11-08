@@ -44,7 +44,6 @@ public class WebhookDaoImpl extends GenericDaoBase<WebhookVO, Long> implements W
     }
     @Override
     public List<WebhookVO> listByEnabledForDelivery(Long accountId, List<Long> domainIds) {
-        logger.info("--------------------------------listByEnabledForDelivery accountId: {}, domainIds: {}", accountId, domainIds);
         SearchBuilder<WebhookVO> sb = createSearchBuilder();
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and().op("scopeGlobal", sb.entity().getScope(), SearchCriteria.Op.EQ);

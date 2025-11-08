@@ -45,50 +45,38 @@ public interface WebhookFilter extends Identity, InternalIdentity {
     String getValue();
     Date getCreated();
 
-    static boolean overlaps(WebhookFilter.MatchType t1, String v1, WebhookFilter.MatchType t2, String v2) {
-        switch (t1) {
+    static boolean overlaps(WebhookFilter.MatchType oldMatchType, String oldValue, WebhookFilter.MatchType newMatchType, String newValue) {
+        switch (oldMatchType) {
             case Exact:
-                switch (t2) {
+                switch (newMatchType) {
                     case Exact:
-                        return v1.equals(v2);
-                    case Prefix:
-                        return v2.startsWith(v1 + ".");
-                    case Suffix:
-                        return v2.endsWith("." + v1);
-                    case Contains:
-                        return v2.contains(v1);
+                        return oldValue.equals(newValue);
                 }
                 break;
 
             case Prefix:
-                switch (t2) {
+                switch (newMatchType) {
                     case Exact:
                     case Prefix:
-                        return v1.startsWith(v2 + ".") || v2.startsWith(v1 + ".");
-                    case Suffix:
-                    case Contains:
-                        return v1.contains(v2) || v2.contains(v1);
+                        return newValue.startsWith(oldValue);
                 }
                 break;
 
             case Suffix:
-                switch (t2) {
+                switch (newMatchType) {
                     case Exact:
-                        return v1.endsWith(v2) || v2.endsWith(v1);
-                    case Prefix:
                     case Suffix:
-                    case Contains:
-                        return v1.contains(v2) || v2.contains(v1);
+                        return newValue.endsWith(oldValue);
                 }
                 break;
 
             case Contains:
-                switch (t2) {
+                switch (newMatchType) {
                     case Exact:
                     case Prefix:
                     case Suffix:
                     case Contains:
-                        return v1.contains(v2) || v2.contains(v1);
+                        return newValue.contains(oldValue);
                 }
                 break;
 
@@ -98,7 +86,7 @@ public interface WebhookFilter extends Identity, InternalIdentity {
         return false;
     }
 
-    default boolean isConflicting(List<? extends WebhookFilter> existing) {
+    default WebhookFilter getConflicting(List<? extends WebhookFilter> existing) {
         for (WebhookFilter f : existing) {
             if (f.getType() != this.getType()) {
                 continue;
@@ -108,19 +96,20 @@ public interface WebhookFilter extends Identity, InternalIdentity {
             if (f.getMode() == this.getMode()
                     && f.getMatchType() == this.getMatchType()
                     && f.getValue().equalsIgnoreCase(this.getValue())) {
-                return true;
+                return f;
             }
 
             // 2. Opposite mode (INCLUDE vs EXCLUDE) — check for overlap
-            if (f.getMode() != this.getMode()) {
+            if (Mode.Exclude.equals(f.getMode())
+                    && Mode.Include.equals(this.getMode())) {
                 String oldVal = f.getValue().toUpperCase();
                 String newVal = this.getValue().toUpperCase();
 
                 if (overlaps(f.getMatchType(), oldVal, this.getMatchType(), newVal)) {
-                    return true;
+                    return f;
                 }
             }
         }
-        return false;
+        return null;
     }
 }

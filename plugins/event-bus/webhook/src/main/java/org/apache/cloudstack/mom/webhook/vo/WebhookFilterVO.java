@@ -150,6 +150,6 @@ public class WebhookFilterVO implements WebhookFilter {
     @Override
     public String toString() {
         return String.format("WebhookFilter %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                this, "id", "uuid", "name", "payloadUrl"));
+                this, "id", "uuid", "webhook_id", "type", "mode", "match_type", "value"));
     }
 }

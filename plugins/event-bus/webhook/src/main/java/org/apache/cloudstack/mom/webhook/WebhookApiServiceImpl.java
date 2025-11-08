@@ -263,6 +263,25 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         final String name = cmd.getName();
         final String keyword = cmd.getKeyword();
         final String scopeStr = cmd.getScope();
+        Webhook.Scope scope = null;
+        if (StringUtils.isNotEmpty(scopeStr)) {
+            scope = EnumUtils.getEnumIgnoreCase(Webhook.Scope.class, scopeStr);
+            if (scope == null) {
+                throw new InvalidParameterValueException("Invalid scope specified");
+            }
+        }
+        if ((Webhook.Scope.Global.equals(scope) && !Account.Type.ADMIN.equals(caller.getType())) ||
+                (Webhook.Scope.Domain.equals(scope) &&
+                        !List.of(Account.Type.ADMIN, Account.Type.DOMAIN_ADMIN).contains(caller.getType()))) {
+            throw new InvalidParameterValueException(String.format("Scope %s can not be specified", scope));
+        }
+        Webhook.State state = null;
+        if (StringUtils.isNotEmpty(stateStr)) {
+            state = EnumUtils.getEnumIgnoreCase(Webhook.State.class, stateStr);
+            if (state == null) {
+                throw new InvalidParameterValueException("Invalid state specified");
+            }
+        }
         List<WebhookResponse> responsesList = new ArrayList<>();
         List<Long> permittedAccounts = new ArrayList<>();
         Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject =
@@ -287,27 +306,6 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         SearchCriteria<WebhookJoinVO> sc = sb.create();
         accountManager.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts,
                 listProjectResourcesCriteria);
-        Webhook.Scope scope = null;
-        if (StringUtils.isNotEmpty(scopeStr)) {
-            try {
-                scope = Webhook.Scope.valueOf(scopeStr);
-            } catch (IllegalArgumentException iae) {
-                throw new InvalidParameterValueException("Invalid scope specified");
-            }
-        }
-        if ((Webhook.Scope.Global.equals(scope) && !Account.Type.ADMIN.equals(caller.getType())) ||
-                (Webhook.Scope.Domain.equals(scope) &&
-                        !List.of(Account.Type.ADMIN, Account.Type.DOMAIN_ADMIN).contains(caller.getType()))) {
-            throw new InvalidParameterValueException(String.format("Scope %s can not be specified", scope));
-        }
-        Webhook.State state = null;
-        if (StringUtils.isNotEmpty(stateStr)) {
-            try {
-                state = Webhook.State.valueOf(stateStr);
-            } catch (IllegalArgumentException iae) {
-                throw new InvalidParameterValueException("Invalid state specified");
-            }
-        }
         if (scope != null) {
             sc.setParameters("scope", scope.name());
         }
@@ -345,9 +343,8 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         final String stateStr = cmd.getState();
         Webhook.Scope scope = Webhook.Scope.Local;
         if (StringUtils.isNotEmpty(scopeStr)) {
-            try {
-                scope = Webhook.Scope.valueOf(scopeStr);
-            } catch (IllegalArgumentException iae) {
+            scope = EnumUtils.getEnumIgnoreCase(Webhook.Scope.class, scopeStr);
+            if (scope == null) {
                 throw new InvalidParameterValueException("Invalid scope specified");
             }
         }
@@ -359,9 +356,8 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         }
         Webhook.State state = Webhook.State.Enabled;
         if (StringUtils.isNotEmpty(stateStr)) {
-            try {
-                state = Webhook.State.valueOf(stateStr);
-            } catch (IllegalArgumentException iae) {
+            state = EnumUtils.getEnumIgnoreCase(Webhook.State.class, stateStr);
+            if (state == null) {
                 throw new InvalidParameterValueException("Invalid state specified");
             }
         }
@@ -428,29 +424,27 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
             updateNeeded = true;
         }
         if (StringUtils.isNotEmpty(stateStr)) {
-            try {
-                Webhook.State state = Webhook.State.valueOf(stateStr);
-                webhook.setState(state);
-                updateNeeded = true;
-            } catch (IllegalArgumentException iae) {
+            Webhook.State state = EnumUtils.getEnumIgnoreCase(Webhook.State.class, stateStr);
+            if (state == null) {
                 throw new InvalidParameterValueException("Invalid state specified");
             }
+            webhook.setState(state);
+            updateNeeded = true;
         }
         Account owner = accountManager.getAccount(webhook.getAccountId());
         if (StringUtils.isNotEmpty(scopeStr)) {
-            try {
-                Webhook.Scope scope = Webhook.Scope.valueOf(scopeStr);
-                if ((Webhook.Scope.Global.equals(scope) && !Account.Type.ADMIN.equals(owner.getType())) ||
-                        (Webhook.Scope.Domain.equals(scope) &&
-                                !List.of(Account.Type.ADMIN, Account.Type.DOMAIN_ADMIN).contains(owner.getType()))) {
-                    throw new InvalidParameterValueException(
-                            String.format("Scope %s can not be specified for owner %s", scope, owner.getName()));
-                }
-                webhook.setScope(scope);
-                updateNeeded = true;
-            } catch (IllegalArgumentException iae) {
+            Webhook.Scope scope = EnumUtils.getEnumIgnoreCase(Webhook.Scope.class, scopeStr);
+            if (scope == null) {
                 throw new InvalidParameterValueException("Invalid scope specified");
             }
+            if ((Webhook.Scope.Global.equals(scope) && !Account.Type.ADMIN.equals(owner.getType())) ||
+                    (Webhook.Scope.Domain.equals(scope) &&
+                            !List.of(Account.Type.ADMIN, Account.Type.DOMAIN_ADMIN).contains(owner.getType()))) {
+                throw new InvalidParameterValueException(
+                        String.format("Scope %s can not be specified for owner %s", scope, owner.getName()));
+            }
+            webhook.setScope(scope);
+            updateNeeded = true;
         }
         URI uri = URI.create(webhook.getPayloadUrl());
         if (StringUtils.isNotEmpty(payloadUrl)) {
@@ -490,8 +484,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
 
     @Override
     public ListResponse<WebhookDeliveryResponse> listWebhookDeliveries(ListWebhookDeliveriesCmd cmd) {
-        final CallContext ctx = CallContext.current();
-        final Account caller = ctx.getCallingAccount();
+        final Account caller = CallContext.current().getCallingAccount();
         final Long id = cmd.getId();
         final Long webhookId = cmd.getWebhookId();
         final Long managementServerId = cmd.getManagementServerId();
@@ -549,15 +542,15 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         final String secretKey = cmd.getSecretKey();
         final Boolean sslVerification = cmd.isSslVerification();
         final String payload = cmd.getPayload();
-        final Account owner = accountManager.finalizeOwner(caller, null, null, null);
 
         if (ObjectUtils.allNull(deliveryId, webhookId) && StringUtils.isBlank(payloadUrl)) {
             throw new InvalidParameterValueException(String.format("One of the %s, %s or %s must be specified",
                     ApiConstants.ID, ApiConstants.WEBHOOK_ID, ApiConstants.PAYLOAD_URL));
         }
-        if (deliveryId != null && webhookId != null) {
+        if (deliveryId != null && (webhookId != null || StringUtils.isNotBlank(payloadUrl))) {
             throw new InvalidParameterValueException(
-                    String.format("Only one of the %s or %s can be specified", ApiConstants.ID, ApiConstants.WEBHOOK_ID));
+                    String.format("%s cannot be specified with %s or %s", ApiConstants.ID, ApiConstants.WEBHOOK_ID,
+                            ApiConstants.PAYLOAD_URL));
         }
         WebhookDeliveryVO existingDelivery = null;
         WebhookVO webhook = null;
@@ -590,7 +583,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
             accountManager.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, false, webhook);
         }
         if (ObjectUtils.allNull(deliveryId, webhookId)) {
-            webhook = new WebhookVO(owner.getDomainId(), owner.getId(), payloadUrl, secretKey,
+            webhook = new WebhookVO(caller.getDomainId(), caller.getId(), payloadUrl, secretKey,
                     Boolean.TRUE.equals(sslVerification));
         }
         WebhookDelivery webhookDelivery = webhookService.executeWebhookDelivery(existingDelivery, webhook, payload);
@@ -649,7 +642,14 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         WebhookFilterVO webhookFilter = new WebhookFilterVO(webhook.getId(), type, mode, matchType, value);
         List<? extends WebhookFilter> existingFilters = webhookFilterDao.listByWebhook(webhook.getId());
         if (CollectionUtils.isNotEmpty(existingFilters)) {
-            webhookFilter.isConflicting(existingFilters);
+            WebhookFilter conflicting = webhookFilter.getConflicting(existingFilters);
+            if (conflicting != null) {
+                logger.error("Conflict detected when adding WebhookFilter having type: {}, mode: {}, " +
+                        "matchtype: {}, value: {} with existing {} for {}", type, mode, matchType, value, conflicting,
+                        webhook);
+                throw new InvalidParameterValueException(String.format("Conflicting Webhook filter exists ID: %s",
+                        conflicting.getId()));
+            }
         }
         webhookFilter = webhookFilterDao.persist(webhookFilter);
         webhookService.invalidateWebhookFiltersCache(webhook.getId());
