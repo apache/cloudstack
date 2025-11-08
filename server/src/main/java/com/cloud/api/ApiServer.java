@@ -43,6 +43,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -611,6 +612,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 logger.error("invalid request, no command sent");
                 if (logger.isTraceEnabled()) {
                     logger.trace("dumping request parameters");
+                    // define sensitive fields that need to be masked in the logs
                     Set<String> sensitiveFields = new HashSet<>(Arrays.asList(
                         "password", "secretkey", "apikey", "token",
                         "sessionkey", "accesskey", "signature",
