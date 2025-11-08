@@ -87,33 +87,3 @@ CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('MaaS', 'orchestratorrequir
 
 CALL `cloud`.`IDEMPOTENT_DROP_UNIQUE_KEY`('counter', 'uc_counter__provider__source__value');
 CALL `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY`('cloud.counter', 'uc_counter__provider__source__value__removed', '(provider, source, value, removed)');
-
--- ToDo: Move to 4.23 upgrade path
--- Add management_server_details table to allow ManagementServer scope configs
-CREATE TABLE IF NOT EXISTS `cloud`.`management_server_details` (
-    `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-    `management_server_id` bigint unsigned NOT NULL COMMENT 'management server the detail is related to',
-    `name` varchar(255) NOT NULL COMMENT 'name of the detail',
-    `value` varchar(255) NOT NULL,
-    `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user',
-    PRIMARY KEY (`id`),
-    CONSTRAINT `fk_management_server_details__management_server_id` FOREIGN KEY `fk_management_server_details__management_server_id`(`management_server_id`) REFERENCES `mshost`(`id`) ON DELETE CASCADE,
-    KEY `i_management_server_details__name__value` (`name`(128),`value`(128))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
--- Create table for logs web session
-CREATE TABLE IF NOT EXISTS `cloud`.`logs_web_session` (
-    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id of the session',
-    `uuid` varchar(40) NOT NULL COMMENT 'UUID generated for the session',
-    `filter` varchar(64) DEFAULT NULL COMMENT 'Filter keyword for the session',
-    `created` datetime NOT NULL COMMENT 'When the session was created',
-    `domain_id` bigint(20) unsigned NOT NULL COMMENT 'Domain of the account who generated the session',
-    `account_id` bigint(20) unsigned NOT NULL COMMENT 'Account who generated the session',
-    `creator_address` VARCHAR(45) DEFAULT NULL COMMENT 'Address of the creator of the session',
-    `connections` int unsigned NOT NULL DEFAULT 0 COMMENT 'Number of connections for the session',
-    `connected_time` datetime DEFAULT NULL COMMENT 'When the session was connected',
-    `client_address` VARCHAR(45) DEFAULT NULL COMMENT 'Address of the client that connected to the session',
-    `removed` datetime COMMENT 'When the session was removed/used',
-    PRIMARY KEY(`id`),
-    CONSTRAINT `uc_logs_web_session__uuid` UNIQUE (`uuid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
