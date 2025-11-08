@@ -82,12 +82,11 @@ public final class ProcessRunner {
     }
 
     /**
-     * Executes a process with provided list of commands with a given timeout that
-     * is less
+     * Executes a process with provided list of commands with a given timeout that is less
      * than or equal to DEFAULT_MAX_TIMEOUT
      *
      * @param commands list of string commands
-     * @param timeOut  timeout duration
+     * @param timeOut timeout duration
      * @return returns process result
      */
     public ProcessResult executeCommands(final List<String> commands, final Duration timeOut) {
