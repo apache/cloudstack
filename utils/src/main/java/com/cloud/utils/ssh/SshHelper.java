@@ -54,7 +54,10 @@ public class SshHelper {
             Pattern.compile("(?i)(--password\\s+['\"])([^'\"]*)(['\"])"),
             Pattern.compile("(?i)(--password\\s+)([^\\s]+)"),
             Pattern.compile("(?i)(\\s+-u\\s+['\"][^,'\":]+[,:])([^'\"]*)(['\"])"),
-            Pattern.compile("(?i)(\\s+-u\\s+[^\\s,:]+[,:])([^\\s]+)")
+            Pattern.compile("(?i)(\\s+-u\\s+[^\\s,:]+[,:])([^\\s]+)"),
+            Pattern.compile("(?i)(\\s+-s\\s+['\"])([^'\"]*)(['\"])"),
+            Pattern.compile("(?i)(\\s+-s\\s+)([^\\s]+)"),
+
     };
 
     protected static Logger LOGGER = LogManager.getLogger(SshHelper.class);
