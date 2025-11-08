@@ -87,18 +87,3 @@ CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('MaaS', 'orchestratorrequir
 
 CALL `cloud`.`IDEMPOTENT_DROP_UNIQUE_KEY`('counter', 'uc_counter__provider__source__value');
 CALL `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY`('cloud.counter', 'uc_counter__provider__source__value__removed', '(provider, source, value, removed)');
-
-DROP TABLE IF EXISTS `cloud`.`webhook_filter`;
-CREATE TABLE IF NOT EXISTS `cloud`.`webhook_filter` (
-    `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id of the webhook filter',
-    `uuid` varchar(255) COMMENT 'uuid of the webhook filter',
-    `webhook_id` bigint unsigned  NOT NULL COMMENT 'id of the webhook',
-    `type` varchar(20) COMMENT 'type of the filter',
-    `mode` varchar(20) COMMENT 'mode of the filter',
-    `match_type` varchar(20) COMMENT 'match type of the filter',
-    `value` varchar(256) NOT NULL COMMENT 'value of the filter used for matching',
-    `created` datetime NOT NULL COMMENT 'date created',
-    PRIMARY KEY (`id`),
-    INDEX `i_webhook_filter__webhook_id`(`webhook_id`),
-    CONSTRAINT `fk_webhook_filter__webhook_id` FOREIGN KEY(`webhook_id`) REFERENCES `webhook`(`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
