@@ -29,7 +29,7 @@
         <a-form-item :label="$t('label.name.optional')" name="name">
           <a-input v-model:value="form.name" />
         </a-form-item>
-        <a-form-item v-if="!resource.virtualmachineid" name="preserveIpAddresses" style="margin-top: 8px">
+        <a-form-item v-if="resource.isbackupvmexpunged" name="preserveIpAddresses" style="margin-top: 8px">
           <a-switch v-model:checked="form.preserveIpAddresses" />
           <template #label>
             <tooltip-label :title="$t('label.use.backup.ip.address')" :tooltip="$t('label.use.backup.ip.address.tooltip')"/>
@@ -91,42 +91,46 @@ export default {
       required: true
     }
   },
-  created () {
-    this.fetchBackupVmDetails().then(() => {
-      this.fetchServiceOffering()
-      this.loading = false
-    })
+  async created () {
+    await Promise.all[(
+      this.fetchServiceOffering(),
+      this.fetchBackupOffering()
+    )]
+    this.loading = false
   },
   methods: {
-    fetchBackupVmDetails () {
-      this.serviceOfferings = []
-      return getAPI('listBackups', {
-        id: this.resource.id,
-        listvmdetails: true
-      }).then(response => {
-        const backups = response.listbackupsresponse.backup || []
-        this.vmdetails = backups[0].vmdetails
-      })
-    },
     fetchServiceOffering () {
-      this.serviceOfferings = []
-      getAPI('listServiceOfferings', {
+      return getAPI('listServiceOfferings', {
         zoneid: this.resource.zoneid,
-        id: this.vmdetails.serviceofferingid,
+        id: this.resource.vmdetails.serviceofferingid,
         listall: true
       }).then(response => {
         const serviceOfferings = response.listserviceofferingsresponse.serviceoffering || []
         this.serviceOffering = serviceOfferings[0]
       })
     },
+    fetchBackupOffering () {
+      return getAPI('listBackupOfferings', {
+        id: this.resource.backupofferingid,
+        listall: true
+      }).then(response => {
+        const backupOfferings = response.listbackupofferingsresponse.backupoffering || []
+        this.backupOffering = backupOfferings[0]
+      })
+    },
     populatePreFillData () {
+      this.vmdetails = this.resource.vmdetails
       this.dataPreFill.zoneid = this.resource.zoneid
+      this.dataPreFill.crosszoneinstancecreation = this.backupOffering?.crosszoneinstancecreation || this.backupOffering.provider === 'dummy'
       this.dataPreFill.isIso = (this.vmdetails.isiso === 'true')
+      this.dataPreFill.ostypeid = this.resource.vmdetails.ostypeid
+      this.dataPreFill.ostypename = this.resource.vmdetails.osname
       this.dataPreFill.backupid = this.resource.id
       this.dataPreFill.computeofferingid = this.vmdetails.serviceofferingid
       this.dataPreFill.templateid = this.vmdetails.templateid
+      this.dataPreFill.allowtemplateisoselection = true
       this.dataPreFill.isoid = this.vmdetails.templateid
-      this.dataPreFill.allowIpAddressesFetch = !this.resource.virtualmachineid
+      this.dataPreFill.allowIpAddressesFetch = this.resource.isbackupvmexpunged
       if (this.vmdetails.nics) {
         const nics = JSON.parse(this.vmdetails.nics)
         this.dataPreFill.networkids = nics.map(nic => nic.networkid)

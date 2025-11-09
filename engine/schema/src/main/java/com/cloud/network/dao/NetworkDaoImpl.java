@@ -86,6 +86,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
 
     GenericSearchBuilder<NetworkVO, Long> GarbageCollectedSearch;
     SearchBuilder<NetworkVO> PrivateNetworkSearch;
+    SearchBuilder<NetworkVO> NetworkDomainSearch;
 
     @Inject
     ResourceTagDao _tagsDao;
@@ -197,6 +198,12 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
         persistentNtwkOffJoin.and("persistent", persistentNtwkOffJoin.entity().isPersistent(), Op.EQ);
         PersistentNetworkSearch.join("persistent", persistentNtwkOffJoin, PersistentNetworkSearch.entity().getNetworkOfferingId(), persistentNtwkOffJoin.entity().getId(), JoinType.INNER);
         PersistentNetworkSearch.done();
+
+        NetworkDomainSearch = createSearchBuilder();
+        NetworkDomainSearch.and("networkDomains", NetworkDomainSearch.entity().getNetworkDomain(), Op.IN);
+        NetworkDomainSearch.and("accounts", NetworkDomainSearch.entity().getAccountId(), Op.IN);
+        NetworkDomainSearch.and("domains", NetworkDomainSearch.entity().getDomainId(), Op.IN);
+        NetworkDomainSearch.done();
 
         PhysicalNetworkSearch = createSearchBuilder();
         PhysicalNetworkSearch.and("physicalNetworkId", PhysicalNetworkSearch.entity().getPhysicalNetworkId(), Op.EQ);
@@ -425,6 +432,29 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
         sc.setParameters("guestType", guestTypes);
         sc.setParameters("dc", dataCenterId);
         sc.setJoinParameters("persistent", "persistent", true);
+        return search(sc, null);
+    }
+
+    @Override
+    public List<NetworkVO> listByNetworkDomains(Set<String> uniqueNtwkDomains) {
+        SearchCriteria<NetworkVO> sc = NetworkDomainSearch.create();
+        sc.setParameters("networkDomains", uniqueNtwkDomains.toArray());
+        return search(sc, null);
+    }
+
+    @Override
+    public List<NetworkVO> listByNetworkDomainsAndAccountIds(Set<String> uniqueNtwkDomains, Set<Long> accountIds) {
+        SearchCriteria<NetworkVO> sc = NetworkDomainSearch.create();
+        sc.setParameters("networkDomains", uniqueNtwkDomains.toArray());
+        sc.setParameters("accounts", accountIds.toArray());
+        return search(sc, null);
+    }
+
+    @Override
+    public List<NetworkVO> listByNetworkDomainsAndDomainIds(Set<String> uniqueNtwkDomains, Set<Long> domainIds) {
+        SearchCriteria<NetworkVO> sc = NetworkDomainSearch.create();
+        sc.setParameters("networkDomains", uniqueNtwkDomains.toArray());
+        sc.setParameters("domains", domainIds.toArray());
         return search(sc, null);
     }
 

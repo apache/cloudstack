@@ -183,15 +183,12 @@ encryted
 enebled
 enmpty
 entires
-enviornment
 environmnet
 equivalant
 erro
 erronous
 everthing
 everytime
-excetion
-excption
 excute
 execept
 execption
@@ -378,6 +375,7 @@ propogate
 provison
 psudo
 pyhsical
+re-use
 readabilty
 readd
 reccuring
@@ -414,7 +412,6 @@ retriving
 retrun
 retuned
 returing
-re-use
 rever
 rocessor
 runing
