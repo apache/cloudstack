@@ -127,5 +127,4 @@ public class WebhookFilterDaoImplTest {
 
         assertTrue(result >= 0);
     }
-
 }
