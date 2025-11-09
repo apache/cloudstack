@@ -21,6 +21,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.cloudstack.mom.webhook.vo.WebhookDeliveryVO;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
@@ -64,7 +65,7 @@ public class WebhookDeliveryDaoImpl extends GenericDaoBase<WebhookDeliveryVO, Lo
         SearchCriteria<WebhookDeliveryVO> sc = sb.create();
         sc.setParameters("webhookId", webhookId);
         List<WebhookDeliveryVO> keep = listBy(sc, searchFilter);
-        if (keep.size() < limit) {
+        if (CollectionUtils.isEmpty(keep)) {
             return;
         }
         SearchBuilder<WebhookDeliveryVO> sbDelete = createSearchBuilder();
