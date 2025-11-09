@@ -22,9 +22,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -92,7 +94,7 @@ public class WebhookDeliveryDaoImplTest {
 
     @Test
     public void removeOlderDeliveriesWhenParametersMatch() {
-        Long webhookId = 2L;
+        long webhookId = 2L;
 
         WebhookDeliveryVO d1 = mock(WebhookDeliveryVO.class);
         when(d1.getId()).thenReturn(1L);
@@ -108,5 +110,17 @@ public class WebhookDeliveryDaoImplTest {
         verify(mockSearchCriteria).setParameters("webhookId", webhookId);
         verify(mockSearchBuilder).and(eq("id"), any(), eq(SearchCriteria.Op.NOTIN));
         verify(mockSearchCriteria).setParameters("id", 1L, 2L);
+    }
+
+    @Test
+    public void removeOlderDeliveriesWhenNoKeepDeliveries() {
+        long webhookId = 2L;
+        doReturn(Collections.emptyList()).when(webhookDeliveryDao).listBy(any(SearchCriteria.class), any());
+
+        webhookDeliveryDao.removeOlderDeliveries(webhookId, 10);
+        verify(webhookDeliveryDao, never()).remove(any(SearchCriteria.class));
+        verify(mockSearchBuilder).and(eq("webhookId"), any(), eq(SearchCriteria.Op.EQ));
+        verify(mockSearchCriteria).setParameters("webhookId", webhookId);
+        verify(mockSearchBuilder, never()).and(eq("id"), any(), eq(SearchCriteria.Op.NOTIN));
     }
 }
