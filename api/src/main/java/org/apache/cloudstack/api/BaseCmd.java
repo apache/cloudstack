@@ -32,6 +32,7 @@ import java.util.regex.Pattern;
 import javax.inject.Inject;
 
 import com.cloud.bgp.BGPService;
+import com.cloud.utils.UuidUtils;
 import org.apache.cloudstack.acl.ProjectRoleService;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
@@ -497,5 +498,15 @@ public abstract class BaseCmd {
             details.put(VmDetailConstants.EXTERNAL_DETAIL_PREFIX + key, value);
         }
         return details;
+    }
+
+    public String getResourceUuid(String parameterName) {
+        String resourceUuid = fullUrlParams.get(parameterName);
+
+        if (UuidUtils.isUuid(resourceUuid)) {
+            return resourceUuid;
+        }
+
+        return null;
     }
 }
