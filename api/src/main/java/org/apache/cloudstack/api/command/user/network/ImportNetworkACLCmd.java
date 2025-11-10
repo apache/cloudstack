@@ -36,7 +36,6 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 
 @APICommand(name = "importNetworkACL", description = "Imports network ACL rules.",
         responseObject = NetworkACLItemResponse.class,
