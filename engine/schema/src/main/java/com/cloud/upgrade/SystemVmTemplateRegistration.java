@@ -109,7 +109,8 @@ public class SystemVmTemplateRegistration {
     private static Integer LINUX_12_ID = 363;
     private static final Integer SCRIPT_TIMEOUT = 1800000;
     private static final Integer LOCK_WAIT_TIMEOUT = 1200;
-    protected static final String TEMPLATES_DOWNLOAD_REPOSITORY_KEY = "downloadurl";
+    protected static final String TEMPLATE_DOWNLOAD_URL_KEY = "downloadurl";
+    protected static final String TEMPLATES_DOWNLOAD_REPOSITORY_KEY = "downloadrepository";
     protected static final String TEMPLATES_CUSTOM_DOWNLOAD_REPOSITORY_KEY = "system.vm.templates.download.repository";
     protected static final List<CPU.CPUArch> DOWNLOADABLE_TEMPLATE_ARCH_TYPES = Arrays.asList(
             CPU.CPUArch.amd64,
@@ -837,7 +838,7 @@ public class SystemVmTemplateRegistration {
                         key, metadataFilePath);
                 continue;
             }
-            String url = section.get("downloadurl");
+            String url = section.get(TEMPLATE_DOWNLOAD_URL_KEY);
             if (StringUtils.isNotBlank(url) && updateCustomDownloadRepository) {
                 url = url.replaceFirst(defaultDownloadRepository.trim(),
                         customDownloadRepository.trim());

@@ -88,7 +88,7 @@ declare -A template_specs=(
   [kvm-aarch64]="aarch64-kvm.qcow2.bz2"
   [vmware]="x86_64-vmware.ova"
   [xenserver]="x86_64-xen.vhd.bz2"
-  [hyperv4]="x86_64-hyperv.vhd.zip"
+  [hyperv]="x86_64-hyperv.vhd.zip"
   [lxc]="x86_64-kvm.qcow2.bz2"
   [ovm3]="x86_64-ovm.raw.bz2"
 )

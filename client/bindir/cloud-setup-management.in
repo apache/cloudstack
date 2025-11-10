@@ -92,6 +92,12 @@ def download_template_if_needed(template, url, filename, checksum):
         print(f"Downloading {template} System VM template from {url} to {dest_path}...")
     try:
         download_file(url, dest_path)
+        #After download, verify checksum if provided
+        if checksum:
+            if verify_sha512_checksum(dest_path, checksum):
+                print(f"{template} System VM template downloaded and verified successfully.")
+            else:
+                print(f"ERROR: Checksum verification failed for {template} System VM template after download.")
     except Exception as e:
         print(f"ERROR: Failed to download {template} System VM template: {e}")
 
@@ -164,9 +170,21 @@ if __name__ == '__main__':
     if templates_arg:
         templates_list = [t.strip().lower() for t in templates_arg.split(",")]
         if "all" in templates_list:
+            if len(templates_list) > 1:
+                print("WARNING: 'all' specified for System VM templates, ignoring other specified templates.")
             selected_templates = available_templates
         else:
-            selected_templates = [t for t in templates_list if t in available_templates]
+            invalid_templates = []
+            for t in templates_list:
+                if t in available_templates:
+                    if t not in selected_templates:
+                        selected_templates.append(t)
+                else:
+                    if t not in invalid_templates:
+                        invalid_templates.append(t)
+            if invalid_templates:
+                print(f"ERROR: Invalid System VM template names provided: {', '.join(invalid_templates)}")
+                sys.exit(1)
     print(f"Selected systemvm templates to download: {', '.join(selected_templates) if selected_templates else 'None'}")
 
     template_metadata_list = []
