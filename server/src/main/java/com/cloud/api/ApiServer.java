@@ -622,8 +622,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                         final String keyStr = (String) key;
                         final String[] value = (String[]) params.get(key);
 
+                        String lowerKeyStr = keyStr.toLowerCase();
                         boolean isSensitive = sensitiveFields.stream()
-                            .anyMatch(field -> keyStr.toLowerCase().contains(field));
+                            .anyMatch(lowerKeyStr::contains);
 
                         String logValue;
                         if (isSensitive) {
