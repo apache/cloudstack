@@ -395,7 +395,10 @@ public class SshHelper {
         }
         String masked = maskSensitiveValue(value);
         String cleaned = com.cloud.utils.StringUtils.cleanString(masked);
-        return cleaned != null ? cleaned : masked;
+        if (StringUtils.isBlank(cleaned)) {
+            return masked;
+        }
+        return cleaned;
     }
 
     private static String maskSensitiveValue(String value) {

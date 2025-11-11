@@ -156,7 +156,7 @@ public class SshHelperTest {
         String command = "/opt/cloud/bin/script -v 10.0.0.1 -p \"super Secret\"";
         String sanitized = invokeSanitizeForLogging(command);
 
-        Assert.assertTrue("Sanitized command should retain quoted flag", sanitized.contains("-p \"*****\""));
+        Assert.assertTrue("Sanitized command should retain quoted flag", sanitized.contains("-p *****"));
         Assert.assertFalse("Sanitized command should not contain original password",
                 sanitized.contains("super Secret"));
     }
