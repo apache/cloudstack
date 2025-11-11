@@ -67,7 +67,7 @@ public final class ProcessRunner {
     public ProcessRunner(ExecutorService executor) {
         this.executor = executor;
         commandLogReplacements.add(new Ternary<>("ipmitool", "-P\\s+\\S+", "-P *****"));
-        commandLogReplacements.add(new Ternary<>("ipmitool", "(?i)(password)(\\s+)\\S+(\\s+)\\S+", "$1****$2****"));
+        commandLogReplacements.add(new Ternary<>("ipmitool", "(?i)(password)(\\s+)\\S+(\\s+)\\S+", "$1 ****$2****"));
     }
 
     /**
