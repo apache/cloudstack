@@ -115,7 +115,7 @@ public class MigrateNetworkCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        StringBuilder eventMsg = new StringBuilder("Migrating network: " + getId());
+        StringBuilder eventMsg = new StringBuilder("Migrating network: " + getResourceUuid(ApiConstants.NETWORK_ID));
         if (getNetworkOfferingId() != null) {
             Network network = _networkService.getNetwork(getId());
             if (network == null) {

@@ -78,7 +78,7 @@ public class DeleteUserFromProjectCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Removing User " + userId + " from project: " + projectId;
+        return "Removing User " + getResourceUuid(ApiConstants.USER_ID) + " from project: " + getResourceUuid(ApiConstants.PROJECT_ID);
     }
 
     @Override

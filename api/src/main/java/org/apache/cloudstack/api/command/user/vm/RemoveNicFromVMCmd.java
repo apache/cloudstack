@@ -89,7 +89,7 @@ public class RemoveNicFromVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Removing NIC " + this._uuidMgr.getUuid(Nic.class, getNicId()) + " from User Instance: " + this._uuidMgr.getUuid(VirtualMachine.class, getVmId());
+        return  "Removing NIC with ID: " + getResourceUuid(ApiConstants.NIC_ID) + " from User Instance: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID);
     }
 
     @Override

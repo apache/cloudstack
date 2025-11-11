@@ -61,15 +61,7 @@ public class ChangeStoragePoolScopeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        String description = "Change storage pool scope. Storage pool Id: ";
-        StoragePool pool = _entityMgr.findById(StoragePool.class, getId());
-        if (pool != null) {
-            description += pool.getUuid();
-        } else {
-            description += getId();
-        }
-        description += " to " + getScope();
-        return description;
+        return "Changing storage pool with ID: " + getResourceUuid(ApiConstants.ID) + " to scope " + scope;
     }
 
     @Override

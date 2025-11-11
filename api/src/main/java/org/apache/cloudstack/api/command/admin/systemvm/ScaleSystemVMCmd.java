@@ -137,6 +137,6 @@ public class ScaleSystemVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Upgrading system vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()) + " to service offering: " + this._uuidMgr.getUuid(ServiceOffering.class, getServiceOfferingId());
+        return "Upgrading system vm: " + getResourceUuid(ApiConstants.ID) + " to service offering: " + getResourceUuid(ApiConstants.SERVICE_OFFERING_ID);
     }
 }

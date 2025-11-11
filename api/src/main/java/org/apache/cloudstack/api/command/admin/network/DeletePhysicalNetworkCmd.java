@@ -77,7 +77,7 @@ public class DeletePhysicalNetworkCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting Physical network: " + getId();
+        return "Deleting Physical network with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

@@ -59,7 +59,7 @@ public class DeleteBgpPeerCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting Bgp Peer " + getId();
+        return "Deleting BGP Peer with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

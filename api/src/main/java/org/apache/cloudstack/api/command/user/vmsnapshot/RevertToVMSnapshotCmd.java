@@ -88,7 +88,7 @@ public class RevertToVMSnapshotCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return "Revert from Instance Snapshot: " + this._uuidMgr.getUuid(VMSnapshot.class, getVmSnapShotId());
+        return "Reverting from Instance Snapshot with ID: " + getResourceUuid(ApiConstants.VM_SNAPSHOT_ID);
     }
 
     @Override

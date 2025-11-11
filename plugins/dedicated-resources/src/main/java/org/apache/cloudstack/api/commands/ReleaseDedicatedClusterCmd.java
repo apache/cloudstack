@@ -81,6 +81,6 @@ public class ReleaseDedicatedClusterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "releasing dedicated cluster";
+        return "Releasing dedicated cluster with ID: " + getResourceUuid(ApiConstants.CLUSTER_ID);
     }
 }

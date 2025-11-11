@@ -100,7 +100,7 @@ public class DestroyVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "destroying volume: " + getId();
+        return  "Destroying volume with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

@@ -96,7 +96,7 @@ public class StopVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return "Stopping User Instance: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
+        return "Stopping User Instance with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

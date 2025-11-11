@@ -96,7 +96,7 @@ public class ExtractSnapshotCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Snapshot extraction job";
+        return "Starting snapshot extraction for snapshot with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

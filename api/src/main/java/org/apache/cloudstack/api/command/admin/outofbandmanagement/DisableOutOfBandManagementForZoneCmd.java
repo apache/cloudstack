@@ -93,7 +93,7 @@ public class DisableOutOfBandManagementForZoneCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "disable out-of-band management password for zone: " + getZoneId();
+        return "Disabling out-of-band management password for zone with ID: " + getResourceUuid(ApiConstants.ZONE_ID);
     }
 
     @Override

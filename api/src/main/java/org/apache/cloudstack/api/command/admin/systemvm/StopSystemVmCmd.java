@@ -89,7 +89,7 @@ public class StopSystemVmCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Stopping system vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
+        return "Stopping System VM with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

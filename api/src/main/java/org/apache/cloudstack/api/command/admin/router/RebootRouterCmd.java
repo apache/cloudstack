@@ -78,7 +78,7 @@ public class RebootRouterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "rebooting router: " + this._uuidMgr.getUuid(VirtualMachine.class,getId());
+        return "Rebooting router with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

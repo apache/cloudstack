@@ -54,7 +54,7 @@ public class ArchiveSnapshotCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Archiving Snapshot " + id + " to secondary storage";
+        return "Archiving Snapshot with ID: " + getResourceUuid(ApiConstants.ID) + " to secondary storage";
     }
 
     @Override

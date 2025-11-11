@@ -84,7 +84,7 @@ public class ConfigureInternalLoadBalancerElementCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "configuring internal load balancer element: " + id;
+        return "Configuring internal load balancer element with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

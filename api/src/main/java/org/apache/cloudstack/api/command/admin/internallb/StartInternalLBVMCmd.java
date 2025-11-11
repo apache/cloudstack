@@ -88,7 +88,7 @@ public class StartInternalLBVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "starting Internal LB Instance: " + getId();
+        return "Starting internal LB Instance with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

@@ -61,7 +61,7 @@ public class DeleteNetworkACLCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Deleting Network ACL ID=" + id);
+        return "Deleting Network ACL with ID:" + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

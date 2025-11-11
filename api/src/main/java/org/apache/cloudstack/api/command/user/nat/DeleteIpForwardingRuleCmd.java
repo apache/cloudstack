@@ -95,7 +95,7 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Deleting an IP forwarding 1:1 NAT rule ID:" + id);
+        return "Deleting IP forwarding 1:1 NAT rule with ID:" + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

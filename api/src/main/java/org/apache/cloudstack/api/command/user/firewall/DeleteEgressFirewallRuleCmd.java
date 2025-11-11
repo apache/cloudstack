@@ -71,7 +71,7 @@ public class DeleteEgressFirewallRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Deleting egress firewall rule id=" + id);
+        return ("Deleting egress firewall rule with ID: " + getResourceUuid(ApiConstants.ID));
     }
 
     @Override

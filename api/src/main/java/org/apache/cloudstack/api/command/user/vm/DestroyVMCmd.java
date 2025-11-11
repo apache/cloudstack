@@ -116,7 +116,7 @@ public class DestroyVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return  "destroying Instance: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
+        return  "Destroying Instance with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

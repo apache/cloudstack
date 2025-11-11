@@ -86,7 +86,7 @@ public class StopInternalLBVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Stopping Internal LB Instance: " + getId();
+        return "Stopping Internal LB Instance: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

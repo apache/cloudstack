@@ -143,7 +143,7 @@ public class UpdateVPCCmd extends BaseAsyncCustomIdCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return "updating VPC id=" + getId();
+        return "Updating VPC " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

@@ -66,7 +66,7 @@ public class DeletePrivateGatewayCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Deleting private gateway id=" + id);
+        return "Deleting private gateway with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

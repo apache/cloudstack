@@ -81,7 +81,7 @@ public class UnmanageVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return String.format("Unmanaging Volume with ID %s", volumeId);
+        return String.format("Unmanaging Volume with ID %s", getResourceUuid(ApiConstants.ID));
     }
 
     /////////////////////////////////////////////////////

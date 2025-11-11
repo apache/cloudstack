@@ -121,6 +121,6 @@ public class RestoreVolumeFromBackupAndAttachToVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Restoring volume "+ volumeUuid + " from backup " + backupId + " and attaching it to Instance " + vmId;
+        return "Restoring volume "+ volumeUuid + " from backup " + getResourceUuid(ApiConstants.BACKUP_ID) + " and attaching it to Instance " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID);
     }
 }

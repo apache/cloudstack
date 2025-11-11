@@ -111,6 +111,12 @@ public class DedicateHostCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "dedicating a host";
+        String baseDescription = "Dedicating host with ID: " + getResourceUuid(ApiConstants.ID) + " to domain with ID: " + getResourceUuid(ApiConstants.DOMAIN_ID);
+
+        if (accountName != null) {
+            baseDescription += " and to account " + accountName;
+        }
+
+        return baseDescription;
     }
 }

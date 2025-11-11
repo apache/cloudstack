@@ -93,7 +93,7 @@ public class ConfigureOvsElementCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "configuring ovs provider: " + id;
+        return "Configuring OVS provider with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

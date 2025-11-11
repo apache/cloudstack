@@ -115,7 +115,7 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Restarting network: " + getNetworkId();
+        return "Restarting network with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

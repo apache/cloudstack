@@ -123,7 +123,7 @@ public class DeleteAffinityGroupCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting Affinity Group";
+        return "Deleting Affinity Group with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

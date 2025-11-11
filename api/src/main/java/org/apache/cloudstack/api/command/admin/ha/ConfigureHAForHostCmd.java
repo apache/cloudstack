@@ -115,6 +115,6 @@ public final class ConfigureHAForHostCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Configure HA for host: " + getHostId();
+        return "Configuring HA for host with ID: " + getResourceUuid(ApiConstants.HOST_ID);
     }
 }

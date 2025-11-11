@@ -108,7 +108,7 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Disassociating IP address with ID=" + id);
+        return ("Disassociating IP address with ID:" + getResourceUuid(ApiConstants.ID));
     }
 
     @Override

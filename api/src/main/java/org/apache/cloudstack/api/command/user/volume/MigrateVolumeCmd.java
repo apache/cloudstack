@@ -110,7 +110,7 @@ public class MigrateVolumeCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return "Attempting to migrate volume Id: " + this._uuidMgr.getUuid(Volume.class, getVolumeId()) + " to storage pool Id: " + this._uuidMgr.getUuid(StoragePool.class, getStoragePoolId());
+        return "Attempting to migrate volume with ID: " + getResourceUuid(ApiConstants.VOLUME_ID) + " to storage pool: " + getResourceUuid(ApiConstants.STORAGE_ID);
     }
 
     public Long getNewDiskOfferingId() {

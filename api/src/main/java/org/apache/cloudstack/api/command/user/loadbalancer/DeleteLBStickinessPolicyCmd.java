@@ -82,7 +82,7 @@ public class DeleteLBStickinessPolicyCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "deleting load balancer stickiness policy: " + getId();
+        return "Deleting load balancer stickiness policy with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

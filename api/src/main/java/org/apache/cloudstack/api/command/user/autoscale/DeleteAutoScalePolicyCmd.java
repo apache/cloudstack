@@ -79,7 +79,7 @@ public class DeleteAutoScalePolicyCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "deleting AutoScale Policy: " + getId();
+        return "Deleting AutoScale Policy with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

@@ -88,7 +88,7 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting domain: " + getId();
+        return "Deleting domain with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

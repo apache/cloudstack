@@ -120,7 +120,7 @@ public class MigrateVPCCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public String getEventDescription() { return "Migrating VPC : " + getId() + " to new VPC offering (" + vpcOfferingId + ")";  }
+    public String getEventDescription() { return "Migrating VPC with ID: " + getResourceUuid(ApiConstants.VPC_ID) + " to new VPC offering with ID: " + getResourceUuid(ApiConstants.VPC_OFF_ID);}
 
     @Override
     public String getEventType() {

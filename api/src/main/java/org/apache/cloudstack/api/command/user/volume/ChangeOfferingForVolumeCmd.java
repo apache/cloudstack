@@ -130,12 +130,12 @@ public class ChangeOfferingForVolumeCmd extends BaseAsyncCmd implements UserCmd 
 
     @Override
     public String getEventDescription() {
-        return "Changing Disk offering of Volume Id: " + this._uuidMgr.getUuid(Volume.class, getId()) + " to " + this._uuidMgr.getUuid(DiskOffering.class, getNewDiskOfferingId());
+        return "Changing disk offering of volume with ID: " + getResourceUuid(ApiConstants.ID) + " to " + getResourceUuid(ApiConstants.DISK_OFFERING_ID);
     }
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        CallContext.current().setEventDetails("Volume Id: " + getId());
+        CallContext.current().setEventDetails("Volume ID: " + getResourceUuid(ApiConstants.ID));
         Volume result = _volumeService.changeDiskOfferingForVolume(this);
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseObject.ResponseView.Restricted, result);

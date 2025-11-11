@@ -103,7 +103,7 @@ public class DeleteAccountFromProjectCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Removing Account " + accountName + " from project: " + projectId;
+        return "Removing Account " + accountName + " from project: " + getResourceUuid(ApiConstants.PROJECT_ID);
     }
 
     @Override

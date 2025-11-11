@@ -125,6 +125,6 @@ public class UpdateGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "updating global load balancer rule";
+        return "Updating global load balancer rule with ID: " + getResourceUuid(ApiConstants.ID);
     }
 }

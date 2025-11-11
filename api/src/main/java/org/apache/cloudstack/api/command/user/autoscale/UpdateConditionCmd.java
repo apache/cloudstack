@@ -110,6 +110,6 @@ public class UpdateConditionCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Updating a condition.";
+        return "Updating VM auto scaling condition with ID: " + getResourceUuid(ApiConstants.ID);
     }
 }

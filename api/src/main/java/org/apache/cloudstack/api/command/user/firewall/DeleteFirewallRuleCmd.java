@@ -69,7 +69,7 @@ public class DeleteFirewallRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Deleting firewall rule ID=" + id);
+        return ("Deleting firewall rule with ID:" + getResourceUuid(ApiConstants.ID));
     }
 
     @Override

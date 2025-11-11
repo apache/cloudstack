@@ -130,7 +130,7 @@ public class UpdateAutoScalePolicyCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Updating Auto Scale Policy. Policy Id: " + getId();
+        return "Updating Auto Scale Policy with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

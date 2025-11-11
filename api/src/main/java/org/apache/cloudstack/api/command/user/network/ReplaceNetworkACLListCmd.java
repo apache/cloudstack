@@ -76,7 +76,7 @@ public class ReplaceNetworkACLListCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Associating network ACL ID=" + aclId + " with network ID=" + networkId);
+        return "Associating network ACL with ID:" + getResourceUuid(ApiConstants.ACL_ID) + " with network with ID:" + getResourceUuid(ApiConstants.NETWORK_ID);
     }
 
     @Override

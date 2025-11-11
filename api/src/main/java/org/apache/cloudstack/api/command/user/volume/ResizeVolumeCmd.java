@@ -190,11 +190,13 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
+        String baseDescription = "Resizing volume with ID: " + getResourceUuid(ApiConstants.ID);
+
         if (getSize() != null) {
-            return "Volume Id: " + this._uuidMgr.getUuid(Volume.class, getEntityId()) + " to size " + getSize() + " GB";
-        } else {
-            return "Volume Id: " + this._uuidMgr.getUuid(Volume.class, getEntityId());
+            baseDescription = baseDescription + " to size " + getSize() + " GB.";
         }
+
+        return baseDescription;
     }
 
     @Override

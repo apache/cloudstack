@@ -121,7 +121,7 @@ public class ResetVMSSHKeyCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return "resetting SSHKey for Instance: " + getId();
+        return "Resetting SSH key for Instance with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

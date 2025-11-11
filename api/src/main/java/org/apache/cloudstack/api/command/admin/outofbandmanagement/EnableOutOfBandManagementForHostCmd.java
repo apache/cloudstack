@@ -94,7 +94,7 @@ public class EnableOutOfBandManagementForHostCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "enable out-of-band management password for host: " + getHostId();
+        return "Enabling out-of-band management password for host with ID: " + getResourceUuid(ApiConstants.HOST_ID);
     }
 
     @Override

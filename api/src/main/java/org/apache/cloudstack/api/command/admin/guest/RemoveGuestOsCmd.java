@@ -74,7 +74,7 @@ public class RemoveGuestOsCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Removing Guest OS: " + getId();
+        return "Removing Guest OS with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

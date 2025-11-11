@@ -98,6 +98,6 @@ public class ActivateProjectCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Activating project: " + id;
+        return "Activating project with ID: " + getResourceUuid(ApiConstants.ID);
     }
 }

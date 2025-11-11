@@ -71,7 +71,7 @@ public class DeleteApplicationLoadBalancerCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "deleting load balancer: " + getId();
+        return "Deleting load balancer with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

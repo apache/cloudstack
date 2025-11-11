@@ -74,7 +74,7 @@ public class RemoveGuestOsMappingCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Removing Guest OS Mapping: " + getId();
+        return "Removing Guest OS Mapping with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

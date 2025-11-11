@@ -203,7 +203,13 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
 
     @Override
     public String getEventDescription() {
-        return  "Creating volume: " + getVolumeName() + ((getSnapshotId() == null) ? "" : " from Snapshot: " + this._uuidMgr.getUuid(Snapshot.class, getSnapshotId()));
+        String description = "Creating volume: " + getVolumeName();
+
+        if (getSnapshotId() != null) {
+            description += " from Snapshot: " + getResourceUuid(ApiConstants.SNAPSHOT_ID);
+        }
+
+        return description;
     }
 
     @Override

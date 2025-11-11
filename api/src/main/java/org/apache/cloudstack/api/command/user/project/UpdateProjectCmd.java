@@ -161,6 +161,6 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Updating project: " + id;
+        return "Updating project with ID: " + getResourceUuid(ApiConstants.ID);
     }
 }

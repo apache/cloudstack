@@ -100,7 +100,6 @@ public class RestoreBackupCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        String backupUuid = _uuidMgr.getUuid(Backup.class, getBackupId());
-        return "Restoring Instance from backup: " + backupUuid;
+        return "Restoring Instance from backup with ID: " + getResourceUuid(ApiConstants.ID);
     }
 }

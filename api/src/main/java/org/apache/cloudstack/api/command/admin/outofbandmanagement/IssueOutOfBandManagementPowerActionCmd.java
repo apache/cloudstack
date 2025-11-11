@@ -107,7 +107,7 @@ public class IssueOutOfBandManagementPowerActionCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "issue out-out-band management power action: " + getPowerAction() + " on host: " + getHostId();
+        return "Issuing out-out-band management power action: " + getPowerAction() + " to host: " + getResourceUuid(ApiConstants.HOST_ID);
     }
 
     @Override

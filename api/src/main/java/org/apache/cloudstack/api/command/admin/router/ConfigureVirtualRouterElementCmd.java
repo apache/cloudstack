@@ -100,7 +100,7 @@ public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "configuring virtual router provider: " + id;
+        return "Configuring virtual router with provider that has ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

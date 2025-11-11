@@ -148,7 +148,7 @@ public class ScaleVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Upgrading Instance: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()) + " to service offering: " + this._uuidMgr.getUuid(ServiceOffering.class, getServiceOfferingId());
+        return  "Upgrading Instance with ID: " + getResourceUuid(ApiConstants.ID) + " to service offering with ID: " + getResourceUuid(ApiConstants.SERVICE_OFFERING_ID);
     }
 
     @Override

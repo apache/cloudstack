@@ -76,7 +76,7 @@ public class DeleteProjectInvitationCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Project invitatino id " + id + " is being removed";
+        return "Removing project invitation with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
 }

@@ -146,10 +146,12 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
+        String projectUuid = getResourceUuid(ApiConstants.PROJECT_ID);
+
         if (accountName != null) {
-            return "Adding Account " + getAccountName() + " to project: " + getProjectId();
+            return "Adding account " + getAccountName() + " to project: " + projectUuid;
         } else {
-            return "Sending invitation to email " + email + " to join project: " + getProjectId();
+            return "Sending invitation to email " + email + " to join project: " + projectUuid;
         }
     }
 

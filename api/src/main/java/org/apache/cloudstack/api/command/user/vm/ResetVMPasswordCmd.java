@@ -101,7 +101,7 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return  "resetting password for Instance: " + getId();
+        return  "Resetting password for Instance with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

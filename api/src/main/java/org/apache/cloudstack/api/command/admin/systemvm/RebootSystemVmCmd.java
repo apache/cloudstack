@@ -86,7 +86,7 @@ public class RebootSystemVmCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "rebooting system vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
+        return "Rebooting system VM with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

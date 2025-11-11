@@ -91,7 +91,7 @@ public class StopNetScalerVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "stopping Netscaler vm: " + getId();
+        return "Stopping Netscaler VM with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

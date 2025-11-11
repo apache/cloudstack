@@ -89,7 +89,7 @@ public class DeleteAutoScaleVmGroupCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting autoscale Instance group: " + getId();
+        return "Deleting autoscale Instance group with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

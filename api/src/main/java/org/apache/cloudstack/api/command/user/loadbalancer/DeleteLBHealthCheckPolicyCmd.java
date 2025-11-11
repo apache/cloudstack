@@ -76,7 +76,7 @@ public class DeleteLBHealthCheckPolicyCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "deleting load balancer health check policy: " + getId();
+        return "Deleting load balancer health check policy with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

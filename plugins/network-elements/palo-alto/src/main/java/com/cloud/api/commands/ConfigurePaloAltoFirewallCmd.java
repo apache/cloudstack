@@ -100,7 +100,7 @@ public class ConfigurePaloAltoFirewallCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Configuring a Palo Alto firewall device";
+        return "Configuring Palo Alto firewall device";
     }
 
     @Override

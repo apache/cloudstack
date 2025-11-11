@@ -169,7 +169,7 @@ public class UploadVolumeCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return  "uploading volume: " + getVolumeName() + " in the zone " + this._uuidMgr.getUuid(DataCenter.class, getZoneId());
+        return  "Uploading volume: " + getVolumeName() + " in the zone with ID: " + getResourceUuid(ApiConstants.ZONE_ID);
     }
 
     @Override

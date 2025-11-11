@@ -156,6 +156,6 @@ public class ImportBackupOfferingCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Importing backup offering: " + name + " (external ID: " + externalId + ") on zone ID " + zoneId ;
+        return "Importing backup offering: " + name + " (external ID: " + externalId + ") on zone with ID: " + getResourceUuid(ApiConstants.ZONE_ID) ;
     }
 }

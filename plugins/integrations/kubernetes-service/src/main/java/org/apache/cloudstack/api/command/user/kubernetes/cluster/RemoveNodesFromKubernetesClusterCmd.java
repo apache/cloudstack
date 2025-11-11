@@ -89,7 +89,7 @@ public class RemoveNodesFromKubernetesClusterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return String.format("Removing %s nodes from the Kubernetes Cluster with ID: %s", nodeIds.size(), clusterId);
+        return String.format("Removing %s nodes from the Kubernetes Cluster with ID: %s", nodeIds.size(), getResourceUuid(ApiConstants.ID));
     }
 
     @Override

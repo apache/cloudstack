@@ -85,7 +85,7 @@ public class DeleteGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "deleting global load balancer rule: " + getGlobalLoadBalancerId();
+        return "Deleting global load balancer rule with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

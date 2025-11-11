@@ -90,7 +90,7 @@ public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Updating NIC " + this._uuidMgr.getUuid(Nic.class, getNicId()) + " on User Instance: " + this._uuidMgr.getUuid(VirtualMachine.class, getVmId());
+        return  "Updating NIC " + getResourceUuid(ApiConstants.NIC_ID) + " on User Instance: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID);
     }
 
     @Override

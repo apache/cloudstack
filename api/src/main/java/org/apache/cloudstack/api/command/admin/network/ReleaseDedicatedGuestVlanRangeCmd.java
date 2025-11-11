@@ -72,7 +72,7 @@ public class ReleaseDedicatedGuestVlanRangeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Releasing a dedicated guest vlan range.";
+        return "Releasing dedicated guest VLAN range with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     // ///////////////////////////////////////////////////

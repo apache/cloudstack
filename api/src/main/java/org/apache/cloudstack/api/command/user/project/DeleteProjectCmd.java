@@ -83,7 +83,7 @@ public class DeleteProjectCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting project: " + id;
+        return "Deleting project with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

@@ -93,7 +93,7 @@ public class DeleteNetworkCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting network: " + id;
+        return "Deleting network with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

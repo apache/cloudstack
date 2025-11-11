@@ -148,7 +148,7 @@ public class CopyTemplateCmd extends BaseAsyncCmd implements UserCmd {
             }
         }
 
-        return  "Copying Template: " + this._uuidMgr.getUuid(VirtualMachineTemplate.class, getId()) +((getSourceZoneId() != null) ? " from zone: " + this._uuidMgr.getUuid(DataCenter.class, getSourceZoneId()) : "") + ((descBuilder.length() > 0) ? " to zones: " + descBuilder.toString() : "");
+        return  "Copying Template: " + getResourceUuid(ApiConstants.ID) + ((getSourceZoneId() != null) ? " from zone: " + getResourceUuid(ApiConstants.SOURCE_ZONE_ID) : "") + ((descBuilder.length() > 0) ? " to zones: " + descBuilder.toString() : "");
     }
 
     @Override

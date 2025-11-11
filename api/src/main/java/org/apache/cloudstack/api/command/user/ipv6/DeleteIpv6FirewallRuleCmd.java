@@ -66,7 +66,7 @@ public class DeleteIpv6FirewallRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Deleting IPv6 firewall rule ID=" + id);
+        return "Deleting IPv6 firewall rule with ID:" + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

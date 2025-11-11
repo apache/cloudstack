@@ -73,7 +73,7 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Deleting port forwarding rule for ID=" + id);
+        return "Deleting port forwarding rule with ID:" + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

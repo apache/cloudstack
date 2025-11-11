@@ -87,7 +87,7 @@ public class DeleteIsoCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting ISO " + getId();
+        return "Deleting ISO with ID: " + getResourceUuid(ApiConstants.ID) + " from zone " + getResourceUuid(ApiConstants.ZONE_ID);
     }
 
     @Override

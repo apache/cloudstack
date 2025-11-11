@@ -99,7 +99,7 @@ public class AddNodesToKubernetesClusterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return String.format("Adding %s nodes to the Kubernetes cluster with ID: %s", nodeIds.size(), clusterId);
+        return String.format("Adding %s nodes to the Kubernetes cluster with ID: %s", nodeIds.size(), getResourceUuid(ApiConstants.ID));
     }
 
     @Override

@@ -72,7 +72,7 @@ public class PatchSystemVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return String.format("Attempting to live patch System VM with Id: %s ", this._uuidMgr.getUuid(VirtualMachine.class, getId()));
+        return String.format("Attempting to live patch System VM with Id: %s ", getResourceUuid(ApiConstants.ID));
     }
 
     @Override

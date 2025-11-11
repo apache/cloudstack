@@ -87,7 +87,7 @@ public class UpgradeKubernetesClusterCmd extends BaseAsyncCmd {
         if (cluster != null) {
             description += String.format(" ID: %s", cluster.getUuid());
         } else {
-            description += String.format(" ID: %d", getId());
+            description += String.format(" ID: %d", getResourceUuid(ApiConstants.ID));
         }
         return description;
     }

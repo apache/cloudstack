@@ -93,7 +93,7 @@ public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  ("Disassociating ip address with id=" + id);
+        return "Disassociating IP address with ID:" + getResourceUuid(ApiConstants.ID);
     }
 
     /////////////////////////////////////////////////////

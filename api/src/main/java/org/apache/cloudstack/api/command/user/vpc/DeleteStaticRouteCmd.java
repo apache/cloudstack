@@ -69,7 +69,7 @@ public class DeleteStaticRouteCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Deleting static route id=" + id);
+        return "Deleting static route with ID:" + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

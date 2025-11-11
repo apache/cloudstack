@@ -97,7 +97,7 @@ public class UnmanageVMInstanceCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Unmanaging Instance. Instance ID = " + vmId;
+        return "Unmanaging Instance with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     public Long getHostId() {

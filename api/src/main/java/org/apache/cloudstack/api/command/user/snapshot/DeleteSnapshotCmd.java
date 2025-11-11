@@ -85,7 +85,7 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Deleting Snapshot: " + this._uuidMgr.getUuid(Snapshot.class, getId());
+        return  "Deleting Snapshot with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
