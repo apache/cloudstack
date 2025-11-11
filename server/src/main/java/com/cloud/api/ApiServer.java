@@ -245,6 +245,12 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     @Inject
     private MessageBus messageBus;
 
+    private static final Set<String> sensitiveFields = new HashSet<>(Arrays.asList(
+        "password", "secretkey", "apikey", "token",
+        "sessionkey", "accesskey", "signature",
+        "authorization", "credential", "secret"
+    ));
+
     private static final ConfigKey<Integer> IntegrationAPIPort = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED
             , Integer.class
             , "integration.api.port"
@@ -611,11 +617,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 logger.error("invalid request, no command sent");
                 if (logger.isTraceEnabled()) {
                     logger.trace("dumping request parameters");
-                    Set<String> sensitiveFields = new HashSet<>(Arrays.asList(
-                        "password", "secretkey", "apikey", "token",
-                        "sessionkey", "accesskey", "signature",
-                        "authorization", "credential", "secret"
-                    ));
 
                     for (final Object key : params.keySet()) {
                         final String keyStr = (String) key;
