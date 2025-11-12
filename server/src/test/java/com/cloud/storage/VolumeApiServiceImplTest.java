@@ -1545,7 +1545,7 @@ public class VolumeApiServiceImplTest {
             volumeApiServiceImpl.publishVolumeCreationUsageEvent(volumeVoMock);
 
             usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(), volumeVoMock.getName(),
-                    null, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplay()));
+                    null, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.getInstanceId(), volumeVoMock.isDisplay()));
         }
     }
 
@@ -1558,7 +1558,7 @@ public class VolumeApiServiceImplTest {
             volumeApiServiceImpl.publishVolumeCreationUsageEvent(volumeVoMock);
 
             usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(), volumeVoMock.getName(),
-                    null, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplay()));
+                    null, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.getInstanceId(), volumeVoMock.isDisplay()));
         }
     }
 
@@ -1573,7 +1573,7 @@ public class VolumeApiServiceImplTest {
             volumeApiServiceImpl.publishVolumeCreationUsageEvent(volumeVoMock);
 
             usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(), volumeVoMock.getName(),
-                    null, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplay()));
+                    null, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.getInstanceId(), volumeVoMock.isDisplay()));
         }
     }
 
@@ -1589,7 +1589,7 @@ public class VolumeApiServiceImplTest {
             volumeApiServiceImpl.publishVolumeCreationUsageEvent(volumeVoMock);
 
             usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(), volumeVoMock.getName(),
-                    offeringMockId, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplay()));
+                    offeringMockId, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.getInstanceId(), volumeVoMock.isDisplay()));
         }
     }
 
