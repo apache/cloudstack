@@ -386,9 +386,8 @@ public class Script implements Callable<String> {
         String[] command = _command.toArray(new String[_command.size()]);
         String commandLine = buildCommandLine(command);
 
-        if (_logger.isDebugEnabled() && !avoidLoggingCommand) {
-            _logger.debug(
-                    String.format("Executing: %s", commandLine.split(KeyStoreUtils.KS_FILENAME)[0]));
+        if (_logger.isDebugEnabled()) {
+            _logger.debug(String.format("Executing: %s", commandLine));
         }
 
         try {
