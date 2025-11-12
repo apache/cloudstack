@@ -101,9 +101,9 @@ class TestEventsResource(cloudstackTestCase):
             self.apiclient,
             self.services["network_offering"],
         )
+        self.cleanup.append(self.network_offering)
         self.network_offering.update(self.apiclient, state='Enabled')
         self.services["network"]["networkoffering"] = self.network_offering.id
-        self.cleanup.append(self.network_offering)
         self.services["zoneid"] = self.zone.id
         self.services["template"] = template.id
         self.services["network"]["zoneid"] = self.zone.id
