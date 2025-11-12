@@ -66,7 +66,6 @@ public class Script implements Callable<String> {
     private static final int DEFAULT_TIMEOUT = 3600 * 1000; /* 1 hour */
     private volatile boolean _isTimeOut = false;
 
-    private boolean _passwordCommand = false;
     private boolean avoidLoggingCommand = false;
     private final Set<Integer> sensitiveArgIndices = new HashSet<>();
 
@@ -178,7 +177,6 @@ public class Script implements Callable<String> {
 
             if ("-y".equals(cmd) || "-z".equals(cmd)) {
                 obscureParam = true;
-                _passwordCommand = true;
             }
         }
         return builder.toString();
@@ -340,12 +338,8 @@ public class Script implements Callable<String> {
                 _logger.trace(String.format("Running timed out task of process [%s] for command [%s].", processPid,
                         commandLine));
                 timedoutTask.run();
-                if (_passwordCommand) {
-                    _logger.warn(String.format("Process [%s] for command [%s] timed out.", processPid, commandLine));
-                } else {
-                    _logger.warn(String.format("Process [%s] for command [%s] timed out. Output is [%s].", processPid,
+                _logger.warn(String.format("Process [%s] for command [%s] timed out. Output is [%s].", processPid,
                             commandLine, timedoutTask.getResult()));
-                }
 
                 return ERR_TIMEOUT;
             }
