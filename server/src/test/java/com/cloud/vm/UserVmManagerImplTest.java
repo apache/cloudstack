@@ -171,6 +171,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.VirtualMachineTemplate;
@@ -415,6 +416,8 @@ public class UserVmManagerImplTest {
 
     @Mock
     StorageManager storageManager;
+    @Mock
+    private StoragePoolAndAccessGroupMapDao storagePoolAndAccessGroupMapDao;
 
     @Mock
     private VolumeDataFactory volumeDataFactory;
@@ -3206,95 +3209,208 @@ public class UserVmManagerImplTest {
     }
 
     @Test
-    public void validateStorageAccessGroupsOnHostsMatchingSAGsNoException() {
-        Host srcHost = Mockito.mock(Host.class);
-        Host destHost = Mockito.mock(Host.class);
+    public void testValidateStorageAccessGroupsOnHostsVolumeBasedSuccessWithMatchingGroups() {
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Host destinationHost = Mockito.mock(Host.class);
 
-        Mockito.when(srcHost.getId()).thenReturn(1L);
-        Mockito.when(destHost.getId()).thenReturn(2L);
-        when(storageManager.getStorageAccessGroups(null, null, null, srcHost.getId())).thenReturn(new String[]{"sag1", "sag2"});
-        when(storageManager.getStorageAccessGroups(null, null, null, destHost.getId())).thenReturn(new String[]{"sag1", "sag2", "sag3"});
+        List<VolumeVO> vmVolumes = new ArrayList<>();
+        VolumeVO volume1 = Mockito.mock(VolumeVO.class);
+        VolumeVO volume2 = Mockito.mock(VolumeVO.class);
+        vmVolumes.add(volume1);
+        vmVolumes.add(volume2);
 
-        userVmManagerImpl.validateStorageAccessGroupsOnHosts(srcHost, destHost);
+        StoragePoolVO storagePool1 = Mockito.mock(StoragePoolVO.class);
+        StoragePoolVO storagePool2 = Mockito.mock(StoragePoolVO.class);
 
-        Mockito.verify(storageManager, times(1)).getStorageAccessGroups(null, null, null, srcHost.getId());
-        Mockito.verify(storageManager, times(1)).getStorageAccessGroups(null, null, null, destHost.getId());
+        Mockito.when(vm.getId()).thenReturn(1L);
+        Mockito.when(destinationHost.getId()).thenReturn(2L);
+        Mockito.when(destinationHost.getName()).thenReturn("destHost");
+
+        Mockito.when(volume1.getPoolId()).thenReturn(100L);
+        Mockito.when(volume1.getName()).thenReturn("volume1");
+        Mockito.when(volume1.getVolumeType()).thenReturn(Volume.Type.ROOT);
+        Mockito.when(storagePool1.getName()).thenReturn("pool1");
+
+        Mockito.when(volume2.getPoolId()).thenReturn(200L);
+        Mockito.when(volume2.getName()).thenReturn("volume2");
+        Mockito.when(volume2.getVolumeType()).thenReturn(Volume.Type.DATADISK);
+        Mockito.when(storagePool2.getName()).thenReturn("pool2");
+
+        Mockito.when(volumeDaoMock.findByInstance(1L)).thenReturn(vmVolumes);
+
+        Mockito.when(storageManager.getStorageAccessGroups(null, null, null, 2L))
+                .thenReturn(new String[]{"group1", "group2", "group3"});
+
+        Mockito.when(storagePoolAndAccessGroupMapDao.getStorageAccessGroups(100L))
+                .thenReturn(Arrays.asList("group1", "group2"));
+        Mockito.when(storagePoolAndAccessGroupMapDao.getStorageAccessGroups(200L))
+                .thenReturn(Arrays.asList("group2", "group3"));
+        userVmManagerImpl.validateStorageAccessGroupsOnHosts(vm, destinationHost);
+
+        Mockito.verify(volumeDaoMock).findByInstance(1L);
+        Mockito.verify(storageManager).getStorageAccessGroups(null, null, null, 2L);
+        Mockito.verify(storagePoolAndAccessGroupMapDao).getStorageAccessGroups(100L);
+        Mockito.verify(storagePoolAndAccessGroupMapDao).getStorageAccessGroups(200L);
+    }
+
+    @Test
+    public void testValidateStorageAccessGroupsOnHostsVolumeBasedSuccessWithIntersection() {
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Host destinationHost = Mockito.mock(Host.class);
+
+        List<VolumeVO> vmVolumes = new ArrayList<>();
+        VolumeVO volume1 = Mockito.mock(VolumeVO.class);
+        vmVolumes.add(volume1);
+
+        StoragePoolVO storagePool1 = Mockito.mock(StoragePoolVO.class);
+
+        Mockito.when(vm.getId()).thenReturn(1L);
+        Mockito.when(destinationHost.getId()).thenReturn(2L);
+        Mockito.when(destinationHost.getName()).thenReturn("destHost");
+
+        Mockito.when(volume1.getPoolId()).thenReturn(100L);
+        Mockito.when(volume1.getName()).thenReturn("volume1");
+        Mockito.when(volume1.getVolumeType()).thenReturn(Volume.Type.ROOT);
+        Mockito.when(storagePool1.getName()).thenReturn("pool1");
+
+        Mockito.when(volumeDaoMock.findByInstance(1L)).thenReturn(vmVolumes);
+
+        Mockito.when(storageManager.getStorageAccessGroups(null, null, null, 2L))
+                .thenReturn(new String[]{"group2", "group4", "group5"});
+
+        Mockito.when(storagePoolAndAccessGroupMapDao.getStorageAccessGroups(100L))
+                .thenReturn(Arrays.asList("group1", "group2", "group3"));
+
+        userVmManagerImpl.validateStorageAccessGroupsOnHosts(vm, destinationHost);
+    }
+
+    @Test
+    public void testValidateStorageAccessGroupsOnHostsSuccessWithEmptyStorageGroups() {
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Host destinationHost = Mockito.mock(Host.class);
+
+        List<VolumeVO> vmVolumes = new ArrayList<>();
+        VolumeVO volume1 = Mockito.mock(VolumeVO.class);
+        vmVolumes.add(volume1);
+
+        StoragePoolVO storagePool1 = Mockito.mock(StoragePoolVO.class);
+
+        Mockito.when(vm.getId()).thenReturn(1L);
+        Mockito.when(destinationHost.getId()).thenReturn(2L);
+        Mockito.when(destinationHost.getName()).thenReturn("destHost");
+
+        Mockito.when(volume1.getPoolId()).thenReturn(100L);
+        Mockito.when(volume1.getName()).thenReturn("volume1");
+        Mockito.when(volume1.getVolumeType()).thenReturn(Volume.Type.ROOT);
+        Mockito.when(storagePool1.getName()).thenReturn("pool1");
+
+        Mockito.when(volumeDaoMock.findByInstance(1L)).thenReturn(vmVolumes);
+
+        Mockito.when(storageManager.getStorageAccessGroups(null, null, null, 2L))
+                .thenReturn(new String[]{"group1", "group2"});
+        Mockito.when(storagePoolAndAccessGroupMapDao.getStorageAccessGroups(100L))
+                .thenReturn(List.of());
+        userVmManagerImpl.validateStorageAccessGroupsOnHosts(vm, destinationHost);
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void validateSAGsOnHostsNonMatchingSAGsThrowsException() {
-        Host srcHost = Mockito.mock(Host.class);
-        Host destHost = Mockito.mock(Host.class);
+    public void testValidateStorageAccessGroupsOnHostsDestinationHostEmptyGroups() {
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Host destinationHost = Mockito.mock(Host.class);
 
-        Mockito.when(srcHost.getId()).thenReturn(1L);
-        Mockito.when(destHost.getId()).thenReturn(2L);
-        when(storageManager.getStorageAccessGroups(null, null, null, srcHost.getId())).thenReturn(new String[]{"sag1", "sag2"});
-        when(storageManager.getStorageAccessGroups(null, null, null, destHost.getId())).thenReturn(new String[]{"sag1", "sag3"});
+        List<VolumeVO> vmVolumes = new ArrayList<>();
+        VolumeVO volume1 = Mockito.mock(VolumeVO.class);
+        vmVolumes.add(volume1);
 
-        userVmManagerImpl.validateStorageAccessGroupsOnHosts(srcHost, destHost);
-    }
+        StoragePoolVO storagePool1 = Mockito.mock(StoragePoolVO.class);
 
-    @Test
-    public void validateEmptyStorageAccessGroupOnHosts() {
-        Host srcHost = Mockito.mock(Host.class);
-        Host destHost = Mockito.mock(Host.class);
+        Mockito.when(vm.getId()).thenReturn(1L);
+        Mockito.when(destinationHost.getId()).thenReturn(2L);
+        Mockito.when(destinationHost.getName()).thenReturn("destHost");
 
-        Mockito.when(srcHost.getId()).thenReturn(1L);
-        Mockito.when(destHost.getId()).thenReturn(2L);
-        when(storageManager.getStorageAccessGroups(null, null, null, srcHost.getId())).thenReturn(new String[]{});
-        when(storageManager.getStorageAccessGroups(null, null, null, destHost.getId())).thenReturn(new String[]{});
+        Mockito.when(volume1.getPoolId()).thenReturn(100L);
+        Mockito.when(volume1.getName()).thenReturn("volume1");
+        Mockito.when(volume1.getVolumeType()).thenReturn(Volume.Type.ROOT);
+        Mockito.when(storagePool1.getName()).thenReturn("pool1");
 
-        userVmManagerImpl.validateStorageAccessGroupsOnHosts(srcHost, destHost);
+        Mockito.when(volumeDaoMock.findByInstance(1L)).thenReturn(vmVolumes);
+        Mockito.when(storageManager.getStorageAccessGroups(null, null, null, 2L))
+                .thenReturn(new String[]{});
 
-        Mockito.verify(storageManager, times(1)).getStorageAccessGroups(null, null, null, srcHost.getId());
-        Mockito.verify(storageManager, times(1)).getStorageAccessGroups(null, null, null, destHost.getId());
-    }
-
-    @Test
-    public void validateSAGsOnHostsNullStorageAccessGroups() {
-        Host srcHost = Mockito.mock(Host.class);
-        Host destHost = Mockito.mock(Host.class);
-
-        Mockito.when(srcHost.getId()).thenReturn(1L);
-        Mockito.when(destHost.getId()).thenReturn(2L);
-        when(storageManager.getStorageAccessGroups(null, null, null, srcHost.getId())).thenReturn(null);
-        when(storageManager.getStorageAccessGroups(null, null, null, destHost.getId())).thenReturn(null);
-
-        userVmManagerImpl.validateStorageAccessGroupsOnHosts(srcHost, destHost);
-
-        Mockito.verify(storageManager, times(1)).getStorageAccessGroups(null, null, null, srcHost.getId());
-        Mockito.verify(storageManager, times(1)).getStorageAccessGroups(null, null, null, destHost.getId());
+        Mockito.when(storagePoolAndAccessGroupMapDao.getStorageAccessGroups(100L))
+                .thenReturn(List.of("group1"));
+        userVmManagerImpl.validateStorageAccessGroupsOnHosts(vm, destinationHost);
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void validateSAGsOnDestHostNullStorageAccessGroups() {
-        Host srcHost = Mockito.mock(Host.class);
-        Host destHost = Mockito.mock(Host.class);
+    public void testValidateStorageAccessGroupsOnHostsFailureNoMatch() {
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Host destinationHost = Mockito.mock(Host.class);
 
-        Mockito.when(srcHost.getId()).thenReturn(1L);
-        Mockito.when(destHost.getId()).thenReturn(2L);
-        when(storageManager.getStorageAccessGroups(null, null, null, srcHost.getId())).thenReturn(new String[]{"sag1", "sag2"});
-        when(storageManager.getStorageAccessGroups(null, null, null, destHost.getId())).thenReturn(null);
+        List<VolumeVO> vmVolumes = new ArrayList<>();
+        VolumeVO volume1 = Mockito.mock(VolumeVO.class);
+        vmVolumes.add(volume1);
 
-        userVmManagerImpl.validateStorageAccessGroupsOnHosts(srcHost, destHost);
+        StoragePoolVO storagePool1 = Mockito.mock(StoragePoolVO.class);
+
+        Mockito.when(vm.getId()).thenReturn(1L);
+        Mockito.when(destinationHost.getId()).thenReturn(2L);
+        Mockito.when(destinationHost.getName()).thenReturn("destHost");
+
+        Mockito.when(volume1.getPoolId()).thenReturn(100L);
+        Mockito.when(volume1.getName()).thenReturn("volume1");
+        Mockito.when(volume1.getVolumeType()).thenReturn(Volume.Type.ROOT);
+        Mockito.when(storagePool1.getName()).thenReturn("pool1");
+
+        Mockito.when(volumeDaoMock.findByInstance(1L)).thenReturn(vmVolumes);
+
+        Mockito.when(storageManager.getStorageAccessGroups(null, null, null, 2L))
+                .thenReturn(new String[]{"group4", "group5", "group6"});
+        Mockito.when(storagePoolAndAccessGroupMapDao.getStorageAccessGroups(100L))
+                .thenReturn(Arrays.asList("group1", "group2", "group3"));
+        userVmManagerImpl.validateStorageAccessGroupsOnHosts(vm, destinationHost);
     }
 
-    @Test
-    public void validateNullStorageAccessGroupsOnSrcHost() {
+    @Test(expected = CloudRuntimeException.class)
+    public void testValidateStorageAccessGroupsOnHostsMultipleVolumesFailure() {
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Host destinationHost = Mockito.mock(Host.class);
 
-        Host srcHost = Mockito.mock(Host.class);
-        Host destHost = Mockito.mock(Host.class);
+        List<VolumeVO> vmVolumes = new ArrayList<>();
+        VolumeVO volume1 = Mockito.mock(VolumeVO.class);
+        VolumeVO volume2 = Mockito.mock(VolumeVO.class);
+        vmVolumes.add(volume1);
+        vmVolumes.add(volume2);
 
-        Mockito.when(srcHost.getId()).thenReturn(1L);
-        Mockito.when(destHost.getId()).thenReturn(2L);
-        when(storageManager.getStorageAccessGroups(null, null, null, srcHost.getId())).thenReturn(null);
-        when(storageManager.getStorageAccessGroups(null, null, null, destHost.getId())).thenReturn(new String[]{"sag1", "sag2"});
+        StoragePoolVO storagePool1 = Mockito.mock(StoragePoolVO.class);
+        StoragePoolVO storagePool2 = Mockito.mock(StoragePoolVO.class);
 
-        userVmManagerImpl.validateStorageAccessGroupsOnHosts(srcHost, destHost);
+        Mockito.when(vm.getId()).thenReturn(1L);
+        Mockito.when(destinationHost.getId()).thenReturn(2L);
+        Mockito.when(destinationHost.getName()).thenReturn("destHost");
 
-        Mockito.verify(storageManager, times(1)).getStorageAccessGroups(null, null, null, srcHost.getId());
-        Mockito.verify(storageManager, times(1)).getStorageAccessGroups(null, null, null, destHost.getId());
+        Mockito.when(volume1.getPoolId()).thenReturn(100L);
+        Mockito.when(volume1.getName()).thenReturn("volume1");
+        Mockito.when(volume1.getVolumeType()).thenReturn(Volume.Type.ROOT);
+        Mockito.when(storagePool1.getName()).thenReturn("pool1");
+
+        Mockito.when(volume2.getPoolId()).thenReturn(200L);
+        Mockito.when(volume2.getName()).thenReturn("volume2");
+        Mockito.when(volume2.getVolumeType()).thenReturn(Volume.Type.DATADISK);
+        Mockito.when(storagePool2.getName()).thenReturn("pool2");
+
+        Mockito.when(volumeDaoMock.findByInstance(1L)).thenReturn(vmVolumes);
+
+        Mockito.when(storageManager.getStorageAccessGroups(null, null, null, 2L))
+                .thenReturn(new String[]{"group1", "group2"});
+
+        Mockito.when(storagePoolAndAccessGroupMapDao.getStorageAccessGroups(100L))
+                .thenReturn(List.of("group1"));
+        Mockito.when(storagePoolAndAccessGroupMapDao.getStorageAccessGroups(200L))
+                .thenReturn(Arrays.asList("group3", "group4"));
+        userVmManagerImpl.validateStorageAccessGroupsOnHosts(vm, destinationHost);
     }
+
     @Test
     public void testAllocateVMFromBackupUsingCmdValues() throws InsufficientCapacityException, ResourceAllocationException, ResourceUnavailableException {
         Long backupId = 4L;

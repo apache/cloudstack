@@ -410,6 +410,7 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 
 public class UserVmManagerImpl extends ManagerBase implements UserVmManager, VirtualMachineGuru, Configurable {
 
@@ -588,6 +589,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private DataStoreProviderManager _dataStoreProviderMgr;
     @Inject
     private StorageManager storageManager;
+    @Inject
+    private StoragePoolAndAccessGroupMapDao _storagePoolAndAccessGroupMapDao;
     @Inject
     private ServiceOfferingJoinDao serviceOfferingJoinDao;
     @Inject
@@ -7224,23 +7227,44 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return host.checkHostServiceOfferingAndTemplateTags(serviceOffering, template, strictHostTags);
     }
 
-    protected void validateStorageAccessGroupsOnHosts(Host srcHost, Host destinationHost) {
-        String[] storageAccessGroupsOnSrcHost = storageManager.getStorageAccessGroups(null, null, null, srcHost.getId());
-        String[] storageAccessGroupsOnDestHost = storageManager.getStorageAccessGroups(null, null, null, destinationHost.getId());
-
-        List<String> srcHostStorageAccessGroupsList = storageAccessGroupsOnSrcHost != null ? Arrays.asList(storageAccessGroupsOnSrcHost) : Collections.emptyList();
-        List<String> destHostStorageAccessGroupsList = storageAccessGroupsOnDestHost != null ? Arrays.asList(storageAccessGroupsOnDestHost) : Collections.emptyList();
-
-        if (CollectionUtils.isEmpty(srcHostStorageAccessGroupsList)) {
+    protected void validateStorageAccessGroupsOnHosts(VMInstanceVO vm, Host destinationHost) {
+        List<VolumeVO> vmVolumes = _volsDao.findByInstance(vm.getId());
+        if (CollectionUtils.isEmpty(vmVolumes)) {
+            s_logger.debug(String.format("No volumes found for VM %s, skipping storage access group validation", vm));
             return;
         }
 
+        String[] storageAccessGroupsOnDestHost = storageManager.getStorageAccessGroups(null, null, null, destinationHost.getId());
+        List<String> destHostStorageAccessGroupsList = Arrays.asList(storageAccessGroupsOnDestHost);
         if (CollectionUtils.isEmpty(destHostStorageAccessGroupsList)) {
-            throw new CloudRuntimeException("Source host has storage access groups, but destination host has none.");
+            s_logger.debug(String.format("Destination host %s has no storage access groups", destinationHost.getName()));
         }
 
-        if (!destHostStorageAccessGroupsList.containsAll(srcHostStorageAccessGroupsList)) {
-            throw new CloudRuntimeException("Storage access groups on the source and destination hosts did not match.");
+        for (VolumeVO volume : vmVolumes) {
+            if (volume.getPoolId() == null) {
+                s_logger.debug(String.format("Volume %s has no storage pool assigned, skipping storage access group validation", volume.getName()));
+                continue;
+            }
+            List<String> poolStorageAccessGroupsList = _storagePoolAndAccessGroupMapDao.getStorageAccessGroups(volume.getPoolId());
+            if (CollectionUtils.isEmpty(poolStorageAccessGroupsList)) {
+                s_logger.debug(String.format("Storage pool %d has no storage access groups, skipping validation for volume %s",
+                        volume.getPoolId(), volume.getName()));
+                continue;
+            }
+            if (Collections.disjoint(poolStorageAccessGroupsList, destHostStorageAccessGroupsList)) {
+                throw new CloudRuntimeException(String.format(
+                    "Destination host %s does not have any storage access groups that match the requirements for volume %s (Resource Class: %s) on storage pool %d. " +
+                    "Pool requires access groups: %s, but destination host only has: %s",
+                    destinationHost.getName(),
+                    volume.getName(),
+                    volume.getVolumeType(), volume.getPoolId(),
+                    String.join(", ", poolStorageAccessGroupsList),
+                    String.join(", ", destHostStorageAccessGroupsList)
+                ));
+            }
+            s_logger.debug(String.format("Storage access group validation passed for volume %s (Resource Class: %s) on storage pool %d. " +
+                "Destination host %s has matching access groups.",
+                volume.getName(), volume.getVolumeType(), volume.getPoolId(), destinationHost.getName()));
         }
     }
 
@@ -7286,7 +7310,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         HostVO destinationHostVO = _hostDao.findById(destinationHost.getId());
         _hostDao.loadHostTags(destinationHostVO);
         validateStrictHostTagCheck(vm, destinationHostVO);
-        validateStorageAccessGroupsOnHosts(srcHost, destinationHost);
+        validateStorageAccessGroupsOnHosts(vm, destinationHost);
 
         checkHostsDedication(vm, srcHost.getId(), destinationHost.getId());
 
@@ -7647,7 +7671,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     destinationHost.getName(), destinationHost.getUuid()));
         }
 
-        validateStorageAccessGroupsOnHosts(srcHost, destinationHost);
+        validateStorageAccessGroupsOnHosts(vm, destinationHost);
 
         return new Pair<>(srcHost, destinationHost);
     }
