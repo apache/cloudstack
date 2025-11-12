@@ -34,9 +34,12 @@ import java.util.UUID;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.commons.collections.MapUtils;
 import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -45,6 +48,18 @@ import com.cloud.utils.script.Script;
 
 @RunWith(MockitoJUnitRunner.class)
 public class QemuImgTest {
+
+    @BeforeClass
+    public static void setUp() {
+        Assume.assumeTrue("qemu-img not found", Script.runSimpleBashScript("command -v qemu-img") != null);
+        boolean libVirtAvailable = false;
+        try {
+            Connect conn = new Connect("qemu:///system", false);
+            conn.getVersion();
+            libVirtAvailable = true;
+        } catch (LibvirtException ignored) {}
+        Assume.assumeTrue("libvirt not available", libVirtAvailable);
+    }
 
     @Test
     public void testCreateAndInfo() throws QemuImgException, LibvirtException {
