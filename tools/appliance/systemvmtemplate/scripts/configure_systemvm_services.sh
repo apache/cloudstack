@@ -19,7 +19,7 @@
 set -e
 set -x
 
-CLOUDSTACK_RELEASE=4.21.0
+CLOUDSTACK_RELEASE=4.22.0
 
 function configure_apache2() {
    # Enable ssl, rewrite and auth
@@ -133,7 +133,7 @@ function configure_services() {
   systemctl disable containerd
 
   # Disable cloud init by default
-cat <<EOF > /etc/cloud/cloud.cfg.d/cloudstack.cfg
+  cat <<EOF > /etc/cloud/cloud.cfg.d/cloudstack.cfg
 datasource_list: ['CloudStack']
 datasource:
   CloudStack:

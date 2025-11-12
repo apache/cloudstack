@@ -16,7 +16,9 @@
 // under the License.
 package com.cloud.server;
 
+import com.cloud.agent.api.Answer;
 import com.cloud.host.DetailVO;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
@@ -73,5 +75,7 @@ public interface ManagementServer extends ManagementService, PluggableService {
     public long getMemoryOrCpuCapacityByHost(Long hostId, short capacityType);
 
     Pair<Boolean, String> updateSystemVM(VMInstanceVO systemVM, boolean forced);
+
+    Answer getExternalVmConsole(VirtualMachine vm, Host host);
 
 }

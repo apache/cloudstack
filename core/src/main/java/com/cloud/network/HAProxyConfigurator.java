@@ -36,6 +36,8 @@ import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.api.to.LoadBalancerTO.DestinationTO;
 import com.cloud.agent.api.to.LoadBalancerTO.StickinessPolicyTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
+import com.cloud.agent.resource.virtualnetwork.model.LoadBalancerRule.SslCertEntry;
+import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.utils.Pair;
 import com.cloud.utils.net.NetUtils;
@@ -51,6 +53,12 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         "\toption forwardfor", "\toption httpclose", "\ttimeout connect    5000", "\ttimeout client     50000", "\ttimeout server     50000"};
 
     private static String[] defaultListen = {"listen  vmops", "\tbind 0.0.0.0:9", "\toption transparent"};
+
+    private static final String SSL_CERTS_DIR = "/etc/cloudstack/ssl/";
+
+    private static final String SSL_CONFIGURATION_INTERMEDIATE = " ssl-min-ver TLSv1.2 no-tls-tickets " +
+            "ciphers ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-GCM-SHA256 " +
+            "ciphersuites TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256";
 
     @Override
     public String[] generateConfiguration(final List<PortForwardingRuleTO> fwRules) {
@@ -469,30 +477,41 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         return sb.toString();
     }
 
-    private List<String> getRulesForPool(final LoadBalancerTO lbTO, final boolean keepAliveEnabled) {
+    private List<String> getRulesForPool(final LoadBalancerTO lbTO, final LoadBalancerConfigCommand lbCmd) {
         StringBuilder sb = new StringBuilder();
         final String poolName = sb.append(lbTO.getSrcIp().replace(".", "_")).append('-').append(lbTO.getSrcPort()).toString();
         final String publicIP = lbTO.getSrcIp();
         final int publicPort = lbTO.getSrcPort();
         final String algorithm = lbTO.getAlgorithm();
 
-        final List<String> result = new ArrayList<String>();
-        // add line like this: "listen  65_37_141_30-80\n\tbind 65.37.141.30:80"
-        sb = new StringBuilder();
-        sb.append("listen ").append(poolName);
-        result.add(sb.toString());
+        boolean sslOffloading = lbTO.getSslCert() != null && !lbTO.getSslCert().isRevoked()
+                && NetUtils.SSL_PROTO.equals(lbTO.getLbProtocol());
+
+        final List<String> frontendConfigs = new ArrayList<>();
+        final List<String> backendConfigs = new ArrayList<>();
+        final List<String> result = new ArrayList<>();
+
         sb = new StringBuilder();
         sb.append("\tbind ").append(publicIP).append(":").append(publicPort);
-        result.add(sb.toString());
+
+        if (sslOffloading) {
+            sb.append(" ssl crt ").append(SSL_CERTS_DIR).append(poolName).append(".pem");
+            // check for http2 support
+            sb.append(" alpn h2,http/1.1");
+            sb.append(SSL_CONFIGURATION_INTERMEDIATE);
+            sb.append("\n\thttp-request add-header X-Forwarded-Proto https");
+        }
+        frontendConfigs.add(sb.toString());
+
         sb = new StringBuilder();
         sb.append("\t").append("balance ").append(algorithm.toLowerCase());
-        result.add(sb.toString());
+        backendConfigs.add(sb.toString());
 
         int i = 0;
-        Boolean destsAvailable = false;
+        boolean destsAvailable = false;
         final String stickinessSubRule = getLbSubRuleForStickiness(lbTO);
-        final List<String> dstSubRule = new ArrayList<String>();
-        final List<String> dstWithCookieSubRule = new ArrayList<String>();
+        final List<String> dstSubRule = new ArrayList<>();
+        final List<String> dstWithCookieSubRule = new ArrayList<>();
         for (final DestinationTO dest : lbTO.getDestinations()) {
             // add line like this: "server  65_37_141_30-80_3 10.1.1.4:80 check"
             if (dest.isRevoked()) {
@@ -500,15 +519,20 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             }
             sb = new StringBuilder();
             sb.append("\t")
-            .append("server ")
-            .append(poolName)
-            .append("_")
-            .append(Integer.toString(i++))
-            .append(" ")
-            .append(dest.getDestIp())
-            .append(":")
-            .append(dest.getDestPort())
-            .append(" check");
+                    .append("server ")
+                    .append(poolName)
+                    .append("_")
+                    .append(i++)
+                    .append(" ")
+                    .append(dest.getDestIp())
+                    .append(":")
+                    .append(dest.getDestPort())
+                    .append(" check");
+
+            if (sslOffloading) {
+                sb.append(SSL_CONFIGURATION_INTERMEDIATE);
+            }
+
             if(lbTO.getLbProtocol() != null && lbTO.getLbProtocol().equals("tcp-proxy")) {
                 sb.append(" send-proxy");
             }
@@ -520,9 +544,9 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             destsAvailable = true;
         }
 
-        Boolean httpbasedStickiness = false;
+        boolean httpbasedStickiness = false;
         /* attach stickiness sub rule only if the destinations are available */
-        if (stickinessSubRule != null && destsAvailable == true) {
+        if (stickinessSubRule != null && destsAvailable) {
             for (final StickinessPolicyTO stickinessPolicy : lbTO.getStickinessPolicies()) {
                 if (stickinessPolicy == null) {
                     continue;
@@ -530,28 +554,32 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                 if (StickinessMethodType.LBCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName()) ||
                         StickinessMethodType.AppCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
                     httpbasedStickiness = true;
+                    break;
                 }
             }
             if (httpbasedStickiness) {
-                result.addAll(dstWithCookieSubRule);
+                backendConfigs.addAll(dstWithCookieSubRule);
             } else {
-                result.addAll(dstSubRule);
+                backendConfigs.addAll(dstSubRule);
             }
-            result.add(stickinessSubRule);
+            backendConfigs.add(stickinessSubRule);
         } else {
-            result.addAll(dstSubRule);
+            backendConfigs.addAll(dstSubRule);
         }
         if (stickinessSubRule != null && !destsAvailable) {
             logger.warn("Haproxy stickiness policy for lb rule: " + lbTO.getSrcIp() + ":" + lbTO.getSrcPort() + ": Not Applied, cause:  backends are unavailable");
         }
-        if (publicPort == NetUtils.HTTP_PORT && !keepAliveEnabled || httpbasedStickiness) {
-            sb = new StringBuilder();
-            sb.append("\t").append("mode http");
-            result.add(sb.toString());
-            sb = new StringBuilder();
-            sb.append("\t").append("option httpclose");
-            result.add(sb.toString());
+        boolean keepAliveEnabled = lbCmd.keepAliveEnabled;
+        boolean http = (publicPort == NetUtils.HTTP_PORT && !keepAliveEnabled);
+        if (http || httpbasedStickiness || sslOffloading) {
+            frontendConfigs.add("\tmode http");
+            String keepAliveLine = keepAliveEnabled ? "\tno option forceclose" : "\toption httpclose";
+            frontendConfigs.add(keepAliveLine);
         }
+
+        // add line like this: "listen  65_37_141_30-80\n\tbind 65.37.141.30:80"
+        result.add(String.format("listen %s", poolName));
+        result.addAll(frontendConfigs);
 
         String cidrList = lbTO.getCidrList();
 
@@ -559,6 +587,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             result.add(String.format("\tacl network_allowed src %s \n\ttcp-request connection reject if !network_allowed", cidrList));
         }
 
+        result.addAll(backendConfigs);
         result.add(blankLine);
         return result;
     }
@@ -566,15 +595,18 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
     private String generateStatsRule(final LoadBalancerConfigCommand lbCmd, final String ruleName, final String statsIp) {
         final StringBuilder rule = new StringBuilder("\nlisten ").append(ruleName).append("\n\tbind ").append(statsIp).append(":").append(lbCmd.lbStatsPort);
         // TODO DH: write test for this in both cases
-        if (!lbCmd.keepAliveEnabled) {
-            logger.info("Haproxy mode http enabled");
-            rule.append("\n\tmode http\n\toption httpclose");
+        rule.append("\n\tmode http");
+        if (lbCmd.keepAliveEnabled) {
+            logger.info("Haproxy option http-keep-alive enabled");
+        } else {
+            logger.info("Haproxy option httpclose enabled");
+            rule.append("\n\toption httpclose");
         }
         rule.append("\n\tstats enable\n\tstats uri     ")
-        .append(lbCmd.lbStatsUri)
-        .append("\n\tstats realm   Haproxy\\ Statistics\n\tstats auth    ")
-        .append(lbCmd.lbStatsAuth);
-        rule.append("\n");
+                .append(lbCmd.lbStatsUri)
+                .append("\n\tstats realm   Haproxy\\ Statistics\n\tstats auth    ")
+                .append(lbCmd.lbStatsAuth)
+                .append("\n");
         final String result = rule.toString();
         if (logger.isDebugEnabled()) {
             logger.debug("Haproxystats rule: " + result);
@@ -644,7 +676,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             if (lbTO.isRevoked()) {
                 continue;
             }
-            final List<String> poolRules = getRulesForPool(lbTO, lbCmd.keepAliveEnabled);
+            final List<String> poolRules = getRulesForPool(lbTO, lbCmd);
             result.addAll(poolRules);
             has_listener = true;
         }
@@ -695,5 +727,31 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         result[STATS] = toStats.toArray(new String[toStats.size()]);
 
         return result;
+    }
+
+    @Override
+    public SslCertEntry[] generateSslCertEntries(LoadBalancerConfigCommand lbCmd) {
+        final Set<SslCertEntry> sslCertEntries = new HashSet<>();
+        for (final LoadBalancerTO lbTO : lbCmd.getLoadBalancers()) {
+            if (lbTO.getSslCert() != null) {
+                addSslCertEntry(sslCertEntries, lbTO);
+            }
+        }
+        final SslCertEntry[] result = sslCertEntries.toArray(new SslCertEntry[sslCertEntries.size()]);
+        return result;
+    }
+
+    private void addSslCertEntry(Set<SslCertEntry> sslCertEntries, LoadBalancerTO lbTO) {
+        final LbSslCert cert = lbTO.getSslCert();
+        if (cert.isRevoked()) {
+            return;
+        }
+        if (lbTO.getLbProtocol() == null || ! lbTO.getLbProtocol().equals(NetUtils.SSL_PROTO)) {
+            return;
+        }
+        StringBuilder sb = new StringBuilder();
+        final String name = sb.append(lbTO.getSrcIp().replace(".", "_")).append('-').append(lbTO.getSrcPort()).toString();
+        final SslCertEntry sslCertEntry = new SslCertEntry(name, cert.getCert(), cert.getKey(), cert.getChain(), cert.getPassword());
+        sslCertEntries.add(sslCertEntry);
     }
 }

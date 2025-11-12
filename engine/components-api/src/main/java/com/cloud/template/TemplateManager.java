@@ -57,6 +57,13 @@ public interface TemplateManager {
             + "will validate if the provided URL is resolvable during the register of templates/ISOs before persisting them in the database.",
             true);
 
+    ConfigKey<Boolean> TemplateDeleteFromPrimaryStorage = new ConfigKey<Boolean>("Advanced",
+            Boolean.class,
+            "template.delete.from.primary.storage", "true",
+            "Template when deleted will be instantly deleted from the Primary Storage",
+            true,
+            ConfigKey.Scope.Global);
+
     static final String VMWARE_TOOLS_ISO = "vmware-tools.iso";
     static final String XS_TOOLS_ISO = "xs-tools.iso";
 
@@ -103,6 +110,8 @@ public interface TemplateManager {
      * @return list of VMTemplateStoragePoolVO
      */
     List<VMTemplateStoragePoolVO> getUnusedTemplatesInPool(StoragePoolVO pool);
+
+    void evictTemplateFromStoragePoolsForZones(Long templateId, List<Long> zoneId);
 
     /**
      * Deletes a template in the specified storage pool.
