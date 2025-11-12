@@ -84,7 +84,7 @@ repos:
           ^systemvm/agent/certs/realhostip\.key$|
           ^test/integration/smoke/test_ssl_offloading\.py$
       - id: end-of-file-fixer
-        exclude: \.vhd$
+        exclude: \.vhd$|\.svg$
       - id: file-contents-sorter
         args: [--unique]
         files: ^\.github/linters/codespell\.txt$
