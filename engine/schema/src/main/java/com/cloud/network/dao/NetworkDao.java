@@ -18,6 +18,7 @@ package com.cloud.network.dao;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
@@ -46,6 +47,12 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long>, StateDao<State,
     List<NetworkVO> getNetworksForOffering(long offeringId, long dataCenterId, long accountId);
 
     int getOtherPersistentNetworksCount(long id, String broadcastURI, boolean isPersistent);
+
+    List<NetworkVO> listByNetworkDomains(Set<String> uniqueNtwkDomains);
+
+    List<NetworkVO> listByNetworkDomainsAndAccountIds(Set<String> uniqueNtwkDomains, Set<Long> accountIds);
+
+    List<NetworkVO> listByNetworkDomainsAndDomainIds(Set<String> uniqueNtwkDomains, Set<Long> domainIds);
 
     /**
      * Retrieves the next available mac address in this network configuration.

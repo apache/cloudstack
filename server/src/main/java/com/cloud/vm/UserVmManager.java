@@ -83,6 +83,12 @@ public interface UserVmManager extends UserVmService {
             "If set to true, tags specified in `resource.limit.host.tags` are also included in vm.strict.host.tags.",
             true);
 
+    ConfigKey<String> VmDistinctHostNameScope = new ConfigKey<>(String.class, "vm.distinct.hostname.scope", ConfigKey.CATEGORY_ADVANCED,
+            "network",
+            "Defines the scope for enforcing unique VM hostnames which determines the resource boundary within which VM hostnames must be unique. Possible values: global, domain, subdomain, account, network.",
+            true, ConfigKey.Scope.Global, null, "VM distinct hostname scope", null, null, null, ConfigKey.Kind.Select,
+            "global,domain,subdomain,account,network");
+
     ConfigKey<Boolean> EnableAdditionalVmConfig = new ConfigKey<>(
             "Advanced",
             Boolean.class,
@@ -91,6 +97,7 @@ public interface UserVmManager extends UserVmService {
             "allow additional arbitrary configuration to vm",
             true,
             ConfigKey.Scope.Account);
+
 
     static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
 

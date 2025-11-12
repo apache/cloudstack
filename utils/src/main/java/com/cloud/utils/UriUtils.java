@@ -431,7 +431,7 @@ public class UriUtils {
         return urls;
     }
 
-    public static final Set<String> COMPRESSION_FORMATS = ImmutableSet.of("zip", "bz2", "gz");
+    public static final Set<String> COMPRESSION_FORMATS = ImmutableSet.of("zip", "bz2", "gz", "xz");
 
     public static final Set<String> buildExtensionSet(boolean metalink, String... baseExtensions) {
         final ImmutableSet.Builder<String> builder = ImmutableSet.builder();

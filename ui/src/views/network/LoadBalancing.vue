@@ -451,6 +451,22 @@
             <a-select-option value="ssl" :label="$t('label.ssl')">{{ $t('label.ssl') }}</a-select-option>
           </a-select>
         </div>
+        <div v-if="lbProvider !== 'Netris'" class="edit-rule__item">
+          <p class="edit-rule__label">
+            {{ $t('label.sourcecidrlist') }}
+            <tooltip-label
+              :title="''"
+              bold
+              :tooltip="createLoadBalancerRuleParams.cidrlist.description || 'Enter a comma-separated list of CIDR blocks.'"
+              :tooltip-placement="'right'"
+              style="display: inline; margin-left: 5px;"
+            />
+          </p>
+          <a-input
+            v-model:value="editRuleDetails.cidrlist"
+            :placeholder="$t('label.sourcecidrlist')"
+          />
+        </div>
         <div :span="24" class="action-button">
           <a-button @click="() => editRuleModalVisible = false">{{ $t('label.cancel') }}</a-button>
           <a-button type="primary" @click="handleSubmitEditForm">{{ $t('label.ok') }}</a-button>
@@ -837,7 +853,8 @@ export default {
       editRuleDetails: {
         name: '',
         algorithm: '',
-        protocol: ''
+        protocol: '',
+        cidrlist: ''
       },
       newRule: {
         algorithm: 'roundrobin',
@@ -1625,14 +1642,28 @@ export default {
       this.editRuleDetails.name = this.selectedRule.name
       this.editRuleDetails.algorithm = this.lbProvider !== 'Netris' ? this.selectedRule.algorithm : undefined
       this.editRuleDetails.protocol = this.selectedRule.protocol
+      // Normalize cidrlist: replace spaces with commas and clean up
+      this.editRuleDetails.cidrlist = (this.selectedRule.cidrlist || '')
+        .split(/[\s,]+/) // Split on spaces or commas
+        .map(c => c.trim())
+        .filter(c => c)
+        .join(',') || ''
     },
     handleSubmitEditForm () {
       if (this.editRuleModalLoading) return
       this.loading = true
       this.editRuleModalLoading = true
+      const payload = {
+        ...this.editRuleDetails,
+        id: this.selectedRule.id,
+        ...(this.editRuleDetails.cidrlist && {
+          cidrList: (this.editRuleDetails.cidrlist || '').split(',').map(c => c.trim()).filter(c => c)
+        })
+      }
       postAPI('updateLoadBalancerRule', {
         ...this.editRuleDetails,
-        id: this.selectedRule.id
+        id: this.selectedRule.id,
+        ...payload
       }).then(response => {
         this.$pollJob({
           jobId: response.updateloadbalancerruleresponse.jobid,

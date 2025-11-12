@@ -405,6 +405,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setVmExists(null);
         restoreCommand.setVmState(vmNameAndState.second());
         restoreCommand.setRestoreVolumeUUID(backupVolumeInfo.getUuid());
+        restoreCommand.setMountTimeout(NASBackupRestoreMountTimeout.value());
 
         BackupAnswer answer;
         try {

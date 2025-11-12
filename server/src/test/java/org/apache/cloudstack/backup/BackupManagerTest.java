@@ -49,6 +49,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
@@ -236,6 +237,9 @@ public class BackupManagerTest {
 
     @Mock
     DomainDao domainDao;
+
+    @Mock
+    private GuestOSDao _guestOSDao;
 
     private Gson gson;
 
@@ -1572,14 +1576,12 @@ public class BackupManagerTest {
 
         VMTemplateVO template = mock(VMTemplateVO.class);
         when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
-        when(template.getUuid()).thenReturn(templateUuid);
         when(template.getName()).thenReturn("template1");
         when(vmTemplateDao.findByUuid(templateUuid)).thenReturn(template);
         Map<String, String> details = new HashMap<>();
         details.put(ApiConstants.TEMPLATE_ID, templateUuid);
 
         ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
-        when(serviceOffering.getUuid()).thenReturn(serviceOfferingUuid);
         when(serviceOffering.getName()).thenReturn("service-offering1");
         when(serviceOfferingDao.findByUuid(serviceOfferingUuid)).thenReturn(serviceOffering);
         details.put(ApiConstants.SERVICE_OFFERING_ID, serviceOfferingUuid);

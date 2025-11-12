@@ -1434,6 +1434,9 @@ export default {
       if (possibleApi === 'listTemplates') {
         params.templatefilter = 'executable'
       } else if (possibleApi === 'listIsos') {
+        if (this.$route.path.startsWith('/kubernetesiso')) {
+          params.bootable = false
+        }
         params.isofilter = 'executable'
       } else if (possibleApi === 'listHosts') {
         params.type = 'routing'
@@ -1767,9 +1770,22 @@ export default {
                 params[key] = param.opts[input].name
               }
             } else if (param.type === 'map' && typeof input === 'object') {
-              Object.entries(values.externaldetails).forEach(([key, value]) => {
-                params[param.name + '[0].' + key] = value
-              })
+              const details = values[key]
+              if (details && Object.keys(details).length > 0) {
+                Object.entries(details).forEach(([k, v]) => {
+                  params[key + '[0].' + k] = v
+                })
+              } else {
+                if (['details', 'externaldetails'].includes(key)) {
+                  const updateApiParams = this.$getApiParams(action.api)
+                  const cleanupKey = 'cleanup' + key
+                  if (cleanupKey in updateApiParams) {
+                    params[cleanupKey] = true
+                    break
+                  }
+                }
+                params[key] = {}
+              }
             } else {
               params[key] = input
             }
