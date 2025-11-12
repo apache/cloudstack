@@ -56,15 +56,29 @@
           </a-upload-dragger>
         </a-form-item>
 
-        <a-form-item v-if="csvData.length > 0" :label="$t('label.preview')">
-          <a-table
-              :columns="columns"
-              :dataSource="csvData"
-              :pagination="{ pageSize: 5 }"
-              :scroll="{ x: true }"
-              size="small">
+        <a-form-item v-if="csvData.length > 0" :label="$t('label.csv.preview')">
+          <div class="csv-preview">
+            <a-table
+                :columns="columns"
+                :dataSource="csvData"
+                :pagination="{ pageSize: 5 }"
+                :scroll="{ x: true }"
+                size="small">
 
-          </a-table>
+                <template #action="{ record }">
+                  <a-tag :color="record.action && record.action.toLowerCase() === 'allow' ? 'green' : 'red'">
+                    {{ record.action ? record.action.toUpperCase() : 'N/A' }}
+                  </a-tag>
+                </template>
+
+                <template #traffictype="{ record }">
+                  <a-tag :color="record.traffictype && record.traffictype.toLowerCase() === 'ingress' ? 'blue' : 'orange'">
+                    {{ record.traffictype ? record.traffictype.toUpperCase() : 'N/A' }}
+                  </a-tag>
+                </template>
+
+            </a-table>
+          </div>
         </a-form-item>
 
         <div :span="24" class="action-button">
@@ -85,6 +99,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
+// import { Tag } from 'ant-design-vue'
 import { postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -109,14 +124,15 @@ export default {
         {
           title: this.$t('label.protocol'),
           dataIndex: 'protocol',
-          scopedSlots: { customRender: 'protocol' },
+          key: 'protocol',
           width: 100
         },
         {
           title: this.$t('label.action'),
           dataIndex: 'action',
-          scopedSlots: { customRender: 'action' },
-          width: 100
+          key: 'action',
+          width: 100,
+          slots: { customRender: 'action' }
         },
         {
           title: this.$t('label.cidr'),
@@ -137,8 +153,9 @@ export default {
         {
           title: this.$t('label.traffictype'),
           dataIndex: 'traffictype',
-          scopedSlots: { customRender: 'traffictype' },
-          width: 120
+          key: 'traffictype',
+          width: 120,
+          slots: { customRender: 'traffictype' }
         },
         {
           title: this.$t('label.number'),
@@ -238,7 +255,6 @@ export default {
             return Promise.resolve()
           }
         } catch (reason) {
-          console.log(reason)
           return Promise.reject(rule.message)
         }
       }
@@ -326,17 +342,23 @@ export default {
           params['rules[' + index + '].' + key] = values[key]
         }
       })
-      console.log(params)
-      postAPI('importNetworkACL', params).then(json => {
-        const acl = json.importnetworkaclresponse.acl
-        if (acl) {
-          this.$emit('refresh-data')
-          this.$notification.success({
-            message: 'Import Network ACL',
-            description: 'Sucessfully imported network ACL ' + this.resource.name
-          })
-        }
-        this.closeAction()
+      postAPI('importNetworkACL', params).then(response => {
+        this.$pollJob({
+          jobId: response.importnetworkaclresponse.jobid,
+          title: this.$t('message.success.add.network.acl'),
+          successMethod: () => {
+            this.loading = false
+          },
+          errorMessage: this.$t('message.add.network.acl.failed'),
+          errorMethod: () => {
+            this.loading = false
+          },
+          loadingMessage: this.$t('message.add.network.acl.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          catchMethod: () => {
+            this.loading = false
+          }
+        })
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {

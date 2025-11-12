@@ -39,6 +39,7 @@ import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLListCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -1100,6 +1101,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
         String action = (String) ruleMap.getOrDefault(ApiConstants.ACTION, "deny");
         String trafficType = (String) ruleMap.getOrDefault(ApiConstants.TRAFFIC_TYPE, NetworkACLItem.TrafficType.Ingress);
+        String forDisplay = (String ) ruleMap.getOrDefault(ApiConstants.FOR_DISPLAY, "true");
 
         // Create ACL rule using the service
         CreateNetworkACLCmd cmd = new CreateNetworkACLCmd();
@@ -1107,7 +1109,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         cmd.setProtocol(protocol.toLowerCase());
         cmd.setAction(action.toLowerCase());
         cmd.setTrafficType(trafficType.toLowerCase());
-
+        cmd.setDisplay(BooleanUtils.toBoolean(forDisplay));
 
         // Optional parameters
         if (ruleMap.containsKey(ApiConstants.CIDR_LIST)) {
