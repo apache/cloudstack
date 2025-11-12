@@ -43,6 +43,7 @@ import org.apache.cloudstack.logsws.api.response.LogsWebSessionWebSocketResponse
 import org.apache.cloudstack.logsws.dao.LogsWebSessionDao;
 import org.apache.cloudstack.logsws.vo.LogsWebSessionVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -126,7 +127,7 @@ public class LogsWebSessionApiServiceImpl extends ManagerBase implements LogsWeb
             }
         }
         if (!logsWSManager.canCreateNewLogsWebSession()) {
-            throw new CloudRuntimeException("Failed to create logs web session as max session limit reached");
+            throw new CloudRuntimeException("Failed to create Logs Web Session as max session limit reached");
         }
         try {
             return Transaction.execute((TransactionCallbackWithException<LogsWebSessionResponse, InternalErrorException>) status -> {
@@ -136,7 +137,7 @@ public class LogsWebSessionApiServiceImpl extends ManagerBase implements LogsWeb
                 return createLogsWebSessionResponse(logsWebSessionVO);
             });
         } catch (InternalErrorException e) {
-            throw new CloudRuntimeException("Failed to create logs web session as unable to prepare response", e);
+            throw new CloudRuntimeException("Failed to create Logs Web Session as unable to prepare response", e);
         }
     }
 
@@ -171,19 +172,25 @@ public class LogsWebSessionApiServiceImpl extends ManagerBase implements LogsWeb
             final LogsWebSessionVO logsWebSessionVO) throws InternalErrorException {
         Set<LogsWebSessionWebSocketResponse> responses = new HashSet<>();
         List<LogsWebSessionWebSocket> webSockets = logsWSManager.getLogsWebSessionWebSockets(logsWebSessionVO);
+        if (CollectionUtils.isEmpty(webSockets)) {
+            throw new CloudRuntimeException(String.format("Failed to get websocket endpoints for Logs Web Session %s",
+                    logsWebSessionVO.getUuid()));
+        }
         for (LogsWebSessionWebSocket socket : webSockets) {
             LogsWebSessionWebSocketResponse webSocketResponse = new LogsWebSessionWebSocketResponse();
             webSocketResponse.setManagementServerId(socket.getManagementServerHost().getUuid());
             webSocketResponse.setManagementServerName(socket.getManagementServerHost().getName());
-            String serviceIp = socket.getManagementServerHost().getServiceIP();
-            if (ManagementServerNode.getManagementServerId() == socket.getManagementServerHost().getMsid() &&
-                    NetUtils.isLocalAddress(serviceIp)) {
-                String realIp = getRealIp4Address();
-                if (realIp != null) {
-                    serviceIp = realIp;
+            if (LogsWebSessionManager.LogsWebServerDirectConnect.value()) {
+                String serviceIp = socket.getManagementServerHost().getServiceIP();
+                if (ManagementServerNode.getManagementServerId() == socket.getManagementServerHost().getMsid() &&
+                        NetUtils.isLocalAddress(serviceIp)) {
+                    String realIp = getRealIp4Address();
+                    if (realIp != null) {
+                        serviceIp = realIp;
+                    }
                 }
+                webSocketResponse.setHost(serviceIp);
             }
-            webSocketResponse.setHost(serviceIp);
             webSocketResponse.setPort(socket.getPort());
             webSocketResponse.setPath(socket.getPath());
             webSocketResponse.setSsl(socket.isSsl());

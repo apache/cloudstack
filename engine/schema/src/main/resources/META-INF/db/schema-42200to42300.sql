@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`management_server_details` (
     KEY `i_management_server_details__name__value` (`name`(128),`value`(128))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- Create table for logs web session
+-- Create table for Logs Web Session
 CREATE TABLE IF NOT EXISTS `cloud`.`logs_web_session` (
     `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id of the session',
     `uuid` varchar(40) NOT NULL COMMENT 'UUID generated for the session',

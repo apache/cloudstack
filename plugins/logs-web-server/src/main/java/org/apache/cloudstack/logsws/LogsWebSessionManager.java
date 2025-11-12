@@ -33,6 +33,11 @@ public interface LogsWebSessionManager extends PluggableService, Configurable {
             "Indicates whether Logs Web Server plugin is enabled or not",
             false);
 
+    ConfigKey<Boolean> LogsWebServerDirectConnect = new ConfigKey<>("Advanced", Boolean.class,
+            "logs.web.server.direct.connect", "true",
+            "Whether clients directly connect to the management server hosts for Logs Web Server sessions",
+            true);
+
     ConfigKey<String> LogsWebServerPath = new ConfigKey<>("Advanced", String.class,
             "logs.web.server.path", WS_PATH,
             "The path prefix to be used for Logs Web Server",

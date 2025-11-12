@@ -173,7 +173,7 @@ public final class LogsWebSocketRoutingHandler implements WebSocketHandler {
             return;
         }
 
-        // Delegate to per-connection LogsStreamer (backlog + tail)
+        LOGGER.trace("Starting LogsStreamer for route: {}", route);
         LogsStreamer streamer = new LogsStreamer(logsSession, serverHelper);
         try {
             streamer.start(session, route);

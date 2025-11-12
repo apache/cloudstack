@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.Map;
 
 import javax.servlet.ServletException;
-import javax.servlet.UnavailableException;
 
 import org.apache.cloudstack.framework.websocket.server.common.WebSocketHandler;
 import org.apache.cloudstack.framework.websocket.server.common.WebSocketRouter;
@@ -63,16 +62,13 @@ public class JettyWebSocketServlet extends WebSocketServlet {
         LOGGER.info("Initializing JettyWebSocketServlet");
         if (!isWebSocketServletEnabled()) {
             enabled = false;
-            String msg = "WebSocket Server is not enabled, embedded WebSocket Server will not be running";
-            LOGGER.info(msg);
-            throw new UnavailableException(msg);
+            LOGGER.info("WebSocket Server is not enabled, embedded WebSocket Server will not be running");
         }
         Integer port = getWebSocketServletPort();
         if (port == null) {
             enabled = false;
-            String msg = "WebSocket Server port is configured, embedded WebSocket Server will not be running";
-            LOGGER.info(msg);
-            throw new UnavailableException(msg);
+            LOGGER.info("WebSocket Server port is configured, embedded WebSocket Server will not be running");
+            return;
         }
         enabled = true;
         LOGGER.info("Embedded WebSocket Server initialized at {}/* with port: {}",

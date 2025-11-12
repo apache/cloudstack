@@ -104,8 +104,8 @@ public class LogsWebSessionManagerImpl extends ManagerBase implements LogsWebSes
 
     protected LogsWebSessionWebSocket getLogsWebSessionWebSocket(LogsWebSessionTokenPayload payload) throws
             InternalErrorException {
-        if (webSocketServerManager.isServerEnabled()) {
-            logger.warn("WebSocket server not running on this management server, websocket can not be " +
+        if (!webSocketServerManager.isServerEnabled()) {
+            logger.error("WebSocket server not running on this management server, websocket can not be " +
                     "returned for LogsWebSession ID: {}", payload.getSessionUuid());
             return null;
         }
@@ -357,19 +357,19 @@ public class LogsWebSessionManagerImpl extends ManagerBase implements LogsWebSes
             try {
                 ManagementServerHostVO msHost = managementServerHostDao.findOneByLongestRuntime();
                 if (msHost == null || (msHost.getMsid() != ManagementServerNode.getManagementServerId())) {
-                    logger.debug("Skipping the stale logs web sessions cleanup task on this management server");
+                    logger.debug("Skipping the stale Logs Web Sessions cleanup task on this management server");
                     return;
                 }
                 long cutOffSeconds = LogsWebServerSessionStaleCleanupInterval.value();
                 Date cutOffDate = new Date(System.currentTimeMillis() - (cutOffSeconds * 1000));
                 String cutOffDateString = DateUtil.getOutputString(cutOffDate);
-                logger.debug("Clearing stale stale logs web sessions older than {} using management server {}",
+                logger.debug("Clearing stale stale Logs Web Sessions older than {} using management server {}",
                         cutOffDateString, msHost);
                 long processed = logsWebSessionDao.removeStaleForCutOff(cutOffDate);
-                logger.debug("Cleared {} stale stale logs web sessions older than {}", processed,
+                logger.debug("Cleared {} stale stale Logs Web Sessions older than {}", processed,
                         cutOffDateString);
             } catch (Exception e) {
-                logger.warn("Cleanup task failed to stale logs web sessions", e);
+                logger.warn("Cleanup task failed to stale Logs Web Sessions", e);
             }
         }
 

@@ -35,7 +35,7 @@ import org.apache.cloudstack.logsws.api.response.LogsWebSessionResponse;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "deleteLogsWebSession",
-        description = "Deletes a logs web session",
+        description = "Deletes a Logs Web Session",
         responseObject = SuccessResponse.class,
         entityType = {LogsWebSession.class},
         authorized = {RoleType.Admin},
@@ -51,7 +51,7 @@ public class DeleteLogsWebSession extends BaseCmd {
     @Parameter(name = ApiConstants.ID, type = BaseCmd.CommandType.UUID,
             entityType = LogsWebSessionResponse.class,
             required = true,
-            description = "The ID of the logs web session")
+            description = "The ID of the Logs Web Session")
     private Long id;
 
     /////////////////////////////////////////////////////

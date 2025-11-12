@@ -273,13 +273,22 @@ export default {
     },
     prepareAndOpenWebSockets (webSocketsDetails) {
       var opts = []
+      const currentWsProto = window.location.protocol === 'https:' ? 'wss://' : 'ws://'
+      const currentHost = window.location.host
       for (var ws of webSocketsDetails) {
+        const base = ws.host
+          ? `${currentWsProto}${ws.host}${ws.port ? `:${ws.port}` : ''}`
+          : `${currentWsProto}${currentHost}`
+        let url = base + ws.path
+        if (!ws.host) {
+          url += `&serverid=${ws.managementserverid}&port=${ws.port}`
+        }
         var opt = {
           key: ws.managementserverid,
           id: ws.managementserverid,
           name: ws.managementservername,
           title: ws.managementservername,
-          webSocketUrl: (ws.ssl ? 'wss://' : 'ws://') + ws.host + ':' + ws.port + ws.path,
+          webSocketUrl: url,
           webSocket: null,
           logsErrorCount: 0,
           logsWarningCount: 0

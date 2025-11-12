@@ -103,7 +103,7 @@ public class WebSocketServerManagerImpl extends ManagerBase implements WebSocket
             logger.error(
                     "WebSocket Server port is not a valid number: {}, WebSocket Server will not be started!",
                     webSocketServerPort, nfe);
-            serverMode = ServerMode.EMBEDDED;
+            serverEnabled = false;
         }
     }
 

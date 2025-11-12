@@ -31,19 +31,18 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.logsws.LogsWebSessionApiService;
 import org.apache.cloudstack.logsws.LogsWebSession;
+import org.apache.cloudstack.logsws.LogsWebSessionApiService;
 import org.apache.cloudstack.logsws.api.response.LogsWebSessionResponse;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "createLogsWebSession",
-        description = "Creates a session to connect to logs web socket server",
+        description = "Creates a Logs Web Session",
         responseObject = LogsWebSessionResponse.class,
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = {LogsWebSession.class},
         requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = true,
         authorized = {RoleType.Admin},
         since = "4.23.0")
 public class CreateLogsWebSessionCmd extends BaseCmd {
@@ -81,7 +80,7 @@ public class CreateLogsWebSessionCmd extends BaseCmd {
         try {
             LogsWebSessionResponse response = logsWebSessionApiService.createLogsWebSession(this);
             if (response == null) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create logs web session");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Logs Web Session");
             }
             response.setResponseName(getCommandName());
             setResponseObject(response);
@@ -89,5 +88,4 @@ public class CreateLogsWebSessionCmd extends BaseCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
     }
-
 }

@@ -62,7 +62,7 @@ public class WebSocketServerRoutingHandler extends SimpleChannelInboundHandler<W
             final URI uri = URI.create(requestUri);
             final String rawQuery = uri.getQuery();
             String path = uri.getPath();
-            LOGGER.debug("WebSocket connection for path: {}, query: {}", path, rawQuery);
+            LOGGER.trace("WebSocket connection for path: {}, query: {}", path, rawQuery);
 
             path = WebSocketRouter.stripWebSocketPathPrefix(uri.getPath());
 

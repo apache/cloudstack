@@ -34,47 +34,47 @@ import com.google.gson.annotations.SerializedName;
 @EntityReference(value = {LogsWebSession.class})
 public class LogsWebSessionResponse extends BaseResponse implements ControlledViewEntityResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "The ID of the logs web session")
+    @Param(description = "The ID of the Logs Web Session")
     private String id;
 
     @SerializedName(ApiConstants.FILTERS)
-    @Param(description = "The filters for the logs web session")
+    @Param(description = "The filters for the Logs Web Session")
     private List<String> filters;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "The ID of the domain of the logs web session creator")
+    @Param(description = "The ID of the domain of the Logs Web Session creator")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "The name of the domain of the logs web session creator")
+    @Param(description = "The name of the domain of the Logs Web Session creator")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "The path of the domain of the logs web session creator")
+    @Param(description = "The path of the domain of the Logs Web Session creator")
     private String domainPath;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "The account which created the logs web session")
+    @Param(description = "The account which created the Logs Web Session")
     private String accountName;
 
     @SerializedName(ApiConstants.CREATOR_ADDRESS)
-    @Param(description = "The address of creator for this logs web session")
+    @Param(description = "The address of creator for this Logs Web Session")
     private String creatorAddress;
 
     @SerializedName(ApiConstants.CONNECTED)
-    @Param(description = "The number of clients connected for this logs web session")
+    @Param(description = "The number of clients connected for this Logs Web Session")
     private Integer connected;
 
     @SerializedName(ApiConstants.CLIENT_ADDRESS)
-    @Param(description = "The address of the last connected client for this logs web session")
+    @Param(description = "The address of the last connected client for this Logs Web Session")
     private String clientAddress;
 
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "The date when this logs web session was created")
+    @Param(description = "The date when this Logs Web Session was created")
     private Date created;
 
     @SerializedName(ApiConstants.WEBSOCKET)
-    @Param(description = "The logs web session websocket options")
+    @Param(description = "The Logs Web Session websocket options")
     private Set<LogsWebSessionWebSocketResponse> websocketResponses;
 
     public void setId(String id) {

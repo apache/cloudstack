@@ -19,13 +19,15 @@ package org.apache.cloudstack.logsws.server;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetSocketAddress;
+import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.cloudstack.framework.websocket.server.common.WebSocketSession;
@@ -34,50 +36,69 @@ import org.apache.cloudstack.logsws.logreader.FilteredLogTailerListener;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.input.ReversedLinesFileReader;
 import org.apache.commons.io.input.Tailer;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import org.jetbrains.annotations.Nullable;
 
 public class LogsStreamer implements AutoCloseable {
     protected static Logger LOGGER = LogManager.getLogger(LogsStreamer.class);
-    private String route;
     private Tailer tailer;
     private ExecutorService tailerExecutor;
     private final LogsWebSession logsWebSession;
     private final LogsWebSocketServerHelper serverHelper;
+    private ScheduledExecutorService testBroadcasterExecutor;
 
     public LogsStreamer(final LogsWebSession logsWebSession, final LogsWebSocketServerHelper serverHelper) {
         this.logsWebSession = logsWebSession;
         this.serverHelper = serverHelper;
+        testBroadcasterExecutor = Executors.newSingleThreadScheduledExecutor();
     }
 
-    private void startTestBroadcasting(final ChannelHandlerContext ctx) {
-        String route = ctx.channel().attr(LogsWebSocketRoutingHandler.LOGGER_ROUTE_ATTR).get();
-        // Schedule a periodic task to send messages every 5 seconds.
-        ctx.executor().scheduleAtFixedRate(() -> {
-            if (ctx.channel().isActive()) {
-                String msg = String.format("Hello from Logger broadcaster! Route: %s", route);
-                ctx.writeAndFlush(new TextWebSocketFrame(msg));
-                LOGGER.debug("Broadcasting message: '{}' for context: {}", msg, ctx.hashCode());
-            }
-        }, 0, 5, TimeUnit.SECONDS);
+    @Nullable
+    protected File getValidatedLogFile() {
+        File logFile = new File(serverHelper.getLogFile());
+        if (!logFile.exists()) {
+            LOGGER.error("Log file {} does not exist", logFile.getAbsolutePath());
+            return null;
+        }
+        if (!logFile.canRead()) {
+            LOGGER.error("Log file {} is not readable", logFile.getAbsolutePath());
+            return null;
+        }
+        return logFile;
     }
 
-    private void processExistingLines(final WebSocketSession session, File logFile, final List<String> filters) {
+    /**
+     * For testing purpose - Start broadcasting messages to the given session at fixed intervals.
+     *
+     * @param session WebSocket session to send test messages to
+     */
+    protected void startTestBroadcasting(final WebSocketSession session) {
+        testBroadcasterExecutor.scheduleAtFixedRate(() -> {
+            String msg = String.format("Hello from Logger broadcaster! Route: %s", session.path());
+            session.sendText(msg);
+            LOGGER.debug("Broadcasting message: '{}' for context: {}", msg, session.path());
+        }, 0, 2, TimeUnit.SECONDS);
+    }
+
+    /**
+     * Process existing lines from the log file and send matching lines to the session.
+     *
+     * @param session WebSocket session to send matching lines to
+     * @param logFile log file to read existing lines from
+     * @param filters filter strings for matching; may be null or empty
+     */
+    protected void processExistingLines(final WebSocketSession session, File logFile, final List<String> filters) {
         try (ReversedLinesFileReader reader = new ReversedLinesFileReader(logFile, StandardCharsets.UTF_8)) {
             List<String> lastLines = new ArrayList<>();
             String line;
             int count = 0;
-            // Read lines in reverse order up to LogsWebSocketServerHelper.getMaxReadExistingLines lines
             while ((line = reader.readLine()) != null && count < serverHelper.getMaxReadExistingLines()) {
                 lastLines.add(line);
                 count++;
             }
-            // Reverse to restore original order
             Collections.reverse(lastLines);
-            // Process each line that matches the filter
             boolean isFilterEmpty = CollectionUtils.isEmpty(filters);
             boolean isLastLineValid = false;
             for (String l : lastLines) {
@@ -93,43 +114,80 @@ public class LogsStreamer implements AutoCloseable {
         }
     }
 
-    private void startLogTailing(WebSocketSession session, List<String> filters, File logFile) {
-        // Create the listener to filter new log lines
+    /**
+     * Tail the given log file and stream new matching lines to the session.
+     *
+     * @param session WebSocket session to send matching lines to
+     * @param filters filter strings for the tailer listener; may be null or empty
+     * @param logFile log file to tail (must be readable)
+     */
+    protected void startLogTailing(WebSocketSession session, List<String> filters, File logFile) {
         FilteredLogTailerListener listener = new FilteredLogTailerListener(session, filters);
-        // Use 'true' to start tailing from the end of the file (since we've already processed existing lines)
-        tailer = new Tailer(logFile, listener, 100, true);
-
-        // Use an executor service for managing the tailer thread
+        tailer = new Tailer(logFile, listener, 50, true);
         tailerExecutor = Executors.newSingleThreadExecutor();
         tailerExecutor.submit(tailer);
     }
 
+    /**
+     * Asynchronously extracts and normalizes the remote address from the provided
+     * WebSocketSession and updates the connection info on the server helper.
+     *
+     * <p>The method reads the session attribute {@code "remoteAddress"}, strips a
+     * leading slash if present, handles bracketed IPv6 addresses, and attempts to
+     * resolve the host to an IP address. Any errors during parsing or resolution
+     * are caught and logged at debug level so the caller is not impacted.
+     *
+     * @param session the web socket session containing the {@code "remoteAddress"} attribute
+     */
+    protected void updateSessionWithRemoteAddressAsync(WebSocketSession session) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                String remoteStr = session.getAttr("remoteAddress");
+                if (StringUtils.isEmpty(remoteStr)) {
+                    return;
+                }
+                String s = remoteStr.startsWith("/") ? remoteStr.substring(1) : remoteStr;
+                String host;
+                if (s.startsWith("[")) {
+                    int end = s.indexOf(']');
+                    host = end > 0 ? s.substring(1, end) : s;
+                } else {
+                    int lastColon = s.lastIndexOf(':');
+                    if (lastColon > 0 && s.indexOf(':') == lastColon) {
+                        host = s.substring(0, lastColon);
+                    } else {
+                        host = s;
+                    }
+                }
+                try {
+                    host = InetAddress.getByName(host).getHostAddress();
+                } catch (Exception ignore) {}
+                serverHelper.updateSessionConnection(logsWebSession.getId(), host);
+            } catch (Throwable t) {
+                LOGGER.debug("Failed to update remote address asynchronously", t);
+            }
+        });
+    }
+
+    /**
+     * Starts log streaming for the given WebSocket session and route.
+     * First, it sends the existing log lines that match the session's filters,
+     * then it starts tailing the log file to stream new matching lines.
+     *
+     * @param session the WebSocket session to stream logs to
+     * @param route the route associated with the log streaming session
+     */
     public void start(WebSocketSession session, String route) {
         LOGGER.debug("Starting log streaming for route: {}", route);
-        // Resolve log file
-        File logFile = new File(serverHelper.getLogFile());
-        if (!logFile.exists() || !logFile.canRead()) {
+        File logFile = getValidatedLogFile();
+        if (logFile == null) {
             session.sendText("Log file not available or cannot be read.");
             return;
         }
+        updateSessionWithRemoteAddressAsync(session);
 
-        // (Optional) update server-side session with remote address if available
-        try {
-            String remoteStr = session.getAttr("remoteAddress");
-            if (remoteStr != null && remoteStr.contains("/")) {
-                // Netty: "/1.2.3.4:5678"
-                String host = new InetSocketAddress(remoteStr, 0).getAddress().getHostAddress();
-                serverHelper.updateSessionConnection(logsWebSession.getId(), host);
-            } else if (remoteStr != null) {
-                serverHelper.updateSessionConnection(logsWebSession.getId(), remoteStr);
-            }
-        } catch (Throwable ignore) {
-        }
-
-        // 1) Send backlog
         processExistingLines(session, logFile, logsWebSession.getFilters());
 
-        // 2) Start tailer from end (since backlog was already sent)
         startLogTailing(session, logsWebSession.getFilters(), logFile);
     }
 
@@ -152,17 +210,9 @@ public class LogsStreamer implements AutoCloseable {
             }
         } catch (Throwable ignore) {
         }
-    }
-
-    private void stopLogsBroadcasting() {
-        if (tailer != null) {
-            tailer.stop();
-        }
-        if (tailerExecutor != null && !tailerExecutor.isShutdown()) {
-            tailerExecutor.shutdownNow();
-        }
-        if (logsWebSession != null) {
-            serverHelper.updateSessionConnection(logsWebSession.getId(), null);
+        if (testBroadcasterExecutor != null && !testBroadcasterExecutor.isShutdown()) {
+            testBroadcasterExecutor.shutdownNow();
+            testBroadcasterExecutor = null;
         }
     }
 }
