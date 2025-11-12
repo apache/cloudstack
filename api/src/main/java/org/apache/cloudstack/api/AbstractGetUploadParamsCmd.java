@@ -81,6 +81,34 @@ public abstract class AbstractGetUploadParamsCmd extends BaseCmd {
         return projectId;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setFormat(String format) {
+        this.format = format;
+    }
+
+    public void setZoneId(Long zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public void setChecksum(String checksum) {
+        this.checksum = checksum;
+    }
+
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    public void setDomainId(Long domainId) {
+        this.domainId = domainId;
+    }
+
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
+    }
+
     public GetUploadParamsResponse createGetUploadParamsResponse(UUID id, URL postURL, String metadata, String timeout, String signature) {
         return new GetUploadParamsResponse(id, postURL, metadata, timeout, signature);
     }

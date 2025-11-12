@@ -762,6 +762,12 @@
                         </div>
                       </a-card>
                     </a-form-item>
+                    <a-form-item v-if="extraConfigEnabled" name="extraconfig" ref="extraconfig">
+                      <template #label>
+                        <tooltip-label :title="$t('label.extraconfig')" :tooltip="$t('label.extraconfig.tooltip')"/>
+                      </template>
+                      <a-textarea v-model:value="form.extraconfig"/>
+                    </a-form-item>
                     <a-form-item :label="$t('label.affinity.groups')">
                       <affinity-group-selection
                         :items="options.affinityGroups"
@@ -922,6 +928,7 @@
 import { ref, reactive, toRaw, nextTick, h } from 'vue'
 import { Button, message } from 'ant-design-vue'
 import { getAPI, postAPI } from '@/api'
+import { isAdmin } from '@/role'
 import _ from 'lodash'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
 import store from '@/store'
@@ -1226,6 +1233,7 @@ export default {
       return _.map(this.affinityGroups, 'id')
     },
     params () {
+      const listAll = isAdmin()
       return {
         serviceOfferings: {
           list: 'listServiceOfferings',
@@ -1273,7 +1281,7 @@ export default {
             domainid: this.owner.domainid,
             projectid: this.owner.projectid,
             keyword: undefined,
-            listall: false
+            listall: listAll
           }
         },
         sshKeyPairs: {
@@ -1281,8 +1289,11 @@ export default {
           options: {
             page: 1,
             pageSize: 10,
+            account: this.owner.account,
+            domainid: this.owner.domainid,
+            projectid: this.owner.projectid,
             keyword: undefined,
-            listall: false
+            listall: listAll
           }
         },
         userDatas: {
@@ -1290,8 +1301,11 @@ export default {
           options: {
             page: 1,
             pageSize: 10,
+            account: this.owner.account,
+            domainid: this.owner.domainid,
+            projectid: this.owner.projectid,
             keyword: undefined,
-            listall: false
+            listall: listAll
           }
         },
         networks: {
@@ -1509,6 +1523,9 @@ export default {
     },
     dynamicScalingVmConfigValue () {
       return this.$store.getters.features.dynamicscalingenabled
+    },
+    extraConfigEnabled () {
+      return this.$store.getters.features.additionalconfigenabled
     },
     isCustomizedDiskIOPS () {
       return this.diskSelected?.iscustomizediops || false
@@ -2322,6 +2339,9 @@ export default {
         const isUserdataAllowed = !this.userdataDefaultOverridePolicy || (this.userdataDefaultOverridePolicy === 'ALLOWOVERRIDE' && this.doUserdataOverride) || (this.userdataDefaultOverridePolicy === 'APPEND' && this.doUserdataAppend)
         if (isUserdataAllowed && values.userdata && values.userdata.length > 0) {
           deployVmData.userdata = this.$toBase64AndURIEncoded(values.userdata)
+        }
+        if (values.extraconfig && values.extraconfig.length > 0) {
+          deployVmData.extraconfig = encodeURIComponent(values.extraconfig)
         }
         // step 2: select template/iso
         if (this.imageType === 'templateid') {

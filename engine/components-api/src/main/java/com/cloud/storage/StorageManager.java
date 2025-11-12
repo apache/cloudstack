@@ -302,6 +302,8 @@ public interface StorageManager extends StorageService {
 
     Answer sendToPool(StoragePool pool, long[] hostIdsToTryFirst, Command cmd) throws StorageUnavailableException;
 
+    void updateStoragePoolHostVOAndBytes(StoragePool pool, long hostId, ModifyStoragePoolAnswer mspAnswer);
+
     CapacityVO getSecondaryStorageUsedStats(Long hostId, Long zoneId);
 
     CapacityVO getStoragePoolUsedStats(Long poolId, Long clusterId, Long podId, Long zoneId);

@@ -56,6 +56,10 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
     ConfigKey<Boolean> NoVncConsoleSourceIpCheckEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class, "novnc.console.sourceip.check.enabled", "false",
         "If true, The source IP to access novnc console must be same as the IP in request to management server for console URL. Needs to reconnect CPVM to management server when this changes (via restart CPVM, or management server, or cloud service in CPVM)", false);
 
+    ConfigKey<Boolean> NoVncConsoleShowDot = new ConfigKey<>(Boolean.class, "novnc.console.show.dot", ConfigKey.CATEGORY_ADVANCED, "true",
+            "If true, in noVNC console a dot cursor will be shown when the remote server provides no local cursor, or provides a fully-transparent (invisible) cursor.",
+            true, ConfigKey.Scope.Zone, null);
+
     ConfigKey<String> ConsoleProxyServiceOffering = new ConfigKey<>(String.class, "consoleproxy.service.offering", "Console Proxy", null,
             "Uuid of the service offering used by console proxy; if NULL - system offering will be used", true, ConfigKey.Scope.Zone, null);
 
@@ -92,6 +96,12 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
 
     ConfigKey<String> ConsoleProxyManagementLastState = new ConfigKey<String>(ConfigKey.CATEGORY_ADVANCED, String.class, "consoleproxy.management.state.last", com.cloud.consoleproxy.ConsoleProxyManagementState.Auto.toString(),
             "last console proxy service management state", false, ConfigKey.Kind.Select, consoleProxyManagementStates);
+
+    ConfigKey<String> ConsoleProxyVmUserData = new ConfigKey<>(String.class, "console.proxy.vm.userdata",
+            ConfigKey.CATEGORY_ADVANCED, "",
+            "UUID for user data for console proxy VMs. This works only when systemvm.userdata.enabled is set to true",
+            true, ConfigKey.Scope.Zone, null, "User Data for CPVMs",
+            null, ConfigKey.GROUP_SYSTEM_VMS, ConfigKey.SUBGROUP_CONSOLE_PROXY_VM);
 
     void setManagementState(ConsoleProxyManagementState state);
 

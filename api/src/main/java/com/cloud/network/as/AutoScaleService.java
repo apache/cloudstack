@@ -70,6 +70,8 @@ public interface AutoScaleService {
 
     Counter createCounter(CreateCounterCmd cmd);
 
+    Counter getCounter(long counterId);
+
     boolean deleteCounter(long counterId) throws ResourceInUseException;
 
     List<? extends Counter> listCounters(ListCountersCmd cmd);
