@@ -201,7 +201,7 @@ public final class LogsWebSocketRoutingHandler implements WebSocketHandler {
     }
 
     @Override
-    public void onText(WebSocketSession session, String text) {
+    public void onTextMessage(WebSocketSession session, String text) {
         if (text == null) {
             return;
         }
@@ -213,7 +213,7 @@ public final class LogsWebSocketRoutingHandler implements WebSocketHandler {
     }
 
     @Override
-    public void onBinary(WebSocketSession session, ByteBuffer bin) {
+    public void onBinaryMessage(WebSocketSession session, ByteBuffer bin) {
         // Usually unused for logs; consume or ignore.
         if (bin != null) {
             LOGGER.debug("Ignoring client binary message on logs route: {} bytes", bin.remaining());

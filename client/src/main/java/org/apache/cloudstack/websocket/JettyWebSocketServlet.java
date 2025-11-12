@@ -168,7 +168,7 @@ public class JettyWebSocketServlet extends WebSocketServlet {
         @Override
         public void onWebSocketText(String message) {
             try {
-                handler.onText(session, message);
+                handler.onTextMessage(session, message);
             } catch (Throwable t) {
                 handler.onError(session, t);
             }
@@ -177,7 +177,7 @@ public class JettyWebSocketServlet extends WebSocketServlet {
         @Override
         public void onWebSocketBinary(byte[] payload, int offset, int len) {
             try {
-                handler.onBinary(session, java.nio.ByteBuffer.wrap(payload, offset, len));
+                handler.onBinaryMessage(session, java.nio.ByteBuffer.wrap(payload, offset, len));
             } catch (Throwable t) {
                 handler.onError(session, t);
             }

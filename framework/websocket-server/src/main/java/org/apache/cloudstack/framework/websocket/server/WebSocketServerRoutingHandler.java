@@ -104,10 +104,10 @@ public class WebSocketServerRoutingHandler extends SimpleChannelInboundHandler<W
         }
         try {
             if (frame instanceof TextWebSocketFrame) {
-                handler.onText(session, ((TextWebSocketFrame) frame).text());
+                handler.onTextMessage(session, ((TextWebSocketFrame) frame).text());
             } else if (frame instanceof BinaryWebSocketFrame) {
                 ByteBuffer buf = frame.content().nioBuffer();
-                handler.onBinary(session, buf);
+                handler.onBinaryMessage(session, buf);
             } else if (frame instanceof CloseWebSocketFrame) {
                 CloseWebSocketFrame c = (CloseWebSocketFrame) frame.retain();
                 handler.onClose(session, c.statusCode(), c.reasonText());
