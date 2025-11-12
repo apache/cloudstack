@@ -89,10 +89,8 @@ public class AffinityGroupJoinDaoImpl extends GenericDaoBase<AffinityGroupJoinVO
 
         ApiResponseHelper.populateOwner(agResponse, vag);
 
-        Long callerId = CallContext.current().getCallingAccountId();
-        boolean isCallerRootAdmin = accountManager.isRootAdmin(callerId);
         boolean containsDedicatedResources = vag.getType().equals("ExplicitDedication");
-        if (isCallerRootAdmin && containsDedicatedResources) {
+        if (CallContext.current().isCallingAccountRootAdmin() && containsDedicatedResources) {
             List<DedicatedResourceVO> dedicatedResources = dedicatedResourceDao.listByAffinityGroupId(vag.getId());
             this.populateDedicatedResourcesField(dedicatedResources, agResponse);
         }

@@ -62,7 +62,7 @@ public class InstanceGroupJoinDaoImpl extends GenericDaoBase<InstanceGroupJoinVO
         groupResponse.setName(group.getName());
         groupResponse.setCreated(group.getCreated());
         groupResponse.setHasAnnotation(annotationDao.hasAnnotations(group.getUuid(), AnnotationService.EntityType.INSTANCE_GROUP.name(),
-                accountManager.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+                CallContext.current().isCallingAccountRootAdmin()));
 
         ApiResponseHelper.populateOwner(groupResponse, group);
 
