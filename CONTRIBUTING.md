@@ -1,4 +1,41 @@
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+ -->
+
 # Contributing to Apache CloudStack (ACS)
+
+## Summary
+
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+- [Summary](#summary)
+- [Bug fixes](#bug-fixes)
+- [Developing new features](#developing-new-features)
+- [PendingReleaseNotes file](#pendingreleasenotes-file)
+- [Fork the code](#fork-the-code)
+- [Making changes](#making-changes)
+- [Rebase `feature_x` to include updates from `upstream/main`](#rebase-feature_x-to-include-updates-from-upstreammain)
+- [Make a GitHub Pull Request to contribute your changes](#make-a-github-pull-request-to-contribute-your-changes)
+- [Cleaning up after a successful pull request](#cleaning-up-after-a-successful-pull-request)
+- [Release Principles](#release-principles)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## Summary
 
