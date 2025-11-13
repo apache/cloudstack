@@ -18,6 +18,7 @@
  */
 package org.apache.cloudstack.storage.datastore.lifecycle;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -139,7 +140,6 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
         Long clusterId = (Long)dsInfos.get("clusterId");
         Long podId = (Long)dsInfos.get("podId");
         Long zoneId = (Long)dsInfos.get("zoneId");
-        String url = (String)dsInfos.get("url");
         String providerName = (String)dsInfos.get("providerName");
         HypervisorType hypervisorType = (HypervisorType)dsInfos.get("hypervisorType");
         if (clusterId != null && podId == null) {
@@ -148,19 +148,43 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
 
         PrimaryDataStoreParameters parameters = new PrimaryDataStoreParameters();
 
-        String tags = (String)dsInfos.get("tags");
-        String storageAccessGroups = (String)dsInfos.get(ApiConstants.STORAGE_ACCESS_GROUPS);
         Map<String, String> details = (Map<String, String>)dsInfos.get("details");
+        if (dsInfos.get("capacityBytes") != null) {
+            Long capacityBytes = (Long)dsInfos.get("capacityBytes");
+            if (capacityBytes <= 0) {
+                throw new IllegalArgumentException("'capacityBytes' must be greater than 0.");
+            }
+            if (details == null) {
+                details = new HashMap<>();
+            }
+            details.put(PrimaryDataStoreLifeCycle.CAPACITY_BYTES, String.valueOf(capacityBytes));
+            parameters.setCapacityBytes(capacityBytes);
+        }
 
-        parameters.setTags(tags);
-        parameters.setStorageAccessGroups(storageAccessGroups);
-        parameters.setIsTagARule((Boolean)dsInfos.get("isTagARule"));
+        if (dsInfos.get("capacityIops") != null) {
+            Long capacityIops = (Long)dsInfos.get("capacityIops");
+            if (capacityIops <= 0) {
+                throw new IllegalArgumentException("'capacityIops' must be greater than 0.");
+            }
+            if (details == null) {
+                details = new HashMap<>();
+            }
+            details.put(PrimaryDataStoreLifeCycle.CAPACITY_IOPS, String.valueOf(capacityIops));
+            parameters.setCapacityIops(capacityIops);
+        }
+
         parameters.setDetails(details);
+
+        String tags = (String)dsInfos.get("tags");
+        parameters.setTags(tags);
+        parameters.setIsTagARule((Boolean)dsInfos.get("isTagARule"));
+
+        String storageAccessGroups = (String)dsInfos.get(ApiConstants.STORAGE_ACCESS_GROUPS);
+        parameters.setStorageAccessGroups(storageAccessGroups);
 
         String scheme = dsInfos.get("scheme").toString();
         String storageHost = dsInfos.get("host").toString();
         String hostPath = dsInfos.get("hostPath").toString();
-        String uri = String.format("%s://%s%s", scheme, storageHost, hostPath);
 
         Object localStorage = dsInfos.get("localStorage");
         if (localStorage != null) {
@@ -452,8 +476,8 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
 
     @Override
     public boolean cancelMaintain(DataStore store) {
-        storagePoolAutmation.cancelMaintain(store);
         dataStoreHelper.cancelMaintain(store);
+        storagePoolAutmation.cancelMaintain(store);
         return true;
     }
 
@@ -504,7 +528,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
     @Override
     public boolean attachHost(DataStore store, HostScope scope, StoragePoolInfo existingInfo) {
         DataStore dataStore = dataStoreHelper.attachHost(store, scope, existingInfo);
-        if(existingInfo.getCapacityBytes() == 0){
+        if (existingInfo.getCapacityBytes() == 0) {
             try {
                 storageMgr.connectHostToSharedPool(hostDao.findById(scope.getScopeId()), dataStore.getId());
             } catch (StorageUnavailableException ex) {

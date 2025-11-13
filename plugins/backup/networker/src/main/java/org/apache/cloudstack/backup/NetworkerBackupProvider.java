@@ -159,6 +159,11 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     }
 
     @Override
+    public Boolean crossZoneInstanceCreationEnabled(BackupOffering backupOffering) {
+        return false;
+    }
+
+    @Override
     public String getName() {
         return "networker";
     }
@@ -630,7 +635,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     public boolean willDeleteBackupsOnOfferingRemoval() { return false; }
 
     @Override
-    public boolean restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid) {
-        return true;
+    public Pair<Boolean, String> restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid) {
+        return new Pair<>(true, null);
     }
 }

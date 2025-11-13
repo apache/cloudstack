@@ -33,11 +33,10 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import com.cloud.utils.FileUtil;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.upgrade.dao.DbUpgrade;
 import com.cloud.upgrade.dao.DbUpgradeSystemVmTemplate;
@@ -90,9 +89,10 @@ import com.cloud.upgrade.dao.Upgrade41900to41910;
 import com.cloud.upgrade.dao.Upgrade41910to42000;
 import com.cloud.upgrade.dao.Upgrade42000to42010;
 import com.cloud.upgrade.dao.Upgrade42010to42100;
-import com.cloud.upgrade.dao.Upgrade42100to42200;
 import com.cloud.upgrade.dao.Upgrade420to421;
+import com.cloud.upgrade.dao.Upgrade42100to42200;
 import com.cloud.upgrade.dao.Upgrade421to430;
+import com.cloud.upgrade.dao.Upgrade42200to42300;
 import com.cloud.upgrade.dao.Upgrade430to440;
 import com.cloud.upgrade.dao.Upgrade431to440;
 import com.cloud.upgrade.dao.Upgrade432to440;
@@ -121,6 +121,7 @@ import com.cloud.upgrade.dao.VersionDao;
 import com.cloud.upgrade.dao.VersionDaoImpl;
 import com.cloud.upgrade.dao.VersionVO;
 import com.cloud.upgrade.dao.VersionVO.Step;
+import com.cloud.utils.FileUtil;
 import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.GlobalLock;
@@ -236,6 +237,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 .next("4.20.0.0", new Upgrade42000to42010())
                 .next("4.20.1.0", new Upgrade42010to42100())
                 .next("4.21.0.0", new Upgrade42100to42200())
+                .next("4.22.0.0", new Upgrade42200to42300())
                 .build();
     }
 

@@ -69,6 +69,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import com.cloud.agent.api.to.VirtualMachineMetadataTO;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.command.CommandInfo;
 import org.apache.cloudstack.command.ReconcileCommandService;
@@ -199,6 +200,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VideoDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogAction;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogModel;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.MetadataDef;
 import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceAgentExecutor;
 import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceExecutor;
 import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceServiceExecutor;
@@ -882,6 +884,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected StorageSubsystemCommandHandler storageHandler;
 
     private boolean convertInstanceVerboseMode = false;
+    private String[] convertInstanceEnv = null;
     protected boolean dpdkSupport = false;
     protected String dpdkOvsPath;
     protected String directDownloadTemporaryDownloadPath;
@@ -944,6 +947,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public boolean isConvertInstanceVerboseModeEnabled() {
         return convertInstanceVerboseMode;
+    }
+
+    public String[] getConvertInstanceEnv() {
+        return convertInstanceEnv;
     }
 
     /**
@@ -1145,6 +1152,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         convertInstanceVerboseMode = BooleanUtils.isTrue(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VIRTV2V_VERBOSE_ENABLED));
+
+        String convertEnvTmpDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CONVERT_ENV_TMPDIR);
+        String convertEnvVirtv2vTmpDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CONVERT_ENV_VIRTV2V_TMPDIR);
+
+        setConvertInstanceEnv(convertEnvTmpDir, convertEnvVirtv2vTmpDir);
 
         pool = (String)params.get("pool");
         if (pool == null) {
@@ -1420,6 +1432,22 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         setupMemoryBalloonStatsPeriod(conn);
 
         return true;
+    }
+
+    private void setConvertInstanceEnv(String convertEnvTmpDir, String convertEnvVirtv2vTmpDir) {
+        if (StringUtils.isAllBlank(convertEnvTmpDir, convertEnvVirtv2vTmpDir)) {
+            return;
+        }
+        if (StringUtils.isNotBlank(convertEnvTmpDir) && StringUtils.isNotBlank(convertEnvVirtv2vTmpDir)) {
+            convertInstanceEnv = new String[2];
+            convertInstanceEnv[0] = String.format("%s=%s", "TMPDIR", convertEnvTmpDir);
+            convertInstanceEnv[1] = String.format("%s=%s", "VIRT_V2V_TMPDIR", convertEnvVirtv2vTmpDir);
+        } else {
+            convertInstanceEnv = new String[1];
+            String key = StringUtils.isNotBlank(convertEnvTmpDir) ? "TMPDIR" : "VIRT_V2V_TMPDIR";
+            String value = StringUtils.isNotBlank(convertEnvTmpDir) ? convertEnvTmpDir : convertEnvVirtv2vTmpDir;
+            convertInstanceEnv[0] = String.format("%s=%s", key, value);
+        }
     }
 
     /**
@@ -2985,7 +3013,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         vm.addComp(createClockDef(vmTO));
         vm.addComp(createDevicesDef(vmTO, guest, vcpus, isUefiEnabled));
 
+        MetadataDef metaDef;
+        if ((metaDef = createMetadataDef(vmTO)) != null) {
+            vm.addComp(metaDef);
+        }
+
         addExtraConfigsToVM(vmTO, vm, extraConfig);
+    }
+
+    protected MetadataDef createMetadataDef(VirtualMachineTO vmTO) {
+        VirtualMachineMetadataTO metadata = vmTO.getMetadata();
+        return (metadata != null) ? new MetadataDef(metadata) : null;
     }
 
     /**

@@ -79,6 +79,7 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
+import com.cloud.utils.storage.TemplateDownloaderUtil;
 
 public class LibvirtStorageAdaptor implements StorageAdaptor {
     protected Logger logger = LogManager.getLogger(getClass());
@@ -173,36 +174,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     }
 
     /**
-     * Checks if downloaded template is extractable
-     * @return true if it should be extracted, false if not
-     */
-    public static boolean isTemplateExtractable(String templatePath) {
-        String type = Script.runSimpleBashScript("file " + templatePath + " | awk -F' ' '{print $2}'");
-        return type.equalsIgnoreCase("bzip2") || type.equalsIgnoreCase("gzip") || type.equalsIgnoreCase("zip");
-    }
-
-    /**
-     * Return extract command to execute given downloaded file
-     * @param downloadedTemplateFile
-     * @param templateUuid
-     */
-    public static String getExtractCommandForDownloadedFile(String downloadedTemplateFile, String templateUuid) {
-        if (downloadedTemplateFile.endsWith(".zip")) {
-            return "unzip -p " + downloadedTemplateFile + " | cat > " + templateUuid;
-        } else if (downloadedTemplateFile.endsWith(".bz2")) {
-            return "bunzip2 -c " + downloadedTemplateFile + " > " + templateUuid;
-        } else if (downloadedTemplateFile.endsWith(".gz")) {
-            return "gunzip -c " + downloadedTemplateFile + " > " + templateUuid;
-        } else {
-            throw new CloudRuntimeException("Unable to extract template " + downloadedTemplateFile);
-        }
-    }
-
-    /**
      * Extract downloaded template into installPath, remove compressed file
      */
     public static void extractDownloadedTemplate(String downloadedTemplateFile, KVMStoragePool destPool, String destinationFile) {
-        String extractCommand = getExtractCommandForDownloadedFile(downloadedTemplateFile, destinationFile);
+        String extractCommand = TemplateDownloaderUtil.getExtractCommandForDownloadedFile(downloadedTemplateFile, destinationFile);
         Script.runSimpleBashScript(extractCommand);
         Script.runSimpleBashScript("rm -f " + downloadedTemplateFile);
     }
@@ -221,7 +196,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
         if (destPool.getType() == StoragePoolType.NetworkFilesystem || destPool.getType() == StoragePoolType.Filesystem
             || destPool.getType() == StoragePoolType.SharedMountPoint) {
-            if (!Storage.ImageFormat.ISO.equals(format) && isTemplateExtractable(templateFilePath)) {
+            if (!Storage.ImageFormat.ISO.equals(format) && TemplateDownloaderUtil.isTemplateExtractable(templateFilePath)) {
                 extractDownloadedTemplate(templateFilePath, destPool, destinationFile);
             } else {
                 Script.runSimpleBashScript("mv " + templateFilePath + " " + destinationFile);
@@ -1116,7 +1091,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
                 // make room for encryption header on raw format, use LUKS
                 if (format == PhysicalDiskFormat.RAW) {
-                    destFile.setSize(destFile.getSize() - (16<<20));
+                    destFile.setSize(destFile.getSize() - (16 << 20));
                     destFile.setFormat(PhysicalDiskFormat.LUKS);
                 }
 
@@ -1593,7 +1568,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         String sourcePath = disk.getPath();
 
         KVMPhysicalDisk newDisk;
-        logger.debug("copyPhysicalDisk: disk size:" + toHumanReadableSize(disk.getSize()) + ", virtualsize:" + toHumanReadableSize(disk.getVirtualSize())+" format:"+disk.getFormat());
+        logger.debug("copyPhysicalDisk: disk size:{}, virtualsize:{} format:{}", toHumanReadableSize(disk.getSize()), toHumanReadableSize(disk.getVirtualSize()), disk.getFormat());
         if (destPool.getType() != StoragePoolType.RBD) {
             if (disk.getFormat() == PhysicalDiskFormat.TAR) {
                 newDisk = destPool.createPhysicalDisk(name, PhysicalDiskFormat.DIR, Storage.ProvisioningType.THIN, disk.getVirtualSize(), null);

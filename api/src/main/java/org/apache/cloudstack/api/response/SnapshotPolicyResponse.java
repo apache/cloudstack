@@ -37,6 +37,10 @@ public class SnapshotPolicyResponse extends BaseResponseWithTagInformation {
     @Param(description = "the ID of the disk volume")
     private String volumeId;
 
+    @SerializedName("volumename")
+    @Param(description = "the name of the disk volume")
+    private String volumeName;
+
     @SerializedName("schedule")
     @Param(description = "time the snapshot is scheduled to be taken.")
     private String schedule;
@@ -85,6 +89,10 @@ public class SnapshotPolicyResponse extends BaseResponseWithTagInformation {
 
     public void setVolumeId(String volumeId) {
         this.volumeId = volumeId;
+    }
+
+    public void setVolumeName(String volumeName) {
+        this.volumeName = volumeName;
     }
 
     public String getSchedule() {
