@@ -2106,7 +2106,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
 
             if (domainId != null && !domainId.equals(caller.getDomainId())) {
-                throw new PermissionDeniedException("Can't list domain id= " + domainId + " projects; unauthorized");
+                throw new PermissionDeniedException("Can't list domain ID = " + domainId + " projects; unauthorized");
             }
 
             if (StringUtils.isNotEmpty(username) && !username.equals(user.getUsername())) {
