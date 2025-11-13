@@ -154,6 +154,7 @@ import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
@@ -271,6 +272,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Inject
     private UserVmManager userVmManager;
+    @Inject
+    ManagementService managementService;
 
     private List<? extends Discoverer> _discoverers;
 
@@ -1274,6 +1277,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_MAINTENANCE_CANCEL, eventDescription = "cancel maintenance for host", async = true)
     public Host cancelMaintenance(final CancelMaintenanceCmd cmd) {
         final Long hostId = cmd.getId();
 
@@ -1297,6 +1302,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_HOST_RECONNECT, eventDescription = "reconnecting host", async = true)
     public Host reconnectHost(ReconnectHostCmd cmd) throws AgentUnavailableException {
         Long hostId = cmd.getId();
 
@@ -1500,6 +1507,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_MAINTENANCE_PREPARE, eventDescription = "prepare maintenance for host", async = true)
     public Host maintain(final PrepareForMaintenanceCmd cmd) {
         final Long hostId = cmd.getId();
         final HostVO host = _hostDao.findById(hostId);
@@ -1930,6 +1939,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public Host updateHost(final UpdateHostCmd cmd) throws NoTransitionException {
+        managementService.checkJsInterpretationAllowedIfNeededForParameterValue(ApiConstants.IS_TAG_A_RULE,
+                Boolean.TRUE.equals(cmd.getIsTagARule()));
+
         return updateHost(cmd.getId(), cmd.getName(), cmd.getOsCategoryId(),
                 cmd.getAllocationState(), cmd.getUrl(), cmd.getHostTags(), cmd.getIsTagARule(), cmd.getAnnotation(), false);
     }

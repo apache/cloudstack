@@ -1536,6 +1536,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
             }
 
+            volume = _volsDao.findById(volumeId);
             if (newDiskOfferingId != null) {
                 volume.setDiskOfferingId(newDiskOfferingId);
                 _volumeMgr.saveVolumeDetails(newDiskOfferingId, volume.getId());
@@ -1550,7 +1551,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             // Update size if volume has same size as before, else it is already updated
-            volume = _volsDao.findById(volumeId);
             if (currentSize == volume.getSize() && currentSize != newSize) {
                 volume.setSize(newSize);
             } else if (volume.getSize() != newSize) {
