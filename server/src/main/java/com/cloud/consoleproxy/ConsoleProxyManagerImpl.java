@@ -569,7 +569,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         if (!allowToLaunchNew(dataCenterId)) {
             String configKey = ConsoleProxyLaunchMax.key();
             Integer configValue = ConsoleProxyLaunchMax.valueIn(dataCenterId);
-            logger.warn(String.format("The number of launched console proxys on zone [%s] has reached the limit [%s]. Limit set in [%s].", dataCenterId, configValue, configKey));
+            logger.warn(String.format("The number of launched console proxies on zone [%s] has reached the limit [%s]. Limit set in [%s].", dataCenterId, configValue, configKey));
             return null;
         }
 
