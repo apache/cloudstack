@@ -1588,6 +1588,8 @@
 "label.migrate.instance.specific.storages": "Migrate volume(s) of the Instance to specific primary storages",
 "label.migrate.systemvm.to": "Migrate System VM to",
 "label.migrate.volume": "Migrate Volume",
+"label.specify.iprange": "Specify IP Range",
+"message.iprange.description": "The range of IP addresses to allocate to VPN clients. The first IP in the range will be taken by the VPN server. (Optional)",
 "message.memory.usage.info.hypervisor.additionals": "The data shown may not reflect the actual memory usage if the Instance does not have the additional hypervisor tools installed",
 "message.memory.usage.info.negative.value": "If the Instance's memory usage cannot be obtained from the hypervisor, the lines for free memory in the raw data graph and memory usage in the percentage graph will be disabled",
 "message.migrate.volume.tooltip": "Volume can be migrated to any suitable storage pool. Admin has to choose the appropriate disk offering to replace, that supports the new storage pool",
