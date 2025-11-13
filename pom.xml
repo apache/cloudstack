@@ -1054,7 +1054,6 @@
                             <exclude>systemvm/agent/packages/**</exclude>
                             <exclude>systemvm/debian/**</exclude>
                             <exclude>test/integration/component/test_host_ha.sh</exclude>
-                            <exclude>test/systemvm/README.md</exclude>
                             <exclude>tools/appliance/*/template.json</exclude>
                             <exclude>tools/cli/cloudmonkey.egg-info/*</exclude>
                             <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
@@ -1068,6 +1067,8 @@
                             <exclude>tools/transifex/.tx/config</exclude>
                             <exclude>ui/.*</exclude>
                             <exclude>ui/.*/**</exclude>
+                            <exclude>ui/docs/full-test-plan.template.md</exclude>
+                            <exclude>ui/docs/smoke-test-plan.template.md</exclude>
                             <exclude>ui/src/assets/**</exclude>
                             <exclude>ui/public/**</exclude>
                             <exclude>ui/legacy/**</exclude>
