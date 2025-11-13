@@ -24,7 +24,7 @@ services:
       - db:/var/lib/mysql
     environment:
       MYSQL_DATABASE: cloud
-#      MYSQL_ROOT_PASSWORD: root
+      # MYSQL_ROOT_PASSWORD: root
       MYSQL_ALLOW_EMPTY_PASSWORD: 1
       MYSQL_USER: cloud
       MYSQL_PASSWORD: cloud
