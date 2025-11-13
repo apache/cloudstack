@@ -266,7 +266,6 @@ initalize
 initator
 initilization
 inspite
-instace
 instal
 instnace
 intefaces
@@ -395,7 +394,6 @@ reponse
 reqest
 reqiured
 requieres
-requried
 reserv
 reserverd
 reseted
