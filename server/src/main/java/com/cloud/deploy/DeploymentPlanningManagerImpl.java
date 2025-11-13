@@ -388,17 +388,16 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             HostVO host = _hostDao.findById(vm.getLastHostId());
             if (host == null) {
                 if (Boolean.TRUE.toString().equalsIgnoreCase(considerLastHostStr)) {
-                    throw new CloudRuntimeException("Failed to deploy VM, last host doesn't exists");
+                    throw new CloudRuntimeException("Failed to deploy VM, last host doesn't exist");
                 }
             } else {
+                logger.debug("VM's last host is {}, trying to choose the same host if it is not in maintenance state", host);
                 if (host.isInMaintenanceStates()) {
                     if (Boolean.TRUE.toString().equalsIgnoreCase(considerLastHostStr)) {
                         throw new CloudRuntimeException("Failed to deploy VM, last host is in maintenance state");
                     }
                 } else {
-                    logger.debug("VM's last {}, trying to choose the same host", host);
                     lastHost = host;
-
                     DeployDestination deployDestination = deployInVmLastHost(vmProfile, plan, avoids, planner, vm, dc, offering, cpuRequested, ramRequested, volumesRequireEncryption);
                     if (deployDestination != null) {
                         return deployDestination;
