@@ -853,6 +853,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         Volume vol = ApiDBUtils.findVolumeById(policy.getVolumeId());
         if (vol != null) {
             policyResponse.setVolumeId(vol.getUuid());
+            policyResponse.setVolumeName(vol.getName());
         }
         policyResponse.setSchedule(policy.getSchedule());
         policyResponse.setIntervalType(policy.getInterval());
@@ -4297,6 +4298,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                 if (volume != null) {
                     builder.append("for ").append(volume.getName()).append(" (").append(volume.getUuid()).append(")");
                 }
+                if (vmInstance != null) {
+                    builder.append(" attached to VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(")");
+                }
                 if (diskOff != null) {
                     builder.append(" with disk offering ").append(diskOff.getName()).append(" (").append(diskOff.getUuid()).append(")");
                 }
@@ -4993,7 +4997,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         for (Long jobId : jobIds) {
             UpgradeRouterTemplateResponse routerResponse = new UpgradeRouterTemplateResponse();
             AsyncJob job = _entityMgr.findById(AsyncJob.class, jobId);
-            routerResponse.setAsyncJobId((job.getUuid()));
+            routerResponse.setJobId((job.getUuid()));
             routerResponse.setObjectName("asyncjobs");
             responses.add(routerResponse);
         }
@@ -5039,8 +5043,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public BackupOfferingResponse createBackupOfferingResponse(BackupOffering policy) {
-        return ApiDBUtils.newBackupOfferingResponse(policy);
+    public BackupOfferingResponse createBackupOfferingResponse(BackupOffering offering) {
+        return ApiDBUtils.newBackupOfferingResponse(offering);
     }
 
     public ManagementServerResponse createManagementResponse(ManagementServerHost mgmt) {

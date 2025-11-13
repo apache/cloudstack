@@ -27,18 +27,25 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.org.Grouping;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.SnapshotZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -51,6 +58,8 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 
 import org.junit.Assert;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -89,8 +98,22 @@ public class SnapshotManagerImplTest {
     SnapshotZoneDao snapshotZoneDao;
     @Mock
     VolumeDao volumeDao;
+    @Mock
+    SnapshotPolicyDao snapshotPolicyDao;
     @InjectMocks
     SnapshotManagerImpl snapshotManager = new SnapshotManagerImpl();
+
+    @Before
+    public void setUp() {
+        snapshotManager._snapshotPolicyDao = snapshotPolicyDao;
+        snapshotManager._volsDao = volumeDao;
+        snapshotManager._accountMgr = accountManager;
+    }
+
+    @After
+    public void tearDown() {
+        CallContext.unregister();
+    }
 
     @Test
     public void testGetSnapshotZoneImageStoreValid() {
@@ -394,5 +417,107 @@ public class SnapshotManagerImplTest {
         Mockito.when(dataCenterVO.getType()).thenReturn(DataCenter.Type.Core);
         Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(dataCenterVO);
         Assert.assertNotNull(snapshotManager.getCheckedDestinationZoneForSnapshotCopy(zoneId, false));
+    }
+
+    @Test
+    public void testListSnapshotPolicies() {
+        long volumeId = 42L;
+        ListSnapshotPoliciesCmd cmd = Mockito.mock(ListSnapshotPoliciesCmd.class);
+        Mockito.when(cmd.getVolumeId()).thenReturn(volumeId);
+        Mockito.when(cmd.getId()).thenReturn(null);
+        Mockito.when(cmd.getStartIndex()).thenReturn(0L);
+        Mockito.when(cmd.getPageSizeVal()).thenReturn(10L);
+
+        Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getId()).thenReturn(1L);
+        CallContext.register(Mockito.mock(User.class), caller);
+
+        SnapshotPolicyVO policy1 = Mockito.mock(SnapshotPolicyVO.class);
+        SnapshotPolicyVO policy2 = Mockito.mock(SnapshotPolicyVO.class);
+        List<SnapshotPolicyVO> mockPolicies = List.of(policy1, policy2);
+
+        SearchBuilder<SnapshotPolicyVO> mockSearchBuilder = Mockito.mock(SearchBuilder.class);
+        SearchBuilder<VolumeVO> mockVolumeSearchBuilder = Mockito.mock(SearchBuilder.class);
+        SearchCriteria<SnapshotPolicyVO> mockSearchCriteria = Mockito.mock(SearchCriteria.class);
+
+        Mockito.when(snapshotPolicyDao.createSearchBuilder()).thenReturn(mockSearchBuilder);
+        Mockito.when(mockSearchBuilder.entity()).thenReturn(Mockito.mock(SnapshotPolicyVO.class));
+        Mockito.when(mockSearchBuilder.create()).thenReturn(mockSearchCriteria);
+        Mockito.when(volumeDao.createSearchBuilder()).thenReturn(mockVolumeSearchBuilder);
+        Mockito.when(mockVolumeSearchBuilder.entity()).thenReturn(Mockito.mock(VolumeVO.class));
+        Mockito.when(snapshotPolicyDao.searchAndCount(Mockito.any(), Mockito.any())).thenReturn(new Pair<>(mockPolicies, 2));
+
+        Pair<List<? extends SnapshotPolicy>, Integer> result = snapshotManager.listSnapshotPolicies(cmd);
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(2, result.first().size());
+        Assert.assertEquals(Integer.valueOf(2), result.second());
+        Assert.assertEquals(mockPolicies, result.first());
+    }
+
+    @Test
+    public void testListSnapshotPolicies_NonRootAdmin() {
+        ListSnapshotPoliciesCmd cmd = Mockito.mock(ListSnapshotPoliciesCmd.class);
+        Mockito.when(cmd.getVolumeId()).thenReturn(1L);
+        Mockito.when(cmd.getId()).thenReturn(null);
+        Mockito.when(cmd.getStartIndex()).thenReturn(0L);
+        Mockito.when(cmd.getPageSizeVal()).thenReturn(10L);
+
+        Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getId()).thenReturn(2L);
+        CallContext.register(Mockito.mock(User.class), caller);
+
+        SnapshotPolicyVO policy1 = Mockito.mock(SnapshotPolicyVO.class);
+        SnapshotPolicyVO policy2 = Mockito.mock(SnapshotPolicyVO.class);
+        List<SnapshotPolicyVO> mockPolicies = List.of(policy1, policy2);
+
+        SearchBuilder<SnapshotPolicyVO> mockSearchBuilder = Mockito.mock(SearchBuilder.class);
+        SearchBuilder<VolumeVO> mockVolumeSearchBuilder = Mockito.mock(SearchBuilder.class);
+        SearchCriteria<SnapshotPolicyVO> mockSearchCriteria = Mockito.mock(SearchCriteria.class);
+
+        Mockito.when(snapshotPolicyDao.createSearchBuilder()).thenReturn(mockSearchBuilder);
+        Mockito.when(mockSearchBuilder.entity()).thenReturn(Mockito.mock(SnapshotPolicyVO.class));
+        Mockito.when(mockSearchBuilder.create()).thenReturn(mockSearchCriteria);
+        Mockito.when(volumeDao.createSearchBuilder()).thenReturn(mockVolumeSearchBuilder);
+        Mockito.when(mockVolumeSearchBuilder.entity()).thenReturn(Mockito.mock(VolumeVO.class));
+        Mockito.when(snapshotPolicyDao.searchAndCount(Mockito.any(), Mockito.any())).thenReturn(new Pair<>(mockPolicies, 2));
+
+        Pair<List<? extends SnapshotPolicy>, Integer> result = snapshotManager.listSnapshotPolicies(cmd);
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(2, result.first().size());
+        Assert.assertEquals(Integer.valueOf(2), result.second());
+        Assert.assertEquals(mockPolicies, result.first());
+    }
+
+    @Test
+    public void testListSnapshotPolicies_RootAdmin() {
+        ListSnapshotPoliciesCmd cmd = Mockito.mock(ListSnapshotPoliciesCmd.class);
+        Mockito.when(cmd.getVolumeId()).thenReturn(1L);
+        Mockito.when(cmd.getId()).thenReturn(null);
+        Mockito.when(cmd.getStartIndex()).thenReturn(0L);
+        Mockito.when(cmd.getPageSizeVal()).thenReturn(10L);
+
+        Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getId()).thenReturn(1L);
+        CallContext.register(Mockito.mock(User.class), caller);
+
+        SnapshotPolicyVO policy = Mockito.mock(SnapshotPolicyVO.class);
+        SearchBuilder<SnapshotPolicyVO> mockSearchBuilder = Mockito.mock(SearchBuilder.class);
+        SearchBuilder<VolumeVO> mockVolumeSearchBuilder = Mockito.mock(SearchBuilder.class);
+        SearchCriteria<SnapshotPolicyVO> mockSearchCriteria = Mockito.mock(SearchCriteria.class);
+
+        Mockito.when(snapshotPolicyDao.createSearchBuilder()).thenReturn(mockSearchBuilder);
+        Mockito.when(mockSearchBuilder.entity()).thenReturn(Mockito.mock(SnapshotPolicyVO.class));
+        Mockito.when(mockSearchBuilder.create()).thenReturn(mockSearchCriteria);
+        Mockito.when(volumeDao.createSearchBuilder()).thenReturn(mockVolumeSearchBuilder);
+        Mockito.when(mockVolumeSearchBuilder.entity()).thenReturn(Mockito.mock(VolumeVO.class));
+        Mockito.when(snapshotPolicyDao.searchAndCount(Mockito.any(), Mockito.any())).thenReturn(new Pair<>(List.of(policy), 1));
+
+        Pair<List<? extends SnapshotPolicy>, Integer> result = snapshotManager.listSnapshotPolicies(cmd);
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(1, result.first().size());
+        Assert.assertEquals(Integer.valueOf(1), result.second());
     }
 }

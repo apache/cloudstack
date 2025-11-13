@@ -244,6 +244,7 @@ public class Script implements Callable<String> {
 
         try {
             _logger.trace(String.format("Creating process for command [%s].", commandLine));
+
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.redirectErrorStream(true);
             if (_workDir != null)

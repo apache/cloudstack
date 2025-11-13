@@ -91,6 +91,10 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
     @Param(description = "the ID of the template of the Kubernetes cluster")
     private String templateId;
 
+    @SerializedName(ApiConstants.TEMPLATE_NAME)
+    @Param(description = "the name of the template of the Kubernetes cluster")
+    private String templateName;
+
     @SerializedName(ApiConstants.NETWORK_ID)
     @Param(description = "the ID of the network of the Kubernetes cluster")
     private String networkId;
@@ -204,6 +208,10 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
     @Param(description = "Maximum size of the cluster")
     private Long maxSize;
 
+    @SerializedName(ApiConstants.CSI_ENABLED)
+    @Param(description = "Indicates if the CloudStack CSI driver has been setup in the cluster")
+    private Boolean isCsiEnabled;
+
     @SerializedName(ApiConstants.CLUSTER_TYPE)
     @Param(description = "the type of the cluster")
     private KubernetesCluster.ClusterType clusterType;
@@ -261,6 +269,14 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
 
     public void setTemplateId(String templateId) {
         this.templateId = templateId;
+    }
+
+    public String getTemplateName() {
+        return templateName;
+    }
+
+    public void setTemplateName(String templateName) {
+        this.templateName = templateName;
     }
 
     public String getNetworkId() {
@@ -514,5 +530,9 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
 
     public void setCniConfigName(String cniConfigName) {
         this.cniConfigName = cniConfigName;
+    }
+
+    public void setCsiEnabled(Boolean csiEnabled) {
+        isCsiEnabled = csiEnabled;
     }
 }
