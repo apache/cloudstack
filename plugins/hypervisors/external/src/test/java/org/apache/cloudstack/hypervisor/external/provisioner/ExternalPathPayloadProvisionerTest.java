@@ -790,6 +790,7 @@ public class ExternalPathPayloadProvisionerTest {
             .getInstanceStatusesOnExternalSystem(anyString(), anyString(), anyString(), anyMap(), anyInt());
 
         Map<String, HostVmStateReportEntry> result = provisioner.getVmPowerStates(host, accessDetails, "test-extension", "test-path");
+        assertNull(result);
     }
 
     @Test

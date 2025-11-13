@@ -330,33 +330,33 @@ get_node_host() {
 }
 
 get_console() {
-   check_required_fields node vmid
+    check_required_fields node vmid
 
-   local api_resp port ticket
-   if ! api_resp="$(call_proxmox_api POST "/nodes/${node}/qemu/${vmid}/vncproxy")"; then
+    local api_resp port ticket
+    if ! api_resp="$(call_proxmox_api POST "/nodes/${node}/qemu/${vmid}/vncproxy")"; then
        echo "$api_resp" | jq -c '{status:"error", error:(.errors.curl // (.errors|tostring))}'
        exit 1
-   fi
+    fi
 
-   port="$(echo "$api_resp"   | jq -re '.data.port // empty' 2>/dev/null || true)"
-   ticket="$(echo "$api_resp" | jq -re '.data.ticket // empty' 2>/dev/null || true)"
+    port="$(echo "$api_resp"   | jq -re '.data.port // empty' 2>/dev/null || true)"
+    ticket="$(echo "$api_resp" | jq -re '.data.ticket // empty' 2>/dev/null || true)"
 
-   if [[ -z "$port" || -z "$ticket" ]]; then
+    if [[ -z "$port" || -z "$ticket" ]]; then
        jq -n --arg raw "$api_resp" \
            '{status:"error", error:"Proxmox response missing port/ticket", upstream:$raw}'
        exit 1
-   fi
+    fi
 
-   # Derive host from node’s network info
-   local host
-   host="$(get_node_host)"
-   if [[ -z "$host" ]]; then
+    # Derive host from node’s network info
+    local host
+    host="$(get_node_host)"
+    if [[ -z "$host" ]]; then
        jq -n --arg msg "Could not determine host IP for node $node" \
            '{status:"error", error:$msg}'
        exit 1
-   fi
+    fi
 
-   jq -n \
+    jq -n \
        --arg host "$host" \
        --arg port "$port" \
        --arg password "$ticket" \
@@ -408,23 +408,23 @@ statuses() {
 list_snapshots() {
     snapshot_response=$(call_proxmox_api GET "/nodes/${node}/qemu/${vmid}/snapshot")
     echo "$snapshot_response" | jq '
-      def to_date:
-        if . == "-" then "-"
-        elif . == null then "-"
-        else (. | tonumber | strftime("%Y-%m-%d %H:%M:%S"))
-        end;
+        def to_date:
+            if . == "-" then "-"
+            elif . == null then "-"
+            else (. | tonumber | strftime("%Y-%m-%d %H:%M:%S"))
+            end;
 
-      {
-        status: "success",
-        printmessage: "true",
-        message: [.data[] | {
-          name: .name,
-          snaptime: ((.snaptime // "-") | to_date),
-          description: .description,
-          parent: (.parent // "-"),
-          vmstate: (.vmstate // "-")
-        }]
-      }
+        {
+            status: "success",
+            printmessage: "true",
+            message: [.data[] | {
+                name: .name,
+                snaptime: ((.snaptime // "-") | to_date),
+                description: .description,
+                parent: (.parent // "-"),
+                vmstate: (.vmstate // "-")
+            }]
+        }
     '
 }
 
@@ -492,9 +492,9 @@ parse_json "$parameters" || exit 1
 
 cleanup_vm=0
 cleanup() {
-  if (( cleanup_vm == 1 )); then
-    execute_and_wait DELETE "/nodes/${node}/qemu/${vmid}"
-  fi
+    if (( cleanup_vm == 1 )); then
+        execute_and_wait DELETE "/nodes/${node}/qemu/${vmid}"
+    fi
 }
 
 trap cleanup EXIT
