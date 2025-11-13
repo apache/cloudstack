@@ -3256,6 +3256,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         PhysicalNetwork pnet = ApiDBUtils.findPhysicalNetworkById(result.getPhysicalNetworkId());
         if (pnet != null) {
             response.setPhysicalNetworkId(pnet.getUuid());
+            if (!pnet.getIsolationMethods().isEmpty()) {
+                response.setIsolationMethods(String.join(",", pnet.getIsolationMethods()));
+            }
         }
         if (result.getTrafficType() != null) {
             response.setTrafficType(result.getTrafficType().toString());
@@ -3266,6 +3269,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setVmwareLabel(result.getVmwareNetworkLabel());
         response.setHypervLabel(result.getHypervNetworkLabel());
         response.setOvm3Label(result.getOvm3NetworkLabel());
+        response.setVlan(result.getVlan());
 
         response.setObjectName("traffictype");
         return response;
@@ -4994,7 +4998,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         for (Long jobId : jobIds) {
             UpgradeRouterTemplateResponse routerResponse = new UpgradeRouterTemplateResponse();
             AsyncJob job = _entityMgr.findById(AsyncJob.class, jobId);
-            routerResponse.setAsyncJobId((job.getUuid()));
+            routerResponse.setJobId((job.getUuid()));
             routerResponse.setObjectName("asyncjobs");
             responses.add(routerResponse);
         }

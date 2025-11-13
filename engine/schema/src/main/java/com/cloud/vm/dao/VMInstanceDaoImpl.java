@@ -886,7 +886,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
                 return rs.getLong(1);
             }
         } catch (Exception e) {
-            logger.warn(String.format("Error counting vms by host tag for dcId= %s, hostTag= %s", dcId, hostTag), e);
+            logger.warn(String.format("Error counting vms by host tag for dcId = %s, hostTag = %s", dcId, hostTag), e);
         }
         return 0L;
     }
