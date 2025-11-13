@@ -47,6 +47,11 @@ repos:
   - repo: https://github.com/Lucas-C/pre-commit-hooks
     rev: v1.5.5
     hooks:
+      - id: chmod
+        name: set file permissions
+        args: ['644']
+        files: \.md$
+        stages: [manual]
       - id: insert-license
         name: add license for all Markdown files
         files: \.md$
@@ -123,14 +128,6 @@ repos:
         args: [--config=.github/linters/.markdown-lint.yml]
         types: [markdown]
         files: \.(md|mdown|markdown)$
-  - repo: https://github.com/Lucas-C/pre-commit-hooks
-    rev: v1.5.5
-    hooks:
-      - id: chmod
-        name: set file permissions
-        args: ['644']
-        files: \.md$
-        stages: [manual]
   - repo: https://github.com/adrienverge/yamllint
     rev: v1.37.1
     hooks:
