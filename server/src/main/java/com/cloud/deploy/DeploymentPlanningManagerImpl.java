@@ -384,13 +384,26 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         boolean considerLastHost = vm.getLastHostId() != null && haVmTag == null &&
                 (considerLastHostStr == null || Boolean.TRUE.toString().equalsIgnoreCase(considerLastHostStr));
         if (considerLastHost) {
+            logger.debug("This VM has last host_id: {}", vm.getLastHostId());
             HostVO host = _hostDao.findById(vm.getLastHostId());
-            logger.debug("This VM has last host_id specified, trying to choose the same host: " + host);
-            lastHost = host;
+            if (host == null) {
+                if (Boolean.TRUE.toString().equalsIgnoreCase(considerLastHostStr)) {
+                    throw new CloudRuntimeException("Failed to deploy VM, last host doesn't exists");
+                }
+            } else {
+                if (host.isInMaintenanceStates()) {
+                    if (Boolean.TRUE.toString().equalsIgnoreCase(considerLastHostStr)) {
+                        throw new CloudRuntimeException("Failed to deploy VM, last host is in maintenance state");
+                    }
+                } else {
+                    logger.debug("VM's last {}, trying to choose the same host", host);
+                    lastHost = host;
 
-            DeployDestination deployDestination = deployInVmLastHost(vmProfile, plan, avoids, planner, vm, dc, offering, cpuRequested, ramRequested, volumesRequireEncryption);
-            if (deployDestination != null) {
-                return deployDestination;
+                    DeployDestination deployDestination = deployInVmLastHost(vmProfile, plan, avoids, planner, vm, dc, offering, cpuRequested, ramRequested, volumesRequireEncryption);
+                    if (deployDestination != null) {
+                        return deployDestination;
+                    }
+                }
             }
         }
 
@@ -1474,7 +1487,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
     protected Pair<Host, Map<Volume, StoragePool>> findPotentialDeploymentResources(List<Host> suitableHosts, Map<Volume, List<StoragePool>> suitableVolumeStoragePools,
                                                                                     ExcludeList avoid, PlannerResourceUsage resourceUsageRequired, List<Volume> readyAndReusedVolumes, List<Long> preferredHosts, VirtualMachine vm) {
-        logger.debug("Trying to find a potenial host and associated storage pools from the suitable host/pool lists for this VM");
+        logger.debug("Trying to find a potential host and associated storage pools from the suitable host/pool lists for this VM");
 
         boolean hostCanAccessPool = false;
         boolean haveEnoughSpace = false;
