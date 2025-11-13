@@ -55,4 +55,12 @@ public class EnumUtils {
         }
         return null;
     }
+
+    public static <T extends Enum<T>> T getEnumIgnoreCase(final Class<T> enumClass, final String enumName) {
+        return org.apache.commons.lang3.EnumUtils.getEnumIgnoreCase(enumClass, enumName);
+    }
+
+    public static <T extends Enum<T>> T getEnumIgnoreCase(final Class<T> enumClass, final String enumName, T defaultValue) {
+        return org.apache.commons.lang3.EnumUtils.getEnumIgnoreCase(enumClass, enumName, defaultValue);
+    }
 }
