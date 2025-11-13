@@ -25,6 +25,12 @@ repos:
     hooks:
       - id: identity
       - id: check-hooks-apply
+  - repo: https://github.com/thlorenz/doctoc.git
+    rev: v2.2.0
+    hooks:
+      - id: doctoc
+        name: Add TOC for Markdown files
+        files: ^CONTRIBUTING\.md$|^INSTALL\.md$|^README\.md$
   - repo: https://github.com/oxipng/oxipng
     rev: v9.1.5
     hooks:
@@ -41,6 +47,11 @@ repos:
   - repo: https://github.com/Lucas-C/pre-commit-hooks
     rev: v1.5.5
     hooks:
+      - id: chmod
+        name: set file permissions
+        args: ['644']
+        files: \.md$
+        stages: [manual]
       - id: insert-license
         name: add license for all Markdown files
         files: \.md$
@@ -117,14 +128,6 @@ repos:
         args: [--config=.github/linters/.markdown-lint.yml]
         types: [markdown]
         files: \.(md|mdown|markdown)$
-  - repo: https://github.com/Lucas-C/pre-commit-hooks
-    rev: v1.5.5
-    hooks:
-      - id: chmod
-        name: set file permissions
-        args: ['644']
-        files: \.md$
-        stages: [manual]
   - repo: https://github.com/adrienverge/yamllint
     rev: v1.37.1
     hooks:

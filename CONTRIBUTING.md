@@ -21,6 +21,24 @@
 
 ## Summary
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+- [Summary](#summary)
+- [Bug fixes](#bug-fixes)
+- [Developing new features](#developing-new-features)
+- [PendingReleaseNotes file](#pendingreleasenotes-file)
+- [Fork the code](#fork-the-code)
+- [Making changes](#making-changes)
+- [Rebase `feature_x` to include updates from `upstream/main`](#rebase-feature_x-to-include-updates-from-upstreammain)
+- [Make a GitHub Pull Request to contribute your changes](#make-a-github-pull-request-to-contribute-your-changes)
+- [Cleaning up after a successful pull request](#cleaning-up-after-a-successful-pull-request)
+- [Release Principles](#release-principles)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+## Summary
+
 This document covers how to contribute to the ACS project. ACS uses GitHub PRs to manage code contributions.
 These instructions assume you have a GitHub.com account, so if you don't have one you will have to create one. Your proposed code changes will be published to your own fork of the ACS project, and you will submit a Pull Request for your changes to be added.
 
