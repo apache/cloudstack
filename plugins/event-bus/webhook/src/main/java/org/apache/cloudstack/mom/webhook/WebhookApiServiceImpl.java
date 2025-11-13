@@ -624,7 +624,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
             throw new InvalidParameterValueException("Unable to find the webhook with the specified ID");
         }
         accountManager.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, false, webhook);
-        WebhookFilter.Type type = EnumUtils.getEnum(WebhookFilter.Type.class, typeStr, WebhookFilter.Type.EventType);
+        WebhookFilter.Type type = EnumUtils.getEnumIgnoreCase(WebhookFilter.Type.class, typeStr, WebhookFilter.Type.EventType);
         WebhookFilter.Mode mode = WebhookFilter.Mode.Include;
         if (StringUtils.isNotBlank(modeStr)) {
             mode = EnumUtils.getEnumIgnoreCase(WebhookFilter.Mode.class, modeStr);
