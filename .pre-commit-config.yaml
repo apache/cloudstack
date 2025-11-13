@@ -31,7 +31,6 @@ repos:
       - id: gitleaks
         name: run gitleaks
         description: detect hardcoded secrets
-        args: [-c=.github/linters/gitleaks.toml]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
