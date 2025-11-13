@@ -29,4 +29,14 @@ if [ "$1" = upgrade ]; then
         rm -f /usr/share/cloudstack-management/work
         rm -f /etc/default/cloudstack-management
     fi
+
+    if [ -L "/etc/cloudstack/management/log4j.xml" ]; then
+        echo "Removing existing /etc/cloudstack/management/log4j.xml, symlink will again be created during post install"
+        rm -f /etc/cloudstack/management/log4j.xml
+    fi
+
+    if [ -L "/etc/cloudstack/management/log4j2.xml" ]; then
+        echo "Removing existing /etc/cloudstack/management/log4j2.xml, symlink will again be created during post install"
+        rm -f /etc/cloudstack/management/log4j2.xml
+    fi
 fi

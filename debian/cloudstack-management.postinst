@@ -59,6 +59,33 @@ if [ "$1" = configure ]; then
     chown -R cloud:cloud /usr/share/cloudstack-management/templates
     find /usr/share/cloudstack-management/templates -type d -exec chmod 0770 {} \;
 
+    LOGFILE="${CONFDIR}/log4j-cloud.xml"
+
+    # Detect if current file is old Log4j1 format
+    if grep -q "<log4j:configuration" "$LOGFILE" 2>/dev/null; then
+        echo "Old Log4j1 format detected in $LOGFILE"
+
+        BACKUP_SUFFIXES=".rpmnew .dpkg-new .dpkg-dist"
+        for sfx in $BACKUP_SUFFIXES; do
+            NEWFILE="${LOGFILE}${sfx}"
+            if [ -f "$NEWFILE" ]; then
+                echo "Found new version candidate: $NEWFILE"
+
+                # Verify that the candidate actually has Log4j2 syntax
+                if grep -q "<Configuration" "$NEWFILE" 2>/dev/null; then
+                    echo "Verified Log4j2 format in $NEWFILE — applying update."
+                    cp -f "$NEWFILE" "$LOGFILE"
+                    mv "$NEWFILE" "${NEWFILE}.bak.$(date +%F_%H-%M-%S)"
+                    echo "Replaced old Log4j1 config with Log4j2 version."
+                    break
+                else
+                    echo "WARNING: $NEWFILE does not appear to be Log4j2 format — skipping."
+                fi
+            fi
+        done
+    else
+        echo "Log4j2 format already present — no action needed."
+    fi
     ln -sf ${CONFDIR}/log4j-cloud.xml ${CONFDIR}/log4j2.xml
 
     # Add jdbc MySQL driver settings to db.properties if not present
