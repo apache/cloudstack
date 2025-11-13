@@ -1120,11 +1120,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                         accountCleanupNeeded = true;
                     }
                 }
-                // this is clearing the operational reservations or vlans for the account
-                // this should have happened before and covers up the release issues for the vlans
-                // but as it is purely operational and no business logic is involved we clean now
-                // as a last resort, to prevent allocation issue on the long run.
-                _dataCenterVnetDao.releaseForAccount(accountId);
             }
 
             // Delete Site 2 Site VPN customer gateway
@@ -1162,6 +1157,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             for (AccountGuestVlanMapVO map : maps) {
                 _dataCenterVnetDao.releaseDedicatedGuestVlans(map.getId());
             }
+            // this is clearing the operational reservations or vlans for the account
+            // this should have happened before and covers up the release issues for the vlans
+            // but as it is purely operational and no business logic is involved we clean now
+            // as a last resort, to prevent allocation issue on the long run.
+            _dataCenterVnetDao.releaseForAccount(accountId);
             int vlansReleased = _accountGuestVlanMapDao.removeByAccountId(accountId);
             logger.info("deleteAccount: Released {} dedicated guest vlan ranges from account {}", vlansReleased, account);
 
