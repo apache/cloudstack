@@ -190,11 +190,6 @@ public class PodZoneConfig {
         return currentPodCidrSubnets;
     }
 
-    public void deletePod(String name, long dcId) {
-        String sql = "DELETE FROM `cloud`.`host_pod_ref` WHERE name=\"" + name + "\" AND data_center_id=\"" + dcId + "\"";
-        DatabaseConfig.saveSQL(sql, "Failed to delete pod due to exception. Please contact Cloud Support.");
-    }
-
     public long getVlanDbId(String zone, String vlanId) {
         long zoneId = getZoneId(zone);
 
@@ -475,11 +470,6 @@ public class PodZoneConfig {
     public static String getConfiguredValue(String configName) {
         return DatabaseConfig.getDatabaseValueString("SELECT value FROM `cloud`.`configuration` where name = \"" + configName + "\"", "value",
             "Unable to start DB connection to read configuration. Please contact Cloud Support.");
-    }
-
-    public void deleteZone(String name) {
-        String sql = "DELETE FROM `cloud`.`data_center` WHERE name=\"" + name + "\"";
-        DatabaseConfig.saveSQL(sql, "Failed to delete zone due to exception. Please contact Cloud Support.");
     }
 
     public void saveVlan(long zoneId, Long podId, String vlanId, String vlanGateway, String vlanNetmask, String vlanType, String ipRange, long networkId,
