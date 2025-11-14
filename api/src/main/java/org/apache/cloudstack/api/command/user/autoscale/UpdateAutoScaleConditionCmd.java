@@ -18,6 +18,7 @@
 package org.apache.cloudstack.api.command.user.autoscale;
 
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -35,9 +36,10 @@ import com.cloud.exception.ResourceInUseException;
 import com.cloud.network.as.Condition;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteCondition", description = "Removes a condition for VM auto scaling", responseObject = SuccessResponse.class, entityType = {Condition.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class DeleteConditionCmd extends BaseAsyncCmd {
+@APICommand(name = "updateCondition", description = "Updates a condition for VM auto scaling", responseObject = SuccessResponse.class, entityType = {Condition.class},
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.18.0")
+public class UpdateAutoScaleConditionCmd extends BaseAsyncCmd {
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -47,25 +49,26 @@ public class DeleteConditionCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ConditionResponse.class, required = true, description = "the ID of the condition.")
     private Long id;
 
+    @Parameter(name = ApiConstants.RELATIONAL_OPERATOR, type = CommandType.STRING, required = true, description = "Relational Operator to be used with threshold. Valid values are EQ, GT, LT, GE, LE.")
+    private String relationalOperator;
+
+    @Parameter(name = ApiConstants.THRESHOLD, type = CommandType.LONG, required = true, description = "Value for which the Counter will be evaluated with the Operator selected.")
+    private Long threshold;
+
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
 
     @Override
     public void execute() {
-        boolean result = false;
         try {
-            result = _autoScaleService.deleteCondition(getId());
+            Condition condition = _autoScaleService.updateCondition(this);
+            ConditionResponse response = _responseGenerator.createConditionResponse(condition);
+            response.setResponseName(getCommandName());
+            setResponseObject(response);
         } catch (ResourceInUseException ex) {
             logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_IN_USE_ERROR, ex.getMessage());
-        }
-        if (result) {
-            SuccessResponse response = new SuccessResponse(getCommandName());
-            setResponseObject(response);
-        } else {
-            logger.warn("Failed to delete condition " + getId());
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete condition.");
         }
     }
 
@@ -75,6 +78,14 @@ public class DeleteConditionCmd extends BaseAsyncCmd {
 
     public Long getId() {
         return id;
+    }
+
+    public String getRelationalOperator() {
+        return relationalOperator;
+    }
+
+    public Long getThreshold() {
+        return threshold;
     }
 
     @Override
@@ -90,16 +101,15 @@ public class DeleteConditionCmd extends BaseAsyncCmd {
         }
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are
-        // tracked
     }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_CONDITION_DELETE;
+        return EventTypes.EVENT_CONDITION_UPDATE;
     }
 
     @Override
     public String getEventDescription() {
-        return "Deleting a condition.";
+        return "Updating a condition.";
     }
 }
