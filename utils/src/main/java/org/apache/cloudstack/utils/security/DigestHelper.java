@@ -148,4 +148,13 @@ public class DigestHelper {
             throw new CloudRuntimeException(errMsg, e);
         }
     }
+
+    public static String deduceAlgorithmFromChecksumLength(int length) {
+        for (Map.Entry<String, Integer> entry : paddingLengths.entrySet()) {
+            if (entry.getValue() == length) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
 }
