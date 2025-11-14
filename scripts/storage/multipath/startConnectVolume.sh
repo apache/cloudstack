@@ -91,7 +91,7 @@ multipath -v2 2>/dev/null
 
 ls /dev/mapper/3${WWID} >/dev/null 2>&1
 if [ $? == 0 ]; then
-   logger -t "CS_SCSI_VOL_CONN_START" "${WWID} scan triggered and device immediately became visable at /dev/mapper/3${WWID}"
+   logger -t "CS_SCSI_VOL_CONN_START" "${WWID} scan triggered and device immediately became visible at /dev/mapper/3${WWID}"
 fi
 
 logger -t "CS_SCSI_VOL_CONN_START" "${WWID} successfully triggered discovery"
