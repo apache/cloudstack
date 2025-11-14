@@ -75,7 +75,7 @@
 
           <a-form-item>
             <a-checkbox v-model:checked="specifyIpRange">
-              {{ $t('label.specify.iprange') }}
+              {{ $t('label.remote.access.vpn.specify.iprange') }}
             </a-checkbox>
           </a-form-item>
           <a-form-item
@@ -84,7 +84,7 @@
             :colon="false"
             ref="iprange">
             <template #label>
-              <tooltip-label :title="$t('label.ip.range')" :tooltip="$t('message.iprange.description')"/>
+              <tooltip-label :title="$t('label.ip.range')" :tooltip="$t('message.remote.access.vpn.iprange.description')"/>
             </template>
             <a-input
               v-model:value="vpnIpRange"
