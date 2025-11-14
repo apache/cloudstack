@@ -178,7 +178,8 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
 
         // validate we have a connection, if not we need to connect first.
         if (!isConnected(address.getPath())) {
-            LOGGER.debug("Physical disk " + address.getPath() + " is not connected, a request to connectPhysicalDisk must be made before it can be used.");
+            LOGGER.warn("Physical disk " + address.getPath() + " is not connected, a request to connectPhysicalDisk must be made before it can be used.");
+            return null;
         } else {
             LOGGER.debug("Physical disk " + address.getPath() + " is connected, proceeding to get its size.");
 

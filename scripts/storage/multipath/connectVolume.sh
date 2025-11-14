@@ -29,7 +29,7 @@ WWID=${2:?"WWID required"}
 
 WWID=$(echo $WWID | tr '[:upper:]' '[:lower:]')
 
-START_CONNECT=$(dirname $0)/startConnect.sh
+START_CONNECT=$(dirname $0)/startConnectVolume.sh
 if [ -x "${START_CONNECT}" ]; then
    echo "$(date): Starting connect process for ${WWID} on lun ${LUN}"
    ${START_CONNECT} ${LUN} ${WWID}
@@ -49,7 +49,7 @@ while [ ! -e /dev/mapper/3${WWID} ]; do
    sleep 1
 done
 
-FINISH_CONNECT=$(dirname $0)/finishConnect.sh
+FINISH_CONNECT=$(dirname $0)/finishConnectVolume.sh
 if [ -x "${FINISH_CONNECT}" ]; then
    echo "$(date): Starting post-connect validation for ${WWID} on lun ${LUN}"
    ${FINISH_CONNECT} ${LUN} ${WWID}
