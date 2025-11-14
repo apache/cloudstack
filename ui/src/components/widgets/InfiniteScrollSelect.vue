@@ -78,7 +78,7 @@
         </div>
       </div>
     </template>
-    <a-select-option v-for="option in options" :key="option.id" :value="option[optionValueKey]">
+    <a-select-option v-for="option in selectableOptions" :key="option.id" :value="option[optionValueKey]">
       <span>
         <span v-if="showIcon && option.id !== null && option.id !== undefined">
           <resource-icon v-if="option.icon && option.icon.base64image" :image="option.icon.base64image" size="1x" style="margin-right: 5px"/>
@@ -178,6 +178,19 @@ export default {
     },
     formattedSearchFooterMessage () {
       return `${this.$t('label.showing.results.for').replace('%x', this.searchQuery)}`
+    },
+    selectableOptions () {
+      const currentValue = this.$attrs.value
+      // Only filter out null/empty options when the current value is also null/undefined/empty
+      // This prevents such options from being selected and allows the placeholder to show instead
+      if (currentValue === null || currentValue === undefined || currentValue === '') {
+        return this.options.filter(option => {
+          const optionValue = option[this.optionValueKey]
+          return optionValue !== null && optionValue !== undefined && optionValue !== ''
+        })
+      }
+      // When a valid value is selected, show all options
+      return this.options
     }
   },
   watch: {
