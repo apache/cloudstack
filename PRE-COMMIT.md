@@ -20,7 +20,7 @@
 # pre-commit
 
 We run [pre-commit](https://pre-commit.com/) with
-[GitHub Actions](https://github.com/apache/cloudstack/blob/main/.github/workflows/linter.yml) so installation on your
+[GitHub Actions](https://github.com/apache/cloudstack/blob/main/.github/workflows/pre-commit.yml) so installation on your
 local machine is currently optional.
 
 The `pre-commit` [configuration file](https://github.com/apache/cloudstack/blob/main/.pre-commit-config.yaml)
