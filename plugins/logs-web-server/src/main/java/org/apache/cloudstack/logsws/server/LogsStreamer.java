@@ -142,7 +142,7 @@ public class LogsStreamer implements AutoCloseable {
     protected void updateSessionWithRemoteAddressAsync(WebSocketSession session) {
         CompletableFuture.runAsync(() -> {
             try {
-                String remoteStr = session.getAttr("remoteAddress");
+                String remoteStr = session.getAttr(WebSocketSession.ATTR_REMOTE_ADDR);
                 if (StringUtils.isEmpty(remoteStr)) {
                     return;
                 }

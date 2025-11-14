@@ -25,6 +25,8 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 public interface LogsWebSession extends ControlledEntity, Identity, InternalIdentity {
+    int MAX_FILTERS_LENGTH = 128;
+
     long getId();
     List<String> getFilters();
     long getDomainId();

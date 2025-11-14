@@ -17,44 +17,90 @@
 
 package org.apache.cloudstack.logsws;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.util.Base64;
 
 import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import com.cloud.serializer.GsonHelper;
 
 public class LogsWebSessionTokenCryptoUtil {
     private static final String ALGORITHM = "AES";
-    private static final String TRANSFORMATION = "AES";
-    private static final String KEY_PREFIX = "Logger";
+    private static final String TRANSFORMATION = "AES/GCM/NoPadding";
 
-    private static String getDesiredLengthKey(String key) {
-        if (key.length() >= 16) {
-            return key.substring(0, 16);
-        }
-        return  KEY_PREFIX.substring(0, 16 - key.length()) + key;
+    private static final int IV_LENGTH_BYTES = 12;
+    private static final int GCM_TAG_LENGTH_BITS = 128;
+    private static final byte TOKEN_VERSION = 1;
+
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
+    private static SecretKey deriveKey(String keyMaterial) throws GeneralSecurityException {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] hash = digest.digest(keyMaterial.getBytes(StandardCharsets.UTF_8));
+        return new SecretKeySpec(hash, 0, 32, ALGORITHM);
     }
 
-    public static String encrypt(LogsWebSessionTokenPayload payload, String key) throws GeneralSecurityException {
+    public static String encrypt(LogsWebSessionTokenPayload payload, String keyMaterial)
+            throws GeneralSecurityException {
+
         String json = GsonHelper.getGson().toJson(payload);
-        SecretKeySpec secretKey = new SecretKeySpec(getDesiredLengthKey(key).getBytes(StandardCharsets.UTF_8), ALGORITHM);
+        byte[] plaintext = json.getBytes(StandardCharsets.UTF_8);
+
+        SecretKey key = deriveKey(keyMaterial);
+
+        byte[] iv = new byte[IV_LENGTH_BYTES];
+        SECURE_RANDOM.nextBytes(iv);
+
         Cipher cipher = Cipher.getInstance(TRANSFORMATION);
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey);
-        byte[] encrypted = cipher.doFinal(json.getBytes(StandardCharsets.UTF_8));
-        // URL-safe Base64 (no '/' or '+') and remove padding
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(encrypted);
+        GCMParameterSpec spec = new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv);
+        cipher.init(Cipher.ENCRYPT_MODE, key, spec);
+
+        byte[] ciphertextWithTag = cipher.doFinal(plaintext);
+        ByteBuffer buffer = ByteBuffer.allocate(1 + IV_LENGTH_BYTES + ciphertextWithTag.length);
+        buffer.put(TOKEN_VERSION);
+        buffer.put(iv);
+        buffer.put(ciphertextWithTag);
+
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(buffer.array());
     }
 
-    public static LogsWebSessionTokenPayload decrypt(String token, String key) throws GeneralSecurityException {
-        byte[] decoded = Base64.getUrlDecoder().decode(token);
-        SecretKeySpec secretKey = new SecretKeySpec(getDesiredLengthKey(key).getBytes(StandardCharsets.UTF_8), ALGORITHM);
+    public static LogsWebSessionTokenPayload decrypt(String token, String keyMaterial)
+            throws GeneralSecurityException {
+
+        byte[] allBytes = Base64.getUrlDecoder().decode(token);
+        ByteBuffer buffer = ByteBuffer.wrap(allBytes);
+
+        if (buffer.remaining() < 1 + IV_LENGTH_BYTES + 1) {
+            throw new GeneralSecurityException("Invalid token format");
+        }
+
+        byte version = buffer.get();
+        if (version != TOKEN_VERSION) {
+            throw new GeneralSecurityException("Unsupported token version: " + version);
+        }
+
+        byte[] iv = new byte[IV_LENGTH_BYTES];
+        buffer.get(iv);
+
+        byte[] ciphertextWithTag = new byte[buffer.remaining()];
+        buffer.get(ciphertextWithTag);
+
+        SecretKey key = deriveKey(keyMaterial);
+
         Cipher cipher = Cipher.getInstance(TRANSFORMATION);
-        cipher.init(Cipher.DECRYPT_MODE, secretKey);
-        byte[] decrypted = cipher.doFinal(decoded);
-        String json = new String(decrypted, StandardCharsets.UTF_8);
+        GCMParameterSpec spec = new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv);
+        cipher.init(Cipher.DECRYPT_MODE, key, spec);
+
+        byte[] plaintext = cipher.doFinal(ciphertextWithTag);
+        String json = new String(plaintext, StandardCharsets.UTF_8);
+
         return GsonHelper.getGson().fromJson(json, LogsWebSessionTokenPayload.class);
     }
 }

@@ -29,13 +29,26 @@ public class StringListJsonConverter implements AttributeConverter<List<String>,
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    @Override
-    public String convertToDatabaseColumn(List<String> attribute) {
+    public static String getDatabaseColumnTypeValue(List<String> attribute) {
         try {
             return attribute == null ? null : mapper.writeValueAsString(attribute);
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("Error converting list to JSON", e);
         }
+    }
+
+    public static boolean isValidAttribute(List<String> attribute, int length) {
+        try {
+            String json = getDatabaseColumnTypeValue(attribute);
+            return json != null && json.length() <= length;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    @Override
+    public String convertToDatabaseColumn(List<String> attribute) {
+        return getDatabaseColumnTypeValue(attribute);
     }
 
     @Override

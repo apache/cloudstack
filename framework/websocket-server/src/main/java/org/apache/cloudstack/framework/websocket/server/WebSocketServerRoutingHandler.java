@@ -80,7 +80,7 @@ public class WebSocketServerRoutingHandler extends SimpleChannelInboundHandler<W
             }
 
             session = new NettyWebSocketSession(ctx.channel(), path, QueryUtils.parse(rawQuery));
-            session.setAttr("remoteAddress", String.valueOf(ctx.channel().remoteAddress()));
+            session.setAttr(WebSocketSession.ATTR_REMOTE_ADDR, String.valueOf(ctx.channel().remoteAddress()));
 
             try {
                 handler.onOpen(session);

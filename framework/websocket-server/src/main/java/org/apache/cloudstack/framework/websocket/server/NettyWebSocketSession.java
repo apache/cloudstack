@@ -24,9 +24,13 @@ import java.util.Objects;
 
 import org.apache.cloudstack.framework.websocket.server.common.WebSocketSession;
 
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.util.AttributeKey;
 
 final class NettyWebSocketSession implements WebSocketSession {
     private final Channel ch;
@@ -61,25 +65,25 @@ final class NettyWebSocketSession implements WebSocketSession {
 
     @Override
     public void sendBinary(ByteBuffer buf) {
-        io.netty.buffer.ByteBuf bb = io.netty.buffer.Unpooled.wrappedBuffer(buf);
+        io.netty.buffer.ByteBuf bb = Unpooled.wrappedBuffer(buf);
         ch.writeAndFlush(new BinaryWebSocketFrame(bb));
     }
 
     @Override
     public void close(int code, String reason) {
-        ch.writeAndFlush(new io.netty.handler.codec.http.websocketx.CloseWebSocketFrame(code, reason))
-                .addListener(io.netty.channel.ChannelFutureListener.CLOSE);
+        ch.writeAndFlush(new CloseWebSocketFrame(code, reason))
+                .addListener(ChannelFutureListener.CLOSE);
     }
 
     @Override
     public <T> void setAttr(String key, T val) {
-        ch.attr(io.netty.util.AttributeKey.valueOf(key)).set(val);
+        ch.attr(AttributeKey.valueOf(key)).set(val);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <T> T getAttr(String key) {
-        return (T) ch.attr(io.netty.util.AttributeKey.valueOf(key)).get();
+        return (T) ch.attr(AttributeKey.valueOf(key)).get();
     }
 
     Channel unwrap() {

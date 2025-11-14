@@ -85,7 +85,6 @@ export default {
     }
   },
   created () {
-    console.log('---------------', this.$route.meta.name)
     switch (this.$route.meta.name) {
       case 'account':
         this.scopeKey = 'accountid'

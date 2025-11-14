@@ -30,6 +30,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.websocket.api.Session;
+import org.eclipse.jetty.websocket.api.UpgradeRequest;
 import org.eclipse.jetty.websocket.servlet.ServletUpgradeRequest;
 import org.eclipse.jetty.websocket.servlet.ServletUpgradeResponse;
 import org.eclipse.jetty.websocket.servlet.WebSocketCreator;
@@ -151,16 +152,23 @@ public class JettyWebSocketServlet extends WebSocketServlet {
         }
 
         @Override
-        public void onWebSocketConnect(Session jettySess) {
-            super.onWebSocketConnect(jettySess);
-            this.session = JettyWebSocketSession.adapt(jettySess, routePath, parse(rawQuery));
+        public void onWebSocketConnect(Session jettySession) {
+            super.onWebSocketConnect(jettySession);
+            this.session = JettyWebSocketSession.adapt(jettySession, routePath, parse(rawQuery));
+            UpgradeRequest request = jettySession.getUpgradeRequest();
+            String remoteAddr = request.getHeader("X-Forwarded-For");
+            if (remoteAddr == null) {
+                remoteAddr = jettySession.getRemoteAddress().getAddress().getHostAddress();
+            }
+            this.session.setAttr(WebSocketSession.ATTR_REMOTE_ADDR, remoteAddr);
             try {
+
                 handler.onOpen(session);
             } catch (Throwable t) {
                 try {
                     handler.onError(session, t);
                 } finally {
-                    jettySess.close();
+                    jettySession.close();
                 }
             }
         }

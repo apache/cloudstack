@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`management_server_details` (
 CREATE TABLE IF NOT EXISTS `cloud`.`logs_web_session` (
     `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id of the session',
     `uuid` varchar(40) NOT NULL COMMENT 'UUID generated for the session',
-    `filter` varchar(64) DEFAULT NULL COMMENT 'Filter keyword for the session',
+    `filters` varchar(128) DEFAULT NULL COMMENT 'Filter keywords for the session',
     `created` datetime NOT NULL COMMENT 'When the session was created',
     `domain_id` bigint(20) unsigned NOT NULL COMMENT 'Domain of the account who generated the session',
     `account_id` bigint(20) unsigned NOT NULL COMMENT 'Account who generated the session',

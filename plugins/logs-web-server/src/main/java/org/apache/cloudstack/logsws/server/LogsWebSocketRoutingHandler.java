@@ -26,10 +26,9 @@ import org.apache.cloudstack.framework.websocket.server.common.WebSocketHandler;
 import org.apache.cloudstack.framework.websocket.server.common.WebSocketSession;
 import org.apache.cloudstack.logsws.LogsWebSession;
 import org.apache.cloudstack.logsws.LogsWebSessionTokenPayload;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import io.netty.util.AttributeKey;
 
 /**
  * Transport-agnostic handler for loggerroutes.
@@ -45,14 +44,12 @@ import io.netty.util.AttributeKey;
  * before calling onOpen(..). (Netty initializer can do this easily; Jetty can omit and skip that check.)
  */
 public final class LogsWebSocketRoutingHandler implements WebSocketHandler {
-    public static final AttributeKey<String> LOGGER_ROUTE_ATTR = AttributeKey.valueOf("loggerRoute");
     private static final Logger LOGGER = LogManager.getLogger(LogsWebSocketRoutingHandler.class);
 
     /**
      * Session attr keys
      */
     public static final String ATTR_ROUTE = "loggerRoute";
-    public static final String ATTR_REMOTE_ADDR = "remoteAddress";
     private static final String ATTR_LOGS_STREAM = "logsStreamer";
     public static final String ATTR_LOGS_SESSION = "logsSession";
 
@@ -86,14 +83,14 @@ public final class LogsWebSocketRoutingHandler implements WebSocketHandler {
         }
 
         final String sessionUuid = tokenPayload.getSessionUuid();
-        if (isBlank(sessionUuid)) {
+        if (StringUtils.isBlank(sessionUuid)) {
             LOGGER.error("Session UUID is blank in token payload for route: {}", route);
             return null;
         }
 
         final String creatorAddress = tokenPayload.getCreatorAddress();
-        if (!isBlank(creatorAddress)) {
-            final String remote = session.getAttr(ATTR_REMOTE_ADDR);
+        if (StringUtils.isNotBlank(creatorAddress)) {
+            final String remote = session.getAttr(WebSocketSession.ATTR_REMOTE_ADDR);
             if (remote != null && !remote.contains(creatorAddress)) {
                 LOGGER.error("Remote address '{}' does not match creator address '{}' for session {}",
                         remote, creatorAddress, sessionUuid);
@@ -111,22 +108,25 @@ public final class LogsWebSocketRoutingHandler implements WebSocketHandler {
         return logsSession;
     }
 
-    private static boolean isBlank(String s) {
-        return s == null || s.trim().isEmpty();
-    }
-
     private static void safeClose(WebSocketSession s, int code, String reason) {
+        LOGGER.debug("Closing session {} with code {}, reason: {}", s.id(), code, reason);
         try {
             s.close(code, reason);
         } catch (Throwable ignore) {
         }
     }
 
-    private static void close(WebSocketSession s, int code, String reason) {
-        LOGGER.debug("Closing session {} with code {}, reason: {}", s.id(), code, reason);
-        try {
-            s.close(code, reason);
-        } catch (Throwable ignore) {
+    private static void closeSessionStreamer(WebSocketSession session) {
+        final Object streamObj = session.getAttr(ATTR_LOGS_STREAM);
+        if (streamObj instanceof LogsStreamer) {
+            final LogsStreamer streamer = (LogsStreamer) streamObj;
+            try {
+                streamer.close();
+            } catch (Throwable t) {
+                LOGGER.debug("Error closing LogsStreamer for session with route {}",
+                        session.getAttr(ATTR_ROUTE), t);
+            }
+            session.setAttr(ATTR_LOGS_STREAM, null);
         }
     }
 
@@ -188,7 +188,7 @@ public final class LogsWebSocketRoutingHandler implements WebSocketHandler {
                 routeManager.removeRoute(route);
             } catch (Throwable ignore) {
             }
-            close(session, 1011, "Stream start failed");
+            safeClose(session, 1011, "Stream start failed");
             return;
         }
 
@@ -214,34 +214,31 @@ public final class LogsWebSocketRoutingHandler implements WebSocketHandler {
 
     @Override
     public void onBinaryMessage(WebSocketSession session, ByteBuffer bin) {
-        // Usually unused for logs; consume or ignore.
-        if (bin != null) {
-            LOGGER.debug("Ignoring client binary message on logs route: {} bytes", bin.remaining());
-        }
+        // Usually unused for logs; ignore.
     }
 
     @Override
     public void onClose(WebSocketSession session, int code, String reason) {
+        closeSessionStreamer(session);
         final String route = session.getAttr(ATTR_ROUTE);
-        if (route != null) {
-            // Remove only if this exact session is the current owner
-            activeByRoute.compute(route, (r, current) -> (current == session) ? null : current);
-            try {
-                routeManager.removeRoute(route);
-            } catch (Throwable t) {
-                LOGGER.debug("Error while removing route '{}' on close (ignored)", route, t);
-            }
-            LOGGER.debug("Logs WS closed. route={}, code={}, reason={}", route, code, reason);
+        if (route == null) {
+            return;
         }
+        // Remove only if this exact session is the current owner
+        activeByRoute.compute(route, (r, current) -> (current == session) ? null : current);
+        try {
+            routeManager.removeRoute(route);
+        } catch (Throwable t) {
+            LOGGER.debug("Error while removing route '{}' on close (ignored)", route, t);
+        }
+        LOGGER.debug("Logs Web Session closed. route={}, code={}, reason={}", route, code, reason);
+
     }
 
     @Override
     public void onError(WebSocketSession session, Throwable t) {
-        final String route = session.getAttr(ATTR_ROUTE);
-        LOGGER.error("Exception in LogsWebSocketRoutingHandler (route={})", route, t);
-        try {
-            session.close(1011, "Internal error");
-        } catch (Throwable ignore) {
-        }
+        closeSessionStreamer(session);
+        LOGGER.error("Exception in LogsWebSocketRoutingHandler (route={})", session.getAttr(ATTR_ROUTE), t);
+        safeClose(session, 1011, "Internal error");
     }
 }
