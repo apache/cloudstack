@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import static org.apache.cloudstack.config.ApiServiceConfiguration.ManagementServerAddresses;
 import static org.apache.cloudstack.resourcedetail.UserDetailVO.PasswordResetToken;
 import static org.apache.cloudstack.resourcedetail.UserDetailVO.PasswordResetTokenExpiryDate;
 
@@ -68,7 +69,7 @@ public class UserPasswordResetManagerImpl extends ManagerBase implements UserPas
             new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, String.class,
             "user.password.reset.mail.template", "Hello {{username}}!\n" +
             "You have requested to reset your password. Please click the following link to reset your password:\n" +
-            "{{{domainUrl}}}{{{resetLink}}}\n" +
+            "{{{resetLink}}}\n" +
             "If you did not request a password reset, please ignore this email.\n" +
             "\n" +
             "Regards,\n" +
@@ -179,10 +180,14 @@ public class UserPasswordResetManagerImpl extends ManagerBase implements UserPas
         final String email = userAccount.getEmail();
         final String username = userAccount.getUsername();
         final String subject = "Password Reset Request";
-        final String domainUrl = UserPasswordResetDomainURL.value();
+        String domainUrl = UserPasswordResetDomainURL.value();
+        if (StringUtils.isBlank(domainUrl)) {
+            domainUrl = ManagementServerAddresses.value().split(",")[0];
+        }
+        domainUrl = domainUrl.replaceAll("/+$", "");
 
-        String resetLink = String.format("/client/#/user/resetPassword?username=%s&token=%s",
-                username, resetToken);
+        String resetLink = String.format("%s/client/#/user/resetPassword?username=%s&token=%s",
+                domainUrl, username, resetToken);
         String content = getMessageBody(userAccount, resetToken, resetLink);
 
         SMTPMailProperties mailProperties = new SMTPMailProperties();
