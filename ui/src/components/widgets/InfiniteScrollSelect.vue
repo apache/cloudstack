@@ -250,7 +250,9 @@ export default {
       const match = this.options.find(entry => entry[this.optionValueKey] === matchValue)
       if (!match) {
         this.successiveFetches++
-        if (this.options.length < this.totalCount) {
+        // Exclude defaultOption from count when comparing with totalCount
+        const apiOptionsCount = this.getApiOptionsCount()
+        if (apiOptionsCount < this.totalCount) {
           this.fetchItems()
         } else {
           this.resetPreselectedOptionValue()
@@ -271,6 +273,14 @@ export default {
     resetPreselectedOptionValue () {
       this.preselectedOptionValue = null
       this.successiveFetches = 0
+    },
+    getApiOptionsCount () {
+      // Return count of options excluding the locally added defaultOption
+      if (this.defaultOption) {
+        const defaultOptionValue = this.defaultOption[this.optionValueKey]
+        return this.options.filter(option => option[this.optionValueKey] !== defaultOptionValue).length
+      }
+      return this.options.length
     },
     autoSelectFirstOptionIfNeeded () {
       if (!this.selectFirstOption || this.hasAutoSelectedFirst) {
@@ -320,7 +330,9 @@ export default {
     },
     onScroll (e) {
       const nearBottom = e.target.scrollTop + e.target.clientHeight >= e.target.scrollHeight - 10
-      const hasMore = this.options.length < this.totalCount
+      // Exclude defaultOption from count when comparing with totalCount
+      const apiOptionsCount = this.getApiOptionsCount()
+      const hasMore = apiOptionsCount < this.totalCount
       if (nearBottom && hasMore && !this.loading) {
         this.fetchItems()
       }
