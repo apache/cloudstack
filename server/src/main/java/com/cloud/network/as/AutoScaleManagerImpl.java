@@ -1953,7 +1953,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
     @Override
     public String getNextVmHostName(AutoScaleVmGroupVO asGroup) {
-        if (UseAutoscaleVmHostnamePrefixEnabled.value() == true) {
+        if (UseAutoscaleVmHostnamePrefixEnabled.value()) {
             return getNextVmHostNameWithPrefix(asGroup);
         } else {
             return getNextVmHostNameWithoutPrefix(asGroup);
