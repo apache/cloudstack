@@ -68,7 +68,7 @@ public class EcInfo {
         }
 
         CollectionTable ct = attr.field.getAnnotation(CollectionTable.class);
-        assert (ct.name().length() > 0) : "Please sepcify the table for " + attr.field.getName();
+        assert (ct.name().length() > 0) : "Please specify the table for " + attr.field.getName();
         StringBuilder selectBuf = new StringBuilder("SELECT ");
         StringBuilder insertBuf = new StringBuilder("INSERT INTO ");
         StringBuilder clearBuf = new StringBuilder("DELETE FROM ");
