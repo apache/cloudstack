@@ -71,7 +71,7 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
     static final Property<String> CONNECT_SCRIPT = new Property<String>("multimap.connect.script", "connectVolume.sh");
     static final Property<String> START_CONNECT_SCRIPT = new Property<String>("multimap.startconnect.script", "startConnectVolume.sh");
     static final Property<String> FINISH_CONNECT_SCRIPT = new Property<String>("multimap.finishconnect.script", "finishConnectVolume.sh");
-     static final Property<String> COPY_SCRIPT = new Property<String>("multimap.copy.script", "copyVolume.sh");
+    static final Property<String> COPY_SCRIPT = new Property<String>("multimap.copy.script", "copyVolume.sh");
     static final Property<String> DISCONNECT_SCRIPT = new Property<String>("multimap.disconnect.script", "disconnectVolume.sh");
     static final Property<String> RESIZE_SCRIPT = new Property<String>("multimap.resize.script", "resizeVolume.sh");
     static final Property<Integer> DISK_WAIT_SECS = new Property<Integer>("multimap.disk.wait.secs", 240);
