@@ -905,15 +905,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return response;
     }
 
-    private void validateEndpointUrl() {
-        String csUrl = ApiServiceConfiguration.ApiServletPath.value();
-        if (csUrl == null || csUrl.contains("localhost")) {
-            String error = String.format("Global setting %s has to be set to the Management Server's API end point",
-                ApiServiceConfiguration.ApiServletPath.key());
-            throw new InvalidParameterValueException(error);
-        }
-    }
-
     private DataCenter validateAndGetZoneForKubernetesCreateParameters(Long zoneId, Long networkId) {
         DataCenter zone = dataCenterDao.findById(zoneId);
         if (zone == null) {
@@ -1008,7 +999,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     private void validateManagedKubernetesClusterCreateParameters(final CreateKubernetesClusterCmd cmd) throws CloudRuntimeException {
-        validateEndpointUrl();
+        ApiServiceConfiguration.validateEndpointUrl();
         final String name = cmd.getName();
         final Long zoneId = cmd.getZoneId();
         final Long kubernetesVersionId = cmd.getKubernetesVersionId();
@@ -1308,7 +1299,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     KubernetesVersionManagerImpl.MINIMUN_AUTOSCALER_SUPPORTED_VERSION ));
             }
 
-            validateEndpointUrl();
+            ApiServiceConfiguration.validateEndpointUrl();
 
             if (minSize == null || maxSize == null) {
                 throw new InvalidParameterValueException("Autoscaling requires minsize and maxsize to be passed");
@@ -1413,7 +1404,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     private void validateKubernetesClusterUpgradeParameters(UpgradeKubernetesClusterCmd cmd) {
         // Validate parameters
-        validateEndpointUrl();
+        ApiServiceConfiguration.validateEndpointUrl();
 
         final Long kubernetesClusterId = cmd.getId();
         final Long upgradeVersionId = cmd.getKubernetesVersionId();
