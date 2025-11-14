@@ -213,7 +213,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                         _storagePoolWorkDao.persist(work);
                     } catch (Exception e) {
                         if (logger.isDebugEnabled()) {
-                            logger.debug("Work record already exists, re-using by re-setting values");
+                            logger.debug("Work record already exists, reusing by re-setting values");
                         }
                         StoragePoolWorkVO work = _storagePoolWorkDao.findByPoolIdAndVmId(pool.getId(), vmInstance.getId());
                         work.setStartedAfterMaintenance(false);

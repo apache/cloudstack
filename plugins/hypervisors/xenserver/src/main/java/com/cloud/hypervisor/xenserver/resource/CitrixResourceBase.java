@@ -2908,7 +2908,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
      * within a XenServer that's under CloudStack control.
      *
      * - Native Networks: these are networks that are untagged on the XenServer
-     * and are used to crate VLAN networks on. These are created by the user and
+     * and are used to create VLAN networks on. These are created by the user and
      * is assumed to be one per cluster. - VLAN Networks: these are dynamically
      * created by CloudStack and can have problems with duplicated names. -
      * LinkLocal Networks: these are dynamically created by CloudStack and can
@@ -3773,7 +3773,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 Host host = pbd.getHost(conn);
                 if (!isRefNull(host) && StringUtils.equals(host.getUuid(conn), _host.getUuid())) {
                     if (!pbd.getCurrentlyAttached(conn)) {
-                        logger.debug(String.format("PBD [%s] of local SR [%s] was unplugged, pluggin it now", pbd.getUuid(conn), srRec.uuid));
+                        logger.debug(String.format("PBD [%s] of local SR [%s] was unplugged, plugging it in now", pbd.getUuid(conn), srRec.uuid));
                         pbd.plug(conn);
                     }
                     logger.debug("Scanning local SR: " + srRec.uuid);
