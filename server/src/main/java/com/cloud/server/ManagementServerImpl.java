@@ -789,7 +789,6 @@ import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.ScopeType;
-import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
@@ -806,6 +805,7 @@ import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
@@ -2261,6 +2261,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long clusterId = cmd.getClusterId();
         final Long storagepoolId = cmd.getStoragepoolId();
         final Long imageStoreId = cmd.getImageStoreId();
+        final Long managementServerId = cmd.getManagementServerId();
         Long accountId = cmd.getAccountId();
         Long domainId = cmd.getDomainId();
         final String groupName = cmd.getGroupName();
@@ -2312,6 +2313,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (imageStoreId != null) {
             scope = ConfigKey.Scope.ImageStore;
             id = imageStoreId;
+            paramCountCheck++;
+        }
+        if (managementServerId != null) {
+            scope = ConfigKey.Scope.ManagementServer;
+            id = managementServerId;
             paramCountCheck++;
         }
 
@@ -4710,6 +4716,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final boolean kubernetesServiceEnabled = Boolean.parseBoolean(_configDao.getValue("cloud.kubernetes.service.enabled"));
         final boolean kubernetesClusterExperimentalFeaturesEnabled = Boolean.parseBoolean(_configDao.getValue("cloud.kubernetes.cluster.experimental.features.enabled"));
+        final boolean logsWebServerEnabled = Boolean.parseBoolean(_configDao.getValue("logs.web.server.enabled"));
 
         // check if region-wide secondary storage is used
         boolean regionSecondaryEnabled = false;
@@ -4756,6 +4763,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put(ApiConstants.SHAREDFSVM_MIN_RAM_SIZE, fsVmMinRam);
         if (isCallerRootAdmin) {
             capabilities.put(ApiConstants.EXTENSIONS_PATH, extensionsManager.getExtensionsPath());
+            capabilities.put(ApiConstants.LOGS_WEB_SERVER_ENABLED, logsWebServerEnabled);
         }
         capabilities.put(ApiConstants.ADDITONAL_CONFIG_ENABLED, UserVmManager.EnableAdditionalVmConfig.valueIn(caller.getId()));
 

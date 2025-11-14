@@ -234,6 +234,32 @@ export default {
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]
+    },
+    {
+      name: 'listLogsWebSessions',
+      title: 'label.logs.web.sessions',
+      icon: 'gateway-outlined',
+      permission: ['listLogsWebSessions'],
+      columns: () => {
+        const cols = ['filters', 'account', 'clientaddress', 'connected']
+        return cols
+      },
+      details: () => {
+        const fields = ['id', 'account', 'filters', 'clientaddress', 'connected']
+        return fields
+      },
+      actions: [
+        {
+          api: 'deleteLogsWebSessions',
+          icon: 'delete-outlined',
+          label: 'label.delete.logs.web.session',
+          message: 'message.delete.logs.web.session',
+          dataView: true,
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        }
+      ]
     }
   ]
 }

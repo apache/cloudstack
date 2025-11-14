@@ -18,7 +18,8 @@
 import _ from 'lodash'
 import { i18n } from '@/locales'
 import { getAPI } from '@/api'
-import { message, notification, Modal } from 'ant-design-vue'
+import { message, notification, Modal, Button } from 'ant-design-vue'
+import { h } from 'vue'
 import eventBus from '@/config/eventBus'
 import store from '@/store'
 import { sourceToken } from '@/utils/request'
@@ -26,6 +27,27 @@ import { toLocalDate, toLocaleDate } from '@/utils/date'
 
 export const pollJobPlugin = {
   install (app) {
+    function canViewLogs (logIds) {
+      console.log('canViewLogs', store.getters.features.logswebserverenabled, 'createLogsWebSession' in store.getters.apis, logIds, logIds && logIds.length > 0)
+      return store.getters.features.logswebserverenabled &&
+        'createLogsWebSession' in store.getters.apis &&
+        logIds && logIds.length > 0
+    }
+
+    function handleViewLogs (logIds) {
+      eventBus.emit('view-logs', logIds)
+    }
+
+    function getMessageContent (message, logIds) {
+      if (canViewLogs(logIds)) {
+        return h('span', [
+          message + ' ',
+          h(Button, { type: 'link', onClick: () => { handleViewLogs(logIds) } }, i18n.global.t('label.view.logs'))
+        ])
+      }
+      return message
+    }
+
     app.config.globalProperties.$pollJob = function (options) {
       /**
        * @param {String} jobId
@@ -44,6 +66,7 @@ export const pollJobPlugin = {
        * @param {Object} [action=null]
        * @param {Object} [bulkAction=false]
        * @param {String} resourceId
+       * @param {String} [logIds=() => []]
        */
       const {
         jobId,
@@ -61,7 +84,8 @@ export const pollJobPlugin = {
         catchMethod = () => {},
         action = null,
         bulkAction = false,
-        resourceId = null
+        resourceId = null,
+        logIds = []
       } = options
 
       store.dispatch('AddHeaderNotice', {
@@ -89,10 +113,19 @@ export const pollJobPlugin = {
         this.$store.commit('SET_HEADER_NOTICES', jobs)
       })
 
+      const allLogIds = []
+      if (logIds) {
+        allLogIds.push(...logIds)
+      }
+
       options.originalPage = options.originalPage || this.$router.currentRoute.value.path
       getAPI('queryAsyncJobResult', { jobId }).then(json => {
         const result = json.queryasyncjobresultresponse
         eventBus.emit('update-job-details', { jobId, resourceId })
+        if (result.logids) {
+          allLogIds.push(...result.logids)
+        }
+        console.log('pollJobPlugin', result.logids, allLogIds)
         if (result.jobstatus === 1) {
           if (showSuccessMessage) {
             var content = successMessage
@@ -103,7 +136,7 @@ export const pollJobPlugin = {
               content = content + ' - ' + name
             }
             message.success({
-              content,
+              content: getMessageContent(content, allLogIds),
               key: jobId,
               duration: 2
             })
@@ -129,7 +162,7 @@ export const pollJobPlugin = {
         } else if (result.jobstatus === 2) {
           if (!bulkAction) {
             message.error({
-              content: errorMessage,
+              content: getMessageContent(errorMessage, allLogIds),
               key: jobId,
               duration: 1
             })
@@ -153,14 +186,26 @@ export const pollJobPlugin = {
               store.commit('SET_COUNT_NOTIFY', countNotify)
             }
           }
-          notification.error({
+          const errorConfig = {
             top: '65px',
             message: errMessage,
             description: desc,
             key: jobId,
             duration: 0,
             onClose: onClose
-          })
+          }
+          if (canViewLogs(allLogIds)) {
+            errorConfig.btn = h(
+              Button,
+              {
+                type: 'secondary',
+                size: 'small',
+                onClick: () => handleViewLogs(allLogIds)
+              },
+              i18n.global.t('label.view.logs')
+            )
+          }
+          notification.error(errorConfig)
           store.dispatch('AddHeaderNotice', {
             key: jobId,
             title,
@@ -180,7 +225,7 @@ export const pollJobPlugin = {
         } else if (result.jobstatus === 0) {
           if (showLoading) {
             message.loading({
-              content: loadingMessage,
+              content: getMessageContent(loadingMessage, allLogIds),
               key: jobId,
               duration: 0
             })
