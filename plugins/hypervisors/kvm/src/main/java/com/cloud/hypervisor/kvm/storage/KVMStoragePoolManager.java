@@ -259,7 +259,7 @@ public class KVMStoragePoolManager {
             String waitTime = details.get(StorageManager.STORAGE_POOL_DISK_WAIT.toString());
             if (StringUtils.isNotEmpty(waitTime)) {
                 waitTimeInSec = Integer.valueOf(waitTime).intValue();
-                logger.debug(String.format("%s set to %s", waitTimeInSec, StorageManager.STORAGE_POOL_DISK_WAIT.toString()));
+                logger.debug(String.format("%s set to %s", StorageManager.STORAGE_POOL_DISK_WAIT.toString(), waitTimeInSec));
             }
         } else {
             // wait at least 60 seconds even if input was lower
