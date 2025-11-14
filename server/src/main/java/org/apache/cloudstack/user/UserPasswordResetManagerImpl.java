@@ -184,7 +184,7 @@ public class UserPasswordResetManagerImpl extends ManagerBase implements UserPas
         if (StringUtils.isBlank(domainUrl)) {
             domainUrl = ManagementServerAddresses.value().split(",")[0];
         }
-        domainUrl = domainUrl.replaceAll("/+$", "");
+        domainUrl = domainUrl.trim().replaceAll("/+$", "");
 
         String resetLink = String.format("%s/client/#/user/resetPassword?username=%s&token=%s",
                 domainUrl, username, resetToken);
