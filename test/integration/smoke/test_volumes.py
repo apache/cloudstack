@@ -1039,6 +1039,14 @@ class TestVolumes(cloudstackTestCase):
         else:
             raise self.skipTest("Not enough storage pools found, skipping test")
 
+        volume = Volume.list(self.apiclient,
+                             id=volume.id,
+                             account=self.account.name,
+                             domainid=self.account.domainid)[0]
+        source_pool = list_storage_pools(self.apiclient, id=volume.storageid)[0]
+        if source_pool.type == 'RBD' and pool.type == 'RBD':
+            self.skipTest("Volume migration between RBD pools is unsupported")
+
         if hasattr(pool, 'tags'):
             StoragePool.update(self.apiclient, id=pool.id, tags="")
 
@@ -1110,6 +1118,11 @@ class TestVolumeEncryption(cloudstackTestCase):
             # Volume Encryption currently supported for KVM hypervisor
             cls.unsupportedHypervisor = True
             return
+
+        list_volume_pool_response = list_storage_pools(cls.apiclient)
+        volume_pool = list_volume_pool_response[0]
+        if volume_pool.type == "RBD":
+            cls.skipTest(cls, reason="Volume encryption is unsupported for volumes on RBD storage pool")
 
         # Get Zone and Domain
         cls.domain = get_domain(cls.apiclient)
