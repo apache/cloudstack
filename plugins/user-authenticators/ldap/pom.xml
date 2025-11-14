@@ -215,5 +215,11 @@
             <artifactId>commons-io</artifactId>
             <version>${cs.commons-io.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-api</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 </project>
