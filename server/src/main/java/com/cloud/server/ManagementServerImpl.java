@@ -823,6 +823,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserDataDao;
+import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
@@ -2419,6 +2420,22 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<>(result.first(), result.second());
     }
 
+    protected List<IpAddress.State> getStatesForIpAddressSearch(final ListPublicIpAddressesCmd cmd) {
+        final String statesStr = cmd.getState();
+        final List<IpAddress.State> states = new ArrayList<>();
+        if (StringUtils.isBlank(statesStr)) {
+            return states;
+        }
+        for (String s : StringUtils.split(statesStr, ",")) {
+            IpAddress.State state = EnumUtils.getEnumIgnoreCase(IpAddress.State.class, s.trim());
+            if (state == null) {
+                throw new InvalidParameterValueException("Invalid state: " + s);
+            }
+            states.add(state);
+        }
+        return states;
+    }
+
     @Override
     public Pair<List<? extends IpAddress>, Integer> searchForIPAddresses(final ListPublicIpAddressesCmd cmd) {
         final Long associatedNetworkId = cmd.getAssociatedNetworkId();
@@ -2429,20 +2446,20 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long networkId = cmd.getNetworkId();
         final Long vpcId = cmd.getVpcId();
 
-        final String state = cmd.getState();
+        final List<IpAddress.State> states = getStatesForIpAddressSearch(cmd);
         Boolean isAllocated = cmd.isAllocatedOnly();
         if (isAllocated == null) {
-            if (state != null && (state.equalsIgnoreCase(IpAddress.State.Free.name()) || state.equalsIgnoreCase(IpAddress.State.Reserved.name()))) {
+            if (states.contains(IpAddress.State.Free) || states.contains(IpAddress.State.Reserved)) {
                 isAllocated = Boolean.FALSE;
             } else {
                 isAllocated = Boolean.TRUE; // default
             }
         } else {
-            if (state != null && (state.equalsIgnoreCase(IpAddress.State.Free.name()) || state.equalsIgnoreCase(IpAddress.State.Reserved.name()))) {
+            if (states.contains(IpAddress.State.Free) || states.contains(IpAddress.State.Reserved)) {
                 if (isAllocated) {
                     throw new InvalidParameterValueException("Conflict: allocatedonly is true but state is Free");
                 }
-            } else if (state != null && state.equalsIgnoreCase(IpAddress.State.Allocated.name())) {
+            } else if (states.contains(IpAddress.State.Allocated)) {
                 isAllocated = Boolean.TRUE;
             }
         }
@@ -2521,10 +2538,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Boolean isRecursive = cmd.isRecursive();
         final List<Long> permittedAccounts = new ArrayList<>();
         ListProjectResourcesCriteria listProjectResourcesCriteria = null;
-        boolean isAllocatedOrReserved = false;
-        if (isAllocated || IpAddress.State.Reserved.name().equalsIgnoreCase(state)) {
-            isAllocatedOrReserved = true;
-        }
+        boolean isAllocatedOrReserved = isAllocated ||
+                (states.size() == 1 && IpAddress.State.Reserved.equals(states.get(0)));
         if (isAllocatedOrReserved || (vlanType == VlanType.VirtualNetwork && (caller.getType() != Account.Type.ADMIN || cmd.getDomainId() != null))) {
             final Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(cmd.getDomainId(), cmd.isRecursive(),
                     null);
@@ -2538,7 +2553,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         buildParameters(sb, cmd, vlanType == VlanType.VirtualNetwork ? true : isAllocated);
 
         SearchCriteria<IPAddressVO> sc = sb.create();
-        setParameters(sc, cmd, vlanType, isAllocated);
+        setParameters(sc, cmd, vlanType, isAllocated, states);
 
         if (isAllocatedOrReserved || (vlanType == VlanType.VirtualNetwork && (caller.getType() != Account.Type.ADMIN || cmd.getDomainId() != null))) {
             _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
@@ -2606,7 +2621,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 buildParameters(searchBuilder, cmd, false);
 
                 SearchCriteria<IPAddressVO> searchCriteria = searchBuilder.create();
-                setParameters(searchCriteria, cmd, vlanType, false);
+                setParameters(searchCriteria, cmd, vlanType, false, states);
                 searchCriteria.setParameters("state", IpAddress.State.Free.name());
                 addrs.addAll(_publicIpAddressDao.search(searchCriteria, searchFilter)); // Free IPs on shared network
             }
@@ -2619,7 +2634,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sb2.and("quarantinedPublicIpsIdsNIN", sb2.entity().getId(), SearchCriteria.Op.NIN);
 
             SearchCriteria<IPAddressVO> sc2 = sb2.create();
-            setParameters(sc2, cmd, vlanType, isAllocated);
+            setParameters(sc2, cmd, vlanType, isAllocated, states);
             sc2.setParameters("ids", freeAddrIds.toArray());
             _publicIpAddressDao.buildQuarantineSearchCriteria(sc2);
             addrs.addAll(_publicIpAddressDao.search(sc2, searchFilter)); // Allocated + Free
@@ -2649,7 +2664,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         sb.and("isSourceNat", sb.entity().isSourceNat(), SearchCriteria.Op.EQ);
         sb.and("isStaticNat", sb.entity().isOneToOneNat(), SearchCriteria.Op.EQ);
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
-        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.IN);
         sb.and("display", sb.entity().isDisplay(), SearchCriteria.Op.EQ);
         sb.and(FOR_SYSTEMVMS, sb.entity().isForSystemVms(), SearchCriteria.Op.EQ);
 
@@ -2692,7 +2707,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
     }
 
-    protected void setParameters(SearchCriteria<IPAddressVO> sc, final ListPublicIpAddressesCmd cmd, VlanType vlanType, Boolean isAllocated) {
+    protected void setParameters(SearchCriteria<IPAddressVO> sc, final ListPublicIpAddressesCmd cmd, VlanType vlanType,
+                 Boolean isAllocated, List<IpAddress.State> states) {
         final Object keyword = cmd.getKeyword();
         final Long physicalNetworkId = cmd.getPhysicalNetworkId();
         final Long sourceNetworkId = cmd.getNetworkId();
@@ -2703,7 +2719,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Boolean sourceNat = cmd.isSourceNat();
         final Boolean staticNat = cmd.isStaticNat();
         final Boolean forDisplay = cmd.getDisplay();
-        final String state = cmd.getState();
         final Boolean forSystemVms = cmd.getForSystemVMs();
         final boolean forProvider = cmd.isForProvider();
         final Map<String, String> tags = cmd.getTags();
@@ -2760,13 +2775,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sc.setParameters("display", forDisplay);
         }
 
-        if (state != null) {
-            sc.setParameters("state", state);
+        if (CollectionUtils.isNotEmpty(states)) {
+            sc.setParameters("state", states.toArray());
         } else if (isAllocated != null && isAllocated) {
             sc.setParameters("state", IpAddress.State.Allocated);
         }
 
-        if (IpAddressManagerImpl.getSystemvmpublicipreservationmodestrictness().value() && IpAddress.State.Free.name().equalsIgnoreCase(state)) {
+        if (IpAddressManagerImpl.getSystemvmpublicipreservationmodestrictness().value() &&
+                states.contains(IpAddress.State.Free)) {
             sc.setParameters(FOR_SYSTEMVMS, false);
         } else {
             sc.setParameters(FOR_SYSTEMVMS, forSystemVms);

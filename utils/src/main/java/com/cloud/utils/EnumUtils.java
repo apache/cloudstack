@@ -19,7 +19,7 @@
 
 package com.cloud.utils;
 
-public class EnumUtils {
+public class EnumUtils extends org.apache.commons.lang3.EnumUtils {
     public static String listValues(Enum<?>[] enums) {
         StringBuilder b = new StringBuilder("[");
 
