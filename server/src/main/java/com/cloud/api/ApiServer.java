@@ -348,6 +348,19 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             , ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.Select,
             EnumSet.allOf(ApiSessionKeyCheckOption.class).stream().map(Enum::toString).collect(Collectors.joining(", ")));
 
+    public static final ConfigKey<Boolean> ApiDisallowInternalIds = new ConfigKey<>(
+            ConfigKey.CATEGORY_ADVANCED,
+            Boolean.class,
+            "api.disallow.internal.ids",
+            "false",
+            "When enabled, APIs will not honour requests containing internal database IDs. "
+                    + "Only UUIDs will be accepted as entity identifiers. "
+                    + "By default, internal IDs are still accepted for backward compatibility with pre-3.x APIs.",
+            true,
+            ConfigKey.Scope.Global
+    );
+
+
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         messageBus.subscribe(AsyncJob.Topics.JOB_EVENT_PUBLISH, MessageDispatcher.getDispatcher(this));
@@ -1685,7 +1698,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 useForwardHeader,
                 listOfForwardHeaders,
                 ApiSessionKeyCookieSameSiteSetting,
-                ApiSessionKeyCheckLocations
+                ApiSessionKeyCheckLocations,
+                ApiDisallowInternalIds
         };
     }
 }
