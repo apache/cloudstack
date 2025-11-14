@@ -921,7 +921,8 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
             templatePoolRef.setTemplateSize(volume.getAllocatedSizeInBytes());
         } else {
             templatePoolRef.setTemplateSize(size);
-        }        _vmTemplatePoolDao.update(templatePoolRef.getId(), templatePoolRef);
+        }
+        _vmTemplatePoolDao.update(templatePoolRef.getId(), templatePoolRef);
     }
 
     String generatePathInfo(ProviderVolume volume, Map<String,String> connIdMap) {
