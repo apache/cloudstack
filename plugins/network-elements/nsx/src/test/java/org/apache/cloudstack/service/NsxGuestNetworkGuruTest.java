@@ -16,6 +16,43 @@
 // under the License.
 package org.apache.cloudstack.service;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.Duration;
+import java.util.List;
+
+import org.apache.cloudstack.NsxAnswer;
+import org.apache.cloudstack.agent.api.CreateNsxDhcpRelayConfigCommand;
+import org.apache.cloudstack.agent.api.CreateNsxSegmentCommand;
+import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
+import org.apache.cloudstack.agent.api.NsxCommand;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.context.RequestEntityCache;
+import org.apache.cloudstack.utils.NsxControllerUtils;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -48,38 +85,6 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import org.apache.cloudstack.NsxAnswer;
-import org.apache.cloudstack.agent.api.CreateNsxDhcpRelayConfigCommand;
-import org.apache.cloudstack.agent.api.CreateNsxSegmentCommand;
-import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
-import org.apache.cloudstack.agent.api.NsxCommand;
-import org.apache.cloudstack.utils.NsxControllerUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentMatchers;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import java.util.List;
-
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.lenient;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NsxGuestNetworkGuruTest {
@@ -187,10 +192,16 @@ public class NsxGuestNetworkGuruTest {
         when(physicalNetworkDao.findById(ArgumentMatchers.anyLong())).thenReturn(physicalNetwork);
         when(dcDao.findById(ArgumentMatchers.anyLong())).thenReturn(dataCenterVO);
 
-        Network designedNetwork = guru.design(offering,  plan, network, "", 1L, account);
-        assertNotNull(designedNetwork);
-        assertSame(Networks.BroadcastDomainType.NSX, designedNetwork.getBroadcastDomainType());
-        assertSame(Network.State.Allocated, designedNetwork.getState());
+
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+            Mockito.when(callContextMock.getRequestEntityCache()).thenReturn(new RequestEntityCache(Duration.ofSeconds(60)));
+            Network designedNetwork = guru.design(offering, plan, network, "", 1L, account);
+            assertNotNull(designedNetwork);
+            assertSame(Networks.BroadcastDomainType.NSX, designedNetwork.getBroadcastDomainType());
+            assertSame(Network.State.Allocated, designedNetwork.getState());
+        }
     }
 
     @Test
