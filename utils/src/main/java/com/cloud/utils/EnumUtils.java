@@ -19,7 +19,7 @@
 
 package com.cloud.utils;
 
-public class EnumUtils {
+public class EnumUtils extends org.apache.commons.lang3.EnumUtils {
     public static String listValues(Enum<?>[] enums) {
         StringBuilder b = new StringBuilder("[");
 
@@ -54,13 +54,5 @@ public class EnumUtils {
             }
         }
         return null;
-    }
-
-    public static <T extends Enum<T>> T getEnumIgnoreCase(final Class<T> enumClass, final String enumName) {
-        return org.apache.commons.lang3.EnumUtils.getEnumIgnoreCase(enumClass, enumName);
-    }
-
-    public static <T extends Enum<T>> T getEnumIgnoreCase(final Class<T> enumClass, final String enumName, T defaultValue) {
-        return org.apache.commons.lang3.EnumUtils.getEnumIgnoreCase(enumClass, enumName, defaultValue);
     }
 }
