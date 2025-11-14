@@ -43,7 +43,7 @@ else
    exit 1
 fi
 
-// wait for the device path to show up
+# wait for the device path to show up
 while [ ! -e /dev/mapper/3${WWID} ]; do
    echo "$(date): Waiting for /dev/mapper/3${WWID} to appear"
    sleep 1
