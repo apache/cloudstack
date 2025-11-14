@@ -63,6 +63,16 @@ repos:
           - --fuzzy-match-generates-todo
         exclude: ^(CHANGES|ISSUE_TEMPLATE|PULL_REQUEST_TEMPLATE)\.md$|^ui/docs/(full|smoke)-test-plan\.template\.md$
       - id: insert-license
+        name: add license for all Shell files
+        description: automatically adds a licence header to all Shell files that don't have a license header
+        files: \.sh$
+        args:
+          - --comment-style
+          - '|#|'
+          - --license-filepath
+          - .github/workflows/license-templates/LICENSE.txt
+          - --fuzzy-match-generates-todo
+      - id: insert-license
         name: add license for all SQL files
         files: \.sql$
         args:
