@@ -378,31 +378,11 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             planner = getDeploymentPlannerByName(plannerName);
         }
 
-        Host lastHost = null;
-
-        String considerLastHostStr = (String)vmProfile.getParameter(VirtualMachineProfile.Param.ConsiderLastHost);
-        boolean considerLastHost = vm.getLastHostId() != null && haVmTag == null &&
-                (considerLastHostStr == null || Boolean.TRUE.toString().equalsIgnoreCase(considerLastHostStr));
-        if (considerLastHost) {
-            logger.debug("This VM has last host_id: {}", vm.getLastHostId());
-            HostVO host = _hostDao.findById(vm.getLastHostId());
-            if (host == null) {
-                if (Boolean.TRUE.toString().equalsIgnoreCase(considerLastHostStr)) {
-                    throw new CloudRuntimeException(String.format("Failed to deploy VM %s, last host doesn't exist", vm.getName()));
-                }
-            } else {
-                logger.debug("VM's last host is {}, trying to choose the same host if it is not in maintenance state", host);
-                if (host.isInMaintenanceStates()) {
-                    if (Boolean.TRUE.toString().equalsIgnoreCase(considerLastHostStr)) {
-                        throw new CloudRuntimeException(String.format("Failed to deploy VM %s, last host %s is in maintenance state", vm.getName(), host.getName()));
-                    }
-                } else {
-                    lastHost = host;
-                    DeployDestination deployDestination = deployInVmLastHost(vmProfile, plan, avoids, planner, vm, dc, offering, cpuRequested, ramRequested, volumesRequireEncryption);
-                    if (deployDestination != null) {
-                        return deployDestination;
-                    }
-                }
+        Host lastHost = checkDeployInVmLastHost(vmProfile, vm);
+        if (lastHost != null) {
+            DeployDestination deployDestination = deployInVmLastHost(vmProfile, plan, avoids, planner, vm, dc, offering, cpuRequested, ramRequested, volumesRequireEncryption);
+            if (deployDestination != null) {
+                return deployDestination;
             }
         }
 
@@ -466,6 +446,31 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             }
         }
         return dest;
+    }
+
+    private Host checkDeployInVmLastHost(VirtualMachineProfile vmProfile, VirtualMachine vm) {
+        String considerLastHostStr = (String)vmProfile.getParameter(VirtualMachineProfile.Param.ConsiderLastHost);
+        String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
+        boolean considerLastHost = vm.getLastHostId() != null && haVmTag == null &&
+                (considerLastHostStr == null || Boolean.TRUE.toString().equalsIgnoreCase(considerLastHostStr));
+        if (!considerLastHost) {
+            return null;
+        }
+
+        logger.debug("This VM has last host_id: {}", vm.getLastHostId());
+        HostVO lastHost = _hostDao.findById(vm.getLastHostId());
+        if (lastHost == null) {
+            logger.debug("Unable to deploy VM {} in the last host, last host doesn't exist", vm.getName());
+            return null;
+        }
+
+        logger.debug("VM's last host is {}, trying to choose the same host if it is not in maintenance state", lastHost);
+        if (lastHost.isInMaintenanceStates()) {
+            logger.debug("Unable to deploy VM {} in the last host, last host {} is in maintenance state", vm.getName(), lastHost.getName());
+            return null;
+        }
+
+        return lastHost;
     }
 
     private void avoidDifferentArchResources(VirtualMachineProfile vmProfile, DataCenter dc, ExcludeList avoids) {
