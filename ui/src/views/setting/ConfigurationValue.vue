@@ -187,7 +187,7 @@
           @onClick="$resetConfigurationValueConfirm(configrecord, resetConfigurationValue)"
           v-if="editableValueKey === null"
           icon="reload-outlined"
-          :disabled="(!('resetConfiguration' in $store.getters.apis) || configDisabled || valueLoading)" />
+          :disabled="(!('resetConfiguration' in $store.getters.apis) || configDisabled || valueLoading || configrecord.value === configrecord.defaultvalue)" />
       </span>
     </a-list-item>
   </a-list>
@@ -263,6 +263,7 @@ export default {
       this.editableValueKey = null
     },
     updateConfigurationValue (configrecord) {
+      let configRecordEntry = this.configrecord
       this.valueLoading = true
       this.editableValueKey = null
       var newValue = this.editableValue
@@ -281,7 +282,8 @@ export default {
         value: newValue
       }
       postAPI('updateConfiguration', params).then(json => {
-        this.editableValue = this.getEditableValue(json.updateconfigurationresponse.configuration)
+        configRecordEntry = json.updateconfigurationresponse.configuration
+        this.editableValue = this.getEditableValue(configRecordEntry)
         this.actualValue = this.editableValue
         this.$emit('change-config', { value: newValue })
         this.$store.dispatch('RefreshFeatures')
@@ -305,10 +307,11 @@ export default {
         })
       }).finally(() => {
         this.valueLoading = false
-        this.$emit('refresh')
+        this.$emit('refresh', configrecord.name, configRecordEntry)
       })
     },
     resetConfigurationValue (configrecord) {
+      let configRecordEntry = this.configrecord
       this.valueLoading = true
       this.editableValueKey = null
       const params = {
@@ -316,7 +319,8 @@ export default {
         name: configrecord.name
       }
       postAPI('resetConfiguration', params).then(json => {
-        this.editableValue = this.getEditableValue(json.resetconfigurationresponse.configuration)
+        configRecordEntry = json.resetconfigurationresponse.configuration
+        this.editableValue = this.getEditableValue(configRecordEntry)
         this.actualValue = this.editableValue
         var newValue = this.editableValue
         if (configrecord.type === 'Range') {
@@ -344,7 +348,7 @@ export default {
         })
       }).finally(() => {
         this.valueLoading = false
-        this.$emit('refresh')
+        this.$emit('refresh', configrecord.name, configRecordEntry)
       })
     },
     getEditableValue (configrecord) {
