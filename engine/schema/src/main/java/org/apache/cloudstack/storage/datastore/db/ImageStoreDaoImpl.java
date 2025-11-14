@@ -41,7 +41,7 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
     private SearchBuilder<ImageStoreVO> nameSearch;
     private SearchBuilder<ImageStoreVO> providerSearch;
     private SearchBuilder<ImageStoreVO> regionSearch;
-    private SearchBuilder<ImageStoreVO> storeSearch;
+    private SearchBuilder<ImageStoreVO> storesExceptIdSearch;
     private SearchBuilder<ImageStoreVO> protocolSearch;
     private SearchBuilder<ImageStoreVO> zoneProtocolSearch;
 
@@ -88,11 +88,12 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
         regionSearch.and("role", regionSearch.entity().getRole(), SearchCriteria.Op.EQ);
         regionSearch.done();
 
-        storeSearch = createSearchBuilder();
-        storeSearch.and("providerName", storeSearch.entity().getProviderName(), SearchCriteria.Op.EQ);
-        storeSearch.and("role", storeSearch.entity().getRole(), SearchCriteria.Op.EQ);
-        storeSearch.and("dataCenterId", storeSearch.entity().getDcId(), SearchCriteria.Op.EQ);
-        storeSearch.done();
+        storesExceptIdSearch = createSearchBuilder();
+        storesExceptIdSearch.and("providerName", storesExceptIdSearch.entity().getProviderName(), SearchCriteria.Op.EQ);
+        storesExceptIdSearch.and("role", storesExceptIdSearch.entity().getRole(), SearchCriteria.Op.EQ);
+        storesExceptIdSearch.and("dataCenterId", storesExceptIdSearch.entity().getDcId(), SearchCriteria.Op.EQ);
+        storesExceptIdSearch.and("id", storesExceptIdSearch.entity().getId(), SearchCriteria.Op.NEQ);
+        storesExceptIdSearch.done();
 
         return true;
     }
@@ -113,11 +114,12 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
     }
 
     @Override
-    public List<ImageStoreVO> listAllStoresInZone(Long zoneId, String provider, DataStoreRole role) {
-        SearchCriteria<ImageStoreVO> sc = storeSearch.create();
+    public List<ImageStoreVO> listAllStoresInZoneExceptId(Long zoneId, String provider, DataStoreRole role, long id) {
+        SearchCriteria<ImageStoreVO> sc = storesExceptIdSearch.create();
         sc.setParameters("providerName", provider);
         sc.setParameters("role", role);
         sc.setParameters("dataCenterId", zoneId);
+        sc.setParameters("id", id);
         return listBy(sc);
     }
 

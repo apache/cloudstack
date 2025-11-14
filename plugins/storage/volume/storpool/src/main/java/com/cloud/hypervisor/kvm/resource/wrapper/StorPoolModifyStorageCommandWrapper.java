@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.StorPoolModifyStoragePoolAnswer;
@@ -38,7 +39,9 @@ import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 @ResourceWrapper(handles =  StorPoolModifyStoragePoolCommand.class)
@@ -51,6 +54,7 @@ public final class StorPoolModifyStorageCommandWrapper extends CommandWrapper<St
             logger.debug(String.format("Could not get StorPool cluster id for a command [%s]", command.getClass()));
             return new Answer(command, false, "spNotFound");
         }
+        String clusterLocation = getStorPoolClusterLocation(clusterId);
         try {
             String result = attachOrDetachVolume("attach", "volume", command.getVolumeName());
             if (result != null) {
@@ -66,7 +70,7 @@ public final class StorPoolModifyStorageCommandWrapper extends CommandWrapper<St
             }
 
             final Map<String, TemplateProp> tInfo = new HashMap<>();
-            return new StorPoolModifyStoragePoolAnswer(command, storagepool.getCapacity(), storagepool.getAvailable(), tInfo, clusterId, storagepool.getStorageNodeId());
+            return new StorPoolModifyStoragePoolAnswer(command, storagepool.getCapacity(), storagepool.getAvailable(), tInfo, clusterId, storagepool.getStorageNodeId(), clusterLocation);
         } catch (Exception e) {
             logger.debug(String.format("Could not modify storage due to %s", e.getMessage()));
             return new Answer(command, e);
@@ -117,5 +121,29 @@ public final class StorPoolModifyStorageCommandWrapper extends CommandWrapper<St
             logger.warn(err);
         }
         return res;
+    }
+
+    private String getStorPoolClusterLocation(String clusterId) {
+        Script sc = new Script("storpool", 300000, logger);
+        sc.add("-j");
+        sc.add("location");
+        sc.add("list");
+
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+
+        String res = sc.execute(parser);
+        if (res == null) {
+            JsonObject jsonObj = new JsonParser().parse(parser.getLines()).getAsJsonObject();
+            if (jsonObj.getAsJsonObject("data") != null) {
+                JsonArray arr = jsonObj.getAsJsonObject("data").getAsJsonArray("locations");
+                for (JsonElement jsonElement : arr) {
+                    JsonObject obj = jsonElement.getAsJsonObject();
+                    if (StringUtils.contains(clusterId, obj.get("id").getAsString())) {
+                        return obj.get("name").getAsString();
+                    }
+                }
+            }
+        }
+        return null;
     }
 }

@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.as;
 
+import com.cloud.user.Account;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface AutoScaleManager extends AutoScaleService {
@@ -38,11 +39,17 @@ public interface AutoScaleManager extends AutoScaleService {
             "The Number of worker threads to scan the autoscale vm groups.",
             false);
 
+    ConfigKey<Integer> AutoScaleErroredInstanceThreshold = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class,
+            "autoscale.errored.instance.threshold",
+            "10",
+            "The number of Error Instances allowed in autoscale vm groups for scale up.",
+            true);
+
     void checkAutoScaleUser(Long autoscaleUserId, long accountId);
 
-    boolean deleteAutoScaleVmGroupsByAccount(Long accountId);
+    boolean deleteAutoScaleVmGroupsByAccount(Account account);
 
-    void cleanUpAutoScaleResources(Long accountId);
+    void cleanUpAutoScaleResources(Account account);
 
     void doScaleUp(long groupId, Integer numVm);
 

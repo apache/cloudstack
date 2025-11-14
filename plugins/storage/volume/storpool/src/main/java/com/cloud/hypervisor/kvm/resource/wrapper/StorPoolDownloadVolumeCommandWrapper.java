@@ -114,11 +114,7 @@ public final class StorPoolDownloadVolumeCommandWrapper extends CommandWrapper<S
             if (isRBDPool) {
                 KVMStoragePool srcPool = srcDisk.getPool();
                 String rbdDestPath = srcPool.getSourceDir() + "/" + srcDisk.getName();
-                srcPath = KVMPhysicalDisk.RBDStringBuilder(srcPool.getSourceHost(),
-                        srcPool.getSourcePort(),
-                        srcPool.getAuthUserName(),
-                        srcPool.getAuthSecret(),
-                        rbdDestPath);
+                srcPath = KVMPhysicalDisk.RBDStringBuilder(srcPool, rbdDestPath);
             } else {
                 srcPath = srcDisk.getPath();
             }

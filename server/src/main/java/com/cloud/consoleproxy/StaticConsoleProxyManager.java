@@ -60,7 +60,7 @@ public class StaticConsoleProxyManager extends AgentBasedConsoleProxyManager imp
     }
 
     @Override
-    public ConsoleProxyInfo assignProxy(long dataCenterId, long userVmId) {
+    public ConsoleProxyInfo assignProxy(long dataCenterId, VMInstanceVO userVm) {
         return new ConsoleProxyInfo(_sslEnabled, _ip, _consoleProxyPort, _consoleProxyUrlPort, _consoleProxyUrlDomain);
     }
 
@@ -72,7 +72,7 @@ public class StaticConsoleProxyManager extends AgentBasedConsoleProxyManager imp
             _ip = "127.0.0.1";
         }
 
-        String value = (String)params.get("consoleproxy.sslEnabled");
+        String value = (String)params.get(ConsoleProxySslEnabled.key());
         if (value != null && value.equalsIgnoreCase("true")) {
             _sslEnabled = true;
         }

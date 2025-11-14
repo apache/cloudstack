@@ -67,8 +67,8 @@ public class VmWorkJobWakeupDispatcher extends AdapterBase implements AsyncJobDi
         try {
             List<AsyncJobJoinMapVO> joinRecords = _joinMapDao.listJoinRecords(job.getId());
             if (joinRecords.size() != 1) {
-                logger.warn("AsyncJob-" + job.getId()
-                        + " received wakeup call with un-supported joining job number: " + joinRecords.size());
+                logger.warn("AsyncJob-{} ({}) received wakeup call with un-supported " +
+                        "joining job number: {}", job.getId(), job, joinRecords.size());
 
                 // if we fail wakeup-execution for any reason, avoid release sync-source if there is any
                 job.setSyncSource(null);
@@ -82,7 +82,7 @@ public class VmWorkJobWakeupDispatcher extends AdapterBase implements AsyncJobDi
             try {
                 workClz = Class.forName(job.getCmd());
             } catch (ClassNotFoundException e) {
-                logger.error("VM work class " + job.getCmd() + " is not found", e);
+                logger.error("VM work class {} for job {} is not found", job.getCmd(), job, e);
                 return;
             }
 
@@ -103,14 +103,13 @@ public class VmWorkJobWakeupDispatcher extends AdapterBase implements AsyncJobDi
                     handler.invoke(_vmMgr);
                 } else {
                     assert (false);
-                    logger.error("Unable to find wakeup handler " + joinRecord.getWakeupHandler() +
-                            " when waking up job-" + job.getId());
+                    logger.error("Unable to find wakeup handler {} when waking up job-{} ({})", joinRecord.getWakeupHandler(), job.getId(), job);
                 }
             } finally {
                 CallContext.unregister();
             }
         } catch (Throwable e) {
-            logger.warn("Unexpected exception in waking up job-" + job.getId());
+            logger.warn("Unexpected exception in waking up job-{} ({})", job.getId(), job);
 
             // if we fail wakeup-execution for any reason, avoid release sync-source if there is any
             job.setSyncSource(null);

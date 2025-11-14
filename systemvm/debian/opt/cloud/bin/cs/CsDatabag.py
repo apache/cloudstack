@@ -107,6 +107,18 @@ class CsCmdLine(CsDataBag):
         else:
             return "unknown"
 
+    def get_eth0_ip(self):
+        if "eth0ip" in self.idata():
+            return self.idata()['eth0ip']
+        else:
+            return False
+
+    def get_cidr_size(self):
+        if "cidrsize" in self.idata():
+            return self.idata()['cidrsize']
+        else:
+            return False
+
     def get_eth2_ip(self):
         if "eth2ip" in self.idata():
             return self.idata()['eth2ip']
@@ -162,6 +174,11 @@ class CsCmdLine(CsDataBag):
     def get_use_ext_dns(self):
         if "useextdns" in self.idata():
             return self.idata()['useextdns']
+        return False
+
+    def get_use_router_ip_as_resolver(self):
+        if "userouteripresolver" in self.idata():
+            return self.idata()['userouteripresolver']
         return False
 
     def get_advert_int(self):
@@ -245,3 +262,10 @@ class CsGuestNetwork(CsDataBag):
                 if ip6gateway:
                     return ip6gateway
         return False
+
+    def get_network_id(self, devname):
+        nw = self.get_dev_data(devname)
+        networkidkey = "network_id"
+        if networkidkey not in nw:
+            return False
+        return nw[networkidkey]

@@ -16,6 +16,7 @@
 // under the License.
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
+import { getFilteredExternalDetails } from '@/utils/extension'
 
 export default {
   name: 'offering',
@@ -29,7 +30,7 @@ export default {
       docHelp: 'adminguide/service_offerings.html#compute-and-disk-service-offerings',
       icon: 'cloud-outlined',
       permission: ['listServiceOfferings'],
-      searchFilters: ['name', 'zoneid', 'domainid', 'cpunumber', 'cpuspeed', 'memory'],
+      searchFilters: ['name', 'gpuenabled', 'zoneid', 'domainid', 'cpunumber', 'cpuspeed', 'memory'],
       params: () => {
         var params = {}
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
@@ -38,9 +39,9 @@ export default {
         return params
       },
       filters: ['active', 'inactive'],
-      columns: ['name', 'displaytext', 'state', 'cpunumber', 'cpuspeed', 'memory', 'domain', 'zone', 'order'],
+      columns: ['name', 'displaytext', 'state', 'cpunumber', 'cpuspeed', 'memory', 'gpu', 'domain', 'zone', 'order'],
       details: () => {
-        var fields = ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'iscustomizediops', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'storagetags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness', 'encryptroot']
+        var fields = ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'iscustomizediops', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'storageaccessgroups', 'storagetags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness', 'encryptroot', 'purgeresources', 'leaseduration', 'gpucardid', 'gpucardname', 'vgpuprofileid', 'vgpuprofilename', 'gpucount', 'gpudisplay', 'leaseexpiryaction', 'externaldetails']
         if (store.getters.apis.createServiceOffering &&
           store.getters.apis.createServiceOffering.params.filter(x => x.name === 'storagepolicy').length > 0) {
           fields.splice(6, 0, 'vspherestoragepolicy')
@@ -95,7 +96,12 @@ export default {
         label: 'label.edit',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
-        args: ['name', 'displaytext', 'storagetags', 'hosttags']
+        args: ['name', 'displaytext', 'storagetags', 'hosttags', 'externaldetails'],
+        mapping: {
+          externaldetails: {
+            transformedvalue: (record) => { return getFilteredExternalDetails(record.serviceofferingdetails) }
+          }
+        }
       }, {
         api: 'updateServiceOffering',
         icon: 'lock-outlined',
@@ -122,7 +128,7 @@ export default {
         show: (record) => { return record.state !== 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Active' } }) }
       }, {
-        api: 'deleteServiceOffering',
+        api: 'updateServiceOffering',
         icon: 'pause-circle-outlined',
         label: 'label.action.disable.service.offering',
         message: 'message.action.disable.service.offering',
@@ -130,8 +136,13 @@ export default {
         dataView: true,
         groupAction: true,
         popup: true,
+        mapping: {
+          state: {
+            value: (record) => { return 'Inactive' }
+          }
+        },
         show: (record) => { return record.state === 'Active' },
-        groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Inactive' } }) }
       }]
     },
     {
@@ -142,7 +153,7 @@ export default {
       permission: ['listServiceOfferings', 'listInfrastructure'],
       searchFilters: ['name', 'zoneid', 'domainid', 'cpunumber', 'cpuspeed', 'memory'],
       params: { issystem: 'true', isrecursive: 'true' },
-      columns: ['name', 'state', 'systemvmtype', 'cpunumber', 'cpuspeed', 'memory', 'storagetype', 'order'],
+      columns: ['name', 'state', 'systemvmtype', 'cpunumber', 'cpuspeed', 'memory', 'storagetype', 'offerha', 'order'],
       filters: ['active', 'inactive'],
       details: ['name', 'id', 'displaytext', 'systemvmtype', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'storagetags', 'hosttags', 'tags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness'],
       resourceType: 'ServiceOffering',
@@ -198,7 +209,7 @@ export default {
         show: (record) => { return record.state !== 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Active' } }) }
       }, {
-        api: 'deleteServiceOffering',
+        api: 'updateServiceOffering',
         icon: 'pause-circle-outlined',
         label: 'label.action.disable.system.service.offering',
         message: 'message.action.disable.system.service.offering',
@@ -207,8 +218,13 @@ export default {
         params: { issystem: 'true' },
         groupAction: true,
         popup: true,
+        mapping: {
+          state: {
+            value: (record) => { return 'Inactive' }
+          }
+        },
         show: (record) => { return record.state === 'Active' },
-        groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Inactive' } }) }
       }]
     },
     {
@@ -228,7 +244,9 @@ export default {
       columns: ['name', 'displaytext', 'state', 'disksize', 'domain', 'zone', 'order'],
       filters: ['active', 'inactive'],
       details: () => {
-        var fields = ['name', 'id', 'displaytext', 'disksize', 'provisioningtype', 'storagetype', 'iscustomized', 'disksizestrictness', 'iscustomizediops', 'diskIopsReadRate', 'diskIopsWriteRate', 'diskBytesReadRate', 'diskBytesWriteRate', 'miniops', 'maxiops', 'tags', 'domain', 'zone', 'created', 'encrypt']
+        var fields = ['name', 'id', 'displaytext', 'disksize', 'provisioningtype', 'storagetype', 'iscustomized', 'disksizestrictness', 'iscustomizediops',
+          'diskIopsReadRate', 'diskIopsWriteRate', 'diskBytesReadRate', 'diskBytesReadRateMax', 'diskBytesWriteRate', 'diskBytesWriteRateMax', 'miniops', 'maxiops', 'tags',
+          'domain', 'zone', 'created', 'encrypt']
         if (store.getters.apis.createDiskOffering &&
           store.getters.apis.createDiskOffering.params.filter(x => x.name === 'storagepolicy').length > 0) {
           fields.splice(6, 0, 'vspherestoragepolicy')
@@ -299,7 +317,7 @@ export default {
         show: (record) => { return record.state !== 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Active' } }) }
       }, {
-        api: 'deleteDiskOffering',
+        api: 'updateDiskOffering',
         icon: 'pause-circle-outlined',
         label: 'label.action.disable.disk.offering',
         message: 'message.action.disable.disk.offering',
@@ -307,8 +325,13 @@ export default {
         dataView: true,
         groupAction: true,
         popup: true,
+        mapping: {
+          state: {
+            value: (record) => { return 'Inactive' }
+          }
+        },
         show: (record) => { return record.state === 'Active' },
-        groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Inactive' } }) }
       }]
     },
     {
@@ -371,10 +394,22 @@ export default {
       icon: 'wifi-outlined',
       docHelp: 'adminguide/networking.html#network-offerings',
       permission: ['listNetworkOfferings'],
-      searchFilters: ['name', 'zoneid', 'domainid', 'tags'],
+      filters: ['all', 'forvpc', 'guestnetwork'],
+      searchFilters: ['name', 'zoneid', 'domainid', 'guestiptype', 'tags'],
       columns: ['name', 'state', 'guestiptype', 'traffictype', 'networkrate', 'domain', 'zone', 'order'],
-      details: ['name', 'id', 'displaytext', 'guestiptype', 'traffictype', 'internetprotocol', 'networkrate', 'ispersistent', 'egressdefaultpolicy', 'availability', 'conservemode', 'specifyvlan', 'specifyipranges', 'supportspublicaccess', 'supportsstrechedl2subnet', 'forvpc', 'fornsx', 'nsxmode', 'service', 'tags', 'domain', 'zone'],
+      details: ['name', 'id', 'displaytext', 'guestiptype', 'traffictype', 'internetprotocol', 'networkrate', 'ispersistent', 'egressdefaultpolicy', 'availability', 'conservemode', 'specifyvlan', 'routingmode', 'specifyasnumber', 'specifyipranges', 'supportspublicaccess', 'supportsstrechedl2subnet', 'forvpc', 'fornsx', 'networkmode', 'service', 'tags', 'domain', 'zone'],
       resourceType: 'NetworkOffering',
+      customParamHandler: (params, query) => {
+        const { filter } = query
+        if (!filter) {
+          return params
+        }
+        params.forvpc = filter === 'forvpc'
+        if (filter === 'all') {
+          delete params.forvpc
+        }
+        return params
+      },
       tabs: [
         {
           name: 'details',
@@ -473,7 +508,7 @@ export default {
       searchFilters: ['name', 'zoneid', 'domainid'],
       resourceType: 'VpcOffering',
       columns: ['name', 'state', 'displaytext', 'domain', 'zone', 'order'],
-      details: ['name', 'id', 'displaytext', 'internetprotocol', 'distributedvpcrouter', 'tags', 'service', 'fornsx', 'nsxmode', 'domain', 'zone', 'created'],
+      details: ['name', 'id', 'displaytext', 'internetprotocol', 'distributedvpcrouter', 'tags', 'routingmode', 'specifyasnumber', 'service', 'fornsx', 'networkmode', 'domain', 'zone', 'created'],
       related: [{
         name: 'vpc',
         title: 'label.vpc',

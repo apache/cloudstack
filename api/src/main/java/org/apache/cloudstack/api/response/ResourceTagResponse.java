@@ -61,6 +61,10 @@ public class ResourceTagResponse extends BaseResponse implements ControlledViewE
     @Param(description = "the domain associated with the tag")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the Domain associated with the tag", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.CUSTOMER)
     @Param(description = "customer associated with the tag")
     private String customer;
@@ -94,6 +98,11 @@ public class ResourceTagResponse extends BaseResponse implements ControlledViewE
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     @Override

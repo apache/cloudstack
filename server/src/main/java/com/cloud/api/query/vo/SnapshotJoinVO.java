@@ -132,6 +132,10 @@ public class SnapshotJoinVO extends BaseViewWithTagInformationVO implements Cont
     @Enumerated(EnumType.STRING)
     Volume.Type volumeType = Volume.Type.UNKNOWN;
 
+    @Column(name = "volume_state")
+    @Enumerated(EnumType.STRING)
+    Volume.State volumeState;
+
     @Column(name = "volume_size")
     Long volumeSize;
 
@@ -297,6 +301,10 @@ public class SnapshotJoinVO extends BaseViewWithTagInformationVO implements Cont
 
     public Volume.Type getVolumeType() {
         return volumeType;
+    }
+
+    public Volume.State getVolumeState() {
+        return volumeState;
     }
 
     public Long getVolumeSize() {

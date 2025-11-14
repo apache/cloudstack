@@ -58,6 +58,7 @@ select
     host.resource_state host_resource_state,
     vm_template.id template_id,
     vm_template.uuid template_uuid,
+    vm_template.arch arch,
     service_offering.id service_offering_id,
     service_offering.uuid service_offering_uuid,
     service_offering.name service_offering_name,

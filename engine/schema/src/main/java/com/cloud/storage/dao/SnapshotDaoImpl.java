@@ -18,11 +18,14 @@ package com.cloud.storage.dao;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.server.ResourceTag.ResourceObjectType;
@@ -54,6 +57,10 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     private static final String GET_LAST_SNAPSHOT =
         "SELECT snapshots.id FROM snapshot_store_ref, snapshots where snapshots.id = snapshot_store_ref.snapshot_id AND snapshosts.volume_id = ? AND snapshot_store_ref.role = ? ORDER BY created DESC";
 
+    private static final String VOLUME_ID = "volumeId";
+    private static final String NOT_TYPE = "notType";
+    private static final String STATUS = "status";
+
     private SearchBuilder<SnapshotVO> snapshotIdsSearch;
     private SearchBuilder<SnapshotVO> VolumeIdSearch;
     private SearchBuilder<SnapshotVO> VolumeIdTypeSearch;
@@ -64,6 +71,8 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     private SearchBuilder<SnapshotVO> StatusSearch;
     private SearchBuilder<SnapshotVO> notInStatusSearch;
     private GenericSearchBuilder<SnapshotVO, Long> CountSnapshotsByAccount;
+
+    private SearchBuilder<SnapshotVO> volumeIdAndTypeNotInSearch;
     @Inject
     ResourceTagDao _tagsDao;
     @Inject
@@ -179,6 +188,12 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
 
         InstanceIdSearch.join("instanceSnapshots", volumeSearch, volumeSearch.entity().getId(), InstanceIdSearch.entity().getVolumeId(), JoinType.INNER);
         InstanceIdSearch.done();
+
+        volumeIdAndTypeNotInSearch = createSearchBuilder();
+        volumeIdAndTypeNotInSearch.and(VOLUME_ID, volumeIdAndTypeNotInSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        volumeIdAndTypeNotInSearch.and(STATUS, volumeIdAndTypeNotInSearch.entity().getState(), SearchCriteria.Op.NEQ);
+        volumeIdAndTypeNotInSearch.and(NOT_TYPE, volumeIdAndTypeNotInSearch.entity().getTypeDescription(), SearchCriteria.Op.NOTIN);
+        volumeIdAndTypeNotInSearch.done();
     }
 
     @Override
@@ -284,5 +299,27 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         sc.setParameters("volumeId", volumeId);
         sc.setParameters("status", (Object[]) status);
         return listBy(sc, null);
+    }
+
+    @Override
+    public List<SnapshotVO> searchByVolumes(List<Long> volumeIds) {
+        if (CollectionUtils.isEmpty(volumeIds)) {
+            return new ArrayList<>();
+        }
+        SearchBuilder<SnapshotVO> sb = createSearchBuilder();
+        sb.and("volumeIds", sb.entity().getVolumeId(), SearchCriteria.Op.IN);
+        SearchCriteria<SnapshotVO> sc = sb.create();
+        sc.setParameters("volumeIds", volumeIds.toArray());
+        return search(sc, null);
+    }
+
+    @Override
+    public List<SnapshotVO> listByVolumeIdAndTypeNotInAndStateNotRemoved(long volumeId, Type... types) {
+        SearchCriteria<SnapshotVO> sc =  volumeIdAndTypeNotInSearch.create();
+        sc.setParameters(VOLUME_ID, volumeId);
+        sc.setParameters(NOT_TYPE, Arrays.stream(types).map(Type::toString).toArray());
+        sc.setParameters(STATUS, State.Destroyed);
+
+        return listBy(sc);
     }
 }

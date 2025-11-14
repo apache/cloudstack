@@ -75,6 +75,19 @@ public class CreateBackupScheduleCmd extends BaseCmd {
             description = "Specifies a timezone for this command. For more information on the timezone parameter, see TimeZone Format.")
     private String timezone;
 
+    @Parameter(name = ApiConstants.MAX_BACKUPS, type = CommandType.INTEGER,
+            since = "4.21.0", description = ApiConstants.PARAMETER_DESCRIPTION_MAX_BACKUPS)
+    private Integer maxBackups;
+
+    @Parameter(name = ApiConstants.QUIESCE_VM,
+            type = CommandType.BOOLEAN,
+            required = false,
+            description = "Quiesce the instance before checkpointing the disks for backup. Applicable only to NAS backup provider. " +
+                    "The filesystem is frozen before the backup starts and thawed immediately after. " +
+                    "Requires the instance to have the QEMU Guest Agent installed and running.",
+            since = "4.21.0")
+    private Boolean quiesceVM;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -93,6 +106,14 @@ public class CreateBackupScheduleCmd extends BaseCmd {
 
     public String getTimezone() {
         return timezone;
+    }
+
+    public Integer getMaxBackups() {
+        return maxBackups;
+    }
+
+    public Boolean getQuiesceVM() {
+        return quiesceVM;
     }
 
     /////////////////////////////////////////////////////

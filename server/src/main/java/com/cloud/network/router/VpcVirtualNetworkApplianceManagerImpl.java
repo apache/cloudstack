@@ -30,6 +30,8 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.vpc.dao.VpcDao;
+import org.apache.cloudstack.agent.routing.ManageServiceCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
@@ -80,10 +82,9 @@ import com.cloud.network.vpc.NetworkACLManager;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.PrivateIpAddress;
 import com.cloud.network.vpc.PrivateIpVO;
-import com.cloud.network.vpc.StaticRoute;
+import com.cloud.network.vpc.StaticRouteVO;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
-import com.cloud.network.vpc.VpcGateway;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.PrivateIpDao;
@@ -231,6 +232,54 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         return result;
     }
 
+    @Override
+    public boolean stopKeepAlivedOnRouter(VirtualRouter router,
+            Network network) throws ConcurrentOperationException, ResourceUnavailableException {
+        return manageKeepalivedServiceOnRouter(router, network, "stop");
+    }
+
+    @Override
+    public boolean startKeepAlivedOnRouter(VirtualRouter router,
+            Network network) throws ConcurrentOperationException, ResourceUnavailableException {
+        return manageKeepalivedServiceOnRouter(router, network, "start");
+    }
+
+    private boolean manageKeepalivedServiceOnRouter(VirtualRouter router,
+            Network network, String action) throws ConcurrentOperationException, ResourceUnavailableException {
+        if (network.getTrafficType() != TrafficType.Guest) {
+            logger.warn("Network {} is not of type {}", network, TrafficType.Guest);
+            return false;
+        }
+        boolean result = true;
+        try {
+            if (router.getState() == State.Running) {
+                final ManageServiceCommand stopCommand = new ManageServiceCommand("keepalived", action);
+                stopCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
+
+                final Commands cmds = new Commands(Command.OnError.Stop);
+                cmds.addCommand("manageKeepalived", stopCommand);
+                _nwHelper.sendCommandsToRouter(router, cmds);
+
+                final Answer setupAnswer = cmds.getAnswer("manageKeepalived");
+                if (!(setupAnswer != null && setupAnswer.getResult())) {
+                    logger.warn("Unable to {} keepalived on router {}", action, router);
+                    result = false;
+                }
+            } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
+                logger.debug("Router {} is in {}, so not sending command to the backend", router.getInstanceName(), router.getState());
+            } else {
+                String message = "Unable to " + action + " keepalived on virtual router [" + router + "] is not in the right state " + router.getState();
+                logger.warn(message);
+                throw new ResourceUnavailableException(message, DataCenter.class, router.getDataCenterId());
+            }
+        } catch (final Exception ex) {
+            logger.warn("Failed to {}  keepalived on router {} to network {} due to {}", action, router, network, ex.getLocalizedMessage());
+            logger.debug("Failed to {}  keepalived on router {} to network {}", action, router, network, ex);
+            result = false;
+        }
+        return result;
+    }
+
     protected boolean setupVpcGuestNetwork(final Network network, final VirtualRouter router, final boolean add, final NicProfile guestNic) throws ConcurrentOperationException,
     ResourceUnavailableException {
 
@@ -271,17 +320,19 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 String defaultDns2 = null;
                 String defaultIp6Dns1 = null;
                 String defaultIp6Dns2 = null;
+                boolean isDnsConfigured = false;
                 // remove public and guest nics as we will plug them later
                 final Iterator<NicProfile> it = profile.getNics().iterator();
                 while (it.hasNext()) {
                     final NicProfile nic = it.next();
                     if (nic.getTrafficType() == TrafficType.Public || nic.getTrafficType() == TrafficType.Guest) {
                         // save dns information
-                        if (nic.getTrafficType() == TrafficType.Public) {
+                        if (nic.getTrafficType() == TrafficType.Public || !isDnsConfigured) {
                             defaultDns1 = nic.getIPv4Dns1();
                             defaultDns2 = nic.getIPv4Dns2();
                             defaultIp6Dns1 = nic.getIPv6Dns1();
                             defaultIp6Dns2 = nic.getIPv6Dns2();
+                            isDnsConfigured = true;
                         }
                         logger.debug("Removing nic " + nic + " of type " + nic.getTrafficType() + " from the nics passed on vm start. " + "The nic will be plugged later");
                         it.remove();
@@ -302,6 +353,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 }
                 if (defaultIp6Dns2 != null) {
                     buf.append(" ip6dns2=").append(defaultIp6Dns2);
+                }
+                if (routedIpv4Manager.isRoutedVpc(vpc)) {
+                    buf.append(" is_routed=true");
                 }
             }
         }
@@ -411,6 +465,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                             domainRouterVO.getInstanceName(), domainRouterVO.getType(), details);
                     cmds.addCommand(plugNicCmd);
                     final VpcVO vpc = _vpcDao.findById(domainRouterVO.getVpcId());
+                    if (routedIpv4Manager.isRoutedVpc(vpc)) {
+                        continue;
+                    }
                     final NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(domainRouterVO.getPrivateIpAddress(), domainRouterVO.getInstanceName(), true, publicNic.getIPv4Address(), vpc.getCidr());
                     usageCmds.add(netUsageCmd);
                     UserStatisticsVO stats = _userStatsDao.findBy(domainRouterVO.getAccountId(), domainRouterVO.getDataCenterId(), publicNtwk.getId(), publicNic.getIPv4Address(), domainRouterVO.getId(),
@@ -476,17 +533,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             }
 
             // 4) RE-APPLY ALL STATIC ROUTE RULES
-            final List<? extends StaticRoute> routes = _staticRouteDao.listByVpcId(domainRouterVO.getVpcId());
-            final List<StaticRouteProfile> staticRouteProfiles = new ArrayList<StaticRouteProfile>(routes.size());
-            final Map<Long, VpcGateway> gatewayMap = new HashMap<Long, VpcGateway>();
-            for (final StaticRoute route : routes) {
-                VpcGateway gateway = gatewayMap.get(route.getVpcGatewayId());
-                if (gateway == null) {
-                    gateway = _entityMgr.findById(VpcGateway.class, route.getVpcGatewayId());
-                    gatewayMap.put(gateway.getId(), gateway);
-                }
-                staticRouteProfiles.add(new StaticRouteProfile(route, gateway));
-            }
+            final List<StaticRouteVO> routes = _vpcMgr.getVpcStaticRoutes(domainRouterVO.getVpcId());
+            final List<StaticRouteProfile> staticRouteProfiles = _vpcMgr.getVpcStaticRoutes(routes);
 
             logger.debug("Found " + staticRouteProfiles.size() + " static routes to apply as a part of vpc route " + domainRouterVO + " start");
             if (!staticRouteProfiles.isEmpty()) {
@@ -582,7 +630,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.NetworkACL, Provider.VPCVirtualRouter)) {
                     final List<NetworkACLItemVO> networkACLs = _networkACLMgr.listNetworkACLItems(guestNetworkId);
                     if (networkACLs != null && !networkACLs.isEmpty()) {
-                        logger.debug("Found " + networkACLs.size() + " network ACLs to apply as a part of VPC VR " + domainRouterVO + " start for guest network id=" + guestNetworkId);
+                        logger.debug("Found {} network ACLs to apply as a part of VPC VR {} start for guest network {}", networkACLs.size(), domainRouterVO, _networkModel.getNetwork(guestNetworkId));
                         _commandSetupHelper.createNetworkACLsCommands(networkACLs, domainRouterVO, cmds, guestNetworkId, false);
                     }
                 }
@@ -707,7 +755,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         }
 
         if (domainRouterVO.getState() == State.Starting || domainRouterVO.getState() == State.Running) {
-            final ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(domainRouterVO, provider, guestNetworkId, IpAddress.State.Releasing);
+            final ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(provider, guestNetworkId, IpAddress.State.Releasing);
 
             if (publicIps != null && !publicIps.isEmpty()) {
                 logger.debug("Found " + publicIps.size() + " ip(s) to apply as a part of domR " + domainRouterVO + " start.");
@@ -864,18 +912,18 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         Answer answer = cmds.getAnswer("users");
         if (answer == null || !answer.getResult()) {
             String errorMessage = (answer == null) ? "null answer object" : answer.getDetails();
-            logger.error("Unable to start vpn: unable add users to vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: "
-                    + router.getInstanceName() + " due to " + errorMessage);
-            throw new ResourceUnavailableException("Unable to start vpn: Unable to add users to vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId()
-            + " on domR: " + router.getInstanceName() + " due to " + errorMessage, DataCenter.class, router.getDataCenterId());
+            DataCenter zone = _entityMgr.findById(DataCenter.class, router.getDataCenterId());
+            Account account = _entityMgr.findById(Account.class, vpn.getAccountId());
+            logger.error("Unable to start vpn: unable add users to vpn in zone {} for account {} on domR: {} due to {}", zone, account, router, errorMessage);
+            throw new ResourceUnavailableException(String.format("Unable to start vpn: Unable to add users to vpn in zone %s for account %s on domR: %s due to %s", zone, account, router.getInstanceName(), errorMessage), DataCenter.class, router.getDataCenterId());
         }
         answer = cmds.getAnswer("startVpn");
         if (answer == null || !answer.getResult()) {
             String errorMessage = (answer == null) ? "null answer object" : answer.getDetails();
-            logger.error("Unable to start vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: " + router.getInstanceName() + " due to "
-                    + errorMessage);
-            throw new ResourceUnavailableException("Unable to start vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: "
-                    + router.getInstanceName() + " due to " + errorMessage, DataCenter.class, router.getDataCenterId());
+            DataCenter zone = _entityMgr.findById(DataCenter.class, router.getDataCenterId());
+            Account account = _entityMgr.findById(Account.class, vpn.getAccountId());
+            logger.error("Unable to start vpn in zone {} for account {} on domR: {} due to {}", zone, account, router, errorMessage);
+            throw new ResourceUnavailableException(String.format("Unable to start vpn in zone %s for account %s on domR: %s due to %s", zone, account, router.getInstanceName(), errorMessage), DataCenter.class, router.getDataCenterId());
         }
 
         return true;

@@ -30,7 +30,7 @@ under the License.
          <Policies>
             <TimeBasedTriggeringPolicy/>
          </Policies>
-         <PatternLayout pattern="%d{ISO8601} %-5p [%c{3}] (%t:%x) %m%ex%n"/>
+         <PatternLayout pattern="%d{DEFAULT} %-5p [%c{3}] (%t:%x) %m%ex%n"/>
       </RollingFile>
 
       <!-- ============================== -->
@@ -39,7 +39,7 @@ under the License.
 
       <Console name="CONSOLE" target="SYSTEM_OUT">
          <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
-         <PatternLayout pattern="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%ex%n"/>
+         <PatternLayout pattern="%d{DEFAULT}{GMT} %-5p [%c{3}] (%t:%x) %m%ex%n"/>
       </Console>
 
    </Appenders>

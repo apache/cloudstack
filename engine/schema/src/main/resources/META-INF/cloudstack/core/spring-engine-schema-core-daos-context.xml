@@ -117,6 +117,7 @@
   <bean id="loadBalancerCertMapDaoImpl" class="com.cloud.network.dao.LoadBalancerCertMapDaoImpl" />
   <bean id="managementServerHostDaoImpl" class="com.cloud.cluster.dao.ManagementServerHostDaoImpl" />
   <bean id="managementServerHostPeerDaoImpl" class="com.cloud.cluster.dao.ManagementServerHostPeerDaoImpl" />
+  <bean id="managementServerHostPeerJoinDaoImpl" class="com.cloud.cluster.dao.ManagementServerHostPeerJoinDaoImpl" />
   <bean id="managementServerStatusDaoImpl" class="com.cloud.cluster.dao.ManagementServerStatusDaoImpl" />
   <bean id="networkAccountDaoImpl" class="com.cloud.network.dao.NetworkAccountDaoImpl" />
   <bean id="networkACLDaoImpl" class="com.cloud.network.vpc.dao.NetworkACLDaoImpl" />
@@ -137,6 +138,7 @@
   <bean id="objectInDataStoreDaoImpl" class="org.apache.cloudstack.storage.db.ObjectInDataStoreDaoImpl" />
   <bean id="ovsProviderDaoImpl" class="com.cloud.network.dao.OvsProviderDaoImpl" />
   <bean id="nsxControllerDaoImpl" class="com.cloud.network.dao.NsxProviderDaoImpl" />
+  <bean id="netrisProviderDaoImpl" class="com.cloud.network.dao.NetrisProviderDaoImpl" />
   <bean id="tungstenControllerDaoImpl" class="com.cloud.network.dao.TungstenProviderDaoImpl"/>
   <bean id="physicalNetworkDaoImpl" class="com.cloud.network.dao.PhysicalNetworkDaoImpl" />
   <bean id="physicalNetworkIsolationMethodDaoImpl" class="com.cloud.network.dao.PhysicalNetworkIsolationMethodDaoImpl" />
@@ -269,6 +271,8 @@
   <bean id="annotationDaoImpl" class="org.apache.cloudstack.annotation.dao.AnnotationDaoImpl" />
   <bean id="backupScheduleDaoImpl" class="org.apache.cloudstack.backup.dao.BackupScheduleDaoImpl" />
   <bean id="backupDaoImpl" class="org.apache.cloudstack.backup.dao.BackupDaoImpl" />
+  <bean id="backupDetailsDaoImpl" class="org.apache.cloudstack.backup.dao.BackupDetailsDaoImpl" />
+  <bean id="backupRepositoryDaoImpl" class="org.apache.cloudstack.backup.dao.BackupRepositoryDaoImpl" />
   <bean id="directDownloadCertificateDaoImpl" class="org.apache.cloudstack.direct.download.DirectDownloadCertificateDaoImpl" />
   <bean id="directDownloadCertificateHostMapDaoImpl" class="org.apache.cloudstack.direct.download.DirectDownloadCertificateHostMapDaoImpl" />
   <bean id="routerHealthCheckResultsDaoImpl" class="com.cloud.network.dao.RouterHealthCheckResultDaoImpl" />
@@ -289,4 +293,21 @@
   <bean id="ClusterDrsPlanDetailsDaoImpl" class="org.apache.cloudstack.cluster.dao.ClusterDrsPlanMigrationDaoImpl" />
   <bean id="objectStoreDetailsDaoImpl" class="org.apache.cloudstack.storage.datastore.db.ObjectStoreDetailsDaoImpl" />
   <bean id="bucketStatisticsDaoImpl" class="com.cloud.usage.dao.BucketStatisticsDaoImpl" />
+  <bean id="dataCenterIpv4GuestSubnetDaoImpl" class="org.apache.cloudstack.datacenter.dao.DataCenterIpv4GuestSubnetDaoImpl" />
+  <bean id="ipv4GuestSubnetNetworkMapDaoImpl" class="org.apache.cloudstack.network.dao.Ipv4GuestSubnetNetworkMapDaoImpl" />
+  <bean id="ASNumberDaoImpl" class="com.cloud.dc.dao.ASNumberDaoImpl" />
+  <bean id="ASNumberRangeDaoImpl" class="com.cloud.dc.dao.ASNumberRangeDaoImpl" />
+  <bean id="BgpPeerDaoImpl" class="org.apache.cloudstack.network.dao.BgpPeerDaoImpl" />
+  <bean id="BgpPeerDetailsDaoImpl" class="org.apache.cloudstack.network.dao.BgpPeerDetailsDaoImpl" />
+  <bean id="BgpPeerNetworkMapDaoImpl" class="org.apache.cloudstack.network.dao.BgpPeerNetworkMapDaoImpl" />
+  <bean id="SharedFSDaoImpl" class="org.apache.cloudstack.storage.sharedfs.dao.SharedFSDaoImpl" />
+  <bean id="SharedFSJoinDaoImpl" class="org.apache.cloudstack.storage.sharedfs.query.dao.SharedFSJoinDaoImpl" />
+  <bean id="ReconcileCommandDaoImpl" class="org.apache.cloudstack.command.dao.ReconcileCommandDaoImpl" />
+  <bean id="guiThemeDaoImpl" class="org.apache.cloudstack.gui.theme.dao.GuiThemeDaoImpl" />
+  <bean id="guiThemeDetailsDaoImpl" class="org.apache.cloudstack.gui.theme.dao.GuiThemeDetailsDaoImpl" />
+  <bean id="guiThemeJoinDaoImpl" class="org.apache.cloudstack.gui.theme.dao.GuiThemeJoinDaoImpl" />
+  <bean id="gpuCardDaoImpl" class="com.cloud.gpu.dao.GpuCardDaoImpl" />
+  <bean id="gpuDeviceDaoImpl" class="com.cloud.gpu.dao.GpuDeviceDaoImpl" />
+  <bean id="vgpuProfileDaoImpl" class="com.cloud.gpu.dao.VgpuProfileDaoImpl" />
+  <bean id="importVMTaskDaoImpl" class="com.cloud.vm.dao.ImportVMTaskDaoImpl" />
 </beans>

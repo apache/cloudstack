@@ -46,7 +46,7 @@ public class PatchSystemVMCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN,
             description = "If true, initiates copy of scripts and restart of the agent, even if the scripts version matches." +
                     "To be used with ID parameter only")
-    private Boolean force;
+    private Boolean forced;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -58,7 +58,7 @@ public class PatchSystemVMCmd extends BaseAsyncCmd {
     }
 
     public boolean isForced() {
-        return force != null && force;
+        return forced != null && forced;
     }
 
     /////////////////////////////////////////////////////

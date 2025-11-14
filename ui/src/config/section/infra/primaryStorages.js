@@ -35,7 +35,7 @@ export default {
     fields.push('zonename')
     return fields
   },
-  details: ['name', 'id', 'ipaddress', 'type', 'scope', 'tags', 'path', 'provider', 'hypervisor', 'overprovisionfactor', 'disksizetotal', 'disksizeallocated', 'disksizeused', 'clustername', 'podname', 'zonename', 'created'],
+  details: ['name', 'id', 'ipaddress', 'type', 'details', 'nfsmountopts', 'scope', 'tags', 'storageaccessgroups', 'path', 'provider', 'hypervisor', 'overprovisionfactor', 'disksizetotal', 'disksizeallocated', 'disksizeused', 'capacityiops', 'usediops', 'clustername', 'podname', 'zonename', 'created'],
   related: [{
     name: 'volume',
     title: 'label.volumes',
@@ -90,7 +90,8 @@ export default {
       icon: 'edit-outlined',
       label: 'label.edit',
       dataView: true,
-      args: ['name', 'tags', 'istagarule', 'capacitybytes', 'capacityiops']
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/UpdatePrimaryStorage.vue')))
     },
     {
       api: 'updateStoragePool',
@@ -133,6 +134,26 @@ export default {
       message: 'message.action.cancel.maintenance.mode',
       dataView: true,
       show: (record) => { return ['Maintenance', 'PrepareForMaintenance', 'ErrorInMaintenance'].includes(record.state) }
+    },
+    {
+      api: 'changeStoragePoolScope',
+      icon: 'swap-outlined',
+      label: 'label.action.change.primary.storage.scope',
+      dataView: true,
+      popup: true,
+      show: (record) => {
+        return (record.state === 'Disabled' &&
+          (record.scope === 'CLUSTER' ||
+           record.scope === 'ZONE') &&
+          (record.hypervisor === 'KVM' ||
+           record.hypervisor === 'VMware' ||
+           record.hypervisor === 'HyperV' ||
+           record.hypervisor === 'LXC' ||
+           record.hypervisor === 'Any' ||
+           record.hypervisor === 'Simulator')
+        )
+      },
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ChangeStoragePoolScope.vue')))
     },
     {
       api: 'deleteStoragePool',

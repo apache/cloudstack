@@ -26,5 +26,5 @@
     <bean id="name" class="java.lang.String" >
         <constructor-arg value="orphan1" />
     </bean>
-    
+
 </beans>

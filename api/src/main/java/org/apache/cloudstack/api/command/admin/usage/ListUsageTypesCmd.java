@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UsageTypeResponse;
+import org.apache.cloudstack.usage.UsageTypes;
 
 import com.cloud.user.Account;
 
@@ -37,8 +38,8 @@ public class ListUsageTypesCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        List<UsageTypeResponse> result = _usageService.listUsageTypes();
-        ListResponse<UsageTypeResponse> response = new ListResponse<UsageTypeResponse>();
+        List<UsageTypeResponse> result = UsageTypes.listUsageTypes();
+        ListResponse<UsageTypeResponse> response = new ListResponse<>();
         response.setResponses(result);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

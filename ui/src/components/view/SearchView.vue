@@ -66,12 +66,13 @@
                       return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }"
                     :loading="field.loading"
-                    @input="onchange($event, field.name)">
+                    @input="onchange($event, field.name)"
+                    @change="onSelectFieldChange(field.name)">
                     <a-select-option
                       v-for="(opt, idx) in field.opts"
                       :key="idx"
-                      :value="opt.id"
-                      :label="$t(opt.path || opt.name)">
+                      :value="['account'].includes(field.name) ? opt.name : opt.id"
+                      :label="field.name === 'vgpuprofileid' ? `${opt.gpucardname} - ${opt.name}` : $t((field.name.startsWith('domain') && opt.path) ? opt.path : opt.name)">
                       <div>
                         <span v-if="(field.name.startsWith('zone'))">
                           <span v-if="opt.icon">
@@ -79,13 +80,21 @@
                           </span>
                           <global-outlined v-else style="margin-right: 5px" />
                         </span>
-                        <span v-if="(field.name.startsWith('domain') || field.name === 'account')">
+                        <span v-if="(field.name.startsWith('domain') || field.name === 'account' || field.name.startsWith('associatednetwork'))">
                           <span v-if="opt.icon">
                             <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                           </span>
                           <block-outlined v-else style="margin-right: 5px" />
                         </span>
-                        {{ $t(opt.path || opt.name) }}
+                        <span v-if="(field.name.startsWith('managementserver'))">
+                          <status :text="opt.state" />
+                        </span>
+                        <span v-if="field.name === 'vgpuprofileid'">
+                          {{ opt.gpucardname }} - {{ opt.name }}
+                        </span>
+                        <span v-else>
+                          {{ $t((field.name.startsWith('domain') && opt.path) ? opt.path : opt.name) }}
+                        </span>
                       </div>
                     </a-select-option>
                   </a-select>
@@ -107,6 +116,10 @@
                       <tooltip-button :tooltip="$t('label.clear')" icon="close-outlined" size="small" @onClick="inputKey = inputValue = ''" />
                     </a-input-group>
                   </div>
+                  <a-switch
+                    v-else-if="field.type==='boolean'"
+                    v-model:checked="form[field.name]"
+                  />
                   <a-auto-complete
                     v-else-if="field.type==='autocomplete'"
                     v-model:value="form[field.name]"
@@ -153,15 +166,19 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI } from '@/api'
+import { isAdmin } from '@/role'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import Status from '@/components/widgets/Status'
+import { i18n } from '@/locales'
 
 export default {
   name: 'SearchView',
   components: {
     TooltipButton,
-    ResourceIcon
+    ResourceIcon,
+    Status
   },
   props: {
     searchFilters: {
@@ -206,13 +223,7 @@ export default {
       if (to && to.query && 'q' in to.query) {
         this.searchQuery = to.query.q
       }
-      this.isFiltered = false
-      this.searchFilters.some(item => {
-        if (this.searchParams[item]) {
-          this.isFiltered = true
-          return true
-        }
-      })
+      this.updateIsFiltered()
     }
   },
   mounted () {
@@ -220,6 +231,7 @@ export default {
     if (this.$route && this.$route.query && 'q' in this.$route.query) {
       this.searchQuery = this.$route.query.q
     }
+    this.updateIsFiltered()
   },
   computed: {
     styleSearch () {
@@ -240,6 +252,19 @@ export default {
   methods: {
     onchange: async function (event, fieldname) {
       this.fetchDynamicFieldData(fieldname, event.target.value)
+    },
+    onSelectFieldChange (fieldname) {
+      const fetchAccountOptions = fieldname === 'domainid' && this.fields.some((field) => field.name === 'account')
+      if (fetchAccountOptions) {
+        this.fetchDynamicFieldData('account')
+      }
+
+      const fetchVgpuProfileOptions = fieldname === 'gpucardid' && this.fields.some((field) => field.name === 'vgpuprofileid')
+      if (fetchVgpuProfileOptions) {
+        // Clear the currently selected vGPU profile when GPU card changes
+        this.form.vgpuprofileid = null
+        this.fetchDynamicFieldData('vgpuprofileid')
+      }
     },
     onVisibleForm () {
       this.visibleFilter = !this.visibleFilter
@@ -283,15 +308,32 @@ export default {
         if (item === 'groupid' && !('listInstanceGroups' in this.$store.getters.apis)) {
           return true
         }
+        if (item === 'associatednetworkid' && this.$route.meta.name === 'asnumbers') {
+          item = 'networkid'
+        }
+        if (item === 'usagetype' && !('listUsageTypes' in this.$store.getters.apis)) {
+          return true
+        }
+        if (['isencrypted', 'volumeid'].includes(item) && !('listVolumes' in this.$store.getters.apis)) {
+          return true
+        }
+        if (item === 'backupofferingid' && !('listBackupOfferings' in this.$store.getters.apis)) {
+          return true
+        }
         if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'hypervisor', 'level',
           'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'systemvmtype', 'scope', 'provider',
-          'type'].includes(item)
+          'type', 'scope', 'managementserverid', 'serviceofferingid',
+          'diskofferingid', 'networkid', 'usagetype', 'restartrequired', 'gpuenabled',
+          'displaynetwork', 'guestiptype', 'usersource', 'arch', 'oscategoryid', 'templatetype', 'gpucardid', 'vgpuprofileid',
+          'extensionid', 'backupoffering', 'volumeid', 'virtualmachineid'].includes(item)
         ) {
           type = 'list'
         } else if (item === 'tags') {
           type = 'tag'
-        } else if (item === 'resourcetype') {
+        } else if (['resourcetype', 'apikeyaccess'].includes(item)) {
           type = 'autocomplete'
+        } else if (item === 'isencrypted') {
+          type = 'boolean'
         }
 
         this.fields.push({
@@ -305,9 +347,15 @@ export default {
       return arrayField
     },
     fetchStaticFieldData (arrayField) {
-      if (arrayField.includes('type')) {
-        if (this.$route.path === '/guestnetwork' || this.$route.path.includes('/guestnetwork/')) {
-          const typeIndex = this.fields.findIndex(item => item.name === 'type')
+      if (arrayField.includes('displaynetwork')) {
+        const typeIndex = this.fields.findIndex(item => item.name === 'displaynetwork')
+        this.fields[typeIndex].loading = true
+        this.fields[typeIndex].opts = this.fetchBoolean()
+        this.fields[typeIndex].loading = false
+      }
+      if (arrayField.includes('type') || arrayField.includes('guestiptype')) {
+        if (this.$route.path.includes('/guestnetwork') || this.$route.path.includes('/networkoffering')) {
+          const typeIndex = this.fields.findIndex(item => ['type', 'guestiptype'].includes(item.name))
           this.fields[typeIndex].loading = true
           this.fields[typeIndex].opts = this.fetchGuestNetworkTypes()
           this.fields[typeIndex].loading = false
@@ -317,6 +365,13 @@ export default {
           this.fields[typeIndex].opts = this.fetchRoleTypes()
           this.fields[typeIndex].loading = false
         }
+      }
+
+      if (arrayField.includes('scope')) {
+        const scopeIndex = this.fields.findIndex(item => item.name === 'scope')
+        this.fields[scopeIndex].loading = true
+        this.fields[scopeIndex].opts = this.fetchScope()
+        this.fields[scopeIndex].loading = false
       }
 
       if (arrayField.includes('state')) {
@@ -368,6 +423,26 @@ export default {
         this.fields[providerIndex].loading = false
       }
 
+      if (arrayField.includes('restartrequired')) {
+        const restartRequiredIndex = this.fields.findIndex(item => item.name === 'restartrequired')
+        this.fields[restartRequiredIndex].loading = true
+        this.fields[restartRequiredIndex].opts = [
+          { id: 'true', name: 'label.yes' },
+          { id: 'false', name: 'label.no' }
+        ]
+        this.fields[restartRequiredIndex].loading = false
+      }
+
+      if (arrayField.includes('gpuenabled')) {
+        const gpuEnabledIndex = this.fields.findIndex(item => item.name === 'gpuenabled')
+        this.fields[gpuEnabledIndex].loading = true
+        this.fields[gpuEnabledIndex].opts = [
+          { id: 'true', name: 'label.yes' },
+          { id: 'false', name: 'label.no' }
+        ]
+        this.fields[gpuEnabledIndex].loading = false
+      }
+
       if (arrayField.includes('resourcetype')) {
         const resourceTypeIndex = this.fields.findIndex(item => item.name === 'resourcetype')
         this.fields[resourceTypeIndex].loading = true
@@ -384,6 +459,38 @@ export default {
         ]
         this.fields[resourceTypeIndex].loading = false
       }
+
+      if (arrayField.includes('apikeyaccess')) {
+        const apiKeyAccessIndex = this.fields.findIndex(item => item.name === 'apikeyaccess')
+        this.fields[apiKeyAccessIndex].loading = true
+        this.fields[apiKeyAccessIndex].opts = [
+          { value: 'Disabled' },
+          { value: 'Enabled' },
+          { value: 'Inherit' }
+        ]
+        this.fields[apiKeyAccessIndex].loading = false
+      }
+
+      if (arrayField.includes('usersource')) {
+        const userSourceIndex = this.fields.findIndex(item => item.name === 'usersource')
+        this.fields[userSourceIndex].loading = true
+        this.fields[userSourceIndex].opts = this.fetchAvailableUserSourceTypes()
+        this.fields[userSourceIndex].loading = false
+      }
+
+      if (arrayField.includes('arch')) {
+        const typeIndex = this.fields.findIndex(item => item.name === 'arch')
+        this.fields[typeIndex].loading = true
+        this.fields[typeIndex].opts = this.$fetchCpuArchitectureTypes()
+        this.fields[typeIndex].loading = false
+      }
+
+      if (arrayField.includes('templatetype')) {
+        const typeIndex = this.fields.findIndex(item => item.name === 'templatetype')
+        this.fields[typeIndex].loading = true
+        this.fields[typeIndex].opts = this.$fetchTemplateTypes()
+        this.fields[typeIndex].loading = false
+      }
     },
     async fetchDynamicFieldData (arrayField, searchKeyword) {
       const promises = []
@@ -397,6 +504,18 @@ export default {
       let podIndex = -1
       let clusterIndex = -1
       let groupIndex = -1
+      let managementServerIdIndex = -1
+      let serviceOfferingIndex = -1
+      let diskOfferingIndex = -1
+      let networkIndex = -1
+      let usageTypeIndex = -1
+      let volumeIndex = -1
+      let virtualmachineIndex = -1
+      let backupOfferingIndex = -1
+      let osCategoryIndex = -1
+      let gpuCardIndex = -1
+      let vgpuProfileIndex = -1
+      let extensionIndex = -1
 
       if (arrayField.includes('type')) {
         if (this.$route.path === '/alert') {
@@ -414,6 +533,12 @@ export default {
         zoneIndex = this.fields.findIndex(item => item.name === 'zoneid')
         this.fields[zoneIndex].loading = true
         promises.push(await this.fetchZones(searchKeyword))
+      }
+
+      if (arrayField.includes('extensionid')) {
+        extensionIndex = this.fields.findIndex(item => item.name === 'extensionid')
+        this.fields[extensionIndex].loading = true
+        promises.push(await this.fetchExtensions(searchKeyword))
       }
 
       if (arrayField.includes('domainid')) {
@@ -464,6 +589,78 @@ export default {
         promises.push(await this.fetchInstanceGroups(searchKeyword))
       }
 
+      if (arrayField.includes('virtualmachineid')) {
+        virtualmachineIndex = this.fields.findIndex(item => item.name === 'virtualmachineid')
+        this.fields[virtualmachineIndex].loading = true
+        promises.push(await this.fetchVirtualMachines(searchKeyword))
+      }
+
+      if (arrayField.includes('managementserverid')) {
+        managementServerIdIndex = this.fields.findIndex(item => item.name === 'managementserverid')
+        this.fields[managementServerIdIndex].loading = true
+        promises.push(await this.fetchManagementServers(searchKeyword))
+      }
+
+      if (arrayField.includes('serviceofferingid')) {
+        serviceOfferingIndex = this.fields.findIndex(item => item.name === 'serviceofferingid')
+        this.fields[serviceOfferingIndex].loading = true
+        promises.push(await this.fetchServiceOfferings(searchKeyword))
+      }
+
+      if (arrayField.includes('diskofferingid')) {
+        diskOfferingIndex = this.fields.findIndex(item => item.name === 'diskofferingid')
+        this.fields[diskOfferingIndex].loading = true
+        promises.push(await this.fetchDiskOfferings(searchKeyword))
+      }
+
+      if (arrayField.includes('networkid')) {
+        networkIndex = this.fields.findIndex(item => item.name === 'networkid')
+        this.fields[networkIndex].loading = true
+        promises.push(await this.fetchNetworks(searchKeyword))
+      }
+
+      if (arrayField.includes('usagetype')) {
+        usageTypeIndex = this.fields.findIndex(item => item.name === 'usagetype')
+        this.fields[usageTypeIndex].loading = true
+        promises.push(await this.fetchUsageTypes())
+      }
+
+      if (arrayField.includes('isencrypted')) {
+        volumeIndex = this.fields.findIndex(item => item.name === 'isencrypted')
+        this.fields[volumeIndex].loading = true
+        promises.push(await this.fetchVolumes(searchKeyword))
+      }
+
+      if (arrayField.includes('oscategoryid')) {
+        osCategoryIndex = this.fields.findIndex(item => item.name === 'oscategoryid')
+        this.fields[osCategoryIndex].loading = true
+        promises.push(await this.fetchOsCategories(searchKeyword))
+      }
+
+      if (arrayField.includes('backupofferingid')) {
+        backupOfferingIndex = this.fields.findIndex(item => item.name === 'backupofferingid')
+        this.fields[backupOfferingIndex].loading = true
+        promises.push(await this.fetchBackupOfferings(searchKeyword))
+      }
+
+      if (arrayField.includes('gpucardid')) {
+        gpuCardIndex = this.fields.findIndex(item => item.name === 'gpucardid')
+        this.fields[gpuCardIndex].loading = true
+        promises.push(await this.fetchGpuCards(searchKeyword))
+      }
+
+      if (arrayField.includes('vgpuprofileid')) {
+        vgpuProfileIndex = this.fields.findIndex(item => item.name === 'vgpuprofileid')
+        this.fields[vgpuProfileIndex].loading = true
+        promises.push(await this.fetchVgpuProfiles(searchKeyword))
+      }
+
+      if (arrayField.includes('volumeid')) {
+        volumeIndex = this.fields.findIndex(item => item.name === 'volumeid')
+        this.fields[volumeIndex].loading = true
+        promises.push(await this.fetchVolumes(searchKeyword))
+      }
+
       Promise.all(promises).then(response => {
         if (typeIndex > -1) {
           const types = response.filter(item => item.type === 'type')
@@ -475,6 +672,12 @@ export default {
           const zones = response.filter(item => item.type === 'zoneid')
           if (zones && zones.length > 0) {
             this.fields[zoneIndex].opts = this.sortArray(zones[0].data)
+          }
+        }
+        if (extensionIndex > -1) {
+          const extensions = response.filter(item => item.type === 'extensionid')
+          if (extensions && extensions.length > 0) {
+            this.fields[extensionIndex].opts = this.sortArray(extensions[0].data)
           }
         }
         if (domainIndex > -1) {
@@ -525,6 +728,83 @@ export default {
             this.fields[groupIndex].opts = this.sortArray(groups[0].data)
           }
         }
+
+        if (managementServerIdIndex > -1) {
+          const managementServers = response.filter(item => item.type === 'managementserverid')
+          if (managementServers && managementServers.length > 0) {
+            this.fields[managementServerIdIndex].opts = this.sortArray(managementServers[0].data)
+          }
+        }
+
+        if (serviceOfferingIndex > -1) {
+          const serviceOfferings = response.filter(item => item.type === 'serviceofferingid')
+          if (serviceOfferings && serviceOfferings.length > 0) {
+            this.fields[serviceOfferingIndex].opts = this.sortArray(serviceOfferings[0].data)
+          }
+        }
+
+        if (diskOfferingIndex > -1) {
+          const diskOfferings = response.filter(item => item.type === 'diskofferingid')
+          if (diskOfferings && diskOfferings.length > 0) {
+            this.fields[diskOfferingIndex].opts = this.sortArray(diskOfferings[0].data)
+          }
+        }
+
+        if (networkIndex > -1) {
+          const networks = response.filter(item => item.type === 'networkid')
+          if (networks && networks.length > 0) {
+            this.fields[networkIndex].opts = this.sortArray(networks[0].data)
+          }
+        }
+
+        if (usageTypeIndex > -1) {
+          const usageTypes = response.filter(item => item.type === 'usagetype')
+          if (usageTypes?.length > 0) {
+            this.fields[usageTypeIndex].opts = this.sortArray(usageTypes[0].data)
+          }
+        }
+
+        if (osCategoryIndex > -1) {
+          const osCategories = response.filter(item => item.type === 'oscategoryid')
+          if (osCategories && osCategories.length > 0) {
+            this.fields[osCategoryIndex].opts = this.sortArray(osCategories[0].data)
+          }
+        }
+
+        if (backupOfferingIndex > -1) {
+          const backupOfferings = response.filter(item => item.type === 'backupofferingid')
+          if (backupOfferings?.length > 0) {
+            this.fields[backupOfferingIndex].opts = this.sortArray(backupOfferings[0].data)
+          }
+        }
+
+        if (gpuCardIndex > -1) {
+          const gpuCards = response.filter(item => item.type === 'gpucardid')
+          if (gpuCards && gpuCards.length > 0) {
+            this.fields[gpuCardIndex].opts = this.sortArray(gpuCards[0].data)
+          }
+        }
+
+        if (vgpuProfileIndex > -1) {
+          const vgpuProfiles = response.filter(item => item.type === 'vgpuprofileid')
+          if (vgpuProfiles && vgpuProfiles.length > 0) {
+            this.fields[vgpuProfileIndex].opts = this.sortArray(vgpuProfiles[0].data)
+          }
+        }
+
+        if (volumeIndex > -1) {
+          const volumes = response.filter(item => ['volumeid', 'isencrypted'].includes(item.type))
+          if (volumes && volumes.length > 0) {
+            this.fields[volumeIndex].opts = this.sortArray(volumes[0].data)
+          }
+        }
+
+        if (virtualmachineIndex > -1) {
+          const virtualMachines = response.filter(item => item.type === 'virtualmachineid')
+          if (virtualMachines && virtualMachines.length > 0) {
+            this.fields[virtualmachineIndex].opts = this.sortArray(virtualMachines[0].data)
+          }
+        }
       }).finally(() => {
         if (typeIndex > -1) {
           this.fields[typeIndex].loading = false
@@ -532,8 +812,17 @@ export default {
         if (zoneIndex > -1) {
           this.fields[zoneIndex].loading = false
         }
+        if (extensionIndex > -1) {
+          this.fields[extensionIndex].loading = false
+        }
         if (domainIndex > -1) {
           this.fields[domainIndex].loading = false
+        }
+        if (accountIndex > -1) {
+          this.fields[accountIndex].loading = false
+        }
+        if (hypervisorIndex > -1) {
+          this.fields[hypervisorIndex].loading = false
         }
         if (imageStoreIndex > -1) {
           this.fields[imageStoreIndex].loading = false
@@ -550,7 +839,42 @@ export default {
         if (groupIndex > -1) {
           this.fields[groupIndex].loading = false
         }
-        this.fillFormFieldValues()
+        if (managementServerIdIndex > -1) {
+          this.fields[managementServerIdIndex].loading = false
+        }
+        if (serviceOfferingIndex > -1) {
+          this.fields[serviceOfferingIndex].loading = false
+        }
+        if (diskOfferingIndex > -1) {
+          this.fields[diskOfferingIndex].loading = false
+        }
+        if (networkIndex > -1) {
+          this.fields[networkIndex].loading = false
+        }
+        if (usageTypeIndex > -1) {
+          this.fields[usageTypeIndex].loading = false
+        }
+        if (osCategoryIndex > -1) {
+          this.fields[osCategoryIndex].loading = false
+        }
+        if (backupOfferingIndex > -1) {
+          this.fields[backupOfferingIndex].loading = false
+        }
+        if (gpuCardIndex > -1) {
+          this.fields[gpuCardIndex].loading = false
+        }
+        if (vgpuProfileIndex > -1) {
+          this.fields[vgpuProfileIndex].loading = false
+        }
+        if (volumeIndex > -1) {
+          this.fields[volumeIndex].loading = false
+        }
+        if (virtualmachineIndex > -1) {
+          this.fields[virtualmachineIndex].loading = false
+        }
+        if (Array.isArray(arrayField)) {
+          this.fillFormFieldValues()
+        }
       })
     },
     initFormFieldData () {
@@ -561,6 +885,9 @@ export default {
       this.fetchDynamicFieldData(arrayField)
     },
     sortArray (data, key = 'name') {
+      if (!data) {
+        return []
+      }
       return data.sort(function (a, b) {
         if (a[key] < b[key]) { return -1 }
         if (a[key] > b[key]) { return 1 }
@@ -584,7 +911,7 @@ export default {
     },
     fetchZones (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listZones', { showicon: true, keyword: searchKeyword }).then(json => {
+        getAPI('listZones', { showicon: true, keyword: searchKeyword }).then(json => {
           const zones = json.listzonesresponse.zone
           resolve({
             type: 'zoneid',
@@ -595,9 +922,22 @@ export default {
         })
       })
     },
+    fetchExtensions (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        getAPI('listExtensions', { details: 'min', showicon: true, keyword: searchKeyword }).then(json => {
+          const extensions = json.listextensionsresponse.extension
+          resolve({
+            type: 'extensionid',
+            data: extensions
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
     fetchDomains (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listDomains', { listAll: true, showicon: true, keyword: searchKeyword }).then(json => {
+        getAPI('listDomains', { listAll: true, details: 'min', showicon: true, keyword: searchKeyword }).then(json => {
           const domain = json.listdomainsresponse.domain
           resolve({
             type: 'domainid',
@@ -610,8 +950,15 @@ export default {
     },
     fetchAccounts (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listAccounts', { listAll: true, showicon: true, keyword: searchKeyword }).then(json => {
-          const account = json.listaccountsresponse.account
+        const params = { listAll: true, isrecursive: false, showicon: true, keyword: searchKeyword }
+        if (this.form.domainid) {
+          params.domainid = this.form.domainid
+        }
+        getAPI('listAccounts', params).then(json => {
+          let account = json?.listaccountsresponse?.account || []
+          if (this.form.domainid) {
+            account = account.filter(a => a.domainid === this.form.domainid)
+          }
           resolve({
             type: 'account',
             data: account
@@ -623,7 +970,7 @@ export default {
     },
     fetchHypervisors () {
       return new Promise((resolve, reject) => {
-        api('listHypervisors').then(json => {
+        getAPI('listHypervisors').then(json => {
           const hypervisor = json.listhypervisorsresponse.hypervisor.map(a => { return { id: a.name, name: a.name } })
           resolve({
             type: 'hypervisor',
@@ -636,7 +983,7 @@ export default {
     },
     fetchImageStores (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listImageStores', { listAll: true, showicon: true, keyword: searchKeyword }).then(json => {
+        getAPI('listImageStores', { listAll: true, showicon: true, keyword: searchKeyword }).then(json => {
           const imageStore = json.listimagestoresresponse.imagestore
           resolve({
             type: 'imagestoreid',
@@ -649,7 +996,7 @@ export default {
     },
     fetchStoragePools (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listStoragePools', { listAll: true, showicon: true, keyword: searchKeyword }).then(json => {
+        getAPI('listStoragePools', { listAll: true, showicon: true, keyword: searchKeyword }).then(json => {
           const storagePool = json.liststoragepoolsresponse.storagepool
           resolve({
             type: 'storageid',
@@ -662,7 +1009,7 @@ export default {
     },
     fetchPods (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listPods', { keyword: searchKeyword }).then(json => {
+        getAPI('listPods', { keyword: searchKeyword }).then(json => {
           const pods = json.listpodsresponse.pod
           resolve({
             type: 'podid',
@@ -675,7 +1022,7 @@ export default {
     },
     fetchClusters (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listClusters', { keyword: searchKeyword }).then(json => {
+        getAPI('listClusters', { keyword: searchKeyword }).then(json => {
           const clusters = json.listclustersresponse.cluster
           resolve({
             type: 'clusterid',
@@ -688,11 +1035,50 @@ export default {
     },
     fetchInstanceGroups (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listInstanceGroups', { listAll: true, keyword: searchKeyword }).then(json => {
+        getAPI('listInstanceGroups', { listAll: true, keyword: searchKeyword }).then(json => {
           const instancegroups = json.listinstancegroupsresponse.instancegroup
           resolve({
             type: 'groupid',
             data: instancegroups
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchServiceOfferings (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        getAPI('listServiceOfferings', { listAll: true, keyword: searchKeyword }).then(json => {
+          const serviceOfferings = json.listserviceofferingsresponse.serviceoffering
+          resolve({
+            type: 'serviceofferingid',
+            data: serviceOfferings
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchDiskOfferings (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        getAPI('listDiskOfferings', { listAll: true, keyword: searchKeyword }).then(json => {
+          const diskOfferings = json.listdiskofferingsresponse.diskoffering
+          resolve({
+            type: 'diskofferingid',
+            data: diskOfferings
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchNetworks (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        getAPI('listNetworks', { listAll: true, keyword: searchKeyword }).then(json => {
+          const networks = json.listnetworksresponse.network
+          resolve({
+            type: 'networkid',
+            data: networks
           })
         }).catch(error => {
           reject(error.response.headers['x-description'])
@@ -709,7 +1095,7 @@ export default {
         })
       } else {
         return new Promise((resolve, reject) => {
-          api('listAlertTypes').then(json => {
+          getAPI('listAlertTypes').then(json => {
             const alerttypes = json.listalerttypesresponse.alerttype.map(a => { return { id: a.alerttypeid, name: a.name } })
             this.alertTypes = alerttypes
             resolve({
@@ -732,7 +1118,7 @@ export default {
         })
       } else {
         return new Promise((resolve, reject) => {
-          api('listAffinityGroupTypes').then(json => {
+          getAPI('listAffinityGroupTypes').then(json => {
             const alerttypes = json.listaffinitygrouptypesresponse.affinityGroupType.map(a => {
               let name = a.type
               if (a.type === 'host anti-affinity') {
@@ -756,6 +1142,58 @@ export default {
           })
         })
       }
+    },
+    fetchVolumes (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        getAPI('listVolumes', { listAll: true, isencrypted: searchKeyword }).then(json => {
+          const volumes = json.listvolumesresponse.volume
+          resolve({
+            type: 'isencrypted',
+            data: volumes
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchVirtualMachines (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        getAPI('listVirtualMachines', { listAll: true, keyword: searchKeyword }).then(json => {
+          const virtualMachines = json.listvirtualmachinesresponse.virtualmachine
+          resolve({
+            type: 'virtualmachineid',
+            data: virtualMachines
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchManagementServers (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        getAPI('listManagementServers', { listAll: true, keyword: searchKeyword }).then(json => {
+          const managementservers = json.listmanagementserversresponse.managementserver
+          resolve({
+            type: 'managementserverid',
+            data: managementservers
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchOsCategories (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        getAPI('listOsCategories', { showicon: true, keyword: searchKeyword }).then(json => {
+          const osCategories = json.listoscategoriesresponse.oscategory
+          resolve({
+            type: 'oscategoryid',
+            data: osCategories
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
     },
     fetchGuestNetworkTypes () {
       const types = []
@@ -877,9 +1315,30 @@ export default {
       }
       return types
     },
+    fetchScope () {
+      const scope = []
+      if (this.apiName.indexOf('listWebhooks') > -1) {
+        scope.push({
+          id: 'Local',
+          name: 'label.local'
+        })
+        scope.push({
+          id: 'Domain',
+          name: 'label.domain'
+        })
+        if (isAdmin()) {
+          scope.push({
+            id: 'Global',
+            name: 'label.global'
+          })
+        }
+      }
+      return scope
+    },
     fetchState () {
+      var state = []
       if (this.apiName.includes('listVolumes')) {
-        return [
+        state = [
           {
             id: 'Allocated',
             name: 'label.allocated'
@@ -906,7 +1365,7 @@ export default {
           }
         ]
       } else if (this.apiName.includes('listKubernetesClusters')) {
-        return [
+        state = [
           {
             id: 'Created',
             name: 'label.created'
@@ -956,8 +1415,38 @@ export default {
             name: 'label.error'
           }
         ]
+      } else if (this.apiName.indexOf('listWebhooks') > -1) {
+        state = [
+          {
+            id: 'Enabled',
+            name: 'label.enabled'
+          },
+          {
+            id: 'Disabled',
+            name: 'label.disabled'
+          }
+        ]
+      } else if (this.apiName.indexOf('listEvents') > -1) {
+        state = [
+          {
+            id: 'Created',
+            name: 'label.created'
+          },
+          {
+            id: 'Scheduled',
+            name: 'label.scheduled'
+          },
+          {
+            id: 'Started',
+            name: 'label.started'
+          },
+          {
+            id: 'Completed',
+            name: 'label.completed'
+          }
+        ]
       }
-      return []
+      return state
     },
     fetchEntityType () {
       const entityType = []
@@ -1014,12 +1503,99 @@ export default {
       })
       return levels
     },
+    fetchUsageTypes () {
+      return new Promise((resolve, reject) => {
+        getAPI('listUsageTypes')
+          .then(json => {
+            const usageTypes = json.listusagetypesresponse.usagetype.map(entry => {
+              return {
+                id: entry.id,
+                name: i18n.global.t(entry.name)
+              }
+            })
+
+            resolve({
+              type: 'usagetype',
+              data: usageTypes
+            })
+          })
+          .catch(error => {
+            reject(error.response.headers['x-description'])
+          })
+      })
+    },
+    fetchBackupOfferings (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        getAPI('listBackupOfferings').then(json => {
+          const backupOfferings = json.listbackupofferingsresponse.backupoffering
+          resolve({
+            type: 'backupofferingid',
+            data: backupOfferings
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchAvailableUserSourceTypes () {
+      return [
+        {
+          id: 'native',
+          name: 'label.native'
+        },
+        {
+          id: 'saml2',
+          name: 'label.saml'
+        },
+        {
+          id: 'saml2disabled',
+          name: 'label.saml.disabled'
+        },
+        {
+          id: 'ldap',
+          name: 'label.ldap'
+        }
+      ]
+    },
+    fetchGpuCards (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        getAPI('listGpuCards', { keyword: searchKeyword }).then(json => {
+          const gpuCards = json.listgpucardsresponse.gpucard
+          resolve({
+            type: 'gpucardid',
+            data: gpuCards
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchVgpuProfiles (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        const params = { keyword: searchKeyword }
+
+        // If a GPU card is selected, filter vGPU profiles by that GPU card
+        if (this.form.gpucardid) {
+          params.gpucardid = this.form.gpucardid
+        }
+
+        getAPI('listVgpuProfiles', params).then(json => {
+          const vgpuProfiles = json.listvgpuprofilesresponse.vgpuprofile
+          resolve({
+            type: 'vgpuprofileid',
+            data: vgpuProfiles
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
     onSearch (value) {
       this.paramsFilter = {}
       this.searchQuery = value
       this.$emit('search', { searchQuery: this.searchQuery })
     },
-    onClear () {
+    async onClear () {
       this.formRef.value.resetFields()
       this.form = reactive({})
       this.isFiltered = false
@@ -1027,6 +1603,21 @@ export default {
       this.inputValue = null
       this.searchQuery = null
       this.paramsFilter = {}
+
+      const refreshAccountOptions = ['account', 'domainid'].every((field) => {
+        return this.fields.some((searchViewField) => searchViewField.name === field)
+      })
+      if (refreshAccountOptions) {
+        await this.fetchDynamicFieldData('account')
+      }
+
+      const refreshVgpuProfileOptions = ['gpucardid', 'vgpuprofileid'].every((field) => {
+        return this.fields.some((searchViewField) => searchViewField.name === field)
+      })
+      if (refreshVgpuProfileOptions) {
+        await this.fetchDynamicFieldData('vgpuprofileid')
+      }
+
       this.$emit('search', this.paramsFilter)
     },
     handleSubmit () {
@@ -1052,6 +1643,13 @@ export default {
     },
     changeFilter (filter) {
       this.$emit('change-filter', filter)
+    },
+    updateIsFiltered () {
+      this.isFiltered = this.searchFilters.some(item => {
+        if (this.searchParams[item]) {
+          return true
+        }
+      })
     }
   }
 }

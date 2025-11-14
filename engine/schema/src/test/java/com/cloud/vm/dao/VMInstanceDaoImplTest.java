@@ -30,31 +30,45 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 
+import com.cloud.host.dao.HostDao;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import org.mockito.junit.MockitoJUnitRunner;
 
 /**
  * Created by sudharma_jain on 3/2/17.
  */
-
+@RunWith(MockitoJUnitRunner.class)
 public class VMInstanceDaoImplTest {
 
+    @InjectMocks
     @Spy
-    VMInstanceDaoImpl vmInstanceDao = new VMInstanceDaoImpl();
+    VMInstanceDaoImpl vmInstanceDao;
 
     @Mock
     VMInstanceVO vm;
+
+    @Mock
+    HostDao _hostDao;
 
     private AutoCloseable closeable;
 
@@ -105,9 +119,6 @@ public class VMInstanceDaoImplTest {
 
     @Test
     public void testUpdatePowerStateVmNotFound() {
-        when(vm.getPowerStateUpdateTime()).thenReturn(null);
-        when(vm.getPowerHostId()).thenReturn(1L);
-        when(vm.getPowerState()).thenReturn(VirtualMachine.PowerState.PowerOn);
         doReturn(null).when(vmInstanceDao).findById(anyLong());
 
         boolean result = vmInstanceDao.updatePowerState(1L, 1L, VirtualMachine.PowerState.PowerOff, new Date());
@@ -148,7 +159,6 @@ public class VMInstanceDaoImplTest {
         when(vm.getPowerStateUpdateCount()).thenReturn(MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT);
         when(vm.getState()).thenReturn(Running);
         doReturn(vm).when(vmInstanceDao).findById(anyLong());
-        doReturn(true).when(vmInstanceDao).update(anyLong(), any());
 
         boolean result = vmInstanceDao.updatePowerState(1L, 1L, VirtualMachine.PowerState.PowerOn, new Date());
 
@@ -164,8 +174,8 @@ public class VMInstanceDaoImplTest {
     public void testUpdatePowerStateNoChangeMaxUpdatesInvalidStateVmStopped() {
         when(vm.getPowerStateUpdateTime()).thenReturn(null);
         when(vm.getPowerHostId()).thenReturn(1L);
+        when(vm.getHostId()).thenReturn(1L);
         when(vm.getPowerState()).thenReturn(VirtualMachine.PowerState.PowerOn);
-        when(vm.getPowerStateUpdateCount()).thenReturn(MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT);
         when(vm.getState()).thenReturn(Stopped);
         doReturn(vm).when(vmInstanceDao).findById(anyLong());
         doReturn(true).when(vmInstanceDao).update(anyLong(), any());
@@ -184,8 +194,8 @@ public class VMInstanceDaoImplTest {
     public void testUpdatePowerStateNoChangeMaxUpdatesInvalidStateVmRunning() {
         when(vm.getPowerStateUpdateTime()).thenReturn(null);
         when(vm.getPowerHostId()).thenReturn(1L);
+        when(vm.getHostId()).thenReturn(1L);
         when(vm.getPowerState()).thenReturn(VirtualMachine.PowerState.PowerOff);
-        when(vm.getPowerStateUpdateCount()).thenReturn(MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT);
         when(vm.getState()).thenReturn(Running);
         doReturn(vm).when(vmInstanceDao).findById(anyLong());
         doReturn(true).when(vmInstanceDao).update(anyLong(), any());
@@ -198,5 +208,30 @@ public class VMInstanceDaoImplTest {
         verify(vm, times(1)).setPowerStateUpdateTime(any(Date.class));
 
         assertTrue(result);
+    }
+
+    @Test
+    public void testSearchRemovedByRemoveDate() {
+        SearchBuilder<VMInstanceVO> sb = Mockito.mock(SearchBuilder.class);
+        SearchCriteria<VMInstanceVO> sc = Mockito.mock(SearchCriteria.class);
+        Mockito.when(sb.create()).thenReturn(sc);
+        Mockito.when(vmInstanceDao.createSearchBuilder()).thenReturn(sb);
+        final VMInstanceVO mockedVO = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(sb.entity()).thenReturn(mockedVO);
+        Mockito.doReturn(new ArrayList<>()).when(vmInstanceDao).searchIncludingRemoved(
+                Mockito.any(SearchCriteria.class), Mockito.any(Filter.class), Mockito.eq(null),
+                Mockito.eq(false));
+        Calendar cal = Calendar.getInstance();
+        Date endDate = new Date();
+        cal.setTime(endDate);
+        cal.add(Calendar.DATE, -1 * 10);
+        Date startDate = cal.getTime();
+        vmInstanceDao.searchRemovedByRemoveDate(startDate, endDate, 50L, new ArrayList<>());
+        Mockito.verify(sc).setParameters("startDate", startDate);
+        Mockito.verify(sc).setParameters("endDate", endDate);
+        Mockito.verify(sc, Mockito.never()).setParameters(Mockito.eq("skippedVmIds"), Mockito.any());
+        Mockito.verify(vmInstanceDao, Mockito.times(1)).searchIncludingRemoved(
+                Mockito.any(SearchCriteria.class), Mockito.any(Filter.class), Mockito.eq(null),
+                Mockito.eq(false));
     }
 }

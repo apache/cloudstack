@@ -230,6 +230,16 @@
           <a-form-item name="ip6cidr" ref="ip6cidr" :label="$t('label.cidr')" class="form__item">
             <a-input v-model:value="form.ip6cidr" />
           </a-form-item>
+          <a-form-item name="provider" ref="provider">
+            <template #label>
+              <tooltip-label :title="$t('label.provider')"/>
+            </template>
+            <a-select v-model:value="form.provider">
+              <a-select-option value=""></a-select-option>
+              <a-select-option value="NSX">{{ $t('label.nsx') }}</a-select-option>
+              <a-select-option value="Netris">{{ $t('label.netris') }}</a-select-option>
+            </a-select>
+          </a-form-item>
         </div>
         <div v-else>
           <a-form-item name="gateway" ref="gateway" :label="$t('label.gateway')" class="form__item">
@@ -244,37 +254,54 @@
           <a-form-item name="endip" ref="endip" :label="$t('label.endip')" class="form__item">
             <a-input v-model:value="form.endip" />
           </a-form-item>
+          <a-form-item name="provider" ref="provider">
+            <template #label>
+              <tooltip-label :title="$t('label.provider')"/>
+            </template>
+            <a-select v-model:value="form.provider">
+              <a-select-option value=""></a-select-option>
+              <a-select-option value="NSX">{{ $t('label.nsx') }}</a-select-option>
+              <a-select-option value="Netris">{{ $t('label.netris') }}</a-select-option>
+            </a-select>
+          </a-form-item>
         </div>
         <div class="form__item" v-if="!basicGuestNetwork && form.iptype != 'ip6'">
-          <div style="color: black;">{{ $t('label.set.reservation') }}</div>
+          <tooltip-label :title="$t('label.set.reservation')" :tooltip="$t('label.set.reservation.desc')" class="tooltip-label-wrapper"/>
+          <br/>
           <a-switch v-model:checked="showAccountFields" @change="handleShowAccountFields" />
         </div>
         <div v-if="showAccountFields && !basicGuestNetwork" style="margin-top: 20px;">
-          <div v-html="$t('label.set.reservation.desc')"></div>
-          <a-form-item name="forsystemvms" ref="forsystemvms" :label="$t('label.system.vms')" class="form__item">
+          <a-form-item name="forsystemvms" ref="forsystemvms" class="form__item">
+            <tooltip-label :title="$t('label.system.vms')" :tooltip="$t('label.set.reservation.systemvm.desc')" class="tooltip-label-wrapper"/>
+            <br/>
             <a-switch v-model:checked="form.forsystemvms" />
           </a-form-item>
-          <a-spin :spinning="domainsLoading">
-            <a-form-item name="account" ref="account" :label="$t('label.account')" class="form__item">
-              <a-input v-model:value="form.account"></a-input>
-            </a-form-item>
-            <a-form-item name="domain" ref="domain" :label="$t('label.domain')" class="form__item">
-              <a-select
-                v-model:value="form.domain"
-                showSearch
-                optionFilterProp="label"
-                :filterOption="(input, option) => {
-                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                }" >
-                <a-select-option
-                  v-for="domain in domains"
-                  :key="domain.id"
-                  :value="domain.id"
-                  :label="domain.path || domain.name || domain.description">{{ domain.path || domain.name || domain.description }}
-                </a-select-option>
-              </a-select>
-            </a-form-item>
-          </a-spin>
+          <br/>
+          <span v-if="!form.forsystemvms">
+            <a-spin :spinning="domainsLoading">
+              <a-form-item name="account" ref="account" class="form__item">
+                <tooltip-label :title="$t('label.account')" :tooltip="$t('label.set.reservation.account.desc')" class="tooltip-label-wrapper"/>
+                <br/>
+                <a-input v-model:value="form.account"></a-input>
+              </a-form-item>
+              <a-form-item name="domain" ref="domain" :label="$t('label.domain')" class="form__item">
+                <a-select
+                  v-model:value="form.domain"
+                  showSearch
+                  optionFilterProp="label"
+                  :filterOption="(input, option) => {
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }" >
+                  <a-select-option
+                    v-for="domain in domains"
+                    :key="domain.id"
+                    :value="domain.id"
+                    :label="domain.path || domain.name || domain.description">{{ domain.path || domain.name || domain.description }}
+                  </a-select-option>
+                </a-select>
+              </a-form-item>
+            </a-spin>
+          </span>
         </div>
 
         <div :span="24" class="action-button">
@@ -338,13 +365,15 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'IpRangesTabPublic',
   components: {
-    TooltipButton
+    TooltipButton,
+    TooltipLabel
   },
   props: {
     resource: {
@@ -469,7 +498,7 @@ export default {
     },
     fetchData () {
       this.componentLoading = true
-      api('listVlanIpRanges', {
+      getAPI('listVlanIpRanges', {
         networkid: this.network.id,
         zoneid: this.resource.zoneid,
         page: this.page,
@@ -486,7 +515,7 @@ export default {
     },
     fetchDomains () {
       this.domainsLoading = true
-      api('listDomains', {
+      getAPI('listDomains', {
         details: 'min',
         listAll: true
       }).then(response => {
@@ -503,7 +532,7 @@ export default {
     },
     fetchPods () {
       this.podsLoading = true
-      api('listPods', {
+      getAPI('listPods', {
         zoneid: this.resource.zoneid,
         page: this.page,
         pagesize: this.pageSize
@@ -536,7 +565,7 @@ export default {
         params.account = this.addAccount.account
       }
 
-      api('dedicatePublicIpRange', params).catch(error => {
+      postAPI('dedicatePublicIpRange', params).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.addAccountModal = false
@@ -546,7 +575,7 @@ export default {
     },
     handleRemoveAccount (id) {
       this.componentLoading = true
-      api('releasePublicIpRange', { id }).catch(error => {
+      postAPI('releasePublicIpRange', { id }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.fetchData()
@@ -587,7 +616,7 @@ export default {
     },
     handleDeleteIpRange (id) {
       this.componentLoading = true
-      api('deleteVlanIpRange', { id }).then(() => {
+      postAPI('deleteVlanIpRange', { id }).then(() => {
         this.$notification.success({
           message: 'Removed IP Range'
         })
@@ -624,7 +653,8 @@ export default {
           params.podid = values.podid
           params.networkid = this.network.id
         }
-        api('createVlanIpRange', params).then(() => {
+        params.provider = values.provider
+        postAPI('createVlanIpRange', params).then(() => {
           this.$notification.success({
             message: this.$t('message.success.add.iprange')
           })
@@ -660,7 +690,7 @@ export default {
         for (const key of ipRangeKeys) {
           params[key] = values[key]
         }
-        api('updateVlanIpRange', params).then(() => {
+        postAPI('updateVlanIpRange', params).then(() => {
           this.$notification.success({
             message: this.$t('message.success.update.iprange')
           })
@@ -710,6 +740,10 @@ export default {
     &__label {
       font-weight: bold;
     }
+  }
+
+  .tooltip-label-wrapper {
+    color: rgba(0, 0, 0, 0.85);
   }
 
   .ant-list-item {

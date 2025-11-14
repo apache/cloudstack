@@ -62,6 +62,7 @@ public class UpdateResourceLimitCmd extends BaseCmd {
                    + "2 - Volume. Number of disk volumes a user can create. "
                    + "3 - Snapshot. Number of snapshots a user can create. "
                    + "4 - Template. Number of templates that a user can register/create. "
+                   + "5 - Project. Number of projects a user can create. "
                    + "6 - Network. Number of guest network a user can create. "
                    + "7 - VPC. Number of VPC a user can create. "
                    + "8 - CPU. Total number of CPU cores a user can use. "

@@ -21,6 +21,8 @@ import java.net.UnknownHostException;
 import java.util.Map;
 
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.storage.ChangeStoragePoolScopeCmd;
+import org.apache.cloudstack.api.command.admin.storage.ConfigureStorageAccessCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
@@ -29,11 +31,13 @@ import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.SyncStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateObjectStoragePoolCmd;
+import org.apache.cloudstack.api.command.admin.storage.UpdateImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
 
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.command.admin.storage.heuristics.CreateSecondaryStorageSelectorCmd;
@@ -92,6 +96,12 @@ public interface StorageService {
 
     StoragePool updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException;
 
+    StoragePool enablePrimaryStoragePool(Long id);
+
+    StoragePool disablePrimaryStoragePool(Long id);
+
+    boolean configureStorageAccess(ConfigureStorageAccessCmd cmd);
+
     StoragePool getStoragePool(long id);
 
     boolean deleteImageStore(DeleteImageStoreCmd cmd);
@@ -110,6 +120,8 @@ public interface StorageService {
      */
     ImageStore migrateToObjectStore(String name, String url, String providerName, Map<String, String> details) throws DiscoveryException;
 
+    ImageStore updateImageStore(UpdateImageStoreCmd cmd);
+
     ImageStore updateImageStoreStatus(Long id, Boolean readonly);
 
     void updateStorageCapabilities(Long poolId, boolean failOnChecks);
@@ -122,9 +134,11 @@ public interface StorageService {
 
     void removeSecondaryStorageHeuristic(RemoveSecondaryStorageSelectorCmd cmd);
 
-    ObjectStore discoverObjectStore(String name, String url, String providerName, Map details) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
+    ObjectStore discoverObjectStore(String name, String url, Long size, String providerName, Map details) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
 
     boolean deleteObjectStore(DeleteObjectStoragePoolCmd cmd);
 
     ObjectStore updateObjectStore(Long id, UpdateObjectStoragePoolCmd cmd);
+
+    void changeStoragePoolScope(ChangeStoragePoolScopeCmd cmd) throws IllegalArgumentException, InvalidParameterValueException, PermissionDeniedException;
 }

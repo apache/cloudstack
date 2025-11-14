@@ -33,4 +33,9 @@ public class FlashArrayAdapterFactory implements ProviderAdapterFactory {
         return new FlashArrayAdapter(url, details);
     }
 
+    @Override
+    public Object canDirectAttachSnapshot() {
+        return false;
+    }
+
 }

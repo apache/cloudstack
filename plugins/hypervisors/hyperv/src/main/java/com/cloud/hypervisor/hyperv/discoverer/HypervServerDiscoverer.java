@@ -24,7 +24,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -64,6 +63,7 @@ import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.storage.StorageLayer;
+import com.cloud.utils.UuidUtils;
 
 /**
  * Methods to discover and managem a Hyper-V agent. Prepares a
@@ -136,7 +136,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
         }
 
         if (logger.isDebugEnabled()) {
-            logger.debug("Setting up host " + agentId);
+            logger.debug(String.format("Setting up host %s", agent));
         }
 
         HostEnvironment env = new HostEnvironment();
@@ -161,14 +161,14 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
                 if (reason == null) {
                     reason = " details were null";
                 }
-                logger.warn("Unable to setup agent " + agentId + " due to " + reason);
+                logger.warn(String.format("Unable to setup agent %s due to %s", agent, reason));
             }
             // Error handling borrowed from XcpServerDiscoverer, may need to be
             // updated.
         } catch (AgentUnavailableException e) {
-            logger.warn("Unable to setup agent " + agentId + " because it became unavailable.", e);
+            logger.warn(String.format("Unable to setup agent %s because it became unavailable.", agent), e);
         } catch (OperationTimedoutException e) {
-            logger.warn("Unable to setup agent " + agentId + " because it timed out", e);
+            logger.warn(String.format("Unable to setup agent %s because it timed out", agent), e);
         }
         throw new ConnectionException(true, "Reinitialize agent after setup.");
     }
@@ -256,7 +256,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
             }
 
             logger.info("Creating" + HypervDirectConnectResource.class.getName() + " HypervDirectConnectResource for zone/pod/cluster " + dcId + "/" + podId + "/" +
-                clusterId);
+                cluster);
 
             // Some Hypervisors organise themselves in pools.
             // The startup command tells us what pool they are using.
@@ -264,7 +264,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
             // pool in the database
             // This GUID may change.
             if (cluster.getGuid() == null) {
-                cluster.setGuid(UUID.nameUUIDFromBytes(String.valueOf(clusterId).getBytes(Charset.forName("UTF-8"))).toString());
+                cluster.setGuid(UuidUtils.nameUUIDFromBytes(String.valueOf(clusterId).getBytes(Charset.forName("UTF-8"))).toString());
                 _clusterDao.update(clusterId, cluster);
             }
 
@@ -322,7 +322,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
     /**
      * Encapsulate GUID calculation in public method to allow access to test
      * programs. Works by converting a string to a GUID using
-     * UUID.nameUUIDFromBytes
+     * UuidUtils.nameUUIDFromBytes
      *
      * @param uuidSeed
      *            string to use to generate GUID
@@ -330,7 +330,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
      * @return GUID in form of a string.
      */
     public static String calcServerResourceGuid(final String uuidSeed) {
-        String guid = UUID.nameUUIDFromBytes(uuidSeed.getBytes(Charset.forName("UTF-8"))).toString();
+        String guid = UuidUtils.nameUUIDFromBytes(uuidSeed.getBytes(Charset.forName("UTF-8"))).toString();
         return guid;
     }
 
@@ -391,7 +391,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
             return null;
         }
 
-        logger.info("Host: " + host.getName() + " connected with hypervisor type: " + HypervisorType.Hyperv + ". Checking CIDR...");
+        logger.info(String.format("Host: %s connected with hypervisor type: %s. Checking CIDR...", host, HypervisorType.Hyperv));
 
         HostPodVO pod = _podDao.findById(host.getPodId());
         DataCenterVO dc = _dcDao.findById(host.getDataCenterId());

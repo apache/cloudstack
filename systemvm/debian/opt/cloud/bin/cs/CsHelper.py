@@ -221,7 +221,7 @@ def save_iptables(command, iptables_file):
 
 def execute2(command, wait=True):
     """ Execute command """
-    logging.info("Executing: %s" % command)
+    logging.info("Executing2: %s" % command)
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     if wait:
         p.wait()

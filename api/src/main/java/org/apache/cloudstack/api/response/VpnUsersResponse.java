@@ -48,6 +48,10 @@ public class VpnUsersResponse extends BaseResponse implements ControlledEntityRe
     @Param(description = "the domain name of the account of the remote access vpn")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain to which the remote access vpn belongs", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.PROJECT_ID)
     @Param(description = "the project id of the vpn")
     private String projectId;
@@ -81,6 +85,11 @@ public class VpnUsersResponse extends BaseResponse implements ControlledEntityRe
     @Override
     public void setDomainName(String name) {
         this.domainName = name;
+    }
+
+    @Override
+    public void setDomainPath(String path) {
+        this.domainPath = path;
     }
 
     @Override

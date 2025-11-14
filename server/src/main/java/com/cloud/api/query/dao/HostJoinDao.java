@@ -29,6 +29,8 @@ import com.cloud.utils.db.GenericDao;
 
 public interface HostJoinDao extends GenericDao<HostJoinVO, Long> {
 
+    HostResponse newMinimalHostResponse(HostJoinVO host);
+
     HostResponse newHostResponse(HostJoinVO host, EnumSet<HostDetails> details);
 
     HostForMigrationResponse newHostForMigrationResponse(HostJoinVO host, EnumSet<HostDetails> details);

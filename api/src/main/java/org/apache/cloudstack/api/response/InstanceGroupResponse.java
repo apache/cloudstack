@@ -63,6 +63,10 @@ public class InstanceGroupResponse extends BaseResponseWithAnnotations implement
     @Param(description = "the domain name of the instance group")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the Domain the instance group belongs to", since = "4.19.2.0")
+    private String domainPath;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -88,6 +92,11 @@ public class InstanceGroupResponse extends BaseResponseWithAnnotations implement
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     @Override

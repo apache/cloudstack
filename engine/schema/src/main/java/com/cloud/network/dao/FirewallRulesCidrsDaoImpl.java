@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.DB;
@@ -45,7 +46,7 @@ public class FirewallRulesCidrsDaoImpl extends GenericDaoBase<FirewallRulesCidrs
         sc.setParameters("firewallRuleId", firewallRuleId);
 
         List<FirewallRulesCidrsVO> results = search(sc, null);
-        List<String> cidrs = new ArrayList<String>(results.size());
+        List<String> cidrs = new ArrayList<>(results.size());
         for (FirewallRulesCidrsVO result : results) {
             cidrs.add(result.getCidr());
         }
@@ -64,8 +65,26 @@ public class FirewallRulesCidrsDaoImpl extends GenericDaoBase<FirewallRulesCidrs
     }
 
     @Override
+    public void updateSourceCidrsForRule(Long firewallRuleId, List<String> sourceCidrList) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        txn.start();
+
+        SearchCriteria<FirewallRulesCidrsVO> sc = CidrsSearch.create();
+        sc.setParameters("firewallRuleId", firewallRuleId);
+        remove(sc);
+
+        persist(firewallRuleId, sourceCidrList);
+
+        txn.commit();
+    }
+
+    @Override
     @DB
     public void persist(long firewallRuleId, List<String> sourceCidrs) {
+        if (CollectionUtils.isEmpty(sourceCidrs)) {
+            return;
+        }
+
         TransactionLegacy txn = TransactionLegacy.currentTxn();
 
         txn.start();

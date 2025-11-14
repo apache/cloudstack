@@ -59,4 +59,6 @@ public interface VolumeDataStoreDao extends GenericDao<VolumeDataStoreVO, Long>,
     List<VolumeDataStoreVO> listByVolume(long volumeId, long storeId);
 
     List<VolumeDataStoreVO> listByStoreIdAndInstallPaths(Long storeId, List<String> paths);
+
+    int expungeByVolumeList(List<Long> volumeIds, Long batchSize);
 }

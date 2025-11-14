@@ -131,6 +131,10 @@ public class EventJoinDaoImpl extends GenericDaoBase<EventJoinVO, Long> implemen
 
     @Override
     public List<EventJoinVO> searchByIds(Long... ids) {
+        // return empty collection if there are no ids.
+        if (ids.length == 0) {
+            return List.of();
+        }
         SearchCriteria<EventJoinVO> sc = vrSearch.create();
         sc.setParameters("idIN", ids);
         return searchIncludingRemoved(sc, null, null, false);

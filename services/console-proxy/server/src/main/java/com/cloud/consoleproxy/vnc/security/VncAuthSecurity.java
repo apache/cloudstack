@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.consoleproxy.vnc.security;
 
-import com.cloud.consoleproxy.util.Logger;
 import com.cloud.consoleproxy.vnc.NoVncClient;
 import com.cloud.consoleproxy.vnc.network.NioSocketHandler;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -24,12 +23,15 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class VncAuthSecurity implements VncSecurity {
 
     private final String vmPass;
 
     private static final int VNC_AUTH_CHALLENGE_SIZE = 16;
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public VncAuthSecurity(String vmPass) {
         this.vmPass = vmPass;

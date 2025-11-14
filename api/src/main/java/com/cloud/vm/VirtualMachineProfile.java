@@ -78,6 +78,7 @@ public interface VirtualMachineProfile {
         public static final Param BootIntoSetup = new Param("enterHardwareSetup");
         public static final Param PreserveNics = new Param("PreserveNics");
         public static final Param ConsiderLastHost = new Param("ConsiderLastHost");
+        public static final Param ReturnAfterVolumePrepare = new Param("ReturnAfterVolumePrepare");
 
         private String name;
 
@@ -191,6 +192,10 @@ public interface VirtualMachineProfile {
     BootloaderType getBootLoaderType();
 
     Map<Param, Object> getParameters();
+
+    void setCpuOvercommitRatio(Float cpuOvercommitRatio);
+
+    void setMemoryOvercommitRatio(Float memoryOvercommitRatio);
 
     Float getCpuOvercommitRatio();
 

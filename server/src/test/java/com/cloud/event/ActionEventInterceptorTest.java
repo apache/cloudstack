@@ -140,6 +140,7 @@ public class ActionEventInterceptorTest {
         }
 
         utils.init();
+        CallContext.register(user, account);
     }
 
     /**
@@ -152,6 +153,7 @@ public class ActionEventInterceptorTest {
         Mockito.when(configDao.getValue(Config.PublishActionEvent.key())).thenReturn("true");
         componentContextMocked = Mockito.mockStatic(ComponentContext.class);
         Mockito.when(ComponentContext.getComponent(EventBus.class)).thenReturn(eventBus);
+        persistedEvents = new ArrayList<>();
 
         //Needed for persist to actually set an ID that can be returned from the ActionEventUtils
         //methods.
@@ -231,11 +233,11 @@ public class ActionEventInterceptorTest {
         Object event = actionEventInterceptor.interceptStart(m, tester);
         Assert.assertNull(event);
 
-        Assert.assertEquals(persistedEvents.size(), 1);
+        Assert.assertEquals(1, persistedEvents.size());
         EventVO eventVO = persistedEvents.get(0);
-        Assert.assertEquals(eventVO.getType(), EventTypes.EVENT_VM_START);
-        Assert.assertEquals(eventVO.getDescription(), "Starting VM");
-        Assert.assertEquals(eventVO.getState(), com.cloud.event.Event.State.Started);
+        Assert.assertEquals(EventTypes.EVENT_VM_START, eventVO.getType());
+        Assert.assertEquals(eventDescription, eventVO.getDescription());
+        Assert.assertEquals(com.cloud.event.Event.State.Started, eventVO.getState());
     }
 
     @Test
@@ -244,12 +246,12 @@ public class ActionEventInterceptorTest {
         Method m = tester.getClass().getMethod("testMethod");
         actionEventInterceptor.interceptComplete(m, tester, null);
 
-        Assert.assertEquals(persistedEvents.size(), 1);
+        Assert.assertEquals(1, persistedEvents.size());
         EventVO eventVO = persistedEvents.get(0);
-        Assert.assertEquals(eventVO.getType(), eventType);
+        Assert.assertEquals(eventType, eventVO.getType());
         Assert.assertTrue(eventVO.getDescription().endsWith(eventDescription));
-        Assert.assertEquals(eventVO.getLevel(), EventVO.LEVEL_INFO);
-        Assert.assertEquals(eventVO.getState(), com.cloud.event.Event.State.Completed);
+        Assert.assertEquals(EventVO.LEVEL_INFO, eventVO.getLevel());
+        Assert.assertEquals(com.cloud.event.Event.State.Completed, eventVO.getState());
     }
 
     @Test
@@ -258,12 +260,12 @@ public class ActionEventInterceptorTest {
         Method m = tester.getClass().getMethod("testMethod");
         actionEventInterceptor.interceptException(m, tester, null);
 
-        Assert.assertEquals(persistedEvents.size(), 1);
+        Assert.assertEquals(1, persistedEvents.size());
         EventVO eventVO = persistedEvents.get(0);
-        Assert.assertEquals(eventVO.getType(), eventType);
+        Assert.assertEquals(eventType, eventVO.getType());
         Assert.assertTrue(eventVO.getDescription().endsWith(eventDescription));
-        Assert.assertEquals(eventVO.getLevel(), EventVO.LEVEL_ERROR);
-        Assert.assertEquals(eventVO.getState(), com.cloud.event.Event.State.Completed);
+        Assert.assertEquals(EventVO.LEVEL_ERROR, eventVO.getLevel());
+        Assert.assertEquals(com.cloud.event.Event.State.Completed, eventVO.getState());
     }
 
     @Test
@@ -276,14 +278,14 @@ public class ActionEventInterceptorTest {
         Method m = tester.getClass().getMethod("testMethod");
         actionEventInterceptor.interceptException(m, tester, null);
 
-        Assert.assertEquals(persistedEvents.size(), 1);
+        Assert.assertEquals(1, persistedEvents.size());
         EventVO eventVO = persistedEvents.get(0);
-        Assert.assertEquals(eventVO.getType(), eventType);
+        Assert.assertEquals(eventType, eventVO.getType());
         Assert.assertTrue(eventVO.getDescription().endsWith(eventDescription));
-        Assert.assertEquals(eventVO.getLevel(), EventVO.LEVEL_ERROR);
-        Assert.assertEquals(eventVO.getState(), com.cloud.event.Event.State.Completed);
-        Assert.assertEquals(eventVO.getResourceId(), resourceId);
-        Assert.assertEquals(eventVO.getResourceType(), resourceType.toString());
+        Assert.assertEquals(EventVO.LEVEL_ERROR, eventVO.getLevel());
+        Assert.assertEquals(com.cloud.event.Event.State.Completed, eventVO.getState());
+        Assert.assertEquals(resourceId, eventVO.getResourceId());
+        Assert.assertEquals(resourceType.toString(), eventVO.getResourceType());
     }
 
     @Test

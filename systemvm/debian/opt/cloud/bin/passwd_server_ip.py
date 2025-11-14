@@ -28,13 +28,14 @@
 import binascii
 import cgi
 import os
+import socketserver
 import sys
 import syslog
 import threading
 import urllib.parse
 
-from http.server   import BaseHTTPRequestHandler, HTTPServer
-from socketserver     import ThreadingMixIn #, ForkingMixIn
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from socketserver import ThreadingMixIn
 
 
 passMap = {}
@@ -97,9 +98,17 @@ def removePassword(ip):
             del passMap[ip]
 
 
-class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
-    pass
+class CloudStackPasswordServer(socketserver.TCPServer):
+    allow_reuse_address = 1
+    def server_bind(self):
+        """Override server_bind to store the server name."""
+        socketserver.TCPServer.server_bind(self)
+        host, port = self.server_address[:2]
+        self.server_name = host
+        self.server_port = port
 
+class ThreadedHTTPServer(ThreadingMixIn, CloudStackPasswordServer):
+    pass
 
 class PasswordRequestHandler(BaseHTTPRequestHandler):
     server_version = 'CloudStack Password Server'
@@ -114,7 +123,7 @@ class PasswordRequestHandler(BaseHTTPRequestHandler):
         if requestType == 'send_my_password':
             password = getPassword(clientAddress)
             if not password:
-                self.wfile.write('saved_password')
+                self.wfile.write('saved_password'.encode())
                 syslog.syslog('serve_password: requested password not found for %s' % clientAddress)
             else:
                 self.wfile.write(password.encode())
@@ -122,11 +131,11 @@ class PasswordRequestHandler(BaseHTTPRequestHandler):
         elif requestType == 'saved_password':
             removePassword(clientAddress)
             savePasswordFile()
-            self.wfile.write('saved_password')
+            self.wfile.write('saved_password'.encode())
             syslog.syslog('serve_password: saved_password ack received from %s' % clientAddress)
         else:
             self.send_response(400)
-            self.wfile.write('bad_request')
+            self.wfile.write('bad_request'.encode())
             syslog.syslog('serve_password: bad_request from IP %s' % clientAddress)
         return
 

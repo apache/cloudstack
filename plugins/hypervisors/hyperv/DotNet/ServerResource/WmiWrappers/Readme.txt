@@ -1,4 +1,4 @@
-﻿Classes were generated on a hyper-v server using the Visual Studio GUI, but you can do the same using
+Classes were generated on a hyper-v server using the Visual Studio GUI, but you can do the same using
 mgmtclassgen.exe.  Below are some examples:
 
 mgmtclassgen.exe Msvm_ComputerSystem /N root\virtualization /L CS /O CloudStack.Plugin.WmiWrappers /P ComputerSystem.cs

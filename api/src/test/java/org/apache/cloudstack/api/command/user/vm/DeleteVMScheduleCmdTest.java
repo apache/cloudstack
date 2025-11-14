@@ -34,8 +34,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
-import java.security.InvalidParameterException;
-
 public class DeleteVMScheduleCmdTest {
     @Mock
     public VMScheduleManager vmScheduleManager;
@@ -89,11 +87,11 @@ public class DeleteVMScheduleCmdTest {
     /**
      * given: "We have a VMScheduleManager and DeleteVMScheduleCmd"
      * when: "DeleteVMScheduleCmd is executed with an invalid parameter"
-     * then: "an InvalidParameterException is thrown"
+     * then: "an InvalidParameterValueException is thrown"
      */
-    @Test(expected = InvalidParameterException.class)
-    public void testInvalidParameterException() {
-        Mockito.when(vmScheduleManager.removeSchedule(deleteVMScheduleCmd)).thenThrow(InvalidParameterException.class);
+    @Test(expected = InvalidParameterValueException.class)
+    public void testInvalidParameterValueException() {
+        Mockito.when(vmScheduleManager.removeSchedule(deleteVMScheduleCmd)).thenThrow(InvalidParameterValueException.class);
         deleteVMScheduleCmd.execute();
     }
 
@@ -113,7 +111,7 @@ public class DeleteVMScheduleCmdTest {
     /**
      * given: "We have an EntityManager and DeleteVMScheduleCmd"
      * when: "DeleteVMScheduleCmd.getEntityOwnerId is executed for a VM which doesn't exist"
-     * then: "an InvalidParameterException is thrown"
+     * then: "an InvalidParameterValueException is thrown"
      */
     @Test(expected = InvalidParameterValueException.class)
     public void testFailureGetEntityOwnerId() {

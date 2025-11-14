@@ -83,6 +83,11 @@ public class QuotaTariffResponse extends BaseResponse {
     @Param(description = "when the quota tariff was removed")
     private Date removed;
 
+    @SerializedName("position")
+    @Param(description = "position in the execution sequence for tariffs of the same type")
+    private Integer position;
+
+
     public QuotaTariffResponse() {
         super();
         this.setObjectName("quotatariff");
@@ -170,6 +175,14 @@ public class QuotaTariffResponse extends BaseResponse {
 
     public void setRemoved(Date removed) {
         this.removed = removed;
+    }
+
+    public Integer getPosition() {
+        return position;
+    }
+
+    public void setPosition(Integer position) {
+        this.position = position;
     }
 
 }

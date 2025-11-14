@@ -81,7 +81,6 @@ public class DeleteUserFromProjectCmd extends BaseAsyncCmd {
         return "Removing user " + userId + " from project: " + projectId;
     }
 
-
     @Override
     public long getEntityOwnerId() {
         Project project = _projectService.getProject(projectId);

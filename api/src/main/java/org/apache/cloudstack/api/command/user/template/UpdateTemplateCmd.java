@@ -46,6 +46,11 @@ public class UpdateTemplateCmd extends BaseUpdateTemplateOrIsoCmd implements Use
     @Parameter(name = ApiConstants.TEMPLATE_TAG, type = CommandType.STRING, description = "the tag for this template.", since = "4.20.0")
     private String templateTag;
 
+    @Parameter(name = ApiConstants.FOR_CKS, type = CommandType.BOOLEAN,
+    description = "indicates that the template can be used for deployment of CKS clusters",
+    since = "4.21.0")
+    private Boolean forCks;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -61,6 +66,10 @@ public class UpdateTemplateCmd extends BaseUpdateTemplateOrIsoCmd implements Use
 
     public String getTemplateTag() {
         return templateTag;
+    }
+
+    public Boolean getForCks() {
+        return forCks;
     }
 
     /////////////////////////////////////////////////////

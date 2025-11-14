@@ -29,7 +29,7 @@ import org.apache.cloudstack.api.response.IsAccountAllowedToCreateOfferingsWithT
         responseObject = IsAccountAllowedToCreateOfferingsWithTagsResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class IsAccountAllowedToCreateOfferingsWithTagsCmd extends BaseCmd {
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "Account UUID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "Account UUID", required = true)
     private Long id;
 
     @Override

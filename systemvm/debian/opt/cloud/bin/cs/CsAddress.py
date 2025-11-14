@@ -19,14 +19,15 @@ import logging
 from netaddr import IPAddress, IPNetwork
 import subprocess
 import time
+
 from . import CsHelper
 from .CsDatabag import CsDataBag
 from .CsApp import CsApache, CsDnsmasq, CsPasswdSvc
 from .CsRoute import CsRoute
 from .CsRule import CsRule
+from .CsStaticRoutes import CsStaticRoutes
 
 VRRP_TYPES = ['guest']
-
 
 class CsAddress(CsDataBag):
 
@@ -43,6 +44,19 @@ class CsAddress(CsDataBag):
             for ip in self.dbag[dev]:
                 interfaces.append(CsInterface(ip, self.config))
         return interfaces
+
+    def get_guest_if_by_network_id(self):
+        guest_interface = None
+        lowest_network_id = 1000
+        for interface in self.get_interfaces():
+            if interface.is_guest() and interface.is_added():
+                if not self.config.is_vpc():
+                    return interface
+                network_id = self.config.guestnetwork().get_network_id(interface.get_device())
+                if network_id and network_id < lowest_network_id:
+                    lowest_network_id = network_id
+                    guest_interface = interface
+        return guest_interface
 
     def get_guest_if(self):
         """
@@ -261,12 +275,15 @@ class CsDevice:
         self.fw = config.get_fw()
         self.cl = config.cmdline()
 
-    def configure_rp(self):
+    def configure_rp(self, enable=True):
         """
         Configure Reverse Path Filtering
         """
         filename = "/proc/sys/net/ipv4/conf/%s/rp_filter" % self.dev
-        CsHelper.updatefile(filename, "1\n", "w")
+        if enable:
+            CsHelper.updatefile(filename, "1\n", "w")
+        else:
+            CsHelper.updatefile(filename, "0\n", "w")
 
     def buildlist(self):
         """
@@ -307,6 +324,8 @@ class CsIP:
         self.fw = config.get_fw()
         self.cl = config.cmdline()
         self.config = config
+        self.nft_ipv4_fw = config.get_nft_ipv4_fw()
+        self.nft_ipv4_acl = config.get_nft_ipv4_acl()
 
     def setAddress(self, address):
         self.address = address
@@ -341,7 +360,7 @@ class CsIP:
 
             interfaces = [CsInterface(address, self.config)]
             CsHelper.reconfigure_interfaces(self.cl, interfaces)
-            if self.get_type() in ['public']:
+            if self.get_type() in ['public'] and not self.config.is_routed() and self.config.has_public_network():
                 self.set_mark()
 
             if 'gateway' in self.address:
@@ -351,14 +370,20 @@ class CsIP:
             self.post_config_change("add")
 
         '''For isolated/redundant and dhcpsrvr routers, call this method after the post_config is complete '''
-        if not self.config.is_vpc():
+        if self.get_type() in ["control"]:
             self.setup_router_control()
 
         if self.config.is_vpc() or self.cl.is_redundant():
             # The code looks redundant here, but we actually have to cater for routers and
             # VPC routers in a different manner. Please do not remove this block otherwise
             # The VPC default route will be broken.
-            if self.get_type() in ["public"] and address["device"] == CsHelper.PUBLIC_INTERFACES[self.cl.get_type()]:
+            if not self.config.has_public_network():
+                interface = self.config.address().get_guest_if_by_network_id()
+                if interface:
+                    gateway = interface.get_gateway()
+                    route.add_or_change_defaultroute(gateway)
+                    CsDevice(self.dev, self.config).configure_rp(False)
+            elif self.get_type() in ["public"] and address["device"] == CsHelper.PUBLIC_INTERFACES[self.cl.get_type()]:
                 gateway = str(address["gateway"])
                 route.add_defaultroute(gateway)
         else:
@@ -399,7 +424,19 @@ class CsIP:
             return self.address['mtu']
         return CsIP.DEFAULT_MTU
 
+    def setup_router_control_routing(self):
+        if self.config.is_vpc():
+            self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
+                                      'rule': 'iifname "eth0" tcp dport 3922 ct state established,new counter accept'})
+        else:
+            self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
+                                     'rule': 'iifname "eth1" tcp dport 3922 ct state established,new counter accept'})
+
     def setup_router_control(self):
+        if self.config.is_routed():
+            self.setup_router_control_routing()
+            return
+
         if self.config.is_vpc():
             return
 
@@ -412,7 +449,7 @@ class CsIP:
         self.fw.append(["filter", "", "-P FORWARD DROP"])
 
     def fw_router(self):
-        if self.config.is_vpc():
+        if self.config.is_vpc() or self.config.is_routed() or self.config.is_dhcp():
             return
 
         self.fw.append(["mangle", "front", "-A PREROUTING " +
@@ -500,7 +537,7 @@ class CsIP:
         self.fw.append(['', '', '-A NETWORK_STATS -i eth2 ! -o eth0 -p tcp'])
 
     def fw_vpcrouter(self):
-        if not self.config.is_vpc():
+        if not self.config.is_vpc() or self.config.is_routed():
             return
 
         self.fw.append(["filter", "", "-A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT"])
@@ -509,20 +546,24 @@ class CsIP:
             self.fw.append(["mangle", "front", "-A PREROUTING " +
                             " -i %s -m state --state RELATED,ESTABLISHED " % self.dev +
                             "-j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff"])
-            guestNetworkCidr = self.address['network']
-            self.fw.append(["filter", "", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" %
-                            (guestNetworkCidr, self.dev, self.dev)])
-            self.fw.append(
-                ["filter", "front", "-A ACL_INBOUND_%s -d 224.0.0.18/32 -j ACCEPT" % self.dev])
-            self.fw.append(
-                ["filter", "front", "-A ACL_INBOUND_%s -d 225.0.0.50/32 -j ACCEPT" % self.dev])
-            self.fw.append(
-                ["filter", "", "-A ACL_INBOUND_%s -j DROP" % self.dev])
 
-            self.fw.append(
-                ["mangle", "front", "-A ACL_OUTBOUND_%s -d 225.0.0.50/32 -j ACCEPT" % self.dev])
-            self.fw.append(
-                ["mangle", "front", "-A ACL_OUTBOUND_%s -d 224.0.0.18/32 -j ACCEPT" % self.dev])
+            guestNetworkCidr = self.address['network']
+            if self.config.has_public_network():
+                self.fw.append(["filter", "", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" %
+                                (guestNetworkCidr, self.dev, self.dev)])
+                self.fw.append(
+                    ["filter", "front", "-A ACL_INBOUND_%s -d 224.0.0.18/32 -j ACCEPT" % self.dev])
+                self.fw.append(
+                    ["filter", "front", "-A ACL_INBOUND_%s -d 225.0.0.50/32 -j ACCEPT" % self.dev])
+                self.fw.append(
+                    ["filter", "", "-A ACL_INBOUND_%s -j DROP" % self.dev])
+                self.fw.append(
+                    ["mangle", "front", "-A ACL_OUTBOUND_%s -d 225.0.0.50/32 -j ACCEPT" % self.dev])
+                self.fw.append(
+                    ["mangle", "front", "-A ACL_OUTBOUND_%s -d 224.0.0.18/32 -j ACCEPT" % self.dev])
+            else:
+                self.fw.append(["filter", "", "-A FORWARD -d %s -o %s -j ACCEPT" % (guestNetworkCidr, self.dev)])
+
             self.fw.append(
                 ["filter", "", "-A INPUT -i %s -p udp -m udp --dport 67 -j ACCEPT" % self.dev])
             self.fw.append(
@@ -537,13 +578,17 @@ class CsIP:
                 ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 443 -s %s -m state --state NEW -j ACCEPT" % (self.dev, guestNetworkCidr)])
             self.fw.append(
                 ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 8080 -s %s -m state --state NEW -j ACCEPT" % (self.dev, guestNetworkCidr)])
-            self.fw.append(["mangle", "",
-                            "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s/32 -j ACL_OUTBOUND_%s" %
-                            (self.dev, guestNetworkCidr, self.address['gateway'], self.dev)])
+
+            if self.config.has_public_network():
+                self.fw.append(["mangle", "",
+                                "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s/32 -j ACL_OUTBOUND_%s" %
+                                (self.dev, guestNetworkCidr, self.address['gateway'], self.dev)])
 
         if self.is_private_gateway():
-            self.fw.append(["filter", "", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" %
+            self.fw.append(["filter", "front", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" %
                             (self.address['network'], self.dev, self.dev)])
+            self.fw.append(["filter", "front", "-A FORWARD -d %s -o %s -m state --state RELATED,ESTABLISHED -j ACCEPT" %
+                            (self.address['network'], self.dev)])
             self.fw.append(["filter", "", "-A ACL_INBOUND_%s -j DROP" % self.dev])
             self.fw.append(["mangle", "",
                             "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s/32 -j ACL_OUTBOUND_%s" %
@@ -551,6 +596,23 @@ class CsIP:
             self.fw.append(["mangle", "front",
                             "-A PREROUTING -s %s -d %s -m state --state NEW -j MARK --set-xmark %s/0xffffffff" %
                             (self.cl.get_vpccidr(), self.address['network'], hex(100 + int(self.dev[3:])))])
+
+            static_routes = CsStaticRoutes("staticroutes", self.config)
+            if static_routes:
+                for item in static_routes.get_bag():
+                    if item == "id":
+                        continue
+                    static_route = static_routes.get_bag()[item]
+                    if static_route['ip_address'] == self.address['public_ip'] and not static_route['revoke']:
+                        self.fw.append(["mangle", "",
+                                        "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s/32 -j ACL_OUTBOUND_%s" %
+                                        (self.dev, static_route['network'], static_route['ip_address'], self.dev)])
+                        self.fw.append(["filter", "front", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" %
+                                        (static_route['network'], self.dev, self.dev)])
+                        self.fw.append(["filter", "front",
+                                        "-A FORWARD -d %s -o %s -m state --state RELATED,ESTABLISHED -j ACCEPT" %
+                                        (static_route['network'], self.dev)])
+
             if self.address["source_nat"]:
                 self.fw.append(["nat", "front",
                                 "-A POSTROUTING -o %s -j SNAT --to-source %s" %
@@ -603,6 +665,117 @@ class CsIP:
         self.fw.append(["filter", "", "-P INPUT DROP"])
         self.fw.append(["filter", "", "-P FORWARD DROP"])
 
+    def fw_router_routing(self):
+        if self.config.is_vpc() or not self.config.is_routed():
+            return
+
+        # Add default rules for INPUT chain
+        self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
+                                 'rule': "iifname lo counter accept"})
+        self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
+                                 'rule': "iifname eth2 ct state related,established counter accept"})
+        # Add default rules for FORWARD chain
+        self.nft_ipv4_fw.append({'type': "", 'chain': 'FORWARD',
+                   'rule': 'iifname "eth2" oifname "eth0" ct state related,established counter accept'})
+        self.nft_ipv4_fw.append({'type': "", 'chain': 'FORWARD',
+                   'rule': 'iifname "eth0" oifname "eth0" ct state new counter accept'})
+        self.nft_ipv4_fw.append({'type': "", 'chain': 'FORWARD',
+                   'rule': 'iifname "eth0" oifname "eth0" ct state related,established counter accept'})
+
+        if self.get_type() in ["guest"]:
+            guestNetworkCidr = self.address['network']
+            self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
+                                     'rule': "iifname %s ct state related,established counter accept" % self.dev})
+            self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
+                                     'rule': "iifname %s udp dport 67 counter accept" % self.dev})
+            self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
+                                     'rule': "iifname %s ip saddr %s tcp dport 53 counter accept" % (self.dev, guestNetworkCidr)})
+            self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
+                                     'rule': "iifname %s ip saddr %s udp dport 53 counter accept" % (self.dev, guestNetworkCidr)})
+            self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
+                                     'rule': "iifname %s ip saddr %s tcp dport 80 ct state new counter accept" % (self.dev, guestNetworkCidr)})
+            self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
+                                     'rule': "iifname %s ip saddr %s tcp dport 443 ct state new counter accept" % (self.dev, guestNetworkCidr)})
+            self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
+                                     'rule': "iifname %s ip saddr %s tcp dport 8080 ct state new counter accept" % (self.dev, guestNetworkCidr)})
+
+    def fw_vpcrouter_routing(self):
+        if not self.config.is_vpc() or not self.config.is_routed():
+            return
+
+        # Add default rules for INPUT chain for VPC
+        self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
+                                  'rule': "iifname lo counter accept"})
+        self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
+                                  'rule': "iifname eth1 ct state related,established counter accept"})
+
+        if self.get_type() in ["guest"]:
+            guestNetworkCidr = self.address['network']
+            self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
+                                      'rule': "iifname %s ct state related,established counter accept" % self.dev})
+            self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
+                                      'rule': "iifname %s udp dport 67 counter accept" % self.dev})
+            self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
+                                      'rule': "iifname %s ip saddr %s tcp dport 53 counter accept" % (self.dev, guestNetworkCidr)})
+            self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
+                                      'rule': "iifname %s ip saddr %s udp dport 53 counter accept" % (self.dev, guestNetworkCidr)})
+            self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
+                                      'rule': "iifname %s ip saddr %s tcp dport 80 ct state new counter accept" % (self.dev, guestNetworkCidr)})
+            self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
+                                      'rule': "iifname %s ip saddr %s tcp dport 443 ct state new counter accept" % (self.dev, guestNetworkCidr)})
+            self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
+                                      'rule': "iifname %s ip saddr %s tcp dport 8080 ct state new counter accept" % (self.dev, guestNetworkCidr)})
+
+            # Add default rules for FORWARD chain for VPC tiers
+            self.nft_ipv4_acl.append({'type': "", 'chain': 'FORWARD',
+                                      'rule': "oifname %s ip daddr %s ct state related,established counter accept" % (self.dev, guestNetworkCidr)})
+            self.nft_ipv4_acl.append({'type': "", 'chain': 'FORWARD',
+                                      'rule': "iifname %s oifname %s ct state new counter accept" % (self.dev, self.dev)})
+            self.nft_ipv4_acl.append({'type': "", 'chain': 'FORWARD',
+                                      'rule': "iifname %s oifname %s ct state related,established counter accept" % (self.dev, self.dev)})
+
+    def fw_dhcpserver(self):
+        if not self.config.is_dhcp():
+            return
+
+        self.fw.append(["mangle", "front",
+                        "-A POSTROUTING " +
+                        "-p udp -m udp --dport 68 -j CHECKSUM --checksum-fill"])
+
+        self.fw.append(["filter", "", "-A INPUT -d 224.0.0.18/32 -j ACCEPT"])
+        self.fw.append(["filter", "", "-A INPUT -d 225.0.0.50/32 -j ACCEPT"])
+        self.fw.append(["filter", "", "-A INPUT -i %s -m state --state RELATED,ESTABLISHED -j ACCEPT" %
+                        self.dev])
+        self.fw.append(["filter", "", "-A INPUT -p icmp -j ACCEPT"])
+        self.fw.append(["filter", "", "-A INPUT -i lo -j ACCEPT"])
+
+        if self.config.is_vpc():
+            self.fw.append(
+                ["filter", "", "-A INPUT -i eth0 -p tcp -m tcp --dport 3922 -m state --state NEW,ESTABLISHED -j ACCEPT"])
+        else:
+            self.fw.append(
+                ["filter", "", "-A INPUT -i eth1 -p tcp -m tcp --dport 3922 -m state --state NEW,ESTABLISHED -j ACCEPT"])
+
+        if self.get_type() in ["guest"]:
+            guestNetworkCidr = self.address['network']
+            self.fw.append(
+                ["filter", "", "-A INPUT -i %s -p udp -m udp --dport 67 -j ACCEPT" % self.dev])
+            self.fw.append(
+                ["filter", "", "-A INPUT -i %s -p udp -m udp --dport 53 -s %s -j ACCEPT" % (self.dev, guestNetworkCidr)])
+            self.fw.append(
+                ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 53 -s %s -j ACCEPT" % (self.dev, guestNetworkCidr)])
+            self.fw.append(
+                ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 80 -s %s -m state --state NEW -j ACCEPT" % (self.dev, guestNetworkCidr)])
+            self.fw.append(
+                ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 443 -s %s -m state --state NEW -j ACCEPT" % (self.dev, guestNetworkCidr)])
+            self.fw.append(
+                ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 8080 -s %s -m state --state NEW -j ACCEPT" % (self.dev, guestNetworkCidr)])
+            self.fw.append(
+                ["filter", "", "-A FORWARD -i %s -o %s -m state --state RELATED,ESTABLISHED -j ACCEPT" % (self.dev, self.dev)])
+            self.fw.append(
+                ["filter", "", "-A FORWARD -i %s -o %s -m state --state NEW -j ACCEPT" % (self.dev, self.dev)])
+
+
     def post_config_change(self, method):
         route = CsRoute()
         tableName = "Table_" + self.dev
@@ -649,6 +822,9 @@ class CsIP:
 
         self.fw_router()
         self.fw_vpcrouter()
+        self.fw_router_routing()
+        self.fw_vpcrouter_routing()
+        self.fw_dhcpserver()
 
         cmdline = self.config.cmdline()
 
@@ -688,7 +864,7 @@ class CsIP:
                     elif method == "delete":
                         CsPasswdSvc(self.get_gateway() + "," + self.address['public_ip']).stop()
 
-        if self.get_type() == "public" and self.config.is_vpc() and method == "add":
+        if self.get_type() == "public" and self.config.is_vpc() and method == "add" and not self.config.is_routed():
             if self.address["source_nat"]:
                 vpccidr = cmdline.get_vpccidr()
                 self.fw.append(

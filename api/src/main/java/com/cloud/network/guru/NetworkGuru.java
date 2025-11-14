@@ -212,4 +212,11 @@ public interface NetworkGuru extends Adapter {
 
     boolean isMyTrafficType(TrafficType type);
 
+    default boolean isSlaacV6Only() {
+        return true;
+    }
+
+    default boolean update(Network network, String prevNetworkName) {
+        return true;
+    }
 }
