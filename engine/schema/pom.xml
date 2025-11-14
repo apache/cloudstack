@@ -130,8 +130,8 @@
                 <artifactId>download-maven-plugin</artifactId>
                 <version>1.6.3</version>
                 <executions>
-                    <?m2e execute onConfiguration,onIncremental?>
                     <execution>
+                        <?m2e execute onConfiguration,onIncremental?>
                         <id>download-checksums</id>
                         <phase>validate</phase>
                         <goals>
