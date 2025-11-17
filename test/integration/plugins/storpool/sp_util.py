@@ -981,11 +981,11 @@ class StorPoolHelper():
             if obj.zoneid not in snapshots:
                 new_list.append(obj)
                 snapshots.add(obj.zoneid)
-        logging.debug(new_list)
-        logging.debug(zone_ids)
-        logging.debug(snapshot_entries)
+        logging.debug("new list %s" % new_list)
+        logging.debug("zone IDs %s" % zone_ids)
+        logging.debug("snapshot entries %s" % snapshot_entries)
         if len(new_list) != len(zone_ids):
-            cls.fail("Undesired list snapshot size for multiple zones")
+            raise Exception("Undesired list snapshot size for multiple zones")
         for zone_id in zone_ids:
             zone_found = False
             for entry in new_list:
@@ -993,4 +993,4 @@ class StorPoolHelper():
                     zone_found = True
                     break
             if zone_found == False:
-                cls.fail("Unable to find snapshot entry for the zone ID: %s" % zone_id)
+                raise Exception("Unable to find snapshot entry for the zone ID: %s" % zone_id)

@@ -87,6 +87,9 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
 
         if storage_pools_response:
             cls.zone_wide_storage = storage_pools_response[0]
+            storage_tag = None
+            if cls.zone_wide_storage.tags:
+                storage_tag = cls.zone_wide_storage.tags
 
             cls.debug(
                 "zone wide storage id is %s" %
@@ -94,7 +97,7 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
             cls.service_offering = ServiceOffering.create(
                 cls.apiclient,
                 cls.services["service_offerings"]["small"],
-                tags=cls.zone_wide_storage.tags
+                tags=storage_tag
             )
             cls._cleanup.append(cls.service_offering)
 
@@ -102,7 +105,7 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
                 "name": "do-tags",
                 "displaytext": "Disk offering with tags",
                 "disksize":8,
-                "tags": cls.zone_wide_storage.tags
+                "tags": storage_tag
             }
             cls.disk_offering = DiskOffering.create(
                 cls.apiclient,
@@ -271,7 +274,7 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
         self.deploy_vm_from_snapshot(snapshot)
 
     def deploy_vm_from_snapshot(self, snapshot):
-        virtual_machine = VirtualMachine.create(self.apiclient,
+        self.virtual_machine = VirtualMachine.create(self.apiclient,
                                                 {"name": "Test-%s" % uuid.uuid4()},
                                                 accountid=self.account.name,
                                                 domainid=self.account.domainid,
@@ -280,12 +283,12 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
                                                 snapshotid=snapshot.id,
                                                 mode="basic",
                                                 )
-        self._cleanup.append(virtual_machine)
+        self.cleanup.append(self.virtual_machine)
         try:
-            ssh_client = virtual_machine.get_ssh_client()
+            ssh_client = self.virtual_machine.get_ssh_client()
         except Exception as e:
             self.fail("SSH failed for virtual machine: %s - %s" %
-                      (virtual_machine.ipaddress, e))
+                      (self.virtual_machine.ipaddress, e))
 
     def create_volume_from_snapshot_deploy_vm(self, snapshotid):
         volume = Volume.create_from_snapshot(
@@ -297,7 +300,7 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
             domainid=self.account.domainid,
             zoneid=self.zone.id,
         )
-        virtual_machine = VirtualMachine.create(self.apiclient,
+        self.virtual_machine = VirtualMachine.create(self.apiclient,
                                                 {"name": "Test-%s" % uuid.uuid4()},
                                                 accountid=self.account.name,
                                                 domainid=self.account.domainid,
@@ -306,9 +309,9 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
                                                 volumeid=volume.id,
                                                 mode="basic",
                                                 )
-        self._cleanup.append(virtual_machine)
+        self.cleanup.append(self.virtual_machine)
         try:
-            ssh_client = virtual_machine.get_ssh_client()
+            ssh_client = self.virtual_machine.get_ssh_client()
         except Exception as e:
             self.fail("SSH failed for virtual machine: %s - %s" %
-                      (virtual_machine.ipaddress, e))
+                      (self.virtual_machine.ipaddress, e))

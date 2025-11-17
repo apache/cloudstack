@@ -110,8 +110,6 @@ class TestSnapshotCopy(cloudstackTestCase):
             domainid=cls.domain.id)
         cls._cleanup.append(cls.account)
 
-        cls.helper = StorPoolHelper()
-
         compute_offering_service = cls.services["service_offerings"]["tiny"].copy()
         td = TestData()
         cls.testdata = td.testdata
@@ -164,9 +162,9 @@ class TestSnapshotCopy(cloudstackTestCase):
         """
 
         snapshot = Snapshot.create(self.userapiclient, volume_id=self.volume.id, zoneids=[str(self.additional_zone.id)], usestoragereplication=True)
+        self._cleanup.append(snapshot)
         self.snapshot_id = snapshot.id
         self.helper.verify_snapshot_copies(self.userapiclient, self.snapshot_id, [self.zone.id, self.additional_zone.id])
-        self._cleanup.append(snapshot)
         return
 
     @skipTestIf("testsNotSupported")
@@ -176,11 +174,11 @@ class TestSnapshotCopy(cloudstackTestCase):
         """
 
         snapshot = Snapshot.create(self.userapiclient, volume_id=self.volume.id)
+        self._cleanup.append(snapshot)
         self.snapshot_id = snapshot.id
         Snapshot.copy(self.userapiclient, self.snapshot_id, zone_ids=[str(self.additional_zone.id)], source_zone_id=self.zone.id, usestoragereplication=True)
         self.helper.verify_snapshot_copies(self.userapiclient, self.snapshot_id, [self.zone.id, self.additional_zone.id])
 
-        self._cleanup.append(snapshot)
         return
 
     @skipTestIf("testsNotSupported")
@@ -222,6 +220,7 @@ class TestSnapshotCopy(cloudstackTestCase):
         """
 
         snapshot = Snapshot.create(self.userapiclient,volume_id=self.volume.id, zoneids=[str(self.additional_zone.id)], usestoragereplication=True)
+        self._cleanup.append(snapshot)
         self.snapshot_id = snapshot.id
         self.helper.verify_snapshot_copies(self.userapiclient, self.snapshot_id, [self.zone.id, self.additional_zone.id])
         disk_offering_id = None
@@ -236,8 +235,7 @@ class TestSnapshotCopy(cloudstackTestCase):
             disk_offering_id = self.disk_offering.id
 
         self.volume = Volume.create(self.userapiclient, {"diskname":"StorPoolDisk-1" }, snapshotid=self.snapshot_id, zoneid=self.zone.id, diskofferingid=disk_offering_id)
-        self._cleanup.append(self.volume)
-        self._cleanup.append(snapshot)
+        self.cleanup.append(self.volume)
         if self.zone.id != self.volume.zoneid:
             self.fail("Volume from snapshot not created in the additional zone")
         return
@@ -248,13 +246,13 @@ class TestSnapshotCopy(cloudstackTestCase):
         """Test to take volume snapshot in multiple StorPool primary storages in diff zones and create a volume in one of the additional zones
         """
         snapshot = Snapshot.create(self.userapiclient, volume_id=self.volume.id, zoneids=[str(self.additional_zone.id)], usestoragereplication=True)
+        self._cleanup.append(snapshot)
         self.snapshot_id = snapshot.id
         self.helper.verify_snapshot_copies(self.userapiclient, self.snapshot_id, [self.zone.id, self.additional_zone.id])
         self.template = self.helper.create_snapshot_template(self.userapiclient, self.services, self.snapshot_id, self.additional_zone.id)
+        self.cleanup.append(self.template)
         if self.additional_zone.id != self.template.zoneid:
             self.fail("Template from snapshot not created in the additional zone")
-        self._cleanup.append(snapshot)
-        self._cleanup.append(self.template)
         return
 
     @skipTestIf("testsNotSupported")
@@ -280,7 +278,7 @@ class TestSnapshotCopy(cloudstackTestCase):
          and deploy a VM from the volume in one of the additional zones
         """
         snapshot = Snapshot.create(self.userapiclient, volume_id=self.volume.id, zoneids=[str(self.additional_zone.id)], usestoragereplication=True)
-        self._cleanup.append(snapshot)
+        self.cleanup.append(snapshot)
         self.snapshot_id = snapshot.id
         self.helper.verify_snapshot_copies(self.userapiclient, self.snapshot_id, [self.zone.id, self.additional_zone.id])
         vm = self.create_volume_from_snapshot_deploy_vm(snapshotid=self.snapshot_id, zoneid=self.additional_zone.id)
