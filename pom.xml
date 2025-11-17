@@ -29,7 +29,7 @@
 
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.22.0.0-SNAPSHOT</version>
+    <version>4.23.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Apache CloudStack</name>
     <description>Apache CloudStack is an IaaS ("Infrastructure as a Service") cloud orchestration platform.</description>
@@ -50,7 +50,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.systemvm.template.location>https://download.cloudstack.org/systemvm</project.systemvm.template.location>
-        <project.systemvm.template.version>4.20.2.0</project.systemvm.template.version>
+        <project.systemvm.template.version>4.22.0.0</project.systemvm.template.version>
         <sonar.organization>apache</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
 
@@ -156,7 +156,7 @@
         <cs.jakarta.xml.bind.version>2.3.3</cs.jakarta.xml.bind.version>
         <cs.jaxws.version>2.3.7</cs.jaxws.version>
         <cs.jersey-client.version>2.26</cs.jersey-client.version>
-        <cs.jetty.version>9.4.51.v20230217</cs.jetty.version>
+        <cs.jetty.version>9.4.58.v20250814</cs.jetty.version>
         <cs.jetty-maven-plugin.version>9.4.27.v20200227</cs.jetty-maven-plugin.version>
         <cs.jna.version>5.5.0</cs.jna.version>
         <cs.joda-time.version>2.12.5</cs.joda-time.version>
@@ -1016,19 +1016,17 @@
                             <exclude>**/.vagrant</exclude>
                             <exclude>**/*.json</exclude>
                             <exclude>**/.checkstyle</exclude>
-                            <exclude>**/*.md</exclude>
                             <exclude>.java-version</exclude>
                             <exclude>.python-version</exclude>
-                            <exclude>systemvm/.pythen-version</exclude>
                             <exclude>.idea/</exclude>
                             <exclude>.metadata/**</exclude>
                             <exclude>.git/**</exclude>
                             <exclude>.github/linters/codespell.txt</exclude>
                             <exclude>.gitignore</exclude>
+                            <exclude>.markdownlintignore</exclude>
                             <exclude>CHANGES.md</exclude>
-                            <exclude>CONTRIBUTING.md</exclude>
-                            <exclude>README.md</exclude>
-                            <exclude>INSTALL.md</exclude>
+                            <exclude>ISSUE_TEMPLATE.md</exclude>
+                            <exclude>PULL_REQUEST_TEMPLATE.md</exclude>
                             <exclude>build/build.number</exclude>
                             <exclude>debian/cloudstack-agent.dirs</exclude>
                             <exclude>debian/cloudstack-usage.dirs</exclude>
@@ -1056,7 +1054,6 @@
                             <exclude>systemvm/agent/packages/**</exclude>
                             <exclude>systemvm/debian/**</exclude>
                             <exclude>test/integration/component/test_host_ha.sh</exclude>
-                            <exclude>test/systemvm/README.md</exclude>
                             <exclude>tools/appliance/*/template.json</exclude>
                             <exclude>tools/cli/cloudmonkey.egg-info/*</exclude>
                             <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
@@ -1070,6 +1067,8 @@
                             <exclude>tools/transifex/.tx/config</exclude>
                             <exclude>ui/.*</exclude>
                             <exclude>ui/.*/**</exclude>
+                            <exclude>ui/docs/full-test-plan.template.md</exclude>
+                            <exclude>ui/docs/smoke-test-plan.template.md</exclude>
                             <exclude>ui/src/assets/**</exclude>
                             <exclude>ui/public/**</exclude>
                             <exclude>ui/legacy/**</exclude>

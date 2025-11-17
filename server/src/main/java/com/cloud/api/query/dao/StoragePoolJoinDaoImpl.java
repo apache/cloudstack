@@ -40,6 +40,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.capacity.CapacityManager;
+import com.cloud.server.ResourceTag;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
@@ -152,6 +153,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
                 }
             }
         }
+        poolResponse.setCapacityBytes(pool.getCapacityBytes());
         poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
         poolResponse.setDiskSizeAllocated(allocatedSize);
         poolResponse.setDiskSizeUsed(pool.getUsedBytes());
@@ -180,6 +182,8 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setIsTagARule(pool.getIsTagARule());
         poolResponse.setOverProvisionFactor(Double.toString(CapacityManager.StorageOverprovisioningFactor.valueIn(pool.getId())));
         poolResponse.setManaged(storagePool.isManaged());
+        Map<String, String> details = ApiDBUtils.getResourceDetails(pool.getId(), ResourceTag.ResourceObjectType.Storage);
+        poolResponse.setDetails(details);
 
         // set async job
         if (pool.getJobId() != null) {
@@ -252,6 +256,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         }
 
         long allocatedSize = pool.getUsedCapacity();
+        poolResponse.setCapacityBytes(pool.getCapacityBytes());
         poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
         poolResponse.setDiskSizeAllocated(allocatedSize);
         poolResponse.setCapacityIops(pool.getCapacityIops());

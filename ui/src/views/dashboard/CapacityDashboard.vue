@@ -673,6 +673,7 @@ export default {
 
 .dashboard-storage {
   width: 100%;
+  min-height: 370px;
   overflow-x:hidden;
   overflow-y: scroll;
   max-height: 370px;
