@@ -123,7 +123,9 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
             return null;
         }
         DataStore store = storeMgr.getDataStore(snapshotStore.getDataStoreId(), role);
-        return SnapshotObject.getSnapshotObject(snapshot, store);
+        SnapshotObject snapshotObject = SnapshotObject.getSnapshotObject(snapshot, store);
+        snapshotObject.setKvmIncrementalSnapshot(snapshotStore.getKvmCheckpointPath() != null);
+        return snapshotObject;
     }
 
     @Override
