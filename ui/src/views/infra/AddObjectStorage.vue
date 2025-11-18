@@ -31,6 +31,7 @@
           </template>
           <a-input v-model:value="form.name" v-focus="true" />
         </a-form-item>
+
         <a-form-item name="provider" ref="provider">
           <template #label>
             <tooltip-label :title="$t('label.providername')" :tooltip="apiParams.provider.description"/>
@@ -51,8 +52,8 @@
           </a-select>
         </a-form-item>
 
+        <!-- Cloudian HyperStore Only Object Store Configuration -->
         <div v-if="form.provider === 'Cloudian HyperStore'">
-          <!-- HyperStore Only Object Store Configuration -->
           <a-form-item name="url" ref="url" :label="$t('label.cloudian.admin.url')">
             <a-input v-model:value="form.url" placeholder="https://admin-hostname:19443" />
           </a-form-item>
@@ -67,16 +68,74 @@
             <!-- Use secretKey field for the password to make provider shared configuration easier -->
             <a-input-password v-model:value="form.secretKey" autocomplete="off"/>
           </a-form-item>
-          <a-form-item name="s3Url" ref="s3Url" :label="$t('label.cloudian.s3.url')" :rules="[{ required: true, message: this.$t('label.required') }]">
+          <a-form-item name="s3Url" ref="s3Url" :label="$t('label.cloudian.s3.url')" :rules="[{ required: true, message: $t('label.required') }]">
             <a-input v-model:value="form.s3Url" placeholder="https://s3-hostname or http://s3-hostname"/>
           </a-form-item>
-          <a-form-item name="iamUrl" ref="iamUrl" :label="$t('label.cloudian.iam.url')" :rules="[{ required: true, message: this.$t('label.required') }]">
+          <a-form-item name="iamUrl" ref="iamUrl" :label="$t('label.cloudian.iam.url')" :rules="[{ required: true, message: $t('label.required') }]">
             <a-input v-model:value="form.iamUrl" placeholder="https://iam-hostname:16443 or http://iam-hostname:16080"/>
           </a-form-item>
         </div>
 
+        <!-- ECS Object Store Configuration -->
+        <div v-else-if="form.provider === 'ECS'">
+          <!-- S3 URL (for UI: this becomes addObjectStoragePool url=...) -->
+          <a-form-item name="url" ref="url">
+            <template #label>
+              <tooltip-label :title="$t('label.url')" :tooltip="apiParams.url.description"/>
+            </template>
+            <a-input v-model:value="form.url" placeholder="https://ecs.example.com" />
+          </a-form-item>
+
+          <!-- Management API URL -> details[0].value (mgmt_url) -->
+          <a-form-item name="mgmtUrl" ref="mgmtUrl" :rules="[{ required: true, message: $t('label.required') }]">
+            <template #label>
+              <tooltip-label :title="'ECS Management URL'" :tooltip="'ECS management API base URL (mgmt_url), e.g. https://ecs-api.example.com:4443'"/>
+            </template>
+            <a-input v-model:value="form.mgmtUrl" placeholder="https://ecs-api.elcld.net" />
+          </a-form-item>
+
+          <!-- S3 host (hostname[:port], no scheme) -> details[1].value (s3_host) -->
+          <a-form-item name="s3Host" ref="s3Host" :rules="[{ required: true, message: $t('label.required') }]">
+            <template #label>
+              <tooltip-label :title="'ECS S3 Host'" :tooltip="'S3 endpoint host (s3_host), e.g. ecs.earthlink.dev'"/>
+            </template>
+            <a-input v-model:value="form.s3Host" placeholder="ecs.earthlink.dev" />
+          </a-form-item>
+
+          <!-- Service account user -> details[2].value (sa_user) -->
+          <a-form-item name="accessKey" ref="accessKey">
+            <template #label>
+              <tooltip-label :title="'ECS service account user'" :tooltip="'Service account user (sa_user), e.g. cloudstack'"/>
+            </template>
+            <a-input v-model:value="form.accessKey" placeholder="cloudstack" />
+          </a-form-item>
+
+          <!-- Service account password -> details[3].value (sa_password) -->
+          <a-form-item name="secretKey" ref="secretKey">
+            <template #label>
+              <tooltip-label :title="'ECS service account password'" :tooltip="'Service account password (sa_password)'"/>
+            </template>
+            <a-input-password v-model:value="form.secretKey" autocomplete="off" />
+          </a-form-item>
+
+          <!-- Namespace -> details[4].value (namespace) -->
+          <a-form-item name="namespace" ref="namespace" :rules="[{ required: true, message: $t('label.required') }]">
+            <template #label>
+              <tooltip-label :title="'Namespace'" :tooltip="'ECS namespace (namespace), e.g. cloudstack'"/>
+            </template>
+            <a-input v-model:value="form.namespace" placeholder="cloudstack" />
+          </a-form-item>
+
+          <!-- Insecure -> details[5].value (insecure) -->
+          <a-form-item name="insecure" ref="insecure">
+            <a-checkbox v-model:checked="form.insecure">
+              Allow insecure HTTPS (set insecure=true)
+            </a-checkbox>
+          </a-form-item>
+        </div>
+
+        <!-- Non-HyperStore, non-ECS Object Stores -->
         <div v-else>
-          <!-- Non-HyperStore Object Stores -->
           <a-form-item name="url" ref="url">
             <template #label>
               <tooltip-label :title="$t('label.url')" :tooltip="apiParams.url.description"/>
@@ -96,6 +155,7 @@
             <a-input v-model:value="form.size" />
           </a-form-item>
         </div>
+
         <div :span="24" class="action-button">
           <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
           <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -104,6 +164,7 @@
     </a-spin>
   </div>
 </template>
+
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { getAPI } from '@/api'
@@ -127,7 +188,7 @@ export default {
   inject: ['parentFetchData'],
   data () {
     return {
-      providers: ['MinIO', 'Ceph', 'Cloudian HyperStore', 'Simulator'],
+      providers: ['MinIO', 'Ceph', 'Cloudian HyperStore', 'Simulator', 'ECS'],
       zones: [],
       loading: false
     }
@@ -144,7 +205,12 @@ export default {
       this.formRef = ref()
       this.form = reactive({
         provider: 'MinIO',
-        validateSSL: true
+        validateSSL: true,
+        // ECS defaults
+        mgmtUrl: '',
+        s3Host: '',
+        namespace: '',
+        insecure: false
       })
       this.rules = reactive({
         url: [{ required: true, message: this.$t('label.required') }],
@@ -165,26 +231,62 @@ export default {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
 
-        var data = {
-          name: values.name,
-          size: values.size
+        const data = {
+          name: values.name
         }
-        var provider = values.provider
+        const provider = values.provider
 
         data.provider = provider
         data.url = values.url
-        data['details[0].key'] = 'accesskey'
-        data['details[0].value'] = values.accessKey
-        data['details[1].key'] = 'secretkey'
-        data['details[1].value'] = values.secretKey
 
         if (provider === 'Cloudian HyperStore') {
+          // Cloudian HyperStore details
+          data['details[0].key'] = 'accesskey'
+          data['details[0].value'] = values.accessKey
+          data['details[1].key'] = 'secretkey'
+          data['details[1].value'] = values.secretKey
           data['details[2].key'] = 'validateSSL'
           data['details[2].value'] = values.validateSSL
           data['details[3].key'] = 's3Url'
           data['details[3].value'] = values.s3Url
           data['details[4].key'] = 'iamUrl'
           data['details[4].value'] = values.iamUrl
+        } else if (provider === 'ECS') {
+          // ECS details matching your CLI example:
+          // add objectstoragepool name=ecsstore-4 provider=ECS url=https://ecs.earthlink.dev
+          //   details[0].key=mgmt_url    details[0].value=https://ecs-api.elcld.net
+          //   details[1].key=s3_host     details[1].value=ecs.earthlink.dev
+          //   details[2].key=sa_user     details[2].value=cloudstack
+          //   details[3].key=sa_password details[3].value=...
+          //   details[4].key=namespace   details[4].value=cloudstack
+          //   details[5].key=insecure    details[5].value=true
+
+          data['details[0].key'] = 'mgmt_url'
+          data['details[0].value'] = values.mgmtUrl
+
+          data['details[1].key'] = 's3_host'
+          data['details[1].value'] = values.s3Host
+
+          data['details[2].key'] = 'sa_user'
+          data['details[2].value'] = values.accessKey
+
+          data['details[3].key'] = 'sa_password'
+          data['details[3].value'] = values.secretKey
+
+          data['details[4].key'] = 'namespace'
+          data['details[4].value'] = values.namespace
+
+          data['details[5].key'] = 'insecure'
+          data['details[5].value'] = values.insecure ? 'true' : 'false'
+        } else {
+          // Generic non-Cloudian, non-ECS object stores
+          data['details[0].key'] = 'accesskey'
+          data['details[0].value'] = values.accessKey
+          data['details[1].key'] = 'secretkey'
+          data['details[1].value'] = values.secretKey
+          if (values.size) {
+            data.size = values.size
+          }
         }
 
         this.loading = true
@@ -219,6 +321,7 @@ export default {
   }
 }
 </script>
+
 <style lang="scss" scoped>
 .form-layout {
   width: 85vw;
