@@ -475,6 +475,20 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         _querySelectors = querySelectors;
     }
 
+    protected void deleteUserDataForAccount(long accountId) {
+        List<UserDataVO> userdataList = userDataDao.listByAccountId(accountId);
+        if (CollectionUtils.isNotEmpty(userdataList)) {
+            List<Long> conflictingTemplateIds = _templateDao.listByUserdataIdsNotAccount(userdataList
+                    .stream()
+                    .map(UserDataVO::getId)
+                    .collect(Collectors.toList()), accountId);
+            if (CollectionUtils.isNotEmpty(conflictingTemplateIds)) {
+                throw new CloudRuntimeException("User data owned by account linked to templates not owned by the account");
+            }
+        }
+        userDataDao.removeByAccountId(accountId);
+    }
+
     protected void deleteWebhooksForAccount(long accountId) {
         try {
             WebhookHelper webhookService = ComponentContext.getDelegateComponentOfType(WebhookHelper.class);
@@ -1200,7 +1214,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
 
             // Delete registered UserData
-            userDataDao.removeByAccountId(accountId);
+            deleteUserDataForAccount(accountId);
 
             // Delete Webhooks
             deleteWebhooksForAccount(accountId);
