@@ -31,6 +31,7 @@
     <bean id="ExtensionResourceMapDaoImpl" class="org.apache.cloudstack.framework.extensions.dao.ExtensionResourceMapDaoImpl" />
     <bean id="ExtensionResourceMapDetailsDaoImpl" class="org.apache.cloudstack.framework.extensions.dao.ExtensionResourceMapDetailsDaoImpl" />
     <bean id="ExtensionsManager" class="org.apache.cloudstack.framework.extensions.manager.ExtensionsManagerImpl" />
+    <bean id="ExtensionsImportManager" class="org.apache.cloudstack.framework.extensions.manager.ExtensionsImportManagerImpl" />
     <bean id="ExtensionCustomActionDaoImpl" class="org.apache.cloudstack.framework.extensions.dao.ExtensionCustomActionDaoImpl" />
     <bean id="ExtensionCustomActionDetailsDaoImpl" class="org.apache.cloudstack.framework.extensions.dao.ExtensionCustomActionDetailsDaoImpl" />
 </beans>

@@ -1,0 +1,95 @@
+apiVersion: cloudstack.apache.org/v1
+kind: OrchestratorExtension
+
+metadata:
+  name: firecracker
+  displayName: Firecracker Extension
+  description: >
+    External orchestrator extension that integrates Firecracker microVMs
+    with Apache CloudStack via the Orchestrator Extension Framework.
+  version: 0.1.0
+  maintainer: "Marco Sinhoreli <msinhore@gmail.com>"
+  homepage: "https://github.com/msinhore/cloudstack-firecracker-extension"
+
+source:
+  type: git
+  url: "https://github.com/msinhore/cloudstack-firecracker-extension"
+  refs: "branchName"
+
+spec:
+  type: Orchestrator
+
+  compatibility:
+    cloudstack:
+      minVersion: 4.23.0
+
+  entrypoint:
+    language: python
+    path: firecracker.py
+    targetDir: /usr/share/cloudstack-management/extensions/firecracker
+
+  orchestrator:
+    requiresPrepareVm: false
+
+  details:
+    key1: value1
+    key2: value2
+
+  enabled: true
+
+  customActions:
+    - name: CreateSnapshot
+      displayName: "Create Snapshot"
+      description: "Create a snapshot for a virtual machine instance."
+      resourcetype: VirtualMachine
+      enabled: true
+      timeout: 600
+      allowedroletypes: [Admin, DomainAdmin, User]
+      parameters:
+        - name: snap_name
+          type: STRING
+          validationformat: NONE
+          required: true
+        - name: snap_description
+          type: STRING
+          validationformat: NONE
+          required: false
+        - name: snap_save_memory
+          type: BOOLEAN
+          validationformat: NONE
+          required: false
+
+    - name: ListSnapshots
+      displayName: "List Snapshots"
+      description: "List all snapshots for a virtual machine instance."
+      resourcetype: VirtualMachine
+      enabled: true
+      timeout: 120
+      allowedroletypes: [Admin, DomainAdmin, User]
+      parameters: []
+
+    - name: RestoreSnapshot
+      displayName: "Restore Snapshot"
+      description: "Restore a virtual machine instance from a given snapshot."
+      resourcetype: VirtualMachine
+      enabled: true
+      timeout: 900
+      allowedroletypes: [Admin, DomainAdmin, User]
+      parameters:
+        - name: snap_name
+          type: STRING
+          validationformat: NONE
+          required: true
+
+    - name: DeleteSnapshot
+      displayName: "Delete Snapshot"
+      description: "Delete a snapshot for a virtual machine instance."
+      resourcetype: VirtualMachine
+      enabled: true
+      timeout: 300
+      allowedroletypes: [Admin, DomainAdmin, User]
+      parameters:
+        - name: snap_name
+          type: STRING
+          validationformat: NONE
+          required: true

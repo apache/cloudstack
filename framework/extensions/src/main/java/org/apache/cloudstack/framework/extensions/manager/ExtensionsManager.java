@@ -57,6 +57,9 @@ public interface ExtensionsManager extends Manager {
 
     Extension createExtension(CreateExtensionCmd cmd);
 
+    Extension createExtension(String name, String description, String type, String relativePath, String state,
+                   Boolean orchestratorRequiresPrepareVm, Map<String, String> details);
+
     boolean prepareExtensionPathAcrossServers(Extension extension);
 
     List<ExtensionResponse> listExtensions(ListExtensionsCmd cmd);
@@ -78,6 +81,10 @@ public interface ExtensionsManager extends Manager {
     CustomActionResultResponse runCustomAction(RunCustomActionCmd cmd);
 
     ExtensionCustomAction addCustomAction(AddCustomActionCmd cmd);
+
+    ExtensionCustomAction addCustomAction(String name, String description, long extensionId, String resourceTypeStr,
+              List<String> rolesStrList, int timeout , boolean enabled, Map parametersMap, String successMessage,
+              String errorMessage, Map<String, String> details);
 
     boolean deleteCustomAction(DeleteCustomActionCmd cmd);
 
