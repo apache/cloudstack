@@ -17,9 +17,11 @@
 
 package org.apache.cloudstack.framework.extensions.util;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+
+import org.apache.cloudstack.api.ApiConstants;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -99,15 +101,18 @@ public class ExtensionConfig {
         public List<String> allowedroletypes;
         public List<Parameter> parameters;
 
-        public List<Map<String, String>> getParametersMapList() {
-            return parameters.stream().map(param -> {
-                Map<String, String> paramMap = new java.util.HashMap<>();
-                paramMap.put("name", param.name);
-                paramMap.put("type", param.type);
-                paramMap.put("validationformat", param.validationformat);
-                paramMap.put("required", Boolean.toString(param.required));
-                return paramMap;
-            }).collect(Collectors.toList());
+        public Map<Integer, Map<String, String>> getParametersAsMap() {
+            Map<Integer, Map<String, String>> paramMap = new HashMap<>();
+            int index = 0;
+            for (Parameter param : parameters) {
+                Map<String, String> singleParamMap = new HashMap<>();
+                singleParamMap.put(ApiConstants.NAME, param.name);
+                singleParamMap.put(ApiConstants.TYPE, param.type);
+                singleParamMap.put(ApiConstants.VALIDATION_FORMAT, param.validationformat);
+                singleParamMap.put(ApiConstants.REQUIRED, Boolean.toString(param.required));
+                paramMap.put(index++, singleParamMap);
+            }
+            return paramMap;
         }
     }
 
@@ -119,7 +124,13 @@ public class ExtensionConfig {
     }
 
     public String getArchiveUrl() {
-        return source.url + "archive/refs/heads/" + source.refs + ".zip";
+        String type = source != null ? source.type : null;
+        if ("git".equalsIgnoreCase(type) && source.url != null && source.url.contains("github.com")) {
+            // ToDo: improve
+            String ref = source.refs != null ? source.refs : "main";
+            return source.url.replace("github.com", "codeload.github.com") + "/zip/refs/heads/" + ref;
+        }
+        return source == null ? null : source.url;
     }
 
     public Spec getSpec() {

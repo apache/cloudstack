@@ -22,10 +22,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -41,6 +38,7 @@ import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.hypervisor.ExternalProvisioner;
+import com.cloud.utils.FileUtil;
 import com.cloud.utils.HttpUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Transaction;
@@ -92,14 +90,12 @@ public class ExtensionsImportManagerImpl extends ManagerBase implements Extensio
                     false, Collections.emptyMap());
 
             for (ExtensionConfig.CustomAction action : extensionConfig.spec.customActions) {
-                List<Map<String, String>> parameters = action.getParametersMapList();
-                Map<Integer, Collection<Map<String, String>>> parametersMap = new HashMap<>();
-                parametersMap.put(1, parameters);
+                Map<Integer, Map<String, String>> parameters = action.getParametersAsMap();
                 extensionsManager.addCustomAction(action.name, action.description, extension.getId(),
-                        action.resourcetype, action.allowedroletypes, action.timeout, true, parametersMap,
+                        action.resourcetype, action.allowedroletypes, action.timeout, true, parameters,
                         null, null, Collections.emptyMap());
             }
-            return null;
+            return extension;
         });
     }
 
@@ -123,8 +119,8 @@ public class ExtensionsImportManagerImpl extends ManagerBase implements Extensio
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             throw e;
-        }/* finally {
+        } finally {
             FileUtil.deletePath(tempDir.toString());
-        }*/
+        }
     }
 }

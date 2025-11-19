@@ -25,7 +25,8 @@ public class YamlParserTest extends TestCase {
 
     @Test
     public void testParseYaml() {
-        String yamlFilePath = getClass().getResource("manifest.yaml").getFile();
-        YamlParser.parseYamlFile(yamlFilePath);
+        String yamlFilePath = getClass().getResource("testmanifest.yaml").getFile();
+        ExtensionConfig config = YamlParser.parseYamlFile(yamlFilePath);
+        assertNotNull(config);
     }
 }
