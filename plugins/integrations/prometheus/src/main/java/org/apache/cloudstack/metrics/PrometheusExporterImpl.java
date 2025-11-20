@@ -664,8 +664,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         int isDedicated;
         String hosttags;
 
-        public ItemVMCore(final String zn, final String zu, final String hn, final String hu, final String hip,
-                          final String fl, final Long cr, final int dedicated, final String tags) {
+        public ItemVMCore(final String zn, final String zu, final String hn, final String hu, final String hip, final String fl, final Long cr, final int dedicated, final String tags) {
             super("cloudstack_host_vms_cores_total",
                   "Total number of VM cores on hosts",
                   "gauge");
