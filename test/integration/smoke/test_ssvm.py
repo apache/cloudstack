@@ -18,15 +18,14 @@
 """
 # Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.cloudstackAPI import (stopSystemVm,
+from marvin.cloudstackAPI import (getDiagnosticsData, stopSystemVm,
                                   rebootSystemVm,
                                   destroySystemVm, updateConfiguration)
 from marvin.lib.utils import (cleanup_resources,
                               get_process_status,
                               get_host_credentials,
                               wait_until)
-from marvin.lib.base import (PhysicalNetwork,
-                             NetScaler, ImageStore)
+from marvin.lib.base import (PhysicalNetwork, NetScaler, ImageStore, UserData)
 from marvin.lib.common import (get_zone,
                                list_hosts,
                                list_ssvms,
@@ -35,6 +34,10 @@ from marvin.lib.common import (get_zone,
 from nose.plugins.attrib import attr
 import telnetlib
 import logging
+import base64
+import os
+import urllib
+import zipfile
 
 # Import System modules
 import time

@@ -117,7 +117,7 @@ public class AgentProperties{
 
     /**
      * Local storage path.<br>
-     * This property allows multiple values to be entered in a single String. The differente values must be separated by commas.<br>
+     * This property allows multiple values to be entered in a single String. The different values must be separated by commas.<br>
      * Data type: String.<br>
      * Default value: <code>/var/lib/libvirt/images/</code>
      */
@@ -134,7 +134,7 @@ public class AgentProperties{
 
     /**
      * MANDATORY: The UUID for the local storage pool.<br>
-     * This property allows multiple values to be entered in a single String. The differente values must be separated by commas.<br>
+     * This property allows multiple values to be entered in a single String. The different values must be separated by commas.<br>
      * Data type: String.<br>
      * Default value: <code>null</code>
      */
@@ -793,6 +793,20 @@ public class AgentProperties{
      * Default value: <code>false</code>
      */
     public static final Property<Boolean> VIRTV2V_VERBOSE_ENABLED = new Property<>("virtv2v.verbose.enabled", false);
+
+    /**
+     * Set env TMPDIR var for virt-v2v Instance Conversion from VMware to KVM
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> CONVERT_ENV_TMPDIR = new Property<>("convert.instance.env.tmpdir", null, String.class);
+
+    /**
+     * Set env VIRT_V2V_TMPDIR var for virt-v2v Instance Conversion from VMware to KVM
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> CONVERT_ENV_VIRTV2V_TMPDIR = new Property<>("convert.instance.env.virtv2v.tmpdir", null, String.class);
 
     /**
      * BGP controll CIDR

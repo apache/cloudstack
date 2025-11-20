@@ -53,6 +53,9 @@ public class LdapListConfigurationCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = false, entityType = DomainResponse.class, description = "linked domain")
     private Long domainId;
 
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = LdapConfigurationResponse.class, description = "list ldap configuration by ID; when passed, all other parameters are ignored")
+    private Long id;
+
     @Parameter(name = ApiConstants.LIST_ALL, type = CommandType.BOOLEAN, description = "If set to true, "
     + " and no domainid specified, list all LDAP configurations irrespective of the linked domain", since = "4.13.2")
     private Boolean listAll;
@@ -118,6 +121,10 @@ public class LdapListConfigurationCmd extends BaseListCmd {
 
     public void setDomainId(final Long domainId) {
         this.domainId = domainId;
+    }
+
+    public Long getId() {
+        return id;
     }
 
     public boolean listAll() {

@@ -106,6 +106,9 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                         ApiCommandResourceType.VirtualMachine);
                 vmContext.setEventResourceId(vmID);
                 try {
+                    if (clusterVM.isControlNode() && kubernetesCluster.isCsiEnabled()) {
+                        deletePVsWithReclaimPolicyDelete();
+                    }
                     UserVm vm = userVmService.destroyVm(vmID, true);
                     if (!userVmManager.expunge(userVM)) {
                         logger.warn("Unable to expunge VM {}, destroying Kubernetes cluster will probably fail", vm);

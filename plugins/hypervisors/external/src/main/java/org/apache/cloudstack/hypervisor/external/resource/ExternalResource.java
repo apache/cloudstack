@@ -35,6 +35,8 @@ import com.cloud.agent.api.CheckNetworkAnswer;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.GetExternalConsoleAnswer;
+import com.cloud.agent.api.GetExternalConsoleCommand;
 import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
@@ -162,6 +164,8 @@ public class ExternalResource implements ServerResource {
                 return execute((StopCommand) cmd);
             } else if (cmd instanceof RebootCommand) {
                 return execute((RebootCommand) cmd);
+            } else if (cmd instanceof GetExternalConsoleCommand) {
+                return execute((GetExternalConsoleCommand) cmd);
             } else if (cmd instanceof PrepareExternalProvisioningCommand) {
                 return execute((PrepareExternalProvisioningCommand) cmd);
             } else if (cmd instanceof GetHostStatsCommand) {
@@ -271,6 +275,13 @@ public class ExternalResource implements ServerResource {
             return new RebootAnswer(cmd, logAndGetExtensionNotConnectedOrDisabledError(), false);
         }
         return externalProvisioner.rebootInstance(guid, extensionName, extensionRelativePath, cmd);
+    }
+
+    public GetExternalConsoleAnswer execute(GetExternalConsoleCommand cmd) {
+        if (isExtensionDisconnected() || isExtensionNotEnabled() || isExtensionPathNotReady()) {
+            return new GetExternalConsoleAnswer(cmd, logAndGetExtensionNotConnectedOrDisabledError());
+        }
+        return externalProvisioner.getInstanceConsole(guid, extensionName, extensionRelativePath, cmd);
     }
 
     public PrepareExternalProvisioningAnswer execute(PrepareExternalProvisioningCommand cmd) {
