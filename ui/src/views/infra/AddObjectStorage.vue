@@ -81,7 +81,7 @@
           <!-- S3 URL (for UI: this becomes addObjectStoragePool url=...) -->
           <a-form-item name="url" ref="url">
             <template #label>
-              <tooltip-label :title="$t('label.url')" :tooltip="apiParams.url.description"/>
+              <tooltip-label :title="'ECS Public URL'" :tooltip="'The S3-compatible endpoint URL that clients use to connect to ECS'"/>
             </template>
             <a-input v-model:value="form.url" placeholder="https://ecs.example.com" />
           </a-form-item>
@@ -89,7 +89,7 @@
           <!-- Management API URL -> details[0].value (mgmt_url) -->
           <a-form-item name="mgmtUrl" ref="mgmtUrl" :rules="[{ required: true, message: $t('label.required') }]">
             <template #label>
-              <tooltip-label :title="'ECS Management URL'" :tooltip="'ECS management API base URL (mgmt_url), e.g. https://ecs-api.example.com:4443'"/>
+              <tooltip-label :title="'ECS API URL'" :tooltip="'ECS management API URL'"/>
             </template>
             <a-input v-model:value="form.mgmtUrl" placeholder="https://ecs-api.elcld.net" />
           </a-form-item>
@@ -97,15 +97,15 @@
           <!-- S3 host (hostname[:port], no scheme) -> details[1].value (s3_host) -->
           <a-form-item name="s3Host" ref="s3Host" :rules="[{ required: true, message: $t('label.required') }]">
             <template #label>
-              <tooltip-label :title="'ECS S3 Host'" :tooltip="'S3 endpoint host (s3_host), e.g. ecs.earthlink.dev'"/>
+              <tooltip-label :title="'ECS Private URL'" :tooltip="'The internal S3 endpoint URL used by CloudStack to communicate with ECS.May be the same as the Public URL.'"/>
             </template>
-            <a-input v-model:value="form.s3Host" placeholder="ecs.earthlink.dev" />
+            <a-input v-model:value="form.s3Host" placeholder="https://ecs.example.com" />
           </a-form-item>
 
           <!-- Service account user -> details[2].value (sa_user) -->
           <a-form-item name="accessKey" ref="accessKey">
             <template #label>
-              <tooltip-label :title="'ECS service account user'" :tooltip="'Service account user (sa_user), e.g. cloudstack'"/>
+              <tooltip-label :title="'ECS service account user'" :tooltip="'Service account user, e.g. cloudstack'"/>
             </template>
             <a-input v-model:value="form.accessKey" placeholder="cloudstack" />
           </a-form-item>
