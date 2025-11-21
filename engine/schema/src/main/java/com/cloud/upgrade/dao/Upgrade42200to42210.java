@@ -16,14 +16,7 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
-import java.io.InputStream;
-import java.sql.Connection;
-
-import com.cloud.upgrade.SystemVmTemplateRegistration;
-import com.cloud.utils.exception.CloudRuntimeException;
-
 public class Upgrade42200to42210 extends DbUpgradeAbstractImpl implements DbUpgrade, DbUpgradeSystemVmTemplate {
-    private SystemVmTemplateRegistration systemVmTemplateRegistration;
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -33,51 +26,5 @@ public class Upgrade42200to42210 extends DbUpgradeAbstractImpl implements DbUpgr
     @Override
     public String getUpgradedVersion() {
         return "4.22.1.0";
-    }
-
-    @Override
-    public boolean supportsRollingUpgrade() {
-        return false;
-    }
-
-    @Override
-    public InputStream[] getPrepareScripts() {
-        final String scriptFile = "META-INF/db/schema-42200to42210.sql";
-        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
-        if (script == null) {
-            throw new CloudRuntimeException("Unable to find " + scriptFile);
-        }
-
-        return new InputStream[] {script};
-    }
-
-    @Override
-    public void performDataMigration(Connection conn) {
-    }
-
-    @Override
-    public InputStream[] getCleanupScripts() {
-        final String scriptFile = "META-INF/db/schema-42200to42210-cleanup.sql";
-        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
-        if (script == null) {
-            throw new CloudRuntimeException("Unable to find " + scriptFile);
-        }
-
-        return new InputStream[] {script};
-    }
-
-    private void initSystemVmTemplateRegistration() {
-        systemVmTemplateRegistration = new SystemVmTemplateRegistration("");
-    }
-
-    @Override
-    public void updateSystemVmTemplates(Connection conn) {
-        logger.debug("Updating System Vm template IDs");
-        initSystemVmTemplateRegistration();
-        try {
-            systemVmTemplateRegistration.updateSystemVmTemplates(conn);
-        } catch (Exception e) {
-            throw new CloudRuntimeException("Failed to find / register SystemVM template(s)", e);
-        }
     }
 }
