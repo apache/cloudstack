@@ -61,6 +61,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterDaoImpl;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSVO;
@@ -156,6 +157,7 @@ public class SystemVmTemplateRegistration {
         imageStoreDetailsDao = new ImageStoreDetailsDaoImpl();
         configurationDao = new ConfigurationDaoImpl();
         guestOSDao = new GuestOSDaoImpl();
+        hostDao = new HostDaoImpl();
         tempDownloadDir = new File(System.getProperty("java.io.tmpdir"));
     }
 
@@ -1079,7 +1081,7 @@ public class SystemVmTemplateRegistration {
                 try {
                     hypervisorsInUse = hostDao.listDistinctHypervisorArchTypes(null);
                 } catch (final Exception e) {
-                    throw new CloudRuntimeException("Exception while getting hypervisor types from clusters", e);
+                    throw new CloudRuntimeException("Exception while getting hypervisor types from hosts", e);
                 }
                 Collection<MetadataTemplateDetails> templateEntries = NewTemplateMap.values();
                 for (MetadataTemplateDetails templateDetails : templateEntries) {
