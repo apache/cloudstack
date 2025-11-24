@@ -2091,6 +2091,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             unmanageInstanceCommand = new UnmanageInstanceCommand(vmName);
             unmanageInstanceCommand.setConfigDriveAttached(vmInstanceDetailsDao.findDetail(vm.getId(), VmDetailConstants.CONFIG_DRIVE_LOCATION) != null);
         }
+        boolean isEnabled = UnmanagedVMsManager.VmUnmanageLibvirtMetadataCleanup.value();
+        unmanageInstanceCommand.setLibvirtMetadataCleanup(isEnabled);
 
         logger.debug("Selected host ID: {} to persist domain XML for Instance: {}.", agentHostId, vmName);
         try {

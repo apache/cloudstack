@@ -90,6 +90,7 @@ public class VirtualMachineTO {
     private String metadataManufacturer;
     private String metadataProductName;
     private VirtualMachineMetadataTO metadata;
+    private boolean excludeMetadata;
 
     public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader,
             String os, boolean enableHA, boolean limitCpuUse, String vncPassword) {
@@ -502,6 +503,10 @@ public class VirtualMachineTO {
     public void setMetadata(VirtualMachineMetadataTO metadata) {
         this.metadata = metadata;
     }
+
+    public boolean isExcludeMetadata() { return excludeMetadata; }
+
+    public void setExcludeMetadata(boolean excludeMetadata) { this.excludeMetadata = excludeMetadata;}
 
     @Override
     public String toString() {
