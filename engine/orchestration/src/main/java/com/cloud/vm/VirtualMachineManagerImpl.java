@@ -935,11 +935,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throw new CloudRuntimeException(String.format("Unable to start a VM [%s] due to [%s].", vmUuid, e.getMessage()), e).add(VirtualMachine.class, vmUuid);
         } catch (final ResourceUnavailableException e) {
             if (e.getScope() != null && e.getScope().equals(VirtualRouter.class)){
-                if (callingUser.isRootAdmin()) {
-                    throw new CloudRuntimeException("The Guest Network is unavailable: " + e.getMessage()).add(VirtualMachine.class, vmUuid);
-                } else {
-                    throw new CloudRuntimeException("The Guest Network is unavailable. Please contact administrator. ").add(VirtualMachine.class, vmUuid);
-                }
+                Account callingAccount = CallContext.current().getCallingAccount();
+                String errorSuffix = (callingAccount != null && callingAccount.getType() == Account.Type.ADMIN) ?
+                        String.format("Failure: %s", e.getMessage()) :
+                        "Please contact administrator.";
+                throw new CloudRuntimeException(String.format("The Network for VM %s is unavailable. %s", vmUuid, errorSuffix), e).add(VirtualMachine.class, vmUuid);
             }
             throw new CloudRuntimeException(String.format("Unable to start a VM [%s] due to [%s].", vmUuid, e.getMessage()), e).add(VirtualMachine.class, vmUuid);
         }
