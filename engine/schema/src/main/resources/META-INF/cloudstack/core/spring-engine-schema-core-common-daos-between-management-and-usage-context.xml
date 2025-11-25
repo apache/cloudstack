@@ -71,6 +71,7 @@
 	<bean id="NetworkDaoImpl" class="org.apache.cloudstack.quota.dao.NetworkDaoImpl" />
 	<bean id="VpcDaoImpl" class="org.apache.cloudstack.quota.dao.VpcDaoImpl" />
 	<bean id="volumeDaoImpl" class="com.cloud.storage.dao.VolumeDaoImpl" />
-  <bean id="reservationDao" class="org.apache.cloudstack.reservation.dao.ReservationDaoImpl" />
+  	<bean id="reservationDao" class="org.apache.cloudstack.reservation.dao.ReservationDaoImpl" />
     <bean id="backupOfferingDaoImpl" class="org.apache.cloudstack.backup.dao.BackupOfferingDaoImpl" />
+    <bean id="backupOfferingDetailsDaoImpl" class="org.apache.cloudstack.backup.dao.BackupOfferingDetailsDaoImpl" />
 </beans>

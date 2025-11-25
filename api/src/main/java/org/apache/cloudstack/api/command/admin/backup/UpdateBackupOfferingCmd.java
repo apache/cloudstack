@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.offering.DomainAndZoneIdResolver;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.BackupOffering;
@@ -35,9 +36,11 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+import java.util.List;
+
 @APICommand(name = "updateBackupOffering", description = "Updates a backup offering.", responseObject = BackupOfferingResponse.class,
 requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.16.0")
-public class UpdateBackupOfferingCmd extends BaseCmd {
+public class UpdateBackupOfferingCmd extends BaseCmd implements DomainAndZoneIdResolver {
 
     @Inject
     private BackupManager backupManager;
@@ -56,6 +59,13 @@ public class UpdateBackupOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.ALLOW_USER_DRIVEN_BACKUPS, type = CommandType.BOOLEAN, description = "Whether to allow user driven backups or not")
     private Boolean allowUserDrivenBackups;
+
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+            type = CommandType.STRING,
+            description = "the ID of the containing domain(s) as comma separated string, public for public offerings",
+            since = "4.23.0",
+            length = 4096)
+    private String domainIds;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -101,6 +111,10 @@ public class UpdateBackupOfferingCmd extends BaseCmd {
             logger.error(String.format("Failed to update Backup Offering [id: %s] due to: [%s].", id, e.getMessage()), e);
             throw new ServerApiException(paramError, e.getMessage());
         }
+    }
+
+    public List<Long> getDomainIds() {
+        return resolveDomainIds(domainIds, id, backupManager::getBackupOfferingDomains, "backup offering");
     }
 
     @Override

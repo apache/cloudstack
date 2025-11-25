@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,16 +14,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
+package org.apache.cloudstack.backup.dao;
 
-package com.cloud.utils.component;
+import java.util.List;
 
-public class ManagerBase extends ComponentLifecycleBase implements ComponentMethodInterceptable {
-    public ManagerBase() {
-        super();
-        // set default run level for manager components
-        setRunLevel(ComponentLifecycle.RUN_LEVEL_COMPONENT_BOOTSTRAP);
-    }
+import org.apache.cloudstack.backup.BackupOfferingDetailsVO;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
+import com.cloud.utils.db.GenericDao;
 
+public interface BackupOfferingDetailsDao extends GenericDao<BackupOfferingDetailsVO, Long>, ResourceDetailsDao<BackupOfferingDetailsVO> {
+    List<Long> findDomainIds(final long resourceId);
+    List<Long> findZoneIds(final long resourceId);
+    String getDetail(Long backupOfferingId, String key);
+    List<Long> findOfferingIdsByDomainIds(List<Long> domainIds);
 }

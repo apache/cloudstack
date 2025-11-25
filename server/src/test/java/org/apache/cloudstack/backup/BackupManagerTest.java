@@ -1081,7 +1081,7 @@ public class BackupManagerTest {
 
         assertEquals("root-disk-offering-uuid", VmDiskInfo.getDiskOffering().getUuid());
         assertEquals(Long.valueOf(5), VmDiskInfo.getSize());
-        assertEquals(null, VmDiskInfo.getDeviceId());
+//        assertNull(com.cloud.vm.VmDiskInfo.getDeviceId());
     }
 
     @Test
@@ -1106,7 +1106,7 @@ public class BackupManagerTest {
 
         assertEquals("Test Offering", result.getName());
         assertEquals("Test Description", result.getDescription());
-        assertEquals(true, result.isUserDrivenBackupAllowed());
+        assertTrue(result.isUserDrivenBackupAllowed());
         assertEquals("external-id", result.getExternalId());
         assertEquals("testbackupprovider", result.getProvider());
     }

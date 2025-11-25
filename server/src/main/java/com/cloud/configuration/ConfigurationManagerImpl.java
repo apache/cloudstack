@@ -8425,9 +8425,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         if (filteredDomainIds.size() > 1) {
             for (int i = filteredDomainIds.size() - 1; i >= 1; i--) {
-                long first = filteredDomainIds.get(i);
                 for (int j = i - 1; j >= 0; j--) {
-                    long second = filteredDomainIds.get(j);
                     if (_domainDao.isChildDomain(filteredDomainIds.get(i), filteredDomainIds.get(j))) {
                         filteredDomainIds.remove(j);
                         i--;

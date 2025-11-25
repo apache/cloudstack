@@ -36,6 +36,7 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
+import org.apache.cloudstack.backup.BackupOffering;
 
 public interface AccountService {
 
@@ -114,6 +115,8 @@ public interface AccountService {
     void checkAccess(Account account, NetworkOffering nof, DataCenter zone) throws PermissionDeniedException;
 
     void checkAccess(Account account, VpcOffering vof, DataCenter zone) throws PermissionDeniedException;
+
+    void checkAccess(Account account, BackupOffering bof) throws PermissionDeniedException;
 
     void checkAccess(User user, ControlledEntity entity);
 
