@@ -153,8 +153,7 @@ backup_running_vm() {
   virsh -c qemu:///system domjobinfo $VM --completed
   du -sb $dest | cut -f1
 
-  umount $mount_point
-  rmdir $mount_point
+  umount_operation
 }
 
 backup_stopped_vm() {
@@ -183,6 +182,8 @@ backup_stopped_vm() {
   sync
 
   ls -l --numeric-uid-gid $dest | awk '{print $5}'
+
+  umount_operation
 }
 
 delete_backup() {
@@ -215,6 +216,34 @@ mount_operation() {
   else
       echo "Failed to mount ${NAS_TYPE} store"
       exit 1
+  fi
+}
+
+umount_operation() {
+  elapsed=0
+  while fuser -m "$mount_point" >/dev/null 2>&1 && (( elapsed < 10 )); do
+      sleep 1
+      elapsed=$((elapsed + 1))
+  done
+
+  # Check if timeout was reached
+  if (( elapsed >= 10 )); then
+      echo "Timeout for unmounting reached: still busy"
+  fi
+
+  # Attempt to unmount safely and capture output
+  set +e
+  umount_output=$(umount "$mount_point" 2>&1)
+  umount_exit=$?
+  set -e
+
+  if [ "$umount_exit" -eq 0 ]; then
+    # Only remove directory if unmount succeeded
+    rmdir "$mount_point"
+  else
+    echo "Warning: failed to unmount $mount_point, skipping rmdir"
+    echo "umount error message: $umount_output"
+    log -ne "Warning: failed to unmount $mount_point, error: $umount_output"
   fi
 }
 
