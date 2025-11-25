@@ -973,7 +973,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         sb.and("backupOfferingId", sb.entity().getBackupOfferingId(), SearchCriteria.Op.EQ);
 
         if (keyword != null) {
-            sb.or().op("keywordName", sb.entity().getName(), SearchCriteria.Op.LIKE);
+            sb.and().op("keywordName", sb.entity().getName(), SearchCriteria.Op.LIKE);
             SearchBuilder<VMInstanceVO> vmSearch = vmInstanceDao.createSearchBuilder();
             sb.join("vmSearch", vmSearch, sb.entity().getVmId(), vmSearch.entity().getId(), JoinBuilder.JoinType.INNER);
             sb.or("vmSearch", "keywordVmName", vmSearch.entity().getHostName(), SearchCriteria.Op.LIKE);
