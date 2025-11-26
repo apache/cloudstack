@@ -60,4 +60,16 @@ public class ProcessRunnerTest {
         Assert.assertTrue(log.contains(password));
         Assert.assertEquals(1, countSubstringOccurrences(log, password));
     }
+
+    @Test
+    public void testRemoveCommandSensitiveInfoForLoggingIpmiPasswordCommand() {
+        String userId = "3";
+        String newPassword = "Sup3rSecr3t!";
+        String command = String.format("/usr/bin/ipmitool user set password %s %s", userId, newPassword);
+        String log = processRunner.removeCommandSensitiveInfoForLogging(command);
+
+        Assert.assertFalse(log.contains(userId));
+        Assert.assertFalse(log.contains(newPassword));
+        Assert.assertTrue(log.contains("password **** ****"));
+    }
 }
