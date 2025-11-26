@@ -25,7 +25,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.sql.Statement;
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Properties;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.sql.DataSource;
