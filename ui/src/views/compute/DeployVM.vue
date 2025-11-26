@@ -261,8 +261,11 @@
                       :minimum-cpunumber="templateConfigurationExists && selectedTemplateConfiguration && selectedTemplateConfiguration.cpunumber ? selectedTemplateConfiguration.cpunumber : 0"
                       :minimum-cpuspeed="templateConfigurationExists && selectedTemplateConfiguration && selectedTemplateConfiguration.cpuspeed ? selectedTemplateConfiguration.cpuspeed : 0"
                       :minimum-memory="templateConfigurationExists && selectedTemplateConfiguration && selectedTemplateConfiguration.memory ? selectedTemplateConfiguration.memory : 0"
+                      :service-offering-categories="options.serviceOfferingCategories"
+                      :selected-service-offering-category-id="selectedServiceOfferingCategoryId"
                       @select-compute-item="($event) => updateComputeOffering($event)"
                       @handle-search-filter="($event) => handleSearchFilter('serviceOfferings', $event)"
+                      @service-offering-category-change="($event) => handleServiceOfferingCategoryChange($event)"
                     ></compute-offering-selection>
                     <compute-selection
                       v-if="serviceOffering && (serviceOffering.iscustomized || serviceOffering.iscustomizediops)"
@@ -2271,6 +2274,46 @@ export default {
           console.error('Error fetching guestOsCategories:', e)
         })
     },
+    fetchServiceOfferingCategories () {
+      this.loading.serviceOfferingCategories = true
+      return new Promise((resolve, reject) => {
+        getAPI('listServiceOfferingCategories').then(json => {
+          const categories = json.listserviceofferingcategoriesresponse.serviceofferingcategory || []
+          this.options.serviceOfferingCategories = [
+            {
+              id: '-1',
+              name: this.$t('label.all')
+            },
+            ...categories
+          ]
+          resolve()
+        }).catch(error => {
+          console.error('Error fetching service offering categories:', error)
+          this.options.serviceOfferingCategories = [
+            {
+              id: '-1',
+              name: this.$t('label.all')
+            }
+          ]
+          reject(error)
+        }).finally(() => {
+          this.loading.serviceOfferingCategories = false
+        })
+      })
+    },
+    handleServiceOfferingCategoryChange (categoryId) {
+      this.selectedServiceOfferingCategoryId = categoryId
+      const params = {
+        page: 1,
+        pageSize: 10
+      }
+      if (categoryId && categoryId !== '-1') {
+        params.serviceofferingcategoryid = categoryId
+      } else {
+        params.serviceofferingcategoryid = null
+      }
+      this.handleSearchFilter('serviceOfferings', params)
+    },
     changeArchitecture (arch) {
       this.selectedArchitecture = arch
       this.updateImages()
@@ -3027,6 +3070,8 @@ export default {
       if (this.isModernImageSelection && guestOsFetch) {
         await guestOsFetch
       }
+      // Load service offering categories
+      this.fetchServiceOfferingCategories()
       this.fetchImages()
       this.updateTemplateKey()
       this.formModel = toRaw(this.form)
