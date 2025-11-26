@@ -3121,7 +3121,7 @@
 "message.change.offering.confirm": "Please confirm that you wish to change the service offering of this virtual Instance.",
 "message.change.offering.for.volume": "Successfully changed offering for the volume",
 "message.change.offering.for.volume.failed": "Change offering for the volume failed",
-"message.change.offering.processing": "Changing offering for the volume...",
+"message.change.offering.for.volume.processing": "Changing offering for the volume...",
 "message.change.password": "Please change your password.",
 "message.change.scope.failed": "Scope change failed",
 "message.change.scope.processing": "Scope change in progress",
