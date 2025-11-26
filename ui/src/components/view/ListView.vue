@@ -1328,7 +1328,7 @@ export default {
       return new Promise((resolve, reject) => {
         postAPI(apiCommand, {
           id,
-          sortkey: index
+          sortKey: index
         }).then((response) => {
           resolve(response)
         }).catch((reason) => {
