@@ -646,6 +646,16 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
+    public org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse createServiceOfferingCategoryResponse(com.cloud.offering.ServiceOfferingCategory category) {
+        org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse response = new org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse();
+        response.setId(category.getUuid());
+        response.setName(category.getName());
+        response.setSortKey(category.getSortKey());
+        response.setObjectName("serviceofferingcategory");
+        return response;
+    }
+
+    @Override
     public ConfigurationResponse createConfigurationResponse(Configuration cfg) {
         ConfigurationResponse cfgResponse = new ConfigurationResponse();
         cfgResponse.setCategory(cfg.getCategory());

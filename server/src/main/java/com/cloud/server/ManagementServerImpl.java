@@ -162,11 +162,15 @@ import org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetwor
 import org.apache.cloudstack.api.command.admin.network.UpdateStorageNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCategoryCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCategoryCmd;
 import org.apache.cloudstack.api.command.admin.offering.IsAccountAllowedToCreateOfferingsWithTagsCmd;
+import org.apache.cloudstack.api.command.admin.offering.ListServiceOfferingCategoriesCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCategoryCmd;
 import org.apache.cloudstack.api.command.admin.outofbandmanagement.ChangeOutOfBandManagementPasswordCmd;
 import org.apache.cloudstack.api.command.admin.outofbandmanagement.ConfigureOutOfBandManagementCmd;
 import org.apache.cloudstack.api.command.admin.outofbandmanagement.DisableOutOfBandManagementForClusterCmd;
@@ -3759,6 +3763,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(IsAccountAllowedToCreateOfferingsWithTagsCmd.class);
         cmdList.add(UpdateDiskOfferingCmd.class);
         cmdList.add(UpdateServiceOfferingCmd.class);
+        cmdList.add(CreateServiceOfferingCategoryCmd.class);
+        cmdList.add(ListServiceOfferingCategoriesCmd.class);
+        cmdList.add(UpdateServiceOfferingCategoryCmd.class);
+        cmdList.add(DeleteServiceOfferingCategoryCmd.class);
         cmdList.add(CreatePodCmd.class);
         cmdList.add(DeletePodCmd.class);
         cmdList.add(ListPodsByCmd.class);

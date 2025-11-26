@@ -85,6 +85,7 @@ SELECT
     `vgpu_profile`.`max_resolution_y` AS `vgpu_profile_max_resolution_y`,
     `service_offering`.`gpu_count` AS `gpu_count`,
     `service_offering`.`gpu_display` AS `gpu_display`,
+    `service_offering`.`category_id` AS `category_id`,
     GROUP_CONCAT(DISTINCT(domain.id)) AS domain_id,
     GROUP_CONCAT(DISTINCT(domain.uuid)) AS domain_uuid,
     GROUP_CONCAT(DISTINCT(domain.name)) AS domain_name,

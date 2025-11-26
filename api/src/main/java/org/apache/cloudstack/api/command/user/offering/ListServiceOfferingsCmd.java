@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
@@ -124,6 +125,13 @@ public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesC
             since = "4.21.0")
     private Boolean gpuEnabled;
 
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_CATEGORY_ID,
+            type = CommandType.UUID,
+            entityType = ServiceOfferingCategoryResponse .class,
+            description = "the ID of the service offering category",
+            since = "4.23.0")
+    private Long categoryId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -191,6 +199,10 @@ public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesC
 
     public Boolean getGpuEnabled() {
         return gpuEnabled;
+    }
+
+    public Long getCategoryId() {
+        return categoryId;
     }
 
     /////////////////////////////////////////////////////

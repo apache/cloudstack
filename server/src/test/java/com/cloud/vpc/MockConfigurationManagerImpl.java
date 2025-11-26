@@ -147,6 +147,24 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
         return null;
     }
 
+    @Override
+    public com.cloud.offering.ServiceOfferingCategory createServiceOfferingCategory(org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCategoryCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean deleteServiceOfferingCategory(org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCategoryCmd cmd) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public com.cloud.offering.ServiceOfferingCategory updateServiceOfferingCategory(org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCategoryCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.configuration.ConfigurationService#updateDiskOffering(org.apache.cloudstack.api.commands.UpdateDiskOfferingCmd)
      */

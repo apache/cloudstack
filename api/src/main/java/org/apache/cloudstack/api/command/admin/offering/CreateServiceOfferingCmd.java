@@ -289,6 +289,14 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             since = "4.21.0")
     private Map externalDetails;
 
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_CATEGORY_ID,
+            type = CommandType.UUID,
+            entityType = org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse.class,
+            required = false,
+            description = "the ID of the service offering category to associate with this offering",
+            since = "4.23")
+    private Long serviceOfferingCategoryId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -559,6 +567,10 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     public Boolean getGpuDisplay() {
         return Boolean.TRUE.equals(gpuDisplay);
+    }
+
+    public Long getServiceOfferingCategoryId() {
+        return serviceOfferingCategoryId;
     }
 
     /////////////////////////////////////////////////////

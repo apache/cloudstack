@@ -18,3 +18,17 @@
 --;
 -- Schema upgrade from 4.22.0.0 to 4.23.0.0
 --;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`service_offering_category` (
+ `id` bigint unsigned NOT NULL auto_increment,
+ `name` varchar(255) NOT NULL,
+ `uuid` varchar(40),
+ `sort_key` int NOT NULL DEFAULT 0,
+ PRIMARY KEY  (`id`),
+ CONSTRAINT `uc_service_offering_category__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+
+ALTER TABLE `cloud`.`service_offering` ADD COLUMN `category_id` bigint unsigned NOT NULL DEFAULT 1;
+ALTER TABLE `cloud`.`service_offering` ADD CONSTRAINT `fk_service_offering__category_id` FOREIGN KEY (`category_id`) REFERENCES `cloud`.`service_offering_category` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+INSERT INTO `cloud`.`service_offering_category` (id, name, uuid) VALUES (1, 'Default', UUID());

@@ -64,6 +64,8 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
     private ConfigurationDao configDao;
     @Inject
     private AccountManager accountManager;
+    @Inject
+    private com.cloud.service.dao.ServiceOfferingCategoryDao _serviceOfferingCategoryDao;
 
     private SearchBuilder<ServiceOfferingJoinVO> sofIdSearch;
 
@@ -147,6 +149,16 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         offeringResponse.setMaxResolutionY(offering.getMaxResolutionY());
         offeringResponse.setGpuCount(offering.getGpuCount());
         offeringResponse.setGpuDisplay(offering.getGpuDisplay());
+
+        // Set category information if available
+        if (offering.getCategoryId() != null) {
+            com.cloud.service.ServiceOfferingCategoryVO category = _serviceOfferingCategoryDao.findById(offering.getCategoryId());
+            if (category != null) {
+                offeringResponse.setCategoryId(category.getUuid());
+                offeringResponse.setCategoryName(category.getName());
+            }
+        }
+
         offeringResponse.setNetworkRate(offering.getRateMbps());
         offeringResponse.setHostTag(offering.getHostTag());
         offeringResponse.setDeploymentPlanner(offering.getDeploymentPlanner());

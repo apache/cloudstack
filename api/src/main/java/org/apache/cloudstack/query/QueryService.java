@@ -185,6 +185,8 @@ public interface QueryService {
 
     ListResponse<ServiceOfferingResponse>  searchForServiceOfferings(ListServiceOfferingsCmd cmd);
 
+    ListResponse<org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse> listServiceOfferingCategories(org.apache.cloudstack.api.command.admin.offering.ListServiceOfferingCategoriesCmd cmd);
+
     ListResponse<ZoneResponse>  listDataCenters(ListZonesCmd cmd);
 
     ListResponse<TemplateResponse> listTemplates(ListTemplatesCmd cmd);

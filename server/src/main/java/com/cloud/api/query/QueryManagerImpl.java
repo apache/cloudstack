@@ -477,6 +477,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     ServiceOfferingDetailsDao _srvOfferingDetailsDao;
 
     @Inject
+    com.cloud.service.dao.ServiceOfferingCategoryDao _serviceOfferingCategoryDao;
+
+    @Inject
     DiskOfferingDao _diskOfferingDao;
 
     @Inject
@@ -4011,6 +4014,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         ServiceOffering.State state = cmd.getState();
         final Long vgpuProfileId = cmd.getVgpuProfileId();
         final Boolean gpuEnabled = cmd.getGpuEnabled();
+        Long categoryId = cmd.getCategoryId();
 
         final Account owner = accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
 
@@ -4056,6 +4060,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (gpuEnabled != null) {
             _srvOfferingDao.addCheckForGpuEnabled(serviceOfferingSearch, gpuEnabled);
+        }
+
+        if (categoryId != null) {
+            serviceOfferingSearch.and("categoryId", serviceOfferingSearch.entity().getCategoryId(), Op.EQ);
         }
 
         if (vmId != null) {
@@ -4346,6 +4354,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (vgpuProfileId != null) {
             sc.setParameters("vgpuProfileId", vgpuProfileId);
+        }
+
+        if (categoryId != null) {
+            sc.setParameters("categoryId", categoryId);
         }
 
         if (vmId != null) {
@@ -6229,6 +6241,46 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         return bucketDao.searchByIds(bktIds);
+    }
+
+    @Override
+    public ListResponse<org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse> listServiceOfferingCategories(org.apache.cloudstack.api.command.admin.offering.ListServiceOfferingCategoriesCmd cmd) {
+        Long id = cmd.getId();
+        String name = cmd.getName();
+
+        Filter searchFilter = new Filter(com.cloud.service.ServiceOfferingCategoryVO.class, "sortKey", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchBuilder<com.cloud.service.ServiceOfferingCategoryVO> sb = _serviceOfferingCategoryDao.createSearchBuilder();
+
+        if (id != null) {
+            sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        }
+
+        if (name != null) {
+            sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+        }
+
+        sb.done();
+        SearchCriteria<com.cloud.service.ServiceOfferingCategoryVO> sc = sb.create();
+
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+
+        if (name != null) {
+            sc.setParameters("name", name);
+        }
+
+        Pair<List<com.cloud.service.ServiceOfferingCategoryVO>, Integer> result = _serviceOfferingCategoryDao.searchAndCount(sc, searchFilter);
+        ListResponse<org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse> response = new ListResponse<>();
+        List<org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse> responses = new ArrayList<>();
+
+        for (com.cloud.service.ServiceOfferingCategoryVO category : result.first()) {
+            org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse categoryResponse = responseGenerator.createServiceOfferingCategoryResponse(category);
+            responses.add(categoryResponse);
+        }
+
+        response.setResponses(responses, result.second());
+        return response;
     }
 
     @Override

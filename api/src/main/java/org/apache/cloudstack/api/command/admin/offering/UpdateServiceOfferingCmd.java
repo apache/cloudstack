@@ -109,6 +109,14 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
             since = "4.22.0")
     protected Boolean cleanupExternalDetails;
 
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_CATEGORY_ID,
+            type = CommandType.UUID,
+            entityType = org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse.class,
+            required = false,
+            description = "the ID of the service offering category to associate",
+            since = "4.23")
+    private Long categoryId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -216,6 +224,8 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
     public boolean isCleanupExternalDetails() {
         return Boolean.TRUE.equals(cleanupExternalDetails);
     }
+
+    public Long getCategoryId() { return categoryId; }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

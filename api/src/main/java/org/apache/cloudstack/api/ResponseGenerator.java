@@ -267,6 +267,8 @@ public interface ResponseGenerator {
 
     ServiceOfferingResponse createServiceOfferingResponse(ServiceOffering offering);
 
+    org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse createServiceOfferingCategoryResponse(com.cloud.offering.ServiceOfferingCategory category);
+
     ConfigurationResponse createConfigurationResponse(Configuration cfg);
 
     ConfigurationGroupResponse createConfigurationGroupResponse(ConfigurationGroup cfgGroup);
