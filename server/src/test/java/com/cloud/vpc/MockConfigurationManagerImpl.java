@@ -42,6 +42,7 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offering.ServiceOfferingCategory;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
 import com.cloud.org.Grouping.AllocationState;
@@ -151,7 +152,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     }
 
     @Override
-    public com.cloud.offering.ServiceOfferingCategory createServiceOfferingCategory(CreateServiceOfferingCategoryCmd cmd) {
+    public ServiceOfferingCategory createServiceOfferingCategory(CreateServiceOfferingCategoryCmd cmd) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -163,7 +164,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     }
 
     @Override
-    public com.cloud.offering.ServiceOfferingCategory updateServiceOfferingCategory(UpdateServiceOfferingCategoryCmd cmd) {
+    public ServiceOfferingCategory updateServiceOfferingCategory(UpdateServiceOfferingCategoryCmd cmd) {
         // TODO Auto-generated method stub
         return null;
     }
