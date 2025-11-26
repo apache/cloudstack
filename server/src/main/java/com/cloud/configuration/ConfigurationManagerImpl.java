@@ -8636,7 +8636,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Service offering category with name " + name + " already exists");
         }
 
-        com.cloud.service.ServiceOfferingCategoryVO category = new ServiceOfferingCategoryVO(name);
+        ServiceOfferingCategoryVO category = new ServiceOfferingCategoryVO(name);
         if (sortKey != null) {
             category.setSortKey(sortKey);
         }
@@ -8651,7 +8651,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public boolean deleteServiceOfferingCategory(DeleteServiceOfferingCategoryCmd cmd) {
         Long categoryId = cmd.getId();
 
-        com.cloud.service.ServiceOfferingCategoryVO category = _serviceOfferingCategoryDao.findById(categoryId);
+        ServiceOfferingCategoryVO category = _serviceOfferingCategoryDao.findById(categoryId);
         if (category == null) {
             throw new InvalidParameterValueException("Unable to find service offering category with id " + categoryId);
         }

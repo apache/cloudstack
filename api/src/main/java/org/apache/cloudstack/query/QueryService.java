@@ -88,6 +88,7 @@ import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import org.apache.cloudstack.api.response.SecondaryStorageHeuristicsResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.StorageAccessGroupResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
@@ -186,7 +187,7 @@ public interface QueryService {
 
     ListResponse<ServiceOfferingResponse>  searchForServiceOfferings(ListServiceOfferingsCmd cmd);
 
-    ListResponse<org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse> listServiceOfferingCategories(ListServiceOfferingCategoriesCmd cmd);
+    ListResponse<ServiceOfferingCategoryResponse> listServiceOfferingCategories(ListServiceOfferingCategoriesCmd cmd);
 
     ListResponse<ZoneResponse>  listDataCenters(ListZonesCmd cmd);
 

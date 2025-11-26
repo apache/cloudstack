@@ -166,6 +166,7 @@ import org.apache.cloudstack.api.response.SecondaryStorageHeuristicsResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse;
 import org.apache.cloudstack.api.response.ServiceResponse;
 import org.apache.cloudstack.api.response.SharedFSResponse;
 import org.apache.cloudstack.api.response.Site2SiteCustomerGatewayResponse;
@@ -373,6 +374,7 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offering.ServiceOfferingCategory;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.org.Cluster;
@@ -646,8 +648,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse createServiceOfferingCategoryResponse(com.cloud.offering.ServiceOfferingCategory category) {
-        org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse response = new org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse();
+    public ServiceOfferingCategoryResponse createServiceOfferingCategoryResponse(ServiceOfferingCategory category) {
+        ServiceOfferingCategoryResponse response = new ServiceOfferingCategoryResponse();
         response.setId(category.getUuid());
         response.setName(category.getName());
         response.setSortKey(category.getSortKey());

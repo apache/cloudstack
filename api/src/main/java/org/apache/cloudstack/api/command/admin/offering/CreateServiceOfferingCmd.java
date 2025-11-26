@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse;
 import org.apache.cloudstack.api.response.VgpuProfileResponse;
 import org.apache.cloudstack.api.response.VsphereStoragePoliciesResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
@@ -291,7 +292,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.SERVICE_OFFERING_CATEGORY_ID,
             type = CommandType.UUID,
-            entityType = org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse.class,
+            entityType = ServiceOfferingCategoryResponse.class,
             required = false,
             description = "the ID of the service offering category to associate with this offering",
             since = "4.23")
