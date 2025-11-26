@@ -62,11 +62,14 @@ import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCategoryCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCategoryCmd;
 import org.apache.cloudstack.api.command.admin.offering.IsAccountAllowedToCreateOfferingsWithTagsCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCategoryCmd;
 import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
 import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
 import org.apache.cloudstack.api.command.admin.region.CreatePortableIpRangeCmd;
@@ -148,19 +151,19 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     }
 
     @Override
-    public com.cloud.offering.ServiceOfferingCategory createServiceOfferingCategory(org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCategoryCmd cmd) {
+    public com.cloud.offering.ServiceOfferingCategory createServiceOfferingCategory(CreateServiceOfferingCategoryCmd cmd) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public boolean deleteServiceOfferingCategory(org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCategoryCmd cmd) {
+    public boolean deleteServiceOfferingCategory(DeleteServiceOfferingCategoryCmd cmd) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public com.cloud.offering.ServiceOfferingCategory updateServiceOfferingCategory(org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCategoryCmd cmd) {
+    public com.cloud.offering.ServiceOfferingCategory updateServiceOfferingCategory(UpdateServiceOfferingCategoryCmd cmd) {
         // TODO Auto-generated method stub
         return null;
     }

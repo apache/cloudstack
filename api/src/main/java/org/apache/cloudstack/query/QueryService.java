@@ -36,6 +36,7 @@ import org.apache.cloudstack.api.command.admin.storage.ListStorageAccessGroupsCm
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageTagsCmd;
 import org.apache.cloudstack.api.command.admin.storage.heuristics.ListSecondaryStorageSelectorsCmd;
+import org.apache.cloudstack.api.command.admin.offering.ListServiceOfferingCategoriesCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
@@ -185,7 +186,7 @@ public interface QueryService {
 
     ListResponse<ServiceOfferingResponse>  searchForServiceOfferings(ListServiceOfferingsCmd cmd);
 
-    ListResponse<org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse> listServiceOfferingCategories(org.apache.cloudstack.api.command.admin.offering.ListServiceOfferingCategoriesCmd cmd);
+    ListResponse<org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse> listServiceOfferingCategories(ListServiceOfferingCategoriesCmd cmd);
 
     ListResponse<ZoneResponse>  listDataCenters(ListZonesCmd cmd);
 

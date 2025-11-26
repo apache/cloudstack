@@ -35,11 +35,14 @@ import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCategoryCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCategoryCmd;
 import org.apache.cloudstack.api.command.admin.offering.IsAccountAllowedToCreateOfferingsWithTagsCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCategoryCmd;
 import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
 import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
 import org.apache.cloudstack.api.command.admin.region.CreatePortableIpRangeCmd;
@@ -134,7 +137,7 @@ public interface ConfigurationService {
      * @param cmd - the command specifying name and sort key
      * @return the newly created service offering category
      */
-    ServiceOfferingCategory createServiceOfferingCategory(org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCategoryCmd cmd);
+    ServiceOfferingCategory createServiceOfferingCategory(CreateServiceOfferingCategoryCmd cmd);
 
     /**
      * Deletes a service offering category
@@ -142,7 +145,7 @@ public interface ConfigurationService {
      * @param cmd - the command specifying category id
      * @return true if successful, false otherwise
      */
-    boolean deleteServiceOfferingCategory(org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCategoryCmd cmd);
+    boolean deleteServiceOfferingCategory(DeleteServiceOfferingCategoryCmd cmd);
 
     /**
      * Updates a service offering category
@@ -150,7 +153,7 @@ public interface ConfigurationService {
      * @param cmd - the command specifying category id, name, and/or sort key
      * @return updated service offering category
      */
-    ServiceOfferingCategory updateServiceOfferingCategory(org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCategoryCmd cmd);
+    ServiceOfferingCategory updateServiceOfferingCategory(UpdateServiceOfferingCategoryCmd cmd);
 
     /**
      * Updates a disk offering

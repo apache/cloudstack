@@ -69,6 +69,7 @@ import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
 import org.apache.cloudstack.api.command.admin.iso.ListIsosCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.management.ListMgmtsCmd;
+import org.apache.cloudstack.api.command.admin.offering.ListServiceOfferingCategoriesCmd;
 import org.apache.cloudstack.api.command.admin.pod.ListPodsByCmd;
 import org.apache.cloudstack.api.command.admin.resource.icon.ListResourceIconCmd;
 import org.apache.cloudstack.api.command.admin.router.GetRouterHealthCheckResultsCmd;
@@ -138,6 +139,7 @@ import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import org.apache.cloudstack.api.response.SecondaryStorageHeuristicsResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.StorageAccessGroupResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
@@ -296,8 +298,10 @@ import com.cloud.server.ResourceManagerUtil;
 import com.cloud.server.ResourceMetaDataService;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
+import com.cloud.service.ServiceOfferingCategoryVO;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingCategoryDao;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.BucketVO;
@@ -6244,12 +6248,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     }
 
     @Override
-    public ListResponse<org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse> listServiceOfferingCategories(org.apache.cloudstack.api.command.admin.offering.ListServiceOfferingCategoriesCmd cmd) {
+    public ListResponse<ServiceOfferingCategoryResponse> listServiceOfferingCategories(ListServiceOfferingCategoriesCmd cmd) {
         Long id = cmd.getId();
         String name = cmd.getName();
 
-        Filter searchFilter = new Filter(com.cloud.service.ServiceOfferingCategoryVO.class, "sortKey", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchBuilder<com.cloud.service.ServiceOfferingCategoryVO> sb = _serviceOfferingCategoryDao.createSearchBuilder();
+        Filter searchFilter = new Filter(ServiceOfferingCategoryVO.class, "sortKey", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchBuilder<ServiceOfferingCategoryVO> sb = _serviceOfferingCategoryDao.createSearchBuilder();
 
         if (id != null) {
             sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
@@ -6260,7 +6264,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         sb.done();
-        SearchCriteria<com.cloud.service.ServiceOfferingCategoryVO> sc = sb.create();
+        SearchCriteria<ServiceOfferingCategoryVO> sc = sb.create();
 
         if (id != null) {
             sc.setParameters("id", id);
@@ -6270,12 +6274,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("name", name);
         }
 
-        Pair<List<com.cloud.service.ServiceOfferingCategoryVO>, Integer> result = _serviceOfferingCategoryDao.searchAndCount(sc, searchFilter);
-        ListResponse<org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse> response = new ListResponse<>();
-        List<org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse> responses = new ArrayList<>();
+        Pair<List<ServiceOfferingCategoryVO>, Integer> result = _serviceOfferingCategoryDao.searchAndCount(sc, searchFilter);
+        ListResponse<ServiceOfferingCategoryResponse> response = new ListResponse<>();
+        List<ServiceOfferingCategoryResponse> responses = new ArrayList<>();
 
-        for (com.cloud.service.ServiceOfferingCategoryVO category : result.first()) {
-            org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse categoryResponse = responseGenerator.createServiceOfferingCategoryResponse(category);
+        for (ServiceOfferingCategoryVO category : result.first()) {
+            ServiceOfferingCategoryResponse categoryResponse = responseGenerator.createServiceOfferingCategoryResponse(category);
             responses.add(categoryResponse);
         }
 
