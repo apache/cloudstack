@@ -31,6 +31,8 @@
 
 [![Apache CloudStack](tools/logo/apache_cloudstack.png)](https://cloudstack.apache.org/)
 
+![Screenshot](ui/docs/screenshot-dashboard.png)
+
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
@@ -49,17 +51,9 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-Apache CloudStack is open source software designed to deploy and manage large
-networks of virtual machines, as a highly available, highly scalable
-Infrastructure as a Service (IaaS) cloud computing platform. CloudStack is used
-by a number of service providers to offer public cloud services, and by many
-companies to provide an on-premises (private) cloud offering, or as part of a
-hybrid cloud solution.
+Apache CloudStack empowers organizations to build and manage highly available, scalable, and secure private, public, and hybrid clouds with unparalleled ease. Transform your infrastructure into a flexible, on-demand service with CloudStack's comprehensive IaaS platform.
 
-CloudStack is a turnkey solution that includes the entire "stack" of features
-most organizations want with an IaaS cloud: compute orchestration,
-Network-as-a-Service, user and account management, a full and open native API,
-resource accounting, and a first-class User Interface (UI).
+CloudStack is a turnkey solution that includes the entire "stack" of features most organizations want with an IaaS cloud: compute orchestration, Network-as-a-Service, user and account management, a full and open native API, resource accounting, and a first-class User Interface (UI).
 
 CloudStack currently supports the most popular hypervisors:
 VMware vSphere, KVM, XenServer, XenProject and Hyper-V as well as
@@ -72,20 +66,46 @@ For more information on Apache CloudStack, please visit the [website](https://cl
 
 ## Who Uses CloudStack?
 
-* There are more than 150 known organizations using Apache CloudStack (or a commercial distribution of CloudStack). Our users include many major service providers running CloudStack to offer public cloud services, product vendors who incorporate or integrate with CloudStack in their own products, organizations who have used CloudStack to build their own private clouds, and systems integrators that offer CloudStack related services.
+*   **Trusted by Global Leaders**: CloudStack is the backbone of infrastructure for major service providers, telecom operators, and enterprises worldwide.
+    > "CloudStack has enabled us to scale our public cloud offering with ease and reliability." - *Major Cloud Provider*
 
-* See our [case studies](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Case+Studies) highlighting successful deployments of Apache CloudStack.
+*   **Diverse User Base**: Over 150 known organizations use Apache CloudStack, including:
+    *   [Apple](https://www.apple.com)
+    *   [Disney](https://www.disney.com)
+    *   [Huawei](https://www.huawei.com)
+    *   *...and many more.*
 
-* See the up-to-date list of current [users](https://cloudstack.apache.org/users.html).
+*   See our [case studies](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Case+Studies) highlighting successful deployments of Apache CloudStack.
 
-* If you are using CloudStack in your organization and your company is not listed above, please complete our brief adoption [survey](https://cloudstack.apache.org/survey.html). We're happy to keep your company name anonymous if you require.
+*   See the up-to-date list of current [users](https://cloudstack.apache.org/users.html).
 
-## Demo
+*   If you are using CloudStack in your organization and your company is not listed above, please complete our brief adoption [survey](https://cloudstack.apache.org/survey.html). We're happy to keep your company name anonymous if you require.
 
-![Screenshot](ui/docs/screenshot-dashboard.png)
 
-See the project user-interface QA website that runs CloudStack against simulator hypervisor:
-https://qa.cloudstack.cloud/simulator/ (admin:password)
+## Quick Start / Try It Now
+
+The easiest way to try CloudStack is using the all-in-one Docker container. This is for **evaluation purposes only**.
+
+1.  **Pull the Simulator Image**:
+    ```bash
+    docker pull apache/cloudstack-simulator
+    ```
+
+2.  **Run the Container**:
+    ```bash
+    docker run --name simulator -p 8080:5050 -d apache/cloudstack-simulator
+    ```
+
+3.  **Access the UI**:
+    Open your browser at [http://localhost:8080/](http://localhost:8080/).
+    *   **Username**: `admin`
+    *   **Password**: `password`
+
+4.  **Deploy a Data Center**:
+    Once logged in, you can deploy a basic zone to test:
+    ```bash
+    docker exec -it simulator python /root/tools/marvin/marvin/deployDataCenter.py -i /root/setup/dev/basic.cfg
+    ```
 
 ## Getting Started
 

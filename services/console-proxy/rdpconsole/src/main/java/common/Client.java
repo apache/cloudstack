@@ -299,16 +299,16 @@ public class Client {
 
     private Protocol parseOptions(String[] args) {
         String protocolName = (args.length > 0) ? args[0] : "";
-        Protocol protocol;
+        Protocol protocol = Protocol.NONE;
 
         Option[] options;
-        if (protocolName.equals(Protocol.VNC.name().toLowerCase())) {
+        if (protocolName.equals("vnc")) {
             protocol = Protocol.VNC;
             options = join(commonOptions, vncOptions);
-        } else if (protocolName.equals(Protocol.RDP.name().toLowerCase())) {
+        } else if (protocolName.equals("rdp")) {
             protocol = Protocol.RDP;
             options = join(commonOptions, rdpOptions);
-        } else if (protocolName.equals(Protocol.HYPERV.name().toLowerCase())) {
+        } else if (protocolName.equals("hyperv")) {
             protocol = Protocol.HYPERV;
             options = join(commonOptions, hyperVOptions);
         } else {
