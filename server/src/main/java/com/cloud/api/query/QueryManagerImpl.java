@@ -481,7 +481,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     ServiceOfferingDetailsDao _srvOfferingDetailsDao;
 
     @Inject
-    com.cloud.service.dao.ServiceOfferingCategoryDao _serviceOfferingCategoryDao;
+    ServiceOfferingCategoryDao _serviceOfferingCategoryDao;
 
     @Inject
     DiskOfferingDao _diskOfferingDao;

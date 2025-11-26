@@ -44,6 +44,8 @@ import com.cloud.dc.dao.VsphereStoragePolicyDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.service.dao.ServiceOfferingCategoryDao;
+import com.cloud.service.ServiceOfferingCategoryVO;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.Filter;
@@ -65,7 +67,7 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
     @Inject
     private AccountManager accountManager;
     @Inject
-    private com.cloud.service.dao.ServiceOfferingCategoryDao _serviceOfferingCategoryDao;
+    private ServiceOfferingCategoryDao _serviceOfferingCategoryDao;
 
     private SearchBuilder<ServiceOfferingJoinVO> sofIdSearch;
 
@@ -152,7 +154,7 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
 
         // Set category information if available
         if (offering.getCategoryId() != null) {
-            com.cloud.service.ServiceOfferingCategoryVO category = _serviceOfferingCategoryDao.findById(offering.getCategoryId());
+            ServiceOfferingCategoryVO category = _serviceOfferingCategoryDao.findById(offering.getCategoryId());
             if (category != null) {
                 offeringResponse.setCategoryId(category.getUuid());
                 offeringResponse.setCategoryName(category.getName());
