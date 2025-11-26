@@ -123,7 +123,10 @@ import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.ScriptRunner;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.common.annotations.VisibleForTesting;
 
@@ -448,39 +451,71 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 throw new CloudRuntimeException("Unable to acquire lock to check for database integrity.");
             }
 
-            try {
-                initializeDatabaseEncryptors();
-
-                final CloudStackVersion dbVersion = CloudStackVersion.parse(_dao.getCurrentVersion());
-                final String currentVersionValue = this.getClass().getPackage().getImplementationVersion();
-
-                if (StringUtils.isBlank(currentVersionValue)) {
-                    return;
-                }
-
-                String csVersion = SystemVmTemplateRegistration.parseMetadataFile();
-                final CloudStackVersion sysVmVersion = CloudStackVersion.parse(csVersion);
-                final  CloudStackVersion currentVersion = CloudStackVersion.parse(currentVersionValue);
-                SystemVmTemplateRegistration.CS_MAJOR_VERSION  = String.valueOf(sysVmVersion.getMajorRelease()) + "." + String.valueOf(sysVmVersion.getMinorRelease());
-                SystemVmTemplateRegistration.CS_TINY_VERSION = String.valueOf(sysVmVersion.getPatchRelease());
-
-                LOGGER.info("DB version = " + dbVersion + " Code Version = " + currentVersion);
-
-                if (dbVersion.compareTo(currentVersion) > 0) {
-                    throw new CloudRuntimeException("Database version " + dbVersion + " is higher than management software version " + currentVersionValue);
-                }
-
-                if (dbVersion.compareTo(currentVersion) == 0) {
-                    LOGGER.info("DB version and code version matches so no upgrade needed.");
-                    return;
-                }
-
-                upgrade(dbVersion, currentVersion);
-            } finally {
-                lock.unlock();
-            }
+            // not sure about the right moment to do this yet
+            checkIfStandalone();
+            doUpgrades(lock);
         } finally {
             lock.releaseRef();
+        }
+    }
+    private void checkIfStandalone() throws CloudRuntimeException {
+        boolean standalone = Transaction.execute(new TransactionCallback<>() {
+            @Override
+            public Boolean doInTransaction(TransactionStatus status) {
+                String sql = "SELECT COUNT(*) FROM `cloud`.`management_server` WHERE `status` = 'UP'";
+                try (Connection conn  = TransactionLegacy.getStandaloneConnection();
+                     PreparedStatement pstmt = conn.prepareStatement(sql);
+                     ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        int count = rs.getInt(1);
+                        return count <= 1;
+                    }
+                } catch (SQLException e) {
+                    String errorMessage = "Unable to check if the management server is running in standalone mode.";
+                    LOGGER.error(errorMessage, e);
+                    throw new CloudRuntimeException(errorMessage, e);
+                }
+                return true;
+            }
+        });
+        if (! standalone) {
+            String msg = "CloudStack is running multiple management servers and attempting to upgrade. Upgrades can only be run in standalone mode. Skipping database upgrade check.";
+            LOGGER.info(msg);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+
+    private void doUpgrades(GlobalLock lock) {
+        try {
+            initializeDatabaseEncryptors();
+
+            final CloudStackVersion dbVersion = CloudStackVersion.parse(_dao.getCurrentVersion());
+            final String currentVersionValue = this.getClass().getPackage().getImplementationVersion();
+
+            if (StringUtils.isBlank(currentVersionValue)) {
+                return;
+            }
+
+            String csVersion = SystemVmTemplateRegistration.parseMetadataFile();
+            final CloudStackVersion sysVmVersion = CloudStackVersion.parse(csVersion);
+            final  CloudStackVersion currentVersion = CloudStackVersion.parse(currentVersionValue);
+            SystemVmTemplateRegistration.CS_MAJOR_VERSION  = String.valueOf(sysVmVersion.getMajorRelease()) + "." + String.valueOf(sysVmVersion.getMinorRelease());
+            SystemVmTemplateRegistration.CS_TINY_VERSION = String.valueOf(sysVmVersion.getPatchRelease());
+
+            LOGGER.info("DB version = " + dbVersion + " Code Version = " + currentVersion);
+
+            if (dbVersion.compareTo(currentVersion) > 0) {
+                throw new CloudRuntimeException("Database version " + dbVersion + " is higher than management software version " + currentVersionValue);
+            }
+
+            if (dbVersion.compareTo(currentVersion) == 0) {
+                LOGGER.info("DB version and code version matches so no upgrade needed.");
+                return;
+            }
+
+            upgrade(dbVersion, currentVersion);
+        } finally {
+            lock.unlock();
         }
     }
 
