@@ -167,3 +167,12 @@ repos:
         types: [yaml]
         files: \.ya?ml$
         exclude: ^.*k8s-.*\.ya?ml$
+  - repo: https://github.com/lycheeverse/lychee.git
+    rev: lychee-v0.20.1
+    hooks:
+      - id: lychee
+        name: run lychee
+        description: run lychee a fast, async, stream-based link checker written in Rust
+        args: [--config=.github/linters/lychee.toml]
+        files: \.md$
+        stages: [manual]
