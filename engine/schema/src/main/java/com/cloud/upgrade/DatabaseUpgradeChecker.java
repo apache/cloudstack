@@ -468,7 +468,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                      ResultSet rs = pstmt.executeQuery()) {
                     if (rs.next()) {
                         int count = rs.getInt(1);
-                        return count <= 1;
+                        return count = 0;
                     }
                 } catch (SQLException e) {
                     String errorMessage = "Unable to check if the management server is running in standalone mode.";
