@@ -462,7 +462,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         boolean standalone = Transaction.execute(new TransactionCallback<>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
-                String sql = "SELECT COUNT(*) FROM `cloud`.`management_server` WHERE `status` = 'UP'";
+                String sql = "SELECT COUNT(*) FROM `cloud`.`mshosts` WHERE `state` = 'UP'";
                 try (Connection conn  = TransactionLegacy.getStandaloneConnection();
                      PreparedStatement pstmt = conn.prepareStatement(sql);
                      ResultSet rs = pstmt.executeQuery()) {
