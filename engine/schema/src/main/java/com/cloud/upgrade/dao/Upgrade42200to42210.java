@@ -16,15 +16,15 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
-public class Upgrade42200to42300 extends DbUpgradeAbstractImpl implements DbUpgrade, DbUpgradeSystemVmTemplate {
+public class Upgrade42200to42210 extends DbUpgradeAbstractImpl implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[]{"4.22.0.0", "4.23.0.0"};
+        return new String[] {"4.22.0.0", "4.22.1.0"};
     }
 
     @Override
     public String getUpgradedVersion() {
-        return "4.23.0.0";
+        return "4.22.1.0";
     }
 }

@@ -21,6 +21,8 @@ import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.ConfigurationManagerImpl;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
@@ -372,6 +374,8 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
                    _volumeDao.update(volume.getId(), volume);
                    _volumeDao.attachVolume(volume.getId(), vm.getId(), getNextAvailableDeviceId(vmVolumes));
                }
+               UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_ATTACH, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                       volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid(), vm.getId(), volume.isDisplay());
            }
         } catch (Exception e) {
             throw new RuntimeException("Could not restore VM " + vm.getName() + " due to : " + e.getMessage());
@@ -389,6 +393,8 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
                 _volumeDao.attachVolume(restoredVolume.getId(), vm.getId(), getNextAvailableDeviceId(vmVolumes));
                 restoredVolume.setState(Volume.State.Ready);
                 _volumeDao.update(restoredVolume.getId(), restoredVolume);
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_ATTACH, restoredVolume.getAccountId(), restoredVolume.getDataCenterId(), restoredVolume.getId(), restoredVolume.getName(),
+                        restoredVolume.getDiskOfferingId(), restoredVolume.getTemplateId(), restoredVolume.getSize(), Volume.class.getName(), restoredVolume.getUuid(), vm.getId(), restoredVolume.isDisplay());
                 return true;
             } catch (Exception e) {
                 restoredVolume.setDisplay(false);
