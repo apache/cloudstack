@@ -865,6 +865,14 @@
       <template v-if="['isfeatured'].includes(column.key) && ['guestoscategory'].includes($route.path.split('/')[1])">
         {{ record.isfeatured ? $t('label.yes') : $t('label.no') }}
       </template>
+      <template v-if="['agentscount'].includes(column.key)">
+        <router-link
+          v-if="['managementserver'].includes($route.path.split('/')[1]) && $router.resolve('/host').matched[0].redirect !== '/exception/404'"
+          :to="{ path: '/host', query: { managementserverid: record.id } }">
+          {{ text }}
+        </router-link>
+        <span v-else> {{ text }} </span>
+      </template>
       <template v-if="column.key === 'order'">
         <div class="shift-btns">
           <a-tooltip
