@@ -61,6 +61,7 @@ import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.agent.api.BackupSnapshotCommand;
@@ -694,7 +695,12 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                     updateTemplateRef(templateId, poolId, templatePath, templateSize);
                     return templateId;
                 } else {
-                    return volumeVO.getTemplateId();
+                    Long templateId = volumeVO.getTemplateId();
+                    if (templateId == null && volumeVO.getInstanceId() != null) {
+                        VMInstanceVO vmInstanceVO = vmDao.findByIdIncludingRemoved(volumeVO.getInstanceId());
+                        return vmInstanceVO.getTemplateId();
+                    }
+                    return templateId;
                 }
             }
         }
@@ -1393,6 +1399,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER_NAME);
         String username = params.get(VmDetailConstants.VMWARE_VCENTER_USERNAME);
         String password = params.get(VmDetailConstants.VMWARE_VCENTER_PASSWORD);
+        Integer requestedCpuNumber = params.containsKey(VmDetailConstants.CPU_NUMBER) ? Integer.parseInt(params.get(VmDetailConstants.CPU_NUMBER)) : null;
+        Integer requestedCpuSpeed = params.containsKey(VmDetailConstants.CPU_SPEED) ? Integer.parseInt(params.get(VmDetailConstants.CPU_SPEED)) : null;
+        Integer requestedMemory = params.containsKey(VmDetailConstants.MEMORY) ? Integer.parseInt(params.get(VmDetailConstants.MEMORY)) : null;
 
         try {
             VmwareContext context = connectToVcenter(vcenter, username, password);
@@ -1404,6 +1413,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 throw new CloudRuntimeException(err);
             }
 
+            checkSourceVmResourcesAgainstSelectedOfferingResources(vmMo, requestedCpuNumber, requestedCpuSpeed, requestedMemory);
             VirtualMachinePowerState sourceVmPowerState = vmMo.getPowerState();
 
             if (sourceVmPowerState == VirtualMachinePowerState.POWERED_OFF) {
@@ -1441,6 +1451,29 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             String err = String.format("Error while finding or cloning VM: %s from vCenter %s: %s", vmName, vcenter, e.getMessage());
             logger.error(err, e);
             throw new CloudRuntimeException(err, e);
+        }
+    }
+
+    protected void checkSourceVmResourcesAgainstSelectedOfferingResources(VirtualMachineMO vmMo, Integer requestedCpuNumber, Integer requestedCpuSpeed, Integer requestedMemory) throws Exception {
+        if (ObjectUtils.allNull(requestedCpuNumber, requestedCpuSpeed, requestedMemory)) {
+            return;
+        }
+        VirtualMachineConfigSummary configSummary = vmMo.getConfigSummary();
+        if (configSummary != null) {
+            compareSourceVmResourceAgainstRequested(configSummary.getNumCpu(), requestedCpuNumber, "CPU number");
+            compareSourceVmResourceAgainstRequested(configSummary.getCpuReservation(), requestedCpuSpeed, "CPU speed");
+            compareSourceVmResourceAgainstRequested(configSummary.getMemorySizeMB(), requestedMemory, "Memory");
+        }
+    }
+
+    protected void compareSourceVmResourceAgainstRequested(Integer actualResource, Integer requestedResource, String resourceName) throws Exception {
+        if (ObjectUtils.anyNull(actualResource, requestedResource)) {
+            return;
+        }
+        if (requestedResource < actualResource) {
+            String err = String.format("The requested %s (%d) is less than the source VM %s (%d)", resourceName, requestedResource, resourceName, actualResource);
+            logger.error(err);
+            throw new CloudRuntimeException(err);
         }
     }
 

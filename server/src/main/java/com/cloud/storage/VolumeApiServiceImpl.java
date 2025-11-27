@@ -1004,7 +1004,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (snapshotId == null && displayVolume) {
                     // for volume created from snapshot, create usage event after volume creation
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, null, size,
-                            Volume.class.getName(), volume.getUuid(), displayVolume);
+                            Volume.class.getName(), volume.getUuid(), volume.getInstanceId(), displayVolume);
                 }
 
                 if (volume != null && details != null) {
@@ -1106,7 +1106,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         createdVolume = _volumeMgr.createVolumeFromSnapshot(volume, snapshot, vm);
         VolumeVO volumeVo = _volsDao.findById(createdVolume.getId());
         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, createdVolume.getAccountId(), createdVolume.getDataCenterId(), createdVolume.getId(), createdVolume.getName(),
-                createdVolume.getDiskOfferingId(), null, createdVolume.getSize(), Volume.class.getName(), createdVolume.getUuid(), volumeVo.isDisplayVolume());
+                createdVolume.getDiskOfferingId(), null, createdVolume.getSize(), Volume.class.getName(), createdVolume.getUuid(), volume.getInstanceId(), volumeVo.isDisplayVolume());
 
         return volumeVo;
     }
@@ -1578,6 +1578,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
             }
 
+            volume = _volsDao.findById(volumeId);
             if (newDiskOfferingId != null) {
                 volume.setDiskOfferingId(newDiskOfferingId);
                 _volumeMgr.saveVolumeDetails(newDiskOfferingId, volume.getId());
@@ -1592,7 +1593,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             // Update size if volume has same size as before, else it is already updated
-            volume = _volsDao.findById(volumeId);
             if (currentSize == volume.getSize() && currentSize != newSize) {
                 volume.setSize(newSize);
             } else if (volume.getSize() != newSize) {
@@ -1903,7 +1903,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
         UsageEventUtils
                 .publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), offeringId,
-                        volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid(), volume.isDisplay());
+                        volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid(), volume.getInstanceId(), volume.isDisplay());
 
         logger.debug("Volume [{}] has been successfully recovered, thus a new usage event {} has been published.", volume, EventTypes.EVENT_VOLUME_CREATE);
     }
@@ -2937,8 +2937,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 List<StoragePoolVO> childDatastores = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(storageId);
                 Collections.shuffle(childDatastores);
                 volume.setPoolId(childDatastores.get(0).getId());
+                volume.setPoolType(childDatastores.get(0).getPoolType());
             } else {
                 volume.setPoolId(pool.getId());
+                volume.setPoolType(pool.getPoolType());
             }
         }
 
@@ -2996,7 +2998,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (displayVolume) {
                 // flag turned 1 equivalent to freshly created volume
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), volume.getDiskOfferingId(),
-                        volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid());
+                        volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid(), volume.getInstanceId(), displayVolume);
             } else {
                 // flag turned 0 equivalent to deleting a volume
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), Volume.class.getName(),
@@ -3113,7 +3115,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             } catch (InterruptedException e) {
                 throw new RuntimeException("Operation is interrupted", e);
             } catch (ExecutionException e) {
-                throw new RuntimeException("Execution excetion", e);
+                throw new CloudRuntimeException("Execution exception getting the outcome of the asynchronous detach volume job", e);
             }
 
             Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
@@ -3225,6 +3227,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     if (storagePoolVO != null) {
                         VolumeVO volumeVO = _volsDao.findById(volumeId);
                         volumeVO.setPoolId(storagePoolVO.getId());
+                        volumeVO.setPoolType(storagePoolVO.getPoolType());
                         _volsDao.update(volumeVO.getId(), volumeVO);
                     } else {
                         logger.warn("Unable to find datastore {} while updating the new datastore of the volume {}", datastoreName, volume);
@@ -3256,6 +3259,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 handleTargetsForVMware(hostId, volumePool.getHostAddress(), volumePool.getPort(), volume.get_iScsiName());
             }
 
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DETACH, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                    volume.getDiskOfferingId(), null, volume.getSize(), Volume.class.getName(), volume.getUuid(), null, volume.isDisplay());
             return _volsDao.findById(volumeId);
         } else {
 
@@ -3507,8 +3512,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         if (hypervisorType.equals(HypervisorType.VMware)) {
             try {
-                boolean isStoragePoolStoragepolicyComplaince = storageMgr.isStoragePoolCompliantWithStoragePolicy(Arrays.asList(volumeDiskProfilePair), destPool);
-                if (!isStoragePoolStoragepolicyComplaince) {
+                boolean isStoragePoolStoragepolicyCompliance = storageMgr.isStoragePoolCompliantWithStoragePolicy(Arrays.asList(volumeDiskProfilePair), destPool);
+                if (!isStoragePoolStoragepolicyCompliance) {
                     throw new CloudRuntimeException(String.format("Storage pool %s is not storage policy compliance with the volume %s", poolUuid, vol.getUuid()));
                 }
             } catch (StorageUnavailableException e) {
@@ -3548,7 +3553,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 } catch (InterruptedException e) {
                     throw new RuntimeException("Operation is interrupted", e);
                 } catch (ExecutionException e) {
-                    throw new RuntimeException("Execution excetion", e);
+                    throw new CloudRuntimeException("Execution exception getting the outcome of the asynchronous migrate volume job", e);
                 }
 
                 Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
@@ -3645,12 +3650,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      *
      * If all of the above validations pass, we check if the size of the new disk offering is different from the volume. If it is, we log a warning message.
      */
-    protected void validateConditionsToReplaceDiskOfferingOfVolume(VolumeVO volume, DiskOfferingVO newDiskOffering, StoragePool destPool) {
+    @Override
+    public boolean validateConditionsToReplaceDiskOfferingOfVolume(Volume volume, DiskOffering newDiskOffering, StoragePool destPool) {
         if (newDiskOffering == null) {
-            return;
+            return false;
         }
-        if ((destPool.isShared() && newDiskOffering.isUseLocalStorage()) || destPool.isLocal() && newDiskOffering.isShared()) {
-            throw new InvalidParameterValueException("You cannot move the volume to a shared storage and assign a disk offering for local storage and vice versa.");
+        if (destPool.isShared() && newDiskOffering.isUseLocalStorage()) {
+            throw new InvalidParameterValueException("You cannot move the volume to shared storage, with the disk offering configured for local storage.");
+        }
+        if (destPool.isLocal() && newDiskOffering.isShared()) {
+            throw new InvalidParameterValueException("You cannot move the volume to local storage, with the disk offering configured for shared storage.");
         }
         if (!doesStoragePoolSupportDiskOffering(destPool, newDiskOffering)) {
             throw new InvalidParameterValueException(String.format("Migration failed: target pool [%s, tags:%s] has no matching tags for volume [%s, uuid:%s, tags:%s]", destPool.getName(),
@@ -3675,6 +3684,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     volume, oldDiskOffering, newDiskOffering);
         }
         logger.info("Changing disk offering to [{}] while migrating volume [{}].", newDiskOffering, volume);
+        return true;
     }
 
     /**
@@ -3895,7 +3905,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 } catch (InterruptedException e) {
                     throw new RuntimeException("Operation is interrupted", e);
                 } catch (ExecutionException e) {
-                    throw new RuntimeException("Execution excetion", e);
+                    throw new CloudRuntimeException("Execution exception getting the outcome of the asynchronous take volume snapshot job", e);
                 }
 
                 Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
@@ -4259,7 +4269,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 } catch (InterruptedException e) {
                     throw new RuntimeException("Operation is interrupted", e);
                 } catch (ExecutionException e) {
-                    throw new RuntimeException("Execution excetion", e);
+                    throw new CloudRuntimeException("Execution exception getting the outcome of the asynchronous extract volume job", e);
                 }
 
                 Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
@@ -4331,7 +4341,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 diskOfferingVO);
         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
                 volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(),
-                volume.getUuid(), volume.isDisplayVolume());
+                volume.getUuid(), volume.getInstanceId(), volume.isDisplayVolume());
 
         volService.moveVolumeOnSecondaryStorageToAnotherAccount(volume, oldAccount, newAccount);
     }
@@ -4855,6 +4865,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (attached) {
                 ev = Volume.Event.OperationSucceeded;
                 logger.debug("Volume: {} successfully attached to VM: {}", volInfo.getVolume(), volInfo.getAttachedVM());
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_ATTACH, volumeToAttach.getAccountId(), volumeToAttach.getDataCenterId(), volumeToAttach.getId(), volumeToAttach.getName(),
+                        volumeToAttach.getDiskOfferingId(), volumeToAttach.getTemplateId(), volumeToAttach.getSize(), Volume.class.getName(), volumeToAttach.getUuid(), vm.getId(), volumeToAttach.isDisplay());
+
                 provideVMInfo(dataStore, vm.getId(), volInfo.getId());
             } else {
                 logger.debug("Volume: {} failed to attach to VM: {}", volInfo.getVolume(), volInfo.getAttachedVM());

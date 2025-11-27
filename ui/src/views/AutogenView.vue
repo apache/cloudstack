@@ -1078,8 +1078,6 @@ export default {
         }
         if (this.$route.path.startsWith('/vmsnapshot/')) {
           params.vmsnapshotid = this.$route.params.id
-        } else if (this.$route.path.startsWith('/ldapsetting/')) {
-          params.hostname = this.$route.params.id
         }
         if (this.$route.path.startsWith('/tungstenpolicy/')) {
           params.policyuuid = this.$route.params.id
@@ -1191,9 +1189,6 @@ export default {
             if (func && typeof func === 'function') {
               this.items[idx][key] = func(this.items[idx])
             }
-          }
-          if (this.$route.path.startsWith('/ldapsetting')) {
-            this.items[idx].id = this.items[idx].hostname
           }
         }
         if (this.items.length > 0) {
@@ -1439,6 +1434,9 @@ export default {
       if (possibleApi === 'listTemplates') {
         params.templatefilter = 'executable'
       } else if (possibleApi === 'listIsos') {
+        if (this.$route.path.startsWith('/kubernetesiso')) {
+          params.bootable = false
+        }
         params.isofilter = 'executable'
       } else if (possibleApi === 'listHosts') {
         params.type = 'routing'
@@ -1772,9 +1770,22 @@ export default {
                 params[key] = param.opts[input].name
               }
             } else if (param.type === 'map' && typeof input === 'object') {
-              Object.entries(values.externaldetails).forEach(([key, value]) => {
-                params[param.name + '[0].' + key] = value
-              })
+              const details = values[key]
+              if (details && Object.keys(details).length > 0) {
+                Object.entries(details).forEach(([k, v]) => {
+                  params[key + '[0].' + k] = v
+                })
+              } else {
+                if (['details', 'externaldetails'].includes(key)) {
+                  const updateApiParams = this.$getApiParams(action.api)
+                  const cleanupKey = 'cleanup' + key
+                  if (cleanupKey in updateApiParams) {
+                    params[cleanupKey] = true
+                    break
+                  }
+                }
+                params[key] = {}
+              }
             } else {
               params[key] = input
             }
@@ -1986,9 +1997,8 @@ export default {
     },
     onSearch (opts) {
       const query = Object.assign({}, this.$route.query)
-      for (const key in this.searchParams) {
-        delete query[key]
-      }
+      const searchFilters = this.$route?.meta?.searchFilters || []
+      searchFilters.forEach(key => delete query[key])
       delete query.name
       delete query.templatetype
       delete query.keyword

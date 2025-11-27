@@ -857,6 +857,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
         volumeVO.setPath(finalPath);
         volumeVO.setFormat(ImageFormat.RAW);
         volumeVO.setPoolId(storagePool.getId());
+        volumeVO.setPoolType(storagePool.getPoolType());
         volumeVO.setExternalUuid(managedVolume.getExternalUuid());
         volumeVO.setDisplay(true);
         volumeVO.setDisplayVolume(true);

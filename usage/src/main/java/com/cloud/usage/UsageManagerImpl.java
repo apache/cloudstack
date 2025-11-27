@@ -1008,7 +1008,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
     private boolean isVolumeEvent(String eventType) {
         return eventType != null &&
-                (eventType.equals(EventTypes.EVENT_VOLUME_CREATE) || eventType.equals(EventTypes.EVENT_VOLUME_DELETE) || eventType.equals(EventTypes.EVENT_VOLUME_RESIZE) || eventType.equals(EventTypes.EVENT_VOLUME_UPLOAD));
+                (eventType.equals(EventTypes.EVENT_VOLUME_CREATE) ||
+                 eventType.equals(EventTypes.EVENT_VOLUME_DELETE) ||
+                 eventType.equals(EventTypes.EVENT_VOLUME_RESIZE) ||
+                 eventType.equals(EventTypes.EVENT_VOLUME_UPLOAD) ||
+                 eventType.equals(EventTypes.EVENT_VOLUME_ATTACH) ||
+                 eventType.equals(EventTypes.EVENT_VOLUME_DETACH));
     }
 
     private boolean isTemplateEvent(String eventType) {
@@ -1424,92 +1429,112 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         }
     }
 
+    private void deleteExistingSecondaryStorageUsageForVolume(long volId, long accountId, Date deletedDate) {
+        List<UsageStorageVO> storageVOs = _usageStorageDao.listById(accountId, volId, StorageTypes.VOLUME);
+        for (UsageStorageVO storageVO : storageVOs) {
+            logger.debug("Setting the volume with id: {} to 'deleted' in the usage_storage table for account: {}.", volId, accountId);
+            storageVO.setDeleted(deletedDate);
+            _usageStorageDao.update(storageVO);
+        }
+    }
+
+    private void deleteExistingInstanceVolumeUsage(long volId, long accountId, Date deletedDate) {
+        List<UsageVolumeVO> volumesVOs = _usageVolumeDao.listByVolumeId(volId, accountId);
+        for (UsageVolumeVO volumesVO : volumesVOs) {
+            if (volumesVO.getVmId() != null) {
+                logger.debug("Setting the volume with id: {} for instance id: {} to 'deleted' in the usage_volume table for account {}.",
+                        volumesVO.getVolumeId(), volumesVO.getVmId(), accountId);
+                volumesVO.setDeleted(deletedDate);
+                _usageVolumeDao.update(volumesVO.getId(), volumesVO);
+            }
+        }
+    }
+
+    private void deleteExistingVolumeUsage(long volId, long accountId, Date deletedDate) {
+        List<UsageVolumeVO> volumesVOs = _usageVolumeDao.listByVolumeId(volId, accountId);
+        for (UsageVolumeVO volumesVO : volumesVOs) {
+            logger.debug("Setting the volume with id: {} to 'deleted' in the usage_volume table for account: {}.", volId, accountId);
+            volumesVO.setDeleted(deletedDate);
+            _usageVolumeDao.update(volumesVO.getId(), volumesVO);
+        }
+    }
+
     private void createVolumeHelperEvent(UsageEventVO event) {
 
         long volId = event.getResourceId();
+        Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
+        List<UsageVolumeVO> volumesVOs;
+        UsageVolumeVO volumeVO;
 
-        if (EventTypes.EVENT_VOLUME_CREATE.equals(event.getType())) {
-            //For volumes which are 'attached' successfully, set the 'deleted' column in the usage_storage table,
+        switch (event.getType()) {
+        case EventTypes.EVENT_VOLUME_CREATE:
+            //For volumes which are 'attached' successfully from uploaded state, set the 'deleted' column in the usage_storage table,
             //so that the secondary storage should stop accounting and only primary will be accounted.
-            SearchCriteria<UsageStorageVO> sc = _usageStorageDao.createSearchCriteria();
-            sc.addAnd("entityId", SearchCriteria.Op.EQ, volId);
-            sc.addAnd("storageType", SearchCriteria.Op.EQ, StorageTypes.VOLUME);
-            List<UsageStorageVO> volumesVOs = _usageStorageDao.search(sc, null);
-            if (volumesVOs != null) {
-                if (volumesVOs.size() == 1) {
-                    logger.debug("Setting the volume with id: " + volId + " to 'deleted' in the usage_storage table.");
-                    volumesVOs.get(0).setDeleted(event.getCreateDate());
-                    _usageStorageDao.update(volumesVOs.get(0));
-                }
-            }
-        }
-        if (EventTypes.EVENT_VOLUME_CREATE.equals(event.getType()) || EventTypes.EVENT_VOLUME_RESIZE.equals(event.getType())) {
-            SearchCriteria<UsageVolumeVO> sc = _usageVolumeDao.createSearchCriteria();
-            sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
-            sc.addAnd("volumeId", SearchCriteria.Op.EQ, volId);
-            sc.addAnd("deleted", SearchCriteria.Op.NULL);
-            List<UsageVolumeVO> volumesVOs = _usageVolumeDao.search(sc, null);
+            deleteExistingSecondaryStorageUsageForVolume(volId, event.getAccountId(), event.getCreateDate());
+
+            volumesVOs = _usageVolumeDao.listByVolumeId(volId, event.getAccountId());
             if (volumesVOs.size() > 0) {
                 //This is a safeguard to avoid double counting of volumes.
                 logger.error("Found duplicate usage entry for volume: " + volId + " assigned to account: " + event.getAccountId() + "; marking as deleted...");
+                deleteExistingVolumeUsage(volId, event.getAccountId(), event.getCreateDate());
             }
-            //an entry exists if it is a resize volume event. marking the existing deleted and creating a new one in the case of resize.
-            for (UsageVolumeVO volumesVO : volumesVOs) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("deleting volume: " + volumesVO.getId() + " from account: " + volumesVO.getAccountId());
-                }
-                volumesVO.setDeleted(event.getCreateDate());
-                _usageVolumeDao.update(volumesVO);
-            }
-            if (logger.isDebugEnabled()) {
-                logger.debug("create volume with id : " + volId + " for account: " + event.getAccountId());
-            }
-            Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
-            UsageVolumeVO volumeVO = new UsageVolumeVO(volId, event.getZoneId(), event.getAccountId(), acct.getDomainId(), event.getOfferingId(), event.getTemplateId(), event.getSize(), event.getCreateDate(), null);
+
+            logger.debug("Creating a new entry in usage_volume for volume with id: {} for account: {}", volId, event.getAccountId());
+            volumeVO = new UsageVolumeVO(volId, event.getZoneId(), event.getAccountId(), acct.getDomainId(), event.getOfferingId(), event.getTemplateId(), null, event.getSize(), event.getCreateDate(), null);
             _usageVolumeDao.persist(volumeVO);
-        } else if (EventTypes.EVENT_VOLUME_DELETE.equals(event.getType())) {
-            SearchCriteria<UsageVolumeVO> sc = _usageVolumeDao.createSearchCriteria();
-            sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
-            sc.addAnd("volumeId", SearchCriteria.Op.EQ, volId);
-            sc.addAnd("deleted", SearchCriteria.Op.NULL);
-            List<UsageVolumeVO> volumesVOs = _usageVolumeDao.search(sc, null);
-            if (volumesVOs.size() > 1) {
-                logger.warn("More that one usage entry for volume: " + volId + " assigned to account: " + event.getAccountId() + "; marking them all as deleted...");
+
+            if (event.getVmId() != null) {
+                volumeVO = new UsageVolumeVO(volId, event.getZoneId(), event.getAccountId(), acct.getDomainId(), event.getOfferingId(), event.getTemplateId(), event.getVmId(), event.getSize(), event.getCreateDate(), null);
+                _usageVolumeDao.persist(volumeVO);
             }
+            break;
+
+        case EventTypes.EVENT_VOLUME_RESIZE:
+            volumesVOs = _usageVolumeDao.listByVolumeId(volId, event.getAccountId());
             for (UsageVolumeVO volumesVO : volumesVOs) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("deleting volume: " + volumesVO.getId() + " from account: " + volumesVO.getAccountId());
+                String delete_msg = String.format("Setting the volume with id: %s to 'deleted' in the usage_volume table for account: %s.", volId, event.getAccountId());
+                String create_msg = String.format("Creating a new entry in usage_volume for volume with id: %s after resize for account: %s", volId, event.getAccountId());
+                Long vmId = volumesVO.getVmId();
+                if (vmId != null) {
+                    delete_msg = String.format("Setting the volume with id: %s for instance id: %s to 'deleted' in the usage_volume table for account: %s.",
+                            volId, vmId, event.getAccountId());
+                    create_msg = String.format("Creating a new entry in usage_volume for volume with id: %s and instance id: %s after resize for account: %s",
+                            volId, vmId, event.getAccountId());
                 }
-                volumesVO.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
-                _usageVolumeDao.update(volumesVO);
-            }
-        } else if (EventTypes.EVENT_VOLUME_UPLOAD.equals(event.getType())) {
-            //For Upload event add an entry to the usage_storage table.
-            SearchCriteria<UsageStorageVO> sc = _usageStorageDao.createSearchCriteria();
-            sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
-            sc.addAnd("entityId", SearchCriteria.Op.EQ, volId);
-            sc.addAnd("storageType", SearchCriteria.Op.EQ, StorageTypes.VOLUME);
-            sc.addAnd("deleted", SearchCriteria.Op.NULL);
-            List<UsageStorageVO> volumesVOs = _usageStorageDao.search(sc, null);
-
-            if (volumesVOs.size() > 0) {
-                //This is a safeguard to avoid double counting of volumes.
-                logger.error("Found duplicate usage entry for volume: " + volId + " assigned to account: " + event.getAccountId() + "; marking as deleted...");
-            }
-            for (UsageStorageVO volumesVO : volumesVOs) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("deleting volume: " + volumesVO.getId() + " from account: " + volumesVO.getAccountId());
-                }
+                logger.debug(delete_msg);
                 volumesVO.setDeleted(event.getCreateDate());
-                _usageStorageDao.update(volumesVO);
-            }
+                _usageVolumeDao.update(volumesVO.getId(), volumesVO);
 
-            if (logger.isDebugEnabled()) {
-                logger.debug("create volume with id : " + volId + " for account: " + event.getAccountId());
+                logger.debug(create_msg);
+                volumeVO = new UsageVolumeVO(volId, event.getZoneId(), event.getAccountId(), acct.getDomainId(), event.getOfferingId(), event.getTemplateId(), vmId, event.getSize(), event.getCreateDate(), null);
+                _usageVolumeDao.persist(volumeVO);
             }
-            Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
-            UsageStorageVO volumeVO = new UsageStorageVO(volId, event.getZoneId(), event.getAccountId(), acct.getDomainId(), StorageTypes.VOLUME, event.getTemplateId(), event.getSize(), event.getCreateDate(), null);
-            _usageStorageDao.persist(volumeVO);
+            break;
+
+        case EventTypes.EVENT_VOLUME_DELETE:
+            deleteExistingVolumeUsage(volId, event.getAccountId(), event.getCreateDate());
+            break;
+
+        case EventTypes.EVENT_VOLUME_ATTACH:
+            deleteExistingInstanceVolumeUsage(event.getResourceId(), event.getAccountId(), event.getCreateDate());
+
+            logger.debug("Creating a new entry in usage_volume for volume with id: {}, and instance id: {} for account: {}",
+                    volId, event.getVmId(), event.getAccountId());
+            volumeVO = new UsageVolumeVO(volId, event.getZoneId(), event.getAccountId(), acct.getDomainId(), event.getOfferingId(), event.getTemplateId(), event.getVmId(), event.getSize(), event.getCreateDate(), null);
+            _usageVolumeDao.persist(volumeVO);
+            break;
+
+        case EventTypes.EVENT_VOLUME_DETACH:
+            deleteExistingInstanceVolumeUsage(event.getResourceId(), event.getAccountId(), event.getCreateDate());
+            break;
+
+        case EventTypes.EVENT_VOLUME_UPLOAD:
+            deleteExistingSecondaryStorageUsageForVolume(volId, event.getAccountId(), event.getCreateDate());
+
+            logger.debug("Creating a new entry in usage_storage for volume with id : {} for account: {}", volId, event.getAccountId());
+            UsageStorageVO storageVO = new UsageStorageVO(volId, event.getZoneId(), event.getAccountId(), acct.getDomainId(), StorageTypes.VOLUME, event.getTemplateId(), event.getSize(), event.getCreateDate(), null);
+            _usageStorageDao.persist(storageVO);
+            break;
         }
     }
 

@@ -217,6 +217,10 @@ export default {
     actions: {
       type: Array,
       default: () => []
+    },
+    resource: {
+      type: Object,
+      required: false
     }
   },
   data () {
@@ -254,6 +258,12 @@ export default {
     this.setConfigData()
   },
   watch: {
+    configrecord: {
+      handler () {
+        this.setConfigData()
+      },
+      deep: true
+    }
   },
   methods: {
     setConfigData () {
@@ -280,6 +290,9 @@ export default {
         [this.scopeKey]: this.$route.params?.id,
         name: configrecord.name,
         value: newValue
+      }
+      if (this.scopeKey === 'domainid' && !params[this.scopeKey]) {
+        params[this.scopeKey] = this.resource?.id
       }
       postAPI('updateConfiguration', params).then(json => {
         configRecordEntry = json.updateconfigurationresponse.configuration
@@ -317,6 +330,9 @@ export default {
       const params = {
         [this.scopeKey]: this.$route.params?.id,
         name: configrecord.name
+      }
+      if (this.scopeKey === 'domainid' && !params[this.scopeKey]) {
+        params[this.scopeKey] = this.resource?.id
       }
       postAPI('resetConfiguration', params).then(json => {
         configRecordEntry = json.resetconfigurationresponse.configuration

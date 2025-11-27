@@ -401,7 +401,8 @@ class VirtualMachine:
             self.ssh_port = 22
         self.ssh_client = None
         # extract out the ipaddress
-        self.ipaddress = self.nic[0].ipaddress
+        if self.nic:
+            self.ipaddress = self.nic[0].ipaddress
 
     @classmethod
     def ssh_access_group(cls, apiclient, cmd):
@@ -1083,7 +1084,7 @@ class VirtualMachine:
         return apiclient.scaleVirtualMachine(cmd)
 
     def unmanage(self, apiclient):
-        """Unmanage a VM from CloudStack (currently VMware only)"""
+        """Unmanage a VM from CloudStack"""
         cmd = unmanageVirtualMachine.unmanageVirtualMachineCmd()
         cmd.id = self.id
         return apiclient.unmanageVirtualMachine(cmd)
@@ -3080,6 +3081,9 @@ class LoadBalancerRule:
         if "openfirewall" in services:
             cmd.openfirewall = services["openfirewall"]
 
+        if "protocol" in services:
+            cmd.protocol = services["protocol"]
+
         if projectid:
             cmd.projectid = projectid
 
@@ -3187,6 +3191,22 @@ class LoadBalancerRule:
 
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return apiclient.listLoadBalancerRuleInstances(cmd)
+
+    def assignCert(self, apiclient, certId, forced=None):
+        """"""
+        cmd = assignCertToLoadBalancer.assignCertToLoadBalancerCmd()
+        cmd.lbruleid = self.id
+        cmd.certid = certId
+        if forced is not None:
+            cmd.forced = forced
+        return apiclient.assignCertToLoadBalancer(cmd)
+
+    def removeCert(self, apiclient):
+        """Removes a certificate from a load balancer rule"""
+
+        cmd = removeCertFromLoadBalancer.removeCertFromLoadBalancerCmd()
+        cmd.lbruleid = self.id
+        return apiclient.removeCertFromLoadBalancer(cmd)
 
 
 class Cluster:
@@ -6246,7 +6266,7 @@ class Backup:
         return (apiclient.restoreVolumeFromBackupAndAttachToVM(cmd))
 
     @classmethod
-    def createVMFromBackup(cls, apiclient, services, mode, backupid, accountname, domainid, zoneid, vmname=None):
+    def createVMFromBackup(cls, apiclient, services, mode, backupid, accountname, domainid, zoneid, vmname=None, networkids=None, templateid=None):
         """Create new VM from backup
         """
         cmd = createVMFromBackup.createVMFromBackupCmd()
@@ -6256,6 +6276,10 @@ class Backup:
         cmd.zoneid = zoneid
         if vmname:
             cmd.name = vmname
+        if networkids:
+            cmd.networkids = networkids
+        if templateid:
+            cmd.templateid = templateid
         response = apiclient.createVMFromBackup(cmd)
         virtual_machine = VirtualMachine(response.__dict__, [])
         VirtualMachine.program_ssh_access(apiclient, services, mode, cmd.networkids, virtual_machine)
@@ -6326,6 +6350,14 @@ class BackupRepository:
         cmd = deleteBackupRepository.deleteBackupRepositoryCmd()
         cmd.id = self.id
         return (apiclient.deleteBackupRepository(cmd))
+
+    def update(self, apiclient, crosszoneinstancecreation):
+        """Update backup repository"""
+
+        cmd = updateBackupRepository.updateBackupRepositoryCmd()
+        cmd.id = self.id
+        cmd.crosszoneinstancecreation = crosszoneinstancecreation
+        return (apiclient.updateBackupRepository(cmd))
 
     def list(self, apiclient):
         """List backup repository"""
@@ -8016,3 +8048,60 @@ class GpuDevice:
         cmd.id = self.id
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return (apiclient.updateGpuDevice(cmd))
+
+
+class SslCertificate:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, services, name, certificate=None, privatekey=None,
+               certchain=None, password=None, enabledrevocationcheck=None,
+               account=None, domainid=None, projectid=None):
+        """Upload SSL certificate"""
+        cmd = uploadSslCert.uploadSslCertCmd()
+        cmd.name = name
+
+        if certificate:
+            cmd.certificate = certificate
+        elif "certificate" in services:
+            cmd.certificate = services["certificate"]
+
+        if privatekey:
+            cmd.privatekey = privatekey
+        elif "privatekey" in services:
+            cmd.privatekey = services["privatekey"]
+
+        if certchain:
+            cmd.certchain = certchain
+        elif "certchain" in services:
+            cmd.certchain = services["certchain"]
+
+        if password:
+            cmd.password = password
+        elif "password" in services:
+            cmd.password = services["password"]
+
+        if enabledrevocationcheck is not None:
+            cmd.enabledrevocationcheck = enabledrevocationcheck
+        elif "enabledrevocationcheck" in services:
+            cmd.enabledrevocationcheck = services["enabledrevocationcheck"]
+
+        if account:
+            cmd.account = account
+
+        if projectid:
+            cmd.projectid = projectid
+
+        if domainid:
+            cmd.domainid = domainid
+
+        return SslCertificate(apiclient.uploadSslCert(cmd, method='POST').__dict__)
+
+    def delete(self, apiclient):
+        """Delete SSL Certificate"""
+
+        cmd = deleteSslCert.deleteSslCertCmd()
+        cmd.id = self.id
+        apiclient.deleteSslCert(cmd)

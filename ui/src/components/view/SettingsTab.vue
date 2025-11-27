@@ -26,6 +26,7 @@
       <ConfigurationTable
         :columns="columns"
         :config="items"
+        :resource="resource"
         @refresh-config="handleConfigRefresh" />
     </a-col>
   </div>

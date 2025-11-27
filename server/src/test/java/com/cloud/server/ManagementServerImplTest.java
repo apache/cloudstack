@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -49,6 +50,7 @@ import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
+import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.userdata.UserDataManager;
 import org.junit.After;
 import org.junit.Assert;
@@ -99,6 +101,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceDetailVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 
@@ -164,6 +167,9 @@ public class ManagementServerImplTest {
 
     @Mock
     GuestOSDao _guestOSDao;
+
+    @Mock
+    ExtensionsManager extensionManager;
 
     @Spy
     @InjectMocks
@@ -253,14 +259,14 @@ public class ManagementServerImplTest {
         Mockito.when(cmd.getId()).thenReturn(null);
         Mockito.when(cmd.isSourceNat()).thenReturn(null);
         Mockito.when(cmd.isStaticNat()).thenReturn(null);
-        Mockito.when(cmd.getState()).thenReturn(IpAddress.State.Free.name());
         Mockito.when(cmd.getTags()).thenReturn(null);
-        spy.setParameters(sc, cmd, VlanType.VirtualNetwork, Boolean.FALSE);
+        List<IpAddress.State> states = Collections.singletonList(IpAddress.State.Free);
+        spy.setParameters(sc, cmd, VlanType.VirtualNetwork, Boolean.FALSE, states);
 
         Mockito.verify(sc, Mockito.times(1)).setJoinParameters("vlanSearch", "vlanType", VlanType.VirtualNetwork);
         Mockito.verify(sc, Mockito.times(1)).setParameters("display", false);
         Mockito.verify(sc, Mockito.times(1)).setParameters("sourceNetworkId", 10L);
-        Mockito.verify(sc, Mockito.times(1)).setParameters("state", "Free");
+        Mockito.verify(sc, Mockito.times(1)).setParameters("state", states.toArray());
         Mockito.verify(sc, Mockito.times(1)).setParameters("forsystemvms", false);
     }
 
@@ -276,14 +282,14 @@ public class ManagementServerImplTest {
         Mockito.when(cmd.getId()).thenReturn(null);
         Mockito.when(cmd.isSourceNat()).thenReturn(null);
         Mockito.when(cmd.isStaticNat()).thenReturn(null);
-        Mockito.when(cmd.getState()).thenReturn(IpAddress.State.Free.name());
         Mockito.when(cmd.getTags()).thenReturn(null);
-        spy.setParameters(sc, cmd, VlanType.VirtualNetwork, Boolean.FALSE);
+        List<IpAddress.State> states = Collections.singletonList(IpAddress.State.Free);
+        spy.setParameters(sc, cmd, VlanType.VirtualNetwork, Boolean.FALSE, states);
 
         Mockito.verify(sc, Mockito.times(1)).setJoinParameters("vlanSearch", "vlanType", VlanType.VirtualNetwork);
         Mockito.verify(sc, Mockito.times(1)).setParameters("display", false);
         Mockito.verify(sc, Mockito.times(1)).setParameters("sourceNetworkId", 10L);
-        Mockito.verify(sc, Mockito.times(1)).setParameters("state", "Free");
+        Mockito.verify(sc, Mockito.times(1)).setParameters("state", states.toArray());
         Mockito.verify(sc, Mockito.times(1)).setParameters("forsystemvms", false);
     }
 
@@ -299,13 +305,13 @@ public class ManagementServerImplTest {
         Mockito.when(cmd.getId()).thenReturn(null);
         Mockito.when(cmd.isSourceNat()).thenReturn(null);
         Mockito.when(cmd.isStaticNat()).thenReturn(null);
-        Mockito.when(cmd.getState()).thenReturn(null);
         Mockito.when(cmd.getTags()).thenReturn(null);
-        spy.setParameters(sc, cmd, VlanType.VirtualNetwork, Boolean.TRUE);
+        spy.setParameters(sc, cmd, VlanType.VirtualNetwork, Boolean.TRUE, Collections.emptyList());
 
         Mockito.verify(sc, Mockito.times(1)).setJoinParameters("vlanSearch", "vlanType", VlanType.VirtualNetwork);
         Mockito.verify(sc, Mockito.times(1)).setParameters("display", false);
         Mockito.verify(sc, Mockito.times(1)).setParameters("sourceNetworkId", 10L);
+        Mockito.verify(sc, Mockito.times(1)).setParameters("state", IpAddress.State.Allocated);
         Mockito.verify(sc, Mockito.times(1)).setParameters("forsystemvms", false);
     }
 
@@ -321,13 +327,13 @@ public class ManagementServerImplTest {
         Mockito.when(cmd.getId()).thenReturn(null);
         Mockito.when(cmd.isSourceNat()).thenReturn(null);
         Mockito.when(cmd.isStaticNat()).thenReturn(null);
-        Mockito.when(cmd.getState()).thenReturn(null);
         Mockito.when(cmd.getTags()).thenReturn(null);
-        spy.setParameters(sc, cmd, VlanType.VirtualNetwork, Boolean.TRUE);
+        spy.setParameters(sc, cmd, VlanType.VirtualNetwork, Boolean.TRUE, Collections.emptyList());
 
         Mockito.verify(sc, Mockito.times(1)).setJoinParameters("vlanSearch", "vlanType", VlanType.VirtualNetwork);
         Mockito.verify(sc, Mockito.times(1)).setParameters("display", false);
         Mockito.verify(sc, Mockito.times(1)).setParameters("sourceNetworkId", 10L);
+        Mockito.verify(sc, Mockito.times(1)).setParameters("state", IpAddress.State.Allocated);
         Mockito.verify(sc, Mockito.times(1)).setParameters("forsystemvms", false);
     }
 
@@ -1018,5 +1024,59 @@ public class ManagementServerImplTest {
         Mockito.verify(searchCriteria, Mockito.times(1)).setParameters("id", id);
         Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).searchAndCount(Mockito.eq(searchCriteria), Mockito.any());
 
+    }
+
+    @Test
+    public void testGetExternalVmConsole() {
+        VirtualMachine virtualMachine = Mockito.mock(VirtualMachine.class);
+        Host host = Mockito.mock(Host.class);
+        Mockito.when(extensionManager.getInstanceConsole(virtualMachine, host)).thenReturn(Mockito.mock(com.cloud.agent.api.Answer.class));
+        Assert.assertNotNull(spy.getExternalVmConsole(virtualMachine, host));
+        Mockito.verify(extensionManager).getInstanceConsole(virtualMachine, host);
+    }
+
+    @Test
+    public void getStatesForIpAddressSearchReturnsValidStates() {
+        ListPublicIpAddressesCmd cmd = Mockito.mock(ListPublicIpAddressesCmd.class);
+        Mockito.when(cmd.getState()).thenReturn("Allocated ,free");
+        List<IpAddress.State> result = spy.getStatesForIpAddressSearch(cmd);
+        Assert.assertEquals(2, result.size());
+        Assert.assertTrue(result.contains(IpAddress.State.Allocated));
+        Assert.assertTrue(result.contains(IpAddress.State.Free));
+    }
+
+    @Test
+    public void getStatesForIpAddressSearchReturnsEmptyListForNullState() {
+        ListPublicIpAddressesCmd cmd = Mockito.mock(ListPublicIpAddressesCmd.class);
+        Mockito.when(cmd.getState()).thenReturn(null);
+        List<IpAddress.State> result = spy.getStatesForIpAddressSearch(cmd);
+        Assert.assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void getStatesForIpAddressSearchReturnsEmptyListForBlankState() {
+        ListPublicIpAddressesCmd cmd = Mockito.mock(ListPublicIpAddressesCmd.class);
+        Mockito.when(cmd.getState()).thenReturn("   ");
+        List<IpAddress.State> result = spy.getStatesForIpAddressSearch(cmd);
+        Assert.assertTrue(result.isEmpty());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void getStatesForIpAddressSearchThrowsExceptionForInvalidState() {
+        ListPublicIpAddressesCmd cmd = Mockito.mock(ListPublicIpAddressesCmd.class);
+        Mockito.when(cmd.getState()).thenReturn("InvalidState");
+        spy.getStatesForIpAddressSearch(cmd);
+    }
+
+    @Test
+    public void getStatesForIpAddressSearchHandlesMixedValidAndInvalidStates() {
+        ListPublicIpAddressesCmd cmd = Mockito.mock(ListPublicIpAddressesCmd.class);
+        Mockito.when(cmd.getState()).thenReturn("Allocated,InvalidState");
+        try {
+            spy.getStatesForIpAddressSearch(cmd);
+            Assert.fail("Expected InvalidParameterValueException to be thrown");
+        } catch (InvalidParameterValueException e) {
+            Assert.assertEquals("Invalid state: InvalidState", e.getMessage());
+        }
     }
 }
