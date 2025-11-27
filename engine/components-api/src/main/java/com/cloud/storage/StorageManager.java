@@ -230,7 +230,7 @@ public interface StorageManager extends StorageService {
 
     /**
      * should we execute in sequence not involving any storages?
-     * @return tru if commands should execute in sequence
+     * @return true if commands should execute in sequence
      */
     static boolean shouldExecuteInSequenceOnVmware() {
         return shouldExecuteInSequenceOnVmware(null, null);

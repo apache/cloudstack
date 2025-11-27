@@ -17,6 +17,7 @@
 package com.cloud.api;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -48,6 +49,7 @@ import org.apache.cloudstack.api.response.IpQuarantineResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.TrafficTypeResponse;
 import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
 import org.apache.cloudstack.api.response.UsageRecordResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -70,6 +72,8 @@ import com.cloud.capacity.Capacity;
 import com.cloud.configuration.Resource;
 import com.cloud.domain.DomainVO;
 import com.cloud.host.HostVO;
+import com.cloud.network.Networks;
+import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.PublicIpQuarantine;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.network.as.AutoScaleVmGroupVO;
@@ -80,6 +84,8 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
+import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.resource.icon.ResourceIconVO;
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceIconManager;
@@ -418,6 +424,39 @@ public class ApiResponseHelperTest {
             assertNull(response.getUserDataId());
             assertNull(response.getUserDataName());
             assertNull(response.getUserDataDetails());
+        }
+    }
+
+    @Test
+    public void testCreateTrafficTypeResponse() {
+        PhysicalNetworkVO pnet = new PhysicalNetworkVO();
+        pnet.addIsolationMethod("VXLAN");
+        pnet.addIsolationMethod("STT");
+
+        try (MockedStatic<ApiDBUtils> ignored = Mockito.mockStatic(ApiDBUtils.class)) {
+            when(ApiDBUtils.findPhysicalNetworkById(anyLong())).thenReturn(pnet);
+            String xenLabel = "xen";
+            String kvmLabel = "kvm";
+            String vmwareLabel = "vmware";
+            String simulatorLabel = "simulator";
+            String hypervLabel = "hyperv";
+            String ovmLabel = "ovm";
+            String vlan = "vlan";
+            String trafficType = "Public";
+            PhysicalNetworkTrafficType pnetTrafficType = new PhysicalNetworkTrafficTypeVO(pnet.getId(), Networks.TrafficType.getTrafficType(trafficType), xenLabel, kvmLabel, vmwareLabel, simulatorLabel, vlan, hypervLabel, ovmLabel);
+
+            TrafficTypeResponse response = apiResponseHelper.createTrafficTypeResponse(pnetTrafficType);
+            assertFalse(UUID.fromString(response.getId()).toString().isEmpty());
+            assertEquals(response.getphysicalNetworkId(), pnet.getUuid());
+            assertEquals(response.getTrafficType(), trafficType);
+            assertEquals(response.getXenLabel(), xenLabel);
+            assertEquals(response.getKvmLabel(), kvmLabel);
+            assertEquals(response.getVmwareLabel(), vmwareLabel);
+            assertEquals(response.getHypervLabel(), hypervLabel);
+            assertEquals(response.getOvm3Label(), ovmLabel);
+            assertEquals(response.getVlan(), vlan);
+            assertEquals(response.getIsolationMethods(), "VXLAN,STT");
+
         }
     }
 

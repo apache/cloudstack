@@ -63,7 +63,7 @@ public class UpdateLBHealthCheckPolicyCmd extends BaseAsyncCustomIdCmd{
 
     @Override
     public String getEventDescription() {
-        return "Update load balancer health check policy ID= " + id;
+        return "Update load balancer health check policy ID = " + id;
     }
 
     @Override
