@@ -296,7 +296,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             }
 
             if (storageCapacityBelowThreshold(storageCapacities, destImgStoreId)) {
-                storageCapacities = migrateAway(chosenFileForMigration, storageCapacities, snapshotChains, childTemplates,  snapshotIdsToMigrate, srcDatastore, destImgStoreId, executor, futures);
+                storageCapacities = migrateAway(chosenFileForMigration, storageCapacities, snapshotChains, childTemplates, snapshotIdsToMigrate, srcDatastore, destImgStoreId, executor, futures);
             } else {
                 message = "Migration failed. Destination store doesn't have enough capacity for migration";
                 success = false;
