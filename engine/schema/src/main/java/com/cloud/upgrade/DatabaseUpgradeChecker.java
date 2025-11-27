@@ -462,13 +462,13 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         boolean standalone = Transaction.execute(new TransactionCallback<>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
-                String sql = "SELECT COUNT(*) FROM `cloud`.`mshosts` WHERE `state` = 'UP'";
-                try (Connection conn  = TransactionLegacy.getStandaloneConnection();
+                String sql = "SELECT COUNT(*) FROM `cloud`.`mshost` WHERE `state` = 'UP'";
+                try (Connection conn = TransactionLegacy.getStandaloneConnection();
                      PreparedStatement pstmt = conn.prepareStatement(sql);
                      ResultSet rs = pstmt.executeQuery()) {
                     if (rs.next()) {
                         int count = rs.getInt(1);
-                        return count = 0;
+                        return count == 0;
                     }
                 } catch (SQLException e) {
                     String errorMessage = "Unable to check if the management server is running in standalone mode.";
@@ -479,7 +479,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             }
         });
         if (! standalone) {
-            String msg = "CloudStack is running multiple management servers and attempting to upgrade. Upgrades can only be run in standalone mode. Skipping database upgrade check.";
+            String msg = "CloudStack is running multiple management servers while attempting to upgrade. Upgrades can only be run in standalone mode. Aborting.";
             LOGGER.info(msg);
             throw new CloudRuntimeException(msg);
         }
