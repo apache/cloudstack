@@ -2359,12 +2359,15 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     public TemplateType validateTemplateType(BaseCmd cmd, boolean isAdmin, boolean isCrossZones, HypervisorType hypervisorType) {
-        if (!(cmd instanceof UpdateTemplateCmd) && !(cmd instanceof RegisterTemplateCmd) && !(cmd instanceof GetUploadParamsForTemplateCmd)) {
+        if (!(cmd instanceof UpdateTemplateCmd) &&
+                !(cmd instanceof RegisterTemplateCmd) &&
+                !(cmd instanceof GetUploadParamsForTemplateCmd) &&
+                !(cmd instanceof GetUploadParamsForIsoCmd)) {
             return null;
         }
         TemplateType templateType = null;
-        String newType = null;
-        Boolean isRoutingType = null;
+        String newType = TemplateType.USER.name();
+        Boolean isRoutingType = false;
         if (cmd instanceof UpdateTemplateCmd) {
             newType = ((UpdateTemplateCmd)cmd).getTemplateType();
             isRoutingType = ((UpdateTemplateCmd)cmd).isRoutingType();
