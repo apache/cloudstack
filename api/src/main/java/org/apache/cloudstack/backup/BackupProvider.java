@@ -124,6 +124,10 @@ public interface BackupProvider {
      */
     boolean supportsInstanceFromBackup();
 
+    default boolean supportsMemoryVmSnapshot() {
+        return true;
+    }
+
     /**
      * Returns the backup storage usage (Used, Total) for a backup provider
      * @param zoneId the zone for which to return metrics

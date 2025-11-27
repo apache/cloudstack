@@ -32,7 +32,7 @@
           <b> {{record.displaytext }} </b> {{ ' (' + record.name + ')' }} <br/> {{ record.description }}
         </template>
         <template v-if="column.key === 'value'">
-          <ConfigurationValue :configrecord="record" />
+          <ConfigurationValue :configrecord="record" :resource="resource" />
         </template>
       </template>
     </a-table>
@@ -85,6 +85,10 @@ export default {
     pagesize: {
       type: Number,
       default: 20
+    },
+    resource: {
+      type: Object,
+      required: false
     }
   },
   data () {

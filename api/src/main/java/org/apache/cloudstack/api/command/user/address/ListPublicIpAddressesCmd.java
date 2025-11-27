@@ -53,7 +53,7 @@ public class ListPublicIpAddressesCmd extends BaseListRetrieveOnlyResourceCountC
     @Parameter(name = ApiConstants.ALLOCATED_ONLY, type = CommandType.BOOLEAN, description = "limits search results to allocated public IP addresses")
     private Boolean allocatedOnly;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "lists all public IP addresses by state")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "lists all public IP addresses by state. A comma-separated list of states can be passed")
     private String state;
 
     @Parameter(name = ApiConstants.FOR_VIRTUAL_NETWORK, type = CommandType.BOOLEAN, description = "the virtual network for the IP address")
