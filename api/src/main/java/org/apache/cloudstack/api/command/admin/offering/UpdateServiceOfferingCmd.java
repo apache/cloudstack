@@ -101,6 +101,14 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
             since = "4.21.0")
     private Map externalDetails;
 
+    @Parameter(name = ApiConstants.CLEAN_UP_EXTERNAL_DETAILS,
+            type = CommandType.BOOLEAN,
+            description = "Optional boolean field, which indicates if external details should be cleaned up or not " +
+                    "(If set to true, external details removed for this offering, externaldetails field ignored; " +
+                    "if false or not set, no action)",
+            since = "4.22.0")
+    protected Boolean cleanupExternalDetails;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -203,6 +211,10 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
 
     public Map<String, String> getExternalDetails() {
         return convertExternalDetailsToMap(externalDetails);
+    }
+
+    public boolean isCleanupExternalDetails() {
+        return Boolean.TRUE.equals(cleanupExternalDetails);
     }
 
     /////////////////////////////////////////////////////

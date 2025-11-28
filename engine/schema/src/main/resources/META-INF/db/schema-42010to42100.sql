@@ -754,3 +754,6 @@ SET `cs`.`domain_id` = (
     FROM `cloud`.`account` `acc`
     WHERE `acc`.`id` = `cs`.`account_id`
 );
+
+-- Re-apply VPC: update default network offering for vpc tier to conserve_mode=1 (#8309)
+UPDATE `cloud`.`network_offerings` SET conserve_mode = 1 WHERE name = 'DefaultIsolatedNetworkOfferingForVpcNetworks';

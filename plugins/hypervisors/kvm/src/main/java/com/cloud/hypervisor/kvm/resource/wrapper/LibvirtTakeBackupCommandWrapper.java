@@ -22,12 +22,17 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import com.amazonaws.util.CollectionUtils;
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.storage.Storage;
 import com.cloud.utils.Pair;
 import com.cloud.utils.script.Script;
 import org.apache.cloudstack.backup.BackupAnswer;
 import org.apache.cloudstack.backup.TakeBackupCommand;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,7 +49,24 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         final String backupRepoType = command.getBackupRepoType();
         final String backupRepoAddress = command.getBackupRepoAddress();
         final String mountOptions = command.getMountOptions();
-        final List<String> diskPaths = command.getVolumePaths();
+        List<PrimaryDataStoreTO> volumePools = command.getVolumePools();
+        final List<String> volumePaths = command.getVolumePaths();
+        KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
+
+        List<String> diskPaths = new ArrayList<>();
+        if (Objects.nonNull(volumePaths)) {
+            for (int idx = 0; idx < volumePaths.size(); idx++) {
+                PrimaryDataStoreTO volumePool = volumePools.get(idx);
+                String volumePath = volumePaths.get(idx);
+                if (volumePool.getPoolType() != Storage.StoragePoolType.RBD) {
+                    diskPaths.add(volumePath);
+                } else {
+                    KVMStoragePool volumeStoragePool = storagePoolMgr.getStoragePool(volumePool.getPoolType(), volumePool.getUuid());
+                    String rbdDestVolumeFile = KVMPhysicalDisk.RBDStringBuilder(volumeStoragePool, volumePath);
+                    diskPaths.add(rbdDestVolumeFile);
+                }
+            }
+        }
 
         List<String[]> commands = new ArrayList<>();
         commands.add(new String[]{
@@ -56,7 +78,7 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
                 "-m", Objects.nonNull(mountOptions) ? mountOptions : "",
                 "-p", backupPath,
                 "-q", command.getQuiesce() != null && command.getQuiesce() ? "true" : "false",
-                "-d", (Objects.nonNull(diskPaths) && !diskPaths.isEmpty()) ? String.join(",", diskPaths) : ""
+                "-d", diskPaths.isEmpty() ? "" : String.join(",", diskPaths)
         });
 
         Pair<Integer, String> result = Script.executePipedCommands(commands, libvirtComputingResource.getCmdsTimeout());

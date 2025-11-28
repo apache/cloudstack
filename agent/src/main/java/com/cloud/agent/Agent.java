@@ -475,7 +475,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                 return;
             }
 
-            logger.info("Scheduling a recurring preferred host checker task with lb algorithm '{}' and host.lb.interval={} ms", lbAlgorithm, checkInterval);
+            logger.info("Scheduling a recurring preferred host checker task with host.lb.interval={} ms", checkInterval);
             hostLbCheckExecutor = Executors.newSingleThreadScheduledExecutor((new NamedThreadFactory(name)));
             hostLbCheckExecutor.scheduleAtFixedRate(new PreferredHostCheckerTask(), checkInterval, checkInterval,
                     TimeUnit.MILLISECONDS);
@@ -613,7 +613,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     }
 
     protected String getAgentArch() {
-        String arch = Script.runSimpleBashScript(Script.getExecutableAbsolutePath("arch"), 1000);
+        String arch = Script.runSimpleBashScript(Script.getExecutableAbsolutePath("arch"), 2000);
         logger.debug("Arch for agent: {} found: {}", _name, arch);
         return arch;
     }

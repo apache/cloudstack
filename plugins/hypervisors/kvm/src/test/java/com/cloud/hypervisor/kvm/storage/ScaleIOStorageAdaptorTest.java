@@ -93,34 +93,6 @@ public class ScaleIOStorageAdaptorTest {
     }
 
     @Test
-    public void testPrepareStorageClient_SDCServiceNotRestarted() {
-        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl status scini"))).thenReturn(3);
-        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-enabled scini"))).thenReturn(0);
-        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-active scini"))).thenReturn(0);
-        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl restart scini"))).thenReturn(1);
-
-        Ternary<Boolean, Map<String, String>, String> result = scaleIOStorageAdaptor.prepareStorageClient(poolUuid, new HashMap<>());
-
-        Assert.assertFalse(result.first());
-        Assert.assertNull(result.second());
-        Assert.assertEquals("Couldn't restart SDC service on host", result.third());
-    }
-
-    @Test
-    public void testPrepareStorageClient_SDCServiceRestarted() {
-        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl status scini"))).thenReturn(3);
-        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-enabled scini"))).thenReturn(0);
-        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-active scini"))).thenReturn(0);
-        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl restart scini"))).thenReturn(0);
-
-        Ternary<Boolean, Map<String, String>, String> result = scaleIOStorageAdaptor.prepareStorageClient(poolUuid, new HashMap<>());
-
-        Assert.assertFalse(result.first());
-        Assert.assertNull(result.second());
-        Assert.assertEquals("Couldn't get the SDC details on the host", result.third());
-    }
-
-    @Test
     public void testPrepareStorageClient_SDCServiceNotStarted() {
         when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl status scini"))).thenReturn(3);
         when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-enabled scini"))).thenReturn(0);

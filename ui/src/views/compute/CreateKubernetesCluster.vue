@@ -207,6 +207,12 @@
           </template>
           <a-switch v-model:checked="form.advancedmode" />
         </a-form-item>
+        <a-form-item v-if="form.advancedmode" name="enablecsi" ref="enablecsi" :label="$t('label.enable.csi')">
+            <template #label>
+              <tooltip-label :title="$t('label.enable.csi')" :tooltip="apiParams.enablecsi.description"/>
+            </template>
+            <a-switch v-model:checked="form.enablecsi" />
+          </a-form-item>
         <a-form-item v-if="form.advancedmode" name="controlofferingid" ref="controlofferingid">
           <template #label>
             <tooltip-label :title="$t('label.cks.cluster.control.nodes.offeringid')" :tooltip="$t('label.cks.cluster.control.nodes.offeringid')"/>
@@ -901,6 +907,10 @@ export default {
           params.cniconfigurationid = values.cniconfigurationid
         }
 
+        if (values.enablecsi) {
+          params.enablecsi = values.enablecsi
+        }
+
         var idx = 0
         if (this.cniConfigValues) {
           for (const [key, value] of Object.entries(this.cniConfigValues)) {
@@ -920,7 +930,7 @@ export default {
             description: values.name,
             loadingMessage: `${this.$t('label.kubernetes.cluster.create')} ${values.name} ${this.$t('label.in.progress')}`,
             catchMessage: this.$t('error.fetching.async.job.result'),
-            successMessage: this.$t('message.success.create.kubernetes.cluter') + ' ' + values.name
+            successMessage: this.$t('message.success.create.kubernetes.cluster') + ' ' + values.name
           })
           this.closeAction()
         }).catch(error => {

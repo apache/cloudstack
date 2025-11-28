@@ -213,7 +213,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                         _storagePoolWorkDao.persist(work);
                     } catch (Exception e) {
                         if (logger.isDebugEnabled()) {
-                            logger.debug("Work record already exists, re-using by re-setting values");
+                            logger.debug("Work record already exists, reusing by re-setting values");
                         }
                         StoragePoolWorkVO work = _storagePoolWorkDao.findByPoolIdAndVmId(pool.getId(), vmInstance.getId());
                         work.setStartedAfterMaintenance(false);
@@ -363,6 +363,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                 if (logger.isDebugEnabled()) {
                     logger.debug("ModifyStoragePool add succeeded");
                 }
+                storageManager.updateStoragePoolHostVOAndBytes(pool, host.getId(), (ModifyStoragePoolAnswer) answer);
                 if (pool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
                     logger.debug("Started synchronising datastore cluster storage pool {} with vCenter", pool);
                     storageManager.syncDatastoreClusterStoragePool(pool.getId(), ((ModifyStoragePoolAnswer) answer).getDatastoreClusterChildren(), host.getId());
