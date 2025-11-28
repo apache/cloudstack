@@ -66,6 +66,7 @@ public class LibvirtGetVmIpAddressCommandWrapperTest {
 
         when(getVmIpAddressCommand.getVmName()).thenReturn("validVmName");
         when(getVmIpAddressCommand.getVmNetworkCidr()).thenReturn("192.168.0.0/24");
+        when(getVmIpAddressCommand.getMacAddress()).thenReturn("02:0c:02:f9:00:80");
         when(getVmIpAddressCommand.isWindows()).thenReturn(false);
         when(Script.executePipedCommands(anyList(), anyLong())).thenReturn(new Pair<>(0, VIRSH_DOMIF_OUTPUT));
 
@@ -88,6 +89,7 @@ public class LibvirtGetVmIpAddressCommandWrapperTest {
 
         when(getVmIpAddressCommand.getVmName()).thenReturn("invalidVmName!");
         when(getVmIpAddressCommand.getVmNetworkCidr()).thenReturn("192.168.0.0/24");
+        when(getVmIpAddressCommand.getMacAddress()).thenReturn("02:0c:02:f9:00:80");
         when(getVmIpAddressCommand.isWindows()).thenReturn(false);
         when(Script.executePipedCommands(anyList(), anyLong())).thenReturn(new Pair<>(0, VIRSH_DOMIF_OUTPUT));
 
@@ -114,6 +116,7 @@ public class LibvirtGetVmIpAddressCommandWrapperTest {
 
             when(getVmIpAddressCommand.getVmName()).thenReturn("validVmName");
             when(getVmIpAddressCommand.getVmNetworkCidr()).thenReturn("192.168.0.0/24");
+            when(getVmIpAddressCommand.getMacAddress()).thenReturn("02:0c:02:f9:00:80");
             when(getVmIpAddressCommand.isWindows()).thenReturn(true);
             when(Script.executePipedCommands(anyList(), anyLong())).thenReturn(new Pair<>(0, "192.168.0.10"));
 

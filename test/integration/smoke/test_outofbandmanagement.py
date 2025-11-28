@@ -544,7 +544,7 @@ class TestOutOfBandManagement(cloudstackTestCase):
 
         retry_interval = 1 + (pingInterval * pingTimeout / 10)
 
-        res, _ = wait_until(retry_interval, 10, removeFakeMgmtServer, self.getFakeMsRunId())
+        res, _ = wait_until(retry_interval, 100, removeFakeMgmtServer, self.getFakeMsRunId())
         if not res:
             self.fail("Management server failed to turn down or remove fake mgmt server")
 

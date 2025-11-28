@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -595,7 +596,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks) == null) {
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks,
                             "Offering for Isolated VPC networks with Source Nat service enabled", TrafficType.Guest, null, false, Availability.Optional, null,
-                            defaultVPCOffProviders, true, Network.GuestType.Isolated, false, null, false, null, false, false, null, false, null, true, true, false, false, null, null, null,true, null, null, false);
+                            defaultVPCOffProviders, true, Network.GuestType.Isolated, false, null, true, null, false, false, null, false, null, true, true, false, false, null, null, null,true, null, null, false);
+
                 }
 
                 //#6 - default vpc offering with no LB service
@@ -1291,6 +1293,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             IPAddressVO lockedIpVO = _ipAddressDao.acquireInLockTable(ipVO.getId());
             validateLockedRequestedIp(ipVO, lockedIpVO);
             lockedIpVO.setState(IPAddressVO.State.Allocated);
+            lockedIpVO.setAllocatedTime(new Date());
             _ipAddressDao.update(lockedIpVO.getId(), lockedIpVO);
         } finally {
             _ipAddressDao.releaseFromLockTable(ipVO.getId());
@@ -4769,6 +4772,18 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         });
 
+        if (selectedIp != null && GuestType.Shared.equals(network.getGuestType())) {
+            IPAddressVO ipAddressVO = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), selectedIp);
+            if (ipAddressVO != null && IpAddress.State.Free.equals(ipAddressVO.getState())) {
+                ipAddressVO.setState(IPAddressVO.State.Allocated);
+                ipAddressVO.setAllocatedTime(new Date());
+                Account account = _accountDao.findById(vm.getAccountId());
+                ipAddressVO.setAllocatedInDomainId(account.getDomainId());
+                ipAddressVO.setAllocatedToAccountId(account.getId());
+                _ipAddressDao.update(ipAddressVO.getId(), ipAddressVO);
+            }
+        }
+
         final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
         final NicProfile vmNic = new NicProfile(vo, network, vo.getBroadcastUri(), vo.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),
                 _networkModel.getNetworkTag(vm.getHypervisorType(), network));
@@ -4780,15 +4795,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (network.getGuestType() == GuestType.L2) {
             return null;
         }
-        return dataCenter.getNetworkType() == NetworkType.Basic ?
-                getSelectedIpForNicImportOnBasicZone(ipAddresses.getIp4Address(), network, dataCenter):
+        return GuestType.Shared.equals(network.getGuestType()) ?
+                getSelectedIpForNicImportOnSharedNetwork(ipAddresses.getIp4Address(), network, dataCenter):
                 _ipAddrMgr.acquireGuestIpAddress(network, ipAddresses.getIp4Address());
     }
 
-    protected String getSelectedIpForNicImportOnBasicZone(String requestedIp, Network network, DataCenter dataCenter) {
+    protected String getSelectedIpForNicImportOnSharedNetwork(String requestedIp, Network network, DataCenter dataCenter) {
         IPAddressVO ipAddressVO = StringUtils.isBlank(requestedIp) ?
                 _ipAddressDao.findBySourceNetworkIdAndDatacenterIdAndState(network.getId(), dataCenter.getId(), IpAddress.State.Free):
-                _ipAddressDao.findByIp(requestedIp);
+                _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), requestedIp);
         if (ipAddressVO == null || ipAddressVO.getState() != IpAddress.State.Free) {
             String msg = String.format("Cannot find a free IP to assign to VM NIC on network %s", network.getName());
             logger.error(msg);
