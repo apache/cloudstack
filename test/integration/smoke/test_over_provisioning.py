@@ -60,10 +60,10 @@ class TestUpdateOverProvision(cloudstackTestCase):
                             "The environment don't have storage pools required for test")
 
         for pool in storage_pools:
-            if pool.type == "NetworkFilesystem" or pool.type == "VMFS" or pool.type == "PowerFlex":
+            if pool.type in ("NetworkFilesystem", "VMFS", "PowerFlex", "RBD"):
                 break
 
-        if pool.type != "NetworkFilesystem" and pool.type != "VMFS" and pool.type != "PowerFlex":
+        if pool.type not in ("NetworkFilesystem", "VMFS", "PowerFlex", "RBD"):
             raise self.skipTest("Storage overprovisioning currently not supported on " + pool.type + " pools")
 
         self.poolId = pool.id
