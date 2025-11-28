@@ -85,10 +85,10 @@ export default {
       })
     },
     fetchData () {
-      const isoFiters = ['featured', 'community', 'selfexecutable']
+      const isoFilters = ['featured', 'community', 'selfexecutable']
       this.loading = true
       const promises = []
-      isoFiters.forEach((filter) => {
+      isoFilters.forEach((filter) => {
         promises.push(this.fetchIsos(filter))
       })
       Promise.all(promises).then(() => {
