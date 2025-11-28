@@ -1078,6 +1078,7 @@
                             <exclude>ui/legacy/**</exclude>
                             <exclude>utils/testsmallfileinactive</exclude>
                             <exclude>**/src/test/resources/mockito-extensions/org.mockito.plugins.MockMaker</exclude>
+                            <exclude>.github/workflows/dependabot.yaml</exclude>
                         </excludes>
                     </configuration>
                 </plugin>
