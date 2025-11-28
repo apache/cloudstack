@@ -40,7 +40,6 @@ spec:
       minVersion: 4.23.0
 
   entrypoint:
-    language: python
     path: test.py
     targetDir: /usr/share/cloudstack-management/extensions/test
 
