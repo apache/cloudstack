@@ -14,16 +14,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.usage.dao;
+package com.cloud.upgrade.dao;
 
-import java.util.Date;
-import java.util.List;
+public class Upgrade42200to42210 extends DbUpgradeAbstractImpl implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
-import com.cloud.usage.UsageVolumeVO;
-import com.cloud.utils.db.GenericDao;
+    @Override
+    public String[] getUpgradableVersionRange() {
+        return new String[] {"4.22.0.0", "4.22.1.0"};
+    }
 
-public interface UsageVolumeDao extends GenericDao<UsageVolumeVO, Long> {
-    public List<UsageVolumeVO> getUsageRecords(Long accountId, Long domainId, Date startDate, Date endDate, boolean limit, int page);
-
-    List<UsageVolumeVO> listByVolumeId(long volumeId, long accountId);
+    @Override
+    public String getUpgradedVersion() {
+        return "4.22.1.0";
+    }
 }
