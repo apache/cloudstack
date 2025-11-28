@@ -53,7 +53,7 @@ public class ListPublicIpAddressesCmd extends BaseListRetrieveOnlyResourceCountC
     @Parameter(name = ApiConstants.ALLOCATED_ONLY, type = CommandType.BOOLEAN, description = "limits search results to allocated public IP addresses")
     private Boolean allocatedOnly;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "lists all public IP addresses by state")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "lists all public IP addresses by state. A comma-separated list of states can be passed")
     private String state;
 
     @Parameter(name = ApiConstants.FOR_VIRTUAL_NETWORK, type = CommandType.BOOLEAN, description = "the virtual network for the IP address")
@@ -107,6 +107,9 @@ public class ListPublicIpAddressesCmd extends BaseListRetrieveOnlyResourceCountC
 
     @Parameter(name = ApiConstants.FOR_SYSTEM_VMS, type = CommandType.BOOLEAN, description = "true if range is dedicated for system VMs", since = "4.20.0")
     private Boolean forSystemVMs;
+
+    @Parameter(name = ApiConstants.FOR_PROVIDER, type = CommandType.BOOLEAN, description = "true if range is dedicated for external network provider", since = "4.21.0")
+    private Boolean forProvider;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -181,6 +184,10 @@ public class ListPublicIpAddressesCmd extends BaseListRetrieveOnlyResourceCountC
 
     public boolean getForSystemVMs() {
         return BooleanUtils.isTrue(forSystemVMs);
+    }
+
+    public boolean isForProvider() {
+        return BooleanUtils.isTrue(forProvider);
     }
 
     /////////////////////////////////////////////////////

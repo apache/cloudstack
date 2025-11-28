@@ -74,12 +74,14 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
@@ -133,8 +135,9 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     ConfigurationDao _configDao;
     @Inject
     private HostDao _hostDao;
+    @Inject private VMTemplateDao _vmTemplateDao;
 
-    private long volumeStatsLastUpdate = 0L;
+    private final Map<String, Long> volumeStatsLastUpdate = new HashMap<>();
     private final Map<String, Pair<Long, Long>> volumeStats = new HashMap<>();
 
     public LinstorPrimaryDataStoreDriverImpl()
@@ -670,8 +673,15 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             storagePoolVO.getId(), csCloneId, null);
 
         if (tmplPoolRef != null) {
-            final String templateRscName = LinstorUtil.RSC_PREFIX + tmplPoolRef.getLocalDownloadPath();
+            final String templateRscName;
+            if (tmplPoolRef.getLocalDownloadPath() == null) {
+                VMTemplateVO vmTemplateVO = _vmTemplateDao.findById(tmplPoolRef.getTemplateId());
+                templateRscName = LinstorUtil.RSC_PREFIX + vmTemplateVO.getUuid();
+            } else {
+                templateRscName = LinstorUtil.RSC_PREFIX + tmplPoolRef.getLocalDownloadPath();
+            }
             final String rscName = LinstorUtil.RSC_PREFIX + volumeInfo.getUuid();
+
             final DevelopersApi linstorApi = LinstorUtil.getLinstorAPI(storagePoolVO.getHostAddress());
 
             try {
@@ -858,6 +868,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                     devPath = createVolume(volumeInfo, storagePool);
                     volume.setFolder("/dev/");
                     volume.setPoolId(storagePool.getId());
+                    volume.setPoolType(storagePool.getPoolType());
                     volume.setUuid(vol.getUuid());
                     volume.setPath(vol.getUuid());
 
@@ -1525,11 +1536,12 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
     /**
      * Updates the cache map containing current allocated size data.
-     * @param api Linstor Developers api object
+     * @param linstorAddr Linstor cluster api address
      */
-    private void fillVolumeStatsCache(DevelopersApi api) {
+    private void fillVolumeStatsCache(String linstorAddr) {
+        final DevelopersApi api = LinstorUtil.getLinstorAPI(linstorAddr);
         try {
-            logger.trace("Start volume stats cache update");
+            logger.trace("Start volume stats cache update for " + linstorAddr);
             List<ResourceWithVolumes> resources = api.viewResources(
                     Collections.emptyList(),
                     Collections.emptyList(),
@@ -1556,14 +1568,14 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 }
             }
 
-            volumeStats.clear();
+            volumeStats.keySet().removeIf(key -> key.startsWith(linstorAddr));
             for (Map.Entry<String, Long> entry : allocSizeMap.entrySet()) {
                 Long reserved = resSizeMap.getOrDefault(entry.getKey(), 0L);
                 Pair<Long, Long> volStat = new Pair<>(entry.getValue(), reserved);
-                volumeStats.put(entry.getKey(), volStat);
+                volumeStats.put(linstorAddr + "/" + entry.getKey(), volStat);
             }
-            volumeStatsLastUpdate = System.currentTimeMillis();
-            logger.trace("Done volume stats cache update: {}", volumeStats.size());
+            volumeStatsLastUpdate.put(linstorAddr, System.currentTimeMillis());
+            logger.debug(String.format("Done volume stats cache update for %s: %d", linstorAddr, volumeStats.size()));
         } catch (ApiException e) {
             logger.error("Unable to fetch Linstor resources: {}", e.getBestMessage());
         }
@@ -1571,14 +1583,19 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
     @Override
     public Pair<Long, Long> getVolumeStats(StoragePool storagePool, String volumeId) {
-        final DevelopersApi api = LinstorUtil.getLinstorAPI(storagePool.getHostAddress());
+        String linstorAddr = storagePool.getHostAddress();
         synchronized (volumeStats) {
-            long invalidateCacheTime = volumeStatsLastUpdate +
+            long invalidateCacheTime = volumeStatsLastUpdate.getOrDefault(storagePool.getHostAddress(), 0L) +
                     LinstorConfigurationManager.VolumeStatsCacheTime.value() * 1000;
             if (invalidateCacheTime < System.currentTimeMillis()) {
-                fillVolumeStatsCache(api);
+                fillVolumeStatsCache(storagePool.getHostAddress());
             }
-            return volumeStats.get(LinstorUtil.RSC_PREFIX + volumeId);
+            String volumeKey = linstorAddr + "/" + LinstorUtil.RSC_PREFIX + volumeId;
+            Pair<Long, Long> sizePair = volumeStats.get(volumeKey);
+            if (sizePair == null) {
+                logger.warn(String.format("Volumestats for %s not found in cache", volumeKey));
+            }
+            return sizePair;
         }
     }
 

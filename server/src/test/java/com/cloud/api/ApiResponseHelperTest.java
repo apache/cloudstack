@@ -16,14 +16,6 @@
 // under the License.
 package com.cloud.api;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import java.lang.reflect.Field;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -37,20 +29,6 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import org.apache.cloudstack.annotation.dao.AnnotationDao;
-import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
-import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
-import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
-import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
-import org.apache.cloudstack.api.response.IpQuarantineResponse;
-import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
-import org.apache.cloudstack.api.response.ResourceIconResponse;
-import org.apache.cloudstack.api.response.TemplateResponse;
-import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
-import org.apache.cloudstack.api.response.UsageRecordResponse;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.usage.UsageService;
-import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -64,9 +42,30 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
+import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
+import org.apache.cloudstack.api.response.ConsoleSessionResponse;
+import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
+import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
+import org.apache.cloudstack.api.response.IpQuarantineResponse;
+import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
+import org.apache.cloudstack.api.response.UsageRecordResponse;
+import org.apache.cloudstack.api.response.TrafficTypeResponse;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.usage.UsageService;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
+
 import com.cloud.capacity.Capacity;
 import com.cloud.configuration.Resource;
 import com.cloud.domain.DomainVO;
+import com.cloud.host.HostVO;
+import com.cloud.network.Networks;
+import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.PublicIpQuarantine;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.network.as.AutoScaleVmGroupVO;
@@ -77,6 +76,8 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.resource.icon.ResourceIconVO;
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceIconManager;
@@ -93,7 +94,19 @@ import com.cloud.user.UserDataVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.net.Ip;
+import com.cloud.vm.ConsoleSessionVO;
 import com.cloud.vm.NicSecondaryIp;
+import com.cloud.vm.VMInstanceVO;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 
 @RunWith(MockitoJUnitRunner.class)
 public class ApiResponseHelperTest {
@@ -123,6 +136,19 @@ public class ApiResponseHelperTest {
 
     @Mock
     ResourceIconManager resourceIconManager;
+
+    @Mock
+    private ConsoleSessionVO consoleSessionMock;
+    @Mock
+    private DomainVO domainVOMock;
+    @Mock
+    private UserVO userVOMock;
+    @Mock
+    private AccountVO accountVOMock;
+    @Mock
+    private HostVO hostVOMock;
+    @Mock
+    private VMInstanceVO vmInstanceVOMock;
 
     @Spy
     @InjectMocks
@@ -399,6 +425,39 @@ public class ApiResponseHelperTest {
         }
     }
 
+    @Test
+    public void testCreateTrafficTypeResponse() {
+        PhysicalNetworkVO pnet = new PhysicalNetworkVO();
+        pnet.addIsolationMethod("VXLAN");
+        pnet.addIsolationMethod("STT");
+
+        try (MockedStatic<ApiDBUtils> ignored = Mockito.mockStatic(ApiDBUtils.class)) {
+            when(ApiDBUtils.findPhysicalNetworkById(anyLong())).thenReturn(pnet);
+            String xenLabel = "xen";
+            String kvmLabel = "kvm";
+            String vmwareLabel = "vmware";
+            String simulatorLabel = "simulator";
+            String hypervLabel = "hyperv";
+            String ovmLabel = "ovm";
+            String vlan = "vlan";
+            String trafficType = "Public";
+            PhysicalNetworkTrafficType pnetTrafficType = new PhysicalNetworkTrafficTypeVO(pnet.getId(), Networks.TrafficType.getTrafficType(trafficType), xenLabel, kvmLabel, vmwareLabel, simulatorLabel, vlan, hypervLabel, ovmLabel);
+
+            TrafficTypeResponse response = apiResponseHelper.createTrafficTypeResponse(pnetTrafficType);
+            assertFalse(UUID.fromString(response.getId()).toString().isEmpty());
+            assertEquals(response.getphysicalNetworkId(), pnet.getUuid());
+            assertEquals(response.getTrafficType(), trafficType);
+            assertEquals(response.getXenLabel(), xenLabel);
+            assertEquals(response.getKvmLabel(), kvmLabel);
+            assertEquals(response.getVmwareLabel(), vmwareLabel);
+            assertEquals(response.getHypervLabel(), hypervLabel);
+            assertEquals(response.getOvm3Label(), ovmLabel);
+            assertEquals(response.getVlan(), vlan);
+            assertEquals(response.getIsolationMethods(), "VXLAN,STT");
+
+        }
+    }
+
     private UnmanagedInstanceTO getUnmanagedInstaceForTests() {
         UnmanagedInstanceTO instance = Mockito.mock(UnmanagedInstanceTO.class);
         Mockito.when(instance.getPowerState()).thenReturn(UnmanagedInstanceTO.PowerState.PowerOff);
@@ -630,5 +689,115 @@ public class ApiResponseHelperTest {
                 ResourceTag.ResourceObjectType.Template);
         Mockito.verify(resourceIconManager, Mockito.never()).getByResourceTypeAndUuids(Mockito.any(),
                 Mockito.anyCollection());
+    }
+
+    private ConsoleSessionResponse getExpectedConsoleSessionResponseForTests(boolean fullView) {
+        ConsoleSessionResponse expected = new ConsoleSessionResponse();
+        expected.setId("uuid");
+        expected.setCreated(new Date());
+        expected.setAcquired(new Date());
+        expected.setRemoved(new Date());
+        expected.setConsoleEndpointCreatorAddress("127.0.0.1");
+        expected.setClientAddress("127.0.0.1");
+
+        if (fullView) {
+            expected.setDomain("domain");
+            expected.setDomainPath("domainPath");
+            expected.setDomainId("domainUuid");
+            expected.setUser("user");
+            expected.setUserId("userUuid");
+            expected.setAccount("account");
+            expected.setAccountId("accountUuid");
+            expected.setHostName("host");
+            expected.setHostId("hostUuid");
+            expected.setVmId("vmUuid");
+            expected.setVmName("vmName");
+        }
+
+        return expected;
+    }
+
+    @Test
+    public void createConsoleSessionResponseTestShouldReturnRestrictedResponse() {
+        ConsoleSessionResponse expected = getExpectedConsoleSessionResponseForTests(false);
+
+        try (MockedStatic<ApiDBUtils> apiDBUtilsStaticMock = Mockito.mockStatic(ApiDBUtils.class)) {
+            Mockito.when(consoleSessionMock.getUuid()).thenReturn(expected.getId());
+            Mockito.when(consoleSessionMock.getDomainId()).thenReturn(2L);
+            Mockito.when(consoleSessionMock.getCreated()).thenReturn(expected.getCreated());
+            Mockito.when(consoleSessionMock.getAcquired()).thenReturn(expected.getAcquired());
+            Mockito.when(consoleSessionMock.getRemoved()).thenReturn(expected.getRemoved());
+            Mockito.when(consoleSessionMock.getConsoleEndpointCreatorAddress()).thenReturn(expected.getConsoleEndpointCreatorAddress());
+            Mockito.when(consoleSessionMock.getClientAddress()).thenReturn(expected.getClientAddress());
+
+            ConsoleSessionResponse response = apiResponseHelper.createConsoleSessionResponse(consoleSessionMock, ResponseObject.ResponseView.Restricted);
+
+            Assert.assertEquals(expected.getId(), response.getId());
+            Assert.assertEquals(expected.getCreated(), response.getCreated());
+            Assert.assertEquals(expected.getAcquired(), response.getAcquired());
+            Assert.assertEquals(expected.getRemoved(), response.getRemoved());
+            Assert.assertEquals(expected.getConsoleEndpointCreatorAddress(), response.getConsoleEndpointCreatorAddress());
+            Assert.assertEquals(expected.getClientAddress(), response.getClientAddress());
+        }
+    }
+
+    @Test
+    public void createConsoleSessionResponseTestShouldReturnFullResponse() {
+        ConsoleSessionResponse expected = getExpectedConsoleSessionResponseForTests(true);
+
+        try (MockedStatic<ApiDBUtils> apiDBUtilsStaticMock = Mockito.mockStatic(ApiDBUtils.class)) {
+            Mockito.when(consoleSessionMock.getUuid()).thenReturn(expected.getId());
+            Mockito.when(consoleSessionMock.getDomainId()).thenReturn(2L);
+            Mockito.when(consoleSessionMock.getAccountId()).thenReturn(2L);
+            Mockito.when(consoleSessionMock.getUserId()).thenReturn(2L);
+            Mockito.when(consoleSessionMock.getHostId()).thenReturn(2L);
+            Mockito.when(consoleSessionMock.getInstanceId()).thenReturn(2L);
+            Mockito.when(consoleSessionMock.getCreated()).thenReturn(expected.getCreated());
+            Mockito.when(consoleSessionMock.getAcquired()).thenReturn(expected.getAcquired());
+            Mockito.when(consoleSessionMock.getRemoved()).thenReturn(expected.getRemoved());
+            Mockito.when(consoleSessionMock.getConsoleEndpointCreatorAddress()).thenReturn(expected.getConsoleEndpointCreatorAddress());
+            Mockito.when(consoleSessionMock.getClientAddress()).thenReturn(expected.getClientAddress());
+
+            apiDBUtilsStaticMock.when(() -> ApiDBUtils.findDomainById(2L)).thenReturn(domainVOMock);
+            Mockito.when(domainVOMock.getName()).thenReturn(expected.getDomain());
+            Mockito.when(domainVOMock.getPath()).thenReturn(expected.getDomainPath());
+            Mockito.when(domainVOMock.getUuid()).thenReturn(expected.getDomainId());
+
+            Mockito.when(apiResponseHelper.findUserById(2L)).thenReturn(userVOMock);
+            Mockito.when(userVOMock.getUsername()).thenReturn(expected.getUser());
+            Mockito.when(userVOMock.getUuid()).thenReturn(expected.getUserId());
+
+            Mockito.when(ApiDBUtils.findAccountById(2L)).thenReturn(accountVOMock);
+            Mockito.when(accountVOMock.getAccountName()).thenReturn(expected.getAccount());
+            Mockito.when(accountVOMock.getUuid()).thenReturn(expected.getAccountId());
+
+            Mockito.when(apiResponseHelper.findHostById(2L)).thenReturn(hostVOMock);
+            Mockito.when(hostVOMock.getUuid()).thenReturn(expected.getHostId());
+            Mockito.when(hostVOMock.getName()).thenReturn(expected.getHostName());
+
+            apiDBUtilsStaticMock.when(() -> ApiDBUtils.findVMInstanceById(2L)).thenReturn(vmInstanceVOMock);
+            Mockito.when(vmInstanceVOMock.getUuid()).thenReturn(expected.getVmId());
+            Mockito.when(vmInstanceVOMock.getInstanceName()).thenReturn(expected.getVmName());
+
+            ConsoleSessionResponse response = apiResponseHelper.createConsoleSessionResponse(consoleSessionMock, ResponseObject.ResponseView.Full);
+
+            Assert.assertEquals(expected.getId(), response.getId());
+            Assert.assertEquals(expected.getCreated(), response.getCreated());
+            Assert.assertEquals(expected.getAcquired(), response.getAcquired());
+            Assert.assertEquals(expected.getRemoved(), response.getRemoved());
+            Assert.assertEquals(expected.getConsoleEndpointCreatorAddress(), response.getConsoleEndpointCreatorAddress());
+            Assert.assertEquals(expected.getClientAddress(), response.getClientAddress());
+            Assert.assertEquals(expected.getDomain(), response.getDomain());
+            Assert.assertEquals(expected.getDomainPath(), response.getDomainPath());
+            Assert.assertEquals(expected.getDomainId(), response.getDomainId());
+            Assert.assertEquals(expected.getUser(), response.getUser());
+            Assert.assertEquals(expected.getUserId(), response.getUserId());
+            Assert.assertEquals(expected.getAccount(), response.getAccount());
+            Assert.assertEquals(expected.getAccountId(), response.getAccountId());
+            Assert.assertEquals(expected.getHostId(), response.getHostId());
+            Assert.assertEquals(expected.getHostName(), response.getHostName());
+            Assert.assertEquals(expected.getVmId(), response.getVmId());
+            Assert.assertEquals(expected.getVmName(), response.getVmName());
+        }
     }
 }

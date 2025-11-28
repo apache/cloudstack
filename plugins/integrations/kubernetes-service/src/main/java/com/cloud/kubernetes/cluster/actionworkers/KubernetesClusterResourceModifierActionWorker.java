@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.cpu.CPU;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.dc.DedicatedResourceVO;
@@ -165,6 +166,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
 
     protected String kubernetesClusterNodeNamePrefix;
 
+    private static final int MAX_CLUSTER_PREFIX_LENGTH = 43;
+
     protected KubernetesClusterResourceModifierActionWorker(final KubernetesCluster kubernetesCluster, final KubernetesClusterManagerImpl clusterManager) {
         super(kubernetesCluster, clusterManager);
     }
@@ -175,7 +178,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     }
 
     protected DeployDestination plan(final long nodesCount, final DataCenter zone, final ServiceOffering offering,
-                                     final Long domainId, final Long accountId, final Hypervisor.HypervisorType hypervisorType) throws InsufficientServerCapacityException {
+                                     final Long domainId, final Long accountId, final Hypervisor.HypervisorType hypervisorType, CPU.CPUArch arch) throws InsufficientServerCapacityException {
         final int cpu_requested = offering.getCpu() * offering.getSpeed();
         final long ram_requested = offering.getRamSize() * 1024L * 1024L;
         boolean useDedicatedHosts = false;
@@ -199,6 +202,15 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         if (hypervisorType != null) {
             hosts = hosts.stream().filter(x -> x.getHypervisorType() == hypervisorType).collect(Collectors.toList());
         }
+        if (arch != null) {
+            hosts = hosts.stream().filter(x -> x.getArch().equals(arch)).collect(Collectors.toList());
+        }
+        if (CollectionUtils.isEmpty(hosts)) {
+            String msg = String.format("Cannot find enough capacity for Kubernetes cluster(requested cpu=%d memory=%s) with offering: %s hypervisor: %s and arch: %s",
+                    cpu_requested * nodesCount, toHumanReadableSize(ram_requested * nodesCount), offering.getName(), clusterTemplate.getHypervisorType().toString(), arch.getType());
+            logAndThrow(Level.WARN, msg, new InsufficientServerCapacityException(msg, DataCenter.class, zone.getId()));
+        }
+
         final Map<String, Pair<HostVO, Integer>> hosts_with_resevered_capacity = new ConcurrentHashMap<String, Pair<HostVO, Integer>>();
         for (HostVO h : hosts) {
             hosts_with_resevered_capacity.put(h.getUuid(), new Pair<HostVO, Integer>(h, 0));
@@ -210,7 +222,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             for (Map.Entry<String, Pair<HostVO, Integer>> hostEntry : hosts_with_resevered_capacity.entrySet()) {
                 Pair<HostVO, Integer> hp = hostEntry.getValue();
                 HostVO h = hp.first();
-                if (!h.getHypervisorType().equals(clusterTemplate.getHypervisorType())) {
+                if (!h.getHypervisorType().equals(clusterTemplate.getHypervisorType()) || !h.getArch().equals(clusterTemplate.getArch())) {
                     continue;
                 }
                 hostDao.loadHostTags(h);
@@ -252,8 +264,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             }
             return new DeployDestination(zone, null, null, null);
         }
-        String msg = String.format("Cannot find enough capacity for Kubernetes cluster(requested cpu=%d memory=%s) with offering: %s and hypervisor: %s",
-                cpu_requested * nodesCount, toHumanReadableSize(ram_requested * nodesCount), offering.getName(), clusterTemplate.getHypervisorType().toString());
+        String msg = String.format("Cannot find enough capacity for Kubernetes cluster(requested cpu=%d memory=%s) with offering: %s hypervisor: %s and arch: %s",
+                cpu_requested * nodesCount, toHumanReadableSize(ram_requested * nodesCount), offering.getName(), clusterTemplate.getHypervisorType().toString(), arch.getType());
 
         logger.warn(msg);
         throw new InsufficientServerCapacityException(msg, DataCenter.class, zone.getId());
@@ -263,7 +275,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
      * Plan Kubernetes Cluster Deployment
      * @return a map of DeployDestination per node type
      */
-    protected Map<String, DeployDestination> planKubernetesCluster(Long domainId, Long accountId, Hypervisor.HypervisorType hypervisorType) throws InsufficientServerCapacityException {
+    protected Map<String, DeployDestination> planKubernetesCluster(Long domainId, Long accountId, Hypervisor.HypervisorType hypervisorType, CPU.CPUArch arch) throws InsufficientServerCapacityException {
         Map<String, DeployDestination> destinationMap = new HashMap<>();
         DataCenter zone = dataCenterDao.findById(kubernetesCluster.getZoneId());
         if (logger.isDebugEnabled()) {
@@ -284,7 +296,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             if (logger.isDebugEnabled()) {
                 logger.debug("Checking deployment destination for {} nodes on Kubernetes cluster : {} in zone : {}", nodeType.name(), kubernetesCluster.getName(), zone.getName());
             }
-            DeployDestination planForNodeType = plan(nodes, zone, nodeOffering, domainId, accountId, hypervisorType);
+            DeployDestination planForNodeType = plan(nodes, zone, nodeOffering, domainId, accountId, hypervisorType, arch);
             destinationMap.put(nodeType.name(), planForNodeType);
         }
         return destinationMap;
@@ -320,7 +332,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         if (Objects.nonNull(domainId) && !listDedicatedHostsInDomain(domainId).isEmpty()) {
             DeployDestination dest = null;
             try {
-                Map<String, DeployDestination> destinationMap = planKubernetesCluster(domainId, accountId, vm.getHypervisorType());
+                Map<String, DeployDestination> destinationMap = planKubernetesCluster(domainId, accountId, vm.getHypervisorType(), clusterTemplate.getArch());
                 dest = destinationMap.get(nodeType.name());
             } catch (InsufficientCapacityException e) {
                 logTransitStateAndThrow(Level.ERROR, String.format("Provisioning the cluster failed due to insufficient capacity in the Kubernetes cluster: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
@@ -419,16 +431,16 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             List<Long> securityGroupIds = new ArrayList<>();
             securityGroupIds.add(kubernetesCluster.getSecurityGroupId());
             nodeVm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, workerNodeTemplate, networkIds, securityGroupIds, owner,
-                    hostName, hostName, null, null, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST,base64UserData, null, null, keypairs,
+                    hostName, hostName, null, null, null, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST,base64UserData, null, null, keypairs,
                     null, addrs, null, null, Objects.nonNull(affinityGroupId) ?
                             Collections.singletonList(affinityGroupId) : null, customParameterMap, null, null, null,
-                    null, true, null, UserVmManager.CKS_NODE);
+                    null, true, null, UserVmManager.CKS_NODE, null, null);
         } else {
             nodeVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, workerNodeTemplate, networkIds, owner,
-                    hostName, hostName, null, null, null,
+                    hostName, hostName, null, null, null, null,
                     Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, null, null, keypairs,
                     null, addrs, null, null, Objects.nonNull(affinityGroupId) ?
-                            Collections.singletonList(affinityGroupId) : null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null);
+                            Collections.singletonList(affinityGroupId) : null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null, null, null);
         }
         if (logger.isInfoEnabled()) {
             logger.info("Created node VM : {}, {} in the Kubernetes cluster : {}", hostName, nodeVm, kubernetesCluster.getName());
@@ -787,19 +799,35 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         }
     }
 
+    /**
+     * Generates a valid name prefix for Kubernetes cluster nodes.
+     *
+     * <p>The prefix must comply with Kubernetes naming constraints:
+     * <ul>
+     *   <li>Maximum 63 characters total</li>
+     *   <li>Only lowercase alphanumeric characters and hyphens</li>
+     *   <li>Must start with a letter</li>
+     *   <li>Must end with an alphanumeric character</li>
+     * </ul>
+     *
+     * <p>The generated prefix is limited to 43 characters to accommodate the full node naming pattern:
+     * <pre>{'prefix'}-{'control' | 'node'}-{'11-digit-hash'}</pre>
+     *
+     * @return A valid node name prefix, truncated if necessary
+     * @see <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/names/">Kubernetes "Object Names and IDs" documentation</a>
+     */
     protected String getKubernetesClusterNodeNamePrefix() {
-        String prefix = kubernetesCluster.getName();
-        if (!NetUtils.verifyDomainNameLabel(prefix, true)) {
-            prefix = prefix.replaceAll("[^a-zA-Z0-9-]", "");
-            if (prefix.length() == 0) {
-                prefix = kubernetesCluster.getUuid();
-            }
-            prefix = "k8s-" + prefix;
+        String prefix = kubernetesCluster.getName().toLowerCase();
+
+        if (NetUtils.verifyDomainNameLabel(prefix, true)) {
+            return StringUtils.truncate(prefix, MAX_CLUSTER_PREFIX_LENGTH);
         }
-        if (prefix.length() > 40) {
-            prefix = prefix.substring(0, 40);
+
+        prefix = prefix.replaceAll("[^a-z0-9-]", "");
+        if (prefix.isEmpty()) {
+            prefix = kubernetesCluster.getUuid();
         }
-        return prefix;
+        return StringUtils.truncate("k8s-" + prefix, MAX_CLUSTER_PREFIX_LENGTH);
     }
 
     protected String getEtcdNodeNameForCluster() {
@@ -925,5 +953,48 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
 
     protected List<DedicatedResourceVO> listDedicatedHostsInDomain(Long domainId) {
         return dedicatedResourceDao.listByDomainId(domainId);
+    }
+
+    public boolean deletePVsWithReclaimPolicyDelete() {
+        File pkFile = getManagementServerSshPublicKeyFile();
+        Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
+        publicIpAddress = publicIpSshPort.first();
+        sshPort = publicIpSshPort.second();
+        try {
+            String command = String.format("sudo %s/%s", scriptPath, deletePvScriptFilename);
+            logMessage(Level.INFO, "Starting PV deletion script for cluster: " + kubernetesCluster.getName(), null);
+            Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
+                    pkFile, null, command, 10000, 10000, 600000); // 10 minute timeout
+            if (Boolean.FALSE.equals(result.first())) {
+                logMessage(Level.INFO, "PV delete script missing. Adding it now", null);
+                retrieveScriptFiles();
+                if (deletePvScriptFile != null) {
+                    copyScriptFile(publicIpAddress, sshPort, deletePvScriptFile, deletePvScriptFilename);
+                    logMessage(Level.INFO, "Executing PV deletion script (this may take several minutes)...", null);
+                    result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
+                            pkFile, null, command, 10000, 10000, 600000); // 10 minute timeout
+                    if (Boolean.FALSE.equals(result.first())) {
+                        logMessage(Level.ERROR, "PV deletion script failed: " + result.second(), null);
+                        throw new CloudRuntimeException(result.second());
+                    }
+                    logMessage(Level.INFO, "PV deletion script completed successfully", null);
+                } else {
+                    logMessage(Level.WARN, "PV delete script file not found in resources, skipping PV deletion", null);
+                    return false;
+                }
+            } else {
+                logMessage(Level.INFO, "PV deletion script completed successfully", null);
+            }
+
+            if (result.second() != null && !result.second().trim().isEmpty()) {
+                logMessage(Level.INFO, "PV deletion script output: " + result.second(), null);
+            }
+
+            return true;
+        } catch (Exception e) {
+            String msg = String.format("Failed to delete PVs with reclaimPolicy=Delete: %s : %s", kubernetesCluster.getName(), e.getMessage());
+            logMessage(Level.WARN, msg, e);
+            return false;
+        }
     }
 }

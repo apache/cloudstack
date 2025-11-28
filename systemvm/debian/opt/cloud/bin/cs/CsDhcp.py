@@ -146,9 +146,9 @@ class CsDhcp(CsDataBag):
                 listen_address.append(gateway)
             listen_address.append(ip)
             # Add localized "data-server" records in /etc/hosts for VPC routers
-            if (self.config.is_vpc() or self.config.is_router()) and ('is_vr_guest_gateway' not in gn.data or (not gn.data['is_vr_guest_gateway'])):
+            if (self.config.is_vpc() and gn.is_vr_guest_gateway()) or self.config.is_router():
                 self.add_host(gateway, "%s data-server" % CsHelper.get_hostname())
-            elif self.config.is_dhcp() or (self.config.is_vpc() or self.config.is_router() and gn.data['is_vr_guest_gateway']) :
+            elif self.config.is_dhcp() or (self.config.is_vpc() and not gn.is_vr_guest_gateway()):
                 self.add_host(ip, "%s data-server" % CsHelper.get_hostname())
             idx += 1
 
@@ -231,7 +231,7 @@ class CsDhcp(CsDataBag):
         i = IPAddress(entry['ipv4_address'])
         # Calculate the device
         for v in self.devinfo:
-            if i > v['network'].network and i < v['network'].broadcast:
+            if i > v['network'].network and v['network'].broadcast and i < v['network'].broadcast:
                 v['dnsmasq'] = True
                 # Virtual Router
                 v['gateway'] = entry['default_gateway']

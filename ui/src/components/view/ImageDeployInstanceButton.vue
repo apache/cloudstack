@@ -41,7 +41,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
@@ -71,9 +71,14 @@ export default {
     if (this.$route.meta.name === 'iso') {
       this.imageApi = 'listIsos'
     }
-    setTimeout(() => {
-      this.fetchData()
-    }, 100)
+    this.fetchData()
+  },
+  watch: {
+    resource (newValue) {
+      if (newValue?.id) {
+        this.fetchData()
+      }
+    }
   },
   computed: {
     allowed () {
@@ -82,25 +87,24 @@ export default {
     }
   },
   methods: {
-    arrayHasItems (array) {
-      return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
-    },
     fetchData () {
       this.fetchResourceData()
     },
     fetchResourceData () {
-      const params = {}
-      params.id = this.resource.id
-      params.templatefilter = 'executable'
-      params.listall = true
-      params.page = this.page
-      params.pagesize = this.pageSize
+      if (!this.resource || !this.resource.id) {
+        return
+      }
+      const params = {
+        id: this.resource.id,
+        templatefilter: 'executable',
+        listall: true
+      }
 
       this.dataSource = []
       this.itemCount = 0
-      this.fetchLoading = true
+      this.loading = true
       this.zones = []
-      api(this.imageApi, params).then(json => {
+      getAPI(this.imageApi, params).then(json => {
         const imageResponse = json?.[this.imageApi.toLowerCase() + 'response']?.[this.$route.meta.name] || []
         this.zones = imageResponse.map(i => ({
           id: i.zoneid,
@@ -108,8 +112,8 @@ export default {
         }))
       }).catch(error => {
         this.$notifyError(error)
-        this.loading = false
       }).finally(() => {
+        this.loading = false
         if (this.zones.length !== 0) {
           this.$emit('update-zones', this.zones)
         }
@@ -122,7 +126,8 @@ export default {
       }
       const zoneids = this.zones.map(z => z.id)
       this.loading = true
-      api('listZones', { showicon: true, ids: zoneids.join(',') }).then(json => {
+      const params = { showicon: true, ids: zoneids.join(',') }
+      getAPI('listZones', params).then(json => {
         this.zones = json.listzonesresponse.zone || []
       }).finally(() => {
         this.loading = false

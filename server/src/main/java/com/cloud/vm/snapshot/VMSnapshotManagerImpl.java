@@ -27,12 +27,9 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.storage.snapshot.SnapshotManager;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.commons.collections.MapUtils;
-import org.springframework.stereotype.Component;
 import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
@@ -56,6 +53,8 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.commons.collections.MapUtils;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.RestoreVMSnapshotCommand;
 import com.cloud.agent.api.VMSnapshotTO;
@@ -70,6 +69,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.gpu.GPU;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -110,7 +110,8 @@ import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -124,7 +125,7 @@ import com.cloud.vm.VmWorkJobHandler;
 import com.cloud.vm.VmWorkJobHandlerProxy;
 import com.cloud.vm.VmWorkSerializer;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
@@ -165,7 +166,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
     @Inject
     protected ServiceOfferingDao _serviceOfferingDao;
     @Inject
-    protected UserVmDetailsDao _userVmDetailsDao;
+    protected VMInstanceDetailsDao _vmInstanceDetailsDao;
     @Inject
     protected VMSnapshotDetailsDao _vmSnapshotDetailsDao;
     @Inject
@@ -327,6 +328,10 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             throw new InvalidParameterValueException("Creating VM snapshot failed due to VM:" + vmId + " is a system VM or does not exist");
         }
 
+        if (HypervisorType.External.equals(userVmVo.getHypervisorType())) {
+            throw new InvalidParameterValueException("VM snapshot operation is not allowed for hypervisor type External");
+        }
+
         // VM snapshot with memory is not supported for VGPU Vms
         if (snapshotMemory && _serviceOfferingDetailsDao.findDetail(userVmVo.getServiceOfferingId(), GPU.Keys.vgpuType.toString()) != null) {
             throw new InvalidParameterValueException("VM snapshot with MEMORY is not supported for vGPU enabled VMs.");
@@ -379,14 +384,8 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             //Other Storage volume plugins could integrate this with their own functionality for group snapshots
             VMSnapshotStrategy snapshotStrategy = storageStrategyFactory.getVmSnapshotStrategy(userVmVo.getId(), rootVolumePool.getId(), snapshotMemory);
             if (snapshotStrategy == null) {
-                String message;
-                if (!SnapshotManager.VmStorageSnapshotKvm.value() && !snapshotMemory) {
-                    message = "Creating a snapshot of a running KVM instance without memory is not supported";
-                } else {
-                    message = "KVM does not support the type of snapshot requested";
-                }
-
-                logger.debug(message);
+                String message = String.format("No strategy was able to handle requested snapshot for VM [%s].", userVmVo.getUuid());
+                logger.error(message);
                 throw new CloudRuntimeException(message);
             }
 
@@ -480,9 +479,9 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
     protected void addSupportForCustomServiceOffering(long vmId, long serviceOfferingId, long vmSnapshotId) {
         ServiceOfferingVO serviceOfferingVO = _serviceOfferingDao.findById(serviceOfferingId);
         if (serviceOfferingVO.isDynamic()) {
-            List<UserVmDetailVO> vmDetails = _userVmDetailsDao.listDetails(vmId);
+            List<VMInstanceDetailVO> vmDetails = _vmInstanceDetailsDao.listDetails(vmId);
             List<VMSnapshotDetailsVO> vmSnapshotDetails = new ArrayList<VMSnapshotDetailsVO>();
-            for (UserVmDetailVO detail : vmDetails) {
+            for (VMInstanceDetailVO detail : vmDetails) {
                 if(detail.getName().equalsIgnoreCase(VmDetailConstants.CPU_NUMBER) || detail.getName().equalsIgnoreCase(VmDetailConstants.CPU_SPEED) || detail.getName().equalsIgnoreCase(VmDetailConstants.MEMORY)) {
                     vmSnapshotDetails.add(new VMSnapshotDetailsVO(vmSnapshotId, detail.getName(), detail.getValue(), detail.isDisplay()));
                 }
@@ -516,6 +515,12 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         if (UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
             throw new InvalidParameterValueException("Operation not supported on Shared FileSystem Instance");
         }
+        if (Hypervisor.HypervisorType.External.equals(userVm.getHypervisorType())) {
+            logger.error("Create VM snapshot not supported for {} as it is {} hypervisor instance",
+                    userVm, Hypervisor.HypervisorType.External.name());
+            throw new InvalidParameterValueException(String.format("Operation not supported for instance: %s",
+                    userVm.getName()));
+        }
         VMSnapshotVO vmSnapshot = _vmSnapshotDao.findById(vmSnapshotId);
         if (vmSnapshot == null) {
             throw new CloudRuntimeException("VM snapshot id: " + vmSnapshotId + " can not be found");
@@ -546,7 +551,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             } catch (InterruptedException e) {
                 throw new RuntimeException("Operation is interrupted", e);
             } catch (java.util.concurrent.ExecutionException e) {
-                throw new RuntimeException("Execution excetion", e);
+                throw new CloudRuntimeException("Execution exception getting the outcome of the asynchronous create VM snapshot job", e);
             }
 
             Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
@@ -656,7 +661,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             } catch (InterruptedException e) {
                 throw new RuntimeException("Operation is interrupted", e);
             } catch (java.util.concurrent.ExecutionException e) {
-                throw new RuntimeException("Execution excetion", e);
+                throw new CloudRuntimeException("Execution exception getting the outcome of the asynchronous delete VM snapshot job", e);
             }
 
             Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
@@ -781,7 +786,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             } catch (InterruptedException e) {
                 throw new RuntimeException("Operation is interrupted", e);
             } catch (java.util.concurrent.ExecutionException e) {
-                throw new RuntimeException("Execution excetion", e);
+                throw new CloudRuntimeException("Execution exception getting the outcome of the asynchronous revert to snapshot job", e);
             }
 
             Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
@@ -819,9 +824,9 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
      * @return map
      */
     protected Map<String, String> getVmMapDetails(UserVm userVm) {
-        List<UserVmDetailVO> userVmDetails = _userVmDetailsDao.listDetails(userVm.getId());
+        List<VMInstanceDetailVO> userVmDetails = _vmInstanceDetailsDao.listDetails(userVm.getId());
         Map<String, String> details = new HashMap<String, String>();
-        for (UserVmDetailVO detail : userVmDetails) {
+        for (VMInstanceDetailVO detail : userVmDetails) {
             details.put(detail.getName(), detail.getValue());
         }
         return details;
@@ -950,11 +955,11 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         ServiceOfferingVO serviceOfferingVO = _serviceOfferingDao.findById(vmSnapshotVo.getServiceOfferingId());
         if (serviceOfferingVO.isDynamic()) {
             List<VMSnapshotDetailsVO> vmSnapshotDetails = _vmSnapshotDetailsDao.listDetails(vmSnapshotVo.getId());
-            List<UserVmDetailVO> userVmDetails = new ArrayList<UserVmDetailVO>();
+            List<VMInstanceDetailVO> userVmDetails = new ArrayList<VMInstanceDetailVO>();
             for (VMSnapshotDetailsVO detail : vmSnapshotDetails) {
-                userVmDetails.add(new UserVmDetailVO(userVm.getId(), detail.getName(), detail.getValue(), detail.isDisplay()));
+                userVmDetails.add(new VMInstanceDetailVO(userVm.getId(), detail.getName(), detail.getValue(), detail.isDisplay()));
             }
-            _userVmDetailsDao.saveDetails(userVmDetails);
+            _vmInstanceDetailsDao.saveDetails(userVmDetails);
         }
     }
 
@@ -1032,7 +1037,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             } catch (InterruptedException e) {
                 throw new RuntimeException("Operation is interrupted", e);
             } catch (java.util.concurrent.ExecutionException e) {
-                throw new RuntimeException("Execution excetion", e);
+                throw new CloudRuntimeException("Execution exception getting the outcome of the asynchronous delete snapshots job", e);
             }
 
             Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
@@ -1385,6 +1390,12 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             }
         }
         return true;
+    }
+
+    @Override
+    public void updateOperationFailed(VMSnapshot vmSnapshot) throws NoTransitionException {
+        VMSnapshotStrategy strategy = findVMSnapshotStrategy(vmSnapshot);
+        strategy.updateOperationFailed(vmSnapshot);
     }
 
     @Override

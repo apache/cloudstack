@@ -55,7 +55,7 @@ export default {
     param: 'account'
   }, {
     name: 'userdata',
-    title: 'label.userdata',
+    title: 'label.user.data',
     param: 'account'
   }, {
     name: 'template',
@@ -85,7 +85,7 @@ export default {
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/ResourceLimitTab.vue')))
     },
     {
-      name: 'certificate',
+      name: 'certificates',
       component: shallowRef(defineAsyncComponent(() => import('@/views/iam/SSLCertificateTab.vue')))
     },
     {

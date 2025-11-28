@@ -34,6 +34,7 @@ import javax.persistence.Transient;
 
 import com.cloud.cpu.CPU;
 import com.cloud.user.UserData;
+import com.cloud.utils.UuidUtils;
 import org.apache.cloudstack.util.CPUArchConverter;
 import org.apache.cloudstack.util.HypervisorTypeConverter;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
@@ -176,6 +177,9 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     @Convert(converter = CPUArchConverter.class)
     private CPU.CPUArch arch;
 
+    @Column(name = "extension_id")
+    private Long extensionId;
+
     @Override
     public String getUniqueName() {
         return uniqueName;
@@ -218,7 +222,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 
     public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured, boolean isExtractable, TemplateType type, String url, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable,
                         HypervisorType hyperType, String templateTag, Map<String, String> details, boolean sshKeyEnabled, boolean isDynamicallyScalable, boolean directDownload,
-                        boolean deployAsIs, CPU.CPUArch arch) {
+                        boolean deployAsIs, CPU.CPUArch arch, Long extensionId) {
         this(id,
             name,
             format,
@@ -245,6 +249,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         this.directDownload = directDownload;
         this.deployAsIs = deployAsIs;
         this.arch = arch;
+        this.extensionId = extensionId;
     }
 
     public static VMTemplateVO createPreHostIso(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic, boolean featured, TemplateType type,
@@ -340,7 +345,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         name.append("-");
         name.append(userId);
         name.append("-");
-        name.append(UUID.nameUUIDFromBytes((displayName + System.currentTimeMillis()).getBytes()).toString());
+        name.append(UuidUtils.nameUUIDFromBytes((displayName + System.currentTimeMillis()).getBytes()).toString());
         return name.toString();
     }
 
@@ -702,4 +707,11 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         this.arch = arch;
     }
 
+    public Long getExtensionId() {
+        return extensionId;
+    }
+
+    public void setExtensionId(Long extensionId) {
+        this.extensionId = extensionId;
+    }
 }

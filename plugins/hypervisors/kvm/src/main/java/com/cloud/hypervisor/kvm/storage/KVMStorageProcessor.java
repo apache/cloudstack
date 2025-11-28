@@ -62,7 +62,7 @@ import org.apache.cloudstack.direct.download.DirectTemplateDownloader;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
-import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplianceCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
@@ -99,9 +99,8 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-
+import org.apache.logging.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo;
@@ -136,7 +135,6 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DeviceType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiscardType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiskProtocol;
-import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.MigrationOptions;
 import com.cloud.storage.ScopeType;
@@ -366,16 +364,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 final TemplateObjectTO newTemplate = new TemplateObjectTO();
                 newTemplate.setPath(primaryVol.getName());
                 newTemplate.setSize(primaryVol.getSize());
-
-                if(List.of(
-                    StoragePoolType.RBD,
-                    StoragePoolType.PowerFlex,
-                    StoragePoolType.Linstor,
-                    StoragePoolType.FiberChannel).contains(primaryPool.getType())) {
-                    newTemplate.setFormat(ImageFormat.RAW);
-                } else {
-                    newTemplate.setFormat(ImageFormat.QCOW2);
-                }
+                newTemplate.setFormat(getFormat(primaryPool.getType()));
                 data = newTemplate;
             } else if (destData.getObjectType() == DataObjectType.VOLUME) {
                 final VolumeObjectTO volumeObjectTO = new VolumeObjectTO();
@@ -656,7 +645,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         try {
             final String volumeName = UUID.randomUUID().toString();
 
-            final String destVolumeName = volumeName + "." + destFormat.getFileExtension();
+            final String destVolumeName = volumeName + "." + ImageFormat.QCOW2.getFileExtension();
             final KVMPhysicalDisk volume = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), srcVolumePath);
             volume.setFormat(PhysicalDiskFormat.valueOf(srcFormat.toString()));
 
@@ -1789,15 +1778,6 @@ public class KVMStorageProcessor implements StorageProcessor {
     private static final String TAG_AVOID_DISK_FROM_SNAPSHOT = "<disk name='%s' snapshot='no' />";
 
     /**
-     * Virsh command to merge (blockcommit) snapshot into the base file.<br><br>
-     * 1st parameter: VM's name;<br>
-     * 2nd parameter: disk's label (target.dev tag from VM's XML);<br>
-     * 3rd parameter: the absolute path of the base file;
-     * 4th parameter: the flag '--delete', if Libvirt supports it. Libvirt started to support it on version <b>6.0.0</b>;
-     */
-    private static final String COMMAND_MERGE_SNAPSHOT = "virsh blockcommit %s %s --base %s --active --wait %s --pivot";
-
-    /**
      * Flag to take disk-only snapshots from VM.<br><br>
      * Libvirt lib for java does not have the enum virDomainSnapshotCreateFlags.
      * @see <a href="https://libvirt.org/html/libvirt-libvirt-domain-snapshot.html">Module libvirt-domain-snapshot from libvirt</a>
@@ -2238,7 +2218,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             String convertResult = convertBaseFileToSnapshotFileInStorageDir(ObjectUtils.defaultIfNull(secondaryPool, primaryPool), disk, snapshotPath, directoryPath, volume, cmd.getWait());
 
-            mergeSnapshotIntoBaseFile(vm, diskLabel, diskPath, snapshotName, volume, conn);
+            resource.mergeSnapshotIntoBaseFile(vm, diskLabel, diskPath, null, true, snapshotName, volume, conn);
 
             validateConvertResult(convertResult, snapshotPath);
         } catch (LibvirtException e) {
@@ -2431,59 +2411,6 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     /**
-     * Merges the snapshot into base file to keep volume and VM behavior after stopping - starting.
-     * @param vm Domain of the VM;
-     * @param diskLabel Disk label to manage snapshot and base file;
-     * @param baseFilePath Path of the base file;
-     * @param snapshotName Name of the snapshot;
-     * @throws LibvirtException
-     */
-    protected void mergeSnapshotIntoBaseFile(Domain vm, String diskLabel, String baseFilePath, String snapshotName, VolumeObjectTO volume,
-            Connect conn) throws LibvirtException {
-        boolean isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit = LibvirtUtilitiesHelper.isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(conn);
-        String vmName = vm.getName();
-        String mergeCommand = String.format(COMMAND_MERGE_SNAPSHOT, vmName, diskLabel, baseFilePath, isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit ? "--delete" : "");
-        String mergeResult = Script.runSimpleBashScript(mergeCommand);
-
-        if (mergeResult == null) {
-            logger.debug(String.format("Successfully merged snapshot [%s] into VM [%s] %s base file.", snapshotName, vmName, volume));
-            manuallyDeleteUnusedSnapshotFile(isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit, getSnapshotTemporaryPath(baseFilePath, snapshotName));
-            return;
-        }
-
-        String errorMsg = String.format("Failed to merge snapshot [%s] into VM [%s] %s base file. Command [%s] resulted in [%s]. If the VM is stopped and then started, it"
-          + " will start to write in the base file again. All changes made between the snapshot and the VM stop will be in the snapshot. If the VM is stopped, the snapshot must be"
-          + " merged into the base file manually.", snapshotName, vmName, volume, mergeCommand, mergeResult);
-
-        logger.warn(String.format("%s VM XML: [%s].", errorMsg, vm.getXMLDesc(0)));
-        throw new CloudRuntimeException(errorMsg);
-    }
-
-    /**
-     * Manually deletes the unused snapshot file.<br/>
-     * This method is necessary due to Libvirt created the tag '--delete' on command 'virsh blockcommit' on version <b>1.2.9</b>, however it was only implemented on version
-     *  <b>6.0.0</b>.
-     * @param snapshotPath The unused snapshot file to manually delete.
-     */
-    protected void manuallyDeleteUnusedSnapshotFile(boolean isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit, String snapshotPath) {
-        if (isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit) {
-            logger.debug(String.format("The current Libvirt's version supports the flag '--delete' on command 'virsh blockcommit', we will skip the manually deletion of the"
-                    + " unused snapshot file [%s] as it already was automatically deleted.", snapshotPath));
-            return;
-        }
-
-        logger.debug(String.format("The current Libvirt's version does not supports the flag '--delete' on command 'virsh blockcommit', therefore we will manually delete the"
-                + " unused snapshot file [%s].", snapshotPath));
-
-        try {
-            Files.deleteIfExists(Paths.get(snapshotPath));
-            logger.debug(String.format("Manually deleted unused snapshot file [%s].", snapshotPath));
-        } catch (IOException ex) {
-            throw new CloudRuntimeException(String.format("Unable to manually delete unused snapshot file [%s] due to [%s].", snapshotPath, ex.getMessage()));
-        }
-    }
-
-    /**
      * Creates the snapshot directory in the primary storage, if it does not exist; then, converts the base file (VM's old writing file) to the snapshot directory.
      * @param pool         Storage to create folder, if not exists;
      * @param baseFile     Base file of VM, which will be converted;
@@ -2569,7 +2496,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         String diskLabelToSnapshot = diskToSnapshotAndDisksToAvoid.first();
         String disksToAvoidsOnSnapshot = diskToSnapshotAndDisksToAvoid.second().stream().map(diskLabel -> String.format(TAG_AVOID_DISK_FROM_SNAPSHOT, diskLabel))
           .collect(Collectors.joining());
-        String snapshotTemporaryPath = getSnapshotTemporaryPath(diskPath, snapshotName);
+        String snapshotTemporaryPath = resource.getSnapshotTemporaryPath(diskPath, snapshotName);
 
         String createSnapshotXmlFormated = String.format(XML_CREATE_DISK_SNAPSHOT, snapshotName, diskLabelToSnapshot, snapshotTemporaryPath, disksToAvoidsOnSnapshot);
 
@@ -2618,18 +2545,6 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
 
         return new Pair<>(diskLabelToSnapshot, disksToAvoid);
-    }
-
-    /**
-     * Retrieves the temporary path of the snapshot.
-     * @param diskPath Path of the disk to snapshot;
-     * @param snapshotName Snapshot name;
-     * @return the path of the disk replacing the disk with the snapshot.
-     */
-    protected String getSnapshotTemporaryPath(String diskPath, String snapshotName) {
-        String[] diskPathSplitted = diskPath.split(File.separator);
-        diskPathSplitted[diskPathSplitted.length - 1] = snapshotName;
-        return String.join(File.separator, diskPathSplitted);
     }
 
     /**
@@ -3025,7 +2940,9 @@ public class KVMStorageProcessor implements StorageProcessor {
             if (template != null) {
                 templatePath = template.getPath();
             }
-            if (StringUtils.isEmpty(templatePath)) {
+            if (ImageFormat.ISO.equals(cmd.getFormat())) {
+                logger.debug("Skipping template validations as image format is {}", cmd.getFormat());
+            } else if (StringUtils.isEmpty(templatePath)) {
                 logger.warn("Skipped validation whether downloaded file is QCOW2 for template {}, due to downloaded template path is empty", template.getName());
             } else if (!new File(templatePath).exists()) {
                 logger.warn("Skipped validation whether downloaded file is QCOW2 for template {}, due to downloaded template path is not valid: {}", template.getName(), templatePath);
@@ -3064,7 +2981,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         final VolumeObjectTO srcVol = (VolumeObjectTO)srcData;
         final VolumeObjectTO destVol = (VolumeObjectTO)destData;
         final ImageFormat srcFormat = srcVol.getFormat();
-        final ImageFormat destFormat = destVol.getFormat();
+        ImageFormat destFormat = destVol.getFormat();
         final DataStoreTO srcStore = srcData.getDataStore();
         final DataStoreTO destStore = destData.getDataStore();
         final PrimaryDataStoreTO srcPrimaryStore = (PrimaryDataStoreTO)srcStore;
@@ -3099,33 +3016,35 @@ public class KVMStorageProcessor implements StorageProcessor {
             volume.setFormat(PhysicalDiskFormat.valueOf(srcFormat.toString()));
             volume.setDispName(srcVol.getName());
             volume.setVmName(srcVol.getVmName());
-
-            String destVolumeName = null;
+            KVMPhysicalDisk newVolume;
+            String destVolumeName;
+            destPool = storagePoolMgr.getStoragePool(destPrimaryStore.getPoolType(), destPrimaryStore.getUuid());
             if (destPrimaryStore.isManaged()) {
                 if (!storagePoolMgr.connectPhysicalDisk(destPrimaryStore.getPoolType(), destPrimaryStore.getUuid(), destVolumePath, destPrimaryStore.getDetails())) {
                     logger.warn("Failed to connect dest volume {}, in storage pool {}", destVol, destPrimaryStore);
                 }
                 destVolumeName = derivePath(destPrimaryStore, destData, destPrimaryStore.getDetails());
             } else {
+                PhysicalDiskFormat destPoolDefaultFormat = destPool.getDefaultFormat();
+                destFormat = getFormat(destPoolDefaultFormat);
                 final String volumeName = UUID.randomUUID().toString();
                 destVolumeName = volumeName + "." + destFormat.getFileExtension();
 
                 // Update path in the command for reconciliation
-                if (destData.getPath() == null) {
+                if (StringUtils.isBlank(destVolumePath)) {
                     ((VolumeObjectTO) destData).setPath(destVolumeName);
                 }
             }
 
-            destPool = storagePoolMgr.getStoragePool(destPrimaryStore.getPoolType(), destPrimaryStore.getUuid());
             try {
                 Volume.Type volumeType = srcVol.getVolumeType();
 
                 resource.createOrUpdateLogFileForCommand(cmd, Command.State.PROCESSING_IN_BACKEND);
                 if (srcVol.getPassphrase() != null && (Volume.Type.ROOT.equals(volumeType) || Volume.Type.DATADISK.equals(volumeType))) {
                     volume.setQemuEncryptFormat(QemuObject.EncryptFormat.LUKS);
-                    storagePoolMgr.copyPhysicalDisk(volume, destVolumeName, destPool, cmd.getWaitInMillSeconds(), srcVol.getPassphrase(), destVol.getPassphrase(), srcVol.getProvisioningType());
+                    newVolume = storagePoolMgr.copyPhysicalDisk(volume, destVolumeName, destPool, cmd.getWaitInMillSeconds(), srcVol.getPassphrase(), destVol.getPassphrase(), srcVol.getProvisioningType());
                 } else {
-                    storagePoolMgr.copyPhysicalDisk(volume, destVolumeName, destPool, cmd.getWaitInMillSeconds());
+                    newVolume = storagePoolMgr.copyPhysicalDisk(volume, destVolumeName, destPool, cmd.getWaitInMillSeconds());
                 }
                 resource.createOrUpdateLogFileForCommand(cmd, Command.State.COMPLETED);
             } catch (Exception e) { // Any exceptions while copying the disk, should send failed answer with the error message
@@ -3145,9 +3064,13 @@ public class KVMStorageProcessor implements StorageProcessor {
             }
 
             final VolumeObjectTO newVol = new VolumeObjectTO();
-            String path = destPrimaryStore.isManaged() ? destVolumeName : destVolumePath + File.separator + destVolumeName;
+            String path = destVolumeName;
+            if (!destPrimaryStore.isManaged() && StringUtils.isNotBlank(destVolumePath)) {
+                path = destVolumePath + File.separator + destVolumeName;
+            }
             newVol.setPath(path);
-            newVol.setFormat(destFormat);
+            ImageFormat newVolumeFormat = getFormat(newVolume.getFormat());
+            newVol.setFormat(newVolumeFormat);
             newVol.setEncryptFormat(destVol.getEncryptFormat());
             return new CopyCmdAnswer(newVol);
         } catch (final CloudRuntimeException e) {
@@ -3156,6 +3079,26 @@ public class KVMStorageProcessor implements StorageProcessor {
         } finally {
             srcVol.clearPassphrase();
             destVol.clearPassphrase();
+        }
+    }
+
+    private Storage.ImageFormat getFormat(PhysicalDiskFormat format) {
+        if (format == null) {
+            return null;
+        }
+
+        return ImageFormat.valueOf(format.toString().toUpperCase());
+    }
+
+    private Storage.ImageFormat getFormat(StoragePoolType poolType) {
+        if(List.of(
+                StoragePoolType.RBD,
+                StoragePoolType.PowerFlex,
+                StoragePoolType.Linstor,
+                StoragePoolType.FiberChannel).contains(poolType)) {
+            return ImageFormat.RAW;
+        } else {
+            return ImageFormat.QCOW2;
         }
     }
 
@@ -3190,8 +3133,8 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     @Override
-    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplainceCommand cmd) {
-        logger.info("'CheckDataStoreStoragePolicyComplainceCommand' not currently applicable for KVMStorageProcessor");
+    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplianceCommand cmd) {
+        logger.info("'CheckDataStoreStoragePolicyComplianceCommand' not currently applicable for KVMStorageProcessor");
         return new Answer(cmd,false,"Not currently applicable for KVMStorageProcessor");
     }
 

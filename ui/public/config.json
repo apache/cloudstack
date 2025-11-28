@@ -17,6 +17,7 @@
   "logo": "assets/logo.svg",
   "minilogo": "assets/mini-logo.svg",
   "banner": "assets/banner.svg",
+  "favicon": "cloud.ico",
   "error": {
     "403": "assets/403.png",
     "404": "assets/404.png",
@@ -63,6 +64,7 @@
     "sc": "label.simplified.chinese.keyboard"
   },
   "userCard": {
+    "enabled": true,
     "title": "label.help",
     "icon": "question-circle-outlined",
     "links": [
@@ -97,10 +99,12 @@
   "basicZoneEnabled": true,
   "multipleServer": false,
   "allowSettingTheme": true,
+  "displayProjectFieldOnLogin": false,
   "imageSelectionInterface": "modern",
   "showUserCategoryForModernImageSelection": true,
   "showAllCategoryForModernImageSelection": false,
   "docHelpMappings": {},
+  "notifyLatestCSVersion": true,
   "announcementBanner": {
     "enabled": false,
     "showIcon": false,

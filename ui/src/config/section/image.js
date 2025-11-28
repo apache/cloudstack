@@ -18,6 +18,7 @@
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 import { isZoneCreated } from '@/utils/zone'
+import kubernetesIcon from '@/assets/icons/kubernetes.svg?inline'
 
 export default {
   name: 'image',
@@ -58,7 +59,7 @@ export default {
         return fields
       },
       details: () => {
-        var fields = ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'arch', 'format', 'ostypename', 'size', 'physicalsize', 'isready', 'passwordenabled',
+        var fields = ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'arch', 'format', 'externalprovisioner', 'ostypename', 'size', 'physicalsize', 'isready', 'passwordenabled',
           'crossZones', 'templatetype', 'directdownload', 'deployasis', 'ispublic', 'isfeatured', 'isextractable', 'isdynamicallyscalable', 'crosszones', 'type',
           'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy', 'forcks']
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
@@ -67,7 +68,7 @@ export default {
         return fields
       },
       searchFilters: () => {
-        var filters = ['name', 'zoneid', 'tags', 'arch', 'oscategoryid', 'templatetype']
+        var filters = ['name', 'zoneid', 'tags', 'arch', 'oscategoryid', 'templatetype', 'extensionid']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           filters.push('storageid')
           filters.push('imagestoreid')
@@ -367,7 +368,7 @@ export default {
     {
       name: 'kubernetesiso',
       title: 'label.kubernetes.isos',
-      icon: ['fa-solid', 'fa-dharmachakra'],
+      icon: kubernetesIcon,
       docHelp: 'plugins/cloudstack-kubernetes-service.html#kubernetes-supported-versions',
       permission: ['listKubernetesSupportedVersions'],
       searchFilters: ['zoneid', 'minimumsemanticversion', 'arch'],
@@ -390,6 +391,15 @@ export default {
           api: 'addKubernetesSupportedVersion',
           icon: 'plus-outlined',
           label: 'label.kubernetes.version.add',
+          listView: true,
+          popup: true,
+          show: isZoneCreated,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/image/AddKubernetesSupportedVersion.vue')))
+        },
+        {
+          api: 'getUploadParamsForKubernetesSupportedVersion',
+          icon: 'cloud-upload-outlined',
+          label: 'label.kubernetes.version.from.local',
           listView: true,
           popup: true,
           show: isZoneCreated,

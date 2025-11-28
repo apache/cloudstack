@@ -34,8 +34,11 @@
                     <span v-if="resourceIcon && !['router', 'systemvm', 'volume'].includes($route.path.split('/')[1])">
                       <resource-icon :image="resourceIcon" size="4x" style="margin-right: 5px"/>
                     </span>
+                    <span v-else-if="resource.vmtype === 'sharedfsvm'">
+                      <file-text-outlined style="font-size: 36px;" />
+                    </span>
                     <span v-else>
-                      <os-logo v-if="resource.ostypeid || resource.ostypename || ['guestoscategory'].includes($route.path.split('/')[1])" :osId="resource.ostypeid" :osName="resource.ostypename || resource.name" size="3x" @update-osname="setResourceOsType"/>
+                      <os-logo v-if="resource.ostypeid || resource.ostypename || ['guestoscategory'].includes($route.path.split('/')[1])" :osId="resource.ostypeid" :osName="resource.ostypename || resource.osdisplayname || resource.name" size="3x" />
                       <render-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 36px" :icon="$route.meta.icon" />
                       <font-awesome-icon
                         v-else-if="$route.meta.icon && Array.isArray($route.meta.icon)"
@@ -60,6 +63,9 @@
                 <div class="tags">
                   <a-tag v-if="resource.instancename">
                     {{ resource.instancename }}
+                  </a-tag>
+                  <a-tag :color="$config.theme['@link-color']" v-if="$route.path.startsWith('/extension') && !resource.isuserdefined">
+                    {{ $t('label.inbuilt') }}
                   </a-tag>
                   <a-tag v-if="resource.type">
                     <span v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(resource.type)">{{ $t(resource.type.toLowerCase()) }}</span>
@@ -153,18 +159,18 @@
                 <span style="margin-left: 10px;"><copy-label :label="resource.id" /></span>
               </div>
             </div>
-            <div class="resource-detail-item" v-if="resource.ostypename && resource.ostypeid">
+            <div class="resource-detail-item" v-if="(resource.ostypename || resource.osdisplayname) && resource.ostypeid">
               <div class="resource-detail-item__label">{{ $t('label.ostypename') }}</div>
               <div class="resource-detail-item__details">
                 <span v-if="images.guestoscategory">
                   <resource-icon :image="images.guestoscategory" size="1x" style="margin-right: 5px"/>
                 </span>
-                <os-logo v-else :osId="resource.ostypeid" :osName="resource.ostypename" size="lg" style="margin-left: -1px" />
+                <os-logo v-else :osId="resource.ostypeid" :osName="resource.ostypename || resource.osdisplayname" size="lg" style="margin-left: -1px" />
                 <span style="margin-left: 8px">
                   <router-link v-if="$router.resolve('/guestos/' + resource.ostypeid).matched[0].redirect !== '/exception/404'" :to="{ path: '/guestos/' + resource.ostypeid }">
-                    {{ resource.ostypename }}
+                    {{ resource.ostypename || resource.osdisplayname }}
                   </router-link>
-                  <span v-else>{{ resource.ostypename }}</span>
+                  <span v-else>{{ resource.ostypename || resource.osdisplayname }}</span>
                 </span>
               </div>
             </div>
@@ -316,6 +322,47 @@
                   </div>
                 </div>
 
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="'gpucardname' in resource && resource.gpucardname !== ''">
+              <div class="resource-detail-item__label">{{ $t('label.gpu') }}</div>
+              <div class="resource-detail-item__details">
+                <font-awesome-icon
+                  :icon="['fa-solid', 'fa-microchip']"
+                  class="anticon"
+                  :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
+                <span>
+                  {{ resource.gpucount ? resource.gpucount + ' x ' : '' }}
+                  <router-link v-if="resource.gpucardid" :to="{ path: '/gpucard/' + resource.gpucardid }">{{ resource.gpucardname}} </router-link>
+                  <span v-else>{{ resource.gpucardname }}</span>
+                  <router-link v-if="resource.vgpuprofilename !== 'passthrough' && resource.vgpuprofileid" :to="{ path: '/vgpuprofile/' + resource.vgpuprofileid }">{{ ' (' + resource.vgpuprofilename + ')' }}</router-link>
+                  <span v-else-if="resource.vgpuprofilename !== 'passthrough' &&resource.vgpuprofilename">{{ ' (' + resource.vgpuprofilename + ')' }}</span>
+                  <span v-if="resource.videoram || (resource.maxresolutionx || resource.maxresolutiony)">
+                    <br/>{{ ' [' + (resource.videoram ? (resource.videoram + 'MB') : '') +  ((resource.videoram && resource.maxresolutionx && resource.maxresolutiony) ? ', ' : '') +
+                    (resource.maxresolutionx && resource.maxresolutiony ? resource.maxresolutionx + 'x' + resource.maxresolutiony : '') + ']' }}
+                  </span>
+                </span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.gputotal">
+              <div class="resource-detail-item__label">{{ $t('label.gpu') }}</div>
+              <div class="resource-detail-item__details">
+                <font-awesome-icon
+                  :icon="['fa-solid', 'fa-microchip']"
+                  class="anticon"
+                  :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
+                {{ resource.gputotal + ' ' + $t('label.gpu') }}
+              </div>
+              <div>
+                <span v-if="resource.gpuused">
+                  <a-progress
+                    class="progress-bar"
+                    size="small"
+                    status="active"
+                    :percent="Number(parseFloat(100.0 * parseFloat(resource.gpuused) / parseFloat(resource.gputotal)).toFixed(2))"
+                    :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.used')"
+                  />
+                </span>
               </div>
             </div>
             <div class="resource-detail-item" v-if="resource.volumes || resource.sizegb">
@@ -482,7 +529,7 @@
               <div class="resource-detail-item__label">{{ $t('label.vmname') }}</div>
               <div class="resource-detail-item__details">
                 <desktop-outlined />
-                <router-link :to="{ path: createPathBasedOnVmType(resource.vmtype, resource.virtualmachineid) }">{{ resource.vmname || resource.vm || resource.virtualmachinename || resource.virtualmachineid }} </router-link>
+                <router-link :to="{ path: createPathBasedOnVmType(resource.vmtype || resource.virtualmachinetype, resource.virtualmachineid) }">{{ resource.vmname || resource.vm || resource.virtualmachinename || resource.virtualmachineid }} </router-link>
                 <status class="status status--end" :text="resource.vmstate" v-if="resource.vmstate"/>
               </div>
             </div>
@@ -581,6 +628,17 @@
                 <router-link v-if="!isStatic && ($route.meta.name === 'router' || $route.meta.name === 'systemvm')" :to="{ path: '/systemoffering/' + resource.serviceofferingid}">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
                 <router-link v-else-if="$router.resolve('/computeoffering/' + resource.serviceofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/computeoffering/' + resource.serviceofferingid }">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
                 <span v-else>{{ resource.serviceofferingname || resource.serviceofferingid }}</span>
+                <span v-if="resource.leaseduration !== undefined">
+                  <a-tooltip>
+                    <template #title>{{ $t('label.remainingdays')  + ": " + getRemainingLeaseText(record.leaseduration) }}</template>
+                    <field-time-outlined
+                      :style="{
+                        color: $store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' },
+                        fontSize: '20px',
+                        paddingLeft: '5px'
+                      }"/>
+                  </a-tooltip>
+                </span>
               </div>
             </div>
             <div class="resource-detail-item" v-if="resource.controlofferingname && resource.controlofferingid">
@@ -695,11 +753,19 @@
               </div>
             </div>
             <div class="resource-detail-item" v-if="resource.userdataname">
-              <div class="resource-detail-item__label">{{ $t('label.userdata') }}</div>
+              <div class="resource-detail-item__label">{{ $t('label.user.data') }}</div>
               <div class="resource-detail-item__details">
                 <solution-outlined />
                 <router-link v-if="!isStatic && $router.resolve('/userdata/' + resource.userdataid).matched[0].redirect !== '/exception/404'" :to="{ path: '/userdata/' + resource.userdataid }">{{ resource.userdataname || resource.userdataid }}</router-link>
                 <span v-else>{{ resource.userdataname || resource.userdataid }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.extensionid">
+              <div class="resource-detail-item__label">{{ $t('label.extensionid') }}</div>
+              <div class="resource-detail-item__details">
+                <appstore-add-outlined />
+                <router-link v-if="$router.resolve('/extension/' + resource.extensionid).matched[0].redirect !== '/exception/404'" :to="{ path: '/extension/' + resource.extensionid }">{{ resource.extensionname || resource.extensionid }}</router-link>
+                <span v-else>{{ resource.extensionname || resource.extensionid }}</span>
               </div>
             </div>
             <div class="resource-detail-item" v-if="resource.owner">
@@ -759,6 +825,18 @@
                 <node-index-outlined />
                 <router-link v-if="!isStatic && $router.resolve('/webhook/' + resource.webhookid).matched[0].redirect !== '/exception/404'" :to="{ path: '/webhook/' + resource.webhookid }">{{ resource.webhookname || resource.webhookid }}</router-link>
                 <span v-else>{{ resource.webhookname || resource.webhookid }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.boottype">
+              <div class="resource-detail-item__label">{{ $t('label.boottype') }}</div>
+              <div class="resource-detail-item__details">
+                <span>{{ resource.boottype }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.bootmode">
+              <div class="resource-detail-item__label">{{ $t('label.bootmode') }}</div>
+              <div class="resource-detail-item__details">
+                <span>{{ resource.bootmode }}</span>
               </div>
             </div>
             <div class="resource-detail-item" v-if="resource.managementserverid">
@@ -913,6 +991,7 @@ import eventBus from '@/config/eventBus'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import ResourceLabel from '@/components/widgets/ResourceLabel'
 import ImageDeployInstanceButton from '@/components/view/ImageDeployInstanceButton'
+import { FileTextOutlined } from '@ant-design/icons-vue'
 
 export default {
   name: 'InfoCard',
@@ -925,7 +1004,8 @@ export default {
     UploadResourceIcon,
     ResourceIcon,
     ResourceLabel,
-    ImageDeployInstanceButton
+    ImageDeployInstanceButton,
+    FileTextOutlined
   },
   props: {
     resource: {
@@ -1252,10 +1332,6 @@ export default {
         this.getTags()
       })
     },
-    setResourceOsType (name) {
-      this.newResource.ostypename = name
-      this.$emit('change-resource', this.newResource)
-    },
     getRouterQuery (item) {
       const query = {}
       if (item.value) {
@@ -1263,6 +1339,9 @@ export default {
       } else {
         if (item.name === 'template') {
           query.templatefilter = 'self'
+          query.filter = 'self'
+        } else if (item.name === 'iso') {
+          query.isofilter = 'self'
           query.filter = 'self'
         }
 

@@ -41,6 +41,10 @@ public class BackupOfferingResponse extends BaseResponse {
     @Param(description = "description for the backup offering")
     private String description;
 
+    @SerializedName(ApiConstants.PROVIDER)
+    @Param(description = "provider name", since = "4.21.0")
+    private String provider;
+
     @SerializedName(ApiConstants.EXTERNAL_ID)
     @Param(description = "external ID on the provider side")
     private String externalId;
@@ -57,6 +61,10 @@ public class BackupOfferingResponse extends BaseResponse {
     @Param(description = "zone name")
     private String zoneName;
 
+    @SerializedName(ApiConstants.CROSS_ZONE_INSTANCE_CREATION)
+    @Param(description = "the backups with this offering can be used to create Instances on all Zones", since = "4.22.0")
+    private Boolean crossZoneInstanceCreation;
+
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "the date this backup offering was created")
     private Date created;
@@ -67,6 +75,10 @@ public class BackupOfferingResponse extends BaseResponse {
 
     public void setExternalId(String externalId) {
         this.externalId = externalId;
+    }
+
+    public void setProvider(String provider) {
+        this.provider = provider;
     }
 
     public void setName(String name) {
@@ -87,6 +99,10 @@ public class BackupOfferingResponse extends BaseResponse {
 
     public void setZoneName(String zoneName) {
         this.zoneName = zoneName;
+    }
+
+    public void setCrossZoneInstanceCreation(Boolean crossZoneInstanceCreation) {
+        this.crossZoneInstanceCreation = crossZoneInstanceCreation;
     }
 
     public void setCreated(Date created) {

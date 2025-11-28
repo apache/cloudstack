@@ -29,16 +29,25 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.gpu.dao.VgpuProfileDao;
+
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.springframework.stereotype.Component;
+
 import com.cloud.agent.manager.allocator.HostAllocator;
+import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentClusterPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.deploy.FirstFitPlanner;
 import com.cloud.gpu.GPU;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
@@ -58,16 +67,13 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
-
-import org.springframework.stereotype.Component;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * An allocator that tries to find a fit on a computing host.  This allocator does not care whether or not the host supports routing.
@@ -99,7 +105,9 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     @Inject
     CapacityDao _capacityDao;
     @Inject
-    UserVmDetailsDao _userVmDetailsDao;
+    VMInstanceDetailsDao _vmInstanceDetailsDao;
+    @Inject
+    private VgpuProfileDao vgpuProfileDao;
 
     boolean _checkHvm = true;
     static DecimalFormat decimalFormat = new DecimalFormat("#.##");
@@ -120,9 +128,9 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         Account account = vmProfile.getOwner();
 
         boolean isVMDeployedWithUefi = false;
-        UserVmDetailVO userVmDetailVO = _userVmDetailsDao.findDetail(vmProfile.getId(), "UEFI");
-        if(userVmDetailVO != null){
-            if ("secure".equalsIgnoreCase(userVmDetailVO.getValue()) || "legacy".equalsIgnoreCase(userVmDetailVO.getValue())) {
+        VMInstanceDetailVO vmInstanceDetailVO = _vmInstanceDetailsDao.findDetail(vmProfile.getId(), "UEFI");
+        if(vmInstanceDetailVO != null){
+            if ("secure".equalsIgnoreCase(vmInstanceDetailVO.getValue()) || "legacy".equalsIgnoreCase(vmInstanceDetailVO.getValue())) {
                 isVMDeployedWithUefi = true;
             }
         }
@@ -220,7 +228,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             avoid.addHost(host.getId());
         }
 
-        return allocateTo(plan, offering, template, avoid, clusterHosts, returnUpTo, considerReservedCapacity, account);
+        return allocateTo(vmProfile, plan, offering, template, avoid, clusterHosts, returnUpTo, considerReservedCapacity, account);
     }
 
     @Override
@@ -281,13 +289,13 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         hostsCopy.addAll(_hostDao.findHostsWithTagRuleThatMatchComputeOferringTags(hostTagOnOffering));
 
         if (!hostsCopy.isEmpty()) {
-            suitableHosts = allocateTo(plan, offering, template, avoid, hostsCopy, returnUpTo, considerReservedCapacity, account);
+            suitableHosts = allocateTo(vmProfile, plan, offering, template, avoid, hostsCopy, returnUpTo, considerReservedCapacity, account);
         }
 
         return suitableHosts;
     }
 
-    protected List<Host> allocateTo(DeploymentPlan plan, ServiceOffering offering, VMTemplateVO template, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo,
+    protected List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, ServiceOffering offering, VMTemplateVO template, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo,
         boolean considerReservedCapacity, Account account) {
         String vmAllocationAlgorithm = DeploymentClusterPlanner.VmAllocationAlgorithm.value();
         if (vmAllocationAlgorithm.equals("random") || vmAllocationAlgorithm.equals("userconcentratedpod_random")) {
@@ -295,7 +303,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             Collections.shuffle(hosts);
         } else if (vmAllocationAlgorithm.equals("userdispersing")) {
             hosts = reorderHostsByNumberOfVms(plan, hosts, account);
-        }else if(vmAllocationAlgorithm.equals("firstfitleastconsumed")){
+        } else if(vmAllocationAlgorithm.equals("firstfitleastconsumed")){
             hosts = reorderHostsByCapacity(plan, hosts);
         }
 
@@ -338,14 +346,15 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             }
 
             // Check if GPU device is required by offering and host has the availability
-            if ((offeringDetails   = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.vgpuType.toString())) != null) {
-                ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.pciDevice.toString());
-                if(!_resourceMgr.isGPUDeviceAvailable(host, groupName.getValue(), offeringDetails.getValue())){
-                    logger.debug("Adding host [{}] to avoid set, because this host does not have required GPU devices available.", host);
-                    avoid.addHost(host.getId());
-                    continue;
-                }
+            if (_resourceMgr.isGPUDeviceAvailable(offering, host, vmProfile.getId())) {
+                logger.debug("Host [{}] has required GPU devices available.", host);
+            } else {
+                // If GPU is not available, skip this host
+                logger.debug("Adding host [{}] to avoid set, because this host does not have required GPU devices available.", host);
+                avoid.addHost(host.getId());
+                continue;
             }
+
             Pair<Boolean, Boolean> cpuCapabilityAndCapacity = _capacityMgr.checkIfHostHasCpuCapabilityAndCapacity(host, offering, considerReservedCapacity);
             if (cpuCapabilityAndCapacity.first() && cpuCapabilityAndCapacity.second()) {
                 if (logger.isDebugEnabled()) {
@@ -372,13 +381,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     private List<? extends Host> reorderHostsByCapacity(DeploymentPlan plan, List<? extends Host> hosts) {
         Long zoneId = plan.getDataCenterId();
         Long clusterId = plan.getClusterId();
-        //Get capacity by which we should reorder
-        String capacityTypeToOrder = _configDao.getValue(Config.HostCapacityTypeToOrderClusters.key());
-        short capacityType = CapacityVO.CAPACITY_TYPE_CPU;
-        if("RAM".equalsIgnoreCase(capacityTypeToOrder)){
-            capacityType = CapacityVO.CAPACITY_TYPE_MEMORY;
-        }
-        Pair<List<Long>, Map<Long, Double>> result = _capacityDao.orderHostsByFreeCapacity(zoneId, clusterId, capacityType);
+        Pair<List<Long>, Map<Long, Double>> result = getOrderedHostsByCapacity(zoneId, clusterId);
         List<Long> hostIdsByFreeCapacity = result.first();
         Map<Long, String> sortedHostByCapacity = result.second().entrySet()
                 .stream()
@@ -405,6 +408,37 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         }
 
         return reorderedHosts;
+    }
+
+    private Pair<List<Long>, Map<Long, Double>> getOrderedHostsByCapacity(Long zoneId, Long clusterId) {
+        double cpuToMemoryWeight = ConfigurationManager.HostCapacityTypeCpuMemoryWeight.value();
+        // Get capacity by which we should reorder
+        short capacityType = FirstFitPlanner.getHostCapacityTypeToOrderCluster(
+                _configDao.getValue(Config.HostCapacityTypeToOrderClusters.key()), cpuToMemoryWeight);
+        logger.debug("CapacityType: {} is used for Host ordering", FirstFitPlanner.getCapacityTypeName(capacityType));
+        if (capacityType >= 0) { // for CPU or RAM
+            return _capacityDao.orderHostsByFreeCapacity(zoneId, clusterId, capacityType);
+        }
+        List<CapacityVO> capacities = _capacityDao.listHostCapacityByCapacityTypes(zoneId, clusterId,
+                List.of(Capacity.CAPACITY_TYPE_CPU, Capacity.CAPACITY_TYPE_MEMORY));
+        Map<Long, Double> hostByComputedCapacity = getHostByCombinedCapacities(capacities, cpuToMemoryWeight);
+        return new Pair<>(new ArrayList<>(hostByComputedCapacity.keySet()), hostByComputedCapacity);
+    }
+
+    @NotNull
+    public static Map<Long, Double> getHostByCombinedCapacities(List<CapacityVO> capacities, double cpuToMemoryWeight) {
+        Map<Long, Double> hostByComputedCapacity = new HashMap<>();
+        for (CapacityVO capacityVO : capacities) {
+            long hostId = capacityVO.getHostOrPoolId();
+            double applicableWeight = capacityVO.getCapacityType() == Capacity.CAPACITY_TYPE_CPU ? cpuToMemoryWeight : 1 - cpuToMemoryWeight;
+            double capacityMetric = applicableWeight * (capacityVO.getTotalCapacity() - (capacityVO.getUsedCapacity() + capacityVO.getReservedCapacity()))/capacityVO.getTotalCapacity();
+            hostByComputedCapacity.merge(hostId, capacityMetric, Double::sum);
+        }
+
+        return hostByComputedCapacity.entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
     }
 
     private List<? extends Host> reorderHostsByNumberOfVms(DeploymentPlan plan, List<? extends Host> hosts, Account account) {
@@ -508,7 +542,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         prioritizedHosts.addAll(lowPriorityHosts);
 
         // if service offering is not GPU enabled then move all the GPU enabled hosts to the end of priority list.
-        if (_serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString()) == null) {
+        if (_serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString()) == null && offering.getVgpuProfileId() == null) {
 
             List<Host> gpuEnabledHosts = new ArrayList<>();
             // Check for GPU enabled hosts.

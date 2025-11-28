@@ -1,9 +1,46 @@
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+ -->
+
 # Changelog
 
 All notable changes to Linstor CloudStack plugin will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [2025-10-03]
+
+### Changed
+
+- Revert qcow2 snapshot now use sparse/discard options to convert on thin devices.
+
+## [2025-08-05]
+
+### Fixed
+
+- getVolumeStats wasn't correctly working if multiple Linstor clusters/primary storages are used.
+
+## [2025-07-01]
+
+### Fixed
+
+- Regression in 4.19.3 and 4.21.0 with templates from snapshots
 
 ## [2025-05-07]
 

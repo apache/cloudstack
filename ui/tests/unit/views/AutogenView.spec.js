@@ -652,12 +652,12 @@ describe('Views > AutogenView.vue', () => {
           testapinamecase1response: {
             count: 0,
             testapinamecase1: [{
-              id: 'test-id-1',
+              id: 'uuid1',
               name: 'test-name-1'
             }]
           }
         })
-        await router.push({ name: 'testRouter13', params: { id: 'test-id' } })
+        await router.push({ name: 'testRouter13', params: { id: 'uuid1' } })
         await flushPromises()
 
         expect(mockAxios).toHaveBeenCalled()
@@ -668,8 +668,7 @@ describe('Views > AutogenView.vue', () => {
             command: 'testApiNameCase1',
             response: 'json',
             listall: true,
-            id: 'test-id',
-            hostname: 'test-id',
+            id: 'uuid1',
             page: 1,
             pagesize: 20
           })
@@ -777,6 +776,7 @@ describe('Views > AutogenView.vue', () => {
           testapinamecase1response: {
             count: 1,
             testapinamecase1: [{
+              id: 'uuid1',
               name: 'test-name-value',
               hostname: 'test-hostname-value'
             }]
@@ -786,13 +786,13 @@ describe('Views > AutogenView.vue', () => {
         await flushPromises()
 
         expect(wrapper.vm.items).toEqual([{
-          id: 'test-hostname-value',
+          id: 'uuid1',
           name: 'test-name-value',
           hostname: 'test-hostname-value',
           key: 0
         }])
         expect(wrapper.vm.resource).toEqual({
-          id: 'test-hostname-value',
+          id: 'uuid1',
           name: 'test-name-value',
           hostname: 'test-hostname-value',
           key: 0
@@ -1293,12 +1293,12 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'POST',
-          data: common.createDataParams({
+          method: 'GET',
+          params: {
             command: 'listTestApiNames',
             response: 'json',
             listall: true
-          })
+          }
         })
         expect(param).toEqual({
           name: 'testapiname',
@@ -1390,13 +1390,13 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'POST',
-          data: common.createDataParams({
+          method: 'GET',
+          params: {
             command: 'listTemplates',
             response: 'json',
             listall: true,
             templatefilter: 'executable'
-          })
+          }
         })
         expect(param).toEqual({
           name: 'id',
@@ -1429,13 +1429,13 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'POST',
-          data: common.createDataParams({
+          method: 'GET',
+          params: {
             command: 'listIsos',
             response: 'json',
             listall: true,
             isofilter: 'executable'
-          })
+          }
         })
         expect(param).toEqual({
           name: 'id',
@@ -1468,13 +1468,13 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'POST',
-          data: common.createDataParams({
+          method: 'GET',
+          params: {
             command: 'listHosts',
             response: 'json',
             listall: true,
             type: 'routing'
-          })
+          }
         })
         expect(param).toEqual({
           name: 'id',

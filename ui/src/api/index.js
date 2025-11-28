@@ -23,6 +23,19 @@ import {
   ACCESS_TOKEN
 } from '@/store/mutation-types'
 
+const getAPICommandsRegex = /^(get|list|query|find)\w+$/i
+const additionalGetAPICommandsList = [
+  'isaccountallowedtocreateofferingswithtags',
+  'readyforshutdown',
+  'cloudianisenabled',
+  'quotabalance',
+  'quotasummary',
+  'quotatarifflist',
+  'quotaisenabled',
+  'quotastatement',
+  'verifyoauthcodeandgetuser'
+]
+
 export function getAPI (command, args = {}) {
   args.command = command
   args.response = 'json'
@@ -47,7 +60,7 @@ export function postAPI (command, data = {}) {
   params.append('response', 'json')
   if (data) {
     Object.entries(data).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
+      if (value !== undefined && value !== null) {
         params.append(key, value)
       }
     })
@@ -62,6 +75,12 @@ export function postAPI (command, data = {}) {
     method: 'POST',
     data: params
   })
+}
+
+export function callAPI (command, args = {}) {
+  const isGetAPICommand = getAPICommandsRegex.test(command) || additionalGetAPICommandsList.includes(command.toLowerCase())
+  const call = isGetAPICommand ? getAPI : postAPI
+  return call(command, args)
 }
 
 export function login (arg) {
@@ -88,10 +107,13 @@ export function login (arg) {
   })
 }
 
-export function logout () {
-  message.destroy()
-  notification.destroy()
-  return postAPI('logout')
+export async function logout () {
+  const result = await postAPI('logout').finally(() => {
+    sourceToken.cancel()
+    message.destroy()
+    notification.destroy()
+  })
+  return result
 }
 
 export function oauthlogin (arg) {

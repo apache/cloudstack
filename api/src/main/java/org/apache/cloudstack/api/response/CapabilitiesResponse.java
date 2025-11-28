@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
@@ -140,6 +141,18 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "true if instance lease feature is enabled", since = "4.21.0")
     private Boolean instanceLeaseEnabled;
 
+    @SerializedName(ApiConstants.EXTENSIONS_PATH)
+    @Param(description = "The path of the extensions directory", since = "4.21.0", authorized = {RoleType.Admin})
+    private String extensionsPath;
+
+    @SerializedName(ApiConstants.DYNAMIC_SCALING_ENABLED)
+    @Param(description = "true if dynamically scaling for instances is enabled", since = "4.21.0")
+    private Boolean dynamicScalingEnabled;
+
+    @SerializedName(ApiConstants.ADDITONAL_CONFIG_ENABLED)
+    @Param(description = "true if additional configurations or extraconfig can be passed to Instances", since = "4.20.2")
+    private Boolean additionalConfigEnabled;
+
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
@@ -254,5 +267,17 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setInstanceLeaseEnabled(Boolean instanceLeaseEnabled) {
         this.instanceLeaseEnabled = instanceLeaseEnabled;
+    }
+
+    public void setExtensionsPath(String extensionsPath) {
+        this.extensionsPath = extensionsPath;
+    }
+
+    public void setDynamicScalingEnabled(Boolean dynamicScalingEnabled) {
+        this.dynamicScalingEnabled = dynamicScalingEnabled;
+    }
+
+    public void setAdditionalConfigEnabled(Boolean additionalConfigEnabled) {
+        this.additionalConfigEnabled = additionalConfigEnabled;
     }
 }

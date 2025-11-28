@@ -32,6 +32,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -40,7 +41,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.dc.dao.ASNumberDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.alert.AlertService;
@@ -84,12 +84,14 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
@@ -108,6 +110,7 @@ import com.cloud.dc.DomainVlanMapVO;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterVnetDao;
@@ -177,6 +180,7 @@ import com.cloud.network.element.VirtualRouterProviderVO;
 import com.cloud.network.element.VpcVirtualRouterElement;
 import com.cloud.network.guru.GuestNetworkGuru;
 import com.cloud.network.guru.NetworkGuru;
+import com.cloud.network.nsx.NsxService;
 import com.cloud.network.router.CommandSetupHelper;
 import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.VirtualRouter;
@@ -223,6 +227,8 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
@@ -910,7 +916,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throw new InvalidParameterValueException("Invalid network id is given");
         }
 
-        int maxAllowedIpsPerNic = NumbersUtil.parseInt(_configDao.getValue(Config.MaxNumberOfSecondaryIPsPerNIC.key()), 10);
+        int maxAllowedIpsPerNic = NumbersUtil.parseInt(_configDao.getValue(Config.MaxNumberOfSecondaryIPsPerNIC.key()), Integer.parseInt(Config.MaxNumberOfSecondaryIPsPerNIC.getDefaultValue()));
         Long nicWiseIpCount = _nicSecondaryIpDao.countByNicId(nicId);
         if (nicWiseIpCount.intValue() >= maxAllowedIpsPerNic) {
             logger.error("Maximum Number of Ips \"vm.network.nic.max.secondary.ipaddresses = \"{} per Nic has been crossed for the nic {}.", maxAllowedIpsPerNic, nicVO);
@@ -1832,10 +1838,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             _networkDetailsDao.persist(new NetworkDetailVO(network.getId(), Network.hideIpAddressUsage, String.valueOf(hideIpAddressUsage), false));
         }
 
-        if (ip6GatewayCidr != null) {
-            ipv6Service.assignIpv6SubnetToNetwork(ip6Cidr, network.getId());
-        }
-
         // assign to network
         if (NetworkOffering.NetworkMode.ROUTED.equals(ntwkOff.getNetworkMode())) {
             routedIpv4Manager.assignIpv4SubnetToNetwork(network);
@@ -2333,9 +2335,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     }
 
                     if (createVlan && network != null) {
+                        Provider networkProvider = getNetworkOfferingProvider(ntwkOff);
                         // Create vlan ip range
                         _configMgr.createVlanAndPublicIpRange(pNtwk.getDataCenterId(), network.getId(), physicalNetworkId, false, false, null, startIP, endIP, gateway, netmask, vlanId,
-                                bypassVlanOverlapCheck, null, null, startIPv6, endIPv6, ip6Gateway, ip6Cidr, ntwkOff.isForNsx());
+                                bypassVlanOverlapCheck, null, null, startIPv6, endIPv6, ip6Gateway, ip6Cidr, networkProvider);
                     }
                     if (associatedNetwork != null) {
                         _networkDetailsDao.persist(new NetworkDetailVO(network.getId(), Network.AssociatedNetworkId, String.valueOf(associatedNetwork.getId()), true));
@@ -2361,9 +2364,19 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
+    private Provider getNetworkOfferingProvider(NetworkOffering networkOffering) {
+        if (_networkModel.isProviderForNetworkOffering(Provider.Nsx, networkOffering.getId())) {
+            return Provider.Nsx;
+        } else if (_networkModel.isProviderForNetworkOffering(Provider.Netris, networkOffering.getId())) {
+            return Provider.Netris;
+        }
+        return null;
+    }
+
     @Override
     public Pair<List<? extends Network>, Integer> searchForNetworks(ListNetworksCmd cmd) {
         Long id = cmd.getId();
+        String name = cmd.getName();
         String keyword = cmd.getKeyword();
         Long zoneId = cmd.getZoneId();
         Account caller = CallContext.current().getCallingAccount();
@@ -2542,7 +2555,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         Pair<List<NetworkVO>, Integer> result = new Pair<>(new ArrayList<>(), 0);
         if (BooleanUtils.isTrue(isSystem)) {
-            SearchCriteria<NetworkVO> sc = createNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType,
+            SearchCriteria<NetworkVO> sc = createNetworkSearchCriteria(sb, name, keyword, id, isSystem, zoneId, guestIpType, trafficType,
                     physicalNetworkId, networkOfferingId, null, restartRequired, specifyIpRanges,
                     vpcId, tags, display, vlanId, associatedNetworkId);
             addProjectNetworksConditionToSearch(sc, true);
@@ -2550,12 +2563,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         } else {
             SearchCriteria<NetworkVO> additionalSC = _networksDao.createSearchCriteria();
 
-            addAccountSpecificNetworksToSearch(additionalSC, sb, networkFilter, skipProjectNetworks, permittedAccounts, path, isRecursive);
+            addAccountSpecificNetworksToSearch(additionalSC, sb, networkFilter, skipProjectNetworks, permittedAccounts, path, isRecursive, projectId);
             addDomainSpecificNetworksToSearch(additionalSC, sb, networkFilter, permittedAccounts, domainId, path, isRecursive);
             addSharedNetworksToSearch(additionalSC, sb, networkFilter, permittedAccounts, path, isRecursive);
 
             if (CollectionUtils.isNotEmpty(additionalSC.getValues())) {
-                SearchCriteria<NetworkVO> sc = createNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType,
+                SearchCriteria<NetworkVO> sc = createNetworkSearchCriteria(sb, name, keyword, id, isSystem, zoneId, guestIpType,
                         trafficType, physicalNetworkId, networkOfferingId, aclType, restartRequired, specifyIpRanges, vpcId,
                         tags, display, vlanId, associatedNetworkId);
                 sc.addAnd("id", SearchCriteria.Op.SC, additionalSC);
@@ -2610,7 +2623,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     private void addAccountSpecificNetworksToSearch(SearchCriteria<NetworkVO> additionalSC, SearchBuilder<NetworkVO> sb,
                                                     Network.NetworkFilter networkFilter, boolean skipProjectNetworks,
-                                                    List<Long> permittedAccounts, String path, boolean isRecursive) {
+                                                    List<Long> permittedAccounts, String path, boolean isRecursive, Long projectId) {
         if (!Arrays.asList(Network.NetworkFilter.Account, Network.NetworkFilter.AccountDomain, Network.NetworkFilter.All).contains(networkFilter)) {
             return;
         }
@@ -2629,7 +2642,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         } else {
             accountSC.addAnd("accountId", SearchCriteria.Op.IN, permittedAccounts.toArray());
         }
-        addProjectNetworksConditionToSearch(accountSC, skipProjectNetworks);
+        addProjectNetworksConditionToSearch(accountSC, skipProjectNetworks, projectId);
         additionalSC.addOr("id", SearchCriteria.Op.SC, accountSC);
     }
 
@@ -2668,7 +2681,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
-    private SearchCriteria<NetworkVO> createNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id,
+    private SearchCriteria<NetworkVO> createNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String name, String keyword, Long id,
                                                                  Boolean isSystem, Long zoneId, String guestIpType, String trafficType, Long physicalNetworkId,
                                                                  Long networkOfferingId, String aclType, Boolean restartRequired,
                                                                  Boolean specifyIpRanges, Long vpcId, Map<String, String> tags, Boolean display, String vlanId, Long associatedNetworkId) {
@@ -2677,6 +2690,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         if (isSystem != null) {
             sc.setJoinParameters("networkOfferingSearch", "systemOnly", isSystem);
+        }
+
+        if (name != null) {
+            sc.addAnd("name", SearchCriteria.Op.EQ, name);
         }
 
         if (keyword != null) {
@@ -2806,8 +2823,17 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
-    private void addProjectNetworksConditionToSearch(SearchCriteria<NetworkVO> sc, boolean skipProjectNetworks) {
-        sc.getJoin("account").addAnd("type", skipProjectNetworks ? Op.NEQ : Op.EQ, Account.Type.PROJECT);
+    protected void addProjectNetworksConditionToSearch(SearchCriteria<NetworkVO> sc, boolean skipProjectNetworks) {
+        addProjectNetworksConditionToSearch(sc, skipProjectNetworks, null);
+    }
+
+    protected void addProjectNetworksConditionToSearch(SearchCriteria<NetworkVO> sc, boolean skipProjectNetworks,
+               Long projectId) {
+        if (!skipProjectNetworks && projectId == -1) {
+            sc.getJoin("account").addAnd("type", Op.NNULL);
+        } else {
+            sc.getJoin("account").addAnd("type", skipProjectNetworks ? Op.NEQ : Op.EQ, Account.Type.PROJECT);
+        }
         sc.addAnd("id", Op.SC, sc.getJoin("account"));
     }
 
@@ -3114,7 +3140,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         // verify input parameters
         final NetworkVO network = getNetworkVO(networkId, "Specified network id doesn't exist in the system");
-
+        String prevNetworkName = network.getName();
         //perform below validation if the network is vpc network
         if (network.getVpcId() != null && networkOfferingId != null) {
             Vpc vpc = _entityMgr.findById(Vpc.class, network.getVpcId());
@@ -3597,7 +3623,15 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
         Network updatedNetwork = getNetwork(network.getId());
         UsageEventUtils.publishNetworkUpdate(updatedNetwork);
+        updateProviderNetwork(updatedNetwork, prevNetworkName);
         return updatedNetwork;
+    }
+
+    private void updateProviderNetwork(Network network, String prevNetworkName) {
+        final NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
+        if (Objects.nonNull(guru) && !guru.update(network, prevNetworkName)) {
+            logger.error("Failed to update name of network on provider");
+        }
     }
 
     protected Pair<Integer, Integer> validateMtuOnUpdate(NetworkVO network, Long zoneId, Integer publicMtu, Integer privateMtu) {
@@ -4269,6 +4303,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                         logger.warn("Failed to add NSX provider to physical network due to:", ex.getMessage());
                     }
 
+                    // Add Netris provider
+                    try {
+                        addNetrisProviderToPhysicalNetwork(pNetwork.getId());
+                    } catch (Exception ex) {
+                        logger.warn("Failed to add Netris provider to physical network due to:", ex.getMessage());
+                    }
+
                     CallContext.current().putContextParameter(PhysicalNetwork.class, pNetwork.getUuid());
 
                     return pNetwork;
@@ -4465,7 +4506,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (network.getIsolationMethods().contains("GRE")) {
                 minVnet = MIN_GRE_KEY;
                 maxVnet = MAX_GRE_KEY;
-            } else if (network.getIsolationMethods().contains("VXLAN")) {
+            } else if (network.getIsolationMethods().contains("VXLAN") || network.getIsolationMethods().contains("Netris")) {
                 minVnet = MIN_VXLAN_VNI;
                 maxVnet = MAX_VXLAN_VNI;
                 // fail if zone already contains VNI, need to be unique per zone.
@@ -5097,11 +5138,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
             // validate Services
             boolean addGatewayService = false;
+            boolean isRoutedMode = enabledServices.stream().noneMatch(svc -> svc.equalsIgnoreCase(Service.SourceNat.getName()));
             for (String serviceName : enabledServices) {
                 Network.Service service = Network.Service.getService(serviceName);
                 if (service == null || service == Service.Gateway) {
                     throw new InvalidParameterValueException("Invalid Network Service specified=" + serviceName);
-                } else if (service == Service.SourceNat) {
+                } else if (service == Service.SourceNat ||
+                        (isRoutedMode && Arrays.asList(Provider.Nsx.getName().toLowerCase(Locale.ROOT),
+                        Provider.Netris.getName().toLowerCase(Locale.ROOT)).contains(providerName.toLowerCase(Locale.ROOT)))) {
                     addGatewayService = true;
                 }
 
@@ -5673,7 +5717,22 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
 
             addProviderToPhysicalNetwork(physicalNetworkId, Provider.Nsx.getName(), null, null);
-            enableProvider(Provider.Nsx.getName());
+        }
+        return null;
+    }
+
+    private PhysicalNetworkServiceProvider addNetrisProviderToPhysicalNetwork(long physicalNetworkId) {
+        PhysicalNetworkVO pvo = _physicalNetworkDao.findById(physicalNetworkId);
+        DataCenterVO dvo = _dcDao.findById(pvo.getDataCenterId());
+        if (dvo.getNetworkType() == NetworkType.Advanced) {
+
+            Provider provider = Network.Provider.getProvider(Provider.Netris.getName());
+            if (provider == null) {
+                return null;
+            }
+
+            addProviderToPhysicalNetwork(physicalNetworkId, Provider.Netris.getName(), null, null);
+            enableProvider(Provider.Netris.getName());
         }
         return null;
     }
@@ -6336,5 +6395,39 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         DomainVO domainOfThePreviousOwner = _domainDao.findById(_accountDao.findById(publicIpQuarantine.getPreviousOwnerId()).getDomainId());
 
         _accountMgr.checkAccess(callingAccount, domainOfThePreviousOwner);
+    }
+
+    @Override
+    public String getNicVlanValueForExternalVm(NicTO nic) {
+        Networks.BroadcastDomainType broadcastDomainType = Networks.BroadcastDomainType.getSchemeValue(nic.getBroadcastUri());
+        if (Networks.BroadcastDomainType.NSX.equals(broadcastDomainType)) {
+            NetworkVO networkVO = _networksDao.findById(nic.getNetworkId());
+            try {
+                NsxService nsxService = ComponentContext.getDelegateComponentOfType(NsxService.class);
+                return nsxService.getSegmentId(networkVO.getDomainId(), networkVO.getDataCenterId(),
+                        networkVO.getAccountId(), networkVO.getVpcId(), networkVO.getId());
+            } catch (NoSuchBeanDefinitionException e) {
+                logger.error("NSX service is not available, unable to retrieve segment ID for NIC: {}", nic, e);
+                throw new CloudRuntimeException(
+                        String.format("Unable to retrieve segment ID for NIC with NSX broadcast domain: %s", nic));
+            }
+        }
+        return Networks.BroadcastDomainType.getValue(nic.getBroadcastUri());
+    }
+
+    @Override
+    public Network.IpAddresses getIpAddressesFromIps(String ipAddress, String ip6Address, String macAddress) {
+        if (ip6Address != null) {
+            ip6Address = NetUtils.standardizeIp6Address(ip6Address);
+        }
+        if (macAddress != null) {
+            if (!NetUtils.isValidMac(macAddress)) {
+                throw new InvalidParameterValueException("Mac address is not valid: " + macAddress);
+            } else if (!NetUtils.isUnicastMac(macAddress)) {
+                throw new InvalidParameterValueException("Mac address is not unicast: " + macAddress);
+            }
+            macAddress = NetUtils.standardizeMacAddress(macAddress);
+        }
+        return new Network.IpAddresses(ipAddress, ip6Address, macAddress);
     }
 }

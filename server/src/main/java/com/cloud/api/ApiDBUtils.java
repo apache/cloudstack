@@ -45,7 +45,6 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
-import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.BackupScheduleResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
@@ -75,11 +74,12 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupOffering;
+import org.apache.cloudstack.backup.BackupRepository;
 import org.apache.cloudstack.backup.BackupSchedule;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
+import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -343,7 +343,7 @@ import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -357,12 +357,16 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class ApiDBUtils {
+    private static final Logger log = LogManager.getLogger(ApiDBUtils.class);
     private static ManagementServer s_ms;
     static AsyncJobManager s_asyncMgr;
     static SecurityGroupManager s_securityGroupMgr;
@@ -434,7 +438,7 @@ public class ApiDBUtils {
     static HighAvailabilityManager s_haMgr;
     static VpcManager s_vpcMgr;
     static TaggedResourceService s_taggedResourceService;
-    static UserVmDetailsDao s_userVmDetailsDao;
+    static VMInstanceDetailsDao s_vmInstanceDetailsDao;
     static SSHKeyPairDao s_sshKeyPairDao;
 
     static ConditionDao s_asConditionDao;
@@ -491,6 +495,7 @@ public class ApiDBUtils {
     static BackupDao s_backupDao;
     static BackupScheduleDao s_backupScheduleDao;
     static BackupOfferingDao s_backupOfferingDao;
+    static BackupRepositoryDao s_backupRepositoryDao;
     static NicDao s_nicDao;
     static ResourceManagerUtil s_resourceManagerUtil;
     static SnapshotPolicyDetailsDao s_snapshotPolicyDetailsDao;
@@ -639,7 +644,7 @@ public class ApiDBUtils {
     @Inject
     private TaggedResourceService taggedResourceService;
     @Inject
-    private UserVmDetailsDao userVmDetailsDao;
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
     @Inject
     private SSHKeyPairDao sshKeyPairDao;
 
@@ -749,6 +754,8 @@ public class ApiDBUtils {
     @Inject
     private BackupOfferingDao backupOfferingDao;
     @Inject
+    private BackupRepositoryDao backupRepositoryDao;
+    @Inject
     private BackupScheduleDao backupScheduleDao;
     @Inject
     private NicDao nicDao;
@@ -839,7 +846,7 @@ public class ApiDBUtils {
         s_vpcMgr = vpcMgr;
         s_taggedResourceService = taggedResourceService;
         s_sshKeyPairDao = sshKeyPairDao;
-        s_userVmDetailsDao = userVmDetailsDao;
+        s_vmInstanceDetailsDao = vmInstanceDetailsDao;
         s_asConditionDao = asConditionDao;
         s_asPolicyDao = asPolicyDao;
         s_asPolicyConditionMapDao = asPolicyConditionMapDao;
@@ -897,6 +904,7 @@ public class ApiDBUtils {
         s_backupDao = backupDao;
         s_backupScheduleDao = backupScheduleDao;
         s_backupOfferingDao = backupOfferingDao;
+        s_backupRepositoryDao = backupRepositoryDao;
         s_resourceIconDao = resourceIconDao;
         s_resourceManagerUtil = resourceManagerUtil;
         s_objectStoreDao = objectStoreDao;
@@ -1065,6 +1073,10 @@ public class ApiDBUtils {
         return s_storageMgr.getSecondaryStorageUsedStats(hostId, zoneId);
     }
 
+    public static CapacityVO getObjectStorageUsedStats(Long zoneId) {
+        return s_storageMgr.getObjectStorageUsedStats(zoneId);
+    }
+
     // ///////////////////////////////////////////////////////////
     // Dao methods //
     // ///////////////////////////////////////////////////////////
@@ -1102,7 +1114,7 @@ public class ApiDBUtils {
         return null;
     }
 
-    public static DiskOfferingVO findDiskOfferingById(Long diskOfferingId) {
+    public static DiskOfferingVO findNonComputeDiskOfferingById(Long diskOfferingId) {
         if (diskOfferingId == null) {
             return null;
         }
@@ -1111,6 +1123,14 @@ public class ApiDBUtils {
             return off;
         }
         return null;
+    }
+
+    public static DiskOfferingVO findDiskOfferingById(Long diskOfferingId) {
+        if (diskOfferingId == null) {
+            return null;
+        }
+        DiskOfferingVO off = s_diskOfferingDao.findByIdIncludingRemoved(diskOfferingId);
+        return off;
     }
 
     public static ServiceOfferingVO findServiceOfferingByComputeOnlyDiskOffering(Long diskOfferingId, boolean includingRemoved) {
@@ -1621,8 +1641,8 @@ public class ApiDBUtils {
         return null;
     }
 
-    public static UserVmDetailVO  findPublicKeyByVmId(long vmId) {
-        return s_userVmDetailsDao.findDetail(vmId, VmDetailConstants.SSH_PUBLIC_KEY);
+    public static VMInstanceDetailVO findPublicKeyByVmId(long vmId) {
+        return s_vmInstanceDetailsDao.findDetail(vmId, VmDetailConstants.SSH_PUBLIC_KEY);
     }
 
     public static void getAutoScaleVmGroupPolicies(long vmGroupId, List<AutoScalePolicy> scaleUpPolicies, List<AutoScalePolicy> scaleDownPolicies) {
@@ -1707,6 +1727,21 @@ public class ApiDBUtils {
         return s_zoneDao.listByIds(zoneIds);
     }
 
+    public static List<StoragePoolVO> findSnapshotPolicyPools(SnapshotPolicy policy, Volume volume) {
+        List<SnapshotPolicyDetailVO> poolDetails = s_snapshotPolicyDetailsDao.findDetails(policy.getId(), ApiConstants.STORAGE_ID);
+        List<Long> poolIds = new ArrayList<>();
+        for (SnapshotPolicyDetailVO detail : poolDetails) {
+            try {
+                poolIds.add(Long.valueOf(detail.getValue()));
+            } catch (NumberFormatException ignored) {
+                log.debug(String.format("Could not parse the storage ID value of %s", detail.getValue()), ignored);
+            }
+        }
+        if (volume != null && !poolIds.contains(volume.getPoolId())) {
+            poolIds.add(0, volume.getPoolId());
+        }
+        return s_storagePoolDao.listByIds(poolIds);
+    }
     public static VpcOffering findVpcOfferingById(long offeringId) {
         return s_vpcOfferingDao.findById(offeringId);
     }
@@ -2264,16 +2299,14 @@ public class ApiDBUtils {
         return s_resourceIconDao.findByResourceUuid(resourceUUID, resourceType);
     }
 
-    public static BackupResponse newBackupResponse(Backup backup) {
-        return s_backupDao.newBackupResponse(backup);
-    }
-
     public static BackupScheduleResponse newBackupScheduleResponse(BackupSchedule schedule) {
         return s_backupScheduleDao.newBackupScheduleResponse(schedule);
     }
 
-    public static BackupOfferingResponse newBackupOfferingResponse(BackupOffering policy) {
-        return s_backupOfferingDao.newBackupOfferingResponse(policy);
+    public static BackupOfferingResponse newBackupOfferingResponse(BackupOffering offering) {
+        BackupRepository repository = s_backupRepositoryDao.findByUuid(offering.getExternalId());
+        Boolean crossZoneInstanceCreationEnabled = repository != null ? Boolean.TRUE.equals(repository.crossZoneInstanceCreationEnabled()) : false;
+        return s_backupOfferingDao.newBackupOfferingResponse(offering, crossZoneInstanceCreationEnabled);
     }
 
     public static NicVO findByIp4AddressAndNetworkId(String ip4Address, long networkId) {

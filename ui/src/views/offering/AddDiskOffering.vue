@@ -211,6 +211,9 @@
             <a-radio-button value="writethrough">
               {{ $t('label.writethrough') }}
             </a-radio-button>
+            <a-radio-button value="hypervisor_default">
+              {{ $t('label.hypervisor.default') }}
+            </a-radio-button>
           </a-radio-group>
         </a-form-item>
         <a-form-item v-if="isAdmin() || isDomainAdminAllowedToInformTags" name="tags" ref="tags">
@@ -218,6 +221,7 @@
             <tooltip-label :title="$t('label.storagetags')" :tooltip="apiParams.tags.description"/>
           </template>
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             mode="tags"
             v-model:value="form.tags"
             showSearch
@@ -242,6 +246,7 @@
           </template>
           <a-select
             mode="multiple"
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.domainid"
             showSearch
             optionFilterProp="label"
@@ -266,6 +271,7 @@
           <a-select
             id="zone-selection"
             mode="multiple"
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.zoneid"
             showSearch
             optionFilterProp="label"
@@ -289,6 +295,7 @@
             <tooltip-label :title="$t('label.vmware.storage.policy')" :tooltip="apiParams.storagepolicy.description"/>
           </template>
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.storagepolicy"
             :placeholder="apiParams.storagepolicy.description"
             showSearch
@@ -600,7 +607,7 @@ export default {
     width: 80vw;
 
     @media (min-width: 800px) {
-      width: 430px;
+      width: 480px;
     }
   }
 </style>

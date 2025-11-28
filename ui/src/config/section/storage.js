@@ -39,7 +39,7 @@ export default {
         }
       },
       columns: () => {
-        const fields = ['name', 'state', 'sizegb', 'type', 'vmname', 'vmstate']
+        const fields = ['name', 'state', 'size', 'type', 'vmname', 'vmstate']
         const metricsFields = ['diskkbsread', 'diskkbswrite', 'diskiopstotal']
 
         if (store.getters.userInfo.roletype === 'Admin') {
@@ -228,7 +228,7 @@ export default {
           label: 'label.change.offering.for.volume',
           args: ['id', 'diskofferingid', 'size', 'miniops', 'maxiops', 'automigrate'],
           dataView: true,
-          show: (record, store) => { return ['Allocated', 'Ready'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
+          show: (record, store) => { return ['Allocated', 'Ready'].includes(record.state) },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/ChangeOfferingForVolume.vue')))
         },
@@ -324,7 +324,7 @@ export default {
         fields.push('zonename')
         return fields
       },
-      details: ['name', 'id', 'volumename', 'volumetype', 'snapshottype', 'intervaltype', 'physicalsize', 'virtualsize', 'account', 'domain', 'created'],
+      details: ['name', 'id', 'volumename', 'volumetype', 'snapshottype', 'intervaltype', 'physicalsize', 'virtualsize', 'chainsize', 'account', 'domain', 'created'],
       tabs: [
         {
           name: 'details',
@@ -414,21 +414,81 @@ export default {
       ]
     },
     {
+      name: 'snapshotpolicy',
+      title: 'label.snapshotpolicies',
+      icon: 'build-outlined',
+      docHelp: 'adminguide/storage.html#working-with-volume-snapshots',
+      permission: ['listSnapshotPolicies'],
+      resourceType: 'SnapshotPolicy',
+      params: { listall: true },
+      columns: () => {
+        var fields = ['intervaltype', 'maxsnaps', 'schedule', 'timezone', 'volumename']
+        return fields
+      },
+      searchFilters: ['volumeid'],
+      actions: [
+        {
+          api: 'createSnapshotPolicy',
+          icon: 'plus-outlined',
+          docHelp: 'adminguide/storage.html#working-with-volume-snapshots',
+          label: 'label.action.create.recurring.snapshot',
+          listView: true,
+          show: () => { return 'createSnapshotPolicy' in store.getters.apis },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/RecurringSnapshotVolume.vue'))),
+          mapping: {
+            intervaltype: {
+              options: ['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY']
+            }
+          }
+        },
+        {
+          api: 'deleteSnapshotPolicies',
+          icon: 'delete-outlined',
+          label: 'label.delete.snapshot.policy',
+          message: 'message.action.delete.snapshot.policy',
+          dataView: true,
+          show: (record) => true,
+          args: ['id'],
+          mapping: {
+            id: {
+              value: (record) => record.id
+            }
+          }
+        }
+      ]
+    },
+    {
       name: 'backup',
-      title: 'label.backup',
+      title: 'label.backups',
       icon: 'cloud-upload-outlined',
       permission: ['listBackups'],
-      columns: [{ name: (record) => { return record.virtualmachinename } }, 'status', 'size', 'virtualsize', 'type', 'created', 'account', 'domain', 'zone'],
-      details: ['virtualmachinename', 'id', 'type', 'externalid', 'size', 'virtualsize', 'volumes', 'backupofferingname', 'zone', 'account', 'domain', 'created'],
+      params: { listvmdetails: 'true' },
+      columns: ['name', 'status', 'size', 'virtualsize', 'virtualmachinename', 'backupofferingname', 'intervaltype', 'type', 'created', 'account', 'domain', 'zone'],
+      details: ['name', 'description', 'virtualmachinename', 'id', 'intervaltype', 'type', 'externalid', 'size', 'virtualsize', 'volumes', 'backupofferingname', 'zone', 'account', 'domain', 'created'],
+      searchFilters: () => {
+        var filters = ['name', 'zoneid', 'domainid', 'account', 'backupofferingid']
+        return filters
+      },
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'instance.metadata',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/BackupMetadata.vue')))
+        }
+      ],
       actions: [
         {
           api: 'restoreBackup',
           icon: 'sync-outlined',
-          docHelp: 'adminguide/virtual_machines.html#restoring-vm-backups',
+          docHelp: 'adminguide/virtual_machines.html#restoring-instance-backups',
           label: 'label.backup.restore',
           message: 'message.backup.restore',
           dataView: true,
-          show: (record) => { return record.state !== 'Destroyed' }
+          show: (record) => { return record.status === 'BackedUp' }
         },
         {
           api: 'restoreVolumeFromBackupAndAttachToVM',
@@ -436,9 +496,20 @@ export default {
           label: 'label.backup.attach.restore',
           message: 'message.backup.attach.restore',
           dataView: true,
-          show: (record) => { return record.state !== 'Destroyed' },
+          show: (record) => { return record.status === 'BackedUp' },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/RestoreAttachBackupVolume.vue')))
+        },
+        {
+          api: 'createVMFromBackup',
+          icon: 'caret-right-outlined',
+          docHelp: 'adminguide/virtual_machines.html#creating-a-new-instance-from-backup',
+          label: 'label.create.instance.from.backup',
+          message: 'message.backup.restore',
+          dataView: true,
+          popup: true,
+          show: (record) => { return record.status === 'BackedUp' },
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateVMFromBackup.vue')))
         },
         {
           api: 'removeVirtualMachineFromBackupOffering',
@@ -446,7 +517,7 @@ export default {
           label: 'label.backup.offering.remove',
           message: 'message.backup.offering.remove',
           dataView: true,
-          show: (record) => { return record.state !== 'Destroyed' },
+          show: (record) => { return record.state !== 'Destroyed' && record.vmbackupofferingremoved !== true },
           args: ['forced', 'virtualmachineid'],
           mapping: {
             forced: {
@@ -468,6 +539,51 @@ export default {
           popup: true,
           groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) },
           args: ['forced']
+        }
+      ]
+    },
+    {
+      name: 'backupschedule',
+      title: 'label.backup.schedules',
+      icon: 'build-outlined',
+      docHelp: 'adminguide/storage.html#working-with-volume-snapshots',
+      permission: ['listBackupSchedule'],
+      resourceType: 'backupSchedule',
+      params: { listall: true },
+      columns: () => {
+        var fields = ['intervaltype', 'maxbackups', 'schedule', 'timezone', 'virtualmachinename']
+        return fields
+      },
+      searchFilters: ['virtualmachineid'],
+      actions: [
+        {
+          api: 'createBackupSchedule',
+          icon: 'plus-outlined',
+          docHelp: 'adminguide/storage.html#working-with-volume-snapshots',
+          label: 'label.action.create.backup.schedule',
+          listView: true,
+          show: () => { return 'createBackupSchedule' in store.getters.apis },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/backup/CreateBackupSchedule.vue'))),
+          mapping: {
+            intervaltype: {
+              options: ['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY']
+            }
+          }
+        },
+        {
+          api: 'deleteBackupSchedule',
+          icon: 'delete-outlined',
+          label: 'label.delete.backup.schedule',
+          message: 'message.action.delete.backup.schedule',
+          dataView: true,
+          show: (record) => true,
+          args: ['id'],
+          mapping: {
+            id: {
+              value: (record) => record.id
+            }
+          }
         }
       ]
     },

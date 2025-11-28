@@ -51,6 +51,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -62,6 +63,9 @@ public class CapacityDaoImplTest {
     CapacityDaoImpl capacityDao = new CapacityDaoImpl();
 
     @Mock
+    private CapacityVO mockEntity;
+
+    @Mock
     private TransactionLegacy txn;
     @Mock
     private PreparedStatement pstmt;
@@ -71,6 +75,8 @@ public class CapacityDaoImplTest {
 
     private SearchBuilder<CapacityVO> searchBuilder;
     private SearchCriteria<CapacityVO> searchCriteria;
+    private List<Short> capacityTypes;
+    private List<CapacityVO> expectedCapacities;
 
     @Before
     public void setUp() {
@@ -83,6 +89,17 @@ public class CapacityDaoImplTest {
 
         mockedTransactionLegacy = Mockito.mockStatic(TransactionLegacy.class);
         mockedTransactionLegacy.when(TransactionLegacy::currentTxn).thenReturn(txn);
+
+        // Setup common test data
+        capacityTypes = Arrays.asList((short) 1, (short) 2, (short) 3);
+        expectedCapacities = Arrays.asList(mock(CapacityVO.class), mock(CapacityVO.class));
+        doReturn(expectedCapacities).when(capacityDao).listBy(searchCriteria);
+    }
+
+    private CapacityVO createMockCapacityVO(Long id) {
+        CapacityVO capacity = mock(CapacityVO.class);
+        when(capacity.getId()).thenReturn(id);
+        return capacity;
     }
 
     @After
@@ -205,11 +222,11 @@ public class CapacityDaoImplTest {
         when(pstmt.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(false);
 
-        List<Long> resultZone = capacityDao.listClustersInZoneOrPodByHostCapacities(1L, 123L, 2, 2048L, (short)0, true);
+        List<Long> resultZone = capacityDao.listClustersInZoneOrPodByHostCapacities(1L, 123L, 2, 2048L, true);
         assertNotNull(resultZone);
         assertTrue(resultZone.isEmpty());
 
-        List<Long> resultPod = capacityDao.listClustersInZoneOrPodByHostCapacities(1L, 123L, 2, 2048L, (short)0, false);
+        List<Long> resultPod = capacityDao.listClustersInZoneOrPodByHostCapacities(1L, 123L, 2, 2048L, false);
         assertNotNull(resultPod);
         assertTrue(resultPod.isEmpty());
     }
@@ -281,7 +298,7 @@ public class CapacityDaoImplTest {
         when(pstmt.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(false);
 
-        List<Long> result = capacityDao.listPodsByHostCapacities(1L, 2, 1024L, (short)0);
+        List<Long> result = capacityDao.listPodsByHostCapacities(1L, 2, 1024L);
         assertNotNull(result);
         assertTrue(result.isEmpty());
     }
@@ -329,5 +346,208 @@ public class CapacityDaoImplTest {
         List<CapacityDaoImpl.SummedCapacity> result = capacityDao.findCapacityBy(1, 1L, 1L, 1L);
         assertNotNull(result);
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testListHostCapacityByCapacityTypes_WithAllParameters() {
+        // Given
+        Long zoneId = 100L;
+        Long clusterId = 200L;
+
+        // When
+        List<CapacityVO> result = capacityDao.listHostCapacityByCapacityTypes(zoneId, clusterId, capacityTypes);
+
+        // Then
+        verify(searchBuilder).and("zoneId", mockEntity.getDataCenterId(), SearchCriteria.Op.EQ);
+        verify(searchBuilder).and("clusterId", mockEntity.getClusterId(), SearchCriteria.Op.EQ);
+        verify(searchBuilder).and("capacityTypes", mockEntity.getCapacityType(), SearchCriteria.Op.IN);
+        verify(searchBuilder).and("capacityState", mockEntity.getCapacityState(), SearchCriteria.Op.EQ);
+
+        verify(searchCriteria).setParameters("capacityState", "Enabled");
+        verify(searchCriteria).setParameters("zoneId", zoneId);
+        verify(searchCriteria).setParameters("clusterId", clusterId);
+        verify(searchCriteria).setParameters("capacityTypes", capacityTypes.toArray());
+
+        verify(capacityDao).listBy(searchCriteria);
+        assertEquals("Should return expected capacities", expectedCapacities, result);
+    }
+
+    @Test
+    public void testListHostCapacityByCapacityTypes_WithNullZoneId() {
+        // Given
+        Long clusterId = 200L;
+
+        // When
+        List<CapacityVO> result = capacityDao.listHostCapacityByCapacityTypes(null, clusterId, capacityTypes);
+
+        // Then
+        verify(searchCriteria).setParameters("capacityState", "Enabled");
+        verify(searchCriteria, Mockito.times(0)).setParameters(eq("zoneId"), any());
+        verify(searchCriteria).setParameters("clusterId", clusterId);
+        verify(searchCriteria).setParameters("capacityTypes", capacityTypes.toArray());
+
+        assertEquals("Should return expected capacities", expectedCapacities, result);
+    }
+
+    @Test
+    public void testListHostCapacityByCapacityTypes_WithNullClusterId() {
+        // Given
+        Long zoneId = 100L;
+
+        // When
+        List<CapacityVO> result = capacityDao.listHostCapacityByCapacityTypes(zoneId, null, capacityTypes);
+
+        // Then
+        verify(searchCriteria).setParameters("capacityState", "Enabled");
+        verify(searchCriteria).setParameters("zoneId", zoneId);
+        verify(searchCriteria, never()).setParameters(eq("clusterId"), any());
+        verify(searchCriteria).setParameters("capacityTypes", capacityTypes.toArray());
+
+        assertEquals("Should return expected capacities", expectedCapacities, result);
+    }
+
+    @Test
+    public void testListHostCapacityByCapacityTypes_WithEmptyCapacityTypes() {
+        // Given
+        Long zoneId = 100L;
+        Long clusterId = 200L;
+        List<Short> emptyCapacityTypes = Collections.emptyList();
+
+        // When
+        List<CapacityVO> result = capacityDao.listHostCapacityByCapacityTypes(zoneId, clusterId, emptyCapacityTypes);
+
+        // Then
+        verify(searchCriteria).setParameters("capacityTypes", emptyCapacityTypes.toArray());
+        assertEquals("Should return expected capacities", expectedCapacities, result);
+    }
+
+    @Test
+    public void testListPodCapacityByCapacityTypes_WithAllParameters() {
+        // Given
+        Long zoneId = 100L;
+
+        // When
+        List<CapacityVO> result = capacityDao.listPodCapacityByCapacityTypes(zoneId, capacityTypes);
+
+        // Then
+        verify(searchBuilder).and("zoneId", mockEntity.getDataCenterId(), SearchCriteria.Op.EQ);
+        verify(searchBuilder).and("capacityTypes", mockEntity.getCapacityType(), SearchCriteria.Op.IN);
+        verify(searchBuilder).and("capacityState", mockEntity.getCapacityState(), SearchCriteria.Op.EQ);
+
+        verify(searchCriteria).setParameters("capacityState", "Enabled");
+        verify(searchCriteria).setParameters("zoneId", zoneId);
+        verify(searchCriteria).setParameters("capacityTypes", capacityTypes.toArray());
+
+        assertEquals("Should return expected capacities", expectedCapacities, result);
+    }
+
+    @Test
+    public void testListPodCapacityByCapacityTypes_WithNullZoneId() {
+        // When
+        List<CapacityVO> result = capacityDao.listPodCapacityByCapacityTypes(null, capacityTypes);
+
+        // Then
+        verify(searchCriteria).setParameters("capacityState", "Enabled");
+        verify(searchCriteria, never()).setParameters(eq("zoneId"), any());
+        verify(searchCriteria).setParameters("capacityTypes", capacityTypes.toArray());
+
+        assertEquals("Should return expected capacities", expectedCapacities, result);
+    }
+
+    @Test
+    public void testListClusterCapacityByCapacityTypes_WithAllParameters() {
+        // Given
+        Long zoneId = 100L;
+        Long podId = 300L;
+
+        // When
+        List<CapacityVO> result = capacityDao.listClusterCapacityByCapacityTypes(zoneId, podId, capacityTypes);
+
+        // Then
+        verify(searchBuilder).and("zoneId", mockEntity.getDataCenterId(), SearchCriteria.Op.EQ);
+        verify(searchBuilder).and("podId", mockEntity.getPodId(), SearchCriteria.Op.EQ);
+        verify(searchBuilder).and("capacityTypes", mockEntity.getCapacityType(), SearchCriteria.Op.IN);
+        verify(searchBuilder).and("capacityState", mockEntity.getCapacityState(), SearchCriteria.Op.EQ);
+
+        verify(searchCriteria).setParameters("capacityState", "Enabled");
+        verify(searchCriteria).setParameters("zoneId", zoneId);
+        verify(searchCriteria).setParameters("podId", podId);
+        verify(searchCriteria).setParameters("capacityTypes", capacityTypes.toArray());
+
+        assertEquals("Should return expected capacities", expectedCapacities, result);
+    }
+
+    @Test
+    public void testListClusterCapacityByCapacityTypes_WithNullZoneId() {
+        // Given
+        Long podId = 300L;
+
+        // When
+        List<CapacityVO> result = capacityDao.listClusterCapacityByCapacityTypes(null, podId, capacityTypes);
+
+        // Then
+        verify(searchCriteria).setParameters("capacityState", "Enabled");
+        verify(searchCriteria, never()).setParameters(eq("zoneId"), any());
+        verify(searchCriteria).setParameters("podId", podId);
+        verify(searchCriteria).setParameters("capacityTypes", capacityTypes.toArray());
+
+        assertEquals("Should return expected capacities", expectedCapacities, result);
+    }
+
+    @Test
+    public void testListClusterCapacityByCapacityTypes_WithNullPodId() {
+        // Given
+        Long zoneId = 100L;
+
+        // When
+        List<CapacityVO> result = capacityDao.listClusterCapacityByCapacityTypes(zoneId, null, capacityTypes);
+
+        // Then
+        verify(searchCriteria).setParameters("capacityState", "Enabled");
+        verify(searchCriteria).setParameters("zoneId", zoneId);
+        verify(searchCriteria, never()).setParameters(eq("podId"), any());
+        verify(searchCriteria).setParameters("capacityTypes", capacityTypes.toArray());
+
+        assertEquals("Should return expected capacities", expectedCapacities, result);
+    }
+
+    @Test
+    public void testListClusterCapacityByCapacityTypes_WithBothIdsNull() {
+        // When
+        List<CapacityVO> result = capacityDao.listClusterCapacityByCapacityTypes(null, null, capacityTypes);
+
+        // Then
+        verify(searchCriteria).setParameters("capacityState", "Enabled");
+        verify(searchCriteria, never()).setParameters(eq("zoneId"), any());
+        verify(searchCriteria, never()).setParameters(eq("podId"), any());
+        verify(searchCriteria).setParameters("capacityTypes", capacityTypes.toArray());
+
+        assertEquals("Should return expected capacities", expectedCapacities, result);
+    }
+
+    @Test
+    public void testAllMethods_VerifySearchBuilderSetup() {
+        // Test that all methods properly set up the search builder
+        Long zoneId = 100L;
+        Long clusterId = 200L;
+        Long podId = 300L;
+
+        // Test host capacity method
+        capacityDao.listHostCapacityByCapacityTypes(zoneId, clusterId, capacityTypes);
+
+        // Test pod capacity method
+        capacityDao.listPodCapacityByCapacityTypes(zoneId, capacityTypes);
+
+        // Test cluster capacity method
+        capacityDao.listClusterCapacityByCapacityTypes(zoneId, podId, capacityTypes);
+
+        // Verify createSearchBuilder was called 3 times
+        verify(capacityDao, times(3)).createSearchBuilder();
+
+        // Verify done() was called 3 times
+        verify(searchBuilder, times(3)).done();
+
+        // Verify listBy was called 3 times
+        verify(capacityDao, times(3)).listBy(searchCriteria);
     }
 }

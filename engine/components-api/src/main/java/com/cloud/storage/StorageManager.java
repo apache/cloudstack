@@ -182,7 +182,7 @@ public interface StorageManager extends StorageService {
     ConfigKey<Boolean> MountDisabledStoragePool = new ConfigKey<>(Boolean.class,
             "mount.disabled.storage.pool",
             "Storage",
-            "false",
+            Boolean.TRUE.toString(),
             "Mount all zone-wide or cluster-wide disabled storage pools after node reboot",
             true,
             ConfigKey.Scope.Cluster,
@@ -220,9 +220,17 @@ public interface StorageManager extends StorageService {
             "storage.pool.host.connect.workers", "1",
             "Number of worker threads to be used to connect hosts to a primary storage", true);
 
+    ConfigKey<Float> ObjectStorageCapacityThreshold = new ConfigKey<>("Alert", Float.class,
+            "objectStorage.capacity.notificationthreshold",
+            "0.75",
+            "Percentage (as a value between 0 and 1) of object storage utilization above which alerts will be sent about low storage available.",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+
     /**
      * should we execute in sequence not involving any storages?
-     * @return tru if commands should execute in sequence
+     * @return true if commands should execute in sequence
      */
     static boolean shouldExecuteInSequenceOnVmware() {
         return shouldExecuteInSequenceOnVmware(null, null);
@@ -293,6 +301,8 @@ public interface StorageManager extends StorageService {
     void createCapacityEntry(StoragePoolVO storagePool, short capacityType, long allocated);
 
     Answer sendToPool(StoragePool pool, long[] hostIdsToTryFirst, Command cmd) throws StorageUnavailableException;
+
+    void updateStoragePoolHostVOAndBytes(StoragePool pool, long hostId, ModifyStoragePoolAnswer mspAnswer);
 
     CapacityVO getSecondaryStorageUsedStats(Long hostId, Long zoneId);
 
@@ -415,4 +425,6 @@ public interface StorageManager extends StorageService {
     Pair<Boolean, String> checkIfReadyVolumeFitsInStoragePoolWithStorageAccessGroups(StoragePool destPool, Volume volume);
 
     String[] getStorageAccessGroups(Long zoneId, Long podId, Long clusterId, Long hostId);
+
+    CapacityVO getObjectStorageUsedStats(Long zoneId);
 }
