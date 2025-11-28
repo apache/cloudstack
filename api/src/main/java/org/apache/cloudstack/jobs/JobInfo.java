@@ -23,16 +23,31 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface JobInfo extends Identity, InternalIdentity {
     public enum Status {
-        IN_PROGRESS(false), SUCCEEDED(true), FAILED(true), CANCELLED(true);
+        IN_PROGRESS(0, false), SUCCEEDED(1, true), FAILED(2, true), CANCELLED(3, true);
 
+        private final int value;
         private final boolean done;
 
-        private Status(boolean done) {
+        private Status(int value, boolean done) {
+            this.value = value;
             this.done = done;
+        }
+
+        public int value() {
+            return value;
         }
 
         public boolean done() {
             return done;
+        }
+
+        public static Status fromValue(int value) {
+            for (Status status : Status.values()) {
+                if (status.value() == value) {
+                    return status;
+                }
+            }
+            throw new IllegalArgumentException("Invalid status value: " + value);
         }
     }
 
