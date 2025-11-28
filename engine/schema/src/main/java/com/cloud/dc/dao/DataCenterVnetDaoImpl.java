@@ -238,6 +238,18 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
     }
 
     @Override
+    public void releaseForAccount(long accountId) {
+        SearchCriteria<DataCenterVnetVO> sc = VnetDcSearchAllocated.create();
+        sc.setParameters("account", accountId);
+
+        DataCenterVnetVO vo = findOneIncludingRemovedBy(sc);
+        vo.setTakenAt(null);
+        vo.setAccountId(null);
+        vo.setReservationId(null);
+        update(vo.getId(), vo);
+    }
+
+    @Override
     public void releaseDedicatedGuestVlans(Long dedicatedGuestVlanRangeId) {
         SearchCriteria<DataCenterVnetVO> sc = DedicatedGuestVlanRangeSearch.create();
         sc.setParameters("dedicatedGuestVlanRangeId", dedicatedGuestVlanRangeId);
