@@ -52,8 +52,8 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.endpoint.DefaultEndPointSelector;
 import org.apache.cloudstack.storage.image.deployasis.DeployAsIsHelper;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -192,6 +192,12 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 logger.debug("Downloading snapshot to data store {}", dataStore);
             }
             _downloadMonitor.downloadSnapshotToStorage(data, caller);
+        } else if (data.getType() == DataObjectType.ARCHIVE) {
+            caller.setCallback(caller.getTarget().createArchiveAsyncCallback(null, null));
+            if (logger.isDebugEnabled()) {
+                logger.debug("Downloading archive to data store {}", dataStore);
+            }
+            _downloadMonitor.downloadArchiveToStorage(data, caller);
         }
     }
 
@@ -355,6 +361,33 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             logger.error(msg);
         } else if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
             CreateCmdResult result = new CreateCmdResult(null, null);
+            caller.complete(result);
+        }
+        return null;
+    }
+
+    protected Void createArchiveAsyncCallback(AsyncCallbackDispatcher<? extends BaseImageStoreDriverImpl, DownloadAnswer> callback, CreateContext<CreateCmdResult> context) {
+        DownloadAnswer answer = callback.getResult();
+        DataObject obj = context.data;
+        DataStore store = obj.getDataStore();
+        AsyncCompletionCallback<CreateCmdResult> caller = context.getParentCallback();
+        if (List.of(VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR,
+                VMTemplateStorageResourceAssoc.Status.ABANDONED,
+                VMTemplateStorageResourceAssoc.Status.UNKNOWN).contains(answer.getDownloadStatus())) {
+            CreateCmdResult result = new CreateCmdResult(null, null);
+            result.setSuccess(false);
+            result.setResult(answer.getErrorString());
+            caller.complete(result);
+            String msg = "Failed to download archive: " + obj.getName() + " with error: " + answer.getErrorString();
+            Long zoneId = dataStoreManager.getStoreZoneId(store.getId(), store.getRole());
+            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED,
+                    zoneId, null, msg, msg);
+            logger.error(msg);
+        } else if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+            if (answer.getTemplatePhySicalSize() == 0) {
+                return null;
+            }
+            CreateCmdResult result = new CreateCmdResult(answer.getInstallPath(), answer);
             caller.complete(result);
         }
         return null;
