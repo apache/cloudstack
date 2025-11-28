@@ -30,6 +30,8 @@ public interface SnapshotInfo extends DataObject, Snapshot {
 
     SnapshotInfo getParent();
 
+    List<SnapshotInfo> getParents();
+
     String getPath();
 
     DataStore getImageStore();
@@ -39,6 +41,8 @@ public interface SnapshotInfo extends DataObject, Snapshot {
     SnapshotInfo getChild();
 
     List<SnapshotInfo> getChildren();
+
+    List<SnapshotInfo> getChildAndGrandchildren();
 
     VolumeInfo getBaseVolume();
 
