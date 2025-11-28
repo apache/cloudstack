@@ -40,6 +40,10 @@ export default {
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
     },
     {
+      name: 'settings',
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/SettingsTab.vue')))
+    },
+    {
       name: 'management.server.peers',
       component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ManagementServerPeerTab.vue')))
     },
