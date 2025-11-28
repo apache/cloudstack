@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.List;
 
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.event.Event.State;
@@ -46,9 +47,12 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
         ToArchiveOrDeleteEventSearch = createSearchBuilder();
         ToArchiveOrDeleteEventSearch.and("id", ToArchiveOrDeleteEventSearch.entity().getId(), Op.IN);
         ToArchiveOrDeleteEventSearch.and("type", ToArchiveOrDeleteEventSearch.entity().getType(), Op.EQ);
+        ToArchiveOrDeleteEventSearch.and("accountId", ToArchiveOrDeleteEventSearch.entity().getAccountId(), Op.EQ);
         ToArchiveOrDeleteEventSearch.and("accountIds", ToArchiveOrDeleteEventSearch.entity().getAccountId(), Op.IN);
+        ToArchiveOrDeleteEventSearch.and("domainIds", ToArchiveOrDeleteEventSearch.entity().getDomainId(), Op.IN);
         ToArchiveOrDeleteEventSearch.and("createdDateB", ToArchiveOrDeleteEventSearch.entity().getCreateDate(), Op.BETWEEN);
         ToArchiveOrDeleteEventSearch.and("createdDateL", ToArchiveOrDeleteEventSearch.entity().getCreateDate(), Op.LTEQ);
+        ToArchiveOrDeleteEventSearch.and("createdDateLT", ToArchiveOrDeleteEventSearch.entity().getCreateDate(), Op.LT);
         ToArchiveOrDeleteEventSearch.and("archived", ToArchiveOrDeleteEventSearch.entity().getArchived(), Op.EQ);
         ToArchiveOrDeleteEventSearch.done();
     }
@@ -56,16 +60,6 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
     @Override
     public List<EventVO> searchAllEvents(SearchCriteria<EventVO> sc, Filter filter) {
         return listIncludingRemovedBy(sc, filter);
-    }
-
-    @Override
-    public List<EventVO> listOlderEvents(Date oldTime) {
-        if (oldTime == null)
-            return null;
-        SearchCriteria<EventVO> sc = createSearchCriteria();
-        sc.addAnd("createDate", SearchCriteria.Op.LT, oldTime);
-        sc.addAnd("archived", SearchCriteria.Op.EQ, false);
-        return listIncludingRemovedBy(sc, null);
     }
 
     @Override
@@ -111,5 +105,29 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
             }
             txn.close();
         }
+    }
+
+    @Override
+    public long purgeAll(List<Long> ids, Date startDate, Date endDate, Date limitDate, String type, Long accountId,
+                         List<Long> domainIds, long limitPerQuery) {
+        SearchCriteria<EventVO> sc = ToArchiveOrDeleteEventSearch.create();
+
+        if (CollectionUtils.isNotEmpty(ids)) {
+            sc.setParameters("id", ids.toArray(new Object[0]));
+        }
+        if (startDate != null && endDate != null) {
+            sc.setParameters("createdDateB", startDate, endDate);
+        } else if (endDate != null) {
+            sc.setParameters("createdDateL", endDate);
+        }
+        sc.setParametersIfNotNull("createdDateLT", limitDate);
+        sc.setParametersIfNotNull("type", type);
+        sc.setParametersIfNotNull("accountId", accountId);
+        if (CollectionUtils.isNotEmpty(domainIds)) {
+            sc.setParameters("domainIds", domainIds.toArray(new Object[0]));
+        }
+        sc.setParameters("archived", false);
+
+        return batchExpunge(sc, limitPerQuery);
     }
 }
