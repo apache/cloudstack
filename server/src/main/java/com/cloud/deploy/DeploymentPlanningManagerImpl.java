@@ -378,16 +378,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             planner = getDeploymentPlannerByName(plannerName);
         }
 
-        Host lastHost = null;
-
-        String considerLastHostStr = (String)vmProfile.getParameter(VirtualMachineProfile.Param.ConsiderLastHost);
-        boolean considerLastHost = vm.getLastHostId() != null && haVmTag == null &&
-                (considerLastHostStr == null || Boolean.TRUE.toString().equalsIgnoreCase(considerLastHostStr));
-        if (considerLastHost) {
-            HostVO host = _hostDao.findById(vm.getLastHostId());
-            logger.debug("This VM has last host_id specified, trying to choose the same host: " + host);
-            lastHost = host;
-
+        Host lastHost = checkDeployInVmLastHost(vmProfile, vm);
+        if (lastHost != null) {
             DeployDestination deployDestination = deployInVmLastHost(vmProfile, plan, avoids, planner, vm, dc, offering, cpuRequested, ramRequested, volumesRequireEncryption);
             if (deployDestination != null) {
                 return deployDestination;
@@ -454,6 +446,31 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             }
         }
         return dest;
+    }
+
+    private Host checkDeployInVmLastHost(VirtualMachineProfile vmProfile, VirtualMachine vm) {
+        String considerLastHostStr = (String)vmProfile.getParameter(VirtualMachineProfile.Param.ConsiderLastHost);
+        String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
+        boolean considerLastHost = vm.getLastHostId() != null && haVmTag == null &&
+                (considerLastHostStr == null || Boolean.TRUE.toString().equalsIgnoreCase(considerLastHostStr));
+        if (!considerLastHost) {
+            return null;
+        }
+
+        logger.debug("This VM has last host_id: {}", vm.getLastHostId());
+        HostVO lastHost = _hostDao.findById(vm.getLastHostId());
+        if (lastHost == null) {
+            logger.debug("Unable to deploy VM {} in the last host, last host doesn't exist", vm.getName());
+            return null;
+        }
+
+        logger.debug("VM's last host is {}, trying to choose the same host if it is not in maintenance state", lastHost);
+        if (lastHost.isInMaintenanceStates()) {
+            logger.debug("Unable to deploy VM {} in the last host, last host {} is in maintenance state", vm.getName(), lastHost.getName());
+            return null;
+        }
+
+        return lastHost;
     }
 
     private void avoidDifferentArchResources(VirtualMachineProfile vmProfile, DataCenter dc, ExcludeList avoids) {
@@ -1474,7 +1491,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
     protected Pair<Host, Map<Volume, StoragePool>> findPotentialDeploymentResources(List<Host> suitableHosts, Map<Volume, List<StoragePool>> suitableVolumeStoragePools,
                                                                                     ExcludeList avoid, PlannerResourceUsage resourceUsageRequired, List<Volume> readyAndReusedVolumes, List<Long> preferredHosts, VirtualMachine vm) {
-        logger.debug("Trying to find a potenial host and associated storage pools from the suitable host/pool lists for this VM");
+        logger.debug("Trying to find a potential host and associated storage pools from the suitable host/pool lists for this VM");
 
         boolean hostCanAccessPool = false;
         boolean haveEnoughSpace = false;
