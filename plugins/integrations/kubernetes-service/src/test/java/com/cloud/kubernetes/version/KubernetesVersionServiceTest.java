@@ -277,7 +277,6 @@ public class KubernetesVersionServiceTest {
             mockedComponentContext.when(() -> ComponentContext.inject(Mockito.any(RegisterIsoCmd.class))).thenReturn(
                     new RegisterIsoCmd());
             mockedCallContext.when(CallContext::current).thenReturn(callContext);
-            when(callContext.getCallingAccount()).thenReturn(accountMock);
             when(templateService.registerIso(Mockito.any(RegisterIsoCmd.class))).thenReturn(
                     Mockito.mock(VirtualMachineTemplate.class));
             VMTemplateVO templateVO = Mockito.mock(VMTemplateVO.class);

@@ -118,10 +118,10 @@ export default {
           api: 'registerTemplate',
           icon: 'cloud-upload-outlined',
           label: 'label.upload.template.from.local',
-          show: () => { return 'getUploadParamsForTemplate' in store.getters.apis },
           docHelp: 'adminguide/templates.html#uploading-templates-and-isos-from-a-local-computer',
           listView: true,
           popup: true,
+          show: () => { return 'getUploadParamsForTemplate' in store.getters.apis },
           component: shallowRef(defineAsyncComponent(() => import('@/views/image/RegisterOrUploadTemplate.vue')))
         },
         {

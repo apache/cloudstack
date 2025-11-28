@@ -103,7 +103,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         response.setDirectDownload(template.isDirectDownload());
     }
 
-    private KubernetesSupportedVersionResponse createKubernetesSupportedVersionResponse(final KubernetesSupportedVersion kubernetesSupportedVersion) {
+    private KubernetesSupportedVersionResponse createKubernetesSupportedVersionResponse(final KubernetesSupportedVersion kubernetesSupportedVersion, boolean isRootAdmin) {
         KubernetesSupportedVersionResponse response = new KubernetesSupportedVersionResponse();
         response.setObjectName("kubernetessupportedversion");
         response.setId(kubernetesSupportedVersion.getUuid());
@@ -122,8 +122,6 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         response.setSupportsHA(compareSemanticVersions(kubernetesSupportedVersion.getSemanticVersion(),
             KubernetesClusterService.MIN_KUBERNETES_VERSION_HA_SUPPORT)>=0);
         response.setSupportsAutoscaling(versionSupportsAutoscaling(kubernetesSupportedVersion));
-        Account caller = CallContext.current().getCallingAccount();
-        boolean isRootAdmin = accountManager.isRootAdmin(caller.getId());
         updateTemplateDetailsInKubernetesSupportedVersionResponse(kubernetesSupportedVersion, response, isRootAdmin);
         response.setCreated(kubernetesSupportedVersion.getCreated());
         return response;
@@ -132,8 +130,11 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
     private ListResponse<KubernetesSupportedVersionResponse> createKubernetesSupportedVersionListResponse(
             List<KubernetesSupportedVersionVO> versions, Integer count) {
         List<KubernetesSupportedVersionResponse> responseList = new ArrayList<>();
+        Account caller = CallContext.current().getCallingAccount();
+        boolean isRootAdmin = accountManager.isRootAdmin(caller.getId());
+
         for (KubernetesSupportedVersionVO version : versions) {
-            responseList.add(createKubernetesSupportedVersionResponse(version));
+            responseList.add(createKubernetesSupportedVersionResponse(version, isRootAdmin));
         }
         ListResponse<KubernetesSupportedVersionResponse> response = new ListResponse<>();
         response.setResponses(responseList, count);
@@ -380,7 +381,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         supportedVersionVO = kubernetesSupportedVersionDao.persist(supportedVersionVO);
         CallContext.current().putContextParameter(KubernetesSupportedVersion.class, supportedVersionVO.getUuid());
 
-        return createKubernetesSupportedVersionResponse(supportedVersionVO);
+        return createKubernetesSupportedVersionResponse(supportedVersionVO, true);
     }
 
     @Override
@@ -441,7 +442,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             }
             version = kubernetesSupportedVersionDao.findById(versionId);
         }
-        return  createKubernetesSupportedVersionResponse(version);
+        return  createKubernetesSupportedVersionResponse(version, true);
     }
 
     @Override
