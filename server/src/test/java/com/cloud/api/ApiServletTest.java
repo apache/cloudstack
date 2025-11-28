@@ -65,6 +65,9 @@ import com.cloud.vm.UserVmManager;
 @RunWith(MockitoJUnitRunner.class)
 public class ApiServletTest {
 
+    private static final String[] STATE_CHANGING_COMMAND_CHECK_NAME_PARAM =
+            {ApiServer.EnforcePostRequestsAndTimestamps.key()};
+
     @Mock
     ApiServer apiServer;
 
@@ -496,7 +499,7 @@ public class ApiServletTest {
         String command = "updateConfiguration";
         String method = "GET";
         Map<String, Object[]> params = new HashMap<>();
-        params.put("name", new String[] { ApiServer.EnforcePostRequestsAndTimestamps.key() });
+        params.put("name", STATE_CHANGING_COMMAND_CHECK_NAME_PARAM);
         boolean result = servlet.isStateChangingCommandNotUsingPOST(command, method, params);
         Assert.assertFalse(result);
     }
@@ -506,7 +509,7 @@ public class ApiServletTest {
         String command = "updateSomeApi";
         String method = "GET";
         Map<String, Object[]> params = new HashMap<>();
-        params.put("name", new String[] { ApiServer.EnforcePostRequestsAndTimestamps.key() });
+        params.put("name", STATE_CHANGING_COMMAND_CHECK_NAME_PARAM);
         boolean result = servlet.isStateChangingCommandNotUsingPOST(command, method, params);
         Assert.assertTrue(result);
     }

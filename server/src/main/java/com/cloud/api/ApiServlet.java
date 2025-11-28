@@ -498,7 +498,9 @@ public class ApiServlet extends HttpServlet {
                     commandHttpMethod = at.httpMethod();
                 }
             }
-        } catch (CloudRuntimeException ignored) {}
+        } catch (CloudRuntimeException e) {
+            LOGGER.trace("Command class not found for {}; falling back to pattern match", command, e);
+        }
         if (BaseCmd.HTTPMethod.GET.toString().equalsIgnoreCase(commandHttpMethod) ||
                 GET_REQUEST_COMMANDS.matcher(command.toLowerCase()).matches()) {
             return false;
