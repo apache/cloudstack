@@ -121,7 +121,7 @@ export default {
           docHelp: 'adminguide/templates.html#uploading-templates-and-isos-from-a-local-computer',
           listView: true,
           popup: true,
-          show: () => { return 'getUploadParamsForTemplate' in store.getters.apis },
+          show: () => { return isZoneCreated() && 'getUploadParamsForTemplate' in store.getters.apis },
           component: shallowRef(defineAsyncComponent(() => import('@/views/image/RegisterOrUploadTemplate.vue')))
         },
         {
