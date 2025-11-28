@@ -33,7 +33,6 @@ import org.apache.cloudstack.storage.sharedfs.SharedFS;
 import org.apache.cloudstack.storage.sharedfs.SharedFSService;
 
 import com.cloud.event.EventTypes;
-import com.cloud.user.Account;
 
 @APICommand(name = "stopSharedFileSystem",
         responseObject= SharedFSResponse.class,
@@ -100,8 +99,7 @@ public class StopSharedFSCmd extends BaseAsyncCmd implements UserCmd {
         SharedFS sharedFS = sharedFSService.stopSharedFS(this.getId(), this.isForced());
         if (sharedFS != null) {
             ResponseObject.ResponseView respView = getResponseView();
-            Account caller = CallContext.current().getCallingAccount();
-            if (_accountService.isRootAdmin(caller.getId())) {
+            if (CallContext.current().isCallingAccountRootAdmin()) {
                 respView = ResponseObject.ResponseView.Full;
             }
             SharedFSResponse response = _responseGenerator.createSharedFSResponse(respView, sharedFS);
