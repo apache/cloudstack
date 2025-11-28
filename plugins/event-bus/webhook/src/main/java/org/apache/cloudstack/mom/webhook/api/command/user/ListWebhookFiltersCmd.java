@@ -17,27 +17,29 @@
 
 package org.apache.cloudstack.mom.webhook.api.command.user;
 
-
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.mom.webhook.Webhook;
 import org.apache.cloudstack.mom.webhook.WebhookApiService;
+import org.apache.cloudstack.mom.webhook.WebhookFilter;
+import org.apache.cloudstack.mom.webhook.api.response.WebhookDeliveryResponse;
+import org.apache.cloudstack.mom.webhook.api.response.WebhookFilterResponse;
 import org.apache.cloudstack.mom.webhook.api.response.WebhookResponse;
 
-@APICommand(name = "listWebhooks",
-        description = "Lists Webhooks",
-        responseObject = WebhookResponse.class,
-        entityType = {Webhook.class},
+@APICommand(name = "listWebhookFilters",
+        description = "Lists Webhook filters",
+        responseObject = WebhookFilterResponse.class,
+        entityType = {WebhookFilter.class},
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
-        since = "4.20.0")
-public class ListWebhooksCmd extends BaseListProjectAndAccountResourcesCmd {
+        since = "4.23.0")
+public class ListWebhookFiltersCmd extends BaseListCmd {
 
     @Inject
     WebhookApiService webhookApiService;
@@ -45,22 +47,15 @@ public class ListWebhooksCmd extends BaseListProjectAndAccountResourcesCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
-            entityType = WebhookResponse.class,
-            description = "The ID of the Webhook")
+    @Parameter(name = ApiConstants.ID, type = BaseCmd.CommandType.UUID,
+            entityType = WebhookDeliveryResponse.class,
+            description = "The ID of the Webhook delivery")
     private Long id;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "The state of the Webhook")
-    private String state;
-
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the Webhook")
-    private String name;
-
-    @Parameter(name = ApiConstants.SCOPE,
-        type = CommandType.STRING,
-        description = "The scope of the Webhook",
-        authorized = {RoleType.Admin, RoleType.DomainAdmin})
-    private String scope;
+    @Parameter(name = ApiConstants.WEBHOOK_ID, type = BaseCmd.CommandType.UUID,
+            entityType = WebhookResponse.class,
+            description = "The ID of the Webhook")
+    private Long webhookId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -69,16 +64,8 @@ public class ListWebhooksCmd extends BaseListProjectAndAccountResourcesCmd {
         return id;
     }
 
-    public String getState() {
-        return state;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getScope() {
-        return scope;
+    public Long getWebhookId() {
+        return webhookId;
     }
 
     /////////////////////////////////////////////////////
@@ -86,7 +73,7 @@ public class ListWebhooksCmd extends BaseListProjectAndAccountResourcesCmd {
     /////////////////////////////////////////////////////
     @Override
     public void execute() throws ServerApiException {
-        ListResponse<WebhookResponse> response = webhookApiService.listWebhooks(this);
+        ListResponse<WebhookFilterResponse> response = webhookApiService.listWebhookFilters(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
