@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.user.dao;
 
+import java.util.List;
+
 import com.cloud.user.UserDataVO;
 import com.cloud.utils.db.GenericDao;
 
@@ -25,6 +27,7 @@ public interface UserDataDao extends GenericDao<UserDataVO, Long> {
 
     public UserDataVO findByName(long accountId, long domainId, String name);
 
+    List<UserDataVO> listByAccountId(long accountId);
     int removeByAccountId(long accountId);
 
 }
