@@ -82,7 +82,6 @@ public class LinstorUtilTest {
                         mockStoragePool("thinpool", "nodeC", ProviderKind.LVM_THIN)
                 ));
 
-//        when(LinstorUtil.getLinstorAPI(LINSTOR_URL_TEST)).thenReturn(api);
     }
 
     @Test
