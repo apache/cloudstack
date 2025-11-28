@@ -24,13 +24,26 @@ repos:
   - repo: meta
     hooks:
       - id: identity
+        description: a simple hook which prints all arguments passed to it, useful for debugging.
       - id: check-hooks-apply
+        description: check that all the hooks apply to the repository
   - repo: https://github.com/thlorenz/doctoc.git
     rev: v2.2.0
     hooks:
       - id: doctoc
         name: Add TOC for Markdown files
+        description: automatically keeps your table of contents up to date
         files: ^CONTRIBUTING\.md$|^INSTALL\.md$|^README\.md$
+  - repo: local
+    hooks:
+      - id: create-pre-commit-docs
+        name: create pre-commit docs
+        description: creates a Markdown file with information on the pre-commit hooks
+        entry: .github/workflows/scripts/create_pre_commit_docs.py
+        language: python
+        additional_dependencies:
+          - pyyaml
+        require_serial: true
   - repo: https://github.com/oxipng/oxipng
     rev: v9.1.5
     hooks:
@@ -49,11 +62,13 @@ repos:
     hooks:
       - id: chmod
         name: set file permissions
+        description: manual hook to be run by macOS or Linux users for a full repository clean up
         args: ['644']
         files: \.md$
         stages: [manual]
       - id: insert-license
         name: add license for all Markdown files
+        description: automatically adds a licence header to all Markdown files that don't have a license header
         files: \.md$
         args:
           - --comment-style
@@ -74,6 +89,7 @@ repos:
           - --fuzzy-match-generates-todo
       - id: insert-license
         name: add license for all SQL files
+        description: automatically adds a licence header to all SQL files that don't have a license header
         files: \.sql$
         args:
           - --comment-style
@@ -96,18 +112,27 @@ repos:
     hooks:
       #- id: check-added-large-files
       - id: check-case-conflict
+        description: check for case conflicts in file names
       #- id: check-executables-have-shebangs
       - id: check-illegal-windows-names
+        description: check for Windows-illegal file names
       - id: check-merge-conflict
+        description: check for merge conflict markers
       - id: check-shebang-scripts-are-executable
+        description: check that scripts with shebangs are executable
         files: \.sh$
       - id: check-symlinks
+        description: checks for symlinks which do not point to anything.
       - id: check-vcs-permalinks
+        description: ensures that links to vcs websites are permalinks
       #- id: check-yaml
       - id: destroyed-symlinks
+        description: detects symlinks which are changed to regular files with a content of a path which that symlink was pointing to
       - id: detect-aws-credentials
+        description: checks for the existence of AWS secrets that you have set up with the AWS CLI
         args: [--allow-missing-credentials]
       - id: detect-private-key
+        description: checks for the existence of private keys
         exclude: >
           (?x)
           ^scripts/vm/systemvm/id_rsa\.cloud$|
@@ -124,14 +149,20 @@ repos:
           ^systemvm/agent/certs/realhostip\.key$|
           ^test/integration/smoke/test_ssl_offloading\.py$
       - id: end-of-file-fixer
+        description: makes sure files end in a newline and only a newline
         exclude: \.vhd$|\.svg$
       - id: file-contents-sorter
+        description: sort the lines in specified files (defaults to alphabetical)
         args: [--unique]
         files: ^\.github/linters/codespell\.txt$
       - id: fix-byte-order-marker
+        description: removes UTF-8 byte order marker
       - id: forbid-submodules
+        description: forbids any submodules in the repository
       - id: mixed-line-ending
+        description: replaces or checks mixed line ending
       - id: trailing-whitespace
+        description: trims trailing whitespace
         files: \.(bat|cfg|cs|css|gitignore|header|in|install|java|md|properties|py|rb|rc|sh|sql|te|template|txt|ucls|vue|xml|xsl|yaml|yml)$|^cloud-cli/bindir/cloud-tool$|^debian/changelog$
         args: [--markdown-linebreak-ext=md]
         exclude: ^services/console-proxy/rdpconsole/src/test/doc/freerdp-debug-log\.txt$
@@ -147,6 +178,7 @@ repos:
     rev: 7.0.0
     hooks:
     - id: flake8
+      description: flake8 is a Python tool that glues together pycodestyle, pyflakes, mccabe, and third-party plugins to check the style and quality of some python code
       args: [--config, .github/linters/.flake8]
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.45.0
