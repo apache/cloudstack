@@ -451,15 +451,15 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 throw new CloudRuntimeException("Unable to acquire lock to check for database integrity.");
             }
 
-            // not sure about the right moment to do this yet
-            checkIfStandalone();
-            doUpgrades(lock);
+            if (isStandalone()) {
+                doUpgrades(lock);
+            }
         } finally {
             lock.releaseRef();
         }
     }
-    private void checkIfStandalone() throws CloudRuntimeException {
-        boolean standalone = Transaction.execute(new TransactionCallback<>() {
+    private boolean isStandalone() throws CloudRuntimeException {
+        return Transaction.execute(new TransactionCallback<>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
                 String sql = "SELECT COUNT(*) FROM `cloud`.`mshost` WHERE `state` = 'UP'";
@@ -473,16 +473,11 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 } catch (SQLException e) {
                     String errorMessage = "Unable to check if the management server is running in standalone mode.";
                     LOGGER.error(errorMessage, e);
-                    throw new CloudRuntimeException(errorMessage, e);
+                    return false;
                 }
                 return true;
             }
         });
-        if (! standalone) {
-            String msg = "CloudStack is running multiple management servers while attempting to upgrade. Upgrades can only be run in standalone mode. Aborting.";
-            LOGGER.info(msg);
-            throw new CloudRuntimeException(msg);
-        }
     }
 
     private void doUpgrades(GlobalLock lock) {
