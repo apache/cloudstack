@@ -38,7 +38,7 @@ public class ApiServiceConfiguration implements Configurable {
 
     public static void validateEndpointUrl() {
         String csUrl = getApiServletPathValue();
-        if (StringUtils.isBlank(csUrl) || StringUtils.containsAny(csUrl, "localhost", "127.0.0.1")) {
+        if (StringUtils.isBlank(csUrl) || StringUtils.containsAny(csUrl, "localhost", "127.0.0.1", "[::1]")) {
             LOGGER.error("Global setting [{}] cannot contain localhost or be blank. Current value: {}", ApiServletPath.key(), csUrl);
             throw new InvalidParameterValueException("Unable to complete this operation. Contact your cloud admin.");
         }
