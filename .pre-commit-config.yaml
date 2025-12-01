@@ -25,6 +25,12 @@ repos:
     hooks:
       - id: identity
       - id: check-hooks-apply
+  - repo: https://github.com/thlorenz/doctoc.git
+    rev: v2.2.0
+    hooks:
+      - id: doctoc
+        name: Add TOC for Markdown files
+        files: ^CONTRIBUTING\.md$|^INSTALL\.md$|^README\.md$
   - repo: https://github.com/oxipng/oxipng
     rev: v9.1.5
     hooks:
@@ -41,6 +47,11 @@ repos:
   - repo: https://github.com/Lucas-C/pre-commit-hooks
     rev: v1.5.5
     hooks:
+      - id: chmod
+        name: set file permissions
+        args: ['644']
+        files: \.md$
+        stages: [manual]
       - id: insert-license
         name: add license for all Markdown files
         files: \.md$
@@ -51,6 +62,35 @@ repos:
           - .github/workflows/license-templates/LICENSE.txt
           - --fuzzy-match-generates-todo
         exclude: ^(CHANGES|ISSUE_TEMPLATE|PULL_REQUEST_TEMPLATE)\.md$|^ui/docs/(full|smoke)-test-plan\.template\.md$
+      - id: insert-license
+        name: add license for all Shell files
+        description: automatically adds a licence header to all Shell files that don't have a license header
+        files: \.sh$
+        args:
+          - --comment-style
+          - '|#|'
+          - --license-filepath
+          - .github/workflows/license-templates/LICENSE.txt
+          - --fuzzy-match-generates-todo
+      - id: insert-license
+        name: add license for all SQL files
+        files: \.sql$
+        args:
+          - --comment-style
+          - '|--|'
+          - --license-filepath
+          - .github/workflows/license-templates/LICENSE.txt
+          - --fuzzy-match-generates-todo
+      - id: insert-license
+        name: add license for all YAML files
+        description: automatically adds a licence header to all YAML files that don't have a license header
+        files: \.ya?ml$
+        args:
+          - --comment-style
+          - '|#|'
+          - --license-filepath
+          - .github/workflows/license-templates/LICENSE.txt
+          - --fuzzy-match-generates-todo
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
@@ -84,7 +124,7 @@ repos:
           ^systemvm/agent/certs/realhostip\.key$|
           ^test/integration/smoke/test_ssl_offloading\.py$
       - id: end-of-file-fixer
-        exclude: \.vhd$
+        exclude: \.vhd$|\.svg$
       - id: file-contents-sorter
         args: [--unique]
         files: ^\.github/linters/codespell\.txt$
@@ -96,7 +136,7 @@ repos:
         args: [--markdown-linebreak-ext=md]
         exclude: ^services/console-proxy/rdpconsole/src/test/doc/freerdp-debug-log\.txt$
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.6
+    rev: v2.4.1
     hooks:
       - id: codespell
         name: run codespell
@@ -117,14 +157,6 @@ repos:
         args: [--config=.github/linters/.markdown-lint.yml]
         types: [markdown]
         files: \.(md|mdown|markdown)$
-  - repo: https://github.com/Lucas-C/pre-commit-hooks
-    rev: v1.5.5
-    hooks:
-      - id: chmod
-        name: set file permissions
-        args: ['644']
-        files: \.md$
-        stages: [manual]
   - repo: https://github.com/adrienverge/yamllint
     rev: v1.37.1
     hooks:
