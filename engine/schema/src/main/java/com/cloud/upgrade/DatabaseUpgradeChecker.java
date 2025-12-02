@@ -457,7 +457,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         }
     }
 
-    private boolean isStandalone() throws CloudRuntimeException {
+    boolean isStandalone() throws CloudRuntimeException {
         return Transaction.execute(new TransactionCallback<>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
@@ -483,18 +483,19 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         });
     }
 
-    private void doUpgrades(GlobalLock lock) {
+    @VisibleForTesting
+    protected void doUpgrades(GlobalLock lock) {
         try {
             initializeDatabaseEncryptors();
 
             final CloudStackVersion dbVersion = CloudStackVersion.parse(_dao.getCurrentVersion());
-            final String currentVersionValue = this.getClass().getPackage().getImplementationVersion();
+            final String currentVersionValue = getImplementationVersion();
 
             if (StringUtils.isBlank(currentVersionValue)) {
                 return;
             }
 
-            String csVersion = SystemVmTemplateRegistration.parseMetadataFile();
+            String csVersion = parseSystemVmMetadata();
             final CloudStackVersion sysVmVersion = CloudStackVersion.parse(csVersion);
             final  CloudStackVersion currentVersion = CloudStackVersion.parse(currentVersionValue);
             SystemVmTemplateRegistration.CS_MAJOR_VERSION  = String.valueOf(sysVmVersion.getMajorRelease()) + "." + String.valueOf(sysVmVersion.getMinorRelease());
@@ -517,14 +518,34 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 String errorMessage = "Database upgrade is required but the management server is running in a clustered environment. " +
                         "Please perform the database upgrade when the management server is not running in a clustered environment.";
                 LOGGER.error(errorMessage);
-                System.exit(5); // I would prefer ServerDaemon.abort(errorMessage) but that would create a dependency hell
+                handleClusteredUpgradeRequired(); // allow tests to override behavior
             }
         } finally {
             lock.unlock();
         }
     }
 
-    private void initializeDatabaseEncryptors() {
+    /**
+     * Hook that is called when an upgrade is required but the management server is clustered.
+     * Default behavior is to exit the JVM, tests can override to throw instead.
+     */
+    @VisibleForTesting
+    protected void handleClusteredUpgradeRequired() {
+        System.exit(5); // I would prefer ServerDaemon.abort(errorMessage) but that would create a dependency hell
+    }
+
+    @VisibleForTesting
+    protected String getImplementationVersion() {
+        return this.getClass().getPackage().getImplementationVersion();
+    }
+
+    @VisibleForTesting
+    protected String parseSystemVmMetadata() {
+        return SystemVmTemplateRegistration.parseMetadataFile();
+    }
+
+    // Make this protected so tests can noop it out
+    protected void initializeDatabaseEncryptors() {
         TransactionLegacy txn = TransactionLegacy.open("initializeDatabaseEncryptors");
         txn.start();
         String errorMessage = "Unable to get the database connections";
