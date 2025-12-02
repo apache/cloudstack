@@ -250,7 +250,6 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             LOGGER.error("Unable to execute upgrade script", e);
             throw new CloudRuntimeException("Unable to execute upgrade script", e);
         }
-
     }
 
     @VisibleForTesting
@@ -451,13 +450,12 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 throw new CloudRuntimeException("Unable to acquire lock to check for database integrity.");
             }
 
-            if (isStandalone()) {
-                doUpgrades(lock);
-            }
+            doUpgrades(lock);
         } finally {
             lock.releaseRef();
         }
     }
+
     private boolean isStandalone() throws CloudRuntimeException {
         return Transaction.execute(new TransactionCallback<>() {
             @Override
@@ -473,6 +471,10 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 } catch (SQLException e) {
                     String errorMessage = "Unable to check if the management server is running in standalone mode.";
                     LOGGER.error(errorMessage, e);
+                    return false;
+                } catch (NullPointerException npe) {
+                    String errorMessage = "Unable to check if the management server is running in standalone mode. Not able to get a Database connection.";
+                    LOGGER.error(errorMessage, npe);
                     return false;
                 }
                 return true;
@@ -508,7 +510,14 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 return;
             }
 
-            upgrade(dbVersion, currentVersion);
+            if (isStandalone()) {
+                upgrade(dbVersion, currentVersion);
+            } else {
+                String errorMessage = "Database upgrade is required but the management server is running in a clustered environment. " +
+                        "Please perform the database upgrade when the management server is not running in a clustered environment.";
+                LOGGER.error(errorMessage);
+                throw new CloudRuntimeException(errorMessage);
+            }
         } finally {
             lock.unlock();
         }
