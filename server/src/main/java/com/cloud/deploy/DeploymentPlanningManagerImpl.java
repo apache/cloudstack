@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.resource.ResourceState;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -464,9 +465,9 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             return null;
         }
 
-        logger.debug("VM's last host is {}, trying to choose the same host if it is not in maintenance state", lastHost);
-        if (lastHost.isInMaintenanceStates()) {
-            logger.debug("Unable to deploy VM {} in the last host, last host {} is in maintenance state", vm.getName(), lastHost.getName());
+        logger.debug("VM's last host is {}, trying to choose the same host if it is not in maintenance, error or degraded state", lastHost);
+        if (lastHost.isInMaintenanceStates() || Arrays.asList(ResourceState.Error, ResourceState.Degraded).contains(lastHost.getResourceState())) {
+            logger.debug("Unable to deploy VM {} in the last host, last host {} is in {} state", vm.getName(), lastHost.getName(), lastHost.getResourceState());
             return null;
         }
 
