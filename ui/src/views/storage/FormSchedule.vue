@@ -173,7 +173,7 @@
               <a-form-item name="useStorageReplication" ref="useStorageReplication">
                 <template #label>
                   <tooltip-label :title="$t('label.usestoragereplication')" :tooltip="apiParams.usestoragereplication.description" />
-                 </template>
+                </template>
                 <a-switch v-model:checked="form.useStorageReplication" />
               </a-form-item>
               <a-form-item v-if="isAdmin && form.useStorageReplication" ref="storageids" name="storageids">

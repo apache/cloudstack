@@ -239,6 +239,7 @@ import { isAdmin } from '@/role'
 import OsLogo from '@/components/widgets/OsLogo'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipButton from '@/components/widgets/TooltipButton'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 import BulkActionProgress from '@/components/view/BulkActionProgress'
 import Status from '@/components/widgets/Status'
 import eventBus from '@/config/eventBus'
@@ -247,6 +248,7 @@ export default {
   name: 'SnapshotZones',
   components: {
     TooltipButton,
+    TooltipLabel,
     OsLogo,
     ResourceIcon,
     BulkActionProgress,
