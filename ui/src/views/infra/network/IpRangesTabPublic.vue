@@ -230,8 +230,8 @@
               return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option value="">{{ }}</a-select-option>
-            <a-select-option value="vlan"> vlan </a-select-option>
-            <a-select-option value="vxlan"> vxlan </a-select-option>
+            <a-select-option value="vlan"> VLAN </a-select-option>
+            <a-select-option value="vxlan"> VXLAN </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item name="vlan" ref="vlan" :label="$t('label.vlan')" class="form__item" v-if="!basicGuestNetwork">
