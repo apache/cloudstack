@@ -128,6 +128,7 @@ import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+
 import com.google.common.annotations.VisibleForTesting;
 
 public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
@@ -516,7 +517,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 String errorMessage = "Database upgrade is required but the management server is running in a clustered environment. " +
                         "Please perform the database upgrade when the management server is not running in a clustered environment.";
                 LOGGER.error(errorMessage);
-                throw new CloudRuntimeException(errorMessage);
+                System.exit(5); // I would prefer ServerDaemon.abort(errorMessage) but that would create a dependency hell
             }
         } finally {
             lock.unlock();
