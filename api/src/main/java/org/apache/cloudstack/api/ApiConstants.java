@@ -674,6 +674,7 @@ public class ApiConstants {
     public static final String USAGE_ID = "usageid";
     public static final String USAGE_NAME = "usagename";
     public static final String USAGE_TYPE = "usagetype";
+    public static final String USAGE_SERVER = "usageserver";
     public static final String INCLUDE_TAGS = "includetags";
 
     public static final String VLAN = "vlan";
