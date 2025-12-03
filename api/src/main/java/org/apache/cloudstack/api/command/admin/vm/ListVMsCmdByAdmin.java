@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "listVirtualMachines", description = "List the virtual machines owned by the account.", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
+@APICommand(name = "listVirtualMachines", description = "List the virtual machines owned by the account. (Update by Daman)", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class ListVMsCmdByAdmin extends ListVMsCmd implements AdminCmd {
 
