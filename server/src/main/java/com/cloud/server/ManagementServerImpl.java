@@ -275,6 +275,7 @@ import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficMonitorsCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypesCmd;
+import org.apache.cloudstack.api.command.admin.usage.ListUsageJobsCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListUsageTypesCmd;
 import org.apache.cloudstack.api.command.admin.usage.RemoveRawUsageRecordsCmd;
@@ -3973,6 +3974,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         cmdList.add(DeleteTrafficTypeCmd.class);
         cmdList.add(GenerateUsageRecordsCmd.class);
         cmdList.add(ListUsageRecordsCmd.class);
+        cmdList.add(ListUsageJobsCmd.class);
         cmdList.add(RemoveRawUsageRecordsCmd.class);
         cmdList.add(ListTrafficMonitorsCmd.class);
         cmdList.add(ListTrafficTypeImplementorsCmd.class);
