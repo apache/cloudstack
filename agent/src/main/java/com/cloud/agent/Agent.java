@@ -93,7 +93,6 @@ import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.NioClient;
 import com.cloud.utils.nio.NioConnection;
 import com.cloud.utils.nio.Task;
-import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
 /**
@@ -598,9 +597,9 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     }
 
     protected String getAgentArch() {
-        final Script command = new Script("/usr/bin/arch", 500, logger);
-        final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
-        return command.execute(parser);
+        String arch = Script.runSimpleBashScript(Script.getExecutableAbsolutePath("arch"), 2000);
+        logger.debug("Arch for agent: {} found: {}", _name, arch);
+        return arch;
     }
 
     @Override
@@ -1229,7 +1228,14 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                     logger.error("Error parsing task", e);
                 }
             } else if (task.getType() == Task.Type.DISCONNECT) {
-                logger.debug("Executing disconnect task - {}", () -> getLinkLog(task.getLink()));
+                try {
+                    // an issue has been found if reconnect immediately after disconnecting.
+                    // wait 5 seconds before reconnecting
+                    logger.debug("Wait for 5 secs before reconnecting, disconnect task - {}", () -> getLinkLog(task.getLink()));
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                }
+                logger.debug("Executing disconnect task - {} and reconnecting", () -> getLinkLog(task.getLink()));
                 reconnect(task.getLink());
             } else if (task.getType() == Task.Type.OTHER) {
                 processOtherTask(task);
