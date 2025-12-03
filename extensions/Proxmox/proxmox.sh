@@ -40,7 +40,7 @@ parse_json() {
         "template_type":    (.externaldetails.virtualmachine.template_type // ""),
         "iso_path":         (.externaldetails.virtualmachine.iso_path // ""),
         "iso_os_type":      (.externaldetails.virtualmachine.iso_os_type // "l26"),
-        "disk_size_gb":      (.externaldetails.virtualmachine.disk_size_gb // "64"),
+        "disk_size_gb":     (.externaldetails.virtualmachine.disk_size_gb // "64"),
         "storage":          (.externaldetails.virtualmachine.storage // "local-lvm"),
         "is_full_clone":    (.externaldetails.virtualmachine.is_full_clone // "false"),
         "snap_name":        (.parameters.snap_name // ""),
