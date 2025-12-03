@@ -114,7 +114,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Parameter (name = ApiConstants.USE_STORAGE_REPLICATION,
             type=CommandType.BOOLEAN,
-            description = "Enables the snapshot to be copied to the supported primary storages when the config 'use.storage.replication' set to true for the storage or globally. " +
+            description = "Enables the snapshot to be copied to the supported primary storages when the config 'use.storage.replication' is set to true for the storage or globally. " +
                     "This is supported only for StorPool storage for now.")
     protected Boolean useStorageReplication;
 
