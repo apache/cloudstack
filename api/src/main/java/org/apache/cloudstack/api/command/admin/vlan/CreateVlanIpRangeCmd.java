@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.admin.vlan;
 
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.StringUtils;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -162,7 +163,7 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     }
 
     public String getVlan() {
-        if ((vlan == null || vlan.isEmpty()) && !isForNsx()) {
+        if (StringUtils.isBlank(vlan) && !isForNsx()) {
             vlan = "untagged";
         }
         return vlan;
