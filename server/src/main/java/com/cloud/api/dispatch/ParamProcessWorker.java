@@ -32,8 +32,6 @@ import java.util.regex.Matcher;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -50,7 +48,8 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
@@ -59,10 +58,11 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.UuidUtils;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 
 public class ParamProcessWorker implements DispatchWorker {
 
-    private static final Logger s_logger = Logger.getLogger(ParamProcessWorker.class.getName());
+    protected Logger logger = LogManager.getLogger(getClass());
     private static final String inputFormatString = "yyyy-MM-dd";
     private static final String newInputFormatString = "yyyy-MM-dd HH:mm:ss";
     public static final DateFormat inputFormat = new SimpleDateFormat(inputFormatString);
@@ -116,8 +116,21 @@ public class ParamProcessWorker implements DispatchWorker {
         }
     }
 
+    private void validateNameForRFCCompliance(final Object param, final String argName) {
+        String value = String.valueOf(param);
+        if (StringUtils.isBlank(value) || !NetUtils.verifyDomainNameLabel(value, true)) {
+            String msg = "it can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+                    + "and the hyphen ('-'), must be between 1 and 63 characters long, and can't start or end with \"-\" and can't start with digit";
+            throwInvalidParameterValueException(argName, msg);
+        }
+    }
+
     protected void throwInvalidParameterValueException(String argName) {
-        throw new InvalidParameterValueException(String.format("Invalid value provided for API arg: %s", argName));
+        throwInvalidParameterValueException(argName, null);
+    }
+
+    protected void throwInvalidParameterValueException(String argName, String customMsg) {
+        throw new InvalidParameterValueException(String.format("Invalid value provided for API arg: %s%s", argName, StringUtils.isBlank(customMsg)? "" : " - " + customMsg));
     }
 
     private void validateField(final Object paramObj, final Parameter annotation) throws ServerApiException {
@@ -154,6 +167,12 @@ public class ParamProcessWorker implements DispatchWorker {
                             break;
                     }
                     break;
+                case RFCComplianceDomainName:
+                    switch (annotation.type()) {
+                        case STRING:
+                            validateNameForRFCCompliance(paramObj, argName);
+                            break;
+                    }
             }
         }
     }
@@ -164,14 +183,18 @@ public class ParamProcessWorker implements DispatchWorker {
 
         final List<Field> cmdFields = cmd.getParamFields();
 
+        String commandName = cmd.getCommandName();
+        if (commandName.endsWith(BaseCmd.RESPONSE_SUFFIX)) {
+            commandName = cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8);
+        }
+
         for (final Field field : cmdFields) {
             final Parameter parameterAnnotation = field.getAnnotation(Parameter.class);
             final Object paramObj = params.get(parameterAnnotation.name());
             if (paramObj == null) {
                 if (parameterAnnotation.required()) {
                     throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to execute API command " +
-                            cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) +
-                            " due to missing parameter " + parameterAnnotation.name());
+                            commandName + " due to missing parameter " + parameterAnnotation.name());
                 }
                 continue;
             }
@@ -184,30 +207,29 @@ public class ParamProcessWorker implements DispatchWorker {
                 validateField(paramObj, parameterAnnotation);
                 setFieldValue(field, cmd, paramObj, parameterAnnotation);
             } catch (final IllegalArgumentException argEx) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Unable to execute API command " + cmd.getCommandName() + " due to invalid value " + paramObj + " for parameter " +
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Unable to execute API command " + commandName + " due to invalid value " + paramObj + " for parameter " +
                             parameterAnnotation.name());
                 }
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to execute API command " +
-                        cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) + " due to invalid value " + paramObj + " for parameter " +
+                        commandName + " due to invalid value " + paramObj + " for parameter " +
                         parameterAnnotation.name());
             } catch (final ParseException parseEx) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Invalid date parameter " + paramObj + " passed to command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8));
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Invalid date parameter " + paramObj + " passed to command " + commandName);
                 }
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to parse date " + paramObj + " for command " +
-                        cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) + ", please pass dates in the format mentioned in the api documentation");
+                        commandName + ", please pass dates in the format mentioned in the api documentation");
             } catch (final InvalidParameterValueException invEx) {
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to execute API command " +
-                        cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) + " due to invalid value. " + invEx.getMessage());
+                        commandName + " due to invalid value. " + invEx.getMessage());
             } catch (final CloudRuntimeException cloudEx) {
-                s_logger.error("CloudRuntimeException", cloudEx);
+                logger.error("CloudRuntimeException", cloudEx);
                 // FIXME: Better error message? This only happens if the API command is not executable, which typically
                 //means
                 // there was
                 // and IllegalAccessException setting one of the parameters.
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Internal error executing API command " +
-                        cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8));
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Internal error executing API command " + commandName);
             }
 
             //check access on the resource this field points to
@@ -288,7 +310,7 @@ public class ParamProcessWorker implements DispatchWorker {
         doAccessChecks(cmd, entitiesToAccess);
     }
 
-    private void doAccessChecks(BaseCmd cmd, Map<Object, AccessType> entitiesToAccess) {
+    protected void doAccessChecks(BaseCmd cmd, Map<Object, AccessType> entitiesToAccess) {
         Account caller = CallContext.current().getCallingAccount();
         List<Long> entityOwners = cmd.getEntityOwnerIds();
         Account[] owners = null;
@@ -296,8 +318,8 @@ public class ParamProcessWorker implements DispatchWorker {
             owners = entityOwners.stream().map(id -> _accountMgr.getAccount(id)).toArray(Account[]::new);
         } else {
             if (cmd.getEntityOwnerId() == Account.ACCOUNT_ID_SYSTEM && cmd instanceof BaseAsyncCmd && ((BaseAsyncCmd)cmd).getApiResourceType() == ApiCommandResourceType.Network) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Skipping access check on the network owner if the owner is ROOT/system.");
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Skipping access check on the network owner if the owner is ROOT/system.");
                 }
                 owners = new Account[]{};
             } else {
@@ -310,18 +332,34 @@ public class ParamProcessWorker implements DispatchWorker {
             _accountMgr.checkAccess(caller, null, false, owners);
         }
 
-        if (!entitiesToAccess.isEmpty()) {
-            // check that caller can access the owner account.
-            _accountMgr.checkAccess(caller, null, false, owners);
-            for (Map.Entry<Object,AccessType>entry : entitiesToAccess.entrySet()) {
-                Object entity = entry.getKey();
-                if (entity instanceof ControlledEntity) {
-                    _accountMgr.checkAccess(caller, entry.getValue(), true, (ControlledEntity) entity);
-                } else if (entity instanceof InfrastructureEntity) {
-                    // FIXME: Move this code in adapter, remove code from
-                    // Account manager
-                }
+        checkCallerAccessToEntities(caller, owners, entitiesToAccess);
+    }
+
+    protected Account[] getEntityOwners(BaseCmd cmd) {
+        List<Long> entityOwners = cmd.getEntityOwnerIds();
+        if (entityOwners != null) {
+            return entityOwners.stream().map(id -> _accountMgr.getAccount(id)).toArray(Account[]::new);
+        }
+
+        if (cmd.getEntityOwnerId() == Account.ACCOUNT_ID_SYSTEM && cmd instanceof BaseAsyncCmd && cmd.getApiResourceType() == ApiCommandResourceType.Network) {
+            logger.debug("Skipping access check on the network owner if the owner is ROOT/system.");
+        } else {
+            Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
+            if (owner != null) {
+                return new Account[]{owner};
             }
+        }
+        return new Account[]{};
+    }
+
+    protected void checkCallerAccessToEntities(Account caller, Account[] owners, Map<Object, AccessType> entitiesToAccess) {
+        if (entitiesToAccess.isEmpty()) {
+            return;
+        }
+        _accountMgr.checkAccess(caller, null, false, owners);
+        for (Map.Entry<Object, AccessType> entry : entitiesToAccess.entrySet()) {
+            Object entity = entry.getKey();
+            _accountMgr.validateAccountHasAccessToResource(caller, entry.getValue(), entity);
         }
     }
 
@@ -404,7 +442,7 @@ public class ParamProcessWorker implements DispatchWorker {
             case STRING:
                 if ((paramObj != null)) {
                     if (paramObj.toString().length() > annotation.length()) {
-                        s_logger.error("Value greater than max allowed length " + annotation.length() + " for param: " + field.getName());
+                        logger.error("Value greater than max allowed length " + annotation.length() + " for param: " + field.getName());
                         throw new InvalidParameterValueException("Value greater than max allowed length " + annotation.length() + " for param: " + field.getName());
                     } else {
                         field.set(cmdObj, paramObj.toString());
@@ -417,7 +455,7 @@ public class ParamProcessWorker implements DispatchWorker {
                 break;
             }
         } catch (final IllegalAccessException ex) {
-            s_logger.error("Error initializing command " + cmdObj.getCommandName() + ", field " + field.getName() + " is not accessible.");
+            logger.error("Error initializing command " + cmdObj.getCommandName() + ", field " + field.getName() + " is not accessible.");
             throw new CloudRuntimeException("Internal error initializing parameters for command " + cmdObj.getCommandName() + " [field " + field.getName() +
                     " is not accessible]");
         }
@@ -427,16 +465,16 @@ public class ParamProcessWorker implements DispatchWorker {
             field.set(cmdObj, DateUtil.parseTZDateString(paramObj.toString()));
             return;
         } catch (ParseException parseException) {
-            s_logger.debug(String.format("Could not parse date [%s] with timezone parser, trying to parse without timezone.", paramObj));
+            logger.debug(String.format("Could not parse date [%s] with timezone parser, trying to parse without timezone.", paramObj));
         }
         if (isObjInNewDateFormat(paramObj.toString())) {
-            s_logger.debug(String.format("Parsing date [%s] using the [%s] format.", paramObj, newInputFormatString));
+            logger.debug(String.format("Parsing date [%s] using the [%s] format.", paramObj, newInputFormatString));
             final DateFormat newFormat = newInputFormat;
             synchronized (newFormat) {
                 field.set(cmdObj, newFormat.parse(paramObj.toString()));
             }
         } else {
-            s_logger.debug(String.format("Parsing date [%s] using the [%s] format.", paramObj, inputFormatString));
+            logger.debug(String.format("Parsing date [%s] using the [%s] format.", paramObj, inputFormatString));
             final DateFormat format = inputFormat;
             synchronized (format) {
                 Date date = format.parse(paramObj.toString());
@@ -523,8 +561,8 @@ public class ParamProcessWorker implements DispatchWorker {
             }
         }
         if (internalId == null) {
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Object entity uuid = " + uuid + " does not exist in the database.");
+            if (logger.isDebugEnabled())
+                logger.debug("Object entity uuid = " + uuid + " does not exist in the database.");
             throw new InvalidParameterValueException("Invalid parameter " + annotation.name() + " value=" + uuid +
                     " due to incorrect long value format, or entity does not exist or due to incorrect parameter annotation for the field in api cmd class.");
         }

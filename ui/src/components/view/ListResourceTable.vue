@@ -41,15 +41,23 @@
           <template v-if="column.key === col">
             <router-link :set="routerlink = routerlinks(record)" :to="{ path: routerlink[col] }" >{{ text }}</router-link>
           </template>
+
+          <template v-else-if="['state', 'status'].includes(column.key)">
+            <status :text="text ? text : ''" />{{ text }}
+          </template>
+
+          <template v-else-if="column.key === 'created'">
+            {{ $toLocaleDate(text) }}
+          </template>
+
+          <template v-else-if="column.key === 'size' || column.key === 'virtualsize'">
+            {{ bytesToHumanReadableSize(text) }}
+          </template>
+
+          <template v-else>
+            {{ text }}
+          </template>
         </div>
-
-        <template v-if="column.key === 'state'">
-          <status :text="text ? text : ''" />{{ text }}
-        </template>
-
-        <template v-if="column.key === 'status'">
-          <status :text="text ? text : ''" />{{ text }}
-        </template>
       </template>
     </a-table>
 

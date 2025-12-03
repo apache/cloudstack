@@ -52,7 +52,7 @@ public interface AlertService {
         public static final AlertType ALERT_TYPE_ROUTING = new AlertType((short)11, "ALERT.NETWORK.ROUTING", true);
         public static final AlertType ALERT_TYPE_STORAGE_MISC = new AlertType((short)12, "ALERT.STORAGE.MISC", true);
         public static final AlertType ALERT_TYPE_USAGE_SERVER = new AlertType((short)13, "ALERT.USAGE", true);
-        public static final AlertType ALERT_TYPE_MANAGMENT_NODE = new AlertType((short)14, "ALERT.MANAGEMENT", true);
+        public static final AlertType ALERT_TYPE_MANAGEMENT_NODE = new AlertType((short)14, "ALERT.MANAGEMENT", true);
         public static final AlertType ALERT_TYPE_DOMAIN_ROUTER_MIGRATE = new AlertType((short)15, "ALERT.NETWORK.DOMAINROUTERMIGRATE", true);
         public static final AlertType ALERT_TYPE_CONSOLE_PROXY_MIGRATE = new AlertType((short)16, "ALERT.SERVICE.CONSOLEPROXYMIGRATE", true);
         public static final AlertType ALERT_TYPE_USERVM_MIGRATE = new AlertType((short)17, "ALERT.USERVM.MIGRATE", true);
@@ -89,6 +89,10 @@ public interface AlertService {
                 }
             }
             return null;
+        }
+
+        public static Set<AlertType> getAlertTypes() {
+            return defaultAlertTypes;
         }
 
         @Override

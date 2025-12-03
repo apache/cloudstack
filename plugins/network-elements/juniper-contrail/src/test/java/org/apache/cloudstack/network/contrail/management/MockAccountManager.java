@@ -31,7 +31,6 @@ import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
 import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
 import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.RoleType;
@@ -73,7 +72,6 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 
 public class MockAccountManager extends ManagerBase implements AccountManager {
-    private static final Logger s_logger = Logger.getLogger(MockAccountManager.class);
 
     @Inject
     AccountDao _accountDao;
@@ -98,7 +96,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
             throw new ConfigurationException("Unable to find the system user using " + User.UID_SYSTEM);
         }
         CallContext.register(_systemUser, _systemAccount);
-        s_logger.info("MockAccountManager initialization successful");
+        logger.info("MockAccountManager initialization successful");
         return true;
     }
 
@@ -177,6 +175,11 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
+    public List<UserAccount> getActiveUserAccountByEmail(String email, Long domainId) {
+        return null;
+    }
+
+    @Override
     public User getActiveUser(long arg0) {
         return _systemUser;
     }
@@ -229,6 +232,12 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
 
     @Override
     public boolean isDomainAdmin(Long accountId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean isResourceDomainAdmin(Long accountId) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -344,6 +353,11 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
+    public List<String> getApiNameList() {
+        return null;
+    }
+
+    @Override
     public boolean deleteUserAccount(long arg0) {
         // TODO Auto-generated method stub
         return false;
@@ -447,6 +461,11 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
+    public void validateAccountHasAccessToResource(Account account, AccessType accessType, Object resource) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
     public Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly) {
         // TODO Auto-generated method stub
         return null;
@@ -473,12 +492,12 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
-    public Map<String, String> getKeys(GetUserKeysCmd cmd){
+    public Pair<Boolean, Map<String, String>> getKeys(GetUserKeysCmd cmd){
         return null;
     }
 
     @Override
-    public Map<String, String> getKeys(Long userId) {
+    public Pair<Boolean, Map<String, String>> getKeys(Long userId) {
         return null;
     }
 
@@ -505,5 +524,23 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return null;
+    }
+
+    public void validateUserPasswordAndUpdateIfNeeded(String newPassword, UserVO user,
+                                               String currentPassword,
+                                               boolean skipCurrentPassValidation) {
+    }
+
+    @Override
+    public void checkApiAccess(Account account, String command) throws PermissionDeniedException {
+    }
+
+    @Override
+    public UserAccount clearUserTwoFactorAuthenticationInSetupStateOnLogin(UserAccount user) {
+        return null;
+    }
+
+    @Override
+    public void verifyCallerPrivilegeForUserOrAccountOperations(Account userAccount) {
     }
 }

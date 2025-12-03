@@ -1171,7 +1171,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
             self.fail("Domain admin is NOT able to deploy a VM for user in ROOT domain in a shared network with scope=all")
         except Exception as e:
             self.debug("When a Domain admin user deploys a VM for ROOT user in a shared network with scope=all %s" % e)
-            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_DOMAIN):
+            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_SOURCE):
                 self.fail("Error message validation failed when Domain admin is NOT able to deploy a VM for user in ROOT domain in a shared network with scope=all")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
@@ -1199,7 +1199,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
             self.fail("Domain admin user is able to Deploy VM for a domain user,  but there is no access to in a shared network with scope=domain with no subdomain access ")
         except Exception as e:
             self.debug("When a Domain admin user  deploys a VM for a domain user, but there is no access to in a shared network with scope=domain with no subdomain access %s" % e)
-            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_DOMAIN):
+            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_SOURCE):
                 self.fail(
                     "Error mesage validation failed when Domain admin user tries to Deploy VM for a domain user, but there is no access to in a shared network with scope=domain with no subdomain access ")
 
@@ -1405,7 +1405,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
             self.fail("Domain admin is able to deploy a VM for user in ROOT domain in a shared network with scope=Domain and no subdomain access")
         except Exception as e:
             self.debug("When a regular user from ROOT domain deploys a VM in a shared network with scope=domain with no subdomain access %s" % e)
-            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_DOMAIN):
+            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_SOURCE):
                 self.fail(
                     "Error message validation failed when Domain admin tries to deploy a VM for user in ROOT domain in a shared network with scope=Domain and no subdomain access")
 
@@ -1601,7 +1601,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
             self.fail("Domain admin is able to deploy a VM for user in ROOT domain in a shared network with scope=Domain and subdomain access")
         except Exception as e:
             self.debug("When a user from ROOT domain deploys a VM in a shared network with scope=domain with subdomain access %s" % e)
-            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_DOMAIN):
+            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_SOURCE):
                 self.fail(
                     "Error message validation failed when Domain admin tries to deploy a VM for user in ROOT domain in a shared network with scope=Domain and subdomain access")
 
@@ -1613,7 +1613,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
         Valiate that Domain admin is NOT able to deploy a VM for user in the same domain but belonging to a different account in a shared network with scope=account
         """
 
-        # Deploy VM as user in a domain under the same domain but different account from the acount that has a shared network with scope=account
+        # Deploy VM as user in a domain under the same domain but different account from the account that has a shared network with scope=account
         self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
         self.vmdata["name"] = self.acldata["vmD111B"]["name"] + "-shared-scope-domain-withsubdomainaccess-domain-admin"
@@ -1714,10 +1714,10 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
                 accountid=self.account_d2a.name,
                 domainid=self.account_d2a.domainid
             )
-            self.fail("Domain admin is able able to deploy a VM for an regular user from a differnt domain in a shared network with scope=account")
+            self.fail("Domain admin is able to deploy a VM for an regular user from a differnt domain in a shared network with scope=account")
         except Exception as e:
             self.debug("When a user from different domain deploys a VM in a shared network with scope=account %s" % e)
-            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_DOMAIN):
+            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_SOURCE):
                 self.fail(
                     "Error message validation failed when Domain admin tries to deploy a VM for an regular user from a differnt domain in a shared network with scope=account")
 
@@ -1746,7 +1746,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
             self.fail("Domain admin is able to deploy a VM for an regular user in ROOT domain in a shared network with scope=account")
         except Exception as e:
             self.debug("When a user from ROOT domain deploys a VM in a shared network with scope=account %s" % e)
-            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_DOMAIN):
+            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_SOURCE):
                 self.fail("Error message validation failed when Domain admin tries to deploy a VM for an regular user in ROOT domain in a shared network with scope=account")
 
     ## Test cases relating to deploying Virtual Machine as Regular user for other users in shared network with scope=all
@@ -1776,7 +1776,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
             self.fail("Regular user is allowed to deploy a VM for another user in the same domain in a shared network with scope=all")
         except Exception as e:
             self.debug("When a regular user deploys a VM for another user in the same domain in a shared network with scope=all %s" % e)
-            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_ACCOUNT):
+            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_SOURCE):
                 self.fail("Error message validation failed when Regular user tries to deploy a VM for another user in the same domain in a shared network with scope=all")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
@@ -1804,7 +1804,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
             self.fail("Regular user is allowed to deploy a VM for another user in the same domain in a shared network with scope=all")
         except Exception as e:
             self.debug("When a regular user deploys a VM for another user in the same domain in a shared network with scope=all %s" % e)
-            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_ACCOUNT):
+            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_SOURCE):
                 self.fail("Error message validation failed when Regular user tries to deploy a VM for another user in the same domain in a shared network with scope=all")
 
     @staticmethod

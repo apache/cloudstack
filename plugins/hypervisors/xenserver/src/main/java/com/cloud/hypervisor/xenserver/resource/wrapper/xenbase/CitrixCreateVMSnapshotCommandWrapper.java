@@ -25,7 +25,6 @@ import java.util.Set;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CreateVMSnapshotAnswer;
@@ -47,7 +46,6 @@ import com.xensource.xenapi.VM;
 @ResourceWrapper(handles =  CreateVMSnapshotCommand.class)
 public final class CitrixCreateVMSnapshotCommandWrapper extends CommandWrapper<CreateVMSnapshotCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixCreateVMSnapshotCommandWrapper.class);
 
     @Override
     public Answer execute(final CreateVMSnapshotCommand command, final CitrixResourceBase citrixResourceBase) {
@@ -71,7 +69,7 @@ public final class CitrixCreateVMSnapshotCommandWrapper extends CommandWrapper<C
         try {
             // check if VM snapshot already exists
             final Set<VM> vmSnapshots = VM.getByNameLabel(conn, command.getTarget().getSnapshotName());
-            if (vmSnapshots == null || vmSnapshots.size() > 0) {
+            if (vmSnapshots == null || !vmSnapshots.isEmpty()) {
                 return new CreateVMSnapshotAnswer(command, command.getTarget(), command.getVolumeTOs());
             }
 
@@ -100,6 +98,7 @@ public final class CitrixCreateVMSnapshotCommandWrapper extends CommandWrapper<C
                     vm = citrixResourceBase.getVM(conn, vmName);
                     vmState = vm.getPowerState(conn);
                 } catch (final Exception e) {
+                    logger.debug("Failed to find VM with name: {} due to:", vmName, e);
                     if (!snapshotMemory) {
                         vm = citrixResourceBase.createWorkingVM(conn, vmName, guestOSType, platformEmulator, listVolumeTo);
                     }
@@ -109,7 +108,7 @@ public final class CitrixCreateVMSnapshotCommandWrapper extends CommandWrapper<C
                     return new CreateVMSnapshotAnswer(command, false, "Creating Instance Snapshot Failed due to can not find Instance: " + vmName);
                 }
 
-                // call Xenserver API
+                // call XenServer API
                 if (!snapshotMemory) {
                     task = vm.snapshotAsync(conn, vmSnapshotName);
                 } else {
@@ -138,7 +137,7 @@ public final class CitrixCreateVMSnapshotCommandWrapper extends CommandWrapper<C
             vmSnapshot = Types.toVM(ref);
             try {
                 Thread.sleep(5000);
-            } catch (final InterruptedException ex) {
+            } catch (final InterruptedException ignored) {
 
             }
             // calculate used capacity for this VM snapshot
@@ -146,7 +145,7 @@ public final class CitrixCreateVMSnapshotCommandWrapper extends CommandWrapper<C
                 try {
                     final long size = citrixResourceBase.getVMSnapshotChainSize(conn, volumeTo, command.getVmName(), vmSnapshotName);
                     volumeTo.setSize(size);
-                } catch (final CloudRuntimeException cre) {
+                } catch (final CloudRuntimeException ignored) {
                 }
             }
 
@@ -163,13 +162,13 @@ public final class CitrixCreateVMSnapshotCommandWrapper extends CommandWrapper<C
             } else {
                 msg = e.toString();
             }
-            s_logger.warn("Creating Instance Snapshot " + command.getTarget().getSnapshotName() + " failed due to: " + msg, e);
+            logger.warn("Creating Instance Snapshot {} failed due to: {}", command.getTarget().getSnapshotName(), msg, e);
             return new CreateVMSnapshotAnswer(command, false, msg);
         } finally {
             try {
                 if (!success) {
                     if (vmSnapshot != null) {
-                        s_logger.debug("Delete existing Instance Snapshot " + vmSnapshotName + " after making VolumeTO failed");
+                        logger.debug("Delete existing Instance Snapshot {} after making VolumeTO failed", vmSnapshotName);
                         final Set<VBD> vbds = vmSnapshot.getVBDs(conn);
                         for (final VBD vbd : vbds) {
                             final VBD.Record vbdr = vbd.getRecord(conn);
@@ -178,16 +177,14 @@ public final class CitrixCreateVMSnapshotCommandWrapper extends CommandWrapper<C
                                 vdi.destroy(conn);
                             }
                         }
-                        vmSnapshot.destroy(conn);
+                        citrixResourceBase.destroyVm(vmSnapshot, conn, true);
                     }
                 }
-                if (vmState == VmPowerState.HALTED) {
-                    if (vm != null) {
-                        vm.destroy(conn);
-                    }
+                if (vmState == VmPowerState.HALTED && vm != null) {
+                    citrixResourceBase.destroyVm(vm, conn);
                 }
             } catch (final Exception e2) {
-                s_logger.error("delete snapshot error due to " + e2.getMessage());
+                logger.error("delete snapshot error due to {}", e2.getMessage());
             }
         }
     }

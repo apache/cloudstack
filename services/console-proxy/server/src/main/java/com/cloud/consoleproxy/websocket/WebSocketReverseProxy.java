@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.consoleproxy.websocket;
 
-import com.cloud.consoleproxy.util.Logger;
 import org.eclipse.jetty.websocket.api.Session;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.drafts.Draft_6455;
@@ -36,6 +35,9 @@ import java.nio.ByteBuffer;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * Acts as a websocket reverse proxy between the remoteSession and the connected endpoint
  * - Connects to a websocket endpoint and sends the received data to the remoteSession endpoint
@@ -51,7 +53,7 @@ public class WebSocketReverseProxy extends WebSocketClient {
     private static final DefaultExtension defaultExtension = new DefaultExtension();
     private static final Draft_6455 draft = new Draft_6455(Collections.singletonList(defaultExtension), Collections.singletonList(protocol));
 
-    private static final Logger logger = Logger.getLogger(WebSocketReverseProxy.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private Session remoteSession;
 
     private void acceptAllCerts() {

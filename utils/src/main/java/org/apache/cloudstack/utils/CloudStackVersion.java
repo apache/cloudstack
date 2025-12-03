@@ -272,4 +272,21 @@ public final class CloudStackVersion implements Comparable<CloudStackVersion> {
     public String toString() {
         return Joiner.on(".").join(asList());
     }
+
+    /**
+     * Get the parent version of VMware hypervisor version
+     * @since 4.18.1.0
+     */
+    public static String getVMwareParentVersion(String hypervisorVersion) {
+        try {
+            CloudStackVersion version = CloudStackVersion.parse(hypervisorVersion);
+            String parentVersion = String.format("%s.%s", version.getMajorRelease(), version.getMinorRelease());
+            if (version.getPatchRelease() != 0) {
+                parentVersion = String.format("%s.%s", parentVersion, version.getPatchRelease());
+            }
+            return parentVersion;
+        } catch (Exception ex) {
+            return null;
+        }
+    }
 }

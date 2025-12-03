@@ -20,7 +20,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.projects.Project;
@@ -33,11 +32,9 @@ import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
-import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 public class ProjectDaoImpl extends GenericDaoBase<ProjectVO, Long> implements ProjectDao {
-    private static final Logger s_logger = Logger.getLogger(ProjectDaoImpl.class);
     protected final SearchBuilder<ProjectVO> AllFieldsSearch;
     protected GenericSearchBuilder<ProjectVO, Long> CountByDomain;
     protected GenericSearchBuilder<ProjectVO, Long> ProjectAccountSearch;
@@ -71,22 +68,8 @@ public class ProjectDaoImpl extends GenericDaoBase<ProjectVO, Long> implements P
     @Override
     @DB
     public boolean remove(Long projectId) {
-        boolean result = false;
-        TransactionLegacy txn = TransactionLegacy.currentTxn();
-        txn.start();
-        ProjectVO projectToRemove = findById(projectId);
-        projectToRemove.setName(null);
-        if (!update(projectId, projectToRemove)) {
-            s_logger.warn("Failed to reset name for the project id=" + projectId + " as a part of project remove");
-            return false;
-        }
-
         _tagsDao.removeByIdAndType(projectId, ResourceObjectType.Project);
-        result = super.remove(projectId);
-        txn.commit();
-
-        return result;
-
+        return super.remove(projectId);
     }
 
     @Override

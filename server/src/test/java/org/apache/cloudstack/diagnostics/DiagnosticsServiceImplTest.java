@@ -18,9 +18,15 @@
 //
 package org.apache.cloudstack.diagnostics;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.dao.VMInstanceDao;
+import junit.framework.TestCase;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.diagnostics.RunDiagnosticsCmd;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -31,18 +37,10 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.routing.NetworkElementCommand;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.dao.VMInstanceDao;
-
-import junit.framework.TestCase;
+import java.util.HashMap;
+import java.util.Map;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DiagnosticsServiceImplTest extends TestCase {

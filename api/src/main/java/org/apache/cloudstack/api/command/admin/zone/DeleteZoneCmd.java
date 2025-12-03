@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.zone;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -33,7 +32,6 @@ import com.cloud.user.Account;
 @APICommand(name = "deleteZone", description = "Deletes a Zone.", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteZoneCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteZoneCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

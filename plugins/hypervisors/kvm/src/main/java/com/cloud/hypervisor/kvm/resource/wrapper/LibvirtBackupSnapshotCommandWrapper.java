@@ -25,7 +25,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.MessageFormat;
 
-import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo.DomainState;
@@ -56,7 +55,6 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 @ResourceWrapper(handles =  BackupSnapshotCommand.class)
 public final class LibvirtBackupSnapshotCommandWrapper extends CommandWrapper<BackupSnapshotCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtBackupSnapshotCommandWrapper.class);
 
     @Override
     public Answer execute(final BackupSnapshotCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -104,7 +102,7 @@ public final class LibvirtBackupSnapshotCommandWrapper extends CommandWrapper<Ba
                     r.confSet("key", primaryPool.getAuthSecret());
                     r.confSet("client_mount_timeout", "30");
                     r.connect();
-                    s_logger.debug("Successfully connected to Ceph cluster at " + r.confGet("mon_host"));
+                    logger.debug("Successfully connected to Ceph cluster at " + r.confGet("mon_host"));
 
                     final IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
                     final Rbd rbd = new Rbd(io);
@@ -113,7 +111,7 @@ public final class LibvirtBackupSnapshotCommandWrapper extends CommandWrapper<Ba
                     try(BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(fh));) {
                         final int chunkSize = 4194304;
                         long offset = 0;
-                        s_logger.debug("Backuping up RBD snapshot " + snapshotName + " to  " + snapshotDestPath);
+                        logger.debug("Backuping up RBD snapshot " + snapshotName + " to  " + snapshotDestPath);
                         while (true) {
                             final byte[] buf = new byte[chunkSize];
                             final int bytes = image.read(offset, buf, chunkSize);
@@ -123,21 +121,21 @@ public final class LibvirtBackupSnapshotCommandWrapper extends CommandWrapper<Ba
                             bos.write(buf, 0, bytes);
                             offset += bytes;
                         }
-                        s_logger.debug("Completed backing up RBD snapshot " + snapshotName + " to  " + snapshotDestPath + ". Bytes written: " + toHumanReadableSize(offset));
+                        logger.debug("Completed backing up RBD snapshot " + snapshotName + " to  " + snapshotDestPath + ". Bytes written: " + toHumanReadableSize(offset));
                     }catch(final IOException ex)
                     {
-                        s_logger.error("BackupSnapshotAnswer:Exception:"+ ex.getMessage());
+                        logger.error("BackupSnapshotAnswer:Exception:"+ ex.getMessage());
                     }
                     r.ioCtxDestroy(io);
                 } catch (final RadosException e) {
-                    s_logger.error("A RADOS operation failed. The error was: " + e.getMessage());
+                    logger.error("A RADOS operation failed. The error was: " + e.getMessage());
                     return new BackupSnapshotAnswer(command, false, e.toString(), null, true);
                 } catch (final RbdException e) {
-                    s_logger.error("A RBD operation on " + snapshotDisk.getName() + " failed. The error was: " + e.getMessage());
+                    logger.error("A RBD operation on " + snapshotDisk.getName() + " failed. The error was: " + e.getMessage());
                     return new BackupSnapshotAnswer(command, false, e.toString(), null, true);
                 }
             } else {
-                final Script scriptCommand = new Script(manageSnapshotPath, cmdsTimeout, s_logger);
+                final Script scriptCommand = new Script(manageSnapshotPath, cmdsTimeout, logger);
                 scriptCommand.add("-b", snapshotDisk.getPath());
                 scriptCommand.add("-n", snapshotName);
                 scriptCommand.add("-p", snapshotDestPath);
@@ -145,7 +143,7 @@ public final class LibvirtBackupSnapshotCommandWrapper extends CommandWrapper<Ba
                 final String result = scriptCommand.execute();
 
                 if (result != null) {
-                    s_logger.debug("Failed to backup snaptshot: " + result);
+                    logger.debug("Failed to backup snaptshot: " + result);
                     return new BackupSnapshotAnswer(command, false, result, null, true);
                 }
             }
@@ -158,7 +156,7 @@ public final class LibvirtBackupSnapshotCommandWrapper extends CommandWrapper<Ba
                     vm = libvirtComputingResource.getDomain(conn, command.getVmName());
                     state = vm.getInfo().state;
                 } catch (final LibvirtException e) {
-                    s_logger.trace("Ignoring libvirt error.", e);
+                    logger.trace("Ignoring libvirt error.", e);
                 }
             }
 
@@ -171,7 +169,7 @@ public final class LibvirtBackupSnapshotCommandWrapper extends CommandWrapper<Ba
                 final String vmUuid = vm.getUUIDString();
                 final Object[] args = new Object[] {snapshotName, vmUuid};
                 final String snapshot = snapshotXML.format(args);
-                s_logger.debug(snapshot);
+                logger.debug(snapshot);
                 final DomainSnapshot snap = vm.snapshotLookupByName(snapshotName);
                 if (snap != null) {
                     snap.delete(0);
@@ -189,12 +187,12 @@ public final class LibvirtBackupSnapshotCommandWrapper extends CommandWrapper<Ba
                     vm.resume();
                 }
             } else {
-                final Script scriptCommand = new Script(manageSnapshotPath, cmdsTimeout, s_logger);
+                final Script scriptCommand = new Script(manageSnapshotPath, cmdsTimeout, logger);
                 scriptCommand.add("-d", snapshotDisk.getPath());
                 scriptCommand.add("-n", snapshotName);
                 final String result = scriptCommand.execute();
                 if (result != null) {
-                    s_logger.debug("Failed to backup snapshot: " + result);
+                    logger.debug("Failed to backup snapshot: " + result);
                     return new BackupSnapshotAnswer(command, false, "Failed to backup snapshot: " + result, null, true);
                 }
             }

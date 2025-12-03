@@ -60,6 +60,8 @@ public interface VirtualMachineProfile {
 
     void setConfigDriveLocation(NetworkElement.Location location);
 
+    void setServiceOffering(ServiceOffering offering);
+
     public static class Param {
 
         public static final Param VmPassword = new Param("VmPassword");
@@ -189,6 +191,10 @@ public interface VirtualMachineProfile {
     BootloaderType getBootLoaderType();
 
     Map<Param, Object> getParameters();
+
+    void setCpuOvercommitRatio(Float cpuOvercommitRatio);
+
+    void setMemoryOvercommitRatio(Float memoryOvercommitRatio);
 
     Float getCpuOvercommitRatio();
 

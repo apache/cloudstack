@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command.user.address;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -51,7 +50,6 @@ import com.cloud.user.Account;
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ReserveIPAddrCmd extends BaseCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(ReserveIPAddrCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

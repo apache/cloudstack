@@ -5,9 +5,9 @@
 -- to you under the Apache License, Version 2.0 (the
 -- "License"); you may not use this file except in compliance
 -- with the License.  You may obtain a copy of the License at
--- 
+--
 --   http://www.apache.org/licenses/LICENSE-2.0
--- 
+--
 -- Unless required by applicable law or agreed to in writing,
 -- software distributed under the License is distributed on an
 -- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -41,7 +41,7 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Hidden', 'DEFAULT', 'managem
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'network.disable.rpfilter', 'true', 'disable rp_filter on Domain Router VM public interfaces.');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'network.securitygroups.work.cleanup.interval', '120', 'Time interval (seconds) in which finished work is cleaned up from the work table');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'network.securitygroups.work.lock.timeout', '300', 'Lock wait timeout (seconds) while updating the security group work queues');
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'network.securitygroups.work.per.agent.queue.size', '100', 
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'network.securitygroups.work.per.agent.queue.size', '100',
 'The number of outstanding security group work items that can be queued to a host. If exceeded, work items will get dropped to conserve memory. Security Group Sync will take care of ensuring that the host gets updated eventually');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'network.securitygroups.workers.pool.size', '50', 'Number of worker threads processing the security group update work queue');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Hidden', 'DEFAULT', 'management-server', 'ovm.guest.network.device', null, 'Specify the private bridge on host for private network');
@@ -51,7 +51,7 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'secstorage.capacity.standby', '10', 'The minimal number of command execution sessions that system is able to serve immediately(standby capacity)');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'secstorage.cmd.execution.time.max', '30', 'The max command execution time in minute');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'secstorage.session.max', '50', 'The max number of command execution sessions that a SSVM can handle');
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'management-server', 'storage.max.volume.size', '2000', 'The maximum size for a volume (in GB).');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'management-server', 'storage.max.volume.size', '2000', 'The maximum size for a volume (in GiB).');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'task.cleanup.retry.interval', '600', 'Time (in seconds) to wait before retrying cleanup of tasks if the cleanup failed previously.  0 means to never retry.');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.additional.vnc.portrange.start', '50000', 'Start port number of additional VNC port range');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.percluster.host.max', '8', 'maxmium hosts per vCenter cluster(do not let it grow over 8)');

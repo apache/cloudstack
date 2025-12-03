@@ -16,34 +16,6 @@
 // under the License.
 package org.apache.cloudstack.privategw;
 
-import java.io.IOException;
-
-import javax.naming.ConfigurationException;
-
-import junit.framework.Assert;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Matchers;
-import org.mockito.Mockito;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.FilterType;
-import org.springframework.core.type.classreading.MetadataReader;
-import org.springframework.core.type.classreading.MetadataReaderFactory;
-import org.springframework.core.type.filter.TypeFilter;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.support.AnnotationConfigContextLoader;
-
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.user.vpc.CreatePrivateGatewayCmd;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.test.utils.SpringUtils;
-
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
@@ -75,6 +47,30 @@ import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.vm.dao.DomainRouterDao;
+import junit.framework.Assert;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.vpc.CreatePrivateGatewayCmd;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.test.utils.SpringUtils;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.core.type.classreading.MetadataReader;
+import org.springframework.core.type.classreading.MetadataReaderFactory;
+import org.springframework.core.type.filter.TypeFilter;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.support.AnnotationConfigContextLoader;
+
+import javax.naming.ConfigurationException;
+import java.io.IOException;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
@@ -100,7 +96,7 @@ public class AclOnPrivateGwTest {
         VpcService _vpcService = Mockito.mock(VpcService.class);
 
         try {
-            _vpcService.applyVpcPrivateGateway(Matchers.anyLong(), Matchers.anyBoolean());
+            _vpcService.applyVpcPrivateGateway(ArgumentMatchers.anyLong(), ArgumentMatchers.anyBoolean());
         } catch (ResourceUnavailableException e) {
             e.printStackTrace();
         } catch (ConcurrentOperationException e) {
@@ -115,7 +111,7 @@ public class AclOnPrivateGwTest {
         createPrivateGwCmd._vpcService = vpcService;
 
         try {
-            Mockito.when(vpcService.applyVpcPrivateGateway(Matchers.anyLong(), Matchers.anyBoolean())).thenReturn(null);
+            Mockito.when(vpcService.applyVpcPrivateGateway(ArgumentMatchers.anyLong(), ArgumentMatchers.anyBoolean())).thenReturn(null);
         } catch (ResourceUnavailableException e) {
             e.printStackTrace();
         } catch (ConcurrentOperationException e) {

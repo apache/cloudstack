@@ -21,13 +21,14 @@ package com.cloud.utils.crypt;
 
 import java.util.Properties;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.db.DbProperties;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class DBEncryptionUtil {
-    public static final Logger s_logger = Logger.getLogger(DBEncryptionUtil.class);
+    protected static Logger LOGGER = LogManager.getLogger(DBEncryptionUtil.class);
     private static CloudStackEncryptor s_encryptor = null;
 
     public static String encrypt(String plain) {
@@ -52,7 +53,7 @@ public class DBEncryptionUtil {
     }
 
     protected static void initialize() {
-        s_logger.debug("Calling to initialize");
+        LOGGER.debug("Calling to initialize");
         final Properties dbProps = DbProperties.getDbProperties();
 
         if (EncryptionSecretKeyChecker.useEncryption()) {
@@ -66,6 +67,6 @@ public class DBEncryptionUtil {
         } else {
             throw new CloudRuntimeException("Trying to encrypt db values when encryption is not enabled");
         }
-        s_logger.debug("initialized");
+        LOGGER.debug("initialized");
     }
 }

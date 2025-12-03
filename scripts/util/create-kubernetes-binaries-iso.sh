@@ -53,7 +53,7 @@ echo "Downloading Kubernetes tools ${RELEASE}..."
 k8s_dir="${working_dir}/k8s"
 mkdir -p "${k8s_dir}"
 cd "${k8s_dir}"
-curl -L --remote-name-all https://storage.googleapis.com/kubernetes-release/release/${RELEASE}/bin/linux/amd64/{kubeadm,kubelet,kubectl}
+curl -L --remote-name-all https://dl.k8s.io/release/${RELEASE}/bin/linux/amd64/{kubeadm,kubelet,kubectl}
 kubeadm_file_permissions=`stat --format '%a' kubeadm`
 chmod +x kubeadm
 
@@ -144,6 +144,9 @@ if [ -z "${kubeadm_file_permissions}" ]; then
     kubeadm_file_permissions=644
 fi
 chmod ${kubeadm_file_permissions} "${working_dir}/k8s/kubeadm"
+
+echo "Updating imagePullPolicy to IfNotPresent in yaml files..."
+sed -i "s/imagePullPolicy:.*/imagePullPolicy: IfNotPresent/g" ${working_dir}/*.yaml
 
 mkisofs -o "${output_dir}/${build_name}" -J -R -l "${iso_dir}"
 

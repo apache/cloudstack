@@ -1934,7 +1934,7 @@ public class CitrixRequestWrapperTest {
         vmIpsMap.put("Test", "127.0.0.1");
         rec.networks = vmIpsMap;
 
-        final GetVmIpAddressCommand getVmIpAddrCmd = new GetVmIpAddressCommand("Test", "127.0.0.1/24", false);
+        final GetVmIpAddressCommand getVmIpAddrCmd = new GetVmIpAddressCommand("Test", "127.0.0.1/24", false, null);
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         assertNotNull(wrapper);

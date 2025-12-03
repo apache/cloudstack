@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command.user.ssh;
 
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -34,7 +33,6 @@ import com.cloud.user.SSHKeyPair;
 @APICommand(name = "deleteSSHKeyPair", description = "Deletes a keypair by name", responseObject = SuccessResponse.class, entityType = {SSHKeyPair.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteSSHKeyPairCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteSSHKeyPairCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

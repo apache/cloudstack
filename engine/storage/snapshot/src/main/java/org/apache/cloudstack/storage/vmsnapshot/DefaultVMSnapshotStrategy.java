@@ -32,7 +32,6 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -77,7 +76,6 @@ import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshotStrategy {
-    private static final Logger s_logger = Logger.getLogger(DefaultVMSnapshotStrategy.class);
     @Inject
     VMSnapshotHelper vmSnapshotHelper;
     @Inject
@@ -164,7 +162,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             answer = (CreateVMSnapshotAnswer)agentMgr.send(hostId, ccmd);
             if (answer != null && answer.getResult()) {
                 processAnswer(vmSnapshotVO, userVm, answer, hostId);
-                s_logger.debug("Create Instance Snapshot " + vmSnapshot.getName() + " succeeded for Instance: " + userVm.getInstanceName());
+                logger.debug("Create Instance Snapshot " + vmSnapshot.getName() + " succeeded for Instance: " + userVm.getInstanceName());
                 result = true;
                 long new_chain_size=0;
                 for (VolumeObjectTO volumeTo : answer.getVolumeTOs()) {
@@ -177,21 +175,21 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 String errMsg = "Creating Instance Snapshot: " + vmSnapshot.getName() + " failed";
                 if (answer != null && answer.getDetails() != null)
                     errMsg = errMsg + " due to " + answer.getDetails();
-                s_logger.error(errMsg);
+                logger.error(errMsg);
                 throw new CloudRuntimeException(errMsg);
             }
         } catch (OperationTimedoutException e) {
-            s_logger.debug("Creating Instance Snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
+            logger.debug("Creating Instance Snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
             throw new CloudRuntimeException("Creating Instance Snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
         } catch (AgentUnavailableException e) {
-            s_logger.debug("Creating Instance Snapshot: " + vmSnapshot.getName() + " failed", e);
+            logger.debug("Creating Instance Snapshot: " + vmSnapshot.getName() + " failed", e);
             throw new CloudRuntimeException("Creating Instance Snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
         } finally {
             if (!result) {
                 try {
                     vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
                 } catch (NoTransitionException e1) {
-                    s_logger.error("Cannot set Instance Snapshot state due to: " + e1.getMessage());
+                    logger.error("Cannot set Instance Snapshot state due to: " + e1.getMessage());
                 }
             }
         }
@@ -204,7 +202,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         try {
             vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.ExpungeRequested);
         } catch (NoTransitionException e) {
-            s_logger.debug("Failed to change Instance Snapshot state with event ExpungeRequested");
+            logger.debug("Failed to change Instance Snapshot state with event ExpungeRequested");
             throw new CloudRuntimeException("Failed to change Instance Snapshot state with event ExpungeRequested: " + e.getMessage());
         }
 
@@ -235,7 +233,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 return true;
             } else {
                 String errMsg = (answer == null) ? null : answer.getDetails();
-                s_logger.error("Delete Instance Snapshot " + vmSnapshot.getName() + " of Instance " + userVm.getInstanceName() + " failed due to " + errMsg);
+                logger.error("Delete Instance Snapshot " + vmSnapshot.getName() + " of Instance " + userVm.getInstanceName() + " failed due to " + errMsg);
                 processAnswer(vmSnapshotVO, userVm, answer, hostId);
                 throw new CloudRuntimeException("Delete Instance Snapshot " + vmSnapshot.getName() + " of Instance " + userVm.getInstanceName() + " failed due to " + errMsg);
             }
@@ -271,7 +269,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             });
         } catch (Exception e) {
             String errMsg = "Error while process answer: " + as.getClass() + " due to " + e.getMessage();
-            s_logger.error(errMsg, e);
+            logger.error(errMsg, e);
             throw new CloudRuntimeException(errMsg);
         }
     }
@@ -377,7 +375,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             UsageEventUtils.publishUsageEvent(type, vmSnapshot.getAccountId(), userVm.getDataCenterId(), userVm.getId(), vmSnapshot.getName(), 0L, 0L, vmSnapSize, virtualSize,
                     VMSnapshot.class.getName(), vmSnapshot.getUuid(), details);
         } catch (Exception e) {
-            s_logger.error("Failed to publis usage event " + type, e);
+            logger.error("Failed to publis usage event " + type, e);
         }
     }
 
@@ -420,21 +418,21 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 String errMsg = "Revert VM: " + userVm.getInstanceName() + " to snapshot: " + vmSnapshotVO.getName() + " failed";
                 if (answer != null && answer.getDetails() != null)
                     errMsg = errMsg + " due to " + answer.getDetails();
-                s_logger.error(errMsg);
-                throw new CloudRuntimeException(errMsg);
+                logger.error(errMsg);
+                throw new CloudRuntimeException(String.format("Unable to revert VM %s to snapshot %s.", userVm.getInstanceName(), vmSnapshotVO.getName()));
             }
         } catch (OperationTimedoutException e) {
-            s_logger.debug("Failed to revert Instance Snapshot", e);
+            logger.debug("Failed to revert Instance Snapshot", e);
             throw new CloudRuntimeException(e.getMessage());
         } catch (AgentUnavailableException e) {
-            s_logger.debug("Failed to revert Instance Snapshot", e);
+            logger.debug("Failed to revert Instance Snapshot", e);
             throw new CloudRuntimeException(e.getMessage());
         } finally {
             if (!result) {
                 try {
                     vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
                 } catch (NoTransitionException e1) {
-                    s_logger.error("Cannot set Instance Snapshot state due to: " + e1.getMessage());
+                    logger.error("Cannot set Instance Snapshot state due to: " + e1.getMessage());
                 }
             }
         }
@@ -451,7 +449,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         try {
             vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.ExpungeRequested);
         } catch (NoTransitionException e) {
-            s_logger.debug("Failed to change Instance Snapshot state with event ExpungeRequested");
+            logger.debug("Failed to change Instance Snapshot state with event ExpungeRequested");
             throw new CloudRuntimeException("Failed to change Instance Snapshot state with event ExpungeRequested: " + e.getMessage());
         }
         UserVm userVm = userVmDao.findById(vmSnapshot.getVmId());
@@ -482,5 +480,15 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             }
         }
         return StrategyPriority.DEFAULT;
+    }
+
+    @Override
+    public void updateOperationFailed(VMSnapshot vmSnapshot) throws NoTransitionException {
+        try {
+            vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
+        } catch (NoTransitionException e) {
+            logger.debug("Failed to change vm snapshot state with event OperationFailed");
+            throw e;
+        }
     }
 }

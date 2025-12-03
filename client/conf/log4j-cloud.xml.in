@@ -17,183 +17,118 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 -->
-<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<Configuration monitorInterval="60" packages="org.apache.cloudstack.alert.snmp,org.apache.cloudstack.syslog">
+   <Appenders>
 
-<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="false">
-   <throwableRenderer class="com.cloud.utils.log.CglibThrowableRenderer"/>
+      <properties>
+        <property name="filters">net.sf.cglib.proxy</property>
+      </properties>
 
-   <!-- ================================= -->
-   <!-- Preserve messages in a local file -->
-   <!-- ================================= -->
+      <!-- ================================= -->
+      <!-- Preserve messages in a local file -->
+      <!-- ================================= -->
 
-   <!-- A regular appender FIXME implement code that will close/reopen logs on SIGHUP by logrotate FIXME make the paths configurable using the build system -->
-   <appender name="FILE" class="org.apache.log4j.rolling.RollingFileAppender">
-      <param name="Append" value="true"/>
-      <param name="Threshold" value="TRACE"/>
-      <rollingPolicy class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
-        <param name="FileNamePattern" value="@MSLOG@.%d{yyyy-MM-dd}.gz"/>
-        <param name="ActiveFileName" value="@MSLOG@"/>
-      </rollingPolicy>
-      <layout class="org.apache.log4j.EnhancedPatternLayout">
-         <param name="ConversionPattern" value="%d{ISO8601} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%n"/>
-      </layout>
-   </appender>
+      <!-- A regular appender -->
+      <RollingFile name="FILE" append="true" fileName="@MSLOG@" filePattern="@MSLOG@.%d{yyyy-MM-dd}.gz">
+         <ThresholdFilter level="TRACE" onMatch="ACCEPT" onMismatch="DENY"/>
+         <Policies>
+            <TimeBasedTriggeringPolicy/>
+         </Policies>
+         <PatternLayout pattern="%d{DEFAULT} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%ex{filters(${filters})}%n"/>
+      </RollingFile>
 
-   <appender name="APISERVER" class="org.apache.log4j.rolling.RollingFileAppender">
-      <param name="Append" value="true"/>
-      <param name="Threshold" value="DEBUG"/>
-      <rollingPolicy class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
-        <param name="FileNamePattern" value="@APISERVERLOG@.%d{yyyy-MM-dd}.gz"/>
-        <param name="ActiveFileName" value="@APISERVERLOG@"/>
-      </rollingPolicy>
-      <layout class="org.apache.log4j.EnhancedPatternLayout">
-         <param name="ConversionPattern" value="%d{ISO8601} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%n"/>
-      </layout>
-   </appender>
 
-   <!-- ============================== -->
-   <!-- Append warnings+ to the syslog if it is listening on UDP port FIXME make sysloghost configurable! -->
-   <!-- ============================== -->
+      <RollingFile name="APISERVER" append="true" fileName="@APISERVERLOG@" filePattern="@APISERVERLOG@.%d{yyyy-MM-dd}.gz">
+         <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
+         <Policies>
+            <TimeBasedTriggeringPolicy/>
+         </Policies>
+         <PatternLayout pattern="%d{DEFAULT} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%ex{filters(${filters})}%n"/>
+      </RollingFile>
 
-   <appender name="SYSLOG" class="org.apache.log4j.net.SyslogAppender">
-      <param name="Threshold" value="WARN"/>
-      <param name="SyslogHost" value="localhost"/>
-      <param name="Facility" value="LOCAL6"/>
-      <layout class="org.apache.log4j.PatternLayout">
-         <param name="ConversionPattern" value="%-5p [%c{3}] (%t:%x) (logid:%X{logcontextid}) %m%n"/>
-      </layout>
-   </appender>
+      <!-- ============================== -->
+      <!-- Append warnings+ to the syslog if it is listening on UDP port -->
+      <!-- ============================== -->
 
-   <!-- ============================== -->
-   <!-- Append alerts to the syslog if it is configured -->
-   <!-- ============================== -->
+      <Syslog name="SYSLOG" host="localhost" facility="LOCAL6">
+         <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
+         <PatternLayout pattern="%d{DEFAULT} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%ex{filters(${filters})}%n"/>
+      </Syslog>
 
-   <appender name="ALERTSYSLOG" class="org.apache.cloudstack.syslog.AlertsSyslogAppender">
-      <param name="Threshold" value="WARN"/>
-      <param name="SyslogHosts" value=""/>
-      <param name="Facility" value="LOCAL6"/>
-      <layout class="org.apache.log4j.PatternLayout">
-         <param name="ConversionPattern" value="%-5p [%c{3}] (%t:%x) (logid:%X{logcontextid}) %m%n"/>
-      </layout>
-   </appender>
+      <!-- ============================== -->
+      <!-- Append alerts to the syslog if it is configured -->
+      <!-- ============================== -->
 
-   <!-- ============================== -->
-   <!-- send alert warnings+ as the SNMP trap if it is configured! -->
-   <!-- ============================== -->
+      <AlertSyslogAppender name="ALERTSYSLOG" syslogHosts="" facility="LOCAL6">
+         <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
+         <PatternLayout pattern="%d{DEFAULT} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%ex{filters(${filters})}%n"/>
+      </AlertSyslogAppender>
 
-   <appender name="SNMP" class="org.apache.cloudstack.alert.snmp.SnmpTrapAppender">
-      <param name="Threshold" value="WARN"/>
-      <param name="SnmpManagerIpAddresses" value=""/>
-      <param name="SnmpManagerPorts" value=""/>
-      <param name="SnmpManagerCommunities" value=""/>
-      <layout class="org.apache.cloudstack.alert.snmp.SnmpEnhancedPatternLayout">
-         <param name="PairDelimiter" value="//"/>
-         <param name="KeyValueDelimiter" value="::"/>
-      </layout>
-   </appender>
+      <!-- ============================== -->
+      <!-- Append messages to the console -->
+      <!-- ============================== -->
 
-   <!-- ============================== -->
-   <!-- Append messages to the console -->
-   <!-- ============================== -->
+      <Console name="CONSOLE" target="SYSTEM_OUT">
+         <ThresholdFilter level="OFF" onMatch="ACCEPT" onMismatch="DENY"/>
+         <PatternLayout pattern="%-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%ex{filters(${filters})}%n"/>
+      </Console>
 
-   <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
-      <param name="Target" value="System.out"/>
-      <param name="Threshold" value="INFO"/>
-      <layout class="org.apache.log4j.EnhancedPatternLayout">
-         <param name="ConversionPattern" value="%-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%n"/>
-      </layout>
-   </appender>
+      <!-- ============================== -->
+      <!-- send alert warnings+ as the SNMP trap if it is configured! -->
+      <!-- ============================== -->
 
-   <!-- ================ -->
-   <!-- Limit categories -->
-   <!-- ================ -->
+      <SnmpTrapAppender name="SNMP" SnmpManagerIpAddresses="" SnmpManagerPorts="" SnmpManagerCommunities="">
+               <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
+      </SnmpTrapAppender>
+   </Appenders>
 
-   <category name="com.cloud">
-     <priority value="DEBUG"/>
-   </category>
+   <Loggers>
 
-   <category name="org.apache.cloudstack">
-     <priority value="DEBUG"/>
-   </category>
+      <Logger name="com.cloud" level="DEBUG"/>
 
-   <category name="org.apache.cloudstack">
-      <priority value="DEBUG"/>
-   </category>
+      <Logger name="org.apache.cloudstack" level="DEBUG"/>
 
-   <category name="com.cloud.utils.nio">
-     <priority value="INFO"/>
-   </category>
+      <Logger name="com.cloud.utils.nio" level="INFO"/>
 
-   <!-- Limit the org.apache category to INFO as its DEBUG is verbose -->
-   <category name="org.apache">
-      <priority value="INFO"/>
-   </category>
+      <Logger name="org.apache" level="INFO"/>
 
-   <category name="org.apache.cloudstack">
-      <priority value="DEBUG"/>
-   </category>
+      <Logger name="org.apache.cloudstack.api.command" level="DEBUG"/>
 
-   <category name="org.apache.cloudstack.api.command">
-      <priority value="TRACE"/>
-   </category>
+      <Logger name="org" level="INFO"/>
 
-   <category name="org">
-      <priority value="INFO"/>
-   </category>
+      <Logger name="org.springframework" level="WARN"/>
 
-   <category name="org.springframework">
-      <priority value="WARN"/>
-   </category>
+      <Logger name="org.apache.cloudstack.spring.module.context.ResourceApplicationContext" level="WARN"/>
 
-   <category name="org.apache.cloudstack.spring.module.context.ResourceApplicationContext">
-      <priority value="WARN"/>
-   </category>
+      <Logger name="net" level="INFO"/>
 
-   <category name="net">
-     <priority value="INFO"/>
-   </category>
+      <Logger name="apiserver.com.cloud"  level="DEBUG"/>
 
-   <category name="apiserver.com.cloud">
-     <priority value="DEBUG"/>
-   </category>
+      <Logger name="apiserver.com.cloud" level="DEBUG" additivity="false">
+         <AppenderRef ref="APISERVER"/>
+      </Logger>
 
-   <logger name="apiserver.com.cloud" additivity="false">
-      <level value="DEBUG"/>
-      <appender-ref ref="APISERVER"/>
-   </logger>
+      <Logger name="com.amazonaws" level="INFO"/>
 
-   <!-- Limit the com.amazonaws category to INFO as its DEBUG is verbose -->
-   <category name="com.amazonaws">
-      <priority value="INFO"/>
-   </category>
+      <Logger name="httpclient.wire" level="INFO"/>
 
-   <!-- Limit the httpclient.wire category to INFO as its DEBUG is verbose -->
-   <category name="httpclient.wire">
-      <priority value="INFO"/>
-   </category>
+      <Logger name="org.apache.cloudstack.alert" additivity="false" level="WARN">
+         <AppenderRef ref="SYSLOG"/>
+         <AppenderRef ref="CONSOLE"/>
+         <AppenderRef ref="FILE"/>
+         <AppenderRef ref="SNMP"/>
+         <AppenderRef ref="ALERTSYSLOG"/>
+      </Logger>
 
-   <!-- ============================== -->
-   <!-- Add or remove these logger for SNMP, this logger is for SNMP alerts plugin -->
-   <!-- ============================== -->
+      <!-- ======================= -->
+      <!-- Setup the Root category -->
+      <!-- ======================= -->
 
-   <logger name="org.apache.cloudstack.alerts" additivity="false">
-      <level value="WARN"/>
-      <appender-ref ref="SYSLOG"/>
-      <appender-ref ref="CONSOLE"/>
-      <appender-ref ref="FILE"/>
-      <appender-ref ref="SNMP"/>
-      <appender-ref ref="ALERTSYSLOG"/>
-   </logger>
+      <Root level="INFO">
+         <AppenderRef ref="SYSLOG"/>
+         <AppenderRef ref="CONSOLE"/>
+         <AppenderRef ref="FILE"/>
+      </Root>
 
-   <!-- ======================= -->
-   <!-- Setup the Root category -->
-   <!-- ======================= -->
-
-   <root>
-      <level value="INFO"/>
-      <appender-ref ref="SYSLOG"/>
-      <appender-ref ref="CONSOLE"/>
-      <appender-ref ref="FILE"/>
-   </root>
-
-</log4j:configuration>
+   </Loggers>
+</Configuration>

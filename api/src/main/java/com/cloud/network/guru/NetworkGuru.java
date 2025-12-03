@@ -79,20 +79,24 @@ public interface NetworkGuru extends Adapter {
      * be used to make determination can be isolation methods, services
      * provided on the guest network and the service provider that's on the
      * guest network.
-     *
+     * <p>
      * If a network is already fully substantiated with the necessary resources
      * during this design phase, then the state should be set to Setup.  If
      * the resources are not allocated at this point, the state should be set
      * to Allocated.
      *
-     * @param offering network offering that contains the package of services
-     *                 the end user intends to use on that network.
-     * @param plan where is this network being deployed.
+     * @param offering      network offering that contains the package of services
+     *                      the end user intends to use on that network.
+     * @param plan          where is this network being deployed.
      * @param userSpecified user specified parameters for this network.
-     * @param owner owner of this network.
+     * @param name
+     * @param vpcId
+     * @param owner         owner of this network.
      * @return Network
      */
-    Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner);
+    Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, String name, Long vpcId, Account owner);
+
+    void setup(Network network, long networkId);
 
     /**
      * For guest networks that are in Allocated state after the design stage,
@@ -208,4 +212,7 @@ public interface NetworkGuru extends Adapter {
 
     boolean isMyTrafficType(TrafficType type);
 
+    default boolean isSlaacV6Only() {
+        return true;
+    }
 }

@@ -26,10 +26,11 @@ import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Properties;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class SnapshotDescriptor {
-    private static final Logger s_logger = Logger.getLogger(SnapshotDescriptor.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private final Properties _properties = new Properties();
 
@@ -43,7 +44,7 @@ public class SnapshotDescriptor {
             String line;
             while ((line = in.readLine()) != null) {
                 // TODO, remember to remove this log, temporarily added for debugging purpose
-                s_logger.info("Parse snapshot file content: " + line);
+                logger.info("Parse snapshot file content: " + line);
 
                 String[] tokens = line.split("=");
                 if (tokens.length == 2) {
@@ -162,7 +163,7 @@ public class SnapshotDescriptor {
             }
         } catch (IOException e) {
             assert (false);
-            s_logger.error("Unexpected exception ", e);
+            logger.error("Unexpected exception ", e);
         }
 
         return bos.toByteArray();

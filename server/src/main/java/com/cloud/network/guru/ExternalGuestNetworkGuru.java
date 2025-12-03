@@ -24,7 +24,6 @@ import javax.inject.Inject;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -36,7 +35,6 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
@@ -73,7 +71,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
-    private static final Logger s_logger = Logger.getLogger(ExternalGuestNetworkGuru.class);
     @Inject
     NetworkOrchestrationService _networkMgr;
     @Inject
@@ -105,41 +102,29 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
                 && isMyIsolationMethod(physicalNetwork) && !offering.isSystemOnly()) {
             return true;
         } else {
-            s_logger.trace("We only take care of Guest networks of type   " + GuestType.Isolated + " in zone of type " + NetworkType.Advanced);
+            logger.trace("We only take care of Guest networks of type   " + GuestType.Isolated + " in zone of type " + NetworkType.Advanced);
             return false;
         }
     }
 
     @Override
-    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
+    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, String name, Long vpcId, Account owner) {
 
         if (_networkModel.areServicesSupportedByNetworkOffering(offering.getId(), Network.Service.Connectivity)) {
             return null;
         }
 
-        NetworkVO config = (NetworkVO)super.design(offering, plan, userSpecified, owner);
+        NetworkVO config = (NetworkVO)super.design(offering, plan, userSpecified, name, vpcId, owner);
         if (config == null) {
             return null;
         } else if (_networkModel.networkIsConfiguredForExternalNetworking(plan.getDataCenterId(), config.getId())) {
             /* In order to revert userSpecified network setup */
             config.setState(State.Allocated);
         }
-        if (userSpecified == null) {
-            return config;
-        }
-        if ((userSpecified.getIp6Cidr() == null && userSpecified.getIp6Gateway() != null) ||
-                    (userSpecified.getIp6Cidr() != null && userSpecified.getIp6Gateway() == null)) {
-            throw new InvalidParameterValueException("ip6gateway and ip6cidr must be specified together.");
-        }
-        if (userSpecified.getIp6Cidr() != null) {
-            config.setIp6Cidr(userSpecified.getIp6Cidr());
-            config.setIp6Gateway(userSpecified.getIp6Gateway());
-        }
-        if (userSpecified.getRouterIpv6() != null) {
-            config.setRouterIpv6(userSpecified.getRouterIpv6());
-        }
 
-        return config;
+        getOrCreateIpv4SubnetForGuestNetwork(offering, config, userSpecified, owner);
+
+        return updateNetworkDesignForIPv6IfNeeded(config, userSpecified);
     }
 
     @Override
@@ -289,7 +274,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             if (!isPublicNetwork) {
                 Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(config, null);
                 if (placeholderNic == null) {
-                    s_logger.debug("Saving placeholder NIC with IPv4 address " + profile.getIPv4Address() +
+                    logger.debug("Saving placeholder NIC with IPv4 address " + profile.getIPv4Address() +
                             " and IPv6 address " + profile.getIPv6Address() + " for the Network " + config);
                     _networkMgr.savePlaceholderNic(config, profile.getIPv4Address(), profile.getIPv6Address(), VirtualMachine.Type.DomainRouter);
                 }

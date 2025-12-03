@@ -271,6 +271,30 @@ public class SAML2LoginAPIAuthenticatorCmdTest {
         verifyTestWhenFailToAuthenticateThrowExceptionOrRedirectToUrl(false, hasThrownServerApiException, 0, 0);
     }
 
+    private void overrideDefaultConfigValue(final ConfigKey configKey, final String name, final Object o) throws IllegalAccessException, NoSuchFieldException {
+        Field f = ConfigKey.class.getDeclaredField(name);
+        f.setAccessible(true);
+        f.set(configKey, o);
+    }
+
+    @Test
+    public void testFailOnSAMLSignatureCheckWhenFalse() throws NoSuchFieldException, IllegalAccessException {
+        overrideDefaultConfigValue(SAML2AuthManager.SAMLCheckSignature, "_value", false);
+        SAML2LoginAPIAuthenticatorCmd cmd = new SAML2LoginAPIAuthenticatorCmd();
+        try {
+            cmd.checkAndFailOnMissingSAMLSignature(null);
+        } catch(Exception e) {
+            Assert.fail("This shouldn't throw any exception");
+        }
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void testFailOnSAMLSignatureCheckWhenTrue() throws NoSuchFieldException, IllegalAccessException {
+        overrideDefaultConfigValue(SAML2AuthManager.SAMLCheckSignature, "_value", true);
+        SAML2LoginAPIAuthenticatorCmd cmd = new SAML2LoginAPIAuthenticatorCmd();
+        cmd.checkAndFailOnMissingSAMLSignature(null);
+    }
+
     private UserAccountVO configureTestWhenFailToAuthenticateThrowExceptionOrRedirectToUrl(String entity, String configurationValue, Boolean isUserAuthorized)
             throws IOException {
         Mockito.when(samlAuthManager.isUserAuthorized(nullable(Long.class), nullable(String.class))).thenReturn(isUserAuthorized);

@@ -50,5 +50,5 @@ module.exports = {
     '!**/node_modules/**',
     '!<rootDir>/src/locales/*.{js, json}'
   ],
-  coverageReporters: ['html', 'text-summary']
+  coverageReporters: ['html', 'text-summary', 'lcov']
 }

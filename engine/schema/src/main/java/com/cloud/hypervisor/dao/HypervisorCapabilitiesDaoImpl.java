@@ -19,8 +19,8 @@ package com.cloud.hypervisor.dao;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -32,7 +32,6 @@ import com.cloud.utils.db.SearchCriteria;
 @Component
 public class HypervisorCapabilitiesDaoImpl extends GenericDaoBase<HypervisorCapabilitiesVO, Long> implements HypervisorCapabilitiesDao {
 
-    private static final Logger s_logger = Logger.getLogger(HypervisorCapabilitiesDaoImpl.class);
 
     protected final SearchBuilder<HypervisorCapabilitiesVO> HypervisorTypeSearch;
     protected final SearchBuilder<HypervisorCapabilitiesVO> HypervisorTypeAndVersionSearch;
@@ -73,6 +72,18 @@ public class HypervisorCapabilitiesDaoImpl extends GenericDaoBase<HypervisorCapa
         SearchCriteria<HypervisorCapabilitiesVO> sc = HypervisorTypeAndVersionSearch.create();
         sc.setParameters("hypervisorType", hypervisorType);
         sc.setParameters("hypervisorVersion", hypervisorVersion);
+        HypervisorCapabilitiesVO result = findOneBy(sc);
+        String parentVersion = CloudStackVersion.getVMwareParentVersion(hypervisorVersion);
+        if (result != null || !HypervisorType.VMware.equals(hypervisorType) ||
+                parentVersion == null) {
+            return result;
+        }
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Hypervisor capabilities for hypervisor: %s, version: %s can not be found. " +
+                            "Trying to find capabilities for the parent version: %s",
+                    hypervisorType, hypervisorVersion, parentVersion));
+        }
+        sc.setParameters("hypervisorVersion", parentVersion);
         return findOneBy(sc);
     }
 

@@ -17,14 +17,17 @@
 
 package org.apache.cloudstack.storage.datastore.util;
 
-import org.apache.log4j.Logger;
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.UuidUtils;
 import com.cloud.utils.script.Script;
 import org.apache.commons.lang3.StringUtils;
 
 public class ScaleIOUtil {
-    private static final Logger LOGGER = Logger.getLogger(ScaleIOUtil.class);
+    protected static Logger LOGGER = LogManager.getLogger(ScaleIOUtil.class);
 
     public static final String PROVIDER_NAME = "PowerFlex";
 
@@ -48,6 +51,24 @@ public class ScaleIOUtil {
     private static final String SDC_HOME_PATH = getSdcHomePath();
 
     private static final String RESCAN_CMD = "drv_cfg --rescan";
+
+    private static final String SDC_SERVICE_STATUS_CMD = "systemctl status scini";
+    private static final String SDC_SERVICE_START_CMD = "systemctl start scini";
+    private static final String SDC_SERVICE_STOP_CMD = "systemctl stop scini";
+    private static final String SDC_SERVICE_RESTART_CMD = "systemctl restart scini";
+
+    private static final String SDC_SERVICE_IS_ACTIVE_CMD = "systemctl is-active scini";
+    private static final String SDC_SERVICE_IS_ENABLED_CMD = "systemctl is-enabled scini";
+    private static final String SDC_SERVICE_ENABLE_CMD = "systemctl enable scini";
+
+    public static final String CONNECTED_SDC_COUNT_STAT = "ConnectedSDCCount";
+
+    /**
+     * Time (in seconds) to wait after SDC service 'scini' start/restart/stop.<br>
+     * Data type: Integer.<br>
+     * Default value: <code>3</code>
+     */
+    public static final AgentProperties.Property<Integer> SDC_SERVICE_ACTION_WAIT = new AgentProperties.Property<>("powerflex.sdc.service.wait", 3);
 
     /**
      * Cmd for querying volumes in SDC
@@ -181,5 +202,65 @@ public class ScaleIOUtil {
         }
 
         return String.format("%s:%s", volumePath, volumeName);
+    }
+
+    public static boolean isSDCServiceInstalled() {
+        int exitValue = Script.runSimpleBashScriptForExitValue(SDC_SERVICE_STATUS_CMD);
+        return exitValue != 4;
+    }
+
+    public static boolean isSDCServiceActive() {
+        int exitValue = Script.runSimpleBashScriptForExitValue(SDC_SERVICE_IS_ACTIVE_CMD);
+        return exitValue == 0;
+    }
+
+    public static boolean isSDCServiceEnabled() {
+        int exitValue = Script.runSimpleBashScriptForExitValue(SDC_SERVICE_IS_ENABLED_CMD);
+        return exitValue == 0;
+    }
+
+    public static boolean enableSDCService() {
+        int exitValue = Script.runSimpleBashScriptForExitValue(SDC_SERVICE_ENABLE_CMD);
+        return exitValue == 0;
+    }
+
+    public static boolean startSDCService() {
+        int exitValue = Script.runSimpleBashScriptForExitValue(SDC_SERVICE_START_CMD);
+        if (exitValue != 0) {
+            return false;
+        }
+        waitForSdcServiceActionToComplete();
+        return true;
+    }
+
+    public static boolean stopSDCService() {
+        int exitValue = Script.runSimpleBashScriptForExitValue(SDC_SERVICE_STOP_CMD);
+        if (exitValue != 0) {
+            return false;
+        }
+        waitForSdcServiceActionToComplete();
+        return true;
+    }
+
+    public static boolean restartSDCService() {
+        int exitValue = Script.runSimpleBashScriptForExitValue(SDC_SERVICE_RESTART_CMD);
+        if (exitValue != 0) {
+            return false;
+        }
+        waitForSdcServiceActionToComplete();
+        return true;
+    }
+
+    private static void waitForSdcServiceActionToComplete() {
+        // Wait for the SDC service to settle after start/restart/stop and reaches a stable state
+        int waitTimeInSecs = AgentPropertiesFileHandler.getPropertyValue(SDC_SERVICE_ACTION_WAIT);
+        if (waitTimeInSecs < 0) {
+            waitTimeInSecs = SDC_SERVICE_ACTION_WAIT.getDefaultValue();
+        }
+        try {
+            LOGGER.debug(String.format("Waiting for %d secs after SDC service action, to reach a stable state", waitTimeInSecs));
+            Thread.sleep(waitTimeInSecs * 1000L);
+        } catch (InterruptedException ignore) {
+        }
     }
 }

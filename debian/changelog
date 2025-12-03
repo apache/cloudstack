@@ -1,12 +1,48 @@
-cloudstack (4.19.0.0-SNAPSHOT) unstable; urgency=low
+cloudstack (4.20.3.0-SNAPSHOT) unstable; urgency=low
 
-  * Update the version to 4.19.0.0-SNAPSHOT
+  * Update the version to 4.20.3.0-SNAPSHOT
 
- -- the Apache CloudStack project <dev@cloudstack.apache.org>  Wed, 21 Jun 2023 12:31:00 +0200
+ -- the Apache CloudStack project <dev@cloudstack.apache.org>  Fri, 24 Oct 2025 08:36:00 +0200
 
-cloudstack (4.18.1.0-SNAPSHOT) unstable; urgency=low
+cloudstack (4.20.2.0) unstable; urgency=low
 
-  * Update the version to 4.18.1.0-SNAPSHOT
+  * Update the version to 4.20.2.0
+
+ -- the Apache CloudStack project <dev@cloudstack.apache.org>  Thu, 16 Oct 2025 11:42:56 +0200
+
+cloudstack (4.20.2.0-SNAPSHOT) unstable; urgency=low
+
+  * Update the version to 4.20.2.0-SNAPSHOT
+
+ -- the Apache CloudStack project <dev@cloudstack.apache.org>  Mon, 29 Jan 2024 10:21:52 +0530
+
+cloudstack (4.20.1.0) unstable; urgency=low
+
+  * Update the version to 4.20.1.0
+
+ -- the Apache CloudStack project <dev@cloudstack.apache.org>  Fri, 30 May 2025 12:43:00 +0530
+
+cloudstack (4.20.1.0-SNAPSHOT) unstable; urgency=low
+
+  * Update the version to 4.20.1.0-SNAPSHOT
+
+ -- the Apache CloudStack project <dev@cloudstack.apache.org>  Tue, 19 Nov 2024 08:54:07 -0300
+
+cloudstack (4.20.1.0-SNAPSHOT-SNAPSHOT) unstable; urgency=low
+
+  * Update the version to 4.20.1.0-SNAPSHOT-SNAPSHOT
+
+ -- the Apache CloudStack project <dev@cloudstack.apache.org>  Mon, 29 Jan 2024 10:21:52 +0530
+
+cloudstack (4.19.0.0) unstable; urgency=low
+
+  * Update the version to 4.19.0.0
+
+ -- the Apache CloudStack project <dev@cloudstack.apache.org>  Mon, 29 Jan 2024 10:21:52 +0530
+
+cloudstack (4.18.1.0) unstable; urgency=low
+
+  * Update the version to 4.18.1.0
 
  -- the Apache CloudStack project <dev@cloudstack.apache.org>  Wed, 21 Jun 2023 12:30:00 +0200
 

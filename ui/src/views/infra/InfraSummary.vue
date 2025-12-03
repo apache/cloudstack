@@ -187,7 +187,7 @@ export default {
     return {
       loading: true,
       routes: {},
-      sections: ['zones', 'pods', 'clusters', 'hosts', 'storagepools', 'imagestores', 'systemvms', 'routers', 'cpusockets', 'managementservers', 'alerts', 'ilbvms', 'metrics'],
+      sections: ['zones', 'pods', 'clusters', 'hosts', 'storagepools', 'imagestores', 'objectstores', 'systemvms', 'routers', 'cpusockets', 'managementservers', 'alerts', 'ilbvms', 'metrics'],
       sslFormVisible: false,
       stats: {},
       intermediateCertificates: [],

@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.response;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import java.math.BigDecimal;
@@ -27,23 +28,23 @@ import java.util.Date;
 public class QuotaTariffResponse extends BaseResponse {
 
     @SerializedName("usageType")
-    @Param(description = "Usage type")
+    @Param(description = "usageType")
     private int usageType;
 
     @SerializedName("usageName")
-    @Param(description = "Usage name")
+    @Param(description = "usageName")
     private String usageName;
 
     @SerializedName("usageUnit")
-    @Param(description = "Usage unit")
+    @Param(description = "usageUnit")
     private String usageUnit;
 
     @SerializedName("usageDiscriminator")
-    @Param(description = "Usage discriminator")
+    @Param(description = "usageDiscriminator")
     private String usageDiscriminator;
 
     @SerializedName("tariffValue")
-    @Param(description = "Tariff value")
+    @Param(description = "tariffValue")
     private BigDecimal tariffValue;
 
     @SerializedName("effectiveDate")
@@ -63,7 +64,7 @@ public class QuotaTariffResponse extends BaseResponse {
     private Date endDate;
 
     @SerializedName("activationRule")
-    @Param(description = "Tctivation rule of the quota tariff")
+    @Param(description = "Activation rule of the quota tariff")
     private String activationRule;
 
     @SerializedName("name")
@@ -74,26 +75,22 @@ public class QuotaTariffResponse extends BaseResponse {
     @Param(description = "Description")
     private String description;
 
-    @SerializedName("uuid")
-    @Param(description = "UUID")
-    private String uuid;
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the ID of the tariff")
+    private String id;
 
     @SerializedName("removed")
     @Param(description = "When the quota tariff was removed")
     private Date removed;
 
+    @SerializedName("position")
+    @Param(description = "position in the execution sequence for tariffs of the same type")
+    private Integer position;
+
+
     public QuotaTariffResponse() {
         super();
         this.setObjectName("quotatariff");
-    }
-
-    public QuotaTariffResponse(final int usageType) {
-        super();
-        this.usageType = usageType;
-    }
-
-    public String getUsageName() {
-        return usageName;
     }
 
     public void setUsageName(String usageName) {
@@ -108,16 +105,8 @@ public class QuotaTariffResponse extends BaseResponse {
         this.usageType = usageType;
     }
 
-    public String getUsageUnit() {
-        return usageUnit;
-    }
-
     public void setUsageUnit(String usageUnit) {
         this.usageUnit = usageUnit;
-    }
-
-    public String getUsageDiscriminator() {
-        return usageDiscriminator;
     }
 
     public void setUsageDiscriminator(String usageDiscriminator) {
@@ -132,24 +121,12 @@ public class QuotaTariffResponse extends BaseResponse {
         this.tariffValue = tariffValue;
     }
 
-    public String getUsageTypeDescription() {
-        return usageTypeDescription;
-    }
-
     public void setUsageTypeDescription(String usageTypeDescription) {
         this.usageTypeDescription = usageTypeDescription;
     }
 
-    public Date getEffectiveOn() {
-        return effectiveOn;
-    }
-
     public void setEffectiveOn(Date effectiveOn) {
         this.effectiveOn = effectiveOn;
-    }
-
-    public String getCurrency() {
-        return currency;
     }
 
     public void setCurrency(String currency) {
@@ -188,20 +165,24 @@ public class QuotaTariffResponse extends BaseResponse {
         this.description = description;
     }
 
-    public String getUuid() {
-        return uuid;
+    public String getId() {
+        return id;
     }
 
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
-    public Date getRemoved() {
-        return removed;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setRemoved(Date removed) {
         this.removed = removed;
+    }
+
+    public Integer getPosition() {
+        return position;
+    }
+
+    public void setPosition(Integer position) {
+        this.position = position;
     }
 
 }

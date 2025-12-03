@@ -1,0 +1,220 @@
+#cloud-config
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+---
+write_files:
+  - path: /usr/local/bin/sharedfs/common
+    permissions: '0700'
+    owner: root:root
+    content: |
+      #!/bin/bash -e
+
+      LOG_FILE="/var/log/userdata.log"
+      log() {
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> $LOG_FILE
+      }
+
+      get_block_device() {
+        if [ "$HYPERVISOR" == "kvm" ]; then
+          BLOCK_DEVICE="vdb"
+        elif [ "$HYPERVISOR" == "xenserver" ]; then
+          BLOCK_DEVICE="xvdb"
+        elif [ "$HYPERVISOR" == "vmware" ]; then
+          BLOCK_DEVICE="sdb"
+        else
+          log "Unknown hypervisor"
+          exit 1
+        fi
+        echo "$BLOCK_DEVICE"
+      }
+
+  - path: /usr/local/bin/sharedfs/create-shared-filesystem
+    permissions: '0700'
+    owner: root:root
+    content: |
+      #!/bin/bash -e
+
+      source /usr/local/bin/sharedfs/common
+
+      log "Running add script"
+
+      DISK_SIZE_DIR="/usr/local/var/sharedfs"
+      DISK_SIZE_FILE="$DISK_SIZE_DIR/previous_disk_size"
+
+      PARTITION="$1"
+      EXPORT_DIR={{ fsvm.exportpath }}
+      PERMISSIONS="rw,sync,no_subtree_check,no_root_squash"
+
+      mkdir -p "$EXPORT_DIR"
+
+      FS_TYPE=$(lsblk -no FSTYPE "$PARTITION")
+
+      if [ -z "$FS_TYPE" ]; then
+        FILESYSTEM={{ fsvm.filesystem }}
+        if [ "$FILESYSTEM" == "xfs" ]; then
+          mkfs.xfs "$PARTITION"
+          log "Formatted Partition $PARTITION with XFS Filesystem."
+        elif [ "$FILESYSTEM" == "ext4" ]; then
+          mkfs.ext4 "$PARTITION"
+          log "Formatted Partition $PARTITION with EXT4 Filesystem."
+        else
+          log "Invalid filesystem type specified. Use 'xfs' or 'ext4'."
+          exit 1
+        fi
+      else
+        log "Partition $PARTITION already has a filesystem of type $FS_TYPE. Skipping format."
+      fi
+
+      FS_INFO=$(blkid "$PARTITION")
+      UUID=$(echo "$FS_INFO" | grep -oP "UUID=\"\K[^\"]+")
+      TYPE=$(echo "$FS_INFO" | grep -oP "TYPE=\"\K[^\"]+")
+
+      if [ -z "$UUID" ] || [ -z "$TYPE" ]; then
+        log "Failed to retrieve UUID or TYPE for $PARTITION"
+        exit 1
+      fi
+
+      echo "UUID=$UUID $EXPORT_DIR $TYPE defaults 0 2" >> /etc/fstab
+      log "Added fstab entry."
+
+      mount -a
+
+      if mountpoint -q "$EXPORT_DIR"; then
+        log "$PARTITION is successfully mounted on $EXPORT_DIR"
+      else
+        log "Failed to mount $PARTITION on $EXPORT_DIR"
+        exit 1
+      fi
+
+      log "Configuring NFS export..."
+      EXPORT_ENTRY="$EXPORT_DIR *($PERMISSIONS)"
+      if ! grep -qF "$EXPORT_ENTRY" /etc/exports; then
+        echo "$EXPORT_ENTRY" | tee -a /etc/exports > /dev/null
+      fi
+      exportfs -ra
+
+      log "Enable and restart NFS server..."
+      systemctl enable nfs-kernel-server
+      systemctl restart nfs-kernel-server
+
+      CURRENT_DISK_SIZE=$(blockdev --getsz "$PARTITION")
+
+      mkdir -p "$DISK_SIZE_DIR"
+      echo "$CURRENT_DISK_SIZE" > "$DISK_SIZE_FILE"
+
+      log "NFS share created successfully."
+      log "Finished running add script."
+
+  - path: /usr/local/bin/sharedfs/resize-filesystem
+    permissions: '0700'
+    owner: root:root
+    content: |
+      #!/bin/bash -e
+
+      source /usr/local/bin/sharedfs/common
+      log "Running resize script."
+
+      FILESYSTEM={{ fsvm.filesystem }}
+      if [ "$FILESYSTEM" == "xfs" ]; then
+        EXPORT_DIR={{ fsvm.exportpath }}
+        xfs_growfs "$EXPORT_DIR"
+      elif [ "$FILESYSTEM" == "ext4" ]; then
+        PARTITION="/dev/$1"
+        resize2fs "$PARTITION"
+      else
+        log "Invalid filesystem type specified. Use 'xfs' or 'ext4'."
+        exit 1
+      fi
+
+      log "Finished running resize script."
+
+  - path: /etc/systemd/system/resize-sharedfs@.service
+    permissions: '0700'
+    owner: root:root
+    content: |
+      [Unit]
+      Description=Resize Shared FileSystem
+
+      [Install]
+      WantedBy=multi-user.target
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/bin/sharedfs/resize-filesystem %I
+
+  - path: /etc/systemd/system/cloud-dhclient@.service
+    permissions: '0700'
+    owner: root:root
+    content: |
+      [Unit]
+      Description=CloudStack service to start dhclient
+
+      [Install]
+      WantedBy=multi-user.target
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/sbin/dhclient %I
+      Restart=on-failure
+
+  - path: /usr/local/bin/sharedfs/fsvm-setup
+    permissions: '0700'
+    owner: root:root
+    content: |
+      #!/bin/bash -e
+
+      source /usr/local/bin/sharedfs/common
+
+      HYPERVISOR={{ fsvm.hypervisor }}
+      BLOCK_DEVICE=$(get_block_device "$HYPERVISOR")
+
+      PARTITION="/dev/$BLOCK_DEVICE"
+      ADD_PARTITION_FILE="/usr/local/bin/sharedfs/create-shared-filesystem"
+      RESIZE_PARTITION_FILE="/usr/local/bin/sharedfs/resize-filesystem"
+
+      for interface in $(ls /sys/class/net/ | grep '^eth'); do
+        echo "Starting cloud-dhclient service for interface: $interface"
+        sudo systemctl start cloud-dhclient@$interface.service
+      done
+      log "Existing network interfaces configured"
+
+      UDEV_RESIZE_RULE="KERNEL==\"$BLOCK_DEVICE\", ACTION==\"add|change\", SUBSYSTEM==\"block\", ENV{SYSTEMD_WANTS}=\"resize-sharedfs@%k.service\""
+      UDEV_ADD_NIC_RULE="ACTION==\"add\", SUBSYSTEM==\"net\", DRIVERS==\"?*\", ENV{SYSTEMD_WANTS}=\"cloud-dhclient@%k.service\""
+
+      # Add udev rules
+      echo "$UDEV_RESIZE_RULE" > /etc/udev/rules.d/99-resize-filesystem.rules
+      echo "$UDEV_ADD_NIC_RULE" > /etc/udev/rules.d/99-add-nic.rules
+
+      if [ -b "$PARTITION" ]; then
+        log "Partition $PARTITION exists. Running the $ADD_PARTITION_FILE script"
+        $ADD_PARTITION_FILE "$PARTITION"
+      fi
+
+      log "Udev rules added."
+
+      # Reload udev rules
+      udevadm control --reload-rules
+      udevadm trigger
+
+      log "Script execution finished successfully."
+
+      sudo touch /home/cloud/success
+      echo "true" > /home/cloud/success
+
+runcmd:
+  - /usr/local/bin/sharedfs/fsvm-setup

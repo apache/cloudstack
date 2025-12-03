@@ -19,10 +19,7 @@
 
 package org.apache.cloudstack.storage.datastore.util;
 
-import java.io.IOException;
 import java.sql.PreparedStatement;
-import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -41,10 +38,6 @@ import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpApiResponse;
 import org.apache.cloudstack.storage.snapshot.StorPoolConfigurationManager;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.log4j.Appender;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
-import org.apache.log4j.RollingFileAppender;
 
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
@@ -170,11 +163,12 @@ public class StorPoolHelper {
         return null;
     }
 
-    public static Map<String, String> addStorPoolTags(String name, String vmUuid, String csTag, String vcPolicy) {
+    public static Map<String, String> addStorPoolTags(String name, String vmUuid, String csTag, String vcPolicy, String qcTier) {
         Map<String, String> tags = new HashMap<>();
         tags.put("uuid", name);
         tags.put("cvm", vmUuid);
         tags.put(StorPoolUtil.SP_VC_POLICY, vcPolicy);
+        tags.put("qc", qcTier);
         if (csTag != null) {
             tags.put("cs", csTag);
         }
@@ -182,30 +176,30 @@ public class StorPoolHelper {
     }
 
     // Initialize custom logger for updated volume and snapshots
-    public static void appendLogger(Logger log, String filePath, String kindOfLog) {
-        Appender appender = null;
-        PatternLayout patternLayout = new PatternLayout();
-        patternLayout.setConversionPattern("%d{YYYY-MM-dd HH:mm:ss.SSS}  %m%n");
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        String path = filePath + "-" + sdf.format(timestamp) + ".log";
-        try {
-            appender = new RollingFileAppender(patternLayout, path);
-            log.setAdditivity(false);
-            log.addAppender(appender);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        if (kindOfLog.equals("update")) {
-            StorPoolUtil.spLog(
-                    "You can find information about volumes and snapshots, which will be updated in Database with their globalIs in %s log file",
-                    path);
-        } else if (kindOfLog.equals("abandon")) {
-            StorPoolUtil.spLog(
-                    "You can find information about volumes and snapshots, for which CloudStack doesn't have information in %s log file",
-                    path);
-        }
-    }
+//    public static void appendLogger(Logger log, String filePath, String kindOfLog) {
+//        Appender appender = null;
+//        PatternLayout patternLayout = new PatternLayout();
+//        patternLayout.setConversionPattern("%d{YYYY-MM-dd HH:mm:ss.SSS}  %m%n");
+//        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+//        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+//        String path = filePath + "-" + sdf.format(timestamp) + ".log";
+//        try {
+//            appender = new RollingFileAppender(patternLayout, path);
+//            log.setAdditivity(false);
+//            log.addAppender(appender);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        if (kindOfLog.equals("update")) {
+//            StorPoolUtil.spLog(
+//                    "You can find information about volumes and snapshots, which will be updated in Database with their globalIs in %s log file",
+//                    path);
+//        } else if (kindOfLog.equals("abandon")) {
+//            StorPoolUtil.spLog(
+//                    "You can find information about volumes and snapshots, for which CloudStack doesn't have information in %s log file",
+//                    path);
+//        }
+//    }
 
     public static void setSpClusterIdIfNeeded(long hostId, String clusterId, ClusterDao clusterDao, HostDao hostDao,
             ClusterDetailsDao clusterDetails) {
@@ -225,17 +219,17 @@ public class StorPoolHelper {
     }
 
     public static Long findClusterIdByGlobalId(String globalId, ClusterDao clusterDao) {
-        List<ClusterVO> clusterVo = clusterDao.listAll();
-        if (clusterVo.size() == 1) {
+        List<Long> clusterIds = clusterDao.listAllIds();
+        if (clusterIds.size() == 1) {
             StorPoolUtil.spLog("There is only one cluster, sending backup to secondary command");
             return null;
         }
-        for (ClusterVO clusterVO2 : clusterVo) {
-            if (globalId != null && StorPoolConfigurationManager.StorPoolClusterId.valueIn(clusterVO2.getId()) != null
-                    && globalId.contains(StorPoolConfigurationManager.StorPoolClusterId.valueIn(clusterVO2.getId()).toString())) {
-                StorPoolUtil.spLog("Found cluster with id=%s for object with globalId=%s", clusterVO2.getId(),
+        for (Long clusterId : clusterIds) {
+            if (globalId != null && StorPoolConfigurationManager.StorPoolClusterId.valueIn(clusterId) != null
+                    && globalId.contains(StorPoolConfigurationManager.StorPoolClusterId.valueIn(clusterId))) {
+                StorPoolUtil.spLog("Found cluster with id=%s for object with globalId=%s", clusterId,
                         globalId);
-                return clusterVO2.getId();
+                return clusterId;
             }
         }
         throw new CloudRuntimeException(

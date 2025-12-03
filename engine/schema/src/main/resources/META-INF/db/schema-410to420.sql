@@ -113,7 +113,7 @@ CREATE TABLE `cloud`.`image_store` (
   `uuid` varchar(255) COMMENT 'uuid of data store',
   `parent` varchar(255) COMMENT 'parent path for the storage server',
   `created` datetime COMMENT 'date the image store first signed on',
-  `removed` datetime COMMENT 'date removed if not null',  
+  `removed` datetime COMMENT 'date removed if not null',
   `total_size` bigint unsigned COMMENT 'storage total size statistics',
   `used_bytes` bigint unsigned COMMENT 'storage available bytes statistics',
   PRIMARY KEY(`id`)
@@ -131,7 +131,7 @@ CREATE TABLE `cloud`.`image_store_details` (
 
 DROP VIEW IF EXISTS `cloud`.`image_store_view`;
 CREATE VIEW `cloud`.`image_store_view` AS
-    select 
+    select
         image_store.id,
         image_store.uuid,
         image_store.name,
@@ -153,9 +153,9 @@ CREATE VIEW `cloud`.`image_store_view` AS
             left join
         `cloud`.`image_store_details` ON image_store_details.store_id = image_store.id;
 
-            
--- here we have to allow null for store_id to accomodate baremetal case to search for ready templates since template state is only stored in this table
--- FK also commented out due to this            
+
+-- here we have to allow null for store_id to accommodate baremetal case to search for ready templates since template state is only stored in this table
+-- FK also commented out due to this
 CREATE TABLE  `cloud`.`template_store_ref` (
   `id` bigint unsigned NOT NULL auto_increment,
   `store_id` bigint unsigned,
@@ -165,7 +165,7 @@ CREATE TABLE  `cloud`.`template_store_ref` (
   `job_id` varchar(255),
   `download_pct` int(10) unsigned,
   `size` bigint unsigned,
-  `store_role` varchar(255),  
+  `store_role` varchar(255),
   `physical_size` bigint unsigned DEFAULT 0,
   `download_state` varchar(255),
   `error_str` varchar(255),
@@ -177,7 +177,7 @@ CREATE TABLE  `cloud`.`template_store_ref` (
   `is_copy` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'indicates whether this was copied ',
   `update_count` bigint unsigned,
   `ref_cnt` bigint unsigned DEFAULT 0,
-  `updated` datetime, 
+  `updated` datetime,
   PRIMARY KEY  (`id`),
 --  CONSTRAINT `fk_template_store_ref__store_id` FOREIGN KEY `fk_template_store_ref__store_id` (`store_id`) REFERENCES `image_store` (`id`) ON DELETE CASCADE,
   INDEX `i_template_store_ref__store_id`(`store_id`),
@@ -193,7 +193,7 @@ CREATE TABLE  `cloud`.`template_store_ref` (
 -- ALTER TABLE `cloud`.`snapshots` DROP COLUMN `sechost_id`;
 
 -- change upload host_id FK to point to image_store table
-ALTER TABLE `cloud`.`upload` DROP FOREIGN KEY `fk_upload__host_id`; 
+ALTER TABLE `cloud`.`upload` DROP FOREIGN KEY `fk_upload__host_id`;
 ALTER TABLE `cloud`.`upload` ADD CONSTRAINT `fk_upload__store_id` FOREIGN KEY(`host_id`) REFERENCES `image_store` (`id`) ON DELETE CASCADE;
 
 CREATE TABLE  `cloud`.`snapshot_store_ref` (
@@ -208,11 +208,11 @@ CREATE TABLE  `cloud`.`snapshot_store_ref` (
   `physical_size` bigint unsigned DEFAULT 0,
   `parent_snapshot_id` bigint unsigned DEFAULT 0,
   `install_path` varchar(255),
-  `state` varchar(255) NOT NULL,  
-  -- `removed` datetime COMMENT 'date removed if not null',  
+  `state` varchar(255) NOT NULL,
+  -- `removed` datetime COMMENT 'date removed if not null',
   `update_count` bigint unsigned,
   `ref_cnt` bigint unsigned,
-  `updated` datetime,   
+  `updated` datetime,
   `volume_id` bigint unsigned,
   PRIMARY KEY  (`id`),
   INDEX `i_snapshot_store_ref__store_id`(`store_id`),
@@ -238,11 +238,11 @@ CREATE TABLE  `cloud`.`volume_store_ref` (
   `install_path` varchar(255),
   `url` varchar(255),
   `download_url` varchar(255),
-  `state` varchar(255) NOT NULL,  
+  `state` varchar(255) NOT NULL,
   `destroyed` tinyint(1) COMMENT 'indicates whether the volume_host entry was destroyed by the user or not',
   `update_count` bigint unsigned,
   `ref_cnt` bigint unsigned,
-  `updated` datetime,   
+  `updated` datetime,
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_volume_store_ref__store_id` FOREIGN KEY `fk_volume_store_ref__store_id` (`store_id`) REFERENCES `image_store` (`id`) ON DELETE CASCADE,
   INDEX `i_volume_store_ref__store_id`(`store_id`),
@@ -525,9 +525,9 @@ CREATE VIEW `cloud`.`event_view` AS
             left join
         `cloud`.`event` eve ON event.start_id = eve.id;
 
-ALTER TABLE `cloud`.`region` ADD COLUMN `portableip_service_enabled` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is Portable IP service enalbed in the Region';
+ALTER TABLE `cloud`.`region` ADD COLUMN `portableip_service_enabled` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is Portable IP service enabled in the Region';
 
-ALTER TABLE `cloud`.`region` ADD COLUMN `gslb_service_enabled` tinyint(1) unsigned NOT NULL DEFAULT 1 COMMENT 'Is GSLB service enalbed in the Region';
+ALTER TABLE `cloud`.`region` ADD COLUMN `gslb_service_enabled` tinyint(1) unsigned NOT NULL DEFAULT 1 COMMENT 'Is GSLB service enabled in the Region';
 
 ALTER TABLE `cloud`.`external_load_balancer_devices` ADD COLUMN `is_gslb_provider` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if load balancer appliance is acting as gslb service provider in the zone';
 
@@ -662,12 +662,12 @@ ALTER TABLE `cloud`.`remote_access_vpn` ADD COLUMN `id` bigint unsigned NOT NULL
 ALTER TABLE `cloud`.`remote_access_vpn` ADD COLUMN `uuid` varchar(40) UNIQUE;
 
 -- START: support for LXC
- 
+
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled) VALUES (UUID(), 'LXC', 'default', 50, 1);
 ALTER TABLE `cloud`.`physical_network_traffic_types` ADD COLUMN `lxc_network_label` varchar(255) DEFAULT 'cloudbr0' COMMENT 'The network name label of the physical device dedicated to this traffic on a LXC host';
- 
+
 UPDATE configuration SET value='KVM,XenServer,VMware,BareMetal,Ovm,LXC' WHERE name='hypervisor.list';
- 
+
 INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
      VALUES (10, UUID(), 'routing-10', 'SystemVM Template (LXC)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://download.cloudstack.org/templates/acton/acton-systemvm-02062012.qcow2.bz2', '2755de1f9ef2ce4d6f2bee2efbb4da92', 0, 'SystemVM Template (LXC)', 'QCOW2', 15, 0, 1, 'LXC');
 
@@ -717,10 +717,10 @@ CREATE TABLE `cloud`.`service_offering_details` (
   CONSTRAINT `fk_service_offering_details__service_offering_id` FOREIGN KEY (`service_offering_id`) REFERENCES `service_offering`(`id`) ON DELETE CASCADE,
   CONSTRAINT UNIQUE KEY `uk_service_offering_id_name` (`service_offering_id`, `name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-      
+
 DROP VIEW IF EXISTS `cloud`.`user_vm_view`;
 CREATE VIEW `cloud`.`user_vm_view` AS
-    select 
+    select
         vm_instance.id id,
         vm_instance.name name,
         user_vm.display_name display_name,
@@ -898,7 +898,7 @@ CREATE VIEW `cloud`.`user_vm_view` AS
 
 DROP VIEW IF EXISTS `cloud`.`affinity_group_view`;
 CREATE VIEW `cloud`.`affinity_group_view` AS
-    select 
+    select
         affinity_group.id id,
         affinity_group.name name,
         affinity_group.type type,
@@ -933,7 +933,7 @@ CREATE VIEW `cloud`.`affinity_group_view` AS
 
 DROP VIEW IF EXISTS `cloud`.`host_view`;
 CREATE VIEW `cloud`.`host_view` AS
-    select 
+    select
         host.id,
         host.uuid,
         host.name,
@@ -1001,10 +1001,10 @@ CREATE VIEW `cloud`.`host_view` AS
         `cloud`.`async_job` ON async_job.instance_id = host.id
             and async_job.instance_type = 'Host'
             and async_job.job_status = 0;
-        
+
 DROP VIEW IF EXISTS `cloud`.`storage_pool_view`;
 CREATE VIEW `cloud`.`storage_pool_view` AS
-    select 
+    select
         storage_pool.id,
         storage_pool.uuid,
         storage_pool.name,
@@ -1024,7 +1024,7 @@ CREATE VIEW `cloud`.`storage_pool_view` AS
         cluster.cluster_type,
         data_center.id data_center_id,
         data_center.uuid data_center_uuid,
-        data_center.name data_center_name,      
+        data_center.name data_center_name,
         data_center.networktype data_center_type,
         host_pod_ref.id pod_id,
         host_pod_ref.uuid pod_uuid,
@@ -1054,11 +1054,11 @@ CREATE VIEW `cloud`.`storage_pool_view` AS
         `cloud`.`async_job` ON async_job.instance_id = storage_pool.id
             and async_job.instance_type = 'StoragePool'
             and async_job.job_status = 0;
-            
+
 
 DROP VIEW IF EXISTS `cloud`.`domain_router_view`;
 CREATE VIEW `cloud`.`domain_router_view` AS
-    select 
+    select
         vm_instance.id id,
         vm_instance.name name,
         account.id account_id,
@@ -1157,7 +1157,7 @@ CREATE VIEW `cloud`.`domain_router_view` AS
         `cloud`.`async_job` ON async_job.instance_id = vm_instance.id
             and async_job.instance_type = 'DomainRouter'
             and async_job.job_status = 0;
-            
+
 CREATE TABLE `cloud`.`external_cisco_vnmc_devices` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(255) UNIQUE,
@@ -1242,7 +1242,7 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 
 DROP VIEW IF EXISTS `cloud`.`service_offering_view`;
 CREATE VIEW `cloud`.`service_offering_view` AS
-    select 
+    select
         service_offering.id,
         disk_offering.uuid,
         disk_offering.name,
@@ -1289,7 +1289,7 @@ UPDATE `cloud_usage`.`account` SET `default`=1 WHERE id IN (1,2);
 UPDATE `cloud`.`user` SET `cloud`.`user`.`default`=1 WHERE id IN (1,2);
 
 CREATE OR REPLACE VIEW `cloud`.`user_view` AS
-    select 
+    select
         user.id,
         user.uuid,
         user.username,
@@ -1329,7 +1329,7 @@ CREATE OR REPLACE VIEW `cloud`.`user_view` AS
         `cloud`.`async_job` ON async_job.instance_id = user.id
             and async_job.instance_type = 'User'
             and async_job.job_status = 0;
-       
+
 
 DROP VIEW IF EXISTS `cloud`.`account_view`;
 CREATE VIEW `cloud`.`account_view` AS
@@ -1879,7 +1879,7 @@ ALTER TABLE `cloud`.`account_details` MODIFY value varchar(255);
 
 DROP VIEW IF EXISTS `cloud`.`template_view`;
 CREATE VIEW `cloud`.`template_view` AS
-    select 
+    select
         vm_template.id,
         vm_template.uuid,
         vm_template.unique_name,
@@ -1920,7 +1920,7 @@ CREATE VIEW `cloud`.`template_view` AS
         domain.path domain_path,
         projects.id project_id,
         projects.uuid project_uuid,
-        projects.name project_name,        
+        projects.name project_name,
         data_center.id data_center_id,
         data_center.uuid data_center_uuid,
         data_center.name data_center_name,
@@ -1950,23 +1950,23 @@ CREATE VIEW `cloud`.`template_view` AS
     from
         `cloud`.`vm_template`
             inner join
-        `cloud`.`guest_os` ON guest_os.id = vm_template.guest_os_id        
+        `cloud`.`guest_os` ON guest_os.id = vm_template.guest_os_id
             inner join
         `cloud`.`account` ON account.id = vm_template.account_id
             inner join
         `cloud`.`domain` ON domain.id = account.domain_id
             left join
-        `cloud`.`projects` ON projects.project_account_id = account.id    
+        `cloud`.`projects` ON projects.project_account_id = account.id
             left join
-        `cloud`.`vm_template_details` ON vm_template_details.template_id = vm_template.id         
+        `cloud`.`vm_template_details` ON vm_template_details.template_id = vm_template.id
             left join
-        `cloud`.`vm_template` source_template ON source_template.id = vm_template.source_template_id    
+        `cloud`.`vm_template` source_template ON source_template.id = vm_template.source_template_id
             left join
         `cloud`.`template_store_ref` ON template_store_ref.template_id = vm_template.id and template_store_ref.store_role = 'Image'
             left join
-        `cloud`.`image_store` ON image_store.removed is NULL AND template_store_ref.store_id is not NULL AND image_store.id = template_store_ref.store_id 
+        `cloud`.`image_store` ON image_store.removed is NULL AND template_store_ref.store_id is not NULL AND image_store.id = template_store_ref.store_id
         	left join
-        `cloud`.`template_zone_ref` ON template_zone_ref.template_id = vm_template.id AND template_store_ref.store_id is NULL AND template_zone_ref.removed is null    
+        `cloud`.`template_zone_ref` ON template_zone_ref.template_id = vm_template.id AND template_store_ref.store_id is NULL AND template_zone_ref.removed is null
             left join
         `cloud`.`data_center` ON (image_store.data_center_id = data_center.id OR template_zone_ref.zone_id = data_center.id)
             left join
@@ -1974,7 +1974,7 @@ CREATE VIEW `cloud`.`template_view` AS
             left join
         `cloud`.`resource_tags` ON resource_tags.resource_id = vm_template.id
             and (resource_tags.resource_type = 'Template' or resource_tags.resource_type='ISO');
-            
+
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'midonet.apiserver.address', 'http://localhost:8081', 'Specify the address at which the Midonet API server can be contacted (if using Midonet)');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'midonet.providerrouter.id', 'd7c5e6a3-e2f4-426b-b728-b7ce6a0448e5', 'Specifies the UUID of the Midonet provider router (if using Midonet)');
 
@@ -1986,7 +1986,7 @@ CREATE TABLE `cloud`.`account_vnet_map` (
   `uuid` varchar(255) UNIQUE,
   `vnet_range` varchar(255) NOT NULL COMMENT 'dedicated guest vlan range',
   `account_id` bigint unsigned NOT NULL COMMENT 'account id. foreign key to account table',
-  `physical_network_id` bigint unsigned NOT NULL COMMENT 'physical network id. foreign key to the the physical network table',
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'physical network id. foreign key to the physical network table',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_account_vnet_map__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network` (`id`) ON DELETE CASCADE,
   INDEX `i_account_vnet_map__physical_network_id`(`physical_network_id`),
@@ -1996,7 +1996,7 @@ CREATE TABLE `cloud`.`account_vnet_map` (
 
 ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD COLUMN account_vnet_map_id bigint unsigned;
 ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD CONSTRAINT `fk_op_dc_vnet_alloc__account_vnet_map_id` FOREIGN KEY `fk_op_dc_vnet_alloc__account_vnet_map_id` (`account_vnet_map_id`) REFERENCES `account_vnet_map` (`id`);
-            
+
  update  `cloud`.`vm_template` set state='Allocated' where state is NULL;
  update  `cloud`.`vm_template` set update_count=0 where update_count is NULL;
 
@@ -2067,7 +2067,7 @@ update `cloud`.`vpc_gateways` set network_acl_id = 2;
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'VpcManager', 'blacklisted.routes', NULL, 'Routes that are blacklisted, can not be used for Static Routes creation for the VPC Private Gateway');
 
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'enable.dynamic.scale.vm', 'false', 'Enables/Diables dynamically scaling a vm');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'enable.dynamic.scale.vm', 'false', 'Enables/Disables dynamically scaling a vm');
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'scale.retry', '2', 'Number of times to retry scaling up the vm');
 
@@ -2100,7 +2100,7 @@ CREATE TABLE `cloud`.`vm_disk_statistics` (
   CONSTRAINT `fk_vm_disk_statistics__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
 
-insert into `cloud`.`vm_disk_statistics`(data_center_id,account_id,vm_id,volume_id) 
+insert into `cloud`.`vm_disk_statistics`(data_center_id,account_id,vm_id,volume_id)
 select volumes.data_center_id, volumes.account_id, vm_instance.id, volumes.id from volumes,vm_instance where vm_instance.vm_type="User" and vm_instance.state<>"Expunging" and volumes.instance_id=vm_instance.id order by vm_instance.id;
 
 DROP TABLE IF EXISTS `cloud`.`ovs_providers`;
@@ -2166,7 +2166,7 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.disk.throttling.bytes_write_rate', 0, 'Default disk I/O write rate in bytes per second allowed in User vm\'s disk. ');
 
 -- Re-enable foreign key checking, at the end of the upgrade path
-SET foreign_key_checks = 1;			
+SET foreign_key_checks = 1;
 
 UPDATE `cloud`.`snapshot_policy` set uuid=id WHERE uuid is NULL;
 #update shared sg enabled network with not null name in Advance Security Group enabled network
@@ -2220,7 +2220,7 @@ CREATE TABLE `cloud`.`external_stratosphere_ssp_credentials` (
 
 DROP VIEW IF EXISTS `cloud`.`project_view`;
 CREATE VIEW `cloud`.`project_view` AS
-    select 
+    select
         projects.id,
         projects.uuid,
         projects.name,
@@ -2264,7 +2264,7 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'manage
 
 ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `concurrent_connections` int(10) unsigned COMMENT 'Load Balancer(haproxy) maximum number of concurrent connections(global max)';
 
-        
+
 ALTER TABLE `cloud`.`sync_queue` MODIFY `queue_size` smallint(6) NOT NULL DEFAULT '0' COMMENT 'number of items being processed by the queue';
 ALTER TABLE `cloud`.`sync_queue` MODIFY `queue_size_limit` smallint(6) NOT NULL DEFAULT '1' COMMENT 'max number of items the queue can process concurrently';
 
@@ -2280,7 +2280,7 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 #update the account_vmstats_view - count only user vms
 DROP VIEW IF EXISTS `cloud`.`account_vmstats_view`;
 CREATE VIEW `cloud`.`account_vmstats_view` AS
-    SELECT 
+    SELECT
         account_id, state, count(*) as vmcount
     from
         `cloud`.`vm_instance`
@@ -2329,7 +2329,7 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Advanced", 'DEFAULT', 'manag
 
 DROP VIEW IF EXISTS `cloud`.`data_center_view`;
 CREATE VIEW `cloud`.`data_center_view` AS
-    select 
+    select
         data_center.id,
         data_center.uuid,
         data_center.name,

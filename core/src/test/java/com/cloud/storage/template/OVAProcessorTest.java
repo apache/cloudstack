@@ -28,19 +28,15 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore({"javax.xml.*", "java.xml.*", "javax.management.*", "org.apache.xerces.*"})
-@PrepareForTest(OVAProcessor.class)
+@RunWith(MockitoJUnitRunner.class)
 public class OVAProcessorTest {
     OVAProcessor processor;
 
@@ -49,7 +45,7 @@ public class OVAProcessorTest {
 
     @Before
     public void setUp() throws Exception {
-        processor = PowerMockito.spy(new OVAProcessor());
+        processor = Mockito.spy(new OVAProcessor());
         Map<String, Object> params = new HashMap<String, Object>();
         params.put(StorageLayer.InstanceConfigKey, mockStorageLayer);
         processor.configure("OVA Processor", params);
@@ -62,11 +58,11 @@ public class OVAProcessorTest {
 
         Mockito.when(mockStorageLayer.exists(Mockito.anyString())).thenReturn(true);
 
-        Script mockScript = Mockito.mock(Script.class);
-        PowerMockito.whenNew(Script.class).withAnyArguments().thenReturn(mockScript);
-        PowerMockito.when(mockScript.execute()).thenReturn("error while untaring the file");
-
-        processor.process(templatePath, null, templateName);
+        try (MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class, (mock, context) -> {
+            Mockito.when(mock.execute()).thenReturn("error while untaring the file");
+        })) {
+            processor.process(templatePath, null, templateName);
+        }
     }
 
     @Test(expected = InternalErrorException.class)
@@ -78,11 +74,11 @@ public class OVAProcessorTest {
         Mockito.when(mockStorageLayer.getSize(Mockito.anyString())).thenReturn(1000l);
         Mockito.doThrow(new InternalErrorException("virtual size calculation failed")).when(processor).getTemplateVirtualSize(Mockito.anyString(), Mockito.anyString());
 
-        Script mockScript = Mockito.mock(Script.class);
-        PowerMockito.whenNew(Script.class).withAnyArguments().thenReturn(mockScript);
-        PowerMockito.when(mockScript.execute()).thenReturn(null);
-
-        processor.process(templatePath, null, templateName);
+        try (MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class, (mock, context) -> {
+            Mockito.when(mock.execute()).thenReturn(null);
+        })) {
+            processor.process(templatePath, null, templateName);
+        }
     }
 
     @Test
@@ -96,15 +92,15 @@ public class OVAProcessorTest {
         Mockito.when(mockStorageLayer.getSize(Mockito.anyString())).thenReturn(actualSize);
         Mockito.doReturn(virtualSize).when(processor).getTemplateVirtualSize(Mockito.anyString(), Mockito.anyString());
 
-        Script mockScript = Mockito.mock(Script.class);
-        PowerMockito.whenNew(Script.class).withAnyArguments().thenReturn(mockScript);
-        PowerMockito.when(mockScript.execute()).thenReturn(null);
-
-        Processor.FormatInfo info = processor.process(templatePath, null, templateName);
-        Assert.assertEquals(Storage.ImageFormat.OVA, info.format);
-        Assert.assertEquals("actual size:", actualSize, info.size);
-        Assert.assertEquals("virtual size:", virtualSize, info.virtualSize);
-        Assert.assertEquals("template name:", templateName + ".ova", info.filename);
+        try (MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class, (mock, context) -> {
+            Mockito.when(mock.execute()).thenReturn(null);
+        })) {
+            Processor.FormatInfo info = processor.process(templatePath, null, templateName);
+            Assert.assertEquals(Storage.ImageFormat.OVA, info.format);
+            Assert.assertEquals("actual size:", actualSize, info.size);
+            Assert.assertEquals("virtual size:", virtualSize, info.virtualSize);
+            Assert.assertEquals("template name:", templateName + ".ova", info.filename);
+        }
     }
 
     @Test
@@ -129,12 +125,31 @@ public class OVAProcessorTest {
         String templatePath = "/tmp";
         String templateName = "template";
         File mockFile = Mockito.mock(File.class);
-        Mockito.when(mockFile.length()).thenReturn(actualSize);
         Mockito.when(mockFile.getParent()).thenReturn(templatePath);
         Mockito.when(mockFile.getName()).thenReturn(templateName);
         Mockito.doReturn(virtualSize).when(processor).getTemplateVirtualSize(templatePath, templateName);
         Assert.assertEquals(virtualSize, processor.getVirtualSize(mockFile));
         Mockito.verify(mockFile, Mockito.times(0)).length();
     }
+    @Test
+    public void testProcessWithLargeFileSize() throws Exception {
+        String templatePath = "/tmp";
+        String templateName = "large_template";
+        long virtualSize = 10_000_000_000L;
+        long actualSize = 5_000_000_000L;
 
+        Mockito.when(mockStorageLayer.exists(Mockito.anyString())).thenReturn(true);
+        Mockito.when(mockStorageLayer.getSize(Mockito.anyString())).thenReturn(actualSize);
+        Mockito.doReturn(virtualSize).when(processor).getTemplateVirtualSize(Mockito.anyString(), Mockito.anyString());
+
+        try (MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class, (mock, context) -> {
+            Mockito.when(mock.execute()).thenReturn(null);
+        })) {
+            Processor.FormatInfo info = processor.process(templatePath, null, templateName);
+            Assert.assertEquals(Storage.ImageFormat.OVA, info.format);
+            Assert.assertEquals("actual size:", actualSize, info.size);
+            Assert.assertEquals("virtual size:", virtualSize, info.virtualSize);
+            Assert.assertEquals("template name:", templateName + ".ova", info.filename);
+        }
+    }
 }

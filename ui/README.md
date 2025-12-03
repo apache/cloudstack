@@ -1,6 +1,6 @@
 # CloudStack UI
 
-A modern role-based progressive CloudStack UI based on VueJS and Ant Design.
+A modern role-based progressive CloudStack UI based on Vue.js and Ant Design.
 
 ![Screenshot](docs/screenshot-dashboard.png)
 
@@ -8,13 +8,13 @@ A modern role-based progressive CloudStack UI based on VueJS and Ant Design.
 
 Install node: (Debian/Ubuntu)
 
-    curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+    curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
     sudo apt-get install -y nodejs
     # Or use distro provided: sudo apt-get install npm nodejs
 
 Install node: (CentOS/Fedora/RHEL)
 
-    curl -sL https://rpm.nodesource.com/setup_14.x | sudo bash -
+    curl -sL https://rpm.nodesource.com/setup_16.x | sudo bash -
     sudo yum install nodejs
 
 Install node: (Mac OS)
@@ -142,7 +142,7 @@ docker container:
 
 ## Documentation
 
-- VueJS Guide: https://vuejs.org/guide/
+- Vue.js Guide: https://vuejs.org/guide/
 - Vue Ant Design: https://www.antdv.com/docs/vue/introduce/
 - UI Developer [Docs](docs)
 - JavaScript ES6 Reference: https://www.tutorialspoint.com/es6/
@@ -152,7 +152,7 @@ docker container:
 
 The UI uses the following:
 
-- [VueJS](https://vuejs.org/)
+- [Vue.js](https://vuejs.org/)
 - [Ant Design Spec](https://ant.design/docs/spec/introduce)
 - [Ant Design Vue](https://vue.ant.design/)
 - [Ant Design Pro Vue](https://github.com/sendya/ant-design-pro-vue)

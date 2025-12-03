@@ -18,7 +18,6 @@
  */
 package org.apache.cloudstack.api.command.admin.storage;
 
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -27,7 +26,6 @@ import org.apache.cloudstack.api.response.StorageTagResponse;
 
 @APICommand(name = "listStorageTags", description = "Lists storage tags", responseObject = StorageTagResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListStorageTagsCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListStorageTagsCmd.class.getName());
 
 
     // ///////////////////////////////////////////////////

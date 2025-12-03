@@ -25,34 +25,32 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 public abstract class AbstractGetUploadParamsCmd extends BaseCmd {
 
-    public static final Logger s_logger = Logger.getLogger(AbstractGetUploadParamsCmd.class.getName());
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "The name of the volume/template")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "The name of the Volume/Template/ISO")
     private String name;
 
-    @Parameter(name = ApiConstants.FORMAT, type = CommandType.STRING, required = true, description = "The format for the volume/template. Possible values include QCOW2, OVA, "
+    @Parameter(name = ApiConstants.FORMAT, type = CommandType.STRING, required = true, description = "The format for the Volume/Template/ISO. Possible values include QCOW2, OVA, "
             + "and VHD.")
     private String format;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of the zone the volume/template is "
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of the zone the Volume/Template/ISO is "
             + "to be hosted on")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.CHECKSUM, type = CommandType.STRING, description = "The checksum value of this Volume/Template " + ApiConstants.CHECKSUM_PARAMETER_PREFIX_DESCRIPTION)
+    @Parameter(name = ApiConstants.CHECKSUM, type = CommandType.STRING, description = "The checksum value of this Volume/Template/ISO " + ApiConstants.CHECKSUM_PARAMETER_PREFIX_DESCRIPTION)
     private String checksum;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "An optional AccountName. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "An optional accountName. Must be used with domainId.")
     private String accountName;
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "An optional domainId. If the Account parameter is used, "
             + "domainId must also be used.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Upload Volume/Template for the project")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Upload Volume/Template/ISO for the project")
     private Long projectId;
 
     public String getName() {

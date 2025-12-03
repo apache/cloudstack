@@ -119,14 +119,12 @@ export default {
 
     .ant-menu-light {
       border-right-color: transparent;
-      padding: 14px 0;
     }
   }
 
   &.dark {
     .ant-menu-dark {
       border-right-color: transparent;
-      padding: 14px 0;
     }
   }
 }

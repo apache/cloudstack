@@ -16,21 +16,25 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.offering;
 
-import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
+import static com.cloud.offering.ServiceOffering.State.Active;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListDomainResourcesCmd;
+import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.commons.lang3.EnumUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import com.cloud.offering.ServiceOffering.State;
 
 @APICommand(name = "listServiceOfferings", description = "Lists all available service offerings.", responseObject = ServiceOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListServiceOfferingsCmd extends BaseListDomainResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListServiceOfferingsCmd.class.getName());
+public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesCmd {
 
 
     /////////////////////////////////////////////////////
@@ -88,6 +92,24 @@ public class ListServiceOfferingsCmd extends BaseListDomainResourcesCmd {
         since = "4.18")
     private Boolean encryptRoot;
 
+    @Parameter(name = ApiConstants.STORAGE_TYPE,
+            type = CommandType.STRING,
+            description = "the storage type of the service offering. Values are local and shared.",
+            since = "4.19")
+    private String storageType;
+
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING,
+               description = "Filter by state of the service offering. Defaults to 'Active'. If set to 'all' shows both Active & Inactive offerings.",
+               since = "4.19")
+    private String serviceOfferingState;
+
+    @Parameter(name = ApiConstants.TEMPLATE_ID,
+            type = CommandType.UUID,
+            entityType = TemplateResponse.class,
+            description = "The ID of the template that listed offerings must support",
+            since = "4.20.0")
+    private Long templateId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -129,6 +151,25 @@ public class ListServiceOfferingsCmd extends BaseListDomainResourcesCmd {
     }
 
     public Boolean getEncryptRoot() { return encryptRoot; }
+
+    public String getStorageType() {
+        return storageType;
+    }
+
+    public State getState() {
+        if (StringUtils.isBlank(serviceOfferingState)) {
+            return Active;
+        }
+        State state = EnumUtils.getEnumIgnoreCase(State.class, serviceOfferingState);
+        if (!serviceOfferingState.equalsIgnoreCase("all") && state == null) {
+            throw new IllegalArgumentException("Invalid state value: " + serviceOfferingState);
+        }
+        return state;
+    }
+
+    public Long getTemplateId() {
+        return templateId;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

@@ -19,12 +19,12 @@
 
 package com.cloud.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 public class UriUtilsTest {
     @Test
@@ -264,5 +264,22 @@ public class UriUtilsTest {
         testGetUriInfoInternal(url10, host);
         testGetUriInfoInternal(url11, host);
         testGetUriInfoInternal(url12, host);
+    }
+
+    @Test
+    public void testIsUrlForCompressedFile() {
+        Assert.assertTrue(UriUtils.isUrlForCompressedFile("https://abc.com/xyz.bz2"));
+        Assert.assertTrue(UriUtils.isUrlForCompressedFile("http://abc.com/xyz.zip"));
+        Assert.assertTrue(UriUtils.isUrlForCompressedFile("https://abc.com/xyz.gz"));
+        Assert.assertFalse(UriUtils.isUrlForCompressedFile("http://abc.com/xyz.qcow2"));
+    }
+
+    @Test
+    public void validateUrl() {
+        Pair<String, Integer> url1 = UriUtils.validateUrl("https://www.cloudstack.org");
+        Assert.assertEquals(url1.first(), "www.cloudstack.org");
+
+        Pair<String, Integer> url2 = UriUtils.validateUrl("https://www.apache.org");
+        Assert.assertEquals(url2.first(), "www.apache.org");
     }
 }

@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.internallb;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -41,7 +40,6 @@ import com.cloud.vm.VirtualMachine;
 @APICommand(name = "stopInternalLoadBalancerVM", description = "Stops an Internal LB Instance.", responseObject = DomainRouterResponse.class, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class StopInternalLBVMCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(StopInternalLBVMCmd.class.getName());
     private static final String s_name = "stopinternallbvmresponse";
 
     // ///////////////////////////////////////////////////
@@ -51,7 +49,7 @@ public class StopInternalLBVMCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainRouterResponse.class, required = true, description = "The ID of the internal LB Instance")
     private Long id;
 
-    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force stop the Instance. The caller knows the Instance is stopped.")
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force stop the Instance (Instance is marked as Stopped even when command fails to be send to the backend, otherwise a force poweroff is attempted). To be used if the caller knows the Instance is stopped and should be marked as such.")
     private Boolean forced;
 
     // ///////////////////////////////////////////////////
@@ -88,7 +86,7 @@ public class StopInternalLBVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "stopping internal lb Instance: " + getId();
+        return "Stopping Internal LB Instance: " + getId();
     }
 
     @Override

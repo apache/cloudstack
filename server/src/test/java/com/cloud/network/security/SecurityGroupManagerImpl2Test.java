@@ -16,16 +16,10 @@
 // under the License.
 package com.cloud.network.security;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import javax.sql.DataSource;
-
+import com.cloud.utils.Profiler;
+import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.component.ComponentContext;
+import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,11 +28,14 @@ import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import com.cloud.utils.Profiler;
-import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.component.ComponentContext;
-
-import junit.framework.TestCase;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:/SecurityGroupManagerTestContext.xml")

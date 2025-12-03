@@ -1,6 +1,6 @@
 # Apache CloudStack [![Build Status](https://github.com/apache/cloudstack/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/build.yml) [![UI Build](https://github.com/apache/cloudstack/actions/workflows/ui.yml/badge.svg)](https://github.com/apache/cloudstack/actions/workflows/ui.yml) [![License Check](https://github.com/apache/cloudstack/actions/workflows/rat.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/rat.yml) [![Simulator CI](https://github.com/apache/cloudstack/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/ci.yml) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=apache_cloudstack&metric=alert_status)](https://sonarcloud.io/dashboard?id=apache_cloudstack) [![codecov](https://codecov.io/gh/apache/cloudstack/branch/main/graph/badge.svg)](https://codecov.io/gh/apache/cloudstack)
 
-![Apache CloudStack](tools/logo/apache_cloudstack.png)
+[![Apache CloudStack](tools/logo/apache_cloudstack.png)](https://cloudstack.apache.org/)
 
 Apache CloudStack is open source software designed to deploy and manage large
 networks of virtual machines, as a highly available, highly scalable
@@ -83,6 +83,13 @@ contribution. Note that you do not have to be a developer in order to contribute
 to Apache CloudStack. We need folks to help with documentation, translation,
 promotion etc. See our contribution [page](http://cloudstack.apache.org/contribute.html).
 
+If you are a frequent contributors, you can request to be added as collaborators
+(see https://cwiki.apache.org/confluence/display/INFRA/Git+-+.asf.yaml+features#Git.asf.yamlfeatures-AssigningexternalcollaboratorswiththetriageroleonGitHub)
+to our GitHub repos. This allows you to use project GitHub with ability to report
+issue with tags, and be assigned to issues and PRs. This is done via the .asf.yaml
+file in this repo.
+You may do so by sharing your GitHub users ID or raise a GitHub issue.
+
 If you're interested in learning more or participating in the Apache CloudStack
 project, the mailing lists are the best way to do that. While the project has
 several communications channels, the [mailing lists](http://cloudstack.apache.org/mailing-lists.html) are the most active and the
@@ -135,7 +142,7 @@ This distribution includes cryptographic software. The country in which you curr
 reside may have restrictions on the import, possession, use, and/or re-export to another
 country, of encryption software. BEFORE using any encryption software, please check your
 country's laws, regulations and policies concerning the import, possession, or use, and
-re-export of encryption software, to see if this is permitted. See [The Wassenaar Arrangement](http://www.wassenaar.org/) 
+re-export of encryption software, to see if this is permitted. See [The Wassenaar Arrangement](http://www.wassenaar.org/)
 for more information.
 
 The U.S. Government Department of Commerce, Bureau of Industry and Security (BIS), has

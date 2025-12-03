@@ -34,7 +34,8 @@
       :dataSource="dataSource"
       :pagination="false"
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
-      :rowKey="record => record.zoneid">
+      :rowKey="record => record.zoneid"
+      :rowExpandable="(record) => record.downloaddetails.length > 0">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'zonename'">
           <span v-if="fetchZoneIcon(record.zoneid)">
@@ -46,6 +47,9 @@
         <template v-if="column.key === 'isready'">
           <span v-if="record.isready">{{ $t('label.yes') }}</span>
           <span v-else>{{ $t('label.no') }}</span>
+        </template>
+        <template v-else-if="column.key === 'created'">
+          <span v-if="record.created">{{ $toLocaleDate(record.created) }}</span>
         </template>
         <template v-if="column.key === 'actions'">
           <span style="margin-right: 5px">
@@ -74,6 +78,40 @@
             </a-popconfirm>
           </span>
         </template>
+      </template>
+      <template #expandedRowRender="{ record }">
+        <a-table
+          style="margin: 10px 0;"
+          :columns="storagePoolInnerColumns"
+          v-if="record.downloaddetails.filter((row) => row.datastoreRole === 'Primary').length > 0"
+          :data-source="record.downloaddetails.filter((row) => row.datastoreRole === 'Primary')"
+          :pagination="false"
+          :bordered="true"
+          :rowKey="record => record.zoneid">
+          <template #bodyCell="{ text, record, column }">
+            <template v-if="column.dataIndex === 'datastore' && record.datastoreId">
+                <router-link :to="{ path: '/storagepool/' + record.datastoreId }">
+                {{ text }}
+              </router-link>
+            </template>
+          </template>
+        </a-table>
+        <a-table
+          style="margin: 10px 0;"
+          :columns="imageStoreInnerColumns"
+          v-if="record.downloaddetails.filter((row) => row.datastoreRole === 'Image').length > 0"
+          :data-source="record.downloaddetails.filter((row) => row.datastoreRole === 'Image')"
+          :pagination="false"
+          :bordered="true"
+          :rowKey="record => record.zoneid">
+          <template #bodyCell="{ text, record, column }">
+            <template v-if="column.dataIndex === 'datastore' && record.datastoreId">
+                <router-link :to="{ path: '/imagestore/' + record.datastoreId }">
+                {{ text }}
+              </router-link>
+            </template>
+          </template>
+        </a-table>
       </template>
     </a-table>
     <a-pagination
@@ -228,6 +266,11 @@ export default {
         dataIndex: 'zonename'
       },
       {
+        key: 'created',
+        title: this.$t('label.created'),
+        dataIndex: 'created'
+      },
+      {
         title: this.$t('label.status'),
         dataIndex: 'status'
       },
@@ -235,6 +278,34 @@ export default {
         key: 'isready',
         title: this.$t('label.isready'),
         dataIndex: 'isready'
+      }
+    ]
+    this.storagePoolInnerColumns = [
+      {
+        title: this.$t('label.primary.storage'),
+        dataIndex: 'datastore'
+      },
+      {
+        title: this.$t('label.download.percent'),
+        dataIndex: 'downloadPercent'
+      },
+      {
+        title: this.$t('label.download.state'),
+        dataIndex: 'downloadState'
+      }
+    ]
+    this.imageStoreInnerColumns = [
+      {
+        title: this.$t('label.secondary.storage'),
+        dataIndex: 'datastore'
+      },
+      {
+        title: this.$t('label.download.percent'),
+        dataIndex: 'downloadPercent'
+      },
+      {
+        title: this.$t('label.download.state'),
+        dataIndex: 'downloadState'
       }
     ]
     if (this.isActionPermitted()) {

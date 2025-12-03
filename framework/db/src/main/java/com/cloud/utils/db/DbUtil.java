@@ -41,12 +41,13 @@ import javax.persistence.SecondaryTables;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import static com.cloud.utils.AutoCloseableUtil.closeAutoCloseable;
 
 public class DbUtil {
-    protected final static Logger LOGGER = Logger.getLogger(DbUtil.class);
+    protected static Logger LOGGER = LogManager.getLogger(DbUtil.class);
 
     private static Map<String, Connection> s_connectionForGlobalLocks = new HashMap<String, Connection>();
 
@@ -124,7 +125,7 @@ public class DbUtil {
     public static Field findField(Class<?> clazz, String columnName) {
         for (Field field : clazz.getDeclaredFields()) {
             if (field.getAnnotation(Embedded.class) != null || field.getAnnotation(EmbeddedId.class) != null) {
-                findField(field.getClass(), columnName);
+                findField(field.getType(), columnName);
             } else {
                 if (columnName.equals(DbUtil.getColumnName(field))) {
                     return field;
@@ -170,7 +171,7 @@ public class DbUtil {
         }
 
         if (field.getAnnotation(EmbeddedId.class) != null) {
-            assert (field.getClass().getAnnotation(Embeddable.class) != null) : "Class " + field.getClass().getName() + " must be Embeddable to be used as Embedded Id";
+            assert (field.getType().getAnnotation(Embeddable.class) != null) : "Class " + field.getType().getName() + " must be Embeddable to be used as Embedded Id";
             return true;
         }
 

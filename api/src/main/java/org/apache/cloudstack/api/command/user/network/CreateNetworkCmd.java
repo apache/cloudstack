@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command.user.network;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -51,7 +50,6 @@ import com.cloud.utils.net.NetUtils;
 @APICommand(name = "createNetwork", description = "Creates a network", responseObject = NetworkResponse.class, responseView = ResponseView.Restricted, entityType = {Network.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateNetworkCmd extends BaseCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateNetworkCmd.class.getName());
 
     private static final String s_name = "createnetworkresponse";
 
@@ -118,7 +116,9 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
     private Long projectId;
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "Domain ID of the account owning a network. " +
-            "If no account is provided then network will be assigned to the caller account and domain")
+            "If the Account is not specified, but the acltype is Account or not specified, the Network will be automatically assigned to the caller account and domain. " +
+            "To create a Network under the domain without linking it to any account, make sure to include acltype=Domain parameter in the api call. " +
+            "If Account is not specified, but acltype is Domain, the network will be created for the specified domain.")
     private Long domainId;
 
     @Parameter(name = ApiConstants.SUBDOMAIN_ACCESS,
@@ -190,6 +190,14 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
                     "\nIf an address is given and it cannot be acquired, an error will be returned and the network won´t be implemented,",
             since = "4.19")
     private String sourceNatIP;
+
+    @Parameter(name = ApiConstants.CIDR_SIZE, type = CommandType.INTEGER,
+            description = "the CIDR size of IPv4 network. For regular users, this is required for isolated networks with ROUTED mode.",
+            since = "4.20.0")
+    private Integer cidrSize;
+
+    @Parameter(name=ApiConstants.AS_NUMBER, type=CommandType.LONG, since = "4.20.0", description="the AS Number of the network")
+    private Long asNumber;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -364,6 +372,10 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
         return NetUtils.standardizeIp6Cidr(ip6Cidr);
     }
 
+    public Integer getCidrSize() {
+        return cidrSize;
+    }
+
     public Long getAclId() {
         return aclId;
     }
@@ -389,6 +401,10 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     public String getIp6Dns2() {
         return ip6Dns2;
+    }
+
+    public Long getAsNumber() {
+        return asNumber;
     }
 
     /////////////////////////////////////////////////////

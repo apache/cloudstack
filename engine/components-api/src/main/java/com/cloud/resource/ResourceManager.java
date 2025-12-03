@@ -28,6 +28,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.to.GPUDeviceTO;
+import com.cloud.cpu.CPU;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodCluster;
@@ -60,6 +61,17 @@ public interface ResourceManager extends ResourceService, Configurable {
                     + "Choose 'Migration' strategy to migrate away VMs running on local storage. "
                     + "To force-stop VMs, choose 'ForceStop' strategy",
             true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.Select, "Error,Migration,ForceStop");
+
+    ConfigKey<String> SystemVmPreferredArchitecture = new ConfigKey<>(
+            String.class,
+            "system.vm.preferred.architecture",
+            "Advanced",
+            CPU.CPUArch.getDefault().getType(),
+            "Preferred architecture for the system VMs including virtual routers",
+            true,
+            ConfigKey.Scope.Zone, null, null, null, null, null,
+            ConfigKey.Kind.Select,
+            "," + CPU.CPUArch.getTypesAsCSV());
 
     /**
      * Register a listener for different types of resource life cycle events.
@@ -126,19 +138,25 @@ public interface ResourceManager extends ResourceService, Configurable {
 
     public List<HostVO> listAllUpAndEnabledHostsInOneZoneByHypervisor(HypervisorType type, long dcId);
 
+    public List<HostVO> listAllUpHostsInOneZoneByHypervisor(HypervisorType type, long dcId);
+
     public List<HostVO> listAllUpAndEnabledHostsInOneZone(long dcId);
 
     public List<HostVO> listAllHostsInOneZoneByType(Host.Type type, long dcId);
 
     public List<HostVO> listAllHostsInAllZonesByType(Type type);
 
-    public List<HypervisorType> listAvailHypervisorInZone(Long hostId, Long zoneId);
+    public List<HostVO> listAllHostsInOneZoneNotInClusterByHypervisor(final HypervisorType type, long dcId, long clusterId);
+
+    public List<HostVO> listAllHostsInOneZoneNotInClusterByHypervisors(List<HypervisorType> types, long dcId, long clusterId);
+
+    public List<HypervisorType> listAvailHypervisorInZone(Long zoneId);
 
     public HostVO findHostByGuid(String guid);
 
     public HostVO findHostByName(String name);
 
-    HostStats getHostStatistics(long hostId);
+    HostStats getHostStatistics(Host host);
 
     Long getGuestOSCategoryId(long hostId);
 
@@ -179,7 +197,7 @@ public interface ResourceManager extends ResourceService, Configurable {
      * @param vgpuType the VGPU type
      * @return true when the host has the capacity with given VGPU type
      */
-    boolean isGPUDeviceAvailable(long hostId, String groupName, String vgpuType);
+    boolean isGPUDeviceAvailable(Host host, String groupName, String vgpuType);
 
     /**
      * Get available GPU device

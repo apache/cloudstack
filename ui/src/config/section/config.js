@@ -37,6 +37,7 @@ export default {
       icon: 'team-outlined',
       docHelp: 'adminguide/accounts.html#using-an-ldap-server-for-user-authentication',
       permission: ['listLdapConfigurations'],
+      searchFilters: ['domainid', 'hostname', 'port'],
       columns: ['hostname', 'port', 'domainid'],
       details: ['hostname', 'port', 'domainid'],
       actions: [
@@ -71,11 +72,109 @@ export default {
       ]
     },
     {
+      name: 'oauthsetting',
+      title: 'label.oauth.configuration',
+      icon: 'login-outlined',
+      docHelp: 'adminguide/accounts.html#using-an-ldap-server-for-user-authentication',
+      permission: ['listOauthProvider'],
+      columns: ['provider', 'enabled', 'description', 'clientid', 'secretkey', 'redirecturi'],
+      details: ['provider', 'description', 'enabled', 'clientid', 'secretkey', 'redirecturi'],
+      actions: [
+        {
+          api: 'registerOauthProvider',
+          icon: 'plus-outlined',
+          label: 'label.register.oauth',
+          listView: true,
+          dataView: false,
+          args: [
+            'provider', 'description', 'clientid', 'redirecturi', 'secretkey'
+          ],
+          mapping: {
+            provider: {
+              options: ['google', 'github']
+            }
+          }
+        },
+        {
+          api: 'updateOauthProvider',
+          icon: 'edit-outlined',
+          label: 'label.edit',
+          dataView: true,
+          popup: true,
+          args: ['description', 'clientid', 'redirecturi', 'secretkey']
+        },
+        {
+          api: 'updateOauthProvider',
+          icon: 'play-circle-outlined',
+          label: 'label.enable.provider',
+          message: 'message.confirm.enable.provider',
+          dataView: true,
+          defaultArgs: { enabled: true },
+          show: (record) => { return record.enabled === false }
+        },
+        {
+          api: 'updateOauthProvider',
+          icon: 'pause-circle-outlined',
+          label: 'label.disable.provider',
+          message: 'message.confirm.disable.provider',
+          dataView: true,
+          defaultArgs: { enabled: false },
+          show: (record) => { return record.enabled === true }
+        },
+        {
+          api: 'deleteOauthProvider',
+          icon: 'delete-outlined',
+          label: 'label.action.delete.oauth.provider',
+          message: 'message.action.delete.guest.os',
+          dataView: true,
+          popup: true
+        }
+      ]
+    },
+    {
+      name: 'backuprepository',
+      title: 'label.backup.repository',
+      icon: 'inbox-outlined',
+      docHelp: 'adminguide/backup_and_recovery.html',
+      permission: ['listBackupRepositories'],
+      searchFilters: ['zoneid'],
+      columns: ['name', 'provider', 'type', 'address', 'zonename'],
+      details: ['name', 'type', 'address', 'provider', 'zonename'],
+      actions: [
+        {
+          api: 'addBackupRepository',
+          icon: 'plus-outlined',
+          label: 'label.backup.repository.add',
+          listView: true,
+          args: [
+            'name', 'provider', 'address', 'type', 'mountopts', 'zoneid'
+          ],
+          mapping: {
+            type: {
+              options: ['nfs', 'cifs']
+            },
+            provider: {
+              value: (record) => { return 'nas' }
+            }
+          }
+        },
+        {
+          api: 'deleteBackupRepository',
+          icon: 'delete-outlined',
+          label: 'label.backup.repository.remove',
+          message: 'message.action.delete.backup.repository',
+          dataView: true,
+          popup: true
+        }
+      ]
+    },
+    {
       name: 'hypervisorcapability',
       title: 'label.hypervisor.capabilities',
       icon: 'database-outlined',
       docHelp: 'adminguide/hosts.html?highlight=Hypervisor%20capabilities#hypervisor-capabilities',
       permission: ['listHypervisorCapabilities'],
+      searchFilters: ['hypervisor'],
       columns: ['hypervisor', 'hypervisorversion', 'maxguestslimit', 'maxhostspercluster'],
       details: ['hypervisor', 'hypervisorversion', 'maxguestslimit', 'maxdatavolumeslimit', 'maxhostspercluster', 'securitygroupenabled', 'storagemotionenabled'],
       actions: [

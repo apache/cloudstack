@@ -21,8 +21,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -35,7 +33,9 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.cpu.CPU;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -45,7 +45,6 @@ import com.cloud.utils.Ternary;
 @APICommand(name = "listHosts", description = "Lists hosts.", responseObject = HostResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListHostsCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListHostsCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -107,6 +106,9 @@ public class ListHostsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "Hypervisor type of host: XenServer,KVM,VMware,Hyperv,BareMetal,Simulator")
     private String hypervisor;
 
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING, description = "CPU Arch of the host", since = "4.20.1")
+    private String arch;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -117,6 +119,10 @@ public class ListHostsCmd extends BaseListCmd {
 
     public Long getId() {
         return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getHostName() {
@@ -185,6 +191,10 @@ public class ListHostsCmd extends BaseListCmd {
 
     public String getHostOutOfBandManagementPowerState() {
         return outOfBandManagementPowerState;
+    }
+
+    public CPU.CPUArch getArch() {
+        return StringUtils.isBlank(arch) ? null : CPU.CPUArch.fromType(arch);
     }
 
     /////////////////////////////////////////////////////

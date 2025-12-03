@@ -23,12 +23,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.OvsSetTagAndFlowAnswer;
@@ -57,7 +57,6 @@ import com.xensource.xenapi.VM;
 @ResourceWrapper(handles =  StartCommand.class)
 public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixStartCommandWrapper.class);
 
     @Override
     public Answer execute(final StartCommand command, final CitrixResourceBase citrixResourceBase) {
@@ -75,30 +74,38 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
                 for (final VM v : vms) {
                     final VM.Record vRec = v.getRecord(conn);
                     if (vRec.powerState == VmPowerState.HALTED) {
-                        v.destroy(conn);
+                        citrixResourceBase.destroyVm(v, conn, true);
                     } else if (vRec.powerState == VmPowerState.RUNNING) {
                         final String host = vRec.residentOn.getUuid(conn);
                         final String msg = "VM " + vmName + " is runing on host " + host;
-                        s_logger.debug(msg);
+                        logger.debug(msg);
                         return new StartAnswer(command, msg, host);
                     } else {
                         final String msg = "There is already a VM having the same name " + vmName + " vm record " + vRec.toString();
-                        s_logger.warn(msg);
+                        logger.warn(msg);
                         return new StartAnswer(command, msg);
                     }
                 }
             }
-            s_logger.debug("1. The VM " + vmName + " is in Starting state.");
+            logger.debug("1. The VM " + vmName + " is in Starting state.");
 
             final Host host = Host.getByUuid(conn, citrixResourceBase.getHost().getUuid());
             vm = citrixResourceBase.createVmFromTemplate(conn, vmSpec, host);
             final GPUDeviceTO gpuDevice = vmSpec.getGpuDevice();
             if (gpuDevice != null) {
-                s_logger.debug("Creating VGPU for of VGPU type: " + gpuDevice.getVgpuType() + " in GPU group " + gpuDevice.getGpuGroup() + " for VM " + vmName);
+                logger.debug("Creating VGPU for of VGPU type: " + gpuDevice.getVgpuType() + " in GPU group " + gpuDevice.getGpuGroup() + " for VM " + vmName);
                 citrixResourceBase.createVGPU(conn, command, vm, gpuDevice);
             }
 
-            if (vmSpec.getType() != VirtualMachine.Type.User) {
+            Host.Record record = host.getRecord(conn);
+            String xenBrand = record.softwareVersion.get("product_brand");
+            String xenVersion = record.softwareVersion.get("product_version");
+            boolean requiresGuestTools = true;
+            if (xenBrand.equals("XenServer") && isVersionGreaterThanOrEqual(xenVersion, "8.2.0")) {
+                requiresGuestTools = false;
+            }
+
+            if (vmSpec.getType() != VirtualMachine.Type.User && requiresGuestTools) {
                 citrixResourceBase.createPatchVbd(conn, vmName, vm);
             }
 
@@ -123,9 +130,9 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
                         final OvsSetTagAndFlowAnswer r = (OvsSetTagAndFlowAnswer) citrixRequestWrapper.execute(flowCmd, citrixResourceBase);
 
                         if (!r.getResult()) {
-                            s_logger.warn("Failed to set flow for VM " + r.getVmId());
+                            logger.warn("Failed to set flow for VM " + r.getVmId());
                         } else {
-                            s_logger.info("Success to set flow for VM " + r.getVmId());
+                            logger.info("Success to set flow for VM " + r.getVmId());
                         }
                     }
                 }
@@ -145,9 +152,9 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
                     if (secGrpEnabled) {
                         result = citrixResourceBase.callHostPlugin(conn, "vmops", "default_network_rules_systemvm", "vmName", vmName);
                         if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
-                            s_logger.warn("Failed to program default network rules for " + vmName);
+                            logger.warn("Failed to program default network rules for " + vmName);
                         } else {
-                            s_logger.info("Programmed default network rules for " + vmName);
+                            logger.info("Programmed default network rules for " + vmName);
                         }
                     }
 
@@ -172,9 +179,9 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
                                     "vmID", Long.toString(vmSpec.getId()), "secIps", secIpsStr);
 
                             if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
-                                s_logger.warn("Failed to program default network rules for " + vmName + " on NIC with IP:" + nic.getIp() + " mac:" + nic.getMac());
+                                logger.warn("Failed to program default Network rules for " + vmName + " on NIC with IP: " + nic.getIp() + " mac:" + nic.getMac());
                             } else {
-                                s_logger.info("Programmed default network rules for " + vmName + " on NIC with IP:" + nic.getIp() + " mac:" + nic.getMac());
+                                logger.info("Programmed default Network rules for " + vmName + " on NIC with IP: " + nic.getIp() + " mac:" + nic.getMac());
                             }
                         }
                     }
@@ -194,7 +201,7 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
 
                 String result2 = citrixResourceBase.connect(conn, vmName, controlIp, 1000);
                 if (StringUtils.isEmpty(result2)) {
-                    s_logger.info(String.format("Connected to SystemVM: %s", vmName));
+                    logger.info(String.format("Connected to SystemVM: %s", vmName));
                 }
 
                 try {
@@ -202,12 +209,12 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
                     VirtualRoutingResource vrResource = citrixResourceBase.getVirtualRoutingResource();
                     if (!vrResource.isSystemVMSetup(vmName, controlIp)) {
                         String errMsg = "Failed to patch systemVM";
-                        s_logger.error(errMsg);
+                        logger.error(errMsg);
                         return new StartAnswer(command, errMsg);
                     }
                 } catch (Exception e) {
                     String errMsg = "Failed to scp files to system VM. Patching of systemVM failed";
-                    s_logger.error(errMsg, e);
+                    logger.error(errMsg, e);
                     return new StartAnswer(command, String.format("%s due to: %s", errMsg, e.getMessage()));
                 }
             }
@@ -218,7 +225,7 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
 
             return startAnswer;
         } catch (final Exception e) {
-            s_logger.warn("Catch Exception: " + e.getClass().toString() + " due to " + e.toString(), e);
+            logger.warn("Catch Exception: " + e.getClass().toString() + " due to " + e.toString(), e);
             final String msg = citrixResourceBase.handleVmStartFailure(conn, vmName, vm, "", e);
 
             final StartAnswer startAnswer = new StartAnswer(command, msg);
@@ -228,9 +235,9 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
             return startAnswer;
         } finally {
             if (state != VmPowerState.HALTED) {
-                s_logger.debug("2. The VM " + vmName + " is in " + state + " state.");
+                logger.debug("2. The VM " + vmName + " is in " + state + " state.");
             } else {
-                s_logger.debug("The VM is in stopped state, detected problem during startup : " + vmName);
+                logger.debug("The VM is in stopped state, detected problem during startup : " + vmName);
             }
         }
     }
@@ -241,7 +248,7 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
         List<DiskTO> disks = new ArrayList<DiskTO>(vmSpec.getDisks().length);
         int index = 0;
         for (final DiskTO disk : vmSpec.getDisks()) {
-            if (Volume.Type.ISO.equals(disk.getType())) {
+            if (Volume.Type.ISO.equals(disk.getType()) && Objects.nonNull(disk.getPath())) {
                 disks.add(0, disk);
             } else {
                 disks.add(index, disk);
@@ -264,5 +271,20 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
                 isoCount++;
             }
         }
+    }
+
+    public static boolean isVersionGreaterThanOrEqual(String v1, String v2) {
+        String[] parts1 = v1.split("\\.");
+        String[] parts2 = v2.split("\\.");
+
+        int length = Math.max(parts1.length, parts2.length);
+        for (int i = 0; i < length; i++) {
+            int num1 = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
+            int num2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
+
+            if (num1 > num2) return true;
+            if (num1 < num2) return false;
+        }
+        return true; // versions are equal
     }
 }

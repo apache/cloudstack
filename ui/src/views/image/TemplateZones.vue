@@ -34,11 +34,12 @@
       :dataSource="dataSource"
       :pagination="false"
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
-      :rowKey="record => record.zoneid">
+      :rowKey="record => record.zoneid"
+      :rowExpandable="(record) => record.downloaddetails.length > 0">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'zonename'">
           <span v-if="fetchZoneIcon(record.zoneid)">
-            <resource-icon :image="zoneIcon" size="1x" style="margin-right: 5px"/>
+            <resource-icon :image="zoneIcon" size="2x" style="margin-right: 5px"/>
           </span>
           <global-outlined v-else style="margin-right: 5px" />
           <span> {{ record.zonename }} </span>
@@ -46,6 +47,9 @@
         <template v-if="column.key === 'isready'">
           <span v-if="record.isready">{{ $t('label.yes') }}</span>
           <span v-else>{{ $t('label.no') }}</span>
+        </template>
+        <template v-else-if="column.key === 'created'">
+          <span v-if="record.created">{{ $toLocaleDate(record.created) }}</span>
         </template>
         <template v-if="column.key === 'actions'">
           <tooltip-button
@@ -68,12 +72,53 @@
       <template #expandedRowRender="{ record }">
         <a-table
           style="margin: 10px 0;"
-          :columns="innerColumns"
-          :data-source="record.downloaddetails"
+          :columns="storagePoolInnerColumns"
+          :data-source="record.downloaddetails.filter((row) => row.datastoreRole === 'Primary')"
+          v-if="record.downloaddetails.filter((row) => row.datastoreRole === 'Primary').length > 0"
           :pagination="false"
           :bordered="true"
-          :rowKey="record => record.zoneid">
+          :rowKey="record => record.datastoreId">
+          <template #bodyCell="{ text, record, column }">
+            <template v-if="column.dataIndex === 'datastore' && record.datastoreId">
+                <router-link :to="{ path: '/storagepool/' + record.datastoreId }">
+                {{ text }}
+              </router-link>
+            </template>
+          </template>
         </a-table>
+        <a-table
+          style="margin: 10px 0;"
+          :columns="imageStoreInnerColumns"
+          :data-source="record.downloaddetails.filter((row) => row.datastoreRole !== 'Primary')"
+          v-if="record.downloaddetails.filter((row) => row.datastoreRole !== 'Primary').length > 0"
+          :pagination="false"
+          :bordered="true"
+          :rowKey="record => record.datastoreId">
+          <template #bodyCell="{ text, record, column }">
+            <template v-if="column.dataIndex === 'datastore' && record.datastoreId">
+                <router-link :to="{ path: '/imagestore/' + record.datastoreId }">
+                {{ text }}
+              </router-link>
+            </template>
+          </template>
+        </a-table>
+      </template>
+      <template #action="{ record }">
+        <tooltip-button
+          style="margin-right: 5px"
+          :disabled="!('copyTemplate' in $store.getters.apis && record.isready)"
+          :title="$t('label.action.copy.template')"
+          icon="copy-outlined"
+          :loading="copyLoading"
+          @onClick="showCopyTemplate(record)" />
+        <tooltip-button
+          style="margin-right: 5px"
+          :disabled="!('deleteTemplate' in $store.getters.apis) || record.status.startsWith('Installing')"
+          :title="$t('label.action.delete.template')"
+          type="primary"
+          :danger="true"
+          icon="delete-outlined"
+          @onClick="onShowDeleteModal(record)"/>
       </template>
     </a-table>
     <a-pagination
@@ -126,7 +171,7 @@
               <a-select-option v-for="zone in zones" :key="zone.id" :label="zone.name">
                 <div>
                   <span v-if="zone.icon && zone.icon.base64image">
-                    <resource-icon :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+                    <resource-icon :image="zone.icon.base64image" size="2x" style="margin-right: 5px"/>
                   </span>
                   <global-outlined v-else style="margin-right: 5px" />
                   {{ zone.name }}
@@ -183,7 +228,7 @@
           </a-form-item>
           <div :span="24" class="action-button">
             <a-button @click="onCloseModal">{{ $t('label.cancel') }}</a-button>
-            <a-button type="primary" ref="submit" @click="deleteTemplate">{{ $t('label.ok') }}</a-button>
+            <a-button type="primary" ref="submit" @click="selectedItems.length > 0 ? deleteTemplates() : deleteTemplate(currentRecord)">{{ $t('label.ok') }}</a-button>
           </div>
         </a-spin>
       </div>
@@ -267,6 +312,11 @@ export default {
         dataIndex: 'zonename'
       },
       {
+        key: 'created',
+        title: this.$t('label.created'),
+        dataIndex: 'created'
+      },
+      {
         title: this.$t('label.status'),
         dataIndex: 'status'
       },
@@ -276,9 +326,23 @@ export default {
         dataIndex: 'isready'
       }
     ]
-    this.innerColumns = [
+    this.imageStoreInnerColumns = [
       {
         title: this.$t('label.secondary.storage'),
+        dataIndex: 'datastore'
+      },
+      {
+        title: this.$t('label.download.percent'),
+        dataIndex: 'downloadPercent'
+      },
+      {
+        title: this.$t('label.download.state'),
+        dataIndex: 'downloadState'
+      }
+    ]
+    this.storagePoolInnerColumns = [
+      {
+        title: this.$t('label.primary.storage'),
         dataIndex: 'datastore'
       },
       {

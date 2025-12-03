@@ -289,7 +289,6 @@ class TestMetrics(cloudstackTestCase):
         self.assertTrue(hasattr(li, 'hosts'))
 
         self.assertEqual(li.hosts, len(list_hosts(self.apiclient,
-            zoneid=self.zone.id,
             type='Routing')))
 
         self.assertTrue(hasattr(li, 'imagestores'))
@@ -518,7 +517,7 @@ class TestMetrics(cloudstackTestCase):
         self.cleanup.append(self.small_virtual_machine)
 
         currentHost = Host.list(self.apiclient, id=self.small_virtual_machine.hostid)[0]
-        if currentHost.hypervisor.lower() == "xenserver" and currentHost.hypervisorversion == "7.1.0":
+        if currentHost.hypervisor.lower() == "xenserver":
             # Skip tests as volume metrics doesn't see to work
             self.skipTest("Skipping test because volume metrics doesn't work on hypervisor\
                             %s, %s" % (currentHost.hypervisor, currentHost.hypervisorversion))

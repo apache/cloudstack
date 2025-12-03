@@ -17,7 +17,6 @@
 
 package org.apache.cloudstack.api.command.admin.region;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -43,7 +42,6 @@ import com.cloud.user.Account;
             responseHasSensitiveInfo = false)
 public class CreatePortableIpRangeCmd extends BaseAsyncCreateCmd {
 
-    public static final Logger s_logger = Logger.getLogger(CreatePortableIpRangeCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -126,7 +124,7 @@ public class CreatePortableIpRangeCmd extends BaseAsyncCreateCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create portable public IP range");
             }
         } catch (ConcurrentOperationException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
     }

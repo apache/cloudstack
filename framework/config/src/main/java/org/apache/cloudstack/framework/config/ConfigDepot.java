@@ -31,4 +31,7 @@ public interface ConfigDepot {
     <T> void set(ConfigKey<T> key, T value);
 
     <T> void createOrUpdateConfigObject(String componentName, ConfigKey<T> key, String value);
+    boolean isNewConfig(ConfigKey<?> configKey);
+    String getConfigStringValue(String key, ConfigKey.Scope scope, Long scopeId);
+    void invalidateConfigCache(String key, ConfigKey.Scope scope, Long scopeId);
 }

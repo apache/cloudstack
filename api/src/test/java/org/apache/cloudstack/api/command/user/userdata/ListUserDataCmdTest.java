@@ -20,10 +20,10 @@ import com.cloud.server.ManagementService;
 import com.cloud.user.UserData;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.junit.After;
 import org.junit.Assert;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.response.UserDataResponse;
-import org.apache.cloudstack.context.CallContext;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,16 +31,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(CallContext.class)
-@PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*", "org.xml.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class ListUserDataCmdTest {
 
     @InjectMocks
@@ -52,9 +48,16 @@ public class ListUserDataCmdTest {
     @Mock
     ResponseGenerator _responseGenerator;
 
+    private AutoCloseable closeable;
+
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test

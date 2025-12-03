@@ -20,13 +20,14 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import com.cloud.utils.db.QueryBuilder;
+import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -81,16 +82,37 @@ public class GuestOSHypervisorDaoImpl extends GenericDaoBase<GuestOSHypervisorVO
         hypervisorTypeAndVersionSearch.done();
     }
 
-    @Override
-    public HypervisorType findHypervisorTypeByGuestOsId(long guestOsId) {
-        SearchCriteria<GuestOSHypervisorVO> sc = guestOsSearch.create();
-        sc.setParameters("guest_os_id", guestOsId);
-        GuestOSHypervisorVO goh = findOneBy(sc);
-        return HypervisorType.getType(goh.getHypervisorType());
+    private GuestOSHypervisorVO getMappingForHypervisorVersionOrParentVersionIfNeeded(GuestOSHypervisorVO mapping,
+       String hypervisorType, String hypervisorVersion, Long guestOsId, String guestOsName) {
+        if (mapping != null || !Hypervisor.HypervisorType.VMware.toString().equals(hypervisorType)) {
+            return mapping;
+        }
+        String guestOs = guestOsId != null ? String.format("guest OS ID: %d", guestOsId) : String.format("guest OS ID: %s", guestOsName);
+        String parentVersion = CloudStackVersion.getVMwareParentVersion(hypervisorVersion);
+        if (parentVersion == null) {
+            if (logger.isDebugEnabled()) {
+                logger.info(String.format("Mapping for %s for hypervisor: %s with version: %s can not be found. Parent version is also null",
+                        guestOs, hypervisorType, hypervisorVersion));
+            }
+            return null;
+        }
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Mapping for %s for hypervisor: %s with version: %s can not be found. " +
+                    "Trying to find one for the parent version: %s", guestOs, hypervisorType, hypervisorVersion, parentVersion));
+        }
+        return guestOsId != null ?
+                findByOsIdAndHypervisorInternal(guestOsId, hypervisorType, parentVersion):
+                findByOsNameAndHypervisorInternal(guestOsName, hypervisorType, parentVersion);
     }
 
     @Override
-    public GuestOSHypervisorVO findByOsIdAndHypervisor(long guestOsId, String hypervisorType, String hypervisorVersion) {
+    public List<GuestOSHypervisorVO> listByGuestOsId(long guestOsId) {
+        SearchCriteria<GuestOSHypervisorVO> sc = guestOsSearch.create();
+        sc.setParameters("guest_os_id", guestOsId);
+        return listBy(sc);
+    }
+
+    private GuestOSHypervisorVO findByOsIdAndHypervisorInternal(long guestOsId, String hypervisorType, String hypervisorVersion) {
         SearchCriteria<GuestOSHypervisorVO> sc = mappingSearch.create();
         String version = "default";
         if (!(hypervisorVersion == null || hypervisorVersion.isEmpty())) {
@@ -100,6 +122,12 @@ public class GuestOSHypervisorDaoImpl extends GenericDaoBase<GuestOSHypervisorVO
         sc.setParameters("hypervisor_type", hypervisorType);
         sc.setParameters("hypervisor_version", version);
         return findOneBy(sc);
+    }
+
+    @Override
+    public GuestOSHypervisorVO findByOsIdAndHypervisor(long guestOsId, String hypervisorType, String hypervisorVersion) {
+        GuestOSHypervisorVO mapping = findByOsIdAndHypervisorInternal(guestOsId, hypervisorType, hypervisorVersion);
+        return getMappingForHypervisorVersionOrParentVersionIfNeeded(mapping, hypervisorType, hypervisorVersion, guestOsId, null);
     }
 
     @Override
@@ -125,8 +153,7 @@ public class GuestOSHypervisorDaoImpl extends GenericDaoBase<GuestOSHypervisorVO
         return super.remove(id);
     }
 
-    @Override
-    public GuestOSHypervisorVO findByOsNameAndHypervisor(String guestOsName, String hypervisorType, String hypervisorVersion) {
+    private GuestOSHypervisorVO findByOsNameAndHypervisorInternal(String guestOsName, String hypervisorType, String hypervisorVersion) {
         SearchCriteria<GuestOSHypervisorVO> sc = guestOsNameSearch.create();
         String version = "default";
         if (!(hypervisorVersion == null || hypervisorVersion.isEmpty())) {
@@ -138,6 +165,12 @@ public class GuestOSHypervisorDaoImpl extends GenericDaoBase<GuestOSHypervisorVO
         final Filter filter = new Filter(GuestOSHypervisorVO.class, "guestOsId", true, null, null);
         List<GuestOSHypervisorVO> results = listIncludingRemovedBy(sc, filter);
         return CollectionUtils.isNotEmpty(results) ? results.get(0) : null;
+    }
+
+    @Override
+    public GuestOSHypervisorVO findByOsNameAndHypervisor(String guestOsName, String hypervisorType, String hypervisorVersion) {
+        GuestOSHypervisorVO mapping = findByOsNameAndHypervisorInternal(guestOsName, hypervisorType, hypervisorVersion);
+        return getMappingForHypervisorVersionOrParentVersionIfNeeded(mapping, hypervisorType, hypervisorVersion, null, guestOsName);
     }
 
     @Override

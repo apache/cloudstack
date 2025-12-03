@@ -18,9 +18,11 @@ package com.cloud.storage;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
@@ -41,6 +43,7 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 
@@ -117,7 +120,7 @@ public interface StorageManager extends StorageService {
             "storage.pool.disk.wait",
             "Storage",
             "60",
-            "Timeout (in secs) for the storage pool disk (of managed pool) to become available in the host. Currently only supported for PowerFlex.",
+            "Timeout (in secs) for the storage pool disk (of managed pool) to become available in the host. Currently supported for PowerFlex only.",
             true,
             ConfigKey.Scope.StoragePool,
             null);
@@ -126,7 +129,7 @@ public interface StorageManager extends StorageService {
             "storage.pool.client.timeout",
             "Storage",
             "60",
-            "Timeout (in secs) for the storage pool client connection timeout (for managed pools). Currently only supported for PowerFlex.",
+            "Timeout (in secs) for the API client connection timeout of storage pool (for managed pools). Currently supported for PowerFlex only.",
             false,
             ConfigKey.Scope.StoragePool,
             null);
@@ -135,8 +138,17 @@ public interface StorageManager extends StorageService {
             "storage.pool.client.max.connections",
             "Storage",
             "100",
-            "Maximum connections for the storage pool client (for managed pools). Currently only supported for PowerFlex.",
+            "Maximum connections for the API client of storage pool (for managed pools). Currently supported for PowerFlex only.",
             false,
+            ConfigKey.Scope.StoragePool,
+            null);
+
+    ConfigKey<Integer> STORAGE_POOL_CONNECTED_CLIENTS_LIMIT = new ConfigKey<>(Integer.class,
+            "storage.pool.connected.clients.limit",
+            "Storage",
+            "-1",
+            "Maximum connected storage pool clients supported for the storage (for managed pools), <= 0 for unlimited (default: -1). Currently supported for PowerFlex only.",
+            true,
             ConfigKey.Scope.StoragePool,
             null);
 
@@ -170,7 +182,7 @@ public interface StorageManager extends StorageService {
     ConfigKey<Boolean> MountDisabledStoragePool = new ConfigKey<>(Boolean.class,
             "mount.disabled.storage.pool",
             "Storage",
-            "false",
+            Boolean.TRUE.toString(),
             "Mount all zone-wide or cluster-wide disabled storage pools after node reboot",
             true,
             ConfigKey.Scope.Cluster,
@@ -191,6 +203,22 @@ public interface StorageManager extends StorageService {
             true,
             ConfigKey.Scope.Global,
             null);
+    static final ConfigKey<Boolean> DataStoreDownloadFollowRedirects = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED,
+            Boolean.class, "store.download.follow.redirects", "false",
+            "Whether HTTP redirect is followed during store downloads for objects such as template, volume etc.",
+            true, ConfigKey.Scope.Global);
+
+    ConfigKey<Long> HEURISTICS_SCRIPT_TIMEOUT = new ConfigKey<>("Advanced", Long.class, "heuristics.script.timeout", "3000",
+            "The maximum runtime, in milliseconds, to execute the heuristic rule; if it is reached, a timeout will happen.", true);
+
+    ConfigKey<Boolean> AllowVolumeReSizeBeyondAllocation = new ConfigKey<Boolean>("Advanced", Boolean.class, "volume.resize.allowed.beyond.allocation", "false",
+            "Determines whether volume size can exceed the pool capacity allocation disable threshold (pool.storage.allocated.capacity.disablethreshold) " +
+                    "when resize a volume upto resize capacity disable threshold (pool.storage.allocated.resize.capacity.disablethreshold)",
+            true, ConfigKey.Scope.Zone);
+
+    ConfigKey<Integer> StoragePoolHostConnectWorkers = new ConfigKey<>("Storage", Integer.class,
+            "storage.pool.host.connect.workers", "1",
+            "Number of worker threads to be used to connect hosts to a primary storage", true);
 
     /**
      * should we execute in sequence not involving any storages?
@@ -244,6 +272,10 @@ public interface StorageManager extends StorageService {
 
     boolean canPoolProvideStorageStats(StoragePool pool);
 
+    boolean poolProvidesCustomStorageStats(StoragePool pool);
+
+    Map<String, String> getCustomStorageStats(StoragePool pool);
+
     /**
      * Checks if a host has running VMs that are using its local storage pool.
      * @return true if local storage is active on the host
@@ -262,9 +294,13 @@ public interface StorageManager extends StorageService {
 
     Answer sendToPool(StoragePool pool, long[] hostIdsToTryFirst, Command cmd) throws StorageUnavailableException;
 
+    void updateStoragePoolHostVOAndBytes(StoragePool pool, long hostId, ModifyStoragePoolAnswer mspAnswer);
+
     CapacityVO getSecondaryStorageUsedStats(Long hostId, Long zoneId);
 
     CapacityVO getStoragePoolUsedStats(Long poolId, Long clusterId, Long podId, Long zoneId);
+
+    CapacityVO getStoragePoolUsedStats(Long zoneId, Long podId, Long clusterId, List<Long> poolIds);
 
     List<StoragePoolVO> ListByDataCenterHypervisor(long datacenterId, HypervisorType type);
 
@@ -277,6 +313,8 @@ public interface StorageManager extends StorageService {
     List<StoragePoolHostVO> findStoragePoolsConnectedToHost(long hostId);
 
     boolean canHostAccessStoragePool(Host host, StoragePool pool);
+
+    boolean canHostPrepareStoragePoolAccess(Host host, StoragePool pool);
 
     Host getHost(long hostId);
 
@@ -291,6 +329,9 @@ public interface StorageManager extends StorageService {
     HypervisorType getHypervisorTypeFromFormat(ImageFormat format);
 
     boolean storagePoolHasEnoughIops(List<Pair<Volume, DiskProfile>> volumeDiskProfilePairs, StoragePool pool);
+
+    boolean storagePoolHasEnoughIops(Long requestedIops, StoragePool pool);
+    boolean storagePoolHasEnoughSpace(Long size, StoragePool pool);
 
     boolean storagePoolHasEnoughSpace(List<Pair<Volume, DiskProfile>> volumeDiskProfilePairs, StoragePool pool);
 
@@ -324,11 +365,20 @@ public interface StorageManager extends StorageService {
 
     boolean isStoragePoolCompliantWithStoragePolicy(List<Pair<Volume, DiskProfile>> volumes, StoragePool pool) throws StorageUnavailableException;
 
+    boolean isStoragePoolCompliantWithStoragePolicy(long diskOfferingId, StoragePool pool) throws StorageUnavailableException;
+
     boolean registerHostListener(String providerUuid, HypervisorHostListener listener);
 
-    boolean connectHostToSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
+    Pair<Map<String, String>, Boolean> getStoragePoolNFSMountOpts(StoragePool pool, Map<String, String> details);
 
-    void disconnectHostFromSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
+    String getStoragePoolMountFailureReason(String error);
+
+    void connectHostsToPool(DataStore primaryStore, List<Long> hostIds, Scope scope,
+            boolean handleStorageConflictException, boolean errorOnNoUpHost) throws CloudRuntimeException;
+
+    boolean connectHostToSharedPool(Host host, long poolId) throws StorageUnavailableException, StorageConflictException;
+
+    void disconnectHostFromSharedPool(Host host, StoragePool pool) throws StorageUnavailableException, StorageConflictException;
 
     void enableHost(long hostId) throws StorageUnavailableException, StorageConflictException;
 
@@ -345,6 +395,8 @@ public interface StorageManager extends StorageService {
     Long getDiskIopsReadRate(ServiceOffering offering, DiskOffering diskOffering);
 
     Long getDiskIopsWriteRate(ServiceOffering offering, DiskOffering diskOffering);
+
+    ImageStore updateImageStoreStatus(Long id, String name, Boolean readonly, Long capacityBytes);
 
     void cleanupDownloadUrls();
 

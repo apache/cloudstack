@@ -63,10 +63,10 @@ patch() {
   export TYPE=$(grep -Po 'type=\K[a-zA-Z]*' $CMDLINE)
   retry=60
   local patched=false
-  if [ "$TYPE" != "cksnode" ]; then
+  if [ "$TYPE" != "cksnode" ] && [ "$TYPE" != "sharedfsvm" ]; then
     while [ $retry -gt 0 ]
     do
-      if [ -f $patchfile ]; then
+      if tar tf $patchfile &> /dev/null; then
         eval $(validate_checksums $md5file $patchfile)
         if [ "$oldmd5" != "$newmd5" ] && [ -f ${patchfile} ] && [ "$newmd5" != "" ]
         then
@@ -99,6 +99,12 @@ patch() {
 cleanup() {
   rm -rf /var/cache/cloud/agent.zip
   mv /var/cache/cloud/cloud-scripts.tgz /usr/share/cloud/cloud-scripts.tgz
+
+  CMDLINE=/var/cache/cloud/cmdline
+  export TYPE=$(grep -Po 'type=\K[a-zA-Z]*' $CMDLINE)
+  if [ "$TYPE" != "consoleproxy" ] && [ "$TYPE" != "secstorage" ]; then
+    rm -rf /usr/local/cloud/systemvm/
+  fi
 }
 
 start() {

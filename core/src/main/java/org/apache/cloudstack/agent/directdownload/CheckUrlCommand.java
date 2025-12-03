@@ -25,6 +25,10 @@ public class CheckUrlCommand extends Command {
 
     private String format;
     private String url;
+    private Integer connectTimeout;
+    private Integer connectionRequestTimeout;
+    private Integer socketTimeout;
+    private boolean followRedirects;
 
     public String getFormat() {
         return format;
@@ -34,10 +38,31 @@ public class CheckUrlCommand extends Command {
         return url;
     }
 
-    public CheckUrlCommand(final String format,final String url) {
+    public Integer getConnectTimeout() { return connectTimeout; }
+
+    public Integer getConnectionRequestTimeout() { return connectionRequestTimeout; }
+
+    public Integer getSocketTimeout() { return socketTimeout; }
+
+    public boolean isFollowRedirects() {
+        return followRedirects;
+    }
+
+    public CheckUrlCommand(final String format, final String url, final boolean followRedirects) {
         super();
         this.format = format;
         this.url = url;
+        this.followRedirects = followRedirects;
+    }
+
+    public CheckUrlCommand(final String format,final String url, Integer connectTimeout, Integer connectionRequestTimeout, Integer socketTimeout, final boolean followRedirects) {
+        super();
+        this.format = format;
+        this.url = url;
+        this.connectTimeout = connectTimeout;
+        this.socketTimeout = socketTimeout;
+        this.connectionRequestTimeout = connectionRequestTimeout;
+        this.followRedirects = followRedirects;
     }
 
     @Override

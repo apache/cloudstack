@@ -23,7 +23,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.StartCommand;
@@ -42,7 +41,6 @@ import com.xensource.xenapi.VM;
 
 public class XenServer620SP1Resource extends XenServer620Resource {
 
-    private static final Logger s_logger = Logger.getLogger(XenServer620SP1Resource.class);
 
     @Override
     protected void fillHostInfo(final Connection conn, final StartupRoutingCommand cmd) {
@@ -54,8 +52,8 @@ public class XenServer620SP1Resource extends XenServer620Resource {
                 cmd.setHostTags("GPU");
             }
         } catch (final Exception e) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Error while getting GPU device info from host " + cmd.getName(), e);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Error while getting GPU device info from host " + cmd.getName(), e);
             }
         }
     }
@@ -104,8 +102,8 @@ public class XenServer620SP1Resource extends XenServer620Resource {
 
     @Override
     public void createVGPU(final Connection conn, final StartCommand cmd, final VM vm, final GPUDeviceTO gpuDevice) throws XenAPIException, XmlRpcException {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating VGPU of VGPU type [ " + gpuDevice.getVgpuType() + " ] in gpu group" + gpuDevice.getGpuGroup()
+        if (logger.isDebugEnabled()) {
+            logger.debug("Creating VGPU of VGPU type [ " + gpuDevice.getVgpuType() + " ] in gpu group" + gpuDevice.getGpuGroup()
                     + " for VM " + cmd.getVirtualMachine().getName());
         }
 
@@ -126,8 +124,8 @@ public class XenServer620SP1Resource extends XenServer620Resource {
         final Map<String, String> other_config = new HashMap<String, String>();
         VGPU.create(conn, vm, gpuGroup, device, other_config, vgpuType);
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Created VGPU of VGPU type [ " + gpuDevice.getVgpuType() + " ] for VM " + cmd.getVirtualMachine().getName());
+        if (logger.isDebugEnabled()) {
+            logger.debug("Created VGPU of VGPU type [ " + gpuDevice.getVgpuType() + " ] for VM " + cmd.getVirtualMachine().getName());
         }
         // Calculate and set remaining GPU capacity in the host.
         cmd.getVirtualMachine().getGpuDevice().setGroupDetails(getGPUGroupDetails(conn));

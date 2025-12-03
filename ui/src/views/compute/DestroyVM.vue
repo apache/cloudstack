@@ -34,7 +34,7 @@
           <a-form-item
             name="expunge"
             ref="expunge"
-            v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.allowuserexpungerecovervm">
+            v-if="'expungeVirtualMachine' in $store.getters.apis && ($store.getters.userInfo.roletype === 'Admin' || $store.getters.features.allowuserexpungerecovervm)">
             <template #label>
               <tooltip-label :title="$t('label.expunge')" :tooltip="apiParams.expunge.description"/>
             </template>

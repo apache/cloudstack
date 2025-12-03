@@ -453,8 +453,8 @@ export default {
         this.onCloseModal()
       }).catch(error => {
         this.$notification.error({
-          message: `${this.$t('label.error')} ${error.response.status}`,
-          description: error.response.data.associateipaddressresponse.errortext || error.response.data.errorresponse.errortext,
+          message: this.$t('message.request.failed'),
+          description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message,
           duration: 0
         })
       }).finally(() => {

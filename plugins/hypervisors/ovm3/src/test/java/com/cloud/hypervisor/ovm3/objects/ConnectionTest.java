@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 import org.apache.xmlrpc.client.XmlRpcClient;
 import org.apache.xmlrpc.common.XmlRpcHttpRequestConfigImpl;
@@ -40,7 +39,6 @@ import org.xml.sax.XMLReader;
  * Connection
  */
 public class ConnectionTest extends Connection {
-    private final Logger LOGGER = Logger.getLogger(ConnectionTest.class);
     XmlTestResultTest results = new XmlTestResultTest();
     String result;
     List<String> multiRes = new ArrayList<String>();
@@ -64,13 +62,13 @@ public class ConnectionTest extends Connection {
             String result = null;
             if (getMethodResponse(method) != null) {
                 result = getMethodResponse(method);
-                LOGGER.debug("methodresponse call: " + method + " - " + params);
-                LOGGER.trace("methodresponse reply: " + result);
+                logger.debug("methodresponse call: " + method + " - " + params);
+                logger.trace("methodresponse reply: " + result);
             }
             if (result == null && multiRes.size() >= 0) {
                 result = getResult();
-                LOGGER.debug("getresult call: " + method + " - " + params);
-                LOGGER.trace("getresult reply: " + result);
+                logger.debug("getresult call: " + method + " - " + params);
+                logger.trace("getresult reply: " + result);
             }
             xr.parse(new InputSource(new StringReader(result)));
         } catch (Exception e) {

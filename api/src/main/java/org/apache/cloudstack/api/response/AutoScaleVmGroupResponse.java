@@ -123,6 +123,10 @@ public class AutoScaleVmGroupResponse extends BaseResponseWithAnnotations implem
     @Param(description = "The domain name of the Instance group")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain to which the vm group belongs", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.FOR_DISPLAY)
     @Param(description = "Is group for display to the regular User", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
@@ -225,6 +229,11 @@ public class AutoScaleVmGroupResponse extends BaseResponseWithAnnotations implem
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     @Override

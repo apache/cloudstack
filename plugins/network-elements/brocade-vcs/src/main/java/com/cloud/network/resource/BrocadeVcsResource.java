@@ -21,7 +21,8 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -50,7 +51,7 @@ import com.cloud.network.schema.showvcs.VcsNodeInfo;
 import com.cloud.resource.ServerResource;
 
 public class BrocadeVcsResource implements ServerResource {
-    private static final Logger s_logger = Logger.getLogger(BrocadeVcsResource.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private String _name;
     private String _guid;
@@ -143,7 +144,7 @@ public class BrocadeVcsResource implements ServerResource {
         try {
             output = _brocadeVcsApi.getSwitchStatus();
         } catch (BrocadeVcsApiException e) {
-            s_logger.error("getSwitchStatus failed", e);
+            logger.error("getSwitchStatus failed", e);
             return null;
         }
 
@@ -151,7 +152,7 @@ public class BrocadeVcsResource implements ServerResource {
         if (vcsNodes != null && !vcsNodes.isEmpty()) {
             for (VcsNodeInfo vcsNodeInfo : vcsNodes) {
                 if (!"Online".equals(vcsNodeInfo.getNodeState())) {
-                    s_logger.error("Brocade Switch is not ready: " + id);
+                    logger.error("Brocade Switch is not ready: " + id);
                     return null;
                 }
             }
@@ -179,7 +180,7 @@ public class BrocadeVcsResource implements ServerResource {
         } else if (cmd instanceof DeleteNetworkCommand) {
             return executeRequest((DeleteNetworkCommand)cmd, numRetries);
         }
-        s_logger.debug("Received unsupported command " + cmd.toString());
+        logger.debug("Received unsupported command " + cmd.toString());
         return Answer.createUnsupportedCommandAnswer(cmd);
     }
 
@@ -276,7 +277,7 @@ public class BrocadeVcsResource implements ServerResource {
     }
 
     private Answer retry(Command cmd, int numRetries) {
-        s_logger.warn("Retrying " + cmd.getClass().getSimpleName() + ". Number of retries remaining: " + numRetries);
+        logger.warn("Retrying " + cmd.getClass().getSimpleName() + ". Number of retries remaining: " + numRetries);
         return executeRequest(cmd, numRetries);
     }
 

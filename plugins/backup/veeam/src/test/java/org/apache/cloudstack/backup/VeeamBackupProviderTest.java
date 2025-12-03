@@ -61,7 +61,7 @@ public class VeeamBackupProviderTest {
             backupProvider.deleteBackup(backup, false);
         } catch (Exception e) {
             assertEquals(CloudRuntimeException.class, e.getClass());
-            String expected = String.format("Could not find any VM associated with the Backup [uuid: %s, externalId: %s].", backup.getUuid(), "abc");
+            String expected = String.format("Could not find any VM associated with the Backup [uuid: %s, name: null, externalId: %s].", backup.getUuid(), "abc");
             assertEquals(expected , e.getMessage());
         }
     }

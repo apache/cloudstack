@@ -16,17 +16,28 @@
 // under the License.
 package com.cloud.hypervisor.kvm.storage;
 
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.storage.formatinspector.Qcow2Inspector;
+import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
+import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.cloudstack.utils.qemu.QemuImgException;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.cloudstack.utils.qemu.QemuObject;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.libvirt.LibvirtException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class KVMPhysicalDisk {
     private String path;
-    private String name;
-    private KVMStoragePool pool;
+    private final String name;
+    private final KVMStoragePool pool;
+    private String dispName;
+    private String vmName;
     private boolean useAsTemplate;
 
     public static String RBDStringBuilder(String monHost, int monPort, String authUserName, String authSecret, String image) {
@@ -68,6 +79,31 @@ public class KVMPhysicalDisk {
         return hostIp;
     }
 
+    public static long getVirtualSizeFromFile(String path) {
+        try {
+            QemuImg qemu = new QemuImg(0);
+            QemuImgFile qemuFile = new QemuImgFile(path);
+            Map<String, String> info = qemu.info(qemuFile);
+            if (info.containsKey(QemuImg.VIRTUAL_SIZE)) {
+                return Long.parseLong(info.get(QemuImg.VIRTUAL_SIZE));
+            } else {
+                throw new CloudRuntimeException("Unable to determine virtual size of volume at path " + path);
+            }
+        } catch (QemuImgException | LibvirtException ex) {
+            throw new CloudRuntimeException("Error when inspecting volume at path " + path, ex);
+        }
+    }
+
+    public static void checkQcow2File(String path) {
+        if (ImageStoreUtil.isCorrectExtension(path, "qcow2")) {
+            try {
+                Qcow2Inspector.validateQcow2File(path);
+            } catch (RuntimeException e) {
+                throw new CloudRuntimeException("The volume file at path " + path + " is not a valid QCOW2. Error: " + e.getMessage());
+            }
+        }
+    }
+
     private PhysicalDiskFormat format;
     private long size;
     private long virtualSize;
@@ -81,7 +117,9 @@ public class KVMPhysicalDisk {
 
     @Override
     public String toString() {
-        return "KVMPhysicalDisk [path=" + path + ", name=" + name + ", pool=" + pool + ", format=" + format + ", size=" + size + ", virtualSize=" + virtualSize + "]";
+        return String.format("KVMPhysicalDisk %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "path", "name", "pool", "format", "size", "virtualSize", "dispName", "vmName"));
     }
 
     public void setFormat(PhysicalDiskFormat format) {
@@ -135,4 +173,20 @@ public class KVMPhysicalDisk {
     public void setUseAsTemplate() { this.useAsTemplate = true; }
 
     public boolean useAsTemplate() { return this.useAsTemplate; }
+
+    public String getDispName() {
+        return dispName;
+    }
+
+    public void setDispName(String dispName) {
+        this.dispName = dispName;
+    }
+
+    public String getVmName() {
+        return vmName;
+    }
+
+    public void setVmName(String vmName) {
+        this.vmName = vmName;
+    }
 }

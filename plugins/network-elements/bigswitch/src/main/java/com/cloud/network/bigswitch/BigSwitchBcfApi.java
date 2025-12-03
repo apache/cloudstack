@@ -48,13 +48,14 @@ import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 public class BigSwitchBcfApi {
-    private static final Logger S_LOGGER = Logger.getLogger(BigSwitchBcfApi.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private final static String S_PROTOCOL = "https";
     private final static String S_NS_BASE_URL = "/networkService/v1.1";
     private final static String CONTENT_TYPE = "content-type";
@@ -94,7 +95,7 @@ public class BigSwitchBcfApi {
         try {
             url = new URL(S_PROTOCOL, host, port, uri).toString();
         } catch (MalformedURLException e) {
-            S_LOGGER.error("Unable to build Big Switch API URL", e);
+            logger.error("Unable to build Big Switch API URL", e);
             throw new BigSwitchBcfApiException("Unable to build Big Switch API URL", e);
         }
 
@@ -119,7 +120,7 @@ public class BigSwitchBcfApi {
             // Cast to ProtocolSocketFactory to avoid the deprecated constructor with the SecureProtocolSocketFactory parameter
             Protocol.registerProtocol("https", new Protocol("https", (ProtocolSocketFactory) new TrustingProtocolSocketFactory(), _port));
         } catch (IOException e) {
-            S_LOGGER.warn("Failed to register the TrustingProtocolSocketFactory, falling back to default SSLSocketFactory", e);
+            logger.warn("Failed to register the TrustingProtocolSocketFactory, falling back to default SSLSocketFactory", e);
         }
     }
 
@@ -289,7 +290,7 @@ public class BigSwitchBcfApi {
         }
         String errorMessage = responseToErrorMessage(m);
         m.releaseConnection();
-        S_LOGGER.error(errorMessageBase + errorMessage);
+        logger.error(errorMessageBase + errorMessage);
         throw new BigSwitchBcfApiException(errorMessageBase + errorMessage + customErrorMsg);
     }
 
@@ -395,7 +396,7 @@ public class BigSwitchBcfApi {
             // CAUTIOUS: Safety margin of 2048 characters - extend if needed.
             returnValue = (T)gson.fromJson(gm.getResponseBodyAsString(2048), returnObjectType);
         } catch (IOException e) {
-            S_LOGGER.error("IOException while retrieving response body", e);
+            logger.error("IOException while retrieving response body", e);
             throw new BigSwitchBcfApiException(e);
         } finally {
             gm.releaseConnection();
@@ -419,11 +420,11 @@ public class BigSwitchBcfApi {
                 method.releaseConnection();
             }
         } catch (HttpException e) {
-            S_LOGGER.error("HttpException caught while trying to connect to the BigSwitch Controller", e);
+            logger.error("HttpException caught while trying to connect to the BigSwitch Controller", e);
             method.releaseConnection();
             throw new BigSwitchBcfApiException("API call to BigSwitch Controller Failed", e);
         } catch (IOException e) {
-            S_LOGGER.error("IOException caught while trying to connect to the BigSwitch Controller", e);
+            logger.error("IOException caught while trying to connect to the BigSwitch Controller", e);
             method.releaseConnection();
             throw new BigSwitchBcfApiException("API call to BigSwitch Controller Failed", e);
         }
@@ -439,7 +440,7 @@ public class BigSwitchBcfApi {
             try {
                 return method.getResponseBodyAsString(2048);
             } catch (IOException e) {
-                S_LOGGER.debug("Error while loading response body", e);
+                logger.debug("Error while loading response body", e);
             }
         }
 

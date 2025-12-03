@@ -39,6 +39,10 @@ public class UnmanagedInstanceResponse extends BaseResponse {
     @Param(description = "The ID of the cluster to which Instance belongs")
     private String clusterId;
 
+    @SerializedName(ApiConstants.CLUSTER_NAME)
+    @Param(description = "the name of the cluster to which virtual machine belongs")
+    private String clusterName;
+
     @SerializedName(ApiConstants.HOST_ID)
     @Param(description = "The ID of the host to which Instance belongs")
     private String hostId;
@@ -75,6 +79,14 @@ public class UnmanagedInstanceResponse extends BaseResponse {
     @Param(description = "The operating system of the Instance")
     private String operatingSystem;
 
+    @SerializedName(ApiConstants.BOOT_MODE)
+    @Param(description = "indicates the boot mode")
+    private String bootMode;
+
+    @SerializedName(ApiConstants.BOOT_TYPE)
+    @Param(description = "indicates the boot type")
+    private String bootType;
+
     @SerializedName(ApiConstants.DISK)
     @Param(description = "The list of disks associated with the Instance", responseObject = UnmanagedInstanceDiskResponse.class)
     private Set<UnmanagedInstanceDiskResponse> disks;
@@ -102,6 +114,14 @@ public class UnmanagedInstanceResponse extends BaseResponse {
 
     public void setClusterId(String clusterId) {
         this.clusterId = clusterId;
+    }
+
+    public String getClusterName() {
+        return clusterName;
+    }
+
+    public void setClusterName(String clusterName) {
+        this.clusterName = clusterName;
     }
 
     public String getHostId() {
@@ -198,5 +218,21 @@ public class UnmanagedInstanceResponse extends BaseResponse {
 
     public void addNic(NicResponse nic) {
         this.nics.add(nic);
+    }
+
+    public String getBootMode() {
+        return bootMode;
+    }
+
+    public void setBootMode(String bootMode) {
+        this.bootMode = bootMode;
+    }
+
+    public String getBootType() {
+        return bootType;
+    }
+
+    public void setBootType(String bootType) {
+        this.bootType = bootType;
     }
 }

@@ -16,13 +16,13 @@
 // under the License.
 package org.apache.cloudstack.agent.lb.algorithm;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import org.apache.cloudstack.agent.lb.IndirectAgentLBAlgorithm;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class IndirectAgentLBStaticAlgorithmTest {
     private IndirectAgentLBAlgorithm algorithm = new IndirectAgentLBStaticAlgorithm();

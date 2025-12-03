@@ -27,7 +27,6 @@ import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.event.EventTypes;
@@ -38,7 +37,6 @@ import com.cloud.user.Account;
 @APICommand(name = "extractTemplate", description = "Extracts a Template", responseObject = ExtractResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ExtractTemplateCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(ExtractTemplateCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -103,7 +101,15 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-     return "Extracting Template: " + this._uuidMgr.getUuid(VirtualMachineTemplate.class, getId()) + ((getZoneId() != null) ? " from zone: " + this._uuidMgr.getUuid(DataCenter.class, getZoneId()) : "");
+        String templateId = this._uuidMgr.getUuid(VirtualMachineTemplate.class, getId());
+        String baseDescription = String.format("Extracting Template: %s", templateId);
+
+        Long zoneId = getZoneId();
+        if (zoneId == null) {
+            return baseDescription;
+        }
+
+        return String.format("%s from zone: %s", baseDescription, this._uuidMgr.getUuid(DataCenter.class, zoneId));
     }
 
     @Override
@@ -122,14 +128,15 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
             CallContext.current().setEventDetails(getEventDescription());
             String uploadUrl = _templateService.extract(this);
             if (uploadUrl != null) {
-                ExtractResponse response = _responseGenerator.createExtractResponse(id, zoneId, getEntityOwnerId(), mode, uploadUrl);
+                ExtractResponse response = _responseGenerator.createImageExtractResponse(id, zoneId, getEntityOwnerId(), mode, uploadUrl);
                 response.setResponseName(getCommandName());
+                response.setObjectName("template");
                 this.setResponseObject(response);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to extract Template");
             }
         } catch (InternalErrorException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
     }

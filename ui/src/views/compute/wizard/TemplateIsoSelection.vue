@@ -56,6 +56,10 @@ export default {
   name: 'TemplateIsoSelection',
   components: { TemplateIsoRadioGroup },
   props: {
+    selected: {
+      type: String,
+      default: null
+    },
     items: {
       type: Object,
       default: () => {}
@@ -85,7 +89,7 @@ export default {
         name: 'label.community'
       }, {
         id: 'selfexecutable',
-        name: 'label.my.templates'
+        name: this.selected === 'isoid' ? 'label.my.isos' : 'label.my.templates'
       }, {
         id: 'sharedexecutable',
         name: 'label.sharedexecutable'

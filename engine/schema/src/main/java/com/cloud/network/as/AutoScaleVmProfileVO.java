@@ -37,6 +37,7 @@ import javax.persistence.Table;
 
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -88,6 +89,12 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     @Basic(fetch = FetchType.LAZY)
     private String userData;
 
+    @Column(name = "user_data_id", nullable = true)
+    private Long userDataId = null;
+
+    @Column(name = "user_data_details", updatable = true, length = 4096)
+    private String userDataDetails;
+
     @Column(name = GenericDao.REMOVED_COLUMN)
     protected Date removed;
 
@@ -120,7 +127,9 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
 
     @Override
     public String toString() {
-        return new StringBuilder("AutoScaleVMProfileVO[").append("id").append(id).append("-").append("templateId").append("-").append(templateId).append("]").toString();
+        return String.format("AutoScaleVMProfile %s.",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "templateId"));
     }
 
     @Override
@@ -226,6 +235,24 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     @Override
     public String getUserData() {
         return userData;
+    }
+
+    @Override
+    public Long getUserDataId() {
+        return userDataId;
+    }
+
+    public void setUserDataId(Long userDataId) {
+        this.userDataId = userDataId;
+    }
+
+    @Override
+    public String getUserDataDetails() {
+        return userDataDetails;
+    }
+
+    public void setUserDataDetails(String userDataDetails) {
+        this.userDataDetails = userDataDetails;
     }
 
     @Override

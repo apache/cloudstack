@@ -17,7 +17,7 @@
 
 package com.cloud.upgrade.dao;
 
-public class Upgrade443to450 extends Upgrade442to450 implements DbUpgrade {
+public class Upgrade443to450 extends Upgrade442to450 {
 
     @Override
     public String[] getUpgradableVersionRange() {

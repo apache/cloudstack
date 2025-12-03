@@ -84,12 +84,18 @@
           }"
           :options="groups.opts" />
       </a-form-item>
-      <a-form-item>
+      <a-form-item v-if="userDataEnabled">
         <template #label>
-          <tooltip-label :title="$t('label.userdata')" :tooltip="apiParams.userdata.description"/>
+          <tooltip-label :title="$t('label.user.data')" :tooltip="apiParams.userdata.description"/>
         </template>
         <a-textarea v-model:value="form.userdata">
         </a-textarea>
+      </a-form-item>
+      <a-form-item v-if="extraConfigEnabled">
+        <template #label>
+          <tooltip-label :title="$t('label.extraconfig')" :tooltip="$t('label.extraconfig.tooltip')"/>
+        </template>
+        <a-textarea v-model:value="form.extraconfig"/>
       </a-form-item>
       <a-form-item ref="securitygroupids" name="securitygroupids" :label="$t('label.security.groups')" v-if="securityGroupsEnabled">
         <a-select
@@ -109,6 +115,13 @@
             </div>
           </a-select-option>
         </a-select>
+      </a-form-item>
+
+      <a-form-item name="deleteprotection" ref="deleteprotection">
+        <template #label>
+          <tooltip-label :title="$t('label.deleteprotection')" :tooltip="apiParams.deleteprotection.description"/>
+        </template>
+        <a-switch v-model:checked="form.deleteprotection" />
       </a-form-item>
 
       <div :span="24" class="action-button">
@@ -143,8 +156,8 @@ export default {
     return {
       serviceOffering: {},
       template: {},
+      userDataEnabled: false,
       securityGroupsEnabled: false,
-      dynamicScalingVmConfig: false,
       loading: false,
       securitygroups: {
         loading: false,
@@ -158,6 +171,19 @@ export default {
         loading: false,
         opts: []
       }
+    }
+  },
+  computed: {
+    extraConfigEnabled () {
+      return this.$store.getters.features.additionalconfigenabled
+    },
+    combinedExtraConfig () {
+      if (!this.extraConfigEnabled || !this.resource.details) return ''
+      const configs = Object.keys(this.resource.details)
+        .filter(key => key.startsWith('extraconfig-'))
+        .map(key => this.resource.details[key] || '')
+        .filter(val => val.trim())
+      return configs.join('\n\n')
     }
   },
   beforeCreate () {
@@ -175,9 +201,11 @@ export default {
         displayname: this.resource.displayname,
         ostypeid: this.resource.ostypeid,
         isdynamicallyscalable: this.resource.isdynamicallyscalable,
+        deleteprotection: this.resource.deleteprotection,
         group: this.resource.group,
-        securitygroupids: this.resource.securitygroup.map(x => x.id),
-        userdata: ''
+        userdata: '',
+        haenable: this.resource.haenable,
+        extraconfig: this.combinedExtraConfig
       })
       this.rules = reactive({})
     },
@@ -188,15 +216,14 @@ export default {
       this.fetchInstaceGroups()
       this.fetchServiceOfferingData()
       this.fetchTemplateData()
-      this.fetchDynamicScalingVmConfig()
       this.fetchUserData()
     },
     fetchZoneDetails () {
       api('listZones', {
-        zoneid: this.resource.zoneid
+        id: this.resource.zoneid
       }).then(response => {
         const zone = response?.listzonesresponse?.zone || []
-        this.securityGroupsEnabled = zone?.[0]?.securitygroupsenabled
+        this.securityGroupsEnabled = zone?.[0]?.securitygroupsenabled || this.$store.getters.showSecurityGroups
       })
     },
     fetchSecurityGroups () {
@@ -240,18 +267,8 @@ export default {
         this.template = templateResponses[0]
       })
     },
-    fetchDynamicScalingVmConfig () {
-      const params = {}
-      params.name = 'enable.dynamic.scale.vm'
-      params.zoneid = this.resource.zoneid
-      var apiName = 'listConfigurations'
-      api(apiName, params).then(json => {
-        const configResponse = json.listconfigurationsresponse.configuration
-        this.dynamicScalingVmConfig = configResponse[0]?.value === 'true'
-      })
-    },
-    canDynamicScalingEnabled () {
-      return this.template.isdynamicallyscalable && this.serviceOffering.dynamicscalingenabled && this.dynamicScalingVmConfig
+    isDynamicScalingEnabled () {
+      return this.template.isdynamicallyscalable && this.serviceOffering.dynamicscalingenabled && this.$store.getters.features.dynamicscalingenabled
     },
     fetchOsTypes () {
       this.osTypes.loading = true
@@ -288,15 +305,37 @@ export default {
       return decodedData.toString('utf-8')
     },
     fetchUserData () {
-      const params = {
-        id: this.resource.id,
-        userdata: true
+      let networkId
+      this.resource.nic.forEach(nic => {
+        if (nic.isdefault) {
+          networkId = nic.networkid
+        }
+      })
+      if (!networkId) {
+        return
       }
+      const listNetworkParams = {
+        id: networkId,
+        listall: true
+      }
+      api(`listNetworks`, listNetworkParams).then(json => {
+        json.listnetworksresponse.network[0].service.forEach(service => {
+          if (service.name === 'UserData') {
+            this.userDataEnabled = true
 
-      api('listVirtualMachines', params).then(json => {
-        this.form.userdata = this.decodeUserData(json.listvirtualmachinesresponse.virtualmachine[0].userdata || '')
+            const listVmParams = {
+              id: this.resource.id,
+              userdata: true,
+              listall: true
+            }
+            api('listVirtualMachines', listVmParams).then(json => {
+              this.form.userdata = atob(json.listvirtualmachinesresponse.virtualmachine[0].userdata || '')
+            })
+          }
+        })
       })
     },
+
     handleSubmit () {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
@@ -305,13 +344,14 @@ export default {
         params.name = values.name
         params.displayname = values.displayname
         params.ostypeid = values.ostypeid
-        if (this.securityGroupsEnabled) {
-          if (values.securitygroupids) {
-            params.securitygroupids = values.securitygroupids
-          }
+        if (this.securityGroupsEnabled && Array.isArray(values.securitygroupids) && values.securitygroupids.length > 0) {
+          params.securitygroupids = values.securitygroupids
         }
         if (values.isdynamicallyscalable !== undefined) {
           params.isdynamicallyscalable = values.isdynamicallyscalable
+        }
+        if (values.deleteprotection !== undefined) {
+          params.deleteprotection = values.deleteprotection
         }
         if (values.haenable !== undefined) {
           params.haenable = values.haenable
@@ -321,6 +361,9 @@ export default {
         }
         if (values.userdata && values.userdata.length > 0) {
           params.userdata = this.$toBase64AndURIEncoded(values.userdata)
+        }
+        if (values.extraconfig && values.extraconfig.length > 0) {
+          params.extraconfig = encodeURIComponent(values.extraconfig)
         }
         this.loading = true
 

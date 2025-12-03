@@ -24,7 +24,6 @@ import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -33,12 +32,13 @@ import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.user.Account;
 import com.cloud.utils.net.Ip;
 
+import java.util.List;
+
 @APICommand(name = "updatePortForwardingRule",
             responseObject = FirewallRuleResponse.class,
         description = "Updates a port forwarding rule. Only the private port and the  Instance can be updated.", entityType = {PortForwardingRule.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdatePortForwardingRuleCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -64,6 +64,13 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
+
+    @Parameter(name = ApiConstants.CIDR_LIST,
+            type = CommandType.LIST,
+            collectionType = CommandType.STRING,
+            description = " the source CIDR list to allow traffic from; all other CIDRs will be blocked. " +
+                    "Multiple entries must be separated by a single comma character (,). This param will be used only for VPC tiers. By default, all CIDRs are allowed.")
+    private List<String> sourceCidrList;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -94,6 +101,10 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
 
     public Boolean getDisplay() {
         return display;
+    }
+
+    public List<String> getSourceCidrList() {
+        return sourceCidrList;
     }
 
     /////////////////////////////////////////////////////
@@ -132,7 +143,7 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public void execute() {
-        PortForwardingRule rule = _rulesService.updatePortForwardingRule(getId(), getPrivatePort(), getPrivateEndPort(), getVirtualMachineId(), getVmGuestIp(), getCustomId(), getDisplay());
+        PortForwardingRule rule = _rulesService.updatePortForwardingRule(this);
         FirewallRuleResponse fwResponse = new FirewallRuleResponse();
         if (rule != null) {
             fwResponse = _responseGenerator.createPortForwardingRuleResponse(rule);

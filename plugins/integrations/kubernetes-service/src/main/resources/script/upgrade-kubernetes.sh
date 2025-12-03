@@ -54,7 +54,7 @@ while true; do
     break
   fi
   set +e
-  output=`blkid -o device -t TYPE=iso9660`
+  output=`blkid -o device -t LABEL=CDROM`
   set -e
   if [ "$output" != "" ]; then
     while read -r line; do
@@ -137,7 +137,7 @@ if [ -d "$BINARIES_DIR" ]; then
 
   systemctl stop kubelet
   cp -a ${BINARIES_DIR}/k8s/{kubelet,kubectl} /opt/bin
-  chmod +x {kubelet,kubectl}
+  chmod +x /opt/bin/{kubelet,kubectl}
 
   systemctl daemon-reload
   systemctl restart containerd

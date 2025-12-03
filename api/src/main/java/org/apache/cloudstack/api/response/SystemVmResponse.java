@@ -178,6 +178,18 @@ public class SystemVmResponse extends BaseResponseWithAnnotations {
     @Param(description = "True if the Instance contains XS/VMWare tools in order to support dynamic scaling of Instance CPU/memory.")
     private Boolean isDynamicallyScalable;
 
+    @SerializedName(ApiConstants.SERVICE_OFFERING_ID)
+    @Param(description = "the ID of the service offering of the system virtual machine.")
+    private String serviceOfferingId;
+
+    @SerializedName("serviceofferingname")
+    @Param(description = "the name of the service offering of the system virtual machine.")
+    private String serviceOfferingName;
+
+    @SerializedName(ApiConstants.ARCH)
+    @Param(description = "CPU arch of the system VM", since = "4.20.1")
+    private String arch;
+
     @Override
     public String getObjectId() {
         return this.getId();
@@ -465,5 +477,25 @@ public class SystemVmResponse extends BaseResponseWithAnnotations {
 
     public void setDynamicallyScalable(Boolean dynamicallyScalable) {
         isDynamicallyScalable = dynamicallyScalable;
+    }
+
+    public String getServiceOfferingId() {
+        return serviceOfferingId;
+    }
+
+    public void setServiceOfferingId(String serviceOfferingId) {
+        this.serviceOfferingId = serviceOfferingId;
+    }
+
+    public String getServiceOfferingName() {
+        return serviceOfferingName;
+    }
+
+    public void setServiceOfferingName(String serviceOfferingName) {
+        this.serviceOfferingName = serviceOfferingName;
+    }
+
+    public void setArch(String arch) {
+        this.arch = arch;
     }
 }

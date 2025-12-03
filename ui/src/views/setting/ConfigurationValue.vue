@@ -39,6 +39,7 @@
             @keydown.esc="editableValueKey = null"
             @pressEnter="updateConfigurationValue(configrecord)"
             @change="value => setConfigurationEditable(configrecord, value)"
+            @keydown="e => handleInputNumberKeyDown(e, false)"
           />
         </a-tooltip>
       </span>
@@ -52,12 +53,13 @@
             @keydown.esc="editableValueKey = null"
             @pressEnter="updateConfigurationValue(configrecord)"
             @change="value => setConfigurationEditable(configrecord, value)"
+            @keydown="e => handleInputNumberKeyDown(e, true)"
           />
         </a-tooltip>
       </span>
-      <span v-else-if="configrecord.type ==='Range'">
-        <a-row>
-          <a-col>
+      <span v-else-if="configrecord.type ==='Range'" style="width: 75%;">
+        <a-row type="flex">
+          <a-col flex="auto">
             <a-tooltip :title="editableValue">
               <a-slider
                 style="width: 13vw"
@@ -73,10 +75,10 @@
               />
             </a-tooltip>
           </a-col>
-          <a-col>
+          <a-col flex="30px">
             <a-tooltip :title="editableValue">
               <a-input-number
-                style="width: 5vw; margin-left: 10px; float: right"
+                style="margin-left: 10px;"
                 class="config-slider-text"
                 :defaultValue="configrecord.value * 100"
                 :min="0"
@@ -87,6 +89,7 @@
                 @keydown.esc="editableValueKey = null"
                 @pressEnter="updateConfigurationValue(configrecord)"
                 @change="value => setConfigurationEditable(configrecord, value)"
+                @keydown="e => handleInputNumberKeyDown(e, true)"
               />
             </a-tooltip>
           </a-col>
@@ -110,9 +113,14 @@
           </a-select>
         </a-tooltip>
       </span>
-      <span v-else-if="configrecord.type === 'Order'">
+      <span v-else-if="configrecord.type === 'Order' || configrecord.type === 'WhitespaceSeparatedListWithOptions'">
         <a-tooltip :title="editableValue.join(', ')">
-          <b>{{ $t('message.select.deselect.to.sort') }}</b>
+          <b v-if="configrecord.type === 'Order'">
+            {{ $t('message.select.deselect.to.sort') }}
+          </b>
+          <b v-else>
+            {{ $t('message.select.deselect.desired.options') }}
+          </b>
           <br />
           <a-select
             style="width: 20vw"
@@ -176,7 +184,7 @@
           :disabled="valueLoading" />
         <tooltip-button
           :tooltip="$t('label.reset.config.value')"
-          @onClick="resetConfigurationValue(configrecord)"
+          @onClick="$resetConfigurationValueConfirm(configrecord, resetConfigurationValue)"
           v-if="editableValueKey === null"
           icon="reload-outlined"
           :disabled="(!('resetConfiguration' in $store.getters.apis) || configDisabled || valueLoading)" />
@@ -241,6 +249,9 @@ export default {
       if (['Order', 'CSV'].includes(configrecord.type)) {
         newValue = newValue.join(',')
       }
+      if (configrecord.type === 'WhitespaceSeparatedListWithOptions') {
+        newValue = newValue.join(' ')
+      }
       const params = {
         name: configrecord.name,
         value: newValue
@@ -250,7 +261,7 @@ export default {
         this.actualValue = this.editableValue
         this.$emit('change-config', { value: newValue })
         this.$store.dispatch('RefreshFeatures')
-        this.$message.success(`${this.$t('message.setting.updated')} ${configrecord.name}`)
+        this.$messageConfigSuccess(`${this.$t('message.setting.updated')} ${configrecord.name}`, configrecord)
         if (json.updateconfigurationresponse &&
           json.updateconfigurationresponse.configuration &&
           !json.updateconfigurationresponse.configuration.isdynamic &&
@@ -266,7 +277,7 @@ export default {
         this.$message.error(this.$t('message.error.save.setting'))
         this.$notification.error({
           message: this.$t('label.error'),
-          description: this.$t('message.error.save.setting')
+          description: error?.response?.data?.updateconfigurationresponse?.errortext || this.$t('message.error.save.setting')
         })
       }).finally(() => {
         this.valueLoading = false
@@ -287,7 +298,7 @@ export default {
         }
         this.$emit('change-config', { value: newValue })
         this.$store.dispatch('RefreshFeatures')
-        this.$message.success(`${this.$t('label.setting')} ${configrecord.name} ${this.$t('label.reset.config.value')}`)
+        this.$messageConfigSuccess(`${this.$t('label.setting')} ${configrecord.name} ${this.$t('label.reset.config.value')}`, configrecord)
         if (json.resetconfigurationresponse &&
           json.resetconfigurationresponse.configuration &&
           !json.resetconfigurationresponse.configuration.isdynamic &&
@@ -332,6 +343,13 @@ export default {
           return []
         }
       }
+      if (configrecord.type === 'WhitespaceSeparatedListWithOptions') {
+        if (configrecord.value && configrecord.value.length > 0) {
+          return String(configrecord.value).split(' ')
+        }
+
+        return []
+      }
       if (configrecord.value) {
         return String(configrecord.value)
       }
@@ -349,6 +367,26 @@ export default {
         this.editableValueKey = 'edit'
       } else {
         this.editableValueKey = null
+      }
+    },
+    handleInputNumberKeyDown (event, isDecimal) {
+      const allowedCodes = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Minus']
+
+      if (isDecimal) {
+        allowedCodes.push('Period')
+      }
+
+      if (
+        event.getModifierState('Control') ||
+        event.getModifierState('Meta') ||
+        event.getModifierState('Alt')
+      ) {
+        return
+      }
+
+      const isValid = allowedCodes.includes(event.code) || !isNaN(event.key)
+      if (!isValid) {
+        event.preventDefault()
       }
     }
   }

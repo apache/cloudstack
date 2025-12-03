@@ -20,12 +20,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.cloud.agent.api.LogLevel.Log4jLevel;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * implemented by classes that extends the Command class. Command specifies
  *
  */
 public abstract class Command {
+
+    protected transient Logger logger = LogManager.getLogger(getClass());
 
     public static enum OnError {
         Continue, Stop
@@ -47,6 +51,13 @@ public abstract class Command {
         return wait;
     }
 
+    /**
+     * This is the time in seconds that the agent will wait before waiting for an answer from the endpoint.
+     * The actual wait time is twice the value of this variable.
+     * See {@link com.cloud.agent.manager.AgentAttache#send(com.cloud.agent.transport.Request, int) AgentAttache#send}  implementation for more details.
+     *
+     * @param wait
+     **/
     public void setWait(int wait) {
         this.wait = wait;
     }

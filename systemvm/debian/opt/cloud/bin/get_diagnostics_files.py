@@ -65,7 +65,7 @@ def zip_files(files):
         cleanup(files_from_shell_commands)
         generate_retrieved_files_txt(zf, files_found_list, files_not_found_list)
         zf.close()
-        print zf_name
+        print(zf_name)
 
 
 def get_cmd(script):
@@ -102,7 +102,7 @@ def execute_shell_script(script):
                 p = sp.Popen(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE)
                 stdout, stderr = p.communicate()
                 return_code = p.returncode
-                if return_code is 0:
+                if return_code == 0:
                     f.write(stdout)
                 else:
                     f.write(stderr)
@@ -129,9 +129,9 @@ def generate_retrieved_files_txt(zip_file, files_found, files_not_found):
     try:
         with open(output_file, 'wb', 0) as man:
             for i in files_found:
-                man.write(i + '\n')
+                man.write((i + '\n').encode())
             for j in files_not_found:
-                man.write(j + 'File Not Found!!\n')
+                man.write((j + ' File Not Found!!\n').encode())
         zip_file.write(output_file, output_file)
     finally:
         cleanup_cmd = "rm -f %s" % output_file

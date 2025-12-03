@@ -36,7 +36,8 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobManagerImpl;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.api.dispatch.DispatchChain;
 import com.cloud.api.dispatch.DispatchChainFactory;
@@ -48,7 +49,7 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ApiDispatcher {
-    private static final Logger s_logger = Logger.getLogger(ApiDispatcher.class.getName());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     Long _createSnapshotQueueSizeLimit;
     Long migrateQueueSizeLimit;
@@ -157,7 +158,7 @@ public class ApiDispatcher {
                         return;
                     }
                 } else {
-                    s_logger.trace("The queue size is unlimited, skipping the synchronizing");
+                    logger.trace("The queue size is unlimited, skipping the synchronizing");
                 }
             }
         }

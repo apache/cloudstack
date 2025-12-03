@@ -22,7 +22,7 @@
       :placeholder="$t('label.search')"
       v-model:value="filter"
       @search="handleSearch" />
-    <a-button type="primary" @click="onCreateNetworkClick" style="float: right; margin-right: 5px; z-index: 8" v-if="showCreateButton">
+    <a-button type="primary" @click="onCreateNetworkClick" style="float: right; margin-right: 5px; z-index: 8" v-if="showCreateButton && !this.vnf">
       {{ $t('label.create.network') }}
     </a-button>
     <a-table
@@ -138,6 +138,10 @@ export default {
       type: Boolean,
       default: () => false
     },
+    vnf: {
+      type: Boolean,
+      default: () => false
+    },
     preFillContent: {
       type: Object,
       default: () => {}
@@ -250,7 +254,7 @@ export default {
       api('listZones', { id: this.zoneId }).then(json => {
         const zoneResponse = json.listzonesresponse.zone || []
         this.showCreateButton = false
-        if (zoneResponse && zoneResponse.length > 0 && (!zoneResponse[0].securitygroupsenabled || (isAdmin() && zoneResponse[0].networktype === 'Advanced'))) {
+        if ('createNetwork' in store.getters.apis && zoneResponse && zoneResponse.length > 0 && (!zoneResponse[0].securitygroupsenabled || (isAdmin() && zoneResponse[0].networktype === 'Advanced'))) {
           this.showCreateButton = true
         }
       })

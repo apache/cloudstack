@@ -283,13 +283,15 @@ class TestKubernetesCluster(cloudstackTestCase):
         cls.apiclient.deleteKubernetesSupportedVersion(deleteKubernetesSupportedVersionCmd)
 
     @classmethod
-    def listKubernetesCluster(cls, cluster_id = None):
+    def listKubernetesCluster(cls, cluster_id = None, cluster_name = None):
         listKubernetesClustersCmd = listKubernetesClusters.listKubernetesClustersCmd()
         listKubernetesClustersCmd.listall = True
         if cluster_id != None:
             listKubernetesClustersCmd.id = cluster_id
+        if cluster_name != None:
+            listKubernetesClustersCmd.name = cluster_name
         clusterResponse = cls.apiclient.listKubernetesClusters(listKubernetesClustersCmd)
-        if cluster_id != None and clusterResponse != None:
+        if (cluster_id != None or cluster_name != None) and clusterResponse != None:
             return clusterResponse[0]
         return clusterResponse
 
@@ -530,26 +532,8 @@ class TestKubernetesCluster(cloudstackTestCase):
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")
     @skipTestIf("hypervisorNotSupported")
-    def test_07_deploy_kubernetes_ha_cluster(self):
-        """Test to deploy a new Kubernetes cluster
-
-        # Validate the following:
-        # 1. createKubernetesCluster should return valid info for new cluster
-        # 2. The Cloud Database contains the valid information
-        """
-        if self.setup_failed == True:
-            self.fail("Setup incomplete")
-        if self.default_network:
-            self.skipTest("HA cluster on shared network requires external ip address, skipping it")
-        global k8s_cluster
-        k8s_cluster = self.getValidKubernetesCluster(1, 2)
-        self.debug("HA Kubernetes cluster with ID: %s successfully deployed" % k8s_cluster.id)
-        return
-
-    @attr(tags=["advanced", "smoke"], required_hardware="true")
-    @skipTestIf("hypervisorNotSupported")
     def test_08_upgrade_kubernetes_ha_cluster(self):
-        """Test to upgrade a Kubernetes cluster to newer version
+        """Test to upgrade a HA Kubernetes cluster to newer version
 
         # Validate the following:
         # 1. upgradeKubernetesCluster should return valid info for the cluster
@@ -559,7 +543,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         if self.default_network:
             self.skipTest("HA cluster on shared network requires external ip address, skipping it")
         global k8s_cluster
-        k8s_cluster = self.getValidKubernetesCluster(1, 2, version=self.kubernetes_version_v1)
+        k8s_cluster = self.getValidKubernetesCluster(1, 3, version=self.kubernetes_version_v1)
         time.sleep(self.services["sleep"])
 
         self.debug("Upgrading HA Kubernetes cluster with ID: %s" % k8s_cluster.id)
@@ -571,24 +555,6 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         self.verifyKubernetesClusterUpgrade(k8s_cluster, self.kubernetes_version_v2.id)
         self.debug("Kubernetes cluster with ID: %s successfully upgraded" % k8s_cluster.id)
-        return
-
-    @attr(tags=["advanced", "smoke"], required_hardware="true")
-    @skipTestIf("hypervisorNotSupported")
-    def test_09_delete_kubernetes_ha_cluster(self):
-        """Test to delete a HA Kubernetes cluster
-
-        # Validate the following:
-        # 1. deleteKubernetesCluster should delete an existing HA Kubernetes cluster
-        """
-        if self.setup_failed == True:
-            self.fail("Setup incomplete")
-        if self.default_network:
-            self.skipTest("HA cluster on shared network requires external ip address, skipping it")
-        global k8s_cluster
-        k8s_cluster = self.getValidKubernetesCluster(1, 2)
-
-        self.debug("Deleting Kubernetes cluster with ID: %s" % k8s_cluster.id)
         return
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")
@@ -800,7 +766,7 @@ class TestKubernetesCluster(cloudstackTestCase):
                 self.verifyKubernetesCluster(cluster, cluster.name, None, size, control_nodes)
                 self.debug("Existing Kubernetes cluster available with name %s" % cluster.name)
                 return cluster
-            except  AssertionError as error:
+            except AssertionError as error:
                 self.debug("Existing cluster failed verification due to %s, need to deploy a new one" % error)
                 self.deleteKubernetesClusterAndVerify(cluster.id, False, True)
 
@@ -818,8 +784,14 @@ class TestKubernetesCluster(cloudstackTestCase):
             cluster = self.createKubernetesCluster(name, version.id, size, control_nodes)
             self.verifyKubernetesCluster(cluster, name, version.id, size, control_nodes)
         except Exception as ex:
+            cluster = self.listKubernetesCluster(cluster_name = name)
+            if cluster != None:
+                self.deleteKubernetesClusterAndVerify(cluster.id, False, True)
             self.fail("Kubernetes cluster deployment failed: %s" % ex)
         except AssertionError as err:
+            cluster = self.listKubernetesCluster(cluster_name = name)
+            if cluster != None:
+                self.deleteKubernetesClusterAndVerify(cluster.id, False, True)
             self.fail("Kubernetes cluster deployment failed during cluster verification: %s" % err)
         return cluster
 

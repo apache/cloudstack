@@ -17,78 +17,57 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 -->
-<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<Configuration monitorInterval="60">
+   <Appenders>
+      <!-- ================================= -->
+      <!-- Preserve messages in a local file -->
+      <!-- ================================= -->
 
-<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="false">
+      <!-- A time/date based rolling appender -->
+      <RollingFile name="FILE" append="true" fileName="samplemanagementserver.log" filePattern="samplemanagementserver.log.%d{yyyy-MM-dd}">
+         <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+         <Policies>
+            <TimeBasedTriggeringPolicy/>
+         </Policies>
+         <PatternLayout pattern="%d %-5p [%c{3}] (%t:%x) %m%ex%n"/>
+      </RollingFile>
 
-   <!-- ================================= -->
-   <!-- Preserve messages in a local file -->
-   <!-- ================================= -->
+      <!-- ============================== -->
+      <!-- Append messages to the console -->
+      <!-- ============================== -->
 
-   <!-- A time/date based rolling appender -->
-   <appender name="FILE" class="org.apache.log4j.DailyRollingFileAppender">
-      <param name="File" value="samplemanagementserver.log"/>
-      <param name="Append" value="true"/>
-      <param name="Threshold" value="INFO"/>
+      <Console name="CONSOLE" target="SYSTEM_OUT">
+         <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+         <PatternLayout pattern="%d{ABSOLUTE} %5p %c{1}:%L - %m%ex%n"/>
+      </Console>
+   </Appenders>
 
-      <!-- Rollover at midnight each day -->
-      <param name="DatePattern" value="'.'yyyy-MM-dd"/>
+   <Loggers>
 
-      <layout class="org.apache.log4j.PatternLayout">
-         <param name="ConversionPattern" value="%d %-5p [%c{3}] (%t:%x) %m%n"/>
-      </layout>
-   </appender>
-   
-   <!-- ============================== -->
-   <!-- Append messages to the console -->
-   <!-- ============================== -->
+      <!-- ================ -->
+      <!-- Limit categories -->
+      <!-- ================ -->
 
-   <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
-      <param name="Target" value="System.out"/>
-      <param name="Threshold" value="INFO"/>
+      <Logger name="com.vmops.utils.db" level="DEBUG"/>
 
-      <layout class="org.apache.log4j.PatternLayout">
-         <param name="ConversionPattern" value="%d{ABSOLUTE} %5p %c{1}:%L - %m%n"/>
-      </layout>
-   </appender>
+      <Logger name="com.vmops.utils.db.Transaction.Transaction" level="TRACE"/>
 
-   <!-- ================ -->
-   <!-- Limit categories -->
-   <!-- ================ -->
-   
-   <category name="com.vmops.utils.db">
-      <priority value="DEBUG"/>
-   </category>
+      <Logger name="com.vmops" level="TRACE"/>
 
-   <category name="com.vmops.utils.db.Transaction.Transaction">
-      <priority value="TRACE"/>
-   </category>
+      <Logger name="org.apache" level="INFO"/>
 
-   <category name="com.vmops">
-     <priority value="TRACE"/>
-   </category>
-   
-   <!-- Limit the org.apache category to INFO as its DEBUG is verbose -->
-   <category name="org.apache">
-      <priority value="INFO"/>
-   </category>
+      <Logger name="org" level="INFO"/>
 
-   <category name="org">
-      <priority value="INFO"/>
-   </category>
-   
-   <category name="net">
-     <priority value="INFO"/>
-   </category>
+      <Logger name="net" level="INFO"/>
 
-   <!-- ======================= -->
-   <!-- Setup the Root category -->
-   <!-- ======================= -->
+      <!-- ======================= -->
+      <!-- Setup the Root category -->
+      <!-- ======================= -->
 
-   <root>
-      <level value="INFO"/>
-      <appender-ref ref="CONSOLE"/>
-      <appender-ref ref="FILE"/>
-   </root>
+      <Root level="INFO">
+         <AppenderRef ref="CONSOLE"/>
+         <AppenderRef ref="FILE"/>
+      </Root>
 
-</log4j:configuration>
+   </Loggers>
+</Configuration>

@@ -17,27 +17,6 @@
 
 package com.cloud.resource;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.naming.ConfigurationException;
-
-import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
-import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
-import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
-import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
-import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
-import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
-import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
-import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
-import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
-import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
-import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
-import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
-
-import org.apache.cloudstack.framework.config.ConfigKey;
-
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.VgpuTypesInfo;
@@ -61,6 +40,24 @@ import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceState.Event;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.fsm.NoTransitionException;
+import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
+import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
+import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
+import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
+import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
+import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
+import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
+import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
+import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
+import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
+
+import javax.naming.ConfigurationException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class MockResourceManagerImpl extends ManagerBase implements ResourceManager {
 
@@ -434,11 +431,22 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
         return null;
     }
 
+    @Override
+    public List<HostVO> listAllHostsInOneZoneNotInClusterByHypervisor(HypervisorType type, long dcId, long clusterId) {
+        return null;
+    }
+
+    @Override
+    public List<HostVO> listAllHostsInOneZoneNotInClusterByHypervisors(List<HypervisorType> types, long dcId, long clusterId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.resource.ResourceManager#listAvailHypervisorInZone(java.lang.Long, java.lang.Long)
      */
     @Override
-    public List<HypervisorType> listAvailHypervisorInZone(final Long hostId, final Long zoneId) {
+    public List<HypervisorType> listAvailHypervisorInZone(final Long zoneId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -465,7 +473,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#getHostStatistics(long)
      */
     @Override
-    public HostStats getHostStatistics(final long hostId) {
+    public HostStats getHostStatistics(final Host host) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -594,6 +602,12 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     @Override
+    public List<HostVO> listAllUpHostsInOneZoneByHypervisor(final HypervisorType type, final long dcId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
     public List<HostVO> listAllUpAndEnabledHostsInOneZone(final long dcId) {
         // TODO Auto-generated method stub
         return null;
@@ -606,7 +620,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     @Override
-    public boolean isGPUDeviceAvailable(final long hostId, final String groupName, final String vgpuType) {
+    public boolean isGPUDeviceAvailable(final Host host, final String groupName, final String vgpuType) {
         // TODO Auto-generated method stub
         return false;
     }

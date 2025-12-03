@@ -16,11 +16,13 @@
 // under the License.
 package com.cloud.dc;
 
+import java.util.Collection;
 import java.util.Map;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
-public interface ClusterDetailsDao extends GenericDao<ClusterDetailsVO, Long> {
+public interface ClusterDetailsDao extends GenericDao<ClusterDetailsVO, Long>, ResourceDetailsDao<ClusterDetailsVO> {
     Map<String, String> findDetails(long clusterId);
 
     void persist(long clusterId, Map<String, String> details);
@@ -28,6 +30,8 @@ public interface ClusterDetailsDao extends GenericDao<ClusterDetailsVO, Long> {
     void persist(long clusterId, String name, String value);
 
     ClusterDetailsVO findDetail(long clusterId, String name);
+
+    Map<String, String> findDetails(long clusterId, Collection<String> names);
 
     void deleteDetails(long clusterId);
 

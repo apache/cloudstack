@@ -16,14 +16,13 @@
 // under the License.
 package com.cloud.network.security;
 
+import com.cloud.utils.Profiler;
+import junit.framework.TestCase;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import junit.framework.TestCase;
-
-import com.cloud.utils.Profiler;
 
 public class SecurityGroupQueueTest extends TestCase {
     public final static SecurityGroupWorkQueue queue = new LocalSecurityGroupWorkQueue();

@@ -236,6 +236,8 @@ public class LibvirtReplugNicCommandWrapperTest {
             bridgeVifDriver.configure(params);
             ovsVifDriver.configure(params);
         }
+
+        LibvirtVMDef.setGlobalLibvirtVersion(6400000L);
     }
 
     @Test
@@ -246,6 +248,10 @@ public class LibvirtReplugNicCommandWrapperTest {
                         + "<target dev='vnet10'/>\n"
                         + "<mac address='02:00:7c:98:00:02'/>\n"
                         + "<model type='virtio'/>\n"
+                        + "<bandwidth>\n"
+                        + "<inbound average='25600' peak='25600'/>\n"
+                        + "<outbound average='25600' peak='25600'/>\n"
+                        + "</bandwidth>\n"
                         + "<link state='up'/>\n"
                         + "</interface>\n";
         final String expectedAttachXml =

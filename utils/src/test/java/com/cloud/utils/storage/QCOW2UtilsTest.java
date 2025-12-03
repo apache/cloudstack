@@ -24,7 +24,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -67,7 +67,7 @@ public class QCOW2UtilsTest {
         ByteBuffer byteBuffer = ByteBuffer.allocate(72);
 
         // Magic
-        byteBuffer.put("QFI".getBytes(Charset.forName("UTF-8")));
+        byteBuffer.put("QFI".getBytes(StandardCharsets.UTF_8));
         byteBuffer.put((byte)0xfb);
 
         // Version
@@ -116,6 +116,6 @@ public class QCOW2UtilsTest {
 
     @Test
     public void getVirtualSizeTest() throws IOException {
-        assertEquals(virtualSize.longValue(), QCOW2Utils.getVirtualSize(inputStream));
+        assertEquals(virtualSize.longValue(), QCOW2Utils.getVirtualSize(inputStream, false));
     }
 }

@@ -44,7 +44,6 @@ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainBlockJobInfo;
@@ -69,7 +68,6 @@ import javax.xml.transform.stream.StreamResult;
 
 @ResourceWrapper(handles =  MigrateVolumeCommand.class)
 public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVolumeCommand, Answer, LibvirtComputingResource> {
-    private static final Logger LOGGER = Logger.getLogger(LibvirtMigrateVolumeCommandWrapper.class);
 
     @Override
     public Answer execute(final MigrateVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -139,18 +137,17 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
             parameters[0] = parameter;
 
             dm.blockCopy(destDiskLabel, diskdef, parameters, Domain.BlockCopyFlags.REUSE_EXT);
-            LOGGER.info(String.format("Block copy has started for the volume %s : %s ", destDiskLabel, srcPath));
+            logger.info(String.format("Block copy has started for the volume %s : %s ", destDiskLabel, srcPath));
 
             return checkBlockJobStatus(command, dm, destDiskLabel, srcPath, destPath, libvirtComputingResource, conn, srcSecretUUID);
-
         } catch (Exception e) {
             String msg = "Migrate volume failed due to " + e.toString();
-            LOGGER.warn(msg, e);
+            logger.warn(msg, e);
             if (destDiskLabel != null) {
                 try {
                     dm.blockJobAbort(destDiskLabel, Domain.BlockJobAbortFlags.ASYNC);
                 } catch (LibvirtException ex) {
-                    LOGGER.error("Migrate volume failed while aborting the block job due to " + ex.getMessage());
+                    logger.error("Migrate volume failed while aborting the block job due to " + ex.getMessage());
                 }
             }
             return new MigrateVolumeAnswer(command, false, msg, null);
@@ -159,7 +156,7 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
                 try {
                     dm.free();
                 } catch (LibvirtException l) {
-                    LOGGER.trace("Ignoring libvirt error.", l);
+                    logger.trace("Ignoring libvirt error.", l);
                 };
             }
         }
@@ -168,20 +165,30 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
     protected MigrateVolumeAnswer checkBlockJobStatus(MigrateVolumeCommand command, Domain dm, String diskLabel, String srcPath, String destPath, LibvirtComputingResource libvirtComputingResource, Connect conn, String srcSecretUUID) throws LibvirtException {
         int timeBetweenTries = 1000; // Try more frequently (every sec) and return early if disk is found
         int waitTimeInSec = command.getWait();
+        double blockCopyProgress = 0;
         while (waitTimeInSec > 0) {
             DomainBlockJobInfo blockJobInfo = dm.getBlockJobInfo(diskLabel, 0);
             if (blockJobInfo != null) {
-                LOGGER.debug(String.format("Volume %s : %s block copy progress: %s%% current value:%s end value:%s", diskLabel, srcPath, (blockJobInfo.end == 0)? 0 : 100*(blockJobInfo.cur / (double) blockJobInfo.end), blockJobInfo.cur, blockJobInfo.end));
+                blockCopyProgress = (blockJobInfo.end == 0)? blockCopyProgress : 100 * (blockJobInfo.cur / (double) blockJobInfo.end);
+                logger.debug(String.format("Volume %s : %s, block copy progress: %s%%, current value: %s end value: %s, job info - type: %s, bandwidth: %s",
+                        diskLabel, srcPath, blockCopyProgress, blockJobInfo.cur, blockJobInfo.end, blockJobInfo.type, blockJobInfo.bandwidth));
                 if (blockJobInfo.cur == blockJobInfo.end) {
-                    LOGGER.info(String.format("Block copy completed for the volume %s : %s", diskLabel, srcPath));
-                    dm.blockJobAbort(diskLabel, Domain.BlockJobAbortFlags.PIVOT);
-                    if (StringUtils.isNotEmpty(srcSecretUUID)) {
-                        libvirtComputingResource.removeLibvirtVolumeSecret(conn, srcSecretUUID);
+                    if (blockJobInfo.end > 0) {
+                        logger.info(String.format("Block copy completed for the volume %s : %s", diskLabel, srcPath));
+                        dm.blockJobAbort(diskLabel, Domain.BlockJobAbortFlags.PIVOT);
+                        if (StringUtils.isNotEmpty(srcSecretUUID)) {
+                            libvirtComputingResource.removeLibvirtVolumeSecret(conn, srcSecretUUID);
+                        }
+                        break;
+                    } else {
+                        // cur = 0, end = 0 - at this point, disk does not have an active block job (so, no need to abort job)
+                        String msg = String.format("No active block copy job for the volume %s : %s - job stopped at %s progress", diskLabel, srcPath, blockCopyProgress);
+                        logger.warn(msg);
+                        return new MigrateVolumeAnswer(command, false, msg, null);
                     }
-                    break;
                 }
             } else {
-                LOGGER.info("Failed to get the block copy status, trying to abort the job");
+                logger.info("Failed to get the block copy status, trying to abort the job");
                 dm.blockJobAbort(diskLabel, Domain.BlockJobAbortFlags.ASYNC);
             }
             waitTimeInSec--;
@@ -195,11 +202,11 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
 
         if (waitTimeInSec <= 0) {
             String msg = "Block copy is taking long time, failing the job";
-            LOGGER.error(msg);
+            logger.error(msg);
             try {
                 dm.blockJobAbort(diskLabel, Domain.BlockJobAbortFlags.ASYNC);
             } catch (LibvirtException ex) {
-                LOGGER.error("Migrate volume failed while aborting the block job due to " + ex.getMessage());
+                logger.error("Migrate volume failed while aborting the block job due to " + ex.getMessage());
             }
             return new MigrateVolumeAnswer(command, false, msg, null);
         }
@@ -279,6 +286,10 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
 
         Map<String, String> srcDetails = command.getSrcDetails();
         String srcPath = srcDetails != null ? srcDetails.get(DiskTO.IQN) : srcVolumeObjectTO.getPath();
+        // its possible a volume has details but is not using IQN addressing...
+        if (srcPath == null) {
+            srcPath = srcVolumeObjectTO.getPath();
+        }
 
         VolumeObjectTO destVolumeObjectTO = (VolumeObjectTO)command.getDestData();
         PrimaryDataStoreTO destPrimaryDataStore = (PrimaryDataStoreTO)destVolumeObjectTO.getDataStore();
@@ -289,15 +300,27 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
                 (destVolumeObjectTO.getPath() != null ? destVolumeObjectTO.getPath() : UUID.randomUUID().toString());
 
         try {
-            storagePoolManager.connectPhysicalDisk(srcPrimaryDataStore.getPoolType(), srcPrimaryDataStore.getUuid(), srcPath, srcDetails);
+            KVMStoragePool sourceStoragePool = storagePoolManager.getStoragePool(srcPrimaryDataStore.getPoolType(), srcPrimaryDataStore.getUuid());
+
+            if (!sourceStoragePool.connectPhysicalDisk(srcPath, srcDetails)) {
+                return new MigrateVolumeAnswer(command, false, "Unable to connect source volume on hypervisor", srcPath);
+            }
 
             KVMPhysicalDisk srcPhysicalDisk = storagePoolManager.getPhysicalDisk(srcPrimaryDataStore.getPoolType(), srcPrimaryDataStore.getUuid(), srcPath);
+            if (srcPhysicalDisk == null) {
+                return new MigrateVolumeAnswer(command, false, "Unable to get handle to source volume on hypervisor", srcPath);
+            }
 
             KVMStoragePool destPrimaryStorage = storagePoolManager.getStoragePool(destPrimaryDataStore.getPoolType(), destPrimaryDataStore.getUuid());
 
-            storagePoolManager.connectPhysicalDisk(destPrimaryDataStore.getPoolType(), destPrimaryDataStore.getUuid(), destPath, destDetails);
+            if (!destPrimaryStorage.connectPhysicalDisk(destPath, destDetails)) {
+                return new MigrateVolumeAnswer(command, false, "Unable to connect destination volume on hypervisor", srcPath);
+            }
 
-            storagePoolManager.copyPhysicalDisk(srcPhysicalDisk, destPath, destPrimaryStorage, command.getWaitInMillSeconds());
+            KVMPhysicalDisk newDiskCopy = storagePoolManager.copyPhysicalDisk(srcPhysicalDisk, destPath, destPrimaryStorage, command.getWaitInMillSeconds());
+            if (newDiskCopy == null) {
+                return new MigrateVolumeAnswer(command, false, "Copy command failed to return handle to copied physical disk", destPath);
+            }
         }
         catch (Exception ex) {
             return new MigrateVolumeAnswer(command, false, ex.getMessage(), null);
@@ -307,14 +330,14 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
                 storagePoolManager.disconnectPhysicalDisk(destPrimaryDataStore.getPoolType(), destPrimaryDataStore.getUuid(), destPath);
             }
             catch (Exception e) {
-                LOGGER.warn("Unable to disconnect from the destination device.", e);
+                logger.warn("Unable to disconnect from the destination device.", e);
             }
 
             try {
                 storagePoolManager.disconnectPhysicalDisk(srcPrimaryDataStore.getPoolType(), srcPrimaryDataStore.getUuid(), srcPath);
             }
             catch (Exception e) {
-                LOGGER.warn("Unable to disconnect from the source device.", e);
+                logger.warn("Unable to disconnect from the source device.", e);
             }
         }
 

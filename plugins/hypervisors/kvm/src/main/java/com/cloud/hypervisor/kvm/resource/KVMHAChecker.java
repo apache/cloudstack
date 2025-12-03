@@ -20,20 +20,18 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
-import org.apache.log4j.Logger;
 
-import com.cloud.utils.script.OutputInterpreter;
-import com.cloud.utils.script.Script;
+import com.cloud.agent.api.to.HostTO;
 
 public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
-    private static final Logger s_logger = Logger.getLogger(KVMHAChecker.class);
-    private List<NfsStoragePool> nfsStoragePools;
-    private String hostIp;
-    private long heartBeatCheckerTimeout = 360000; // 6 minutes
+    private List<HAStoragePool> storagePools;
+    private HostTO host;
+    private boolean reportFailureIfOneStorageIsDown;
 
-    public KVMHAChecker(List<NfsStoragePool> pools, String host) {
-        this.nfsStoragePools = pools;
-        this.hostIp = host;
+    public KVMHAChecker(List<HAStoragePool> pools, HostTO host, boolean reportFailureIfOneStorageIsDown) {
+        this.storagePools = pools;
+        this.host = host;
+        this.reportFailureIfOneStorageIsDown = reportFailureIfOneStorageIsDown;
     }
 
     /*
@@ -44,35 +42,19 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
     public Boolean checkingHeartBeat() {
         boolean validResult = false;
 
-        String hostAndPools = String.format("host IP [%s] in pools [%s]", hostIp, nfsStoragePools.stream().map(pool -> pool._poolIp).collect(Collectors.joining(", ")));
+        String hostAndPools = String.format("host IP [%s] in pools [%s]", host.getPrivateNetwork().getIp(), storagePools.stream().map(pool -> pool.getPoolUUID()).collect(Collectors.joining(", ")));
 
-        s_logger.debug(String.format("Checking heart beat with KVMHAChecker for %s", hostAndPools));
+        logger.debug(String.format("Checking heart beat with KVMHAChecker for %s", hostAndPools));
 
-        for (NfsStoragePool pool : nfsStoragePools) {
-            Script cmd = new Script(s_heartBeatPath, heartBeatCheckerTimeout, s_logger);
-            cmd.add("-i", pool._poolIp);
-            cmd.add("-p", pool._poolMountSourcePath);
-            cmd.add("-m", pool._mountDestPath);
-            cmd.add("-h", hostIp);
-            cmd.add("-r");
-            cmd.add("-t", String.valueOf(_heartBeatUpdateFreq / 1000));
-            OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
-            String result = cmd.execute(parser);
-            String parsedLine = parser.getLine();
-
-            s_logger.debug(String.format("Checking heart beat with KVMHAChecker [{command=\"%s\", result: \"%s\", log: \"%s\", pool: \"%s\"}].", cmd.toString(), result, parsedLine,
-                    pool._poolIp));
-
-            if (result == null && parsedLine.contains("DEAD")) {
-                s_logger.warn(String.format("Checking heart beat with KVMHAChecker command [%s] returned [%s]. [%s]. It may cause a shutdown of host IP [%s].", cmd.toString(),
-                        result, parsedLine, hostIp));
-            } else {
-                validResult = true;
+        for (HAStoragePool pool : storagePools) {
+            validResult = pool.getPool().checkingHeartBeat(pool, host);
+            if (reportFailureIfOneStorageIsDown && !validResult) {
+                break;
             }
         }
 
         if (!validResult) {
-            s_logger.warn(String.format("All checks with KVMHAChecker for %s considered it as dead. It may cause a shutdown of the host.", hostAndPools));
+            logger.warn(String.format("All checks with KVMHAChecker for %s considered it as dead. It may cause a shutdown of the host.", hostAndPools));
         }
 
         return validResult;
@@ -80,7 +62,7 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
 
     @Override
     public Boolean call() throws Exception {
-        // s_logger.addAppender(new org.apache.log4j.ConsoleAppender(new
+        // logger.addAppender(new org.apache.log4j.ConsoleAppender(new
         // org.apache.log4j.PatternLayout(), "System.out"));
         return checkingHeartBeat();
     }

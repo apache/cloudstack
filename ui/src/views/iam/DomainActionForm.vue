@@ -237,6 +237,11 @@ export default {
 
         const resourceName = params.displayname || params.displaytext || params.name || this.resource.name
         let hasJobId = false
+        Object.keys(params).forEach(key => {
+          if (params[key] === '') {
+            delete params[key]
+          }
+        })
         api(this.action.api, params).then(json => {
           for (const obj in json) {
             if (obj.includes('response')) {

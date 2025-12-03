@@ -20,6 +20,7 @@ package com.cloud.storage;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -28,8 +29,10 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
@@ -48,6 +51,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.dao.UserDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
@@ -65,7 +69,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 public class StoragePoolAutomationImpl implements StoragePoolAutomation {
-    private static final Logger s_logger = Logger.getLogger(StoragePoolAutomationImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     @Inject
     protected VirtualMachineManager vmMgr;
     @Inject
@@ -87,6 +91,8 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
     protected StoragePoolWorkDao _storagePoolWorkDao;
     @Inject
     PrimaryDataStoreDao primaryDataStoreDao;
+    @Inject
+    StoragePoolDetailsDao storagePoolDetailsDao;
     @Inject
     DataStoreManager dataStoreMgr;
     @Inject
@@ -122,8 +128,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
             for (StoragePoolVO sp : spes) {
                 if (sp.getParent() != pool.getParent() && sp.getId() != pool.getParent()) { // If Datastore cluster is tried to prepare for maintenance then child storage pools are also kept in PrepareForMaintenance mode
                     if (sp.getStatus() == StoragePoolStatus.PrepareForMaintenance) {
-                        throw new CloudRuntimeException("Only one storage pool in a cluster can be in PrepareForMaintenance mode, " + sp.getId() +
-                                " is already in  PrepareForMaintenance mode ");
+                        throw new CloudRuntimeException(String.format("Only one storage pool in a cluster can be in PrepareForMaintenance mode, %s is already in  PrepareForMaintenance mode ", sp));
                     }
                 }
             }
@@ -158,15 +163,15 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                 ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(false, storagePool);
                 final Answer answer = agentMgr.easySend(host.getId(), cmd);
                 if (answer == null || !answer.getResult()) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("ModifyStoragePool false failed due to " + ((answer == null) ? "answer null" : answer.getDetails()));
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("ModifyStoragePool false failed due to " + ((answer == null) ? "answer null" : answer.getDetails()));
                     }
                 } else {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("ModifyStoragePool false succeeded");
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("ModifyStoragePool false succeeded");
                     }
                     if (pool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
-                        s_logger.debug(String.format("Started synchronising datastore cluster storage pool %s with vCenter", pool.getUuid()));
+                        logger.debug("Started synchronising datastore cluster storage pool {} with vCenter", pool);
                         storageManager.syncDatastoreClusterStoragePool(pool.getId(), ((ModifyStoragePoolAnswer) answer).getDatastoreClusterChildren(), host.getId());
                     }
                 }
@@ -198,8 +203,8 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                         StoragePoolWorkVO work = new StoragePoolWorkVO(vmInstance.getId(), pool.getId(), false, false, server.getId());
                         _storagePoolWorkDao.persist(work);
                     } catch (Exception e) {
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Work record already exists, re-using by re-setting values");
+                        if (logger.isDebugEnabled()) {
+                            logger.debug("Work record already exists, re-using by re-setting values");
                         }
                         StoragePoolWorkVO work = _storagePoolWorkDao.findByPoolIdAndVmId(pool.getId(), vmInstance.getId());
                         work.setStartedAfterMaintenance(false);
@@ -284,7 +289,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                 }
             }
         } catch (Exception e) {
-            s_logger.error("Exception in enabling primary storage maintenance:", e);
+            logger.error("Exception in enabling primary storage maintenance:", e);
             pool.setStatus(StoragePoolStatus.ErrorInMaintenance);
             primaryDataStoreDao.update(pool.getId(), pool);
             throw new CloudRuntimeException(e.getMessage());
@@ -318,20 +323,32 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
         if (hosts == null || hosts.size() == 0) {
             return true;
         }
+
+        Pair<Map<String, String>, Boolean> nfsMountOpts = storageManager.getStoragePoolNFSMountOpts(pool, null);
         // add heartbeat
         for (HostVO host : hosts) {
-            ModifyStoragePoolCommand msPoolCmd = new ModifyStoragePoolCommand(true, pool);
+            ModifyStoragePoolCommand msPoolCmd = new ModifyStoragePoolCommand(true, pool, nfsMountOpts.first());
             final Answer answer = agentMgr.easySend(host.getId(), msPoolCmd);
             if (answer == null || !answer.getResult()) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("ModifyStoragePool add failed due to " + ((answer == null) ? "answer null" : answer.getDetails()));
+                if (logger.isDebugEnabled()) {
+                    logger.debug("ModifyStoragePool add failed due to " + ((answer == null) ? "answer null" : answer.getDetails()));
+                }
+                if (answer != null && nfsMountOpts.second()) {
+                    logger.error(String.format("Unable to attach storage pool to the host %s due to %s",  host,  answer.getDetails()));
+                    StringBuilder exceptionSB = new StringBuilder("Unable to attach storage pool to the host ").append(host.getName());
+                    String reason = storageManager.getStoragePoolMountFailureReason(answer.getDetails());
+                    if (reason!= null) {
+                        exceptionSB.append(". ").append(reason).append(".");
+                    }
+                    throw new CloudRuntimeException(exceptionSB.toString());
                 }
             } else {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("ModifyStoragePool add succeeded");
+                if (logger.isDebugEnabled()) {
+                    logger.debug("ModifyStoragePool add succeeded");
                 }
+                storageManager.updateStoragePoolHostVOAndBytes(pool, host.getId(), (ModifyStoragePoolAnswer) answer);
                 if (pool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
-                    s_logger.debug(String.format("Started synchronising datastore cluster storage pool %s with vCenter", pool.getUuid()));
+                    logger.debug("Started synchronising datastore cluster storage pool {} with vCenter", pool);
                     storageManager.syncDatastoreClusterStoragePool(pool.getId(), ((ModifyStoragePoolAnswer) answer).getDatastoreClusterChildren(), host.getId());
                 }
             }
@@ -399,7 +416,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                     }
                 }
             } catch (Exception e) {
-                s_logger.debug("Failed start vm", e);
+                logger.debug("Failed start vm", e);
                 throw new CloudRuntimeException(e.toString());
             }
         }

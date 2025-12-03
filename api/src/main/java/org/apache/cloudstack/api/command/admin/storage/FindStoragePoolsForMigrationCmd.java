@@ -30,7 +30,6 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.storage.StoragePool;
 import com.cloud.utils.Pair;
@@ -38,7 +37,6 @@ import com.cloud.utils.Pair;
 @APICommand(name = "findStoragePoolsForMigration", description = "Lists storage pools available for migration of a volume.", responseObject = StoragePoolResponse.class,
 requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class FindStoragePoolsForMigrationCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(FindStoragePoolsForMigrationCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -67,7 +65,7 @@ public class FindStoragePoolsForMigrationCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        Pair<List<? extends StoragePool>, List<? extends StoragePool>> pools = _mgr.listStoragePoolsForMigrationOfVolume(getId());
+        Pair<List<? extends StoragePool>, List<? extends StoragePool>> pools = _mgr.listStoragePoolsForMigrationOfVolume(getId(), getKeyword());
         ListResponse<StoragePoolResponse> response = new ListResponse<StoragePoolResponse>();
         List<StoragePoolResponse> poolResponses = new ArrayList<StoragePoolResponse>();
 
@@ -87,7 +85,8 @@ public class FindStoragePoolsForMigrationCmd extends BaseListCmd {
             poolResponses.add(poolResponse);
         }
         sortPoolsBySuitabilityAndName(poolResponses);
-        response.setResponses(poolResponses);
+        List<StoragePoolResponse> pagingList = com.cloud.utils.StringUtils.applyPagination(poolResponses, this.getStartIndex(), this.getPageSizeVal());
+        response.setResponses(pagingList, poolResponses.size());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

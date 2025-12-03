@@ -315,6 +315,9 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
     @Override
     Long getHostId();
 
+
+    void setHostId(Long hostId);
+
     /**
      * @return should HA be enabled for this machine?
      */
@@ -329,6 +332,8 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
      * @return date when machine was created
      */
     Date getCreated();
+
+    Date getRemoved();
 
     long getServiceOfferingId();
 

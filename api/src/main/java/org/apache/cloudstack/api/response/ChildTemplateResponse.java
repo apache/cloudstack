@@ -39,7 +39,7 @@ public class ChildTemplateResponse extends BaseResponse {
     @Param(description = "The size of the Template")
     private Integer size;
 
-    @SerializedName("templatetype")
+    @SerializedName(ApiConstants.TEMPLATE_TYPE)
     @Param(description = "The type of the Template")
     private String templateType;
 

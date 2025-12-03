@@ -30,15 +30,16 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceCountResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ResourceCount;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateResourceCount", description = "Recalculate and update resource count for an account or domain.", responseObject = ResourceCountResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "updateResourceCount",
+            description = "Recalculate and update resource count for an account or domain. " +
+                    "This also executes some cleanup tasks before calculating resource counts.",
+            responseObject = ResourceCountResponse.class,
+            requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateResourceCountCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateResourceCountCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -77,6 +78,9 @@ public class UpdateResourceCountCmd extends BaseCmd {
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Update resource limits for project")
     private Long projectId;
 
+    @Parameter(name = ApiConstants.TAG, type = CommandType.STRING, description = "Tag for the resource type", since = "4.20.0")
+    private String tag;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -91,6 +95,10 @@ public class UpdateResourceCountCmd extends BaseCmd {
 
     public Integer getResourceType() {
         return resourceType;
+    }
+
+    public String getTag() {
+        return tag;
     }
 
     /////////////////////////////////////////////////////
@@ -119,7 +127,7 @@ public class UpdateResourceCountCmd extends BaseCmd {
     @Override
     public void execute() {
         List<? extends ResourceCount> result =
-                _resourceLimitService.recalculateResourceCount(_accountService.finalyzeAccountId(accountName, domainId, projectId, true), getDomainId(), getResourceType());
+                _resourceLimitService.recalculateResourceCount(_accountService.finalyzeAccountId(accountName, domainId, projectId, true), getDomainId(), getResourceType(), getTag());
 
         if ((result != null) && (result.size() > 0)) {
             ListResponse<ResourceCountResponse> response = new ListResponse<ResourceCountResponse>();
@@ -127,7 +135,6 @@ public class UpdateResourceCountCmd extends BaseCmd {
 
             for (ResourceCount count : result) {
                 ResourceCountResponse resourceCountResponse = _responseGenerator.createResourceCountResponse(count);
-                resourceCountResponse.setObjectName("resourcecount");
                 countResponses.add(resourceCountResponse);
             }
 

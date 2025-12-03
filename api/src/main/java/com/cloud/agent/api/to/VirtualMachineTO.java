@@ -82,7 +82,10 @@ public class VirtualMachineTO {
 
     Map<String, String> guestOsDetails = new HashMap<String, String>();
     Map<String, String> extraConfig = new HashMap<>();
+    Map<Long, String> networkIdToNetworkNameMap = new HashMap<>();
     DeployAsIsInfoTO deployAsIsInfo;
+    String metadataManufacturer;
+    String metadataProductName;
 
     public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader,
             String os, boolean enableHA, boolean limitCpuUse, String vncPassword) {
@@ -392,6 +395,14 @@ public class VirtualMachineTO {
         return extraConfig;
     }
 
+    public Map<Long, String> getNetworkIdToNetworkNameMap() {
+        return networkIdToNetworkNameMap;
+    }
+
+    public void setNetworkIdToNetworkNameMap(Map<Long, String> networkIdToNetworkNameMap) {
+        this.networkIdToNetworkNameMap = networkIdToNetworkNameMap;
+    }
+
     public String getBootType() {
         return bootType;
     }
@@ -418,6 +429,22 @@ public class VirtualMachineTO {
 
     public void setDeployAsIsInfo(DeployAsIsInfoTO deployAsIsInfo) {
         this.deployAsIsInfo = deployAsIsInfo;
+    }
+
+    public String getMetadataManufacturer() {
+        return metadataManufacturer;
+    }
+
+    public void setMetadataManufacturer(String metadataManufacturer) {
+        this.metadataManufacturer = metadataManufacturer;
+    }
+
+    public String getMetadataProductName() {
+        return metadataProductName;
+    }
+
+    public void setMetadataProductName(String metadataProductName) {
+        this.metadataProductName = metadataProductName;
     }
 
     @Override

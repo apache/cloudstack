@@ -25,13 +25,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.capacity.Capacity;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class Upgrade222to224 implements DbUpgrade {
-    final static Logger s_logger = Logger.getLogger(Upgrade222to224.class);
+public class Upgrade222to224 extends DbUpgradeAbstractImpl {
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -64,7 +62,7 @@ public class Upgrade222to224 implements DbUpgrade {
         try {
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            s_logger.debug("Ignore if the key is not there.");
+            logger.debug("Ignore if the key is not there.");
         }
         pstmt.close();
 
@@ -130,11 +128,11 @@ public class Upgrade222to224 implements DbUpgrade {
             }
 
             if (zonesWithDuplicateNetworks.size() > 0) {
-                s_logger.warn(errorMsg + zonesWithDuplicateNetworks);
+                logger.warn(errorMsg + zonesWithDuplicateNetworks);
             }
 
         } catch (SQLException e) {
-            s_logger.warn(e);
+            logger.warn(e);
             throw new CloudRuntimeException("Unable to check for duplicate public networks as part of 222 to 224 upgrade.");
         }
     }
@@ -208,21 +206,21 @@ public class Upgrade222to224 implements DbUpgrade {
                 try {
                     pstmtUpdate.close();
                 } catch (SQLException e) {
-                    s_logger.info("[ignored]",e);
+                    logger.info("[ignored]",e);
                 }
             }
             if (rs != null) {
                 try {
                     rs.close();
                 } catch (SQLException e) {
-                    s_logger.info("[ignored]",e);
+                    logger.info("[ignored]",e);
                 }
             }
             if (pstmt != null) {
                 try {
                     pstmt.close();
                 } catch (SQLException e) {
-                    s_logger.info("[ignored]",e);
+                    logger.info("[ignored]",e);
                 }
             }
 
@@ -275,7 +273,7 @@ public class Upgrade222to224 implements DbUpgrade {
                     ResultSet rs1 = pstmt.executeQuery();
 
                     if (rs1.next()) {
-                        s_logger.debug("Not updating user_statistics table for domR id=" + instanceId + " as domR is already expunged");
+                        logger.debug("Not updating user_statistics table for domR id=" + instanceId + " as domR is already expunged");
                         continue;
                     }
 
@@ -301,7 +299,7 @@ public class Upgrade222to224 implements DbUpgrade {
             rs.close();
             pstmt.close();
 
-            s_logger.debug("Upgraded user_statistics with networkId for DomainRouter device type");
+            logger.debug("Upgraded user_statistics with networkId for DomainRouter device type");
 
             // update network_id information for ExternalFirewall and ExternalLoadBalancer device types
             PreparedStatement pstmt1 =
@@ -310,9 +308,9 @@ public class Upgrade222to224 implements DbUpgrade {
             pstmt1.executeUpdate();
             pstmt1.close();
 
-            s_logger.debug("Upgraded user_statistics with networkId for ExternalFirewall and ExternalLoadBalancer device types");
+            logger.debug("Upgraded user_statistics with networkId for ExternalFirewall and ExternalLoadBalancer device types");
 
-            s_logger.debug("Successfully update user_statistics table with network_ids as a part of 222 to 224 upgrade");
+            logger.debug("Successfully update user_statistics table with network_ids as a part of 222 to 224 upgrade");
 
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update user_statistics table with network_ids as a part of 222 to 224 upgrade", e);
@@ -327,7 +325,7 @@ public class Upgrade222to224 implements DbUpgrade {
             if (rs.next()) {
                 pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`domain` DROP INDEX `path`");
                 pstmt.executeUpdate();
-                s_logger.debug("Unique key 'path' is removed successfully");
+                logger.debug("Unique key 'path' is removed successfully");
             }
 
             rs.close();
@@ -346,7 +344,7 @@ public class Upgrade222to224 implements DbUpgrade {
                 Long zoneId = rs.getLong(1);
                 Long networkId = null;
                 Long vmCount = 0L;
-                s_logger.debug("Updating basic zone id=" + zoneId + " with correct nic count");
+                logger.debug("Updating basic zone id=" + zoneId + " with correct nic count");
 
                 pstmt = conn.prepareStatement("SELECT id from networks where data_center_id=? AND guest_type='Direct'");
                 pstmt.setLong(1, zoneId);
@@ -372,7 +370,7 @@ public class Upgrade222to224 implements DbUpgrade {
 
             }
 
-            s_logger.debug("Basic zones are updated with correct nic counts successfully");
+            logger.debug("Basic zones are updated with correct nic counts successfully");
             rs.close();
             pstmt.close();
         } catch (SQLException e) {
@@ -386,7 +384,7 @@ public class Upgrade222to224 implements DbUpgrade {
         PreparedStatement pstmtUpdate = null;
         try {
             // Load all Routing hosts
-            s_logger.debug("Updating total CPU capacity entries in op_host_capacity");
+            logger.debug("Updating total CPU capacity entries in op_host_capacity");
             pstmt = conn.prepareStatement("SELECT id, cpus, speed FROM host WHERE type = 'Routing'");
             rs = pstmt.executeQuery();
             while (rs.next()) {
@@ -410,21 +408,21 @@ public class Upgrade222to224 implements DbUpgrade {
                 try {
                     pstmtUpdate.close();
                 } catch (SQLException e) {
-                    s_logger.info("[ignored]",e);
+                    logger.info("[ignored]",e);
                 }
             }
             if (rs != null) {
                 try {
                     rs.close();
                 } catch (SQLException e) {
-                    s_logger.info("[ignored]",e);
+                    logger.info("[ignored]",e);
                 }
             }
             if (pstmt != null) {
                 try {
                     pstmt.close();
                 } catch (SQLException e) {
-                    s_logger.info("[ignored]",e);
+                    logger.info("[ignored]",e);
                 }
             }
 
@@ -439,7 +437,7 @@ public class Upgrade222to224 implements DbUpgrade {
             if (!rs.next()) {
                 pstmt = conn.prepareStatement("INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (138, 7, 'None')");
                 pstmt.executeUpdate();
-                s_logger.debug("Inserted NONE category to guest_os table");
+                logger.debug("Inserted NONE category to guest_os table");
             }
 
             rs.close();
@@ -488,7 +486,7 @@ public class Upgrade222to224 implements DbUpgrade {
             try {
                 pstmt.executeUpdate();
             } catch (SQLException e) {
-                s_logger.debug("Ignore if the key is not there.");
+                logger.debug("Ignore if the key is not there.");
             }
             pstmt.close();
         }
@@ -499,7 +497,7 @@ public class Upgrade222to224 implements DbUpgrade {
             try {
                 pstmt.executeUpdate();
             } catch (SQLException e) {
-                s_logger.debug("Ignore if the index is not there.");
+                logger.debug("Ignore if the index is not there.");
             }
             pstmt.close();
         }
@@ -613,7 +611,7 @@ public class Upgrade222to224 implements DbUpgrade {
 
         pstmt.close();
 
-        s_logger.debug("Resource limit is cleaned up successfully as a part of db upgrade");
+        logger.debug("Resource limit is cleaned up successfully as a part of db upgrade");
 
     }
 }

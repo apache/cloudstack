@@ -35,6 +35,8 @@ public interface DataStoreManager {
 
     List<DataStore> getImageStoresByScopeExcludingReadOnly(ZoneScope scope);
 
+    List<DataStore> getImageStoresByZoneIds(Long ... zoneIds);
+
     DataStore getRandomImageStore(long zoneId);
 
     DataStore getRandomUsableImageStore(long zoneId);
@@ -54,4 +56,8 @@ public interface DataStoreManager {
     List<DataStore> listImageCacheStores();
 
     boolean isRegionStore(DataStore store);
+
+    DataStore getImageStoreByUuid(String uuid);
+
+    Long getStoreZoneId(long storeId, DataStoreRole role);
 }

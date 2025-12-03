@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -40,7 +39,6 @@ import com.cloud.exception.InvalidParameterValueException;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListCapacityCmd extends BaseListCmd {
 
-    public static final Logger s_logger = Logger.getLogger(ListCapacityCmd.class.getName());
     private static final DecimalFormat s_percentFormat = new DecimalFormat("##.##");
 
 
@@ -72,6 +70,9 @@ public class ListCapacityCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.SORT_BY, type = CommandType.STRING, since = "3.0.0", description = "Sort the results. Available values: Usage")
     private String sortBy;
+
+    @Parameter(name = ApiConstants.TAG, type = CommandType.STRING, description = "Tag for the resource type", since = "4.20.0")
+    private String tag;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -109,6 +110,10 @@ public class ListCapacityCmd extends BaseListCmd {
         return null;
     }
 
+    public String getTag() {
+        return tag;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -127,13 +132,15 @@ public class ListCapacityCmd extends BaseListCmd {
         Collections.sort(capacityResponses, new Comparator<CapacityResponse>() {
             public int compare(CapacityResponse resp1, CapacityResponse resp2) {
                 int res = resp1.getZoneName().compareTo(resp2.getZoneName());
+                // Group by zone
                 if (res != 0) {
                     return res;
-                } else {
-                    return resp1.getCapacityType().compareTo(resp2.getCapacityType());
                 }
+                // Sort by capacity type only if not already sorted by usage
+                return (getSortBy() != null) ? 0 : resp1.getCapacityType().compareTo(resp2.getCapacityType());
             }
         });
+
 
         response.setResponses(capacityResponses);
         response.setResponseName(getCommandName());

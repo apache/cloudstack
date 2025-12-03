@@ -31,7 +31,8 @@ import {
   showIconPlugin,
   resourceTypePlugin,
   fileSizeUtilPlugin,
-  genericUtilPlugin
+  genericUtilPlugin,
+  dialogUtilPlugin
 } from '@/utils/plugins'
 
 function createMockRouter (newRoutes = []) {
@@ -88,6 +89,7 @@ function createFactory (component, options) {
         resourceTypePlugin,
         fileSizeUtilPlugin,
         genericUtilPlugin,
+        dialogUtilPlugin,
         StoragePlugin
       ],
       mocks

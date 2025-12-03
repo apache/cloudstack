@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.user.UserData;
 import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgGroupsByCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
@@ -66,6 +65,7 @@ import org.apache.cloudstack.api.command.user.vm.GetVMPasswordCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.UpdateVMGroupCmd;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.config.ConfigurationGroup;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.alert.Alert;
 import com.cloud.capacity.Capacity;
@@ -85,6 +85,7 @@ import com.cloud.storage.GuestOSHypervisor;
 import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.StoragePool;
 import com.cloud.user.SSHKeyPair;
+import com.cloud.user.UserData;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.vm.InstanceGroup;
@@ -98,6 +99,14 @@ import com.cloud.vm.VirtualMachine.Type;
 public interface ManagementService {
     static final String Name = "management-server";
 
+    ConfigKey<Boolean> JsInterpretationEnabled = new ConfigKey<>("Hidden"
+            , Boolean.class
+            , "js.interpretation.enabled"
+            , "false"
+            , "Enable/Disable all JavaScript interpretation related functionalities to create or update Javascript rules."
+            , false
+            , ConfigKey.Scope.Global);
+
     /**
      * returns the a map of the names/values in the configuration table
      *
@@ -106,7 +115,7 @@ public interface ManagementService {
     Pair<List<? extends Configuration>, Integer> searchForConfigurations(ListCfgsByCmd c);
 
     /**
-     * returns the the configuration groups
+     * returns the configuration groups
      *
      * @return list of configuration groups
      */
@@ -441,16 +450,19 @@ public interface ManagementService {
      */
     Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(Long vmId, Long startIndex, Long pageSize, String keyword);
 
+    Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(VirtualMachine vm, Long startIndex, Long pageSize, String keyword, List<VirtualMachine> vmList);
+
     /**
      * List storage pools for live migrating of a volume. The API returns list of all pools in the cluster to which the
      * volume can be migrated. Current pool is not included in the list. In case of vSphere datastore cluster storage pools,
      * this method removes the child storage pools and adds the corresponding parent datastore cluster for API response listing
      *
      * @param Long volumeId
+     * @param String keyword if passed, will only return storage pools that contain this keyword in the name
      * @return Pair<List<? extends StoragePool>, List<? extends StoragePool>> List of storage pools in cluster and list
      *         of pools with enough capacity.
      */
-    Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolume(Long volumeId);
+    Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolume(Long volumeId, String keyword);
 
     Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForSystemMigrationOfVolume(Long volumeId, Long newDiskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, boolean keepSourceStoragePool, boolean bypassStorageTypeCheck);
 
@@ -477,5 +489,7 @@ public interface ManagementService {
     void cleanupVMReservations();
 
     Pair<Boolean, String> patchSystemVM(PatchSystemVMCmd cmd);
+
+    void checkJsInterpretationAllowedIfNeededForParameterValue(String paramName, boolean paramValue);
 
 }

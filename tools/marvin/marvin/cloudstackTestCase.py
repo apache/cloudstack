@@ -23,7 +23,8 @@ from marvin.lib.base import (
     Network,
     NetworkACL,
     NetworkOffering,
-    VirtualMachine
+    VirtualMachine,
+    Volume
 )
 
 
@@ -98,11 +99,31 @@ class cloudstackTestCase(unittest.case.TestCase):
         """
             Delete resources (created during tests)
         """
+        volume_list = []
         for obj in resources:
             if isinstance(obj, VirtualMachine):
                 obj.delete(api_client, expunge=True)
+            elif isinstance(obj, Volume):
+                obj.destroy(api_client, expunge=True)
+                volume_list.append(obj)
             else:
                 obj.delete(api_client)
+
+        cls.wait_for_volumes_cleanup(api_client, volume_list)
+
+    def wait_for_volumes_cleanup(cls, api_client, volume_list=[]):
+        """Wait for volumes to be deleted"""
+        for volume in volume_list:
+            max_retries = 24  # Max wait time will be 5 * 24 = 120 seconds
+            while max_retries > 0:
+                volumes = Volume.list(
+                    api_client,
+                    id=volume.id
+                )
+                if volumes is None or len(volumes) == 0:
+                    break
+                max_retries = max_retries - 1
+                time.sleep(5)
 
     def check_wget_from_vm(self, vm, public_ip, network=None, testnegative=False, isVmAccessible=True):
         import urllib.request, urllib.error
@@ -162,7 +183,7 @@ class cloudstackTestCase(unittest.case.TestCase):
             sshClient.execute("service httpd start")
             time.sleep(5)
             ssh_response = str(sshClient.execute("service httpd status")).lower()
-        if not "running" in ssh_response:
+        if "running" not in ssh_response:
             raise Exception("Failed to start httpd service")
         self.debug("Setup webserver using apache")
 

@@ -172,7 +172,7 @@ class DeployDataCenters(object):
     def addBaremetalRct(self, config):
         networktype= config.zones[0].networktype
         baremetalrcturl= config.zones[0].baremetalrcturl
-        if networktype is None or baremetalrcturl  is None:
+        if networktype is None or baremetalrcturl is None:
             return
         if networktype.lower()=="advanced":
 

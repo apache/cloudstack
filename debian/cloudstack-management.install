@@ -35,4 +35,5 @@
 /usr/bin/cloudstack-migrate-databases
 /usr/bin/cloudstack-setup-encryption
 /usr/bin/cloudstack-sysvmadm
+/usr/bin/cmk
 /usr/share/cloudstack-management/*

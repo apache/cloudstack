@@ -23,7 +23,7 @@ package com.cloud.utils;
  * purposes.  This is purely on an honor system though.  You should always
  **/
 public interface SerialVersionUID {
-    public static final long Base = 0x564D4F70 << 32;  // 100 brownie points if you guess what this is and tell me.
+    public static final long Base = 0x564D4F70L << 32;  // 100 brownie points if you guess what this is and tell me.
 
     public static final long UUID = Base | 0x1;
     public static final long CloudRuntimeException = Base | 0x2;

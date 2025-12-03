@@ -19,11 +19,11 @@
 
 FROM node:14-bullseye AS build
 
-MAINTAINER "Apache CloudStack" <dev@cloudstack.apache.org>
 LABEL Description="Apache CloudStack UI; Modern role-base progressive UI for Apache CloudStack"
 LABEL Vendor="Apache.org"
 LABEL License=ApacheV2
 LABEL Version=0.5.0
+LABEL Author="Apache CloudStack <dev@cloudstack.apache.org>"
 
 WORKDIR /build
 

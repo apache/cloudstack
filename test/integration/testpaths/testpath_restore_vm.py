@@ -141,7 +141,7 @@ class TestRestoreVM(cloudstackTestCase):
                 "Check: Failed to list  cluster wide storage pools")
 
             if len(self.pools) < 2:
-                self.skipTest("There must be at at least two cluster wide\
+                self.skipTest("There must be at least two cluster wide\
                 storage pools available in the setup")
 
         except Exception as e:

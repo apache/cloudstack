@@ -29,7 +29,6 @@ import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -40,7 +39,6 @@ import com.cloud.projects.ProjectAccount;
 @APICommand(name = "updateProject", description = "Updates a project", responseObject = ProjectResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateProjectCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateProjectCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

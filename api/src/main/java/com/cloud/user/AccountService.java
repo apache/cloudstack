@@ -19,6 +19,7 @@ package com.cloud.user;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -70,6 +71,8 @@ public interface AccountService {
 
     UserAccount getActiveUserAccount(String username, Long domainId);
 
+    List<UserAccount> getActiveUserAccountByEmail(String email, Long domainId);
+
     UserAccount updateUser(UpdateUserCmd updateUserCmd);
 
     Account getActiveAccountById(long accountId);
@@ -83,6 +86,8 @@ public interface AccountService {
     boolean isRootAdmin(Long accountId);
 
     boolean isDomainAdmin(Long accountId);
+
+    boolean isResourceDomainAdmin(Long accountId);
 
     boolean isNormalUser(long accountId);
 
@@ -114,6 +119,8 @@ public interface AccountService {
 
     void checkAccess(Account account, AccessType accessType, boolean sameOwner, String apiName, ControlledEntity... entities) throws PermissionDeniedException;
 
+    void validateAccountHasAccessToResource(Account account, AccessType accessType, Object resource);
+
     Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly);
 
     /**
@@ -123,9 +130,9 @@ public interface AccountService {
      */
     UserAccount getUserAccountById(Long userId);
 
-    public Map<String, String> getKeys(GetUserKeysCmd cmd);
+    public Pair<Boolean, Map<String, String>> getKeys(GetUserKeysCmd cmd);
 
-    public Map<String, String> getKeys(Long userId);
+    public Pair<Boolean, Map<String, String>> getKeys(Long userId);
 
     /**
      * Lists user two-factor authentication provider plugins

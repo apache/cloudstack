@@ -704,7 +704,7 @@ const UI = {
 
     updateControlbarHandle() {
         // Since the control bar is fixed on the viewport and not the page,
-        // the move function expects coordinates relative the the viewport.
+        // the move function expects coordinates relative the viewport.
         const handle = document.getElementById("noVNC_control_bar_handle");
         const handleBounds = handle.getBoundingClientRect();
         UI.moveControlbarHandle(handleBounds.top);
@@ -1000,6 +1000,7 @@ const UI = {
 
     clipboardClear() {
         document.getElementById('noVNC_clipboard_text').value = "";
+        document.getElementById('noVNC_clipboard_text').focus();
     },
 
     clipboardSend() {

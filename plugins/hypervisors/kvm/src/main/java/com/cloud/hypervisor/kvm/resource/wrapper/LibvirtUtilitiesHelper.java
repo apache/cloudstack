@@ -22,7 +22,8 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 
@@ -41,7 +42,7 @@ import com.cloud.utils.script.Script;
  * and the methods wrapped here.
  */
 public class LibvirtUtilitiesHelper {
-    private static final Logger s_logger = Logger.getLogger(LibvirtUtilitiesHelper.class);
+    protected static Logger LOGGER = LogManager.getLogger(LibvirtUtilitiesHelper.class);
 
     public static final int TIMEOUT = 10000;
 
@@ -129,7 +130,7 @@ public class LibvirtUtilitiesHelper {
             return new Pair<>(String.valueOf(currentLibvirtVersion), currentLibvirtVersion >= version);
         } catch (LibvirtException ex) {
             String exceptionMessage = ex.getMessage();
-            s_logger.error(String.format("Unable to validate if the Libvirt's version is equal or higher than [%s] due to [%s]. Returning 'false' as default'.", version,
+            LOGGER.error(String.format("Unable to validate if the Libvirt's version is equal or higher than [%s] due to [%s]. Returning 'false' as default'.", version,
                     exceptionMessage), ex);
             return new Pair<>(String.format("Unknown due to [%s]", exceptionMessage), false);
         }
@@ -140,7 +141,7 @@ public class LibvirtUtilitiesHelper {
      */
     public static boolean isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(Connect conn) {
         Pair<String, Boolean> result = isLibvirtVersionEqualOrHigherThanVersionInParameter(conn, LIBVIRT_VERSION_THAT_SUPPORTS_FLAG_DELETE_ON_COMMAND_VIRSH_BLOCKCOMMIT);
-        s_logger.debug(String.format("The current Libvirt's version [%s]%s supports the flag '--delete' on command 'virsh blockcommit'.", result.first(),
+        LOGGER.debug(String.format("The current Libvirt's version [%s]%s supports the flag '--delete' on command 'virsh blockcommit'.", result.first(),
                 result.second() ? "" : " does not"));
         return result.second();
     }

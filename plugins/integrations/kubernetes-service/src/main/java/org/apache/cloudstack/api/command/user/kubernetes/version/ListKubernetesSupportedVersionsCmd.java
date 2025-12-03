@@ -29,7 +29,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.KubernetesSupportedVersionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.kubernetes.version.KubernetesVersionService;
@@ -41,7 +40,6 @@ import org.apache.commons.lang3.StringUtils;
         responseView = ResponseObject.ResponseView.Restricted,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListKubernetesSupportedVersionsCmd extends BaseListCmd {
-    public static final Logger LOGGER = Logger.getLogger(ListKubernetesSupportedVersionsCmd.class.getName());
 
     @Inject
     private KubernetesVersionService kubernetesVersionService;
@@ -68,6 +66,11 @@ public class ListKubernetesSupportedVersionsCmd extends BaseListCmd {
             description = "The ID of the minimum Kubernetes supported version")
     private Long minimumKubernetesVersionId;
 
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "the CPU arch of the binaries ISO. Valid options are: x86_64, aarch64",
+            since = "4.20")
+    private String arch;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -85,6 +88,10 @@ public class ListKubernetesSupportedVersionsCmd extends BaseListCmd {
             throw new IllegalArgumentException("Invalid version format");
         }
         return minimumSemanticVersion;
+    }
+
+    public String getArch() {
+        return arch;
     }
 
     public Long getMinimumKubernetesVersionId() {

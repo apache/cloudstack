@@ -19,12 +19,13 @@ package org.apache.cloudstack.api.command.user.vpc;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PrivateGatewayResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
@@ -34,9 +35,9 @@ import com.cloud.network.vpc.VpcGateway;
 import com.cloud.utils.Pair;
 
 @APICommand(name = "listPrivateGateways", description = "List private gateways", responseObject = PrivateGatewayResponse.class, entityType = {VpcGateway.class},
+        responseView = ResponseObject.ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListPrivateGatewaysCmd extends BaseListProjectAndAccountResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListPrivateGatewaysCmd.class.getName());
+public class ListPrivateGatewaysCmd extends BaseListProjectAndAccountResourcesCmd implements UserCmd {
 
 
     /////////////////////////////////////////////////////
@@ -90,7 +91,7 @@ public class ListPrivateGatewaysCmd extends BaseListProjectAndAccountResourcesCm
         ListResponse<PrivateGatewayResponse> response = new ListResponse<PrivateGatewayResponse>();
         List<PrivateGatewayResponse> projectResponses = new ArrayList<PrivateGatewayResponse>();
         for (PrivateGateway gateway : gateways.first()) {
-            PrivateGatewayResponse gatewayResponse = _responseGenerator.createPrivateGatewayResponse(gateway);
+            PrivateGatewayResponse gatewayResponse = _responseGenerator.createPrivateGatewayResponse(getResponseView(), gateway);
             projectResponses.add(gatewayResponse);
         }
         response.setResponses(projectResponses, gateways.second());

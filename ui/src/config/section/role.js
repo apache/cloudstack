@@ -16,20 +16,28 @@
 // under the License.
 
 import { shallowRef, defineAsyncComponent } from 'vue'
+import store from '@/store'
+
 export default {
   name: 'role',
   title: 'label.roles',
   icon: 'idcard-outlined',
   docHelp: 'adminguide/accounts.html#roles',
   permission: ['listRoles', 'listRolePermissions'],
-  columns: ['name', 'type', 'description'],
-  details: ['name', 'id', 'type', 'description'],
+  searchFilters: ['name', 'type'],
+  columns: ['name', 'type', 'description', 'state'],
+  details: ['name', 'id', 'type', 'description', 'ispublic'],
   tabs: [{
     name: 'details',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
   }, {
     name: 'rules',
     component: shallowRef(defineAsyncComponent(() => import('@/views/iam/RolePermissionTab.vue')))
+  }, {
+    name: 'events',
+    resourceType: 'Role',
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+    show: () => { return 'listEvents' in store.getters.apis }
   }],
   actions: [
     {
@@ -49,11 +57,43 @@ export default {
       component: shallowRef(defineAsyncComponent(() => import('@/views/iam/ImportRole.vue')))
     },
     {
+      api: 'enableRole',
+      icon: 'play-circle-outlined',
+      label: 'label.action.enable.role',
+      message: 'message.enable.role',
+      dataView: true,
+      show: (record, store) => {
+        return record.state === 'disabled'
+      },
+      mapping: {
+        id: {
+          value: (record) => { return record.id }
+        }
+      },
+      popup: true
+    },
+    {
+      api: 'disableRole',
+      icon: 'pause-circle-outlined',
+      label: 'label.action.disable.role',
+      message: 'message.disable.role',
+      dataView: true,
+      show: (record, store) => {
+        return record.state === 'enabled'
+      },
+      mapping: {
+        id: {
+          value: (record) => { return record.id }
+        }
+      },
+      popup: true
+    },
+    {
       api: 'updateRole',
       icon: 'edit-outlined',
       label: 'label.edit.role',
       dataView: true,
-      args: ['name', 'description', 'type'],
+      args: (record) => record.isdefault ? ['ispublic'] : ['name', 'description', 'type', 'ispublic'],
       mapping: {
         type: {
           options: ['Admin', 'DomainAdmin', 'User']

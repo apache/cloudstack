@@ -25,7 +25,8 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.usage.UsageTypes;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageBackupVO;
@@ -36,7 +37,7 @@ import com.cloud.user.AccountVO;
 
 @Component
 public class BackupUsageParser {
-    public static final Logger LOGGER = Logger.getLogger(BackupUsageParser.class);
+    protected static Logger LOGGER = LogManager.getLogger(BackupUsageParser.class);
 
     private static UsageDao s_usageDao;
     private static UsageBackupDao s_usageBackupDao;

@@ -769,7 +769,7 @@ def add_to_ipset(ipsetname, ips, action):
             logging.debug("vm ip " + ip)
             util.pread2(['ipset', action, ipsetname, ip])
         except:
-            logging.debug("vm ip alreday in ip set" + ip)
+            logging.debug("vm ip already in ip set" + ip)
             continue
 
     return result
@@ -1023,7 +1023,7 @@ def network_rules_for_rebooted_vm(session, vmName):
     [vm_ip, vm_mac] = get_vm_mac_ip_from_log(vmchain)
     default_arp_antispoof(vmchain, vifs, vm_ip, vm_mac)
 
-    #check wether the vm has secondary ips
+    #check whether the vm has secondary ips
     if is_secondary_ips_set(vm_name) == True:
         vmips = get_vm_sec_ips(vm_name)
         #add arp rules for the secondaryp ip

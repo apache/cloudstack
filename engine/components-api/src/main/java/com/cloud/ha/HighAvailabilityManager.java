@@ -32,7 +32,7 @@ import java.util.List;
  */
 public interface HighAvailabilityManager extends Manager {
 
-    public ConfigKey<Boolean> ForceHA = new ConfigKey<>("Advanced", Boolean.class, "force.ha", "false",
+    ConfigKey<Boolean> ForceHA = new ConfigKey<>("Advanced", Boolean.class, "force.ha", "false",
         "Force High-Availability to happen even if the VM says no.", true, Cluster);
 
     ConfigKey<Integer> HAWorkers = new ConfigKey<>("Advanced", Integer.class, "ha.workers", "5",
@@ -53,7 +53,7 @@ public interface HighAvailabilityManager extends Manager {
     ConfigKey<Long> TimeBetweenCleanup = new ConfigKey<>("Advanced", Long.class,
         "time.between.cleanup", "86400", "The time in seconds to wait before the"
         + " cleanup thread runs for the different HA-Worker-Threads. The cleanup thread finds all the work items "
-        + "that were successful and is now ready to be purged from the the database (table: op_ha_work).",
+        + "that were successful and is now ready to be purged from the database (table: op_ha_work).",
         true, Cluster);
 
     ConfigKey<Integer> MaxRetries = new ConfigKey<>("Advanced", Integer.class, "max.retries",
@@ -72,6 +72,9 @@ public interface HighAvailabilityManager extends Manager {
         + " which are registered for the HA event that were successful and are now ready to be purged.",
         true, Cluster);
 
+    public static final ConfigKey<Boolean> KvmHAFenceHostIfHeartbeatFailsOnStorage = new ConfigKey<>("Advanced", Boolean.class, "kvm.ha.fence.on.storage.heartbeat.failure", "false",
+            "Proceed fencing the host even the heartbeat failed for only one storage pool", false, ConfigKey.Scope.Zone);
+
     public enum WorkType {
         Migration,  // Migrating VMs off of a host.
         Stop,       // Stops a VM for storage pool migration purposes.  This should be obsolete now.
@@ -79,6 +82,13 @@ public interface HighAvailabilityManager extends Manager {
         ForceStop,  // Force a VM to stop even if the states don't allow it.  Use this only if you know the VM is stopped on the physical hypervisor.
         Destroy,    // Destroy a VM.
         HA;         // Restart a VM.
+    }
+
+    enum ReasonType {
+        Unknown,
+        HostMaintenance,
+        HostDown,
+        HostDegraded;
     }
 
     enum Step {
@@ -89,7 +99,7 @@ public interface HighAvailabilityManager extends Manager {
      * Investigate why a host has disconnected and migrate the VMs on it
      * if necessary.
      *
-     * @param host - the host that has disconnected.
+     * @param hostId - the id of the host that has disconnected.
      */
     Status investigate(long hostId);
 
@@ -106,17 +116,19 @@ public interface HighAvailabilityManager extends Manager {
      * @param investigate must be investigated before we do anything with this vm.
      */
     void scheduleRestart(VMInstanceVO vm, boolean investigate);
+    void scheduleRestart(VMInstanceVO vm, boolean investigate, ReasonType reasonType);
 
     void cancelDestroy(VMInstanceVO vm, Long hostId);
 
-    void scheduleDestroy(VMInstanceVO vm, long hostId);
+    boolean scheduleDestroy(VMInstanceVO vm, long hostId, ReasonType reasonType);
 
     /**
      * Schedule restarts for all vms running on the host.
      * @param host host.
-     * @param investigate TODO
+     * @param investigate whether to investigate
+     * @param reasonType reason for HA work
      */
-    void scheduleRestartForVmsOnHost(HostVO host, boolean investigate);
+    void scheduleRestartForVmsOnHost(HostVO host, boolean investigate, ReasonType reasonType);
 
     /**
      * Schedule the vm for migration.
@@ -125,6 +137,7 @@ public interface HighAvailabilityManager extends Manager {
      * @return true if schedule worked.
      */
     boolean scheduleMigration(VMInstanceVO vm);
+    boolean scheduleMigration(VMInstanceVO vm, ReasonType reasonType);
 
     List<VMInstanceVO> findTakenMigrationWork();
 
@@ -137,10 +150,11 @@ public interface HighAvailabilityManager extends Manager {
      * 3. Check if a VM has been stopped: WorkType.CheckStop
      *
      * @param vm virtual machine to stop.
-     * @param host host the virtual machine is on.
+     * @param hostId the id of the host the virtual machine is on.
      * @param type which type of stop is requested.
      */
-    void scheduleStop(VMInstanceVO vm, long hostId, WorkType type);
+    boolean scheduleStop(VMInstanceVO vm, long hostId, WorkType type);
+    boolean scheduleStop(VMInstanceVO vm, long hostId, WorkType type, ReasonType reasonType);
 
     void cancelScheduledMigrations(HostVO host);
 
@@ -153,4 +167,5 @@ public interface HighAvailabilityManager extends Manager {
     String getHaTag();
 
     DeploymentPlanner getHAPlanner();
+    int expungeWorkItemsByVmList(List<Long> vmIds, Long batchSize);
 }

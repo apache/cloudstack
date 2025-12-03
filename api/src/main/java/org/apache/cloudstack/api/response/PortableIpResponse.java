@@ -68,7 +68,7 @@ public class PortableIpResponse extends BaseResponse {
     private Date allocated;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "State of the IP address. Can be: Allocating, Allocated and Releasing")
+    @Param(description = "State of the IP address. Can be: Allocating, Allocated, Releasing and Free")
     private String state;
 
     public void setRegionId(Integer regionId) {

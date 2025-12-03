@@ -73,6 +73,7 @@ public interface NetworkModel {
     String HYPERVISOR_HOST_NAME_FILE = "hypervisor-host-name";
     String CLOUD_DOMAIN_FILE = "cloud-domain";
     String CLOUD_DOMAIN_ID_FILE = "cloud-domain-id";
+    String CLOUD_NAME_FILE = "cloud-name";
     int CONFIGDATA_DIR = 0;
     int CONFIGDATA_FILE = 1;
     int CONFIGDATA_CONTENT = 2;
@@ -83,11 +84,12 @@ public interface NetworkModel {
             .put(PUBLIC_HOSTNAME_FILE, "name")
             .put(CLOUD_DOMAIN_FILE, CLOUD_DOMAIN_FILE)
             .put(CLOUD_DOMAIN_ID_FILE, CLOUD_DOMAIN_ID_FILE)
+            .put(CLOUD_NAME_FILE, CLOUD_NAME_FILE)
             .put(HYPERVISOR_HOST_NAME_FILE, HYPERVISOR_HOST_NAME_FILE)
             .build();
 
     List<String> metadataFileNames = new ArrayList<>(Arrays.asList(SERVICE_OFFERING_FILE, AVAILABILITY_ZONE_FILE, LOCAL_HOSTNAME_FILE, LOCAL_IPV4_FILE, PUBLIC_HOSTNAME_FILE, PUBLIC_IPV4_FILE,
-            INSTANCE_ID_FILE, VM_ID_FILE, PUBLIC_KEYS_FILE, CLOUD_IDENTIFIER_FILE, HYPERVISOR_HOST_NAME_FILE));
+            INSTANCE_ID_FILE, VM_ID_FILE, PUBLIC_KEYS_FILE, CLOUD_IDENTIFIER_FILE, CLOUD_NAME_FILE, HYPERVISOR_HOST_NAME_FILE));
 
     static final ConfigKey<Integer> MACIdentifier = new ConfigKey<>("Advanced",Integer.class, "mac.identifier", "0",
             "This value will be used while generating the mac addresses for isolated and shared networks. The hexadecimal equivalent value will be present at the 2nd octet of the mac address. Default value is zero (0) which means that the DB id of the zone will be used.", true, ConfigKey.Scope.Zone);
@@ -147,7 +149,7 @@ public interface NetworkModel {
 
     boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service... services);
 
-    Network getNetworkWithSGWithFreeIPs(Long zoneId);
+    Network getNetworkWithSGWithFreeIPs(Account account, Long zoneId);
 
     Network getNetworkWithSecurityGroupEnabled(Long zoneId);
 
@@ -170,6 +172,8 @@ public interface NetworkModel {
     boolean isSecurityGroupSupportedInNetwork(Network network);
 
     boolean isProviderSupportServiceInNetwork(long networkId, Service service, Provider provider);
+
+    boolean isAnyServiceSupportedInNetwork(long networkId, Provider provider, Service... services);
 
     boolean isProviderEnabledInPhysicalNetwork(long physicalNetowrkId, String providerName);
 
@@ -315,6 +319,8 @@ public interface NetworkModel {
 
     void checkIp6Parameters(String startIPv6, String endIPv6, String ip6Gateway, String ip6Cidr) throws InvalidParameterValueException;
 
+    void checkIp6CidrSizeEqualTo64(String ip6Cidr) throws InvalidParameterValueException;
+
     void checkRequestedIpAddresses(long networkId, IpAddresses ips) throws InvalidParameterValueException;
 
     String getStartIpv6Address(long id);
@@ -352,4 +358,8 @@ public interface NetworkModel {
 
     void verifyIp6DnsPair(final String ip6Dns1, final String ip6Dns2);
 
+    boolean isSecurityGroupSupportedForZone(Long zoneId);
+
+    boolean checkSecurityGroupSupportForNetwork(Account account, DataCenter zone, List<Long> networkIds,
+                                                List<Long> securityGroupsIds);
 }

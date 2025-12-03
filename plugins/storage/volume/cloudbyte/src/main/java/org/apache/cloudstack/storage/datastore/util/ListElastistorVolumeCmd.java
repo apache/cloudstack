@@ -26,11 +26,9 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.log4j.Logger;
 
 @APICommand(name = "listElastistorVolume", description = "Lists the volumes of elastistor", responseObject = ListElastistorVolumeResponse.class)
 public class ListElastistorVolumeCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(ListElastistorVolumeCmd.class.getName());
     private static final String s_name = "listElastistorVolumeResponse";
 
     @Inject

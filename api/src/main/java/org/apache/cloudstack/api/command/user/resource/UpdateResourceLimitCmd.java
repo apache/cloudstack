@@ -26,14 +26,12 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceLimitResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ResourceLimit;
 
 @APICommand(name = "updateResourceLimit", description = "Updates resource limits for an account or domain.", responseObject = ResourceLimitResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateResourceLimitCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateResourceLimitCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -64,13 +62,17 @@ public class UpdateResourceLimitCmd extends BaseCmd {
                    + "2 - Volume. Number of disk volumes a user can create. "
                    + "3 - Snapshot. Number of Snapshots a user can create. "
                    + "4 - Template. Number of Templates that a user can register/create. "
-                   + "6 - Network. Number of guest network a user can create. "
+                   + "5 - Project. Number of Projects a user can create. "
+                   + "6 - Network. Number of guest Network a user can create. "
                    + "7 - VPC. Number of VPC a user can create. "
                    + "8 - CPU. Total number of CPU cores a user can use. "
                    + "9 - Memory. Total Memory (in MB) a user can use. "
                    + "10 - PrimaryStorage. Total primary storage space (in GiB) a user can use. "
                    + "11 - SecondaryStorage. Total secondary storage space (in GiB) a user can use. ")
     private Integer resourceType;
+
+    @Parameter(name = ApiConstants.TAG, type = CommandType.STRING, description = "Tag for the resource type", since = "4.20.0")
+    private String tag;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -82,6 +84,10 @@ public class UpdateResourceLimitCmd extends BaseCmd {
 
     public Long getDomainId() {
         return domainId;
+    }
+
+    public String getTag() {
+        return tag;
     }
 
     public Integer getResourceType() {
@@ -104,7 +110,7 @@ public class UpdateResourceLimitCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        ResourceLimit result = _resourceLimitService.updateResourceLimit(_accountService.finalyzeAccountId(accountName, domainId, projectId, true), getDomainId(), resourceType, max);
+        ResourceLimit result = _resourceLimitService.updateResourceLimit(_accountService.finalyzeAccountId(accountName, domainId, projectId, true), getDomainId(), resourceType, max, getTag());
         if (result != null || (result == null && max != null && max.longValue() == -1L)) {
             ResourceLimitResponse response = _responseGenerator.createResourceLimitResponse(result);
             response.setResponseName(getCommandName());

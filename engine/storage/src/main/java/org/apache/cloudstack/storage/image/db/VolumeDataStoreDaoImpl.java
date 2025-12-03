@@ -18,6 +18,7 @@ package org.apache.cloudstack.storage.image.db;
 
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +28,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.log4j.Logger;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -50,7 +51,6 @@ import com.cloud.utils.db.UpdateBuilder;
 
 @Component
 public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Long> implements VolumeDataStoreDao {
-    private static final Logger s_logger = Logger.getLogger(VolumeDataStoreDaoImpl.class);
     private SearchBuilder<VolumeDataStoreVO> updateStateSearch;
     private SearchBuilder<VolumeDataStoreVO> volumeSearch;
     private SearchBuilder<VolumeDataStoreVO> storeSearch;
@@ -60,12 +60,13 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
     private SearchBuilder<VolumeDataStoreVO> uploadVolumeSearch;
     private SearchBuilder<VolumeVO> volumeOnlySearch;
     private SearchBuilder<VolumeDataStoreVO> uploadVolumeStateSearch;
+    private SearchBuilder<VolumeDataStoreVO> imageStoreAndInstallPathSearch;
     private static final String EXPIRE_DOWNLOAD_URLS_FOR_ZONE = "update volume_store_ref set download_url_created=? where download_url_created is not null and store_id in (select id from image_store where data_center_id=?)";
 
     @Inject
     DataStoreManager storeMgr;
     @Inject
-    VolumeDao volumeDao;
+    VolumeDao volumeDao;;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -118,6 +119,11 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         uploadVolumeStateSearch.join("volumeOnlySearch", volumeOnlySearch, volumeOnlySearch.entity().getId(), uploadVolumeStateSearch.entity().getVolumeId(), JoinType.LEFT);
         uploadVolumeStateSearch.and("destroyed", uploadVolumeStateSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
         uploadVolumeStateSearch.done();
+
+        imageStoreAndInstallPathSearch = createSearchBuilder();
+        imageStoreAndInstallPathSearch.and("store_id", imageStoreAndInstallPathSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        imageStoreAndInstallPathSearch.and("install_pathIN", imageStoreAndInstallPathSearch.entity().getInstallPath(), SearchCriteria.Op.IN);
+        imageStoreAndInstallPathSearch.done();
         return true;
     }
 
@@ -142,7 +148,7 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         }
 
         int rows = update(dataObj, sc);
-        if (rows == 0 && s_logger.isDebugEnabled()) {
+        if (rows == 0 && logger.isDebugEnabled()) {
             VolumeDataStoreVO dbVol = findByIdIncludingRemoved(dataObj.getId());
             if (dbVol != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(dataObj.toString());
@@ -175,7 +181,7 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
                     .append("; updatedTime=")
                     .append(oldUpdatedTime);
             } else {
-                s_logger.debug("Unable to update objectIndatastore: id=" + dataObj.getId() + ", as there is no such object exists in the database anymore");
+                logger.debug("Unable to update objectIndatastore: id=" + dataObj.getId() + ", as there is no such object exists in the database anymore");
             }
         }
         return rows > 0;
@@ -288,14 +294,14 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         }
         // create an entry for each record, but with empty install path since the content is not yet on region-wide store yet
         if (vols != null) {
-            s_logger.info("Duplicate " + vols.size() + " volume cache store records to region store");
+            logger.info("Duplicate " + vols.size() + " volume cache store records to region store");
             for (VolumeDataStoreVO vol : vols) {
                 VolumeDataStoreVO volStore = findByStoreVolume(storeId, vol.getVolumeId());
                 if (volStore != null) {
-                    s_logger.info("There is already entry for volume " + vol.getVolumeId() + " on region store " + storeId);
+                    logger.info("There is already entry for volume " + vol.getVolumeId() + " on region store " + storeId);
                     continue;
                 }
-                s_logger.info("Persisting an entry for volume " + vol.getVolumeId() + " on region store " + storeId);
+                logger.info("Persisting an entry for volume " + vol.getVolumeId() + " on region store " + storeId);
                 VolumeDataStoreVO vs = new VolumeDataStoreVO();
                 vs.setVolumeId(vol.getVolumeId());
                 vs.setDataStoreId(storeId);
@@ -340,6 +346,18 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
     }
 
     @Override
+    public List<VolumeDataStoreVO> listByStoreIdAndInstallPaths(Long storeId, List<String> paths) {
+        if (CollectionUtils.isEmpty(paths)) {
+            return Collections.emptyList();
+        }
+
+        SearchCriteria<VolumeDataStoreVO> sc =  imageStoreAndInstallPathSearch.create();
+        sc.setParameters("store_id", storeId);
+        sc.setParameters("install_pathIN", paths.toArray());
+        return listBy(sc);
+    }
+
+    @Override
     public List<VolumeDataStoreVO> listUploadedVolumesByStoreId(long id) {
         SearchCriteria<VolumeDataStoreVO> sc = uploadVolumeSearch.create();
         sc.setParameters("store_id", id);
@@ -360,7 +378,7 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
             txn.commit();
         } catch (Exception e) {
             txn.rollback();
-            s_logger.warn("Failed expiring download urls for dcId: " + dcId, e);
+            logger.warn("Failed expiring download urls for dcId: " + dcId, e);
         }
 
     }
@@ -388,5 +406,17 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
             throw new CloudRuntimeException("Unable to update the volume id for volume store ref", e);
         }
         return true;
+    }
+
+    @Override
+    public int expungeByVolumeList(List<Long> volumeIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(volumeIds)) {
+            return 0;
+        }
+        SearchBuilder<VolumeDataStoreVO> sb = createSearchBuilder();
+        sb.and("volumeIds", sb.entity().getVolumeId(), SearchCriteria.Op.IN);
+        SearchCriteria<VolumeDataStoreVO> sc = sb.create();
+        sc.setParameters("volumeIds", volumeIds.toArray());
+        return batchExpunge(sc, batchSize);
     }
 }

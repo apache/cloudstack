@@ -52,11 +52,11 @@
       </div>
       <div v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE' || userdataDefaultOverridePolicy === 'APPEND' || !userdataDefaultOverridePolicy">
         <span v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE'" >
-          {{ $t('label.userdata.do.override') }}
+          {{ $t('label.user.data.do.override') }}
           <a-switch v-model:checked="doUserdataOverride" style="margin-left: 10px"/>
         </span>
         <span v-if="userdataDefaultOverridePolicy === 'APPEND'">
-          {{ $t('label.userdata.do.append') }}
+          {{ $t('label.user.data.do.append') }}
           <a-switch v-model:checked="doUserdataAppend" style="margin-left: 10px"/>
         </span>
         <a-step>
@@ -151,7 +151,7 @@ export default {
         {
           dataIndex: 'name',
           title: this.$t('label.name'),
-          sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') },
+          sorter: (a, b) => genericCompare(a?.name || '', b?.name || ''),
           width: '40%'
         },
         {
@@ -198,11 +198,11 @@ export default {
       userDataValues: {},
       templateUserDataCols: [
         {
-          title: this.$t('label.userdata'),
+          title: this.$t('label.user.data'),
           dataIndex: 'userdata'
         },
         {
-          title: this.$t('label.userdatapolicy'),
+          title: this.$t('label.user.data.policy'),
           dataIndex: 'userdataoverridepolicy'
         }
       ],
@@ -282,11 +282,11 @@ export default {
     loadUserdataTabList () {
       this.userdataTabList = [{
         key: 'userdataregistered',
-        tab: this.$t('label.userdata.registered')
+        tab: this.$t('label.user.data.registered')
       },
       {
         key: 'userdatatext',
-        tab: this.$t('label.userdata.text')
+        tab: this.$t('label.user.data.text')
       }]
     },
     onUserdataTabChange (key, type) {
@@ -339,7 +339,6 @@ export default {
       this.loadingData = true
       console.log(values)
       const params = {
-        id: this.resource.id
       }
       if (values.userdata && values.userdata.length > 0) {
         params.userdata = this.$toBase64AndURIEncoded(values.userdata)
@@ -360,9 +359,16 @@ export default {
           idx++
         }
       }
-      api('resetUserDataForVirtualMachine', params).then(json => {
+      params.id = this.resource.resetUserDataResourceId ? this.resource.resetUserDataResourceId : this.resource.id
+
+      const resetUserDataApiName = this.resource.resetUserDataApiName ? this.resource.resetUserDataApiName : 'resetUserDataForVirtualMachine'
+      const httpMethod = params.userdata ? 'POST' : 'GET'
+      const args = httpMethod === 'POST' ? {} : params
+      const data = httpMethod === 'POST' ? params : {}
+
+      api(resetUserDataApiName, args, httpMethod, data).then(json => {
         this.$message.success({
-          content: `${this.$t('label.action.userdata.reset')} - ${this.$t('label.success')}`,
+          content: `${this.$t('label.action.user.data.reset')} - ${this.$t('label.success')}`,
           duration: 2
         })
         this.$emit('refresh-data')

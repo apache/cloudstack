@@ -14,13 +14,13 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import CsHelper
+from . import CsHelper
 import logging
 import os
 from netaddr import *
 from random import randint
 import json
-from CsGuestNetwork import CsGuestNetwork
+from .CsGuestNetwork import CsGuestNetwork
 from cs.CsDatabag import CsDataBag
 from cs.CsFile import CsFile
 from cs.CsAddress import CsIP
@@ -82,7 +82,7 @@ class CsDhcp(CsDataBag):
                 CsHelper.service("dnsmasq", "reload")
 
     def configure_server(self):
-        # self.conf.addeq("dhcp-hostsfile=%s" % DHCP_HOSTS)
+        self.conf.add("bind-interfaces", 0)
         idx = 0
         listen_address = ["127.0.0.1"]
         for i in self.devinfo:
@@ -127,7 +127,7 @@ class CsDhcp(CsDataBag):
             line = "dhcp-option=%s,26,%s" % (device, i['mtu'])
             self.conf.search(sline, line)
 
-        # Netmask
+            # Netmask
             netmask = ''
             if self.config.is_vpc():
                 netmask = gn.get_netmask()
@@ -139,8 +139,7 @@ class CsDhcp(CsDataBag):
             # Listen Address
             if self.cl.is_redundant():
                 listen_address.append(gateway)
-            else:
-                listen_address.append(ip)
+            listen_address.append(ip)
             # Add localized "data-server" records in /etc/hosts for VPC routers
             if self.config.is_vpc() or self.config.is_router():
                 self.add_host(gateway, "%s data-server" % CsHelper.get_hostname())
@@ -227,7 +226,7 @@ class CsDhcp(CsDataBag):
         i = IPAddress(entry['ipv4_address'])
         # Calculate the device
         for v in self.devinfo:
-            if i > v['network'].network and i < v['network'].broadcast:
+            if i > v['network'].network and v['network'].broadcast and i < v['network'].broadcast:
                 v['dnsmasq'] = True
                 # Virtual Router
                 v['gateway'] = entry['default_gateway']

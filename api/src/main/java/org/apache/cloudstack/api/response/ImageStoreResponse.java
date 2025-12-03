@@ -27,11 +27,11 @@ import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = ImageStore.class)
 public class ImageStoreResponse extends BaseResponseWithAnnotations {
-    @SerializedName("id")
+    @SerializedName(ApiConstants.ID)
     @Param(description = "The ID of the image store")
     private String id;
 
-    @SerializedName("zoneid")
+    @SerializedName(ApiConstants.ZONE_ID)
     @Param(description = "The Zone ID of the image store")
     private String zoneId;
 
@@ -39,15 +39,15 @@ public class ImageStoreResponse extends BaseResponseWithAnnotations {
     @Param(description = "The Zone name of the image store")
     private String zoneName;
 
-    @SerializedName("name")
+    @SerializedName(ApiConstants.NAME)
     @Param(description = "The name of the image store")
     private String name;
 
-    @SerializedName("url")
+    @SerializedName(ApiConstants.URL)
     @Param(description = "The url of the image store")
     private String url;
 
-    @SerializedName("protocol")
+    @SerializedName(ApiConstants.PROTOCOL)
     @Param(description = "The protocol of the image store")
     private String protocol;
 
@@ -55,11 +55,11 @@ public class ImageStoreResponse extends BaseResponseWithAnnotations {
     @Param(description = "The provider name of the image store")
     private String providerName;
 
-    @SerializedName("scope")
+    @SerializedName(ApiConstants.SCOPE)
     @Param(description = "The scope of the image store")
     private ScopeType scope;
 
-    @SerializedName("readonly")
+    @SerializedName(ApiConstants.READ_ONLY)
     @Param(description = "Defines if store is read-only")
     private Boolean readonly;
 

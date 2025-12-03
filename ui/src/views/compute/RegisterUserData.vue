@@ -37,15 +37,18 @@
         </a-form-item>
         <a-form-item name="userdata" ref="userdata">
           <template #label>
-            <tooltip-label :title="$t('label.userdata')" :tooltip="apiParams.userdata.description"/>
+            <tooltip-label :title="$t('label.user.data')" :tooltip="$t('label.register.user.data.details')"/>
           </template>
           <a-textarea
             v-model:value="form.userdata"
-            :placeholder="apiParams.userdata.description"/>
+            :placeholder="$t('label.register.user.data.details')"/>
+        </a-form-item>
+        <a-form-item name="isbase64" ref="isbase64" :label="$t('label.is.base64.encoded')">
+          <a-checkbox v-model:checked="form.isbase64"></a-checkbox>
         </a-form-item>
         <a-form-item name="params" ref="params">
           <template #label>
-            <tooltip-label :title="$t('label.userdataparams')" :tooltip="apiParams.params.description"/>
+            <tooltip-label :title="$t('label.user.data.params')" :tooltip="apiParams.params.description"/>
           </template>
           <a-select
             mode="tags"
@@ -147,10 +150,12 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
-      this.form = reactive({})
+      this.form = reactive({
+        isbase64: false
+      })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
-        userdata: [{ required: true, message: this.$t('message.error.userdata') }]
+        userdata: [{ required: true, message: this.$t('message.error.user.data') }]
       })
     },
     fetchData () {
@@ -204,14 +209,14 @@ export default {
         if (this.isValidValueForKey(values, 'account') && values.account.length > 0) {
           params.account = values.account
         }
-        params.userdata = this.$toBase64AndURIEncoded(values.userdata)
+        params.userdata = values.isbase64 ? values.userdata : this.$toBase64AndURIEncoded(values.userdata)
 
         if (values.params != null && values.params.length > 0) {
           var userdataparams = values.params.join(',')
           params.params = userdataparams
         }
 
-        api('registerUserData', params).then(json => {
+        api('registerUserData', {}, 'POST', params).then(json => {
           this.$message.success(this.$t('message.success.register.user.data') + ' ' + values.name)
         }).catch(error => {
           this.$notifyError(error)

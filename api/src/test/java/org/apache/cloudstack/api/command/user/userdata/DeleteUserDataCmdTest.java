@@ -22,23 +22,20 @@ import com.cloud.user.AccountService;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(CallContext.class)
-@PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*", "org.xml.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class DeleteUserDataCmdTest {
 
     @InjectMocks
@@ -53,12 +50,19 @@ public class DeleteUserDataCmdTest {
     private static final long PROJECT_ID = 10L;
     private static final String ACCOUNT_NAME = "user";
 
+    private AutoCloseable closeable;
+
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         ReflectionTestUtils.setField(cmd, "accountName", ACCOUNT_NAME);
         ReflectionTestUtils.setField(cmd, "domainId", DOMAIN_ID);
         ReflectionTestUtils.setField(cmd, "projectId", PROJECT_ID);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
@@ -81,18 +85,18 @@ public class DeleteUserDataCmdTest {
 
     @Test
     public void validateArgsCmd() {
-        PowerMockito.mockStatic(CallContext.class);
-        CallContext callContextMock = PowerMockito.mock(CallContext.class);
-        PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
-        Account accountMock = PowerMockito.mock(Account.class);
-        PowerMockito.when(callContextMock.getCallingAccount()).thenReturn(accountMock);
-        Mockito.when(accountMock.getId()).thenReturn(2L);
-        Mockito.doReturn(false).when(_accountService).isAdmin(2L);
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+            Account accountMock = Mockito.mock(Account.class);
+            Mockito.when(callContextMock.getCallingAccount()).thenReturn(accountMock);
+            Mockito.when(accountMock.getId()).thenReturn(2L);
+            Mockito.doReturn(false).when(_accountService).isAdmin(2L);
 
-        ReflectionTestUtils.setField(cmd, "id", 1L);
+            ReflectionTestUtils.setField(cmd, "id", 1L);
 
-        Assert.assertEquals(1L, (long)cmd.getId());
-        Assert.assertEquals(2L, cmd.getEntityOwnerId());
+            Assert.assertEquals(1L, (long) cmd.getId());
+            Assert.assertEquals(2L, cmd.getEntityOwnerId());
+        }
     }
-
 }
