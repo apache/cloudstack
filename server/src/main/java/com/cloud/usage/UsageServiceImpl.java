@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.usage;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -27,8 +30,11 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.configuration.ConfigurationManagerImpl;
 import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
+import org.apache.cloudstack.api.command.admin.usage.ListUsageJobsCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.RemoveRawUsageRecordsCmd;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.UsageJobResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.usage.Usage;
@@ -499,5 +505,75 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         logger.info("Removing cloud_usage records older than {} day(s).", interval);
         _usageDao.expungeAllOlderThan(interval, ConfigurationManagerImpl.DELETE_QUERY_BATCH_SIZE.value());
         return true;
+    }
+
+    @Override
+    public ListResponse<UsageJobResponse> getUsageJobs(ListUsageJobsCmd cmd) {
+        Filter usageJobFilter = new Filter(UsageJobVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchCriteria<UsageJobVO> sc = _usageJobDao.createSearchCriteria();
+
+        if (StringUtils.isNotBlank(cmd.getUsageServer())) {
+            sc.addAnd("host", SearchCriteria.Op.EQ, cmd.getUsageServer().trim());
+        }
+
+        Object startDate = cmd.getStartDate();
+        if (startDate != null) {
+            sc.addAnd("startDate", SearchCriteria.Op.GTEQ, startDate);
+        }
+
+        Object endDate = cmd.getEndDate();
+        if (endDate != null) {
+            sc.addAnd("startDate", SearchCriteria.Op.LTEQ, endDate);
+        }
+
+        if (cmd.getDuration() != null) {
+            ZoneId systemZoneId = ZoneId.systemDefault();
+            LocalDateTime nowLocal = LocalDateTime.now();
+            ZonedDateTime nowZoned = nowLocal.atZone(systemZoneId);
+            ZonedDateTime lastDateTimeZoned = nowZoned.minusHours(cmd.getDuration());
+            Date lastDate = Date.from(lastDateTimeZoned.toInstant());
+
+            SearchCriteria<UsageJobVO> scc = _usageJobDao.createSearchCriteria();
+            scc.addOr("startDate", SearchCriteria.Op.GTEQ, lastDate);
+            scc.addOr("endDate", SearchCriteria.Op.GTEQ, lastDate);
+            sc.addAnd("startDate", SearchCriteria.Op.SC, scc);
+        }
+
+        Pair<List<UsageJobVO>, Integer> usageJobs = null;
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+        try {
+            usageJobs = _usageJobDao.searchAndCount(sc, usageJobFilter);
+        } finally {
+            txn.close();
+
+            // switch back to VMOPS_DB
+            TransactionLegacy swap = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+            swap.close();
+        }
+
+        ListResponse<UsageJobResponse> response = new ListResponse<>();
+        if (usageJobs != null) {
+            List<UsageJobResponse> responses = new ArrayList<>();
+            for (UsageJobVO job : usageJobs.first()) {
+                UsageJobResponse jobResponse = createUsageJobResponse(job);
+                responses.add(jobResponse);
+            }
+            response.setResponses(responses, usageJobs.second());
+        }
+
+        return response;
+    }
+
+    private UsageJobResponse createUsageJobResponse(UsageJobVO job) {
+        UsageJobResponse jobResponse = new UsageJobResponse();
+        jobResponse.setUsageServer(job.getHost());
+        jobResponse.setJobType(job.getJobType());
+        jobResponse.setScheduled(job.getScheduled());
+        jobResponse.setStartDate(job.getStartDate());
+        jobResponse.setEndDate(job.getEndDate());
+        jobResponse.setSuccess(job.getSuccess());
+        jobResponse.setHeartbeat(job.getHeartbeat());
+        jobResponse.setObjectName("usagejobs");
+        return jobResponse;
     }
 }
