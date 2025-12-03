@@ -1452,6 +1452,7 @@
 "label.lbruleid": "Load balancer ID",
 "label.lbtype": "Load balancer type",
 "label.ldap": "LDAP",
+"label.ldapdomain": "LDAP Domain",
 "label.ldap.configuration": "LDAP Configuration",
 "label.ldap.group.name": "LDAP Group",
 "label.level": "Level",
