@@ -34,7 +34,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
-import org.apache.commons.lang3.StringUtils;
+import com.cloud.utils.StringUtils;
 
 @APICommand(name = "createManagementNetworkIpRange",
         description = "Creates a Management network IP range.",

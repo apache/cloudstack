@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.admin.vlan;
 
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.StringUtils;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -38,7 +39,6 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.Objects;
 
