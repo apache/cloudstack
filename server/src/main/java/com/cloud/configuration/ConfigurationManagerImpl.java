@@ -3470,7 +3470,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         // validate optional category id
-        final Long serviceOfferingCategoryId = cmd.getServiceOfferingCategoryId();
+        final Long serviceOfferingCategoryId = cmd.getCategoryId();
         if (serviceOfferingCategoryId != null && _serviceOfferingCategoryDao.findById(serviceOfferingCategoryId) == null) {
             throw new InvalidParameterValueException("Please specify a valid service offering category id");
         }

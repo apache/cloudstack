@@ -41,7 +41,7 @@ export default {
       filters: ['active', 'inactive'],
       columns: ['name', 'displaytext', 'state', 'cpunumber', 'cpuspeed', 'memory', 'gpu', 'category', 'domain', 'zone', 'order'],
       details: () => {
-        var fields = ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'iscustomizediops', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'storageaccessgroups', 'storagetags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness', 'encryptroot', 'purgeresources', 'leaseduration', 'gpucardid', 'gpucardname', 'vgpuprofileid', 'vgpuprofilename', 'gpucount', 'gpudisplay', 'leaseexpiryaction', 'externaldetails', 'categoryid', 'category']
+        var fields = ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'iscustomizediops', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'storageaccessgroups', 'storagetags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness', 'encryptroot', 'purgeresources', 'leaseduration', 'gpucardid', 'gpucardname', 'vgpuprofileid', 'vgpuprofilename', 'gpucount', 'gpudisplay', 'leaseexpiryaction', 'externaldetails', 'category']
         if (store.getters.apis.createServiceOffering &&
           store.getters.apis.createServiceOffering.params.filter(x => x.name === 'storagepolicy').length > 0) {
           fields.splice(6, 0, 'vspherestoragepolicy')

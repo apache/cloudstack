@@ -296,7 +296,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             required = false,
             description = "the ID of the service offering category to associate with this offering",
             since = "4.23")
-    private Long serviceOfferingCategoryId;
+    private Long categoryId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -570,8 +570,8 @@ public class CreateServiceOfferingCmd extends BaseCmd {
         return Boolean.TRUE.equals(gpuDisplay);
     }
 
-    public Long getServiceOfferingCategoryId() {
-        return serviceOfferingCategoryId;
+    public Long getCategoryId() {
+        return categoryId;
     }
 
     /////////////////////////////////////////////////////

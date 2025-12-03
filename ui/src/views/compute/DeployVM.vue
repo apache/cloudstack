@@ -2308,9 +2308,9 @@ export default {
         pageSize: 10
       }
       if (categoryId && categoryId !== '-1') {
-        params.serviceofferingcategoryid = categoryId
+        params.categoryid = categoryId
       } else {
-        params.serviceofferingcategoryid = null
+        params.categoryid = null
       }
       this.handleSearchFilter('serviceOfferings', params)
     },
