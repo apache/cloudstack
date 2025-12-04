@@ -1754,6 +1754,7 @@ const UI = {
     },
 
     _sendKeyUp(keysym, code) {
+        if (!UI.rfb) return;
         UI.rfb.sendKey(keysym, code, false);
     },
 
@@ -1774,7 +1775,7 @@ const UI = {
 
     // Release all currently pressed modifier keys
     _releaseAllModifierKeys() {
-        if (!UI.rfb || UI.rfb._rfbConnectionState !== 'connected') {
+        if (!UI.rfb) {
             return false;
         }
 
@@ -1786,14 +1787,6 @@ const UI = {
                 keysReleased = true;
             }
         }
-
-        // Also check RFB's internal shift state (it tracks this separately)
-        if (UI.rfb._shiftPressed) {
-            const shiftConfig = UI._modifierKeys.shift;
-            UI._sendKeyUp(shiftConfig.keysym, shiftConfig.code);
-            keysReleased = true;
-        }
-
         return keysReleased;
     },
 
