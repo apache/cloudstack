@@ -140,21 +140,21 @@ public class KVMHostInfo {
         long speed = 0L;
         LOGGER.info("Fetching CPU speed from command \"lscpu\".");
         try {
-            String command = "lscpu | grep -i 'Model name' | head -n 1 | grep -E -o '[[:digit:]].[[:digit:]]+GHz' | sed 's/GHz//g'";
-            if(isHostS390x()) {
-                command = "lscpu | grep 'CPU dynamic MHz' | cut -d ':' -f 2 | tr -d ' ' | awk '{printf \"%.1f\\n\", $1 / 1000}'";
-            }
+            String command = "lscpu | grep -i 'CPU max MHz' | head -n 1 | sed 's/^.*: //' | xargs";
             String result = Script.runSimpleBashScript(command);
-            speed = (long) (Float.parseFloat(result) * 1000);
+            speed = (long) (Float.parseFloat(result));
             LOGGER.info(String.format("Command [%s] resulted in the value [%s] for CPU speed.", command, speed));
             return speed;
         } catch (NullPointerException | NumberFormatException e) {
             LOGGER.error(String.format("Unable to retrieve the CPU speed from lscpu."), e);
         }
         try {
-            String command = "lscpu | grep -i 'CPU max MHz' | head -n 1 | sed 's/^.*: //' | xargs";
+            String command = "lscpu | grep -i 'Model name' | head -n 1 | grep -E -o '[[:digit:]].[[:digit:]]+GHz' | sed 's/GHz//g'";
+            if(isHostS390x()) {
+                command = "lscpu | grep 'CPU dynamic MHz' | cut -d ':' -f 2 | tr -d ' ' | awk '{printf \"%.1f\\n\", $1 / 1000}'";
+            }
             String result = Script.runSimpleBashScript(command);
-            speed = (long) (Float.parseFloat(result));
+            speed = (long) (Float.parseFloat(result) * 1000);
             LOGGER.info(String.format("Command [%s] resulted in the value [%s] for CPU speed.", command, speed));
             return speed;
         } catch (NullPointerException | NumberFormatException e) {
