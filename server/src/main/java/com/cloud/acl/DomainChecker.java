@@ -481,15 +481,12 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     @Override
     public boolean checkAccess(Account account, BackupOffering backupOffering) throws PermissionDeniedException {
         boolean hasAccess = false;
-        // Check for domains
         if (account == null || backupOffering == null) {
             hasAccess = true;
         } else {
-            // admin has all permissions
             if (_accountService.isRootAdmin(account.getId())) {
                 hasAccess = true;
             }
-            // if account is normal user or domain admin or project
             else if (_accountService.isNormalUser(account.getId())
                     || account.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN
                     || _accountService.isDomainAdmin(account.getId())

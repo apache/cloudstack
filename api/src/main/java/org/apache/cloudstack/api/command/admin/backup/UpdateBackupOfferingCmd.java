@@ -37,6 +37,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 import java.util.List;
+import java.util.function.LongFunction;
 
 @APICommand(name = "updateBackupOffering", description = "Updates a backup offering.", responseObject = BackupOfferingResponse.class,
 requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.16.0")
@@ -114,7 +115,15 @@ public class UpdateBackupOfferingCmd extends BaseCmd implements DomainAndZoneIdR
     }
 
     public List<Long> getDomainIds() {
-        return resolveDomainIds(domainIds, id, backupManager::getBackupOfferingDomains, "backup offering");
+        // backupManager may be null in unit tests where the command is spied without injection.
+        // Avoid creating a method reference to a null receiver which causes NPE. When backupManager
+        // is null, pass null as the defaultDomainsProvider so resolveDomainIds will simply return
+        // an empty list or parse the explicit domainIds string.
+        LongFunction<List<Long>> defaultDomainsProvider = null;
+        if (backupManager != null) {
+            defaultDomainsProvider = backupManager::getBackupOfferingDomains;
+        }
+        return resolveDomainIds(domainIds, id, defaultDomainsProvider, "backup offering");
     }
 
     @Override

@@ -85,6 +85,7 @@ import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupDetailsDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
+import org.apache.cloudstack.backup.dao.BackupOfferingDetailsDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -241,6 +242,9 @@ public class BackupManagerTest {
     @Mock
     private GuestOSDao _guestOSDao;
 
+    @Mock
+    private BackupOfferingDetailsDao backupOfferingDetailsDao;
+
     private Gson gson;
 
     private String[] hostPossibleValues = {"127.0.0.1", "hostname"};
@@ -352,6 +356,7 @@ public class BackupManagerTest {
         when(cmd.getName()).thenReturn("New name");
         when(cmd.getDescription()).thenReturn("New description");
         when(cmd.getAllowUserDrivenBackups()).thenReturn(true);
+        when(backupOfferingDetailsDao.findDomainIds(id)).thenReturn(Collections.emptyList());
 
         BackupOffering updated = backupManager.updateBackupOffering(cmd);
         assertEquals("New name", updated.getName());
@@ -1081,7 +1086,7 @@ public class BackupManagerTest {
 
         assertEquals("root-disk-offering-uuid", VmDiskInfo.getDiskOffering().getUuid());
         assertEquals(Long.valueOf(5), VmDiskInfo.getSize());
-//        assertNull(com.cloud.vm.VmDiskInfo.getDeviceId());
+        assertNull(com.cloud.vm.VmDiskInfo.getDeviceId());
     }
 
     @Test
@@ -2156,4 +2161,75 @@ public class BackupManagerTest {
         verify(vmInstanceDao, times(1)).findByIdIncludingRemoved(vmId);
         verify(volumeDao, times(1)).findByInstance(vmId);
     }
+
+    @Test
+    public void getBackupOfferingDomainsTestOfferingNotFound() {
+        Long offeringId = 1L;
+        when(backupOfferingDao.findById(offeringId)).thenReturn(null);
+
+        InvalidParameterValueException exception = Assert.assertThrows(InvalidParameterValueException.class,
+                () -> backupManager.getBackupOfferingDomains(offeringId));
+        assertEquals("Unable to find backup offering null", exception.getMessage());
+    }
+
+    @Test
+    public void getBackupOfferingDomainsTestReturnsDomains() {
+        Long offeringId = 1L;
+        BackupOfferingVO offering = Mockito.mock(BackupOfferingVO.class);
+        when(backupOfferingDao.findById(offeringId)).thenReturn(offering);
+        when(backupOfferingDetailsDao.findDomainIds(offeringId)).thenReturn(List.of(10L, 20L));
+
+        List<Long> result = backupManager.getBackupOfferingDomains(offeringId);
+
+        assertEquals(2, result.size());
+        assertTrue(result.contains(10L));
+        assertTrue(result.contains(20L));
+    }
+
+    @Test
+    public void testUpdateBackupOfferingThrowsWhenDomainIdInvalid() {
+        Long id = 1234L;
+        UpdateBackupOfferingCmd cmd = Mockito.spy(UpdateBackupOfferingCmd.class);
+        when(cmd.getId()).thenReturn(id);
+        when(cmd.getDomainIds()).thenReturn(List.of(99L));
+
+        when(domainDao.findById(99L)).thenReturn(null);
+
+        InvalidParameterValueException exception = Assert.assertThrows(InvalidParameterValueException.class,
+                () -> backupManager.updateBackupOffering(cmd));
+        assertEquals("Please specify a valid domain id", exception.getMessage());
+    }
+
+    @Test
+    public void testUpdateBackupOfferingPersistsDomainDetailsWhenProvided() {
+        Long id = 1234L;
+        Long domainId = 11L;
+        UpdateBackupOfferingCmd cmd = Mockito.spy(UpdateBackupOfferingCmd.class);
+        when(cmd.getId()).thenReturn(id);
+        when(cmd.getDomainIds()).thenReturn(List.of(domainId));
+
+        DomainVO domain = Mockito.mock(DomainVO.class);
+        when(domainDao.findById(domainId)).thenReturn(domain);
+
+        when(backupOfferingDetailsDao.findDomainIds(id)).thenReturn(Collections.emptyList());
+
+        SearchBuilder<BackupOfferingDetailsVO> sb = Mockito.mock(SearchBuilder.class);
+        SearchCriteria<BackupOfferingDetailsVO> sc = Mockito.mock(SearchCriteria.class);
+        BackupOfferingDetailsVO entity = Mockito.mock(BackupOfferingDetailsVO.class);
+        when(backupOfferingDetailsDao.createSearchBuilder()).thenReturn(sb);
+        when(sb.entity()).thenReturn(entity);
+        when(sb.and(Mockito.anyString(), (Object) any(), Mockito.any())).thenReturn(sb);
+        when(sb.create()).thenReturn(sc);
+
+        BackupOfferingVO offering = Mockito.mock(BackupOfferingVO.class);
+        BackupOfferingVO offeringUpdate = Mockito.mock(BackupOfferingVO.class);
+        when(backupOfferingDao.findById(id)).thenReturn(offering);
+        when(backupOfferingDao.createForUpdate(id)).thenReturn(offeringUpdate);
+        when(backupOfferingDao.update(id, offeringUpdate)).thenReturn(true);
+
+        BackupOffering updated = backupManager.updateBackupOffering(cmd);
+
+        verify(backupOfferingDetailsDao, times(1)).persist(Mockito.any(BackupOfferingDetailsVO.class));
+    }
+
 }
