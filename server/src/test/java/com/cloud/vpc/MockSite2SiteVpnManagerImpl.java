@@ -275,4 +275,16 @@ public class MockSite2SiteVpnManagerImpl extends ManagerBase implements Site2Sit
         return null;
     }
 
+    @Override
+    public boolean vpnGatewayContainsExcludedParameters(Site2SiteCustomerGateway customerGateway) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean vpnGatewayContainsObsoleteParameters(Site2SiteCustomerGateway customerGateway) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
 }
