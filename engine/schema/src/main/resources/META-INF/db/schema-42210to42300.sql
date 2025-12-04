@@ -16,5 +16,15 @@
 -- under the License.
 
 --;
--- Schema upgrade cleanup from 4.22.0.0 to 4.23.0.0
+-- Schema upgrade from 4.22.1.0 to 4.23.0.0
 --;
+
+CREATE TABLE `cloud`.`backup_offering_details` (
+    `id` bigint unsigned NOT NULL auto_increment,
+    `backup_offering_id` bigint unsigned NOT NULL COMMENT 'Backup offering id',
+    `name` varchar(255) NOT NULL,
+    `value` varchar(1024) NOT NULL,
+    `display` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Should detail be displayed to the end user',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_offering_details__backup_offering_id` FOREIGN KEY `fk_offering_details__backup_offering_id`(`backup_offering_id`) REFERENCES `backup_offering`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

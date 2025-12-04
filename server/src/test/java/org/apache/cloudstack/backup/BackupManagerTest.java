@@ -1086,7 +1086,7 @@ public class BackupManagerTest {
 
         assertEquals("root-disk-offering-uuid", VmDiskInfo.getDiskOffering().getUuid());
         assertEquals(Long.valueOf(5), VmDiskInfo.getSize());
-        assertNull(com.cloud.vm.VmDiskInfo.getDeviceId());
+        assertNull(VmDiskInfo.getDeviceId());
     }
 
     @Test
