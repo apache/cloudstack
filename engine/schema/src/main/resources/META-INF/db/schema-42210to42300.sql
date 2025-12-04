@@ -16,7 +16,7 @@
 -- under the License.
 
 --;
--- Schema upgrade from 4.22.0.0 to 4.23.0.0
+-- Schema upgrade from 4.22.1.0 to 4.23.0.0
 --;
 
 CREATE TABLE IF NOT EXISTS `cloud`.`service_offering_category` (
@@ -32,3 +32,4 @@ CREATE TABLE IF NOT EXISTS `cloud`.`service_offering_category` (
 ALTER TABLE `cloud`.`service_offering` ADD COLUMN `category_id` bigint unsigned NOT NULL DEFAULT 1;
 ALTER TABLE `cloud`.`service_offering` ADD CONSTRAINT `fk_service_offering__category_id` FOREIGN KEY (`category_id`) REFERENCES `cloud`.`service_offering_category` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 INSERT INTO `cloud`.`service_offering_category` (id, name, uuid) VALUES (1, 'Default', UUID());
+
