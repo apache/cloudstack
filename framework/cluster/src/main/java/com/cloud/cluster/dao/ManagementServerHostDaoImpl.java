@@ -43,6 +43,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServerHostVO, Long> implements ManagementServerHostDao {
 
     private final SearchBuilder<ManagementServerHostVO> MsIdSearch;
+    private final SearchBuilder<ManagementServerHostVO> NameSearch;
     private final SearchBuilder<ManagementServerHostVO> ActiveSearch;
     private final SearchBuilder<ManagementServerHostVO> InactiveSearch;
     private final SearchBuilder<ManagementServerHostVO> StateSearch;
@@ -69,6 +70,32 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 
         List<ManagementServerHostVO> l = listIncludingRemovedBy(sc);
         if (l != null && l.size() > 0) {
+            return l.get(0);
+        }
+
+        return null;
+    }
+
+    @Override
+    public ManagementServerHostVO findByName(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            return null;
+        }
+
+        SearchCriteria<ManagementServerHostVO> sc = NameSearch.create();
+        sc.setParameters("name", name);
+        // Only search for active (non-removed) entries to avoid non-deterministic results
+        // when multiple removed entries exist for the same hostname
+        sc.addAnd("removed", SearchCriteria.Op.NULL);
+
+        List<ManagementServerHostVO> l = listBy(sc);
+        if (l != null && l.size() > 0) {
+            if (l.size() > 1) {
+                s_logger.error(String.format(
+                    "Data corruption detected: Found %d active entries for hostname '%s'. " +
+                    "This should never happen and indicates duplicate mshost records.",
+                    l.size(), name));
+            }
             return l.get(0);
         }
 
@@ -190,6 +217,10 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         MsIdSearch = createSearchBuilder();
         MsIdSearch.and("msid", MsIdSearch.entity().getMsid(), SearchCriteria.Op.EQ);
         MsIdSearch.done();
+
+        NameSearch = createSearchBuilder();
+        NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
+        NameSearch.done();
 
         ActiveSearch = createSearchBuilder();
         ActiveSearch.and("lastUpdateTime", ActiveSearch.entity().getLastUpdateTime(), SearchCriteria.Op.GT);

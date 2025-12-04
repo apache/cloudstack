@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -1043,13 +1044,39 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
 
                 final Class<?> c = this.getClass();
                 final String version = c.getPackage().getImplementationVersion();
+                final String currentHostname = NetUtils.getCanonicalHostName();
 
                 ManagementServerHostVO mshost = _mshostDao.findByMsid(_msId);
+
+                // Look for duplicate hostname in the case of kubernetes setup where ip/mac changes but hostname is constant.
+                if (mshost == null && StringUtils.isNotBlank(currentHostname)) {
+                    ManagementServerHostVO activeEntry = _mshostDao.findByName(currentHostname);
+                    if (activeEntry != null) {
+                        // Found an active entry with this hostname but different MSID
+                        // This happens when a pod restarts with a new MAC address (new MSID)
+                        if (activeEntry.getMsid() != _msId) {
+                            logger.info(String.format(
+                                "Found active entry for hostname '%s' with old MSID %d. " +
+                                "Marking it as removed and creating new entry with MSID %d.",
+                                currentHostname, activeEntry.getMsid(), _msId));
+                            // Mark the old entry as removed
+                            activeEntry.setRemoved(DateUtil.currentGMTTime());
+                            activeEntry.setState(ManagementServerHost.State.Down);
+                            _mshostDao.update(activeEntry.getId(), activeEntry);
+                            // Set mshost to null so a new entry will be created below
+                            mshost = null;
+                        } else {
+                            // Same MSID - this is our existing entry, use the update path
+                            mshost = activeEntry;
+                        }
+                    }
+                }
+
                 if (mshost == null) {
                     mshost = new ManagementServerHostVO();
                     mshost.setMsid(_msId);
                     mshost.setRunid(_runId);
-                    mshost.setName(NetUtils.getCanonicalHostName());
+                    mshost.setName(currentHostname);
                     mshost.setVersion(version);
                     mshost.setServiceIP(_clusterNodeIP);
                     mshost.setServicePort(_currentServiceAdapter.getServicePort());
@@ -1063,7 +1090,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                         logger.info("New instance of management server {}, runId {} is being started", mshost, _runId);
                     }
                 } else {
-                    _mshostDao.update(mshost.getId(), _runId, NetUtils.getCanonicalHostName(), version, _clusterNodeIP, _currentServiceAdapter.getServicePort(),
+                    _mshostDao.update(mshost.getId(), _runId, currentHostname, version, _clusterNodeIP, _currentServiceAdapter.getServicePort(),
                             DateUtil.currentGMTTime());
                     if (logger.isInfoEnabled()) {
                         logger.info("Management server {}, runId {} is being started", mshost, _runId);
