@@ -178,6 +178,12 @@
                 <warning-outlined style="color: #f5222d" />
               </a-tooltip>
             </span>
+            <span v-else-if="$route.path.startsWith('/vpncustomergateway')">
+              &nbsp;
+              <a-tooltip v-if="record.containsexcludedparameters || record.containsobsoleteparameters" :title="$t('message.vpn.customer.gateway.contains.obsolete.parameters')">
+                <warning-outlined :style="{ color: $config.theme['@warning-color'] }" />
+              </a-tooltip>
+            </span>
           </span>
           <span
             v-if="record.leaseduration !== undefined"
