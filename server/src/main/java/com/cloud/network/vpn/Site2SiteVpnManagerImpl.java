@@ -97,12 +97,12 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     public static final ConfigKey<String> VpnCustomerGatewayExcludedEncryptionAlgorithms = new ConfigKey<String>(
         ConfigKey.CATEGORY_NETWORK, String.class, "vpn.customer.gateway.excluded.encryption.algorithms", "",
         "Comma-separated list of encryption algorithms that are excluded and cannot be selected by end users for VPN Customer Gateways." +
-        "Applies to both IKE and ESP phases. Allowed values are aes128, aes192 and aes256 and 3des",
+        "Applies to both IKE and ESP phases. Allowed values are aes128, aes192 and aes256 and 3des.",
         true, ConfigKey.Scope.Domain);
     public static final ConfigKey<String> VpnCustomerGatewayExcludedHashingAlgorithms = new ConfigKey<String>(
         ConfigKey.CATEGORY_NETWORK, String.class, "vpn.customer.gateway.excluded.hashing.algorithms", "",
         "Comma-separated list of hashing algorithms that are excluded and cannot be selected by end users for VPN Customer Gateways." +
-        "Applies to both IKE and ESP phases.Allowed values are sha1, sha256, sha384 and sha512 and md5.",
+        "Applies to both IKE and ESP phases. Allowed values are sha1, sha256, sha384 and sha512 and md5.",
         true, ConfigKey.Scope.Domain);
     public static final ConfigKey<String> VpnCustomerGatewayExcludedIkeVersions = new ConfigKey<String>(
         ConfigKey.CATEGORY_NETWORK, String.class, "vpn.customer.gateway.excluded.ike.versions", "",
@@ -121,7 +121,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     public static final ConfigKey<String> VpnCustomerGatewayObsoleteHashingAlgorithms = new ConfigKey<String>(
         ConfigKey.CATEGORY_NETWORK, String.class, "vpn.customer.gateway.obsolete.hashing.algorithms", "",
         "Comma-separated list of hashing algorithms that are marked as obsolete/insecure for VPN Customer Gateways." +
-        "Applies to both IKE and ESP phases.Allowed values are sha1, sha256, sha384 and sha512 and md5",
+        "Applies to both IKE and ESP phases. Allowed values are sha1, sha256, sha384 and sha512 and md5.",
         true, ConfigKey.Scope.Domain);
     public static final ConfigKey<String> VpnCustomerGatewayObsoleteIkeVersions = new ConfigKey<String>(
         ConfigKey.CATEGORY_NETWORK, String.class, "vpn.customer.gateway.obsolete.ike.versions", "",
