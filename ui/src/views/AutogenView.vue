@@ -540,6 +540,9 @@
         class="row-element"
         v-else
       >
+        <advisories-view
+          v-if="$route.meta.advisories && !loading"
+        />
         <list-view
           :loading="loading"
           :columns="columns"
@@ -604,6 +607,7 @@ import ResourceIcon from '@/components/view/ResourceIcon'
 import BulkActionProgress from '@/components/view/BulkActionProgress'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import DetailsInput from '@/components/widgets/DetailsInput'
+import AdvisoriesView from '@/components/view/AdvisoriesView'
 
 export default {
   name: 'Resource',
@@ -617,7 +621,8 @@ export default {
     TooltipLabel,
     OsLogo,
     ResourceIcon,
-    DetailsInput
+    DetailsInput,
+    AdvisoriesView
   },
   mixins: [mixinDevice],
   provide: function () {
