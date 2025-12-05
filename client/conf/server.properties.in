@@ -62,3 +62,10 @@ extensions.deployment.mode=@EXTENSIONSDEPLOYMENTMODE@
 # Thread pool configuration
 #threads.min=10
 #threads.max=500
+
+# WebSocket server enable/disable flag used by the management server
+websocket.enable=true
+
+# WebSocket server port used by the management server
+# If not set, defaults to 8822. It can be set to same value as http.port or https.port if needed.
+websocket.port=8822

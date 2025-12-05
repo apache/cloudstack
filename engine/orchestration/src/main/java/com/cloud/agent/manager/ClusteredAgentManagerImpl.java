@@ -42,7 +42,6 @@ import javax.naming.ConfigurationException;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
-import com.cloud.resource.ResourceState;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -59,6 +58,7 @@ import org.apache.cloudstack.maintenance.command.PrepareForShutdownManagementSer
 import org.apache.cloudstack.maintenance.command.TriggerShutdownManagementServerHostCommand;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
+import org.apache.cloudstack.cluster.ClusterCommandProcessor;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
@@ -96,6 +96,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
+import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.DateUtil;
@@ -161,6 +162,17 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     protected final ConfigKey<Integer> LoadSize = new ConfigKey<>(Integer.class, "direct.agent.load.size", "Advanced", "16", "How many direct agents to connect to in each round", true);
     protected final ConfigKey<Integer> ScanInterval = new ConfigKey<>(Integer.class, "direct.agent.scan.interval", "Advanced", "90", "Interval between scans to load direct agents", false,
             ConfigKey.Scope.Global, 1000);
+
+    private List<ClusterCommandProcessor> commandProcessors;
+
+
+    public List<ClusterCommandProcessor> getCommandProcessors() {
+        return commandProcessors;
+    }
+
+    public void setCommandProcessors(final List<ClusterCommandProcessor> commandProcessors) {
+        this.commandProcessors = commandProcessors;
+    }
 
     @Override
     public boolean configure(final String name, final Map<String, Object> xmlParams) throws ConfigurationException {
@@ -1325,6 +1337,14 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 return handleShutdownManagementServerHostCommand(cmd);
             } else if (cmds.length == 1 && cmds[0] instanceof ExtensionServerActionBaseCommand) {
                 return extensionsManager.handleExtensionServerCommands((ExtensionServerActionBaseCommand)cmds[0]);
+            } else if (cmds.length == 1) {
+                Command command = cmds[0];
+                logger.debug("Attempting to find a command processor for command class: {}", command.getClass().getName());
+                for (ClusterCommandProcessor commandProcessor : commandProcessors) {
+                    if (commandProcessor.supportsCommand(command.getClass())) {
+                        return commandProcessor.processCommand(command);
+                    }
+                }
             }
 
             try {
