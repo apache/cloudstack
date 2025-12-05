@@ -25,7 +25,7 @@ import com.cloud.serializer.Param;
 public class NetscalerControlCenterResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "Id")
+    @Param(description = "ID")
     private String id;
 
     @SerializedName(ApiConstants.USERNAME)

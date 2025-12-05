@@ -29,7 +29,7 @@ import com.cloud.serializer.Param;
 @SuppressWarnings("unused")
 public class UpgradeRouterTemplateResponse extends BaseResponse {
     @SerializedName(ApiConstants.JOB_ID)
-    @Param(description = "The id of AsyncJob")
+    @Param(description = "The ID of AsyncJob")
     private String asyncJobId;
 
     public String getAsyncJobId() {

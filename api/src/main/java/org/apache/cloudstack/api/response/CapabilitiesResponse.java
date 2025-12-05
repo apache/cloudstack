@@ -33,7 +33,7 @@ public class CapabilitiesResponse extends BaseResponse {
     private boolean dynamicRolesEnabled;
 
     @SerializedName("cloudstackversion")
-    @Param(description = "Version of the cloud stack")
+    @Param(description = "Version of the CloudStack")
     private String cloudStackVersion;
 
     @SerializedName("userpublictemplateenabled")

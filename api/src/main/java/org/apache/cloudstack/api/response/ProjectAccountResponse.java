@@ -30,7 +30,7 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class ProjectAccountResponse extends BaseResponse implements ControlledViewEntityResponse {
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "Project id")
+    @Param(description = "Project ID")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
@@ -38,7 +38,7 @@ public class ProjectAccountResponse extends BaseResponse implements ControlledVi
     private String projectName;
 
     @SerializedName(ApiConstants.ACCOUNT_ID)
-    @Param(description = "The id of the Account")
+    @Param(description = "The ID of the Account")
     private String accountId;
 
     @SerializedName(ApiConstants.ACCOUNT)
@@ -54,15 +54,15 @@ public class ProjectAccountResponse extends BaseResponse implements ControlledVi
     private Integer accountType;
 
     @SerializedName(ApiConstants.USER_ID)
-    @Param(description = "Id of the user")
+    @Param(description = "ID of the user")
     private String userId;
 
     @SerializedName(ApiConstants.PROJECT_ROLE_ID)
-    @Param(description = "Id of the project role associated with the Account/user")
+    @Param(description = "ID of the project role associated with the Account/User")
     private String projectRoleId;
 
     @SerializedName(ApiConstants.ROLE)
-    @Param(description = "Account role in the project (regular,owner)")
+    @Param(description = "Account role in the project (regular, owner)")
     private String role;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
@@ -74,7 +74,7 @@ public class ProjectAccountResponse extends BaseResponse implements ControlledVi
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the Domain the account belongs to", since = "4.19.2.0")
+    @Param(description = "Path of the Domain the Account belongs to", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.USER)

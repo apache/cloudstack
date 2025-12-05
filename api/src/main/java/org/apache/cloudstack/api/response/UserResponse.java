@@ -96,7 +96,7 @@ public class UserResponse extends BaseResponse implements SetResourceIconRespons
     private String timezone;
 
     @SerializedName("apikey")
-    @Param(description = "The api key of the user", isSensitive = true)
+    @Param(description = "The API key of the user", isSensitive = true)
     private String apiKey;
 
     @Deprecated
@@ -129,7 +129,7 @@ public class UserResponse extends BaseResponse implements SetResourceIconRespons
     private Boolean is2FAmandated;
 
     @SerializedName(ApiConstants.API_KEY_ACCESS)
-    @Param(description = "whether api key access is Enabled, Disabled or set to Inherit (it inherits the value from the parent)", since = "4.20.1.0")
+    @Param(description = "Whether api key access is Enabled, Disabled or set to Inherit (it inherits the value from the parent)", since = "4.20.1.0")
     ApiConstants.ApiKeyAccess apiKeyAccess;
 
     @Override

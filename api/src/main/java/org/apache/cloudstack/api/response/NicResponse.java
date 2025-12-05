@@ -55,11 +55,11 @@ public class NicResponse extends BaseResponse {
     private String ipaddress;
 
     @SerializedName(ApiConstants.ISOLATION_URI)
-    @Param(description = "The isolation uri of the NIC")
+    @Param(description = "The isolation URI of the NIC")
     private String isolationUri;
 
     @SerializedName(ApiConstants.BROADCAST_URI)
-    @Param(description = "The broadcast uri of the NIC")
+    @Param(description = "The broadcast URI of the NIC")
     private String broadcastUri;
 
     @SerializedName(ApiConstants.TRAFFIC_TYPE)
@@ -99,7 +99,7 @@ public class NicResponse extends BaseResponse {
     private List<NicExtraDhcpOptionResponse> extraDhcpOptions;
 
     @SerializedName(ApiConstants.DEVICE_ID)
-    @Param(description = "Device id for the Network when plugged into the Instance", since = "4.4")
+    @Param(description = "Device ID for the Network when plugged into the Instance", since = "4.4")
     private String deviceId;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
@@ -139,11 +139,11 @@ public class NicResponse extends BaseResponse {
     private Integer mtu;
 
     @SerializedName(ApiConstants.PUBLIC_IP_ID)
-    @Param(description = "public IP address id associated with this nic via Static nat rule")
+    @Param(description = "Public IP address ID associated with this NIC via Static NAT rule")
     private String publicIpId;
 
     @SerializedName(ApiConstants.PUBLIC_IP)
-    @Param(description = "public IP address associated with this nic via Static nat rule")
+    @Param(description = "Public IP address associated with this NIC via Static NAT rule")
     private String publicIp;
 
     public void setVmId(String vmId) {
@@ -223,7 +223,7 @@ public class NicResponse extends BaseResponse {
     }
 
     @SerializedName(ApiConstants.VPC_ID)
-    @Param(description = "Id of the VPC to which the NIC belongs")
+    @Param(description = "ID of the VPC to which the NIC belongs")
     private String vpcId;
 
     @SerializedName(ApiConstants.VPC_NAME)

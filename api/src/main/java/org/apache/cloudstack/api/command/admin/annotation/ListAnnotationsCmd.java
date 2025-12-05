@@ -37,17 +37,17 @@ import org.apache.commons.lang3.StringUtils;
 public class ListAnnotationsCmd extends BaseListCmd {
 
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.STRING, description = "The id of the annotation")
+    @Parameter(name = ApiConstants.ID, type = CommandType.STRING, description = "The ID of the annotation")
     private String uuid;
 
     @Parameter(name = ApiConstants.ENTITY_TYPE, type = CommandType.STRING, description = "The entity type")
     private String entityType;
 
-    @Parameter(name = ApiConstants.ENTITY_ID, type = CommandType.STRING, description = "The id of the entity for which to show annotations")
+    @Parameter(name = ApiConstants.ENTITY_ID, type = CommandType.STRING, description = "The ID of the entity for which to show annotations")
     private String entityUuid;
 
     @Parameter(name = ApiConstants.USER_ID, type = CommandType.STRING, since = "4.16.0",
-            description = "Optional: The id of the user of the annotation", required = false)
+            description = "Optional: The ID of the user of the annotation", required = false)
     private String userUuid;
 
     @Parameter(name = ApiConstants.ANNOTATION_FILTER,

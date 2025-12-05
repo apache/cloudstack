@@ -31,7 +31,7 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class VpcOfferingResponse extends BaseResponse {
     @SerializedName("id")
-    @Param(description = "The id of the VPC offering")
+    @Param(description = "The ID of the VPC offering")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
@@ -67,7 +67,7 @@ public class VpcOfferingResponse extends BaseResponse {
     private Boolean supportsRegionLevelVpc;
 
     @SerializedName(ApiConstants.FOR_NSX)
-    @Param(description = "true if vpc offering can be used by NSX networks only")
+    @Param(description = "True if VPC offering can be used by NSX networks only")
     private Boolean forNsx;
 
     @SerializedName(ApiConstants.NETWORK_MODE)
@@ -95,11 +95,11 @@ public class VpcOfferingResponse extends BaseResponse {
     private String internetProtocol;
 
     @SerializedName(ApiConstants.SPECIFY_AS_NUMBER)
-    @Param(description = "true if network offering supports choosing AS numbers")
+    @Param(description = "True if network offering supports choosing AS numbers")
     private Boolean specifyAsNumber;
 
     @SerializedName(ApiConstants.ROUTING_MODE)
-    @Param(description = "the routing mode for the network offering, supported types are Static or Dynamic.")
+    @Param(description = "The routing mode for the network offering, supported types are Static or Dynamic.")
     private String routingMode;
 
     public void setId(String id) {

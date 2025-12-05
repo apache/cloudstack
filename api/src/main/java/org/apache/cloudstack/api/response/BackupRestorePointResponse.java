@@ -31,7 +31,7 @@ import java.util.Date;
 public class BackupRestorePointResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "External id of the restore point")
+    @Param(description = "External ID of the restore point")
     private String id;
 
     @SerializedName(ApiConstants.CREATED)

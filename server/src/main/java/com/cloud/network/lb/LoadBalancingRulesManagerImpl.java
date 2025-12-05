@@ -1497,7 +1497,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
         }
         if (!success) {
-            CloudRuntimeException ex = new CloudRuntimeException("Failed to remove specified load balancer rule id for Instances " + vmIds);
+            CloudRuntimeException ex = new CloudRuntimeException("Failed to remove specified load balancer rule ID for Instances " + vmIds);
             ex.addProxyObject(loadBalancer.getUuid(), "loadBalancerId");
             throw ex;
         }

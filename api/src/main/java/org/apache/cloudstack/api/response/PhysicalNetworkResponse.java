@@ -44,7 +44,7 @@ public class PhysicalNetworkResponse extends BaseResponse {
     private String broadcastDomainRange;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "Zone id of the physical Network")
+    @Param(description = "Zone ID of the physical Network")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
@@ -60,7 +60,7 @@ public class PhysicalNetworkResponse extends BaseResponse {
     private String vlan;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "The domain id of the physical Network owner")
+    @Param(description = "The domain ID of the physical Network owner")
     private String domainId;
 
     @SerializedName(ApiConstants.TAGS)

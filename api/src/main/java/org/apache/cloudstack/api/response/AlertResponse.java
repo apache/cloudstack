@@ -31,7 +31,7 @@ import com.cloud.serializer.Param;
 @SuppressWarnings("unused")
 public class AlertResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "The id of the alert")
+    @Param(description = "The ID of the alert")
     private String id;
 
     @SerializedName(ApiConstants.TYPE)

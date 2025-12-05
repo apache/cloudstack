@@ -64,7 +64,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
                type = CommandType.UUID,
                entityType = IPAddressResponse.class,
             required = true,
-    description = "The IP address id of the port forwarding rule")
+    description = "The IP address ID of the port forwarding rule")
     private Long ipAddressId;
 
     @Parameter(name = ApiConstants.PRIVATE_START_PORT,
@@ -120,7 +120,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     @Parameter(name = ApiConstants.NETWORK_ID,
                type = CommandType.UUID,
                entityType = NetworkResponse.class,
-               description = "The network of the  Instance the port forwarding rule will be created for. "
+               description = "The Network of the Instance the port forwarding rule will be created for. "
                    + "Required when public IP address is not associated with any guest network yet (VPC case).")
     private Long networkId;
     @Parameter(name = ApiConstants.VM_GUEST_IP,
@@ -335,7 +335,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
         Ip privateIp = getVmSecondaryIp();
         if (privateIp != null) {
             if (!NetUtils.isValidIp4(privateIp.toString())) {
-                throw new InvalidParameterValueException("Invalid Instance ip address");
+                throw new InvalidParameterValueException("Invalid Instance IP address");
             }
         }
 

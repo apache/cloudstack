@@ -91,7 +91,7 @@ public class FirewallRuleResponse extends BaseResponse {
     private String destNatVmIp;
 
     @SerializedName(ApiConstants.NETWORK_ID)
-    @Param(description = "The id of the guest Network the port forwarding rule belongs to")
+    @Param(description = "The ID of the guest Network the port forwarding rule belongs to")
     private String networkId;
 
     @SerializedName(ApiConstants.FOR_DISPLAY)

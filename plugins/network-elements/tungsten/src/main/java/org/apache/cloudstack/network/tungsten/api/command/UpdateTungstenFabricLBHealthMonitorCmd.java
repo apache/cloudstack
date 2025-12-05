@@ -49,7 +49,7 @@ public class UpdateTungstenFabricLBHealthMonitorCmd extends BaseAsyncCreateCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "The ID of lb rule")
+    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "The ID of LB rule")
     private Long lbId;
 
     @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true, description = "Loadbalancer health monitor type")
@@ -64,13 +64,13 @@ public class UpdateTungstenFabricLBHealthMonitorCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.INTERVAL, type = CommandType.INTEGER, required = true, description = "Loadbalancer health monitor interval")
     private int interval;
 
-    @Parameter(name = ApiConstants.HTTP_METHOD, type = CommandType.STRING, description = "Loadbalancer health monitor http method")
+    @Parameter(name = ApiConstants.HTTP_METHOD, type = CommandType.STRING, description = "Loadbalancer health monitor HTTP method")
     private String httpMethod;
 
     @Parameter(name = ApiConstants.EXPECTED_CODE, type = CommandType.STRING, description = "Loadbalancer health monitor expected code")
     private String expectedCode;
 
-    @Parameter(name = ApiConstants.URL_PATH, type = CommandType.STRING, description = "Loadbalancer health monitor url path")
+    @Parameter(name = ApiConstants.URL_PATH, type = CommandType.STRING, description = "Loadbalancer health monitor URL path")
     private String urlPath;
 
     @Override
@@ -84,7 +84,7 @@ public class UpdateTungstenFabricLBHealthMonitorCmd extends BaseAsyncCreateCmd {
 
         if (monitorType == TungstenService.MonitorType.HTTP) {
             if (httpMethod == null) {
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid http method parameter");
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid HTTP method parameter");
             }
 
             try {
@@ -98,7 +98,7 @@ public class UpdateTungstenFabricLBHealthMonitorCmd extends BaseAsyncCreateCmd {
             }
 
             if (urlPath == null) {
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid url path parameter");
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid URL path parameter");
             }
         }
 

@@ -47,7 +47,7 @@ public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "Enabled/Disabled/Shutdown the physical network service provider")
     private String state;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProviderResponse.class, required = true, description = "Network service provider id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProviderResponse.class, required = true, description = "Network service provider ID")
     private Long id;
 
     @Parameter(name = ApiConstants.SERVICE_LIST,

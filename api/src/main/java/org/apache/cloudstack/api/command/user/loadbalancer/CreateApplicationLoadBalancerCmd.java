@@ -58,13 +58,13 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
                type = CommandType.UUID,
                required = true,
                entityType = NetworkResponse.class,
-               description = "The guest network the load balancer will be created for")
+               description = "The guest Network the load balancer will be created for")
     private Long networkId;
 
     @Parameter(name = ApiConstants.SOURCE_PORT,
                type = CommandType.INTEGER,
                required = true,
-               description = "The source port the network traffic will be load balanced from")
+               description = "The source port the Network traffic will be load balanced from")
     private Integer sourcePort;
 
     @Parameter(name = ApiConstants.ALGORITHM, type = CommandType.STRING, required = true, description = "Load balancer algorithm (source, roundrobin, leastconn)")
@@ -73,7 +73,7 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.INSTANCE_PORT,
                type = CommandType.INTEGER,
                required = true,
-               description = "The TCP port of the  Instance where the network traffic will be load balanced to")
+               description = "The TCP port of the Instance where the network traffic will be load balanced to")
     private Integer instancePort;
 
     @Parameter(name = ApiConstants.SOURCE_IP, type = CommandType.STRING, description = "The source IP address the network traffic will be load balanced from")
@@ -83,7 +83,7 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
                type = CommandType.UUID,
                entityType = NetworkResponse.class,
                required = true,
-               description = "The network id of the source ip address")
+               description = "The Network ID of the source IP address")
     private Long sourceIpNetworkId;
 
     @Parameter(name = ApiConstants.SCHEME,

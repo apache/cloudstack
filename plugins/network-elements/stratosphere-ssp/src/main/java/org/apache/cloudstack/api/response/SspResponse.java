@@ -28,7 +28,7 @@ import com.cloud.serializer.Param;
 @EntityReference(value = HostVO.class)
 public class SspResponse extends BaseResponse {
     @SerializedName(ApiConstants.HOST_ID)
-    @Param(description = "Server id of the stratosphere ssp server")
+    @Param(description = "Server ID of the stratosphere ssp server")
     private String hostId;
 
     @SerializedName(ApiConstants.ZONE_ID)

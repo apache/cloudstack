@@ -67,7 +67,7 @@ public class AddIpToVmNicCmd extends BaseAsyncCreateCmd {
     private long getNetworkId() {
         Nic nic = _entityMgr.findById(Nic.class, nicId);
         if (nic == null) {
-            throw new InvalidParameterValueException("Can't find Network id for specified NIC");
+            throw new InvalidParameterValueException("Can't find Network ID for specified NIC");
         }
         return nic.getNetworkId();
     }
@@ -89,7 +89,7 @@ public class AddIpToVmNicCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "Associating ip to NIC id=" + this._uuidMgr.getUuid(Nic.class, getNicId()) + " belonging to Network id=" + this._uuidMgr.getUuid(Network.class, getNetworkId());
+        return "Associating IP to NIC id=" + this._uuidMgr.getUuid(Nic.class, getNicId()) + " belonging to Network id=" + this._uuidMgr.getUuid(Network.class, getNetworkId());
     }
 
     /////////////////////////////////////////////////////
@@ -117,14 +117,14 @@ public class AddIpToVmNicCmd extends BaseAsyncCreateCmd {
             success = _networkService.configureNicSecondaryIp(result, isZoneSGEnabled());
 
             if (success == false) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to set security group rules for the secondary ip");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to set security group rules for the secondary IP");
             }
 
             NicSecondaryIpResponse response = _responseGenerator.createSecondaryIPToNicResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to assign secondary ip to NIC");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to assign secondary IP to NIC");
         }
     }
 
@@ -166,11 +166,11 @@ public class AddIpToVmNicCmd extends BaseAsyncCreateCmd {
                 setEntityUuid(result.getUuid());
             }
         } catch (InsufficientAddressCapacityException e) {
-            throw new InvalidParameterValueException("Allocating guest ip for NIC failed : " + e.getMessage());
+            throw new InvalidParameterValueException("Allocating guest IP for NIC failed : " + e.getMessage());
         }
 
         if (result == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to assign secondary ip to NIC");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to assign secondary IP to NIC");
         }
     }
 }

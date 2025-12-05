@@ -37,7 +37,7 @@ public class ListProjectInvitationsCmd extends BaseListAccountResourcesCmd {
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "List by project id")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "List by project ID")
     private Long projectId;
 
     @Parameter(name = ApiConstants.ACTIVE_ONLY,
@@ -48,7 +48,7 @@ public class ListProjectInvitationsCmd extends BaseListAccountResourcesCmd {
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "List invitations by state")
     private String state;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProjectInvitationResponse.class, description = "List invitations by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProjectInvitationResponse.class, description = "List invitations by ID")
     private Long id;
 
     @Parameter(name = ApiConstants.USER_ID, type = CommandType.UUID, entityType = UserResponse.class, description = "List invitation by user ID")

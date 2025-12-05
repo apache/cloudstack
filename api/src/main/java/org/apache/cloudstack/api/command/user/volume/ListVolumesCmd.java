@@ -62,10 +62,10 @@ public class ListVolumesCmd extends BaseListRetrieveOnlyResourceCountCmd impleme
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the disk volume")
     private String volumeName;
 
-    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "The pod id the disk volume belongs to")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "The pod ID the disk volume belongs to")
     private Long podId;
 
-    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "The cluster id the disk volume belongs to", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "The cluster ID the disk volume belongs to", authorized = {RoleType.Admin})
     private Long clusterId;
 
     @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "The type of disk volume")

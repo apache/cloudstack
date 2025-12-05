@@ -41,7 +41,7 @@ public class QuerySimulatorMockCmd extends BaseCmd {
 
     @Inject SimulatorManager _simMgr;
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description = "Id of the configured mock")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description = "ID of the configured mock")
     private Long id;
 
     @Override

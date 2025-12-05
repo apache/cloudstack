@@ -29,7 +29,7 @@ import com.google.gson.annotations.SerializedName;
 public class OvsProviderResponse extends BaseResponse implements
         ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "The id of the ovs")
+    @Param(description = "The ID of the ovs")
     private String id;
     @SerializedName(ApiConstants.NSP_ID)
     @Param(description = "The physical Network service provider id of the provider")
@@ -41,7 +41,7 @@ public class OvsProviderResponse extends BaseResponse implements
     @Param(description = "The Account associated with the provider")
     private String accountName;
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The project id of the IP address")
+    @Param(description = "The project ID of the IP address")
     private String projectId;
     @SerializedName(ApiConstants.PROJECT)
     @Param(description = "The project name of the address")
@@ -55,7 +55,7 @@ public class OvsProviderResponse extends BaseResponse implements
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the domain to which the provider belongs", since = "4.19.2.0")
+    @Param(description = "Path of the domain to which the provider belongs", since = "4.19.2.0")
     private String domainPath;
 
     @Override

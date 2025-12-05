@@ -44,7 +44,7 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListUcsManagerCmd extends BaseListCmd {
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, description = "The zone id", entityType = ZoneResponse.class)
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, description = "The zone ID", entityType = ZoneResponse.class)
     private Long zoneId;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UcsManagerResponse.class, description = "The ID of the ucs manager")

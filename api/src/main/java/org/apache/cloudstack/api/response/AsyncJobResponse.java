@@ -32,7 +32,7 @@ import com.cloud.serializer.Param;
 public class AsyncJobResponse extends BaseResponse {
 
     @SerializedName("accountid")
-    @Param(description = "The Account id that executed the async command")
+    @Param(description = "The Account ID that executed the async command")
     private String accountId;
 
     @SerializedName("account")
@@ -40,7 +40,7 @@ public class AsyncJobResponse extends BaseResponse {
     private String account;
 
     @SerializedName("domainid")
-    @Param(description = "The domain id that executed the async command")
+    @Param(description = "The domain ID that executed the async command")
     private String domainid;
 
     @SerializedName("domainpath")

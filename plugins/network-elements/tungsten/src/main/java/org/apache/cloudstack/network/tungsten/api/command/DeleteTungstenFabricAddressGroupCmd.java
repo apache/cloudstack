@@ -47,7 +47,7 @@ public class DeleteTungstenFabricAddressGroupCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.ADDRESS_GROUP_UUID, type = CommandType.STRING, required = true, description = "The uuid of Tungsten-Fabric address group")
+    @Parameter(name = ApiConstants.ADDRESS_GROUP_UUID, type = CommandType.STRING, required = true, description = "The UUID of Tungsten-Fabric address group")
     private String addressGroupUuid;
 
     @Override

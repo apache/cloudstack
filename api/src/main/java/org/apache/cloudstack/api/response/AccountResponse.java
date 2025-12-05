@@ -32,7 +32,7 @@ import com.google.gson.annotations.SerializedName;
 @EntityReference(value = Account.class)
 public class AccountResponse extends BaseResponse implements ResourceLimitAndCountResponse, SetResourceIconResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "The id of the Account")
+    @Param(description = "The ID of the Account")
     private String id;
 
     @SerializedName(ApiConstants.NAME)

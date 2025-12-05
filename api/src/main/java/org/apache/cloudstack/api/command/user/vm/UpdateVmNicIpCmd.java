@@ -46,7 +46,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 
-@APICommand(name = "updateVmNicIp", description = "Update the default Ip of an Instance NIC", responseObject = UserVmResponse.class)
+@APICommand(name = "updateVmNicIp", description = "Update the default IP of an Instance NIC", responseObject = UserVmResponse.class)
 public class UpdateVmNicIpCmd extends BaseAsyncCmd {
 
     /////////////////////////////////////////////////////
@@ -79,7 +79,7 @@ public class UpdateVmNicIpCmd extends BaseAsyncCmd {
     private long getZoneId() {
         Network ntwk = _entityMgr.findById(Network.class, getNetworkId());
         if (ntwk == null) {
-            throw new InvalidParameterValueException("Can't find zone id for specified");
+            throw new InvalidParameterValueException("Can't find zone ID for specified");
         }
         return ntwk.getDataCenterId();
     }
@@ -87,7 +87,7 @@ public class UpdateVmNicIpCmd extends BaseAsyncCmd {
     public Long getNetworkId() {
         Nic nic = _entityMgr.findById(Nic.class, nicId);
         if (nic == null) {
-            throw new InvalidParameterValueException("Can't find Network id for specified NIC ");
+            throw new InvalidParameterValueException("Can't find Network ID for specified NIC");
         }
         Long networkId = nic.getNetworkId();
         return networkId;

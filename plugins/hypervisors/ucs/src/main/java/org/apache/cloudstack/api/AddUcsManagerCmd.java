@@ -38,13 +38,13 @@ public class AddUcsManagerCmd extends BaseCmd {
     @Inject
     private UcsManager mgr;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, description = "The Zone id for the ucs manager", entityType = ZoneResponse.class, required = true)
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, description = "The Zone ID for the ucs manager", entityType = ZoneResponse.class, required = true)
     private Long zoneId;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of UCS manager")
     private String name;
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, description = "The name of UCS url", required = true)
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, description = "The name of UCS URL", required = true)
     private String url;
 
     @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, description = "The username of UCS", required = true)

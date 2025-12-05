@@ -30,7 +30,7 @@ import com.cloud.serializer.Param;
 @EntityReference(value = BaremetalDhcpVO.class)
 public class BaremetalDhcpResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "Device id of ")
+    @Param(description = "Device ID of ")
     private String id;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)

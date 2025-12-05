@@ -44,7 +44,7 @@ public class ListDedicatedGuestVlanRangesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GuestVlanRangeResponse.class, description = "List dedicated guest vlan ranges by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GuestVlanRangeResponse.class, description = "List dedicated guest VLAN ranges by ID")
     private Long id;
 
     @Parameter(name = ApiConstants.ACCOUNT,
@@ -67,7 +67,7 @@ public class ListDedicatedGuestVlanRangesCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID,
                type = CommandType.UUID,
                entityType = PhysicalNetworkResponse.class,
-               description = "Physical network id of the guest VLAN range")
+               description = "Physical network ID of the guest VLAN range")
     private Long physicalNetworkId;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "Zone of the guest VLAN range")

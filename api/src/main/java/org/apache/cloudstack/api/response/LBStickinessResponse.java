@@ -58,7 +58,7 @@ public class LBStickinessResponse extends BaseResponse {
     private String state;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "The id of the zone the Stickiness policy belongs to")
+    @Param(description = "The ID of the zone the Stickiness policy belongs to")
     private String zoneId;
 
     @SerializedName("stickinesspolicy")

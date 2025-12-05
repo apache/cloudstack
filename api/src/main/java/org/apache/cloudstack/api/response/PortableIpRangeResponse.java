@@ -36,7 +36,7 @@ public class PortableIpRangeResponse extends BaseResponse {
     private String id;
 
     @SerializedName(ApiConstants.REGION_ID)
-    @Param(description = "Region Id in which portable IP range is provisioned")
+    @Param(description = "Region ID in which portable IP range is provisioned")
     private Integer regionId;
 
     @SerializedName(ApiConstants.GATEWAY)

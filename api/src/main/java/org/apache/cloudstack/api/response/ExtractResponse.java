@@ -27,7 +27,7 @@ import com.cloud.serializer.Param;
 
 public class ExtractResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "The id of extracted object")
+    @Param(description = "The ID of extracted object")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
@@ -35,7 +35,7 @@ public class ExtractResponse extends BaseResponse {
     private String name;
 
     @SerializedName("extractId")
-    @Param(description = "The upload id of extracted object")
+    @Param(description = "The upload ID of extracted object")
     private String uploadId;
 
     @SerializedName("uploadpercentage")
@@ -47,7 +47,7 @@ public class ExtractResponse extends BaseResponse {
     private String status;
 
     @SerializedName("accountid")
-    @Param(description = "The Account id to which the extracted object belongs")
+    @Param(description = "The Account ID to which the extracted object belongs")
     private String accountId;
 
     @SerializedName("resultstring")
@@ -79,7 +79,7 @@ public class ExtractResponse extends BaseResponse {
     private String mode;
 
     @SerializedName(ApiConstants.URL)
-    @Param(description = "If mode = upload then url of the uploaded entity. if mode = download the url from which the entity can be downloaded")
+    @Param(description = "If mode = upload then URL of the uploaded entity. if mode = download the URL from which the entity can be downloaded")
     private String url;
 
     public ExtractResponse() {

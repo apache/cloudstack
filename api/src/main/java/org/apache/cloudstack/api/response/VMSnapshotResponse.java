@@ -81,7 +81,7 @@ public class VMSnapshotResponse extends BaseResponseWithTagInformation implement
     private Boolean current;
 
     @SerializedName("type")
-    @Param(description = "VM Snapshot type")
+    @Param(description = "Instance Snapshot type")
     private String type;
 
     @SerializedName(ApiConstants.CREATED)
@@ -93,7 +93,7 @@ public class VMSnapshotResponse extends BaseResponseWithTagInformation implement
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The project id of the VPN")
+    @Param(description = "The project ID of the VPN")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)

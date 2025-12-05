@@ -53,7 +53,7 @@ public class UpdateNetworkACLItemCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.END_PORT, type = CommandType.INTEGER, description = "The ending port of ACL")
     private Integer publicEndPort;
 
-    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "The cidr list to allow traffic from/to. Multiple entries must be separated by a single comma character (,).")
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "The CIDR list to allow traffic from/to. Multiple entries must be separated by a single comma character (,).")
     private List<String> cidrlist;
 
     @Parameter(name = ApiConstants.ICMP_TYPE, type = CommandType.INTEGER, description = "Type of the ICMP message being sent")
@@ -68,7 +68,7 @@ public class UpdateNetworkACLItemCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.NUMBER, type = CommandType.INTEGER, description = "The Network of the Instance the ACL will be created for")
     private Integer number;
 
-    @Parameter(name = ApiConstants.ACTION, type = CommandType.STRING, description = "Scl entry action, allow or deny")
+    @Parameter(name = ApiConstants.ACTION, type = CommandType.STRING, description = "ACL entry action, allow or deny")
     private String action;
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the rule to the end User or not", since = "4.4", authorized = {

@@ -107,7 +107,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            logger.error("Error retrieving usage Instances for Account id: " + accountId, ex);
+            logger.error("Error retrieving usage Instances for Account ID: " + accountId, ex);
         } finally {
             txn.close();
         }

@@ -76,7 +76,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
     private String displayText;
 
     @Parameter(name = ApiConstants.CIDR, type = CommandType.STRING,
-            description = "The CIDR of the VPC. All VPC guest Networks' CIDRs should be within this CIDR")
+            description = "The CIDR of the VPC. All VPC Guest Network's CIDRs should be within this CIDR")
     private String cidr;
 
     @Parameter(name = ApiConstants.CIDR_SIZE, type = CommandType.INTEGER,
@@ -116,7 +116,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
     @Parameter(name = ApiConstants.IP6_DNS2, type = CommandType.STRING, description = "The second IPv6 DNS for the VPC", since = "4.18.0")
     private String ip6Dns2;
 
-    @Parameter(name = ApiConstants.SOURCE_NAT_IP, type = CommandType.STRING, description = "IPV4 address to be assigned to the public interface of the Network router." +
+    @Parameter(name = ApiConstants.SOURCE_NAT_IP, type = CommandType.STRING, description = "IPv4 address to be assigned to the public interface of the Network router." +
             "This address will be used as source NAT address for the Networks in ths VPC. " +
             "\nIf an address is given and it cannot be acquired, an error will be returned and the Network won´t be implemented,",
             since = "4.19")

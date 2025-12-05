@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.EntityReference;
 @EntityReference(value = BaremetalRctVO.class)
 public class BaremetalRctResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "Id of rct")
+    @Param(description = "ID of RCT")
     private String id;
 
     @SerializedName(ApiConstants.URL)

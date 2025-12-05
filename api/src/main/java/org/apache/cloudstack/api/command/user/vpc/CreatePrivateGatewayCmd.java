@@ -203,7 +203,7 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd implements UserC
     public Long getSyncObjId() {
         Vpc vpc = _entityMgr.findById(Vpc.class, vpcId);
         if (vpc == null) {
-            throw new InvalidParameterValueException("Invalid id is specified for the VPC");
+            throw new InvalidParameterValueException("Invalid ID is specified for the VPC");
         }
         return vpc.getId();
     }

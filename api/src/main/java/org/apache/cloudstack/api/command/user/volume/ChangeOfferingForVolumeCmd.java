@@ -57,7 +57,7 @@ public class ChangeOfferingForVolumeCmd extends BaseAsyncCmd implements UserCmd 
             entityType = DiskOfferingResponse.class,
             type = CommandType.UUID,
             required = true,
-            description = "New disk offering id")
+            description = "New disk offering ID")
     private Long newDiskOfferingId;
 
     @Parameter(name = ApiConstants.SIZE, type = CommandType.LONG, required = false, description = "New volume size in GB for the custom disk offering")

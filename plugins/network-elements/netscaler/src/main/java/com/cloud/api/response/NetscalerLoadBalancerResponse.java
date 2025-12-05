@@ -32,11 +32,11 @@ import com.cloud.serializer.Param;
 public class NetscalerLoadBalancerResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.LOAD_BALANCER_DEVICE_ID)
-    @Param(description = "Device id of the netscaler load balancer")
+    @Param(description = "Device ID of the netscaler load balancer")
     private String id;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
-    @Param(description = "The physical network to which this netscaler device belongs to")
+    @Param(description = "The physical Network to which this netscaler device belongs to")
     private String physicalNetworkId;
 
     @SerializedName(ApiConstants.PROVIDER)

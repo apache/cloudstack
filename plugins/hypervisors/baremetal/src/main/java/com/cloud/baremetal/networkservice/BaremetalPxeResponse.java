@@ -27,11 +27,11 @@ import com.cloud.serializer.Param;
 
 public class BaremetalPxeResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "Device id of ")
+    @Param(description = "Device ID of ")
     private String id;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
-    @Param(description = "The physical network to which this external DHCP device belongs to")
+    @Param(description = "The physical Network to which this external DHCP device belongs to")
     private String physicalNetworkId;
 
     @SerializedName(ApiConstants.PROVIDER)

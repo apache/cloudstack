@@ -32,7 +32,7 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class IPAddressResponse extends BaseResponseWithAnnotations implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "Public IP address id")
+    @Param(description = "Public IP address ID")
     private String id;
 
     @SerializedName(ApiConstants.IP_ADDRESS)
@@ -144,7 +144,7 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
     private String purpose;
 
     @SerializedName(ApiConstants.VPC_ID)
-    @Param(description = "VPC id the IP belongs to")
+    @Param(description = "VPC ID the IP belongs to")
     private String vpcId;
 
     @SerializedName(ApiConstants.VPC_NAME)

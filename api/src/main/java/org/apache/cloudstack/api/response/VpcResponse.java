@@ -34,7 +34,7 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class VpcResponse extends BaseResponseWithAnnotations implements ControlledEntityResponse, SetResourceIconResponse {
     @SerializedName("id")
-    @Param(description = "The id of the VPC")
+    @Param(description = "The ID of the VPC")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
@@ -50,7 +50,7 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
     private String state;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "Zone id of the VPC")
+    @Param(description = "Zone ID of the VPC")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
@@ -66,7 +66,7 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
     private String cidr;
 
     @SerializedName(ApiConstants.VPC_OFF_ID)
-    @Param(description = "VPC offering id the VPC is created from")
+    @Param(description = "VPC offering ID the VPC is created from")
     private String vpcOfferingId;
 
     @SerializedName(ApiConstants.VPC_OFF_NAME)
@@ -82,7 +82,7 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The project id of the VPC")
+    @Param(description = "The project ID of the VPC")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
@@ -90,7 +90,7 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "The domain id of the VPC owner")
+    @Param(description = "The domain ID of the VPC owner")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
@@ -98,7 +98,7 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
     private String domain;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "the domain path of the owner", since = "4.19.2.0")
+    @Param(description = "The domain path of the owner", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.NETWORK)

@@ -32,7 +32,7 @@ import com.cloud.serializer.Param;
 public class PortableIpResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.REGION_ID)
-    @Param(description = "Region Id in which global Load balancer is created")
+    @Param(description = "Region ID in which global Load balancer is created")
     private Integer regionId;
 
     @SerializedName(ApiConstants.IP_ADDRESS)

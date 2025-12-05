@@ -24,10 +24,10 @@ import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.ha.HAConfig;
 
 public class SimulatorHAStateResponse extends BaseResponse {
-    @SerializedName(ApiConstants.HA_STATE) @Param(description = "The ha state")
+    @SerializedName(ApiConstants.HA_STATE) @Param(description = "The HA state")
     private String haState;
 
-    @SerializedName("prevhastate") @Param(description = "The previous ha state")
+    @SerializedName("prevhastate") @Param(description = "The previous HA state")
     private String previousHaState;
 
     @SerializedName("event") @Param(description = "The event that caused state transition")

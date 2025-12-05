@@ -59,7 +59,7 @@ public class GlobalLoadBalancerResponse extends BaseResponse implements Controll
     private String serviceType;
 
     @SerializedName(ApiConstants.REGION_ID)
-    @Param(description = "Region Id in which global Load balancer is created")
+    @Param(description = "Region ID in which global Load balancer is created")
     private Integer regionId;
 
     @SerializedName(ApiConstants.ACCOUNT)
@@ -67,7 +67,7 @@ public class GlobalLoadBalancerResponse extends BaseResponse implements Controll
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The project id of the Load balancer")
+    @Param(description = "The project ID of the Load balancer")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)

@@ -46,7 +46,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
                type = CommandType.UUID,
                entityType = PrivateGatewayResponse.class,
                required = true,
-               description = "The gateway id we are creating static route for")
+               description = "The gateway ID we are creating static route for")
     private Long gatewayId;
 
     @Parameter(name = ApiConstants.CIDR, required = true, type = CommandType.STRING, description = "Static route CIDR")

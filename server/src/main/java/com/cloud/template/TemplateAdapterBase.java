@@ -157,7 +157,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             }
             GuestOS noneGuestOs = ApiDBUtils.findGuestOSByDisplayName(ApiConstants.ISO_GUEST_OS_NONE);
             if ((guestOSId == null || guestOSId == noneGuestOs.getId()) && bootable == true) {
-                throw new InvalidParameterValueException("Please pass a valid GuestOS Id");
+                throw new InvalidParameterValueException("Please pass a valid GuestOS ID");
             }
             if (bootable == false) {
                 guestOSId = noneGuestOs.getId(); //Guest os id of None.
@@ -173,7 +173,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 requiresHVM = true;
             }
             if (deployAsIs) {
-                logger.info("Setting default guest OS for deploy-as-is Template while the template registration is not completed");
+                logger.info("Setting default guest OS for deploy-as-is Template while the Template registration is not completed");
                 guestOSId = getDefaultDeployAsIsGuestOsId();
             }
         }
@@ -485,7 +485,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
         VMTemplateVO template = _tmpltDao.findById(templateId);
         if (template == null) {
-            throw new InvalidParameterValueException("Unable to find Template with id " + templateId);
+            throw new InvalidParameterValueException("Unable to find Template with ID " + templateId);
         }
 
         userId = accountAndUserValidation(account, userId, null, template, "Unable to delete Template ");
@@ -514,7 +514,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
         VMTemplateVO template = _tmpltDao.findById(templateId);
         if (template == null) {
-            throw new InvalidParameterValueException("unable to find Template with id " + templateId);
+            throw new InvalidParameterValueException("Unable to find Template with ID " + templateId);
         }
         return new TemplateProfile(userId, template, zoneId);
     }
@@ -528,7 +528,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
         VMTemplateVO template = _tmpltDao.findById(templateId);
         if (template == null) {
-            throw new InvalidParameterValueException("Unable to find ISO with id " + templateId);
+            throw new InvalidParameterValueException("Unable to find ISO with ID " + templateId);
         }
 
         userId = accountAndUserValidation(account, userId, null, template, "Unable to delete ISO ");

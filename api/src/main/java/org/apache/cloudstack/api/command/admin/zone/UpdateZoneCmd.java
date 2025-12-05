@@ -86,7 +86,7 @@ public class UpdateZoneCmd extends BaseCmd {
                description = "Network domain name for the networks in the zone; empty string will update domain with NULL value")
     private String domain;
 
-    @Parameter(name = ApiConstants.DNS_SEARCH_ORDER, type = CommandType.LIST, collectionType = CommandType.STRING, description = "The dns search order list")
+    @Parameter(name = ApiConstants.DNS_SEARCH_ORDER, type = CommandType.LIST, collectionType = CommandType.STRING, description = "The DNS search order list")
     private List<String> dnsSearchOrder;
 
     @Parameter(name = ApiConstants.LOCAL_STORAGE_ENABLED, type = CommandType.BOOLEAN, description = "True if local storage offering enabled, false otherwise")

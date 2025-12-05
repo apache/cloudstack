@@ -551,7 +551,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
     public VirtualRouter stopInternalLbVm(final long vmId, final boolean forced, final Account caller, final long callerUserId) throws ConcurrentOperationException, ResourceUnavailableException {
         final DomainRouterVO internalLbVm = _internalLbVmDao.findById(vmId);
         if (internalLbVm == null || internalLbVm.getRole() != Role.INTERNAL_LB_VM) {
-            throw new InvalidParameterValueException("Can't find internal lb Instance by id specified");
+            throw new InvalidParameterValueException("Can't find internal LB Instance by ID specified");
         }
 
         //check permissions
@@ -858,7 +858,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
                     break;
                 } catch (final InsufficientCapacityException ex) {
                     if (startRetry < 2 && iter.hasNext()) {
-                        logger.debug("Failed to start the Internal LB Instance  {} with hypervisor type {}, destroying it and recreating one more time", internalLbVm, hType);
+                        logger.debug("Failed to start the Internal LB Instance {} with hypervisor type {}, destroying it and recreating one more time", internalLbVm, hType);
                         // destroy the internal lb vm
                         destroyInternalLbVm(internalLbVm.getId(), _accountMgr.getSystemAccount(), User.UID_SYSTEM);
                         continue;

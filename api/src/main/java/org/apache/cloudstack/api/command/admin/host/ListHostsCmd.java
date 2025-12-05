@@ -54,7 +54,7 @@ public class ListHostsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "Lists hosts existing in particular cluster")
     private Long clusterId;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HostResponse.class, description = "The id of the host")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HostResponse.class, description = "The ID of the host")
     private Long id;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the host")

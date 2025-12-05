@@ -34,7 +34,7 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class DomainRouterResponse extends BaseResponseWithAnnotations implements ControlledViewEntityResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "The id of the router")
+    @Param(description = "The ID of the router")
     private String id;
 
     @SerializedName(ApiConstants.ZONE_ID)

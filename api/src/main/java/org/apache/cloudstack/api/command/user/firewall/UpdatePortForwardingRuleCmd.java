@@ -59,7 +59,7 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
                description = "The ID of the  Instance for the port forwarding rule")
     private Long virtualMachineId;
 
-    @Parameter(name = ApiConstants.VM_GUEST_IP, type = CommandType.STRING, required = false, description = "VM guest NIC Secondary ip address for the port forwarding rule", since = "4.5")
+    @Parameter(name = ApiConstants.VM_GUEST_IP, type = CommandType.STRING, required = false, description = "Instance guest NIC Secondary IP address for the port forwarding rule", since = "4.5")
     private String vmGuestIp;
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})

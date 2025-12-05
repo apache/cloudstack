@@ -30,7 +30,7 @@ import com.google.gson.annotations.SerializedName;
 @EntityReference(value = ServiceOffering.class)
 public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     @SerializedName("id")
-    @Param(description = "The id of the service offering")
+    @Param(description = "The ID of the service offering")
     private String id;
 
     @SerializedName("name")
@@ -38,7 +38,7 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     private String name;
 
     @SerializedName("state")
-    @Param(description = "state of the service offering")
+    @Param(description = "State of the service offering")
     private String state;
 
     @SerializedName("displaytext")
@@ -177,7 +177,7 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     private Long iopsWriteRate;
 
     @SerializedName("diskIopsWriteRateMax")
-    @Param(description = "Burst io requests write rate of the disk offering")
+    @Param(description = "Burst I/O requests write rate of the disk offering")
     private Long iopsWriteRateMax;
 
     @SerializedName("diskIopsWriteRateMaxLength")

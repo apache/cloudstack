@@ -31,7 +31,7 @@ import com.google.gson.annotations.SerializedName;
 @EntityReference(value = {KubernetesCluster.class})
 public class KubernetesClusterResponse extends BaseResponseWithAnnotations implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "The id of the Kubernetes cluster")
+    @Param(description = "The ID of the Kubernetes cluster")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
@@ -99,7 +99,7 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the domain to which the Kubernetes cluster belongs", since = "4.19.2.0")
+    @Param(description = "Path of the domain to which the Kubernetes cluster belongs", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.SSH_KEYPAIR)

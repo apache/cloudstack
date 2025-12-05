@@ -335,7 +335,7 @@ public class OVFHelper {
             vd.add(od);
         }
         if (logger.isTraceEnabled()) {
-            logger.trace(String.format("found %d disk definitions",vd.size()));
+            logger.trace(String.format("Found %d disk definitions", vd.size()));
         }
         return vd;
     }
@@ -367,7 +367,7 @@ public class OVFHelper {
             }
         }
         if (logger.isTraceEnabled()) {
-            logger.trace(String.format("found %d file definitions in %s",vf.size(), ovfFile.getPath()));
+            logger.trace(String.format("Found %d file definitions in %s", vf.size(), ovfFile.getPath()));
         }
         return vf;
     }

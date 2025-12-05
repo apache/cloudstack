@@ -125,7 +125,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
         ClusterVO cluster = _clusterDao.findById(clusterId);
         if (cluster == null || cluster.getHypervisorType() != HypervisorType.VMware) {
             if (logger.isInfoEnabled())
-                logger.info("Invalid cluster id or cluster is not for VMware hypervisors");
+                logger.info("Invalid cluster ID or cluster is not for VMware hypervisors");
             return null;
         }
 

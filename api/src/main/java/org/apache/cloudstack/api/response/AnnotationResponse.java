@@ -32,7 +32,7 @@ import java.util.Date;
 @EntityReference(value = Annotation.class)
 public class AnnotationResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "The (uu)id of the annotation")
+    @Param(description = "The UUID of the annotation")
     private String uuid;
 
     @SerializedName(ApiConstants.ENTITY_TYPE)
@@ -40,7 +40,7 @@ public class AnnotationResponse extends BaseResponse {
     private String entityType;
 
     @SerializedName(ApiConstants.ENTITY_ID)
-    @Param(description = "The (uu)id of the entity to which this annotation pertains")
+    @Param(description = "The UUID of the entity to which this annotation pertains")
     private String entityUuid;
 
     @SerializedName(ApiConstants.ENTITY_NAME)

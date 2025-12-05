@@ -28,7 +28,7 @@ import com.cloud.serializer.Param;
 public class ServiceInstanceResponse extends BaseResponse implements ControlledEntityResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "The ID of the virtual machine")
+    @Param(description = "The ID of the Instance")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
@@ -44,7 +44,7 @@ public class ServiceInstanceResponse extends BaseResponse implements ControlledE
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The project id of the Instance")
+    @Param(description = "The project ID of the Instance")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
@@ -52,15 +52,15 @@ public class ServiceInstanceResponse extends BaseResponse implements ControlledE
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "The ID of the domain in which the virtual machine exists")
+    @Param(description = "The ID of the domain in which the Instance exists")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "The name of the domain in which the virtual machine exists")
+    @Param(description = "The name of the domain in which the Instance exists")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the Domain in which the virtual machine exists", since = "4.19.2.0")
+    @Param(description = "Path of the Domain in which the Instance exists", since = "4.19.2.0")
     private String domainPath;
 
     public void setId(String id) {

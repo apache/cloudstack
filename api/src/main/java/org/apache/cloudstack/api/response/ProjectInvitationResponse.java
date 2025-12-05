@@ -28,11 +28,11 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class ProjectInvitationResponse extends BaseResponse implements ControlledViewEntityResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "The id of the invitation")
+    @Param(description = "The ID of the invitation")
     private String id;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The id of the project")
+    @Param(description = "The ID of the project")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
@@ -40,7 +40,7 @@ public class ProjectInvitationResponse extends BaseResponse implements Controlle
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "The domain id the project belongs to")
+    @Param(description = "The domain ID the project belongs to")
     private String domainId;
 
     @SerializedName(ApiConstants.USER_ID)
@@ -52,7 +52,7 @@ public class ProjectInvitationResponse extends BaseResponse implements Controlle
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the Domain the project belongs to", since = "4.19.2.0")
+    @Param(description = "Path of the Domain the project belongs to", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.ACCOUNT)

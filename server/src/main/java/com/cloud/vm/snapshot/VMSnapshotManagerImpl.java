@@ -869,7 +869,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         final VMSnapshotVO vmSnapshotVo = _vmSnapshotDao.findById(vmSnapshotId);
         if (vmSnapshotVo == null) {
             throw new InvalidParameterValueException(
-                    "Unable to find Instance Snapshot with id " + vmSnapshotId);
+                    "Unable to find Instance Snapshot with ID " + vmSnapshotId);
         }
         Long vmId = vmSnapshotVo.getVmId();
         final UserVmVO userVm = _userVMDao.findById(vmId);

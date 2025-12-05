@@ -59,15 +59,15 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private String accountName;
 
     @SerializedName(ApiConstants.USER_ID)
-    @Param(description = "The user's ID who deployed the Instance")
+    @Param(description = "The User's ID who deployed the Instance")
     private String userId;
 
     @SerializedName(ApiConstants.USERNAME)
-    @Param(description = "The user's name who deployed the Instance")
+    @Param(description = "The User's name who deployed the Instance")
     private String userName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The project id of the Instance")
+    @Param(description = "The project ID of the Instance")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
@@ -83,7 +83,7 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the domain in which the virtual machine exists", since = "4.19.2.0")
+    @Param(description = "Path of the domain in which the virtual machine exists", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.CREATED)
@@ -139,11 +139,11 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private String templateName;
 
     @SerializedName(ApiConstants.TEMPLATE_TYPE)
-    @Param(description = "the type of the template for the virtual machine", since = "4.19.0")
+    @Param(description = "The type of the template for the virtual machine", since = "4.19.0")
     private String templateType;
 
     @SerializedName(ApiConstants.TEMPLATE_FORMAT)
-    @Param(description = "the format of the template for the virtual machine", since = "4.19.1")
+    @Param(description = "The format of the template for the virtual machine", since = "4.19.1")
     private String templateFormat;
 
     @SerializedName("templatedisplaytext")
@@ -372,7 +372,7 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "Base64 string containing the user data", since = "4.18.0.0")
     private String userData;
 
-    @SerializedName(ApiConstants.USER_DATA_ID) @Param(description = "The id of userdata used for the Instance", since = "4.18.0")
+    @SerializedName(ApiConstants.USER_DATA_ID) @Param(description = "The ID of userdata used for the Instance", since = "4.18.0")
     private String userDataId;
 
     @SerializedName(ApiConstants.USER_DATA_NAME) @Param(description = "The name of userdata used for the Instance", since = "4.18.0")

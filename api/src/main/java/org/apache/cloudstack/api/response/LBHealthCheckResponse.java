@@ -46,7 +46,7 @@ public class LBHealthCheckResponse extends BaseResponse {
     private String domainName;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "The id of the zone the HealthCheck policy belongs to")
+    @Param(description = "The ID of the zone the HealthCheck policy belongs to")
     private String zoneId;
 
     @SerializedName("healthcheckpolicy")

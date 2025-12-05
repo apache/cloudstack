@@ -26,7 +26,7 @@ import org.apache.cloudstack.api.BaseResponse;
 public class LinkAccountToLdapResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "Id of the Domain which is linked to LDAP")
+    @Param(description = "ID of the Domain which is linked to LDAP")
     private String domainId;
 
     @SerializedName(ApiConstants.LDAP_DOMAIN)

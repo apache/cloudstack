@@ -76,7 +76,7 @@ public class QuotaTariffResponse extends BaseResponse {
     private String description;
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the tariff")
+    @Param(description = "The ID of the tariff")
     private String id;
 
     @SerializedName("removed")
@@ -84,7 +84,7 @@ public class QuotaTariffResponse extends BaseResponse {
     private Date removed;
 
     @SerializedName("position")
-    @Param(description = "position in the execution sequence for tariffs of the same type")
+    @Param(description = "Position in the execution sequence for tariffs of the same type")
     private Integer position;
 
 

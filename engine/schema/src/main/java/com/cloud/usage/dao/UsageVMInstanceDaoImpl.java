@@ -139,7 +139,7 @@ public class UsageVMInstanceDaoImpl extends GenericDaoBase<UsageVMInstanceVO, Lo
                 usageInstances.add(usageInstance);
             }
         } catch (Exception ex) {
-            logger.error("Error retrieving usage Instances for Account id: " + accountId, ex);
+            logger.error("Error retrieving usage Instances for Account ID: " + accountId, ex);
         } finally {
             txn.close();
         }

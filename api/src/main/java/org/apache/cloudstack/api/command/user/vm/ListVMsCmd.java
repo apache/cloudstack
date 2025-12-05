@@ -89,7 +89,7 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
                description = "List by Network type; true if need to list Instances using Virtual Network, false otherwise")
     private Boolean forVirtualNetwork;
 
-    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "List by Network id")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "List by Network ID")
     private Long networkId;
 
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "The target hypervisor for the Template")

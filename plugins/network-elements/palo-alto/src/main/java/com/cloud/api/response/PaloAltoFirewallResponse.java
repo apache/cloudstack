@@ -30,11 +30,11 @@ import com.cloud.serializer.Param;
 public class PaloAltoFirewallResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.FIREWALL_DEVICE_ID)
-    @Param(description = "Device id of the Palo Alto firewall")
+    @Param(description = "Device ID of the Palo Alto firewall")
     private String id;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
-    @Param(description = "The physical network to which this Palo Alto firewall belongs to")
+    @Param(description = "The physical Network to which this Palo Alto firewall belongs to")
     private String physicalNetworkId;
 
     @SerializedName(ApiConstants.PROVIDER)

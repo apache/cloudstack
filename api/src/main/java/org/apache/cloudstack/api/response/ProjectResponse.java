@@ -33,7 +33,7 @@ import com.google.gson.annotations.SerializedName;
 public class ProjectResponse extends BaseResponse implements ResourceLimitAndCountResponse, SetResourceIconResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "The id of the project")
+    @Param(description = "The ID of the project")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
@@ -45,7 +45,7 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
     private String displaytext;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "The domain id the project belongs to")
+    @Param(description = "The domain ID the project belongs to")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)

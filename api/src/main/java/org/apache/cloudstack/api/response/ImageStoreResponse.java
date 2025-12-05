@@ -44,7 +44,7 @@ public class ImageStoreResponse extends BaseResponseWithAnnotations {
     private String name;
 
     @SerializedName(ApiConstants.URL)
-    @Param(description = "The url of the image store")
+    @Param(description = "The URL of the image store")
     private String url;
 
     @SerializedName(ApiConstants.PROTOCOL)

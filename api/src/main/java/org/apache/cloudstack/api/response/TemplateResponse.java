@@ -168,7 +168,7 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     private String templateTag;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The project id of the Template")
+    @Param(description = "The project ID of the Template")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
@@ -228,7 +228,7 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     private Boolean requiresHvm;
 
     @SerializedName(ApiConstants.URL)
-    @Param(description = "The URL which the Template/iso is registered from")
+    @Param(description = "The URL which the Template/ISO is registered from")
     private String url;
 
     @SerializedName(ApiConstants.RESOURCE_ICON)

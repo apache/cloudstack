@@ -46,7 +46,7 @@ public class ListVPCsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     ////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "List VPC by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "List VPC by ID")
     private Long id;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "List by zone")
@@ -59,7 +59,7 @@ public class ListVPCsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     private String displayText;
 
     @Parameter(name = ApiConstants.CIDR, type = CommandType.STRING, description = "List by CIDR of the VPC. All VPC "
-        + "guest Networks' CIDRs should be within this CIDR")
+        + "Guest Network's CIDRs should be within this CIDR")
     private String cidr;
 
     @Parameter(name = ApiConstants.VPC_OFF_ID, type = CommandType.UUID, entityType = VpcOfferingResponse.class, description = "List by ID of the VPC offering")

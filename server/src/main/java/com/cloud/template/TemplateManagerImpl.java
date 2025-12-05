@@ -2339,9 +2339,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
         if (templateType != null && !isAdmin && !Arrays.asList(TemplateType.USER, TemplateType.VNF).contains(templateType)) {
             if (cmd instanceof RegisterTemplateCmd) {
-                throw new InvalidParameterValueException(String.format("Users can not register template with template type %s.", templateType));
+                throw new InvalidParameterValueException(String.format("Users can not register Template with template type %s.", templateType));
             } else if (cmd instanceof UpdateTemplateCmd) {
-                throw new InvalidParameterValueException(String.format("Users can not update template to template type %s.", templateType));
+                throw new InvalidParameterValueException(String.format("Users can not update Template to template type %s.", templateType));
             }
         }
         return templateType;
@@ -2375,7 +2375,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     void verifyTemplateId(Long id) {
         // Don't allow to modify system template
         if (id.equals(Long.valueOf(1))) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to update Template/ISO of specified id");
+            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to update Template/ISO of specified ID");
             ex.addProxyObject(String.valueOf(id), "templateId");
             throw ex;
         }
@@ -2437,7 +2437,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             template = _tmpltDao.findById(isoId);
         }
         if (template == null) {
-            throw new InvalidParameterValueException(String.format("Unable to find Template/ISO with id %s", templateId == null? isoId : templateId));
+            throw new InvalidParameterValueException(String.format("Unable to find Template/ISO with ID %s", templateId == null? isoId : templateId));
         }
 
         _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, template);

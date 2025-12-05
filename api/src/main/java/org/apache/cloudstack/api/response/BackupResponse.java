@@ -87,7 +87,7 @@ public class BackupResponse extends BaseResponse {
     private String account;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "Domain id")
+    @Param(description = "Domain ID")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
@@ -95,7 +95,7 @@ public class BackupResponse extends BaseResponse {
     private String domain;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "Zone id")
+    @Param(description = "Zone ID")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE)

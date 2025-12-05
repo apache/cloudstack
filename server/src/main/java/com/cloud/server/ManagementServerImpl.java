@@ -1471,9 +1471,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Host srcHost = _hostDao.findById(srcHostId);
         if (srcHost == null) {
             if (logger.isDebugEnabled()) {
-                logger.debug("Unable to find the host with id: " + srcHostId + " of this Instance: " + vm);
+                logger.debug("Unable to find the host with ID: " + srcHostId + " of this Instance: " + vm);
             }
-            final InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find the host (with specified id) of instance with specified id");
+            final InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find the host (with specified ID) of instance with specified ID");
             ex.addProxyObject(String.valueOf(srcHostId), "hostId");
             ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;

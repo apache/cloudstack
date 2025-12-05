@@ -33,11 +33,11 @@ public class UsageRecordResponse extends BaseResponseWithTagInformation implemen
     private String accountName;
 
     @SerializedName(ApiConstants.ACCOUNT_ID)
-    @Param(description = "The user Account Id")
+    @Param(description = "The user Account ID")
     private String accountId;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The project id of the resource")
+    @Param(description = "The project ID of the resource")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
@@ -53,7 +53,7 @@ public class UsageRecordResponse extends BaseResponseWithTagInformation implemen
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the domain to which the usage reocrd belongs", since = "4.19.2.0")
+    @Param(description = "Path of the domain to which the usage reocrd belongs", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.ZONE_ID)

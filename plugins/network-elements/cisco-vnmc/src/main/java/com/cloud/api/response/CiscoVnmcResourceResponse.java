@@ -31,7 +31,7 @@ public class CiscoVnmcResourceResponse extends BaseResponse {
     public static final String RESOURCE_NAME = "resourcename";
 
     @SerializedName(ApiConstants.RESOURCE_ID)
-    @Parameter(description = "Resource id of the Cisco VNMC controller")
+    @Parameter(description = "Resource ID of the Cisco VNMC controller")
     private String id;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)

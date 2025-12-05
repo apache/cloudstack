@@ -46,7 +46,7 @@ public class ResourceTagResponse extends BaseResponse implements ControlledViewE
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The project id the tag belongs to")
+    @Param(description = "The project ID the tag belongs to")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
@@ -62,7 +62,7 @@ public class ResourceTagResponse extends BaseResponse implements ControlledViewE
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the Domain associated with the tag", since = "4.19.2.0")
+    @Param(description = "Path of the Domain associated with the tag", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.CUSTOMER)

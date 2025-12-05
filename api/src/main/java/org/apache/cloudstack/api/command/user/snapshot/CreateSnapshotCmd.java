@@ -71,7 +71,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.POLICY_ID,
                type = CommandType.UUID,
                entityType = SnapshotPolicyResponse.class,
-            description = "Policy id of the Snapshot, if this is null, then use MANUAL_POLICY.")
+            description = "Policy ID of the Snapshot, if this is null, then use MANUAL_POLICY.")
     private Long policyId;
 
     @Parameter(name = ApiConstants.SNAPSHOT_QUIESCEVM, type = CommandType.BOOLEAN, required = false, description = "Quiesce Instance if true")

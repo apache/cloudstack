@@ -31,7 +31,7 @@ import com.cloud.network.cisco.CiscoAsa1000vDevice;
 public class CiscoAsa1000vResourceResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.RESOURCE_ID)
-    @Parameter(description = "Resource id of the Cisco ASA 1000v appliance")
+    @Parameter(description = "Resource ID of the Cisco ASA 1000v appliance")
     private String id;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)

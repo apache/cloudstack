@@ -53,7 +53,7 @@ public class TungstenFabricLBHealthMonitorResponse extends BaseResponse {
     private int interval;
 
     @SerializedName("httpmethod")
-    @Param(description = "The health monitor http method")
+    @Param(description = "The health monitor HTTP method")
     private String httpMethod;
 
     @SerializedName("expectedcode")
@@ -61,11 +61,11 @@ public class TungstenFabricLBHealthMonitorResponse extends BaseResponse {
     private String expectedCode;
 
     @SerializedName("urlpath")
-    @Param(description = "The health monitor url path")
+    @Param(description = "The health monitor URL path")
     private String urlPath;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "Tungsten-Fabric provider zone id")
+    @Param(description = "Tungsten-Fabric provider zone ID")
     private long zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)

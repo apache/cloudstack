@@ -56,7 +56,7 @@ public class AutoScaleVmGroupResponse extends BaseResponseWithAnnotations implem
     private String lbProvider;
 
     @SerializedName(ApiConstants.PUBLIC_IP_ID)
-    @Param(description = "The public IP address id")
+    @Param(description = "The public IP address ID")
     private String publicIpId;
 
     @SerializedName(ApiConstants.PUBLIC_IP)

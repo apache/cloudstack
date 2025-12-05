@@ -40,7 +40,7 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
     private String description;
 
     @SerializedName(ApiConstants.PUBLIC_IP_ID)
-    @Param(description = "The public IP address id")
+    @Param(description = "The public IP address ID")
     private String publicIpId;
 
     @SerializedName(ApiConstants.PUBLIC_IP)
@@ -60,7 +60,7 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
     private String algorithm;
 
     @SerializedName(ApiConstants.NETWORK_ID)
-    @Param(description = "The id of the guest Network the LB rule belongs to")
+    @Param(description = "The ID of the guest Network the LB rule belongs to")
     private String networkId;
 
     @SerializedName(ApiConstants.CIDR_LIST)
@@ -72,7 +72,7 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The project id of the Load balancer")
+    @Param(description = "The project ID of the Load balancer")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
@@ -96,7 +96,7 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
     private String state;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "The id of the zone the rule belongs to")
+    @Param(description = "The ID of the zone the rule belongs to")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)

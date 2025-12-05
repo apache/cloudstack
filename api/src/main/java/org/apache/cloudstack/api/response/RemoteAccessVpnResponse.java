@@ -50,7 +50,7 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The project id of the VPN")
+    @Param(description = "The project ID of the VPN")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
@@ -58,7 +58,7 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "The domain id of the Account of the remote access VPN")
+    @Param(description = "The domain ID of the Account of the remote access VPN")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
@@ -66,7 +66,7 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the domain to which the remote access vpn belongs", since = "4.19.2.0")
+    @Param(description = "Path of the domain to which the remote access VPN belongs", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.STATE)
@@ -74,7 +74,7 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
     private String state;
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "The id of the remote access VPN")
+    @Param(description = "The ID of the remote access VPN")
     private String id;
 
     @SerializedName(ApiConstants.FOR_DISPLAY)
