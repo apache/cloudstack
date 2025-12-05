@@ -112,4 +112,3 @@ public interface DomainAndZoneIdResolver {
         return validZoneIds;
     }
 }
-

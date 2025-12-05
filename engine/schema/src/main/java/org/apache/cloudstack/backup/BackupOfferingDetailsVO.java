@@ -84,4 +84,3 @@ public class BackupOfferingDetailsVO implements ResourceDetail {
         return display;
     }
 }
-
