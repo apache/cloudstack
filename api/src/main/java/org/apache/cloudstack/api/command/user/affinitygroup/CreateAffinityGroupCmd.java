@@ -106,7 +106,8 @@ public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
         Account caller = CallContext.current().getCallingAccount();
 
         //For domain wide affinity groups (if the affinity group processor type allows it)
-        if(projectId == null && domainId != null && accountName == null && _accountService.isRootAdmin(caller.getId())){
+        if(projectId == null && domainId != null && accountName == null &&
+                CallContext.current().isCallingAccountRootAdmin()) {
             return Account.ACCOUNT_ID_SYSTEM;
         }
         Account owner = _accountService.finalizeOwner(caller, accountName, domainId, projectId);
