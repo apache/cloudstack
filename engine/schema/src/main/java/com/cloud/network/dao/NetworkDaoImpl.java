@@ -598,7 +598,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     public List<NetworkVO> listByPhysicalNetworkTrafficType(final long physicalNetworkId, final TrafficType trafficType) {
         final SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
         sc.setParameters("trafficType", trafficType);
-        sc.setParameters("physicalNetwork", physicalNetworkId);
+        sc.setParameters("physicalNetworkId", physicalNetworkId);
         return listBy(sc);
     }
 
