@@ -82,7 +82,8 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
 
         storage_pools_response = list_storage_pools(cls.apiclient,
                                                     zoneid=cls.zone.id,
-                                                    scope="ZONE")
+                                                    scope="ZONE",
+                                                    status="Up")
 
         if storage_pools_response:
             cls.zone_wide_storage = storage_pools_response[0]
@@ -90,17 +91,10 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
             cls.debug(
                 "zone wide storage id is %s" %
                 cls.zone_wide_storage.id)
-            update1 = StoragePool.update(cls.apiclient,
-                                         id=cls.zone_wide_storage.id,
-                                         tags="test-vm"
-                                         )
-            cls.debug(
-                "Storage %s pool tag%s" %
-                (cls.zone_wide_storage.id, update1.tags))
             cls.service_offering = ServiceOffering.create(
                 cls.apiclient,
                 cls.services["service_offerings"]["small"],
-                tags="test-vm"
+                tags=cls.zone_wide_storage.tags
             )
             cls._cleanup.append(cls.service_offering)
 
@@ -108,7 +102,7 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
                 "name": "do-tags",
                 "displaytext": "Disk offering with tags",
                 "disksize":8,
-                "tags": "test-vm"
+                "tags": cls.zone_wide_storage.tags
             }
             cls.disk_offering = DiskOffering.create(
                 cls.apiclient,
@@ -286,6 +280,7 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
                                                 snapshotid=snapshot.id,
                                                 mode="basic",
                                                 )
+        self._cleanup.append(virtual_machine)
         try:
             ssh_client = virtual_machine.get_ssh_client()
         except Exception as e:
@@ -311,6 +306,7 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
                                                 volumeid=volume.id,
                                                 mode="basic",
                                                 )
+        self._cleanup.append(virtual_machine)
         try:
             ssh_client = virtual_machine.get_ssh_client()
         except Exception as e:
