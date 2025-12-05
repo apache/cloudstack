@@ -144,7 +144,7 @@ export default {
       createModalVisible: false,
       editModalVisible: false,
       selectedRole: null,
-      projectPermisssions: [],
+      projectPermissions: [],
       customStyle: 'margin-bottom: 0; border: none'
     }
   },

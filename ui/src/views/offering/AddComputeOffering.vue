@@ -714,7 +714,7 @@ export default {
       domainLoading: false,
       zones: [],
       zoneLoading: false,
-      selectedDeployementPlanner: null,
+      selectedDeploymentPlanner: null,
       storagePolicies: null,
       storageTags: [],
       storageTagLoading: false,
@@ -1021,9 +1021,9 @@ export default {
       this.qosType = val
     },
     handleDeploymentPlannerChange (planner) {
-      this.selectedDeployementPlanner = planner
+      this.selectedDeploymentPlanner = planner
       this.plannerModeVisible = false
-      if (this.selectedDeployementPlanner === 'ImplicitDedicationPlanner') {
+      if (this.selectedDeploymentPlanner === 'ImplicitDedicationPlanner') {
         this.plannerModeVisible = isAdmin()
       }
     },
