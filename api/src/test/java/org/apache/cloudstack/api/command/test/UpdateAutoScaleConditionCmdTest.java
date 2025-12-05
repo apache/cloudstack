@@ -28,7 +28,7 @@ import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.user.autoscale.UpdateConditionCmd;
+import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleConditionCmd;
 import org.apache.cloudstack.api.response.ConditionResponse;
 
 import org.junit.Assert;
@@ -39,9 +39,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.mockito.Mockito.when;
 
-public class UpdateConditionCmdTest {
+public class UpdateAutoScaleConditionCmdTest {
 
-    private UpdateConditionCmd updateConditionCmd;
+    private UpdateAutoScaleConditionCmd updateConditionCmd;
     private Condition condition;
 
     private AutoScaleService autoScaleService;
@@ -61,7 +61,7 @@ public class UpdateConditionCmdTest {
         entityMgr = Mockito.spy(EntityManager.class);
         responseGenerator = Mockito.spy(ResponseGenerator.class);
 
-        updateConditionCmd = new UpdateConditionCmd();
+        updateConditionCmd = new UpdateAutoScaleConditionCmd();
 
         ReflectionTestUtils.setField(updateConditionCmd,"_autoScaleService", autoScaleService);
         ReflectionTestUtils.setField(updateConditionCmd,"_entityMgr", entityMgr);
@@ -96,7 +96,7 @@ public class UpdateConditionCmdTest {
     @Test
     public void testCreateSuccess() {
         try {
-            Mockito.when(autoScaleService.updateCondition(Mockito.any(UpdateConditionCmd.class))).thenReturn(condition);
+            Mockito.when(autoScaleService.updateCondition(Mockito.any(UpdateAutoScaleConditionCmd.class))).thenReturn(condition);
         } catch (ResourceInUseException ex) {
             Assert.fail("Got exception: " + ex.getMessage());
         }
@@ -117,7 +117,7 @@ public class UpdateConditionCmdTest {
 
         ResourceInUseException exception = new ResourceInUseException("Resource in use");
         try {
-            Mockito.when(autoScaleService.updateCondition(Mockito.any(UpdateConditionCmd.class))).thenThrow(exception);
+            Mockito.when(autoScaleService.updateCondition(Mockito.any(UpdateAutoScaleConditionCmd.class))).thenThrow(exception);
         } catch (ResourceInUseException ex) {
             Assert.fail("Got exception: " + ex.getMessage());
         }
