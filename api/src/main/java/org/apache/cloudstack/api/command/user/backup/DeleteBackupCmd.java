@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.BooleanUtils;
@@ -111,6 +112,7 @@ public class DeleteBackupCmd  extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting backup ID " + backupId;
+        String backupUuid = _uuidMgr.getUuid(Backup.class, getId());
+        return "Deleting backup ID " + backupUuid;
     }
 }
