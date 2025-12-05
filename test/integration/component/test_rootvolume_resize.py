@@ -577,7 +577,7 @@ class TestResizeVolume(cloudstackTestCase):
 
         # 1. Deploy a VM without any disk offering (only root disk)
         # 2. Perform(resize)  of the root  volume
-        # 3. Perform VM snapshot on VM
+        # 3. Perform Instance Snapshot on Instance
         """
 
         # deploy a vm

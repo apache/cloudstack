@@ -43,47 +43,47 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkOfferingResponse.class, description = "the id of the network offering")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkOfferingResponse.class, description = "The ID of the network offering")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the network offering")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the network offering")
     private String networkOfferingName;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the network offering")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "The display text of the network offering")
     private String displayText;
 
-    @Parameter(name = ApiConstants.AVAILABILITY, type = CommandType.STRING, description = "the availability of network offering."
+    @Parameter(name = ApiConstants.AVAILABILITY, type = CommandType.STRING, description = "The availability of network offering."
             + " The value is Required makes this network offering default for Guest Virtual Networks. Only one network offering can have the value Required ")
     private String availability;
 
-    @Parameter(name = ApiConstants.SORT_KEY, type = CommandType.INTEGER, description = "sort key of the network offering, integer")
+    @Parameter(name = ApiConstants.SORT_KEY, type = CommandType.INTEGER, description = "Sort key of the network offering, integer")
     private Integer sortKey;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "update state for the network offering")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "Update state for the network offering")
     private String state;
 
     @Parameter(name = ApiConstants.KEEPALIVE_ENABLED,
             type = CommandType.BOOLEAN,
             required = false,
-            description = "if true keepalive will be turned on in the loadbalancer. At the time of writing this has only an effect on haproxy; the mode http and httpclose options are unset in the haproxy conf file.")
+            description = "If true keepalive will be turned on in the loadbalancer. At the time of writing this has only an effect on haproxy; the mode http and httpclose options are unset in the haproxy conf file.")
     private Boolean keepAliveEnabled;
 
     @Parameter(name = ApiConstants.MAX_CONNECTIONS,
             type = CommandType.INTEGER,
-            description = "maximum number of concurrent connections supported by the network offering")
+            description = "Maximum number of concurrent connections supported by the network offering")
     private Integer maxConnections;
 
-    @Parameter(name = ApiConstants.TAGS, type = CommandType.STRING, description = "the tags for the network offering.", length = 4096)
+    @Parameter(name = ApiConstants.TAGS, type = CommandType.STRING, description = "The tags for the network offering.", length = 4096)
     private String tags;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.STRING,
-            description = "the ID of the containing domain(s) as comma separated string, public for public offerings")
+            description = "The ID of the containing domain(s) as comma separated string, public for public offerings")
     private String domainIds;
 
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.STRING,
-            description = "the ID of the containing zone(s) as comma separated string, all for all zones offerings",
+            description = "The ID of the containing zone(s) as comma separated string, all for all zones offerings",
             since = "4.13",
             length = 4096)
     private String zoneIds;

@@ -28,39 +28,39 @@ import com.cloud.serializer.Param;
 public class ServiceInstanceResponse extends BaseResponse implements ControlledEntityResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the virtual machine")
+    @Param(description = "The ID of the Instance")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the virtual machine")
+    @Param(description = "The name of the Instance")
     private String name;
 
     @SerializedName("displayname")
-    @Param(description = "user generated name. The name of the virtual machine is returned if no displayname exists.")
+    @Param(description = "User generated name. The name of the Instance is returned if no displayname exists.")
     private String displayName;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account associated with the virtual machine")
+    @Param(description = "The account associated with the Instance")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the vm")
+    @Param(description = "The project ID of the Instance")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the vm")
+    @Param(description = "The project name of the vm")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the ID of the domain in which the virtual machine exists")
+    @Param(description = "The ID of the domain in which the Instance exists")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the name of the domain in which the virtual machine exists")
+    @Param(description = "The name of the domain in which the Instance exists")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the Domain in which the virtual machine exists", since = "4.19.2.0")
+    @Param(description = "Path of the Domain in which the Instance exists", since = "4.19.2.0")
     private String domainPath;
 
     public void setId(String id) {

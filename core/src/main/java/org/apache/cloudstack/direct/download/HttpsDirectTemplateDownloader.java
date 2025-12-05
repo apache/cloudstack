@@ -149,7 +149,7 @@ public class HttpsDirectTemplateDownloader extends DirectTemplateDownloaderImpl 
      * Consume response and persist it on getDownloadedFilePath() file
      */
     protected Pair<Boolean, String> consumeResponse(CloseableHttpResponse response) {
-        logger.info("Downloading template " + getTemplateId() + " from " + getUrl() + " to: " + getDownloadedFilePath());
+        logger.info("Downloading Template " + getTemplateId() + " from " + getUrl() + " to: " + getDownloadedFilePath());
         if (response.getStatusLine().getStatusCode() != 200) {
             throw new CloudRuntimeException("Error on HTTPS response");
         }
@@ -159,7 +159,7 @@ public class HttpsDirectTemplateDownloader extends DirectTemplateDownloaderImpl 
             OutputStream out = new FileOutputStream(getDownloadedFilePath());
             IOUtils.copy(in, out);
         } catch (Exception e) {
-            logger.error("Error parsing response for template " + getTemplateId() + " due to: " + e.getMessage());
+            logger.error("Error parsing response for Template " + getTemplateId() + " due to: " + e.getMessage());
             return new Pair<>(false, null);
         }
         return new Pair<>(true, getDownloadedFilePath());

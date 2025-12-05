@@ -37,16 +37,16 @@ public class ListSecurityGroupsCmd extends BaseListTaggedResourcesCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.SECURITY_GROUP_NAME, type = CommandType.STRING, description = "lists security groups by name")
+    @Parameter(name = ApiConstants.SECURITY_GROUP_NAME, type = CommandType.STRING, description = "Lists security groups by name")
     private String securityGroupName;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
                type = CommandType.UUID,
-               description = "lists security groups by virtual machine id",
+               description = "Lists security groups by Instance id",
                entityType = UserVmResponse.class)
     private Long virtualMachineId;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, description = "list the security group by the id provided", entityType = SecurityGroupResponse.class)
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, description = "List the security group by the id provided", entityType = SecurityGroupResponse.class)
     private Long id;
 
     /////////////////////////////////////////////////////

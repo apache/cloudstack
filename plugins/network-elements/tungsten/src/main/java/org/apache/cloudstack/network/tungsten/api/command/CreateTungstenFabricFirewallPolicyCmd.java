@@ -36,7 +36,7 @@ import org.apache.cloudstack.network.tungsten.service.TungstenService;
 
 import javax.inject.Inject;
 
-@APICommand(name = CreateTungstenFabricFirewallPolicyCmd.APINAME, description = "create Tungsten-Fabric firewall policy",
+@APICommand(name = CreateTungstenFabricFirewallPolicyCmd.APINAME, description = "Create Tungsten-Fabric firewall policy",
     responseObject = TungstenFabricFirewallPolicyResponse.class, requestHasSensitiveInfo = false,
     responseHasSensitiveInfo = false)
 public class CreateTungstenFabricFirewallPolicyCmd extends BaseAsyncCmd {
@@ -45,16 +45,16 @@ public class CreateTungstenFabricFirewallPolicyCmd extends BaseAsyncCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.APPLICATION_POLICY_SET_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric application policy set")
+    @Parameter(name = ApiConstants.APPLICATION_POLICY_SET_UUID, type = CommandType.STRING, description = "The UUID of Tungsten-Fabric application policy set")
     private String applicationPolicySetUuid;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Tungsten-Fabric firewall policy name")
     private String name;
 
-    @Parameter(name = ApiConstants.SEQUENCE, type = CommandType.INTEGER, required = true, description = "the sequence of Tungsten-Fabric firewall policy")
+    @Parameter(name = ApiConstants.SEQUENCE, type = CommandType.INTEGER, required = true, description = "The sequence of Tungsten-Fabric firewall policy")
     private int sequence;
 
     @Override

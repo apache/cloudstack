@@ -46,10 +46,10 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
                type = CommandType.UUID,
                entityType = PrivateGatewayResponse.class,
                required = true,
-               description = "the gateway id we are creating static route for")
+               description = "The gateway ID we are creating static route for")
     private Long gatewayId;
 
-    @Parameter(name = ApiConstants.CIDR, required = true, type = CommandType.STRING, description = "static route cidr")
+    @Parameter(name = ApiConstants.CIDR, required = true, type = CommandType.STRING, description = "Static route CIDR")
     private String cidr;
 
     /////////////////////////////////////////////////////
@@ -107,7 +107,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
         } finally {
             if (!success || route == null) {
                 _entityMgr.remove(StaticRoute.class, getEntityId());
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create static route");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create a static route");
             }
         }
     }

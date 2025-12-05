@@ -24,51 +24,51 @@ import com.google.gson.annotations.SerializedName;
 
 public class CapacityResponse extends BaseResponse {
     @SerializedName(ApiConstants.TYPE)
-    @Param(description = "the capacity type")
+    @Param(description = "The capacity type")
     private Short capacityType;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description="the capacity name")
+    @Param(description = "The capacity name")
     private String capacityName;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the Zone ID")
+    @Param(description = "The Zone ID")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "the Zone name")
+    @Param(description = "The Zone name")
     private String zoneName;
 
     @SerializedName(ApiConstants.POD_ID)
-    @Param(description = "the Pod ID")
+    @Param(description = "The Pod ID")
     private String podId;
 
     @SerializedName("podname")
-    @Param(description = "the Pod name")
+    @Param(description = "The Pod name")
     private String podName;
 
     @SerializedName(ApiConstants.CLUSTER_ID)
-    @Param(description = "the Cluster ID")
+    @Param(description = "The Cluster ID")
     private String clusterId;
 
     @SerializedName("clustername")
-    @Param(description = "the Cluster name")
+    @Param(description = "The Cluster name")
     private String clusterName;
 
     @SerializedName("capacityallocated")
-    @Param(description="the capacity currently in allocated")
+    @Param(description = "The capacity currently in allocated")
     private Long capacityAllocated;
 
     @SerializedName("capacityused")
-    @Param(description = "the capacity currently in use")
+    @Param(description = "The capacity currently in use")
     private Long capacityUsed;
 
     @SerializedName("capacitytotal")
-    @Param(description = "the total capacity available")
+    @Param(description = "The total capacity available")
     private Long capacityTotal;
 
     @SerializedName("percentused")
-    @Param(description = "the percentage of capacity currently in use")
+    @Param(description = "The percentage of capacity currently in use")
     private String percentUsed;
 
     @SerializedName(ApiConstants.TAG)

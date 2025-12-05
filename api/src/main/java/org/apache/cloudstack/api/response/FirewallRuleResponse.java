@@ -31,71 +31,71 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class FirewallRuleResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the port forwarding rule")
+    @Param(description = "The ID of the port forwarding rule")
     private String id;
 
     @SerializedName(ApiConstants.PRIVATE_START_PORT)
-    @Param(description = "the starting port of port forwarding rule's private port range")
+    @Param(description = "The starting port of port forwarding rule's private port range")
     private String privateStartPort;
 
     @SerializedName(ApiConstants.PRIVATE_END_PORT)
-    @Param(description = "the ending port of port forwarding rule's private port range")
+    @Param(description = "The ending port of port forwarding rule's private port range")
     private String privateEndPort;
 
     @SerializedName(ApiConstants.PROTOCOL)
-    @Param(description = "the protocol of the port forwarding rule")
+    @Param(description = "The protocol of the port forwarding rule")
     private String protocol;
 
     @SerializedName(ApiConstants.PUBLIC_START_PORT)
-    @Param(description = "the starting port of port forwarding rule's public port range")
+    @Param(description = "The starting port of port forwarding rule's public port range")
     private String publicStartPort;
 
     @SerializedName(ApiConstants.PUBLIC_END_PORT)
-    @Param(description = "the ending port of port forwarding rule's private port range")
+    @Param(description = "The ending port of port forwarding rule's private port range")
     private String publicEndPort;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
-    @Param(description = "the VM ID for the port forwarding rule")
+    @Param(description = "The Instance ID for the port forwarding rule")
     private String virtualMachineId;
 
     @SerializedName("virtualmachinename")
-    @Param(description = "the VM name for the port forwarding rule")
+    @Param(description = "The Instance name for the port forwarding rule")
     private String virtualMachineName;
 
     @SerializedName("virtualmachinedisplayname")
-    @Param(description = "the VM display name for the port forwarding rule")
+    @Param(description = "The Instance display name for the port forwarding rule")
     private String virtualMachineDisplayName;
 
     @SerializedName(ApiConstants.IP_ADDRESS_ID)
-    @Param(description = "the public ip address id for the port forwarding rule")
+    @Param(description = "The public IP address id for the port forwarding rule")
     private String publicIpAddressId;
 
     @SerializedName(ApiConstants.IP_ADDRESS)
-    @Param(description = "the public ip address for the port forwarding rule")
+    @Param(description = "The public IP address for the port forwarding rule")
     private String publicIpAddress;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "the state of the rule")
+    @Param(description = "The state of the rule")
     private String state;
 
     @SerializedName(ApiConstants.CIDR_LIST)
-    @Param(description = "the cidr list to forward traffic from. Multiple entries are separated by a single comma character (,).")
+    @Param(description = "The CIDR list to forward traffic from. Multiple entries are separated by a single comma character (,).")
     private String cidrList;
 
     @SerializedName(ApiConstants.TAGS)
-    @Param(description = "the list of resource tags associated with the rule", responseObject = ResourceTagResponse.class)
+    @Param(description = "The list of resource tags associated with the rule", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
     @SerializedName(ApiConstants.VM_GUEST_IP)
-    @Param(description = "the vm ip address for the port forwarding rule")
+    @Param(description = "The Instance IP address for the port forwarding rule")
     private String destNatVmIp;
 
     @SerializedName(ApiConstants.NETWORK_ID)
-    @Param(description = "the id of the guest network the port forwarding rule belongs to")
+    @Param(description = "The ID of the guest Network the port forwarding rule belongs to")
     private String networkId;
 
     @SerializedName(ApiConstants.FOR_DISPLAY)
-    @Param(description = "is firewall for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    @Param(description = "Is firewall for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
 
     public String getDestNatVmIp() {

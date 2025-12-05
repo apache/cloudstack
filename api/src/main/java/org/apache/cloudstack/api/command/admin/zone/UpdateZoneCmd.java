@@ -42,43 +42,43 @@ public class UpdateZoneCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.DNS1, type = CommandType.STRING, description = "the first DNS for the Zone")
+    @Parameter(name = ApiConstants.DNS1, type = CommandType.STRING, description = "The first DNS for the Zone")
     private String dns1;
 
-    @Parameter(name = ApiConstants.DNS2, type = CommandType.STRING, description = "the second DNS for the Zone")
+    @Parameter(name = ApiConstants.DNS2, type = CommandType.STRING, description = "The second DNS for the Zone")
     private String dns2;
 
-    @Parameter(name = ApiConstants.IP6_DNS1, type = CommandType.STRING, description = "the first DNS for IPv6 network in the Zone")
+    @Parameter(name = ApiConstants.IP6_DNS1, type = CommandType.STRING, description = "The first DNS for IPv6 network in the Zone")
     private String ip6Dns1;
 
-    @Parameter(name = ApiConstants.IP6_DNS2, type = CommandType.STRING, description = "the second DNS for IPv6 network in the Zone")
+    @Parameter(name = ApiConstants.IP6_DNS2, type = CommandType.STRING, description = "The second DNS for IPv6 network in the Zone")
     private String ip6Dns2;
 
-    @Parameter(name = ApiConstants.GUEST_CIDR_ADDRESS, type = CommandType.STRING, description = "the guest CIDR address for the Zone")
+    @Parameter(name = ApiConstants.GUEST_CIDR_ADDRESS, type = CommandType.STRING, description = "The guest CIDR address for the Zone")
     private String guestCidrAddress;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of the Zone")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of the Zone")
     private Long id;
 
-    @Parameter(name = ApiConstants.INTERNAL_DNS1, type = CommandType.STRING, description = "the first internal DNS for the Zone")
+    @Parameter(name = ApiConstants.INTERNAL_DNS1, type = CommandType.STRING, description = "The first internal DNS for the Zone")
     private String internalDns1;
 
-    @Parameter(name = ApiConstants.INTERNAL_DNS2, type = CommandType.STRING, description = "the second internal DNS for the Zone")
+    @Parameter(name = ApiConstants.INTERNAL_DNS2, type = CommandType.STRING, description = "The second internal DNS for the Zone")
     private String internalDns2;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the Zone")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the Zone")
     private String zoneName;
 
-    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "updates a private zone to public if set, but not vice-versa")
+    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "Updates a private zone to public if set, but not vice-versa")
     private Boolean isPublic;
 
     @Parameter(name = ApiConstants.ALLOCATION_STATE, type = CommandType.STRING, description = "Allocation state of this cluster for allocation of new resources")
     private String allocationState;
 
-    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "the details for the Zone")
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "The details for the Zone")
     private Map details;
 
-    @Parameter(name = ApiConstants.DHCP_PROVIDER, type = CommandType.STRING, description = "the dhcp Provider for the Zone")
+    @Parameter(name = ApiConstants.DHCP_PROVIDER, type = CommandType.STRING, description = "The DHCP Provider for the Zone")
     private String dhcpProvider;
 
     @Parameter(name = ApiConstants.DOMAIN,
@@ -86,13 +86,13 @@ public class UpdateZoneCmd extends BaseCmd {
                description = "Network domain name for the networks in the zone; empty string will update domain with NULL value")
     private String domain;
 
-    @Parameter(name = ApiConstants.DNS_SEARCH_ORDER, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the dns search order list")
+    @Parameter(name = ApiConstants.DNS_SEARCH_ORDER, type = CommandType.LIST, collectionType = CommandType.STRING, description = "The DNS search order list")
     private List<String> dnsSearchOrder;
 
-    @Parameter(name = ApiConstants.LOCAL_STORAGE_ENABLED, type = CommandType.BOOLEAN, description = "true if local storage offering enabled, false otherwise")
+    @Parameter(name = ApiConstants.LOCAL_STORAGE_ENABLED, type = CommandType.BOOLEAN, description = "True if local storage offering enabled, false otherwise")
     private Boolean localStorageEnabled;
 
-    @Parameter(name = ApiConstants.SORT_KEY, type = CommandType.INTEGER, description = "sort key of the zone, integer")
+    @Parameter(name = ApiConstants.SORT_KEY, type = CommandType.INTEGER, description = "Sort key of the zone, integer")
     private Integer sortKey;
 
     /////////////////////////////////////////////////////

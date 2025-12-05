@@ -46,16 +46,16 @@ public class UpdateUserCmd extends BaseCmd {
     @Parameter(name = ApiConstants.USER_API_KEY, type = CommandType.STRING, description = "The API key for the user. Must be specified with userSecretKey")
     private String apiKey;
 
-    @Parameter(name = ApiConstants.EMAIL, type = CommandType.STRING, description = "email")
+    @Parameter(name = ApiConstants.EMAIL, type = CommandType.STRING, description = "Email")
     private String email;
 
-    @Parameter(name = ApiConstants.FIRSTNAME, type = CommandType.STRING, description = "first name")
+    @Parameter(name = ApiConstants.FIRSTNAME, type = CommandType.STRING, description = "First name")
     private String firstname;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserResponse.class, required = true, description = "User uuid")
     private Long id;
 
-    @Parameter(name = ApiConstants.LASTNAME, type = CommandType.STRING, description = "last name")
+    @Parameter(name = ApiConstants.LASTNAME, type = CommandType.STRING, description = "Last name")
     private String lastname;
 
     @Parameter(name = ApiConstants.PASSWORD,
