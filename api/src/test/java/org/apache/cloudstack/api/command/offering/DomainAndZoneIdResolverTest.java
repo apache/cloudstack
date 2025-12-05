@@ -147,4 +147,3 @@ public class DomainAndZoneIdResolverTest {
             () -> cmd.resolveZoneIds("bad-zone", null, null, "offering"));
     }
 }
-
