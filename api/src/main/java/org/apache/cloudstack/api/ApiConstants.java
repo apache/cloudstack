@@ -375,6 +375,7 @@ public class ApiConstants {
     public static final String MAC_ADDRESS = "macaddress";
     public static final String MAC_ADDRESSES = "macaddresses";
     public static final String MANUAL_UPGRADE = "manualupgrade";
+    public static final String MATCH_TYPE = "matchtype";
     public static final String MAX = "max";
     public static final String MAX_SNAPS = "maxsnaps";
     public static final String MAX_BACKUPS = "maxbackups";
