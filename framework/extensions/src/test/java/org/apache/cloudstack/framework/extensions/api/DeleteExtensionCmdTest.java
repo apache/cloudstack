@@ -26,22 +26,24 @@ import static org.junit.Assert.fail;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+@RunWith(MockitoJUnitRunner.class)
 public class DeleteExtensionCmdTest {
 
-    private DeleteExtensionCmd cmd;
+    @Mock
     private ExtensionsManager extensionsManager;
 
-    @Before
-    public void setUp() {
-        cmd = Mockito.spy(new DeleteExtensionCmd());
-        extensionsManager = Mockito.mock(ExtensionsManager.class);
-        cmd.extensionsManager = extensionsManager;
-    }
+    @Spy
+    @InjectMocks
+    private DeleteExtensionCmd cmd;
 
     @Test
     public void getIdReturnsNullWhenUnset() {

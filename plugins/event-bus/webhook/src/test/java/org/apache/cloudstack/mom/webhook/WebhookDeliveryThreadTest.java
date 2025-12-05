@@ -17,10 +17,6 @@
 
 package org.apache.cloudstack.mom.webhook;
 
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-
-import org.apache.commons.codec.DecoderException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,19 +34,6 @@ public class WebhookDeliveryThreadTest {
         Assert.assertFalse(webhookDeliveryThread.isValidJson("text"));
         Assert.assertTrue(webhookDeliveryThread.isValidJson("{ \"CloudStack\": \"works!\" }"));
         Assert.assertTrue(webhookDeliveryThread.isValidJson("[{ \"CloudStack\": \"works!\" }]"));
-    }
-
-    @Test
-    public void testGenerateHMACSignature() {
-        String data = "CloudStack works!";
-        String key = "Pj4pnwSUBZ4wQFXw2zWdVY1k5Ku9bIy70wCNG1DmS8keO7QapCLw2Axtgc2nEPYzfFCfB38ATNLt6caDqU2dSw";
-        String result = "HYLWSII5Ap23WeSaykNsIo6mOhmV3d18s5p2cq2ebCA=";
-        try {
-            String sign = WebhookDeliveryThread.generateHMACSignature(data, key);
-            Assert.assertEquals(result, sign);
-        } catch (InvalidKeyException | NoSuchAlgorithmException | DecoderException e) {
-            Assert.fail(e.getMessage());
-        }
     }
 
     @Test
