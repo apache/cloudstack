@@ -238,6 +238,30 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
         return reason;
     }
 
+    public void setCidrlist(List<String> cidrlist) {
+        this.cidrlist = cidrlist;
+    }
+
+    public void setIcmpType(Integer icmpType) {
+        this.icmpType = icmpType;
+    }
+
+    public void setIcmpCode(Integer icmpCode) {
+        this.icmpCode = icmpCode;
+    }
+
+    public void setNumber(Integer number) {
+        this.number = number;
+    }
+
+    public void setDisplay(Boolean display) {
+        this.display = display;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
+    }
+
     @Override
     public void create() {
         NetworkACLItem result = _networkACLService.createNetworkACLItem(this);
