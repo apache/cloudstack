@@ -263,6 +263,9 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     @Column(name = "gpu_display")
     private Boolean gpuDisplay;
 
+    @Column(name = "category_id")
+    private Long categoryId;
+
     public ServiceOfferingJoinVO() {
     }
 
@@ -557,4 +560,6 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     public Boolean getGpuDisplay() {
         return gpuDisplay;
     }
+
+    public Long getCategoryId() { return categoryId; }
 }
