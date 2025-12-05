@@ -99,7 +99,7 @@ export default {
       default: false
     },
     dataSource: {
-      type: Object,
+      type: Array,
       required: true
     },
     deleteFn: {
@@ -128,6 +128,7 @@ export default {
           dataIndex: 'intervaltype'
         },
         {
+          key: 'time',
           title: this.$t('label.time'),
           dataIndex: 'schedule'
         },
