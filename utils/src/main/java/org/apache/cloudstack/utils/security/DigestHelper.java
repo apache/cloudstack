@@ -148,4 +148,18 @@ public class DigestHelper {
             throw new CloudRuntimeException(errMsg, e);
         }
     }
+
+    public static String prependAlgorithm(String checksum) {
+        if (StringUtils.isEmpty(checksum)) {
+            return checksum;
+        }
+        int checksumLength = checksum.length();
+        for (Map.Entry<String, Integer> entry : paddingLengths.entrySet()) {
+            if (entry.getValue().equals(checksumLength)) {
+                String algorithm = entry.getKey();
+                return String.format("{%s}%s", algorithm, checksum);
+            }
+        }
+        return checksum;
+    }
 }
