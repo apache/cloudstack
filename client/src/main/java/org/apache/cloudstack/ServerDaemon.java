@@ -76,9 +76,7 @@ public class ServerDaemon implements Daemon {
     private static final String SESSION_TIMEOUT = "session.timeout";
     private static final String HTTP_ENABLE = "http.enable";
     private static final String HTTP_PORT = "http.port";
-    private static final String HTTPS_ENABLE = "https.enable";
     private static final String HTTPS_PORT = "https.port";
-    private static final String KEYSTORE_FILE = "https.keystore";
     private static final String KEYSTORE_PASSWORD = "https.keystore.password";
     private static final String WEBAPP_DIR = "webapp.dir";
     private static final String ACCESS_LOG = "access.log";
@@ -142,9 +140,9 @@ public class ServerDaemon implements Daemon {
             setContextPath(properties.getProperty(CONTEXT_PATH, "/client"));
             setHttpEnable(Boolean.valueOf(properties.getProperty(HTTP_ENABLE, "true")));
             setHttpPort(Integer.valueOf(properties.getProperty(HTTP_PORT, "8080")));
-            setHttpsEnable(Boolean.valueOf(properties.getProperty(HTTPS_ENABLE, "false")));
+            setHttpsEnable(Boolean.valueOf(properties.getProperty(ServerProperties.HTTPS_ENABLE, "false")));
             setHttpsPort(Integer.valueOf(properties.getProperty(HTTPS_PORT, "8443")));
-            setKeystoreFile(properties.getProperty(KEYSTORE_FILE));
+            setKeystoreFile(properties.getProperty(ServerProperties.KEYSTORE_FILE));
             setKeystorePassword(properties.getProperty(KEYSTORE_PASSWORD));
             setWebAppLocation(properties.getProperty(WEBAPP_DIR));
             setAccessLogFile(properties.getProperty(ACCESS_LOG, "access.log"));

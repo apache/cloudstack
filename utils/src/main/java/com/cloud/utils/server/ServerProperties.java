@@ -16,11 +16,15 @@
 // under the License.
 package com.cloud.utils.server;
 
+import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.crypt.EncryptionSecretKeyChecker;
+import com.cloud.utils.StringUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -28,9 +32,12 @@ import java.util.Properties;
 public class ServerProperties {
     protected Logger logger = LogManager.getLogger(getClass());
 
+    public static final String HTTPS_ENABLE = "https.enable";
+    public static final String KEYSTORE_FILE = "https.keystore";
+    public static final String PASSWORD_ENCRYPTION_TYPE = "password.encryption.type";
+
     private static Properties properties = new Properties();
     private static boolean loaded = false;
-    public static final String passwordEncryptionType = "password.encryption.type";
 
     public synchronized static Properties getServerProperties(InputStream inputStream) {
         if (!loaded) {
@@ -39,7 +46,7 @@ public class ServerProperties {
                 serverProps.load(inputStream);
 
                 EncryptionSecretKeyChecker checker = new EncryptionSecretKeyChecker();
-                checker.check(serverProps, passwordEncryptionType);
+                checker.check(serverProps, PASSWORD_ENCRYPTION_TYPE);
 
                 if (EncryptionSecretKeyChecker.useEncryption()) {
                     EncryptionSecretKeyChecker.decryptAnyProperties(serverProps);
@@ -55,5 +62,26 @@ public class ServerProperties {
         }
 
         return properties;
+    }
+
+    public static boolean isHttpsEnabled() {
+        final File confFile = PropertiesUtil.findConfigFile("server.properties");
+        if (confFile == null) {
+            return false;
+        }
+
+        try {
+            InputStream is = new FileInputStream(confFile);
+            final Properties properties = ServerProperties.getServerProperties(is);
+            if (properties == null) {
+                return false;
+            }
+
+            boolean httpsEnable = Boolean.parseBoolean(properties.getProperty(HTTPS_ENABLE, "false"));
+            String keystoreFile = properties.getProperty(KEYSTORE_FILE);
+            return httpsEnable && StringUtils.isNotEmpty(keystoreFile) && new File(keystoreFile).exists();
+        } catch (final IOException e) {
+            return false;
+        }
     }
 }

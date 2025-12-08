@@ -23,6 +23,7 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.server.ServerProperties;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
@@ -182,12 +183,16 @@ public class UserPasswordResetManagerImpl extends ManagerBase implements UserPas
         final String subject = "Password Reset Request";
         String domainUrl = UserPasswordResetDomainURL.value();
         if (StringUtils.isBlank(domainUrl)) {
-            domainUrl =  ManagementServerAddresses.value().split(",")[0];
+            domainUrl = ManagementServerAddresses.value().split(",")[0];
         }
         domainUrl = domainUrl.replaceAll("/+$", "");
 
         if (!domainUrl.startsWith("http://") && !domainUrl.startsWith("https://")) {
-            domainUrl = "http://" + domainUrl;
+            if (ServerProperties.isHttpsEnabled()) {
+                domainUrl = "https://" + domainUrl;
+            } else {
+                domainUrl = "http://" + domainUrl;
+            }
         }
         String resetLink = String.format("%s/client/#/user/resetPassword?username=%s&token=%s",
                 domainUrl, username, resetToken);
