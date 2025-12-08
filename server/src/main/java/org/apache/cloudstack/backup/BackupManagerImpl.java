@@ -357,6 +357,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final Long offeringId = cmd.getOfferingId();
         final Long zoneId = cmd.getZoneId();
         final String keyword = cmd.getKeyword();
+        Long domainId = cmd.getDomainId();
 
         if (offeringId != null) {
             BackupOfferingVO offering = backupOfferingDao.findById(offeringId);
@@ -370,8 +371,13 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         SearchBuilder<BackupOfferingVO> sb = backupOfferingDao.createSearchBuilder();
         sb.and("zone_id", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+
         CallContext ctx = CallContext.current();
         final Account caller = ctx.getCallingAccount();
+        if (Account.Type.ADMIN != caller.getType() && domainId == null) {
+            domainId = caller.getDomainId();
+        }
+
         if (Account.Type.NORMAL == caller.getType()) {
             sb.and("user_backups_allowed", sb.entity().isUserDrivenBackupAllowed(), SearchCriteria.Op.EQ);
         }
@@ -384,11 +390,34 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (keyword != null) {
             sc.setParameters("name", "%" + keyword + "%");
         }
+
         if (Account.Type.NORMAL == caller.getType()) {
             sc.setParameters("user_backups_allowed", true);
         }
+
         Pair<List<BackupOfferingVO>, Integer> result = backupOfferingDao.searchAndCount(sc, searchFilter);
+
+        if (domainId != null) {
+            List<BackupOfferingVO> filteredOfferings = new ArrayList<>();
+            for (BackupOfferingVO offering : result.first()) {
+                List<Long> offeringDomains = backupOfferingDetailsDao.findDomainIds(offering.getId());
+                if (offeringDomains.isEmpty() || offeringDomains.contains(domainId) || containsParentDomain(offeringDomains, domainId)) {
+                    filteredOfferings.add(offering);
+                }
+            }
+            return new Pair<>(new ArrayList<>(filteredOfferings), filteredOfferings.size());
+        }
+
         return new Pair<>(new ArrayList<>(result.first()), result.second());
+    }
+
+    private boolean containsParentDomain(List<Long> offeringDomains, Long domainId) {
+        for (Long offeringDomainId : offeringDomains) {
+            if (domainDao.isChildDomain(offeringDomainId, domainId)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
