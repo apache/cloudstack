@@ -80,6 +80,7 @@ import org.apache.cloudstack.api.command.admin.backup.UpdateBackupOfferingCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.DeleteBackupScheduleCmd;
+import org.apache.cloudstack.api.command.user.backup.ListBackupOfferingsCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupScheduleCmd;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.backup.dao.BackupDao;
@@ -2230,6 +2231,290 @@ public class BackupManagerTest {
         BackupOffering updated = backupManager.updateBackupOffering(cmd);
 
         verify(backupOfferingDetailsDao, times(1)).persist(Mockito.any(BackupOfferingDetailsVO.class));
+    }
+
+    @Test
+    public void testListBackupOfferingsWithDomainFilteringIncludesGlobalOfferings() {
+        Long requestedDomainId = 3L;
+
+        ListBackupOfferingsCmd cmd =
+            Mockito.mock(ListBackupOfferingsCmd.class);
+        when(cmd.getOfferingId()).thenReturn(null);
+        when(cmd.getDomainId()).thenReturn(requestedDomainId);
+        when(cmd.getStartIndex()).thenReturn(0L);
+        when(cmd.getPageSizeVal()).thenReturn(20L);
+
+        BackupOfferingVO globalOffering = createMockOffering(1L, "Global Offering");
+        BackupOfferingVO domainOffering = createMockOffering(2L, "Domain Offering");
+
+        List<BackupOfferingVO> allOfferings = List.of(globalOffering, domainOffering);
+
+        SearchBuilder<BackupOfferingVO> sb = Mockito.mock(SearchBuilder.class);
+        SearchCriteria<BackupOfferingVO> sc = Mockito.mock(SearchCriteria.class);
+        BackupOfferingVO entityMock = Mockito.mock(BackupOfferingVO.class);
+        when(backupOfferingDao.createSearchBuilder()).thenReturn(sb);
+        when(sb.entity()).thenReturn(entityMock);
+        when(sb.and(Mockito.anyString(), Mockito.any(), Mockito.any(SearchCriteria.Op.class))).thenReturn(sb);
+        when(sb.create()).thenReturn(sc);
+        when(backupOfferingDao.searchAndCount(Mockito.any(), Mockito.any()))
+            .thenReturn(new Pair<>(allOfferings, allOfferings.size()));
+
+        when(backupOfferingDetailsDao.findDomainIds(1L)).thenReturn(Collections.emptyList());
+        when(backupOfferingDetailsDao.findDomainIds(2L)).thenReturn(List.of(2L));
+
+        Account account = Mockito.mock(Account.class);
+        when(account.getType()).thenReturn(Account.Type.NORMAL);
+
+        try (MockedStatic<CallContext> mockedCallContext = Mockito.mockStatic(CallContext.class)) {
+            CallContext contextMock = Mockito.mock(CallContext.class);
+            mockedCallContext.when(CallContext::current).thenReturn(contextMock);
+            when(contextMock.getCallingAccount()).thenReturn(account);
+
+            Pair<List<BackupOffering>, Integer> result = backupManager.listBackupOfferings(cmd);
+
+            assertEquals(1, result.first().size());
+            assertEquals("Global Offering", result.first().get(0).getName());
+        }
+    }
+
+    @Test
+    public void testListBackupOfferingsWithDomainFilteringIncludesDirectDomainMapping() {
+        Long requestedDomainId = 3L;
+
+        ListBackupOfferingsCmd cmd =
+            Mockito.mock(ListBackupOfferingsCmd.class);
+        when(cmd.getOfferingId()).thenReturn(null);
+        when(cmd.getDomainId()).thenReturn(requestedDomainId);
+        when(cmd.getStartIndex()).thenReturn(0L);
+        when(cmd.getPageSizeVal()).thenReturn(20L);
+
+        BackupOfferingVO directDomainOffering = createMockOffering(1L, "Direct Domain Offering");
+        BackupOfferingVO otherDomainOffering = createMockOffering(2L, "Other Domain Offering");
+
+        List<BackupOfferingVO> allOfferings = List.of(directDomainOffering, otherDomainOffering);
+
+        SearchBuilder<BackupOfferingVO> sb = Mockito.mock(SearchBuilder.class);
+        SearchCriteria<BackupOfferingVO> sc = Mockito.mock(SearchCriteria.class);
+        BackupOfferingVO entityMock = Mockito.mock(BackupOfferingVO.class);
+        when(backupOfferingDao.createSearchBuilder()).thenReturn(sb);
+        when(sb.entity()).thenReturn(entityMock);
+        when(sb.and(Mockito.anyString(), Mockito.any(), Mockito.any(SearchCriteria.Op.class))).thenReturn(sb);
+        when(sb.create()).thenReturn(sc);
+        when(backupOfferingDao.searchAndCount(Mockito.any(), Mockito.any()))
+            .thenReturn(new Pair<>(allOfferings, allOfferings.size()));
+
+        when(backupOfferingDetailsDao.findDomainIds(1L)).thenReturn(List.of(requestedDomainId));
+        when(backupOfferingDetailsDao.findDomainIds(2L)).thenReturn(List.of(5L));
+
+        Account account = Mockito.mock(Account.class);
+        when(account.getType()).thenReturn(Account.Type.NORMAL);
+
+        try (MockedStatic<CallContext> mockedCallContext = Mockito.mockStatic(CallContext.class)) {
+            CallContext contextMock = Mockito.mock(CallContext.class);
+            mockedCallContext.when(CallContext::current).thenReturn(contextMock);
+            when(contextMock.getCallingAccount()).thenReturn(account);
+
+            Pair<List<BackupOffering>, Integer> result = backupManager.listBackupOfferings(cmd);
+
+            assertEquals(1, result.first().size());
+            assertEquals("Direct Domain Offering", result.first().get(0).getName());
+        }
+    }
+
+    @Test
+    public void testListBackupOfferingsWithDomainFilteringIncludesParentDomainOfferings() {
+        Long parentDomainId = 1L;
+        Long childDomainId = 3L;
+
+        ListBackupOfferingsCmd cmd =
+            Mockito.mock(ListBackupOfferingsCmd.class);
+        when(cmd.getOfferingId()).thenReturn(null);
+        when(cmd.getDomainId()).thenReturn(childDomainId);
+        when(cmd.getStartIndex()).thenReturn(0L);
+        when(cmd.getPageSizeVal()).thenReturn(20L);
+
+        BackupOfferingVO parentDomainOffering = createMockOffering(1L, "Parent Domain Offering");
+        BackupOfferingVO siblingDomainOffering = createMockOffering(2L, "Sibling Domain Offering");
+
+        List<BackupOfferingVO> allOfferings = List.of(parentDomainOffering, siblingDomainOffering);
+
+        SearchBuilder<BackupOfferingVO> sb = Mockito.mock(SearchBuilder.class);
+        SearchCriteria<BackupOfferingVO> sc = Mockito.mock(SearchCriteria.class);
+        BackupOfferingVO entityMock = Mockito.mock(BackupOfferingVO.class);
+        when(backupOfferingDao.createSearchBuilder()).thenReturn(sb);
+        when(sb.entity()).thenReturn(entityMock);
+        when(sb.and(Mockito.anyString(), Mockito.any(), Mockito.any(SearchCriteria.Op.class))).thenReturn(sb);
+        when(sb.create()).thenReturn(sc);
+        when(backupOfferingDao.searchAndCount(Mockito.any(), Mockito.any()))
+            .thenReturn(new Pair<>(allOfferings, allOfferings.size()));
+
+        when(backupOfferingDetailsDao.findDomainIds(1L)).thenReturn(List.of(parentDomainId));
+        when(backupOfferingDetailsDao.findDomainIds(2L)).thenReturn(List.of(4L));
+
+        when(domainDao.isChildDomain(parentDomainId, childDomainId)).thenReturn(true);
+        when(domainDao.isChildDomain(4L, childDomainId)).thenReturn(false);
+
+        Account account = Mockito.mock(Account.class);
+        when(account.getType()).thenReturn(Account.Type.NORMAL);
+
+        try (MockedStatic<CallContext> mockedCallContext = Mockito.mockStatic(CallContext.class)) {
+            CallContext contextMock = Mockito.mock(CallContext.class);
+            mockedCallContext.when(CallContext::current).thenReturn(contextMock);
+            when(contextMock.getCallingAccount()).thenReturn(account);
+
+            Pair<List<BackupOffering>, Integer> result = backupManager.listBackupOfferings(cmd);
+
+            assertEquals(1, result.first().size());
+            assertEquals("Parent Domain Offering", result.first().get(0).getName());
+        }
+    }
+
+    @Test
+    public void testListBackupOfferingsWithDomainFilteringExcludesSiblingDomainOfferings() {
+        Long requestedDomainId = 3L;
+        Long siblingDomainId = 4L;
+
+        ListBackupOfferingsCmd cmd =
+            Mockito.mock(ListBackupOfferingsCmd.class);
+        when(cmd.getOfferingId()).thenReturn(null);
+        when(cmd.getDomainId()).thenReturn(requestedDomainId);
+        when(cmd.getStartIndex()).thenReturn(0L);
+        when(cmd.getPageSizeVal()).thenReturn(20L);
+
+        BackupOfferingVO siblingOffering = createMockOffering(1L, "Sibling Domain Offering");
+        List<BackupOfferingVO> allOfferings = List.of(siblingOffering);
+
+        SearchBuilder<BackupOfferingVO> sb = Mockito.mock(SearchBuilder.class);
+        SearchCriteria<BackupOfferingVO> sc = Mockito.mock(SearchCriteria.class);
+        BackupOfferingVO entityMock = Mockito.mock(BackupOfferingVO.class);
+        when(backupOfferingDao.createSearchBuilder()).thenReturn(sb);
+        when(sb.entity()).thenReturn(entityMock);
+        when(sb.and(Mockito.anyString(), Mockito.any(), Mockito.any(SearchCriteria.Op.class))).thenReturn(sb);
+        when(sb.create()).thenReturn(sc);
+        when(backupOfferingDao.searchAndCount(Mockito.any(), Mockito.any()))
+            .thenReturn(new Pair<>(allOfferings, allOfferings.size()));
+
+        when(backupOfferingDetailsDao.findDomainIds(1L)).thenReturn(List.of(siblingDomainId));
+        when(domainDao.isChildDomain(siblingDomainId, requestedDomainId)).thenReturn(false);
+
+        Account account = Mockito.mock(Account.class);
+        when(account.getType()).thenReturn(Account.Type.NORMAL);
+
+        try (MockedStatic<CallContext> mockedCallContext = Mockito.mockStatic(CallContext.class)) {
+            CallContext contextMock = Mockito.mock(CallContext.class);
+            mockedCallContext.when(CallContext::current).thenReturn(contextMock);
+            when(contextMock.getCallingAccount()).thenReturn(account);
+
+            Pair<List<BackupOffering>, Integer> result = backupManager.listBackupOfferings(cmd);
+
+            assertEquals(0, result.first().size());
+        }
+    }
+
+    @Test
+    public void testListBackupOfferingsWithDomainFilteringMultipleDomainMappings() {
+        Long requestedDomainId = 5L;
+        Long parentDomainId1 = 1L;
+        Long parentDomainId2 = 2L;
+        Long unrelatedDomainId = 8L;
+
+        ListBackupOfferingsCmd cmd =
+            Mockito.mock(ListBackupOfferingsCmd.class);
+        when(cmd.getOfferingId()).thenReturn(null);
+        when(cmd.getDomainId()).thenReturn(requestedDomainId);
+        when(cmd.getStartIndex()).thenReturn(0L);
+        when(cmd.getPageSizeVal()).thenReturn(20L);
+
+        BackupOfferingVO multiDomainOffering = createMockOffering(1L, "Multi-Domain Offering");
+        List<BackupOfferingVO> allOfferings = List.of(multiDomainOffering);
+
+        SearchBuilder<BackupOfferingVO> sb = Mockito.mock(SearchBuilder.class);
+        SearchCriteria<BackupOfferingVO> sc = Mockito.mock(SearchCriteria.class);
+        BackupOfferingVO entityMock = Mockito.mock(BackupOfferingVO.class);
+        when(backupOfferingDao.createSearchBuilder()).thenReturn(sb);
+        when(sb.entity()).thenReturn(entityMock);
+        when(sb.and(Mockito.anyString(), Mockito.any(), Mockito.any(SearchCriteria.Op.class))).thenReturn(sb);
+        when(sb.create()).thenReturn(sc);
+        when(backupOfferingDao.searchAndCount(Mockito.any(), Mockito.any()))
+            .thenReturn(new Pair<>(allOfferings, allOfferings.size()));
+
+        when(backupOfferingDetailsDao.findDomainIds(1L))
+            .thenReturn(List.of(parentDomainId1, unrelatedDomainId, parentDomainId2));
+
+        when(domainDao.isChildDomain(parentDomainId1, requestedDomainId)).thenReturn(false);
+        when(domainDao.isChildDomain(unrelatedDomainId, requestedDomainId)).thenReturn(false);
+        when(domainDao.isChildDomain(parentDomainId2, requestedDomainId)).thenReturn(true);
+
+        Account account = Mockito.mock(Account.class);
+        when(account.getType()).thenReturn(Account.Type.NORMAL);
+
+        try (MockedStatic<CallContext> mockedCallContext = Mockito.mockStatic(CallContext.class)) {
+            CallContext contextMock = Mockito.mock(CallContext.class);
+            mockedCallContext.when(CallContext::current).thenReturn(contextMock);
+            when(contextMock.getCallingAccount()).thenReturn(account);
+
+            Pair<List<BackupOffering>, Integer> result = backupManager.listBackupOfferings(cmd);
+
+            assertEquals(1, result.first().size());
+            assertEquals("Multi-Domain Offering", result.first().get(0).getName());
+        }
+    }
+
+    @Test
+    public void testListBackupOfferingsNormalUserDefaultsToDomainFiltering() {
+        Long userDomainId = 7L;
+
+        ListBackupOfferingsCmd cmd =
+            Mockito.mock(ListBackupOfferingsCmd.class);
+        when(cmd.getOfferingId()).thenReturn(null);
+        when(cmd.getDomainId()).thenReturn(null); // User didn't pass domain filter
+        when(cmd.getStartIndex()).thenReturn(0L);
+        when(cmd.getPageSizeVal()).thenReturn(20L);
+
+        BackupOfferingVO globalOffering = createMockOffering(1L, "Global Offering");
+        BackupOfferingVO userDomainOffering = createMockOffering(2L, "User Domain Offering");
+        BackupOfferingVO otherDomainOffering = createMockOffering(3L, "Other Domain Offering");
+
+        List<BackupOfferingVO> allOfferings = List.of(globalOffering, userDomainOffering, otherDomainOffering);
+
+        SearchBuilder<BackupOfferingVO> sb = Mockito.mock(SearchBuilder.class);
+        SearchCriteria<BackupOfferingVO> sc = Mockito.mock(SearchCriteria.class);
+        BackupOfferingVO entityMock = Mockito.mock(BackupOfferingVO.class);
+        when(backupOfferingDao.createSearchBuilder()).thenReturn(sb);
+        when(sb.entity()).thenReturn(entityMock);
+        when(sb.and(Mockito.anyString(), Mockito.any(), Mockito.any(SearchCriteria.Op.class))).thenReturn(sb);
+        when(sb.create()).thenReturn(sc);
+        when(backupOfferingDao.searchAndCount(Mockito.any(), Mockito.any()))
+            .thenReturn(new Pair<>(allOfferings, allOfferings.size()));
+
+        when(backupOfferingDetailsDao.findDomainIds(1L)).thenReturn(Collections.emptyList()); // Global
+        when(backupOfferingDetailsDao.findDomainIds(2L)).thenReturn(List.of(userDomainId)); // User's domain
+        when(backupOfferingDetailsDao.findDomainIds(3L)).thenReturn(List.of(99L)); // Other domain
+
+        when(domainDao.isChildDomain(99L, userDomainId)).thenReturn(false);
+
+        Account account = Mockito.mock(Account.class);
+        when(account.getType()).thenReturn(Account.Type.NORMAL);
+        when(account.getDomainId()).thenReturn(userDomainId);
+
+        try (MockedStatic<CallContext> mockedCallContext = Mockito.mockStatic(CallContext.class)) {
+            CallContext contextMock = Mockito.mock(CallContext.class);
+            mockedCallContext.when(CallContext::current).thenReturn(contextMock);
+            when(contextMock.getCallingAccount()).thenReturn(account);
+
+            Pair<List<BackupOffering>, Integer> result = backupManager.listBackupOfferings(cmd);
+
+            assertEquals(2, result.first().size());
+            assertTrue(result.first().stream().anyMatch(o -> o.getName().equals("Global Offering")));
+            assertTrue(result.first().stream().anyMatch(o -> o.getName().equals("User Domain Offering")));
+        }
+    }
+
+    private BackupOfferingVO createMockOffering(Long id, String name) {
+        BackupOfferingVO offering = Mockito.mock(BackupOfferingVO.class);
+        when(offering.getId()).thenReturn(id);
+        when(offering.getName()).thenReturn(name);
+        return offering;
     }
 
 }
