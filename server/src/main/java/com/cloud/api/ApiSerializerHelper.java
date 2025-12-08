@@ -105,7 +105,7 @@ public class ApiSerializerHelper {
     /**
      * validates that a class is allowed to be deserialised.
      *
-     * TODO move to a more globally accesible util class
+     * TODO move to a more globally accessible util class
      * TODO make generic for allow lists
      * TODO extend to return the desired class
      *
