@@ -17,6 +17,7 @@
 package com.cloud.api.query.dao;
 
 import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -89,15 +90,18 @@ public class UserVmJoinDaoImplTest extends GenericDaoBaseWithTagInformationBaseT
     private Long vmId = 100L;
 
     private Long templateId = 101L;
+    private AutoCloseable closeable;
 
     @Before
     public void setup() {
+        closeable = openMocks(this);
         prepareSetup();
     }
 
     @Override
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
+        closeable.close();
         super.tearDown();
     }
 

@@ -45,10 +45,11 @@ import java.util.stream.Collectors;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class LinstorUtil {
-    private static final Logger s_logger = Logger.getLogger(LinstorUtil.class);
+    protected static Logger LOGGER = LogManager.getLogger(LinstorUtil.class);
 
     public final static String PROVIDER_NAME = "Linstor";
     public static final String RSC_PREFIX = "cs-";
@@ -167,7 +168,7 @@ public class LinstorUtil {
 
         if (rscGrps.isEmpty()) {
             final String errMsg = String.format("Linstor: Resource group '%s' not found", rscGroupName);
-            s_logger.error(errMsg);
+            LOGGER.error(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
 
@@ -191,7 +192,7 @@ public class LinstorUtil {
                 .mapToLong(sp -> sp.getTotalCapacity() != null ? sp.getTotalCapacity() : 0L)
                 .sum() * 1024;  // linstor uses kiB
         } catch (ApiException apiEx) {
-            s_logger.error(apiEx.getMessage());
+            LOGGER.error(apiEx.getMessage());
             throw new CloudRuntimeException(apiEx);
         }
     }
@@ -211,11 +212,11 @@ public class LinstorUtil {
                     .mapToLong(sp -> sp.getTotalCapacity() != null && sp.getFreeCapacity() != null ?
                             sp.getTotalCapacity() - sp.getFreeCapacity() : 0L)
                     .sum() * 1024; // linstor uses Kib
-            s_logger.debug(
+            LOGGER.debug(
                     String.format("Linstor(%s;%s): storageStats -> %d/%d", linstorUrl, rscGroupName, capacity, used));
             return new Pair<>(capacity, used);
         } catch (ApiException apiEx) {
-            s_logger.error(apiEx.getMessage());
+            LOGGER.error(apiEx.getMessage());
             throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
         }
     }
@@ -236,8 +237,8 @@ public class LinstorUtil {
                     .map(Resource::getNodeName)
                     .findFirst()
                     .orElse(null);
-       }
-        s_logger.error("isResourceInUse: null returned from resourceList");
+        }
+        LOGGER.error("isResourceInUse: null returned from resourceList");
         return null;
     }
 
@@ -285,14 +286,14 @@ public class LinstorUtil {
                 // CloudStack resource always only have 1 volume
                 String devicePath = rsc.getVolumes().get(0).getDevicePath();
                 if (devicePath != null && !devicePath.isEmpty()) {
-                    s_logger.debug(String.format("getDevicePath: %s -> %s", rscName, devicePath));
+                    LOGGER.debug("getDevicePath: {} -> {}", rscName, devicePath);
                     return devicePath;
                 }
             }
         }
 
         final String errMsg = "viewResources didn't return resources or volumes for " + rscName;
-        s_logger.error(errMsg);
+        LOGGER.error(errMsg);
         throw new CloudRuntimeException("Linstor: " + errMsg);
     }
 
@@ -390,10 +391,10 @@ public class LinstorUtil {
 
         if (answers.hasError()) {
             String bestError = LinstorUtil.getBestErrorMessage(answers);
-            s_logger.error(String.format("Set %s on %s error: %s", propKey, rscName, bestError));
+            LOGGER.error("Set {} on {} error: {}", propKey, rscName, bestError);
             throw new CloudRuntimeException(bestError);
         } else {
-            s_logger.info(String.format("Set %s property on %s", propKey, rscName));
+            LOGGER.info("Set {} property on {}", propKey, rscName);
         }
     }
 
@@ -460,7 +461,7 @@ public class LinstorUtil {
                         } );
             }
         } catch (ApiException apiExc) {
-            s_logger.error(apiExc.getMessage());
+            LOGGER.error(apiExc.getMessage());
         }
         return false;
     }

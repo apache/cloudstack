@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.UUID;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -28,12 +29,12 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
+import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.GenericDao;
 import com.google.gson.annotations.Expose;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "snapshots")
@@ -89,7 +90,7 @@ public class SnapshotVO implements Snapshot {
     Date removed;
 
     @Column(name = "hypervisor_type")
-    @Enumerated(value = EnumType.STRING)
+    @Convert(converter = HypervisorTypeConverter.class)
     HypervisorType hypervisorType;
 
     @Expose
@@ -281,7 +282,8 @@ public class SnapshotVO implements Snapshot {
 
     @Override
     public String toString() {
-        return String.format("Snapshot %s", new ToStringBuilder(this, ToStringStyle.JSON_STYLE).append("uuid", getUuid()).append("name", getName())
-                .append("volumeId", getVolumeId()).toString());
+        return String.format("Snapshot %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name", "volumeId", "version"));
     }
 }

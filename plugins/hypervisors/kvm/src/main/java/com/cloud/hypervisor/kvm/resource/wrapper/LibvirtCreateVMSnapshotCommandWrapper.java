@@ -19,7 +19,6 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo.DomainState;
@@ -35,7 +34,6 @@ import com.cloud.resource.ResourceWrapper;
 @ResourceWrapper(handles =  CreateVMSnapshotCommand.class)
 public final class LibvirtCreateVMSnapshotCommandWrapper extends CommandWrapper<CreateVMSnapshotCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtCreateVMSnapshotCommandWrapper.class);
 
     @Override
     public Answer execute(final CreateVMSnapshotCommand cmd, final LibvirtComputingResource libvirtComputingResource) {
@@ -67,14 +65,14 @@ public final class LibvirtCreateVMSnapshotCommandWrapper extends CommandWrapper<
             return new CreateVMSnapshotAnswer(cmd, cmd.getTarget(), cmd.getVolumeTOs());
         } catch (LibvirtException e) {
             String msg = " Create VM snapshot failed due to " + e.toString();
-            s_logger.warn(msg, e);
+            logger.warn(msg, e);
             return new CreateVMSnapshotAnswer(cmd, false, msg);
         } finally {
             if (dm != null) {
                 try {
                     dm.free();
                 } catch (LibvirtException l) {
-                    s_logger.trace("Ignoring libvirt error.", l);
+                    logger.trace("Ignoring libvirt error.", l);
                 };
             }
         }

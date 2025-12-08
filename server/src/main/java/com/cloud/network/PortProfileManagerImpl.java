@@ -16,7 +16,8 @@
 // under the License.
 package com.cloud.network;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.dao.PortProfileDaoImpl;
@@ -29,7 +30,7 @@ public class PortProfileManagerImpl {
 
     private PortProfileDaoImpl _portProfileDao;
 
-    private static final org.apache.log4j.Logger s_logger = Logger.getLogger(PortProfileManagerImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public PortProfileManagerImpl() {
         _portProfileDao = new PortProfileDaoImpl();
@@ -42,7 +43,7 @@ public class PortProfileManagerImpl {
         // First, check if a port profile with the given name already exists. If it does, throw an exception.
 
         if (_portProfileDao.findByName(portProfName) != null) {
-            s_logger.info("Port Profile with specified name: " + portProfName + " already exists");
+            logger.info("Port Profile with specified name: " + portProfName + " already exists");
             throw new InvalidParameterValueException("Port Profile with specified name: " + portProfName + " already exists");
         }
         // Check if the VSM id is a valid one.
@@ -67,7 +68,7 @@ public class PortProfileManagerImpl {
         portProfileObj = _portProfileDao.findByName(portProfName);
 
         if (portProfileObj != null) {
-            s_logger.info("Port Profile with specified name: " + portProfName + " already exists");
+            logger.info("Port Profile with specified name: " + portProfName + " already exists");
             throw new InvalidParameterValueException("Port Profile with specified name: " + portProfName + " already exists");
         }
 
@@ -75,7 +76,7 @@ public class PortProfileManagerImpl {
         // range passed to this function. If so, throw an exception.
 
         if (_portProfileDao.doesVlanRangeClash(lowVlanId, highVlanId) == true) {
-            s_logger.info("Port Profile's vlanId range clashes with an existing Port Profile's");
+            logger.info("Port Profile's vlanId range clashes with an existing Port Profile's");
             throw new InvalidParameterValueException("Port Profile's vlanId range clashes with an existing Port Profile's");
         }
 

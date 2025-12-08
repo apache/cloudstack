@@ -18,18 +18,30 @@ package org.apache.cloudstack.storage.datastore.provider;
 
 import javax.inject.Inject;
 
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.storage.StoragePool;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
-import org.apache.log4j.Logger;
 
-import com.cloud.exception.StorageConflictException;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class AdaptivePrimaryHostListener implements HypervisorHostListener {
-    static final Logger s_logger = Logger.getLogger(AdaptivePrimaryHostListener.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     StoragePoolHostDao storagePoolHostDao;
+
+    @Inject
+    HostDao hostDao;
+
+    @Inject
+    PrimaryDataStoreDao primaryDataStoreDao;
 
     public AdaptivePrimaryHostListener(AdaptivePrimaryDatastoreAdapterFactoryMap factoryMap) {
 
@@ -37,22 +49,29 @@ public class AdaptivePrimaryHostListener implements HypervisorHostListener {
 
     @Override
     public boolean hostAboutToBeRemoved(long hostId) {
-        s_logger.debug("hostAboutToBeRemoved called");
+        logger.debug("hostAboutToBeRemoved called");
         return true;
     }
 
     @Override
     public boolean hostAdded(long hostId) {
-        s_logger.debug("hostAdded called");
+        logger.debug("hostAdded called");
         return true;
     }
 
     @Override
-    public boolean hostConnect(long hostId, long poolId) throws StorageConflictException {
-        s_logger.debug("hostConnect called for hostid [" + hostId + "], poolId [" + poolId + "]");
-        StoragePoolHostVO storagePoolHost = storagePoolHostDao.findByPoolHost(poolId, hostId);
+    public boolean hostConnect(long hostId, long poolId) {
+        HostVO host = hostDao.findById(hostId);
+        StoragePoolVO pool = primaryDataStoreDao.findById(poolId);
+        return hostConnect(host, pool);
+    }
+
+    @Override
+    public boolean hostConnect(Host host, StoragePool pool) {
+        logger.debug("hostConnect called for host {}, pool {}", host, pool);
+        StoragePoolHostVO storagePoolHost = storagePoolHostDao.findByPoolHost(pool.getId(), host.getId());
         if (storagePoolHost == null) {
-            storagePoolHost = new StoragePoolHostVO(poolId, hostId, "");
+            storagePoolHost = new StoragePoolHostVO(pool.getId(), host.getId(), "");
             storagePoolHostDao.persist(storagePoolHost);
         } else {
             return false;
@@ -62,24 +81,31 @@ public class AdaptivePrimaryHostListener implements HypervisorHostListener {
 
     @Override
     public boolean hostDisconnected(long hostId, long poolId) {
-        s_logger.debug("hostDisconnected called for hostid [" + hostId + "], poolId [" + poolId + "]");
-        StoragePoolHostVO storagePoolHost = storagePoolHostDao.findByPoolHost(poolId, hostId);
+        HostVO host = hostDao.findById(hostId);
+        StoragePoolVO pool = primaryDataStoreDao.findById(poolId);
+        return hostDisconnected(host, pool);
+    }
+
+    @Override
+    public boolean hostDisconnected(Host host, StoragePool pool){
+        logger.debug("hostDisconnected called for host {}, pool {}", host, pool);
+        StoragePoolHostVO storagePoolHost = storagePoolHostDao.findByPoolHost(pool.getId(), host.getId());
 
         if (storagePoolHost != null) {
-            storagePoolHostDao.deleteStoragePoolHostDetails(hostId, poolId);
+            storagePoolHostDao.deleteStoragePoolHostDetails(host.getId(), pool.getId());
         }
         return true;
     }
 
     @Override
     public boolean hostEnabled(long hostId) {
-        s_logger.debug("hostEnabled called");
+        logger.debug("hostEnabled called");
         return true;
     }
 
     @Override
     public boolean hostRemoved(long hostId, long clusterId) {
-        s_logger.debug("hostRemoved called");
+        logger.debug("hostRemoved called");
         return true;
     }
 }

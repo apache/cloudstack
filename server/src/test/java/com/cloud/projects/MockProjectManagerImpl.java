@@ -179,7 +179,7 @@ public class MockProjectManagerImpl extends ManagerBase implements ProjectManage
     }
 
     @Override
-    public boolean deleteAccountFromProject(long projectId, long accountId) {
+    public boolean deleteAccountFromProject(long projectId, Account account) {
         // TODO Auto-generated method stub
         return false;
     }

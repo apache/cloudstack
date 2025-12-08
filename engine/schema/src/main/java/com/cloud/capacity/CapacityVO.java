@@ -80,6 +80,9 @@ public class CapacityVO implements Capacity {
     @Transient
     private Long allocatedCapacity;
 
+    @Transient
+    private String tag;
+
     public CapacityVO() {
     }
 
@@ -219,6 +222,15 @@ public class CapacityVO implements Capacity {
 
     public void setAllocatedCapacity(Long allocatedCapacity) {
         this.allocatedCapacity = allocatedCapacity;
+    }
+
+    @Override
+    public String getTag() {
+        return tag;
+    }
+
+    public void setTag(String tag) {
+        this.tag = tag;
     }
 
     @Override

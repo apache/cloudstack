@@ -41,16 +41,19 @@ public class LoadBalancerTOTest {
     LoadBalancerTO.AutoScaleVmGroupTO vmGroup;
 
     private static final Long counterId = 1L;
+    private static final String counterUuid = "1111-1111-1100";
     private static final String counterName = "counter name";
     private static final Counter.Source counterSource = Counter.Source.CPU;
     private static final String counterValue = "counter value";
     private static final String counterProvider = "VIRTUALROUTER";
 
     private static final Long conditionId = 2L;
+    private static final String conditionUuid = "1111-1111-1110";
     private static final Long threshold = 100L;
     private static final Condition.Operator relationalOperator = Condition.Operator.GT;
 
     private static final Long scaleUpPolicyId = 11L;
+    private static final String scaleUpPolicyUuid = "1111-1111-1111";
     private static final int scaleUpPolicyDuration = 61;
     private static final int scaleUpPolicyQuietTime = 31;
     private static final Date scaleUpPolicyLastQuietTime = new Date();
@@ -85,14 +88,14 @@ public class LoadBalancerTOTest {
 
     @Before
     public void setUp() {
-        counter = new LoadBalancerTO.CounterTO(counterId, counterName, counterSource, counterValue, counterProvider);
-        condition = new LoadBalancerTO.ConditionTO(conditionId, threshold, relationalOperator, counter);
-        scaleUpPolicy = new LoadBalancerTO.AutoScalePolicyTO(scaleUpPolicyId, scaleUpPolicyDuration, scaleUpPolicyQuietTime,
-                scaleUpPolicyLastQuietTime, AutoScalePolicy.Action.SCALEUP,
-                Arrays.asList(new LoadBalancerTO.ConditionTO[]{ condition }), false);
-        scaleDownPolicy = new LoadBalancerTO.AutoScalePolicyTO(scaleDownPolicyId, scaleDownPolicyDuration, scaleDownPolicyQuietTime,
-                scaleDownPolicyLastQuietTime, AutoScalePolicy.Action.SCALEDOWN,
-                Arrays.asList(new LoadBalancerTO.ConditionTO[]{ condition }), false);
+        counter = new LoadBalancerTO.CounterTO(counterId, counterUuid, counterName, counterSource, counterValue, counterProvider);
+        condition = new LoadBalancerTO.ConditionTO(conditionId, conditionUuid, threshold, relationalOperator, counter);
+        scaleUpPolicy = new LoadBalancerTO.AutoScalePolicyTO(scaleUpPolicyId, scaleUpPolicyUuid, scaleUpPolicyDuration,
+                scaleUpPolicyQuietTime, scaleUpPolicyLastQuietTime,
+                AutoScalePolicy.Action.SCALEUP, Arrays.asList(new LoadBalancerTO.ConditionTO[]{ condition }), false);
+        scaleDownPolicy = new LoadBalancerTO.AutoScalePolicyTO(scaleDownPolicyId, scaleUpPolicyUuid, scaleDownPolicyDuration,
+                scaleDownPolicyQuietTime, scaleDownPolicyLastQuietTime,
+                AutoScalePolicy.Action.SCALEDOWN, Arrays.asList(new LoadBalancerTO.ConditionTO[]{ condition }), false);
         vmProfile = new LoadBalancerTO.AutoScaleVmProfileTO(zoneId, domainId, cloudStackApiUrl, autoScaleUserApiKey,
                 autoScaleUserSecretKey, serviceOfferingId, templateId, vmName, networkId, otherDeployParams,
                 counterParamList, expungeVmGracePeriod);
@@ -113,6 +116,7 @@ public class LoadBalancerTOTest {
     @Test
     public void testConditionTO() {
         Assert.assertEquals(conditionId, condition.getId());
+        Assert.assertEquals(conditionUuid, condition.getUuid());
         Assert.assertEquals((long) threshold, condition.getThreshold());
         Assert.assertEquals(relationalOperator, condition.getRelationalOperator());
         Assert.assertEquals(counter, condition.getCounter());

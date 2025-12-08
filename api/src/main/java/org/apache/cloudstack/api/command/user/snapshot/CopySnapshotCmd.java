@@ -34,7 +34,6 @@ import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.event.EventTypes;
@@ -43,13 +42,15 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.Snapshot;
 import com.cloud.user.Account;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @APICommand(name = "copySnapshot", description = "Copies a snapshot from one zone to another.",
         responseObject = SnapshotResponse.class, responseView = ResponseObject.ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0",
         authorized = {RoleType.Admin,  RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CopySnapshotCmd extends BaseAsyncCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(CopySnapshotCmd.class.getName());
+    public static final Logger logger = LogManager.getLogger(CopySnapshotCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -170,10 +171,10 @@ public class CopySnapshotCmd extends BaseAsyncCmd implements UserCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to copy snapshot");
             }
         } catch (StorageUnavailableException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         } catch (ResourceAllocationException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
         }
 

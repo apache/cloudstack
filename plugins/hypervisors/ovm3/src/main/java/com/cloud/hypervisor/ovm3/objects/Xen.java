@@ -24,10 +24,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 public class Xen extends OvmObject {
-    private static final Logger LOGGER = Logger.getLogger(Xen.class);
     private static final String VNCLISTEN = "vnclisten";
     private static final String MEMORY = "memory";
     private static final String MAXVCPUS = "maxvcpus";
@@ -294,7 +292,7 @@ public class Xen extends OvmObject {
                 }
                 c += 1;
             }
-            LOGGER.debug("No vif matched mac: " + mac + " in " + vmVifs);
+            logger.debug("No vif matched mac: " + mac + " in " + vmVifs);
             return -1;
         }
         public Integer getVifIdByIp(String ip) {
@@ -308,13 +306,13 @@ public class Xen extends OvmObject {
                 }
                 c += 1;
             }
-            LOGGER.debug("No vif matched ip: " + ip + " in " + vmVifs);
+            logger.debug("No vif matched ip: " + ip + " in " + vmVifs);
             return -1;
         }
 
         public Boolean addVif(Integer id, String bridge, String mac) {
             if (getVifIdByMac(mac) > 0) {
-                LOGGER.debug("Already nic with mac present: " + mac);
+                logger.debug("Already nic with mac present: " + mac);
                 return false;
             }
             String vif = "mac=" + mac + ",bridge=" + bridge;
@@ -338,15 +336,15 @@ public class Xen extends OvmObject {
                 String remove = "mac=" + mac + ",bridge=" + bridge;
                 for (String vif : getVmVifs()) {
                     if (vif.equals(remove)) {
-                        LOGGER.debug("leaving out vif: " + remove);
+                        logger.debug("leaving out vif: " + remove);
                     } else {
-                        LOGGER.debug("keeping vif: " + vif);
+                        logger.debug("keeping vif: " + vif);
                         newVifs.add(vif);
                     }
                 }
                 vmParams.put("vif", newVifs);
             } catch (Exception e) {
-                LOGGER.debug(e);
+                logger.debug(e);
             }
             return true;
         }
@@ -400,7 +398,7 @@ public class Xen extends OvmObject {
         private Boolean addDiskToDisks(String image, String devName, String mode) {
             for (String disk : vmDisks) {
                 if (disk.contains(image)) {
-                    LOGGER.debug(vmName + " already has disk " +image+ ":" + devName + ":" + mode);
+                    logger.debug(vmName + " already has disk " +image+ ":" + devName + ":" + mode);
                     return true;
                 }
             }
@@ -417,7 +415,7 @@ public class Xen extends OvmObject {
                     return true;
                 }
             }
-            LOGGER.debug("No disk found corresponding to image: " + image);
+            logger.debug("No disk found corresponding to image: " + image);
             return false;
         }
 
@@ -445,7 +443,7 @@ public class Xen extends OvmObject {
             Map<String, Object[]> o = (Map<String, Object[]>) vmParams
                     .get("device");
             if (o == null) {
-                LOGGER.info("No devices found" + vmName);
+                logger.info("No devices found" + vmName);
                 return null;
             }
             vmDisk = (Map<String, String>) o.get("vbd")[disk];
@@ -557,7 +555,7 @@ public class Xen extends OvmObject {
     public Map<String, Vm> listVms() throws Ovm3ResourceException {
         Object[] result = (Object[]) callWrapper("list_vms");
         if (result == null) {
-            LOGGER.debug("no vm results on list_vms");
+            logger.debug("no vm results on list_vms");
             return null;
         }
 
@@ -634,7 +632,7 @@ public class Xen extends OvmObject {
         defVm.setVmParams((Map<String, Object>) callWrapper("list_vm", repoId,
                 vmId));
         if (defVm.getVmParams() == null) {
-            LOGGER.debug("no vm results on list_vm");
+            logger.debug("no vm results on list_vm");
             return false;
         }
         return true;
@@ -898,7 +896,7 @@ public class Xen extends OvmObject {
     public Vm getVmConfig(String vmName) throws Ovm3ResourceException {
         defVm = getRunningVmConfig(vmName);
         if (defVm == null) {
-            LOGGER.debug("Unable to retrieve running config for " + vmName);
+            logger.debug("Unable to retrieve running config for " + vmName);
             return defVm;
         }
         return getVmConfig(defVm.getVmRootDiskPoolId(), defVm.getVmUuid());
@@ -919,7 +917,7 @@ public class Xen extends OvmObject {
             Map<String, Object[]> x = (Map<String, Object[]>) callWrapper(
                     "get_vm_config", repoId, vmId);
             if (x == null) {
-                LOGGER.debug("Unable to find vm with id:" + vmId + " on repoId:" + repoId);
+                logger.debug("Unable to find vm with id:" + vmId + " on repoId:" + repoId);
                 return nVm;
             }
             nVm.setVmVifs(Arrays.asList(Arrays.copyOf(x.get("vif"),

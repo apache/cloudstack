@@ -516,6 +516,7 @@ public class AgentProperties{
     /**
      * The model of Watchdog timer to present to the Guest.<br>
      * For all models refer to the libvirt documentation.<br>
+     * PLEASE NOTE: to disable the watchdogs definitions, use value: none
      * Data type: String.<br>
      * Default value: <code>i6300esb</code>
      */
@@ -803,12 +804,26 @@ public class AgentProperties{
      */
     public static final Property<String> KEYSTORE_PASSPHRASE = new Property<>(KeyStoreUtils.KS_PASSPHRASE_PROPERTY, null, String.class);
 
+    /**
+     * Implicit host tags
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> HOST_TAGS = new Property<>("host.tags", null, String.class);
+
+    /**
+     * Timeout for SSL handshake in seconds
+     * Data type: Integer.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<Integer> SSL_HANDSHAKE_TIMEOUT = new Property<>("ssl.handshake.timeout", null, Integer.class);
+
     public static class Property <T>{
         private String name;
         private T defaultValue;
         private Class<T> typeClass;
 
-        Property(String name, T value) {
+        public Property(String name, T value) {
             init(name, value);
         }
 

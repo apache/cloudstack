@@ -40,7 +40,8 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.CoreConnectionPNames;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
@@ -49,7 +50,7 @@ import com.google.gson.annotations.SerializedName;
  * Stratosphere sdn platform api client
  */
 public class SspClient {
-    private static final Logger s_logger = Logger.getLogger(SspClient.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private static final HttpClient s_client = new DefaultHttpClient(
             new PoolingClientConnectionManager());
     static {
@@ -79,27 +80,27 @@ public class SspClient {
             req.setURI(new URI(base.getScheme(), base.getUserInfo(), base.getHost(),
                     base.getPort(), path, null, null));
         } catch (URISyntaxException e) {
-            s_logger.error("invalid API URL " + apiUrl + " path " + path, e);
+            logger.error("invalid API URL " + apiUrl + " path " + path, e);
             return null;
         }
         try {
             String content = null;
             try {
                 content = getHttpClient().execute(req, new BasicResponseHandler());
-                s_logger.info("ssp api call: " + req);
+                logger.info("ssp api call: " + req);
             } catch (HttpResponseException e) {
-                s_logger.info("ssp api call failed: " + req, e);
+                logger.info("ssp api call failed: " + req, e);
                 if (e.getStatusCode() == HttpStatus.SC_UNAUTHORIZED && login()) {
                     req.reset();
                     content = getHttpClient().execute(req, new BasicResponseHandler());
-                    s_logger.info("ssp api retry call: " + req);
+                    logger.info("ssp api retry call: " + req);
                 }
             }
             return content;
         } catch (ClientProtocolException e) { // includes HttpResponseException
-            s_logger.error("ssp api call failed: " + req, e);
+            logger.error("ssp api call failed: " + req, e);
         } catch (IOException e) {
-            s_logger.error("ssp api call failed: " + req, e);
+            logger.error("ssp api call failed: " + req, e);
         }
         return null;
     }
@@ -111,7 +112,7 @@ public class SspClient {
                     new BasicNameValuePair("username", username),
                     new BasicNameValuePair("password", password))));
         } catch (UnsupportedEncodingException e) {
-            s_logger.error("invalid username or password", e);
+            logger.error("invalid username or password", e);
             return false;
         }
         if (executeMethod(method, "/ws.v1/login") != null) {

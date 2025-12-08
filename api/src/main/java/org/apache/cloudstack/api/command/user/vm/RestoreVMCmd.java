@@ -17,11 +17,8 @@
 package org.apache.cloudstack.api.command.user.vm;
 
 import com.cloud.vm.VmDetailConstants;
-import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.cloudstack.api.response.DiskOfferingResponse;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -31,6 +28,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.UserCmd;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -50,7 +48,6 @@ import java.util.Map;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
 public class RestoreVMCmd extends BaseAsyncCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(RestoreVMCmd.class);
     private static final String s_name = "restorevmresponse";
 
     @ACL(accessType = AccessType.OperateEntry)

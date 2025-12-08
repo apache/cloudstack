@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -42,7 +41,6 @@ import java.util.List;
         since = "4.17.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListNetworkPermissionsCmd extends BaseCmd implements UserCmd {
-    public static final Logger LOGGER = Logger.getLogger(ListNetworkPermissionsCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

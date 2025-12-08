@@ -53,14 +53,14 @@ import org.apache.http.protocol.ResponseConnControl;
 import org.apache.http.protocol.ResponseContent;
 import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.nio.Link;
 
 public class ClusterServiceServletContainer {
-    private static final Logger s_logger = Logger.getLogger(ClusterServiceServletContainer.class);
 
     private ListenerThread listenerThread;
 
@@ -81,6 +81,7 @@ public class ClusterServiceServletContainer {
         }
     }
 
+
     protected static SSLServerSocket getSecuredServerSocket(SSLContext sslContext, String ip, int port)
             throws IOException {
         SSLServerSocketFactory sslFactory = sslContext.getServerSocketFactory();
@@ -96,6 +97,8 @@ public class ClusterServiceServletContainer {
     }
 
     static class ListenerThread extends Thread {
+
+        private static Logger LOGGER = LogManager.getLogger(ListenerThread.class);
         private HttpService httpService = null;
         private volatile SSLServerSocket serverSocket = null;
         private HttpParams params = null;
@@ -111,7 +114,7 @@ public class ClusterServiceServletContainer {
                 SSLContext sslContext = Link.initManagementSSLContext(caService);
                 serverSocket = getSecuredServerSocket(sslContext, ip, port);
             } catch (IOException | GeneralSecurityException e) {
-                s_logger.error("Error initializing cluster service servlet container for secure connection",
+                LOGGER.error("Error initializing cluster service servlet container for secure connection",
                         e);
                 return;
             }
@@ -145,7 +148,7 @@ public class ClusterServiceServletContainer {
                 try {
                     serverSocket.close();
                 } catch (IOException e) {
-                    s_logger.info("[ignored] error on closing server socket", e);
+                    LOGGER.info("[ignored] error on closing server socket", e);
                 }
                 serverSocket = null;
             }
@@ -167,8 +170,8 @@ public class ClusterServiceServletContainer {
 
         @Override
         public void run() {
-            if (s_logger.isInfoEnabled())
-                s_logger.info(String.format("Cluster service servlet container listening on host: %s and port %d",
+            if (LOGGER.isInfoEnabled())
+                LOGGER.info(String.format("Cluster service servlet container listening on host: %s and port %d",
                         serverSocket.getInetAddress().getHostAddress(), serverSocket.getLocalPort()));
 
             while (serverSocket != null) {
@@ -178,7 +181,7 @@ public class ClusterServiceServletContainer {
                     final DefaultHttpServerConnection conn = new DefaultHttpServerConnection();
                     conn.bind(socket, params);
                     if (!isValidPeerConnection(socket)) {
-                        s_logger.warn(String.format("Failure during validating cluster request from %s",
+                        LOGGER.warn(String.format("Failure during validating cluster request from %s",
                                 socket.getInetAddress().getHostAddress()));
                         conn.shutdown();
                         continue;
@@ -189,47 +192,47 @@ public class ClusterServiceServletContainer {
                             HttpContext context = new BasicHttpContext(null);
                             try {
                                 while (!Thread.interrupted() && conn.isOpen()) {
-                                    if (s_logger.isTraceEnabled())
-                                        s_logger.trace("dispatching cluster request from " + conn.getRemoteAddress().toString());
+                                    if (LOGGER.isTraceEnabled())
+                                        LOGGER.trace("dispatching cluster request from " + conn.getRemoteAddress().toString());
 
                                     httpService.handleRequest(conn, context);
 
-                                    if (s_logger.isTraceEnabled())
-                                        s_logger.trace("Cluster request from " + conn.getRemoteAddress().toString() + " is processed");
+                                    if (LOGGER.isTraceEnabled())
+                                        LOGGER.trace("Cluster request from " + conn.getRemoteAddress().toString() + " is processed");
                                 }
                             } catch (ConnectionClosedException ex) {
                                 // client close and read time out exceptions are expected
                                 // when KEEP-AVLIE is enabled
-                                s_logger.trace("Client closed connection", ex);
+                                LOGGER.trace("Client closed connection", ex);
                             } catch (IOException ex) {
-                                s_logger.trace("I/O error", ex);
+                                LOGGER.trace("I/O error", ex);
                             } catch (HttpException ex) {
-                                s_logger.error("Unrecoverable HTTP protocol violation", ex);
+                                LOGGER.error("Unrecoverable HTTP protocol violation", ex);
                             } finally {
                                 try {
                                     conn.shutdown();
                                 } catch (IOException ignore) {
-                                    s_logger.error("unexpected exception", ignore);
+                                    LOGGER.error("unexpected exception", ignore);
                                 }
                             }
                         }
                     });
 
                 } catch (Throwable e) {
-                    s_logger.error("Unexpected exception ", e);
+                    LOGGER.error("Unexpected exception ", e);
 
                     // back off to avoid spinning if the exception condition keeps coming back
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e1) {
-                        s_logger.debug("[ignored] interrupted while waiting to retry running the servlet container.");
+                        LOGGER.debug("[ignored] interrupted while waiting to retry running the servlet container.");
                     }
                 }
             }
 
             executor.shutdown();
-            if (s_logger.isInfoEnabled())
-                s_logger.info("Cluster service servlet container shutdown");
+            if (LOGGER.isInfoEnabled())
+                LOGGER.info("Cluster service servlet container shutdown");
         }
     }
 }

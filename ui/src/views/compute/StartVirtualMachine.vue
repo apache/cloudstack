@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout" v-ctrl-enter="handleSubmit">
+  <div class="form-layout">
     <a-spin :spinning="loading">
       <a-alert type="warning">
         <template #message>{{ $t('message.action.start.instance') }}</template>
@@ -93,7 +93,7 @@
             <template #label>
               <tooltip-label :title="$t('label.considerlasthost')" :tooltip="apiParams.considerlasthost.description"/>
             </template>
-            <a-switch v-model:checked="form.considerlasthost" />
+            <a-switch v-model:checked="form.considerlasthost" v-focus="true"/>
           </a-form-item>
         </div>
 
@@ -150,6 +150,12 @@ export default {
       this.fetchClusters()
       this.fetchHosts()
     }
+  },
+  mounted () {
+    document.addEventListener('keydown', this.handleKeyPress)
+  },
+  beforeUnmount () {
+    document.removeEventListener('keydown', this.handleKeyPress)
   },
   methods: {
     initForm () {
@@ -264,6 +270,12 @@ export default {
     },
     closeAction () {
       this.$emit('close-action')
+    },
+    handleKeyPress (event) {
+      event.preventDefault()
+      if ((event.code === 'Enter' || event.code === 'NumpadEnter') && event.ctrlKey === true) {
+        this.handleSubmit(event)
+      }
     }
   }
 }

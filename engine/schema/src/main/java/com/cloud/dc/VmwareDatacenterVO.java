@@ -28,6 +28,7 @@ import javax.persistence.Table;
 
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.Encrypt;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 /**
  * VmwareDatacenterVO contains information of Vmware Datacenter associated with a CloudStack zone.
@@ -125,7 +126,9 @@ public class VmwareDatacenterVO implements VmwareDatacenter {
 
     @Override
     public String toString() {
-        return new StringBuilder("VmwareDatacenter[").append(guid).append("]").toString();
+        return String.format("VmwareDatacenter %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "guid"));
     }
 
     @Override

@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.DiscriminatorType;
 import javax.persistence.Entity;
@@ -41,9 +42,11 @@ import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
 import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.util.HypervisorTypeConverter;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.Encrypt;
@@ -59,7 +62,7 @@ import com.google.gson.Gson;
 @Inheritance(strategy = InheritanceType.JOINED)
 @DiscriminatorColumn(name = "type", discriminatorType = DiscriminatorType.STRING, length = 32)
 public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, VirtualMachine.Event> {
-    private static final Logger s_logger = Logger.getLogger(VMInstanceVO.class);
+    protected transient Logger logger = LogManager.getLogger(getClass());
     @Id
     @TableGenerator(name = "vm_instance_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "vm_instance_seq", allocationSize = 1)
     @Column(name = "id", updatable = false, nullable = false)
@@ -158,16 +161,14 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     protected String reservationId;
 
     @Column(name = "hypervisor_type")
-    @Enumerated(value = EnumType.STRING)
+    @Convert(converter = HypervisorTypeConverter.class)
     protected HypervisorType hypervisorType;
 
     @Column(name = "dynamically_scalable")
     protected boolean dynamicallyScalable;
 
-    /*
-    @Column(name="tags")
-    protected String tags;
-    */
+    @Column(name = "delete_protection")
+    protected boolean deleteProtection;
 
     @Transient
     Map<String, String> details;
@@ -225,7 +226,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
             random.nextBytes(randomBytes);
             vncPassword = Base64.encodeBase64URLSafeString(randomBytes);
         } catch (NoSuchAlgorithmException e) {
-            s_logger.error("Unexpected exception in SecureRandom Algorithm selection ", e);
+            logger.error("Unexpected exception in SecureRandom Algorithm selection ", e);
         }
     }
 
@@ -537,6 +538,14 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 
     public boolean isDynamicallyScalable() {
         return dynamicallyScalable;
+    }
+
+    public boolean isDeleteProtection() {
+        return deleteProtection;
+    }
+
+    public void setDeleteProtection(boolean deleteProtection) {
+        this.deleteProtection = deleteProtection;
     }
 
     @Override

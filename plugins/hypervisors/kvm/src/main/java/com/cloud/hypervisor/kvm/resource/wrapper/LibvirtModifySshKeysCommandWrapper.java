@@ -24,7 +24,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.StringUtils;
 import com.cloud.agent.api.Answer;
@@ -37,7 +36,6 @@ import com.cloud.utils.script.Script;
 @ResourceWrapper(handles =  ModifySshKeysCommand.class)
 public final class LibvirtModifySshKeysCommandWrapper extends CommandWrapper<ModifySshKeysCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtModifySshKeysCommandWrapper.class);
 
     @Override
     public Answer execute(final ModifySshKeysCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -52,13 +50,13 @@ public final class LibvirtModifySshKeysCommandWrapper extends CommandWrapper<Mod
         String result = null;
         if (!sshKeysDir.exists()) {
             // Change permissions for the 700
-            final Script script = new Script("mkdir", libvirtComputingResource.getTimeout(), s_logger);
+            final Script script = new Script("mkdir", libvirtComputingResource.getTimeout(), logger);
             script.add("-m", "700");
             script.add(sshkeyspath);
             script.execute();
 
             if (!sshKeysDir.exists()) {
-                s_logger.debug("failed to create directory " + sshkeyspath);
+                logger.debug("failed to create directory " + sshkeyspath);
             }
         }
 
@@ -68,7 +66,7 @@ public final class LibvirtModifySshKeysCommandWrapper extends CommandWrapper<Mod
                 pubKeyFile.createNewFile();
             } catch (final IOException e) {
                 result = "Failed to create file: " + e.toString();
-                s_logger.debug(result);
+                logger.debug(result);
             }
         }
 
@@ -78,10 +76,10 @@ public final class LibvirtModifySshKeysCommandWrapper extends CommandWrapper<Mod
             } catch (final FileNotFoundException e) {
                 result = "File" + sshpubkeypath + "is not found:"
                         + e.toString();
-                s_logger.debug(result);
+                logger.debug(result);
             } catch (final IOException e) {
                 result = "Write file " + sshpubkeypath + ":" + e.toString();
-                s_logger.debug(result);
+                logger.debug(result);
             }
         }
 
@@ -91,7 +89,7 @@ public final class LibvirtModifySshKeysCommandWrapper extends CommandWrapper<Mod
                 prvKeyFile.createNewFile();
             } catch (final IOException e) {
                 result = "Failed to create file: " + e.toString();
-                s_logger.debug(result);
+                logger.debug(result);
             }
         }
 
@@ -103,12 +101,12 @@ public final class LibvirtModifySshKeysCommandWrapper extends CommandWrapper<Mod
                 }
             } catch (final FileNotFoundException e) {
                 result = "File" + sshprvkeypath + "is not found:" + e.toString();
-                s_logger.debug(result);
+                logger.debug(result);
             } catch (final IOException e) {
                 result = "Write file " + sshprvkeypath + ":" + e.toString();
-                s_logger.debug(result);
+                logger.debug(result);
             }
-            final Script script = new Script("chmod", libvirtComputingResource.getTimeout(), s_logger);
+            final Script script = new Script("chmod", libvirtComputingResource.getTimeout(), logger);
             script.add("600", sshprvkeypath);
             script.execute();
         }

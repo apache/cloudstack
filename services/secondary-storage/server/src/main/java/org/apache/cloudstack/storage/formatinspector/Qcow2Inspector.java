@@ -19,7 +19,8 @@ package org.apache.cloudstack.storage.formatinspector;
 
 import com.cloud.utils.NumbersUtil;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -42,7 +43,7 @@ import java.util.Set;
  * and on the <a href="https://review.opendev.org/c/openstack/cinder/+/923247/2/cinder/image/format_inspector.py">OpenStack's Cinder implementation for Python</a>.
  */
 public class Qcow2Inspector {
-    protected static Logger LOGGER = Logger.getLogger(Qcow2Inspector.class);
+    protected static Logger LOGGER = LogManager.getLogger(Qcow2Inspector.class);
 
     private static final byte[] QCOW_MAGIC_STRING = ArrayUtils.add("QFI".getBytes(), (byte) 0xfb);
     private static final int INCOMPATIBLE_FEATURES_MAX_KNOWN_BIT = 4;

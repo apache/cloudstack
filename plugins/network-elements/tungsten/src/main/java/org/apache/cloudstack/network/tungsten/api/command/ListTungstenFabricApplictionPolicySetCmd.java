@@ -36,7 +36,6 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricApplicationPolicySetResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
-import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,7 +46,6 @@ import javax.inject.Inject;
     + "policy set", responseObject = TungstenFabricApplicationPolicySetResponse.class, requestHasSensitiveInfo =
     false, responseHasSensitiveInfo = false)
 public class ListTungstenFabricApplictionPolicySetCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListTungstenFabricApplictionPolicySetCmd.class.getName());
     public static final String APINAME = "listTungstenFabricApplicationPolicySet";
 
     @Inject

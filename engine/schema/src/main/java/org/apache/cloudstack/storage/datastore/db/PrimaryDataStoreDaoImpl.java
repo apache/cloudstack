@@ -28,20 +28,20 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.storage.Storage;
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.Filter;
 import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
@@ -63,6 +63,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     private final GenericSearchBuilder<StoragePoolVO, Long> StatusCountSearch;
     private final SearchBuilder<StoragePoolVO> ClustersSearch;
     private final SearchBuilder<StoragePoolVO> IdsSearch;
+    private final SearchBuilder<StoragePoolVO> DcsSearch;
 
     @Inject
     private StoragePoolDetailsDao _detailsDao;
@@ -155,6 +156,9 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         IdsSearch.and("ids", IdsSearch.entity().getId(), SearchCriteria.Op.IN);
         IdsSearch.done();
 
+        DcsSearch = createSearchBuilder();
+        DcsSearch.and("dataCenterId", DcsSearch.entity().getDataCenterId(), SearchCriteria.Op.IN);
+        DcsSearch.done();
     }
 
     @Override
@@ -676,7 +680,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     }
 
     @Override
-    public List<StoragePoolVO> findPoolsByStorageType(String storageType) {
+    public List<StoragePoolVO> findPoolsByStorageType(Storage.StoragePoolType storageType) {
         SearchCriteria<StoragePoolVO> sc = AllFieldSearch.create();
         sc.setParameters("poolType", storageType);
         return listBy(sc);
@@ -730,6 +734,16 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         }
         SearchCriteria<StoragePoolVO> sc = IdsSearch.create();
         sc.setParameters("ids", ids.toArray());
+        return listBy(sc);
+    }
+
+    @Override
+    public List<StoragePoolVO> listByDataCenterIds(List<Long> dataCenterIds) {
+        if (CollectionUtils.isEmpty(dataCenterIds)) {
+            return Collections.emptyList();
+        }
+        SearchCriteria<StoragePoolVO> sc = DcsSearch.create();
+        sc.setParameters("dataCenterId", dataCenterIds.toArray());
         return listBy(sc);
     }
 

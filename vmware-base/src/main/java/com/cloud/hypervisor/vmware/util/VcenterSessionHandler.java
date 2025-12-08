@@ -26,13 +26,14 @@ import javax.xml.ws.handler.MessageContext;
 import javax.xml.ws.handler.soap.SOAPHandler;
 import javax.xml.ws.handler.soap.SOAPMessageContext;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.w3c.dom.DOMException;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class VcenterSessionHandler implements SOAPHandler<SOAPMessageContext> {
-    public static final Logger s_logger = Logger.getLogger(VcenterSessionHandler.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private final String vcSessionCookie;
 
     public VcenterSessionHandler(String vcSessionCookie) {
@@ -50,10 +51,10 @@ public class VcenterSessionHandler implements SOAPHandler<SOAPMessageContext> {
                 vcsessionHeader.setValue(vcSessionCookie);
 
             } catch (DOMException e) {
-                s_logger.debug(e);
+                logger.debug(e);
                 throw new CloudRuntimeException(e);
             } catch (SOAPException e) {
-                s_logger.debug(e);
+                logger.debug(e);
                 throw new CloudRuntimeException(e);
             }
         }

@@ -35,7 +35,8 @@ import java.util.StringTokenizer;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -66,7 +67,7 @@ public class TrafficSentinelResource implements ServerResource {
     private String _inclZones;
     private String _exclZones;
 
-    private static final Logger s_logger = Logger.getLogger(TrafficSentinelResource.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -242,10 +243,10 @@ public class TrafficSentinelResource implements ServerResource {
                     }
                 }
             } catch (MalformedURLException e1) {
-                s_logger.info("Invalid Traffic Sentinel URL", e1);
+                logger.info("Invalid Traffic Sentinel URL", e1);
                 throw new ExecutionException(e1.getMessage());
             } catch (IOException e) {
-                s_logger.debug("Error in direct network usage accounting", e);
+                logger.debug("Error in direct network usage accounting", e);
                 throw new ExecutionException(e.getMessage());
             } finally {
                 if (os != null) {
@@ -256,7 +257,7 @@ public class TrafficSentinelResource implements ServerResource {
                 }
             }
         } catch (Exception e) {
-            s_logger.debug(e);
+            logger.debug(e);
             throw new ExecutionException(e.getMessage());
         }
         return answer;

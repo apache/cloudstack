@@ -28,17 +28,20 @@
       <a-tab-pane :tab="$t('label.networks')" key="tier">
         <VpcTiersTab :resource="resource" :loading="loading" />
       </a-tab-pane>
+      <a-tab-pane :tab="$t('label.bgp.peers')" key="bgppeers" v-if="resource.ip4routing === 'Dynamic'">
+        <BgpPeersTab :resource="resource" />
+      </a-tab-pane>
       <a-tab-pane :tab="$t('label.public.ips')" key="ip" v-if="'listPublicIpAddresses' in $store.getters.apis">
         <IpAddressesTab :resource="resource" :loading="loading" />
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.network.acl.lists')" key="acl" v-if="'listNetworkACLLists' in $store.getters.apis">
+      <a-tab-pane :tab="$t('label.network.acls')" key="acl" v-if="'listNetworkACLLists' in $store.getters.apis">
         <a-button
           type="dashed"
           style="width: 100%"
           :disabled="!('createNetworkACLList' in $store.getters.apis)"
           @click="() => handleOpenModals('networkAcl')">
           <template #icon><plus-circle-outlined /></template>
-          {{ $t('label.add.network.acl.list') }}
+          {{ $t('label.add.network.acl') }}
         </a-button>
         <a-table
           class="table"
@@ -73,7 +76,7 @@
         </a-pagination>
         <a-modal
           :visible="modals.networkAcl"
-          :title="$t('label.add.acl.list')"
+          :title="$t('label.add.acl')"
           :footer="null"
           :maskClosable="false"
           :closable="true"
@@ -86,7 +89,7 @@
             @finish="handleNetworkAclFormSubmit"
             v-ctrl-enter="handleNetworkAclFormSubmit"
            >
-            <a-form-item :label="$t('label.add.list.name')" ref="name" name="name">
+            <a-form-item :label="$t('label.add.acl.name')" ref="name" name="name">
               <a-input
                 v-model:value="form.name"
                 v-focus="true"></a-input>
@@ -389,10 +392,12 @@ import VnfAppliancesTab from './VnfAppliancesTab'
 import EventsTab from '@/components/view/EventsTab'
 import AnnotationsTab from '@/components/view/AnnotationsTab'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import BgpPeersTab from '@/views/infra/zone/BgpPeersTab.vue'
 
 export default {
   name: 'VpcTab',
   components: {
+    BgpPeersTab,
     DetailsTab,
     Status,
     IpAddressesTab,
@@ -722,8 +727,7 @@ export default {
           break
         case 'networkAcl':
           this.rules = {
-            name: [{ required: true, message: this.$t('label.required') }],
-            description: [{ required: true, message: this.$t('label.required') }]
+            name: [{ required: true, message: this.$t('label.required') }]
           }
           this.modals.networkAcl = true
           break

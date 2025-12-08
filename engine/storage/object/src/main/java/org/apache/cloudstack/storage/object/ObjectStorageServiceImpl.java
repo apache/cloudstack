@@ -18,11 +18,8 @@
 package org.apache.cloudstack.storage.object;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectStorageService;
-import org.apache.log4j.Logger;
 
 public class ObjectStorageServiceImpl implements ObjectStorageService {
-
-    private static final Logger s_logger = Logger.getLogger(ObjectStorageServiceImpl.class);
 
 
 }

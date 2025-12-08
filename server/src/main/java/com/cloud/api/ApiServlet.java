@@ -46,7 +46,9 @@ import org.apache.cloudstack.api.command.user.consoleproxy.CreateConsoleEndpoint
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.managed.context.ManagedContext;
 import org.apache.cloudstack.utils.consoleproxy.ConsoleAccessUtils;
-import org.apache.log4j.Logger;
+
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.commons.lang3.EnumUtils;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
@@ -72,10 +74,10 @@ import com.cloud.utils.net.NetUtils;
 
 @Component("apiServlet")
 public class ApiServlet extends HttpServlet {
-    public static final Logger LOGGER = Logger.getLogger(ApiServlet.class.getName());
-    private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServlet.class.getName());
+    protected static Logger LOGGER = LogManager.getLogger(ApiServlet.class);
+    private static final Logger ACCESSLOGGER = LogManager.getLogger("apiserver." + ApiServlet.class.getName());
     private static final String REPLACEMENT = "_";
-    private static final String LOG_REPLACEMENTS = "[\n\r\t]";
+    private static final String LOGGER_REPLACEMENTS = "[\n\r\t]";
 
     @Inject
     ApiServerService apiServer;
@@ -369,7 +371,7 @@ public class ApiServlet extends HttpServlet {
             LOGGER.error("unknown exception writing api response", ex);
             auditTrailSb.append(" unknown exception writing api response");
         } finally {
-            s_accessLogger.info(auditTrailSb.toString());
+            ACCESSLOGGER.info(auditTrailSb.toString());
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("===END=== " + reqStr);
             }
@@ -499,7 +501,7 @@ public class ApiServlet extends HttpServlet {
 
     @Nullable
     private String saveLogString(String stringToLog) {
-        return stringToLog == null ? null : stringToLog.replace(LOG_REPLACEMENTS, REPLACEMENT);
+        return stringToLog == null ? null : stringToLog.replace(LOGGER_REPLACEMENTS, REPLACEMENT);
     }
 
     /**

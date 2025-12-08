@@ -30,7 +30,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.domain.Domain;
@@ -41,7 +40,6 @@ import com.cloud.user.Account;
 @APICommand(name = "updateServiceOffering", description = "Updates a service offering.", responseObject = ServiceOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateServiceOfferingCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateServiceOfferingCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -90,6 +88,11 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
             type = CommandType.STRING,
             description = "state of the service offering")
     private String serviceOfferingState;
+
+    @Parameter(name = ApiConstants.PURGE_RESOURCES, type = CommandType.BOOLEAN,
+            description = "Whether to cleanup VM and its associated resource upon expunge",
+            since="4.20")
+    private Boolean purgeResources;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -185,6 +188,10 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
             throw new InvalidParameterValueException("Invalid state value: " + serviceOfferingState);
         }
         return state;
+    }
+
+    public boolean isPurgeResources() {
+        return Boolean.TRUE.equals(purgeResources);
     }
 
     /////////////////////////////////////////////////////

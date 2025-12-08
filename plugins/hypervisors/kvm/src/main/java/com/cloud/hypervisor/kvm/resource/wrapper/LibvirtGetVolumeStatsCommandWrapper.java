@@ -21,7 +21,6 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.util.HashMap;
 
-import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 
@@ -40,7 +39,6 @@ import com.cloud.agent.api.VolumeStatsEntry;
 
 @ResourceWrapper(handles = GetVolumeStatsCommand.class)
 public final class LibvirtGetVolumeStatsCommandWrapper extends CommandWrapper<GetVolumeStatsCommand, Answer, LibvirtComputingResource> {
-    private static final Logger s_logger = Logger.getLogger(LibvirtGetVmDiskStatsCommandWrapper.class);
 
     @Override
     public Answer execute(final GetVolumeStatsCommand cmd, final LibvirtComputingResource libvirtComputingResource) {

@@ -63,10 +63,10 @@ from
     `cloud`.`domain`
         left join
     `cloud`.`resource_limit` vmlimit ON domain.id = vmlimit.domain_id
-        and vmlimit.type = 'user_vm'
+        and vmlimit.type = 'user_vm' and vmlimit.tag IS NULL
         left join
     `cloud`.`resource_count` vmcount ON domain.id = vmcount.domain_id
-        and vmcount.type = 'user_vm'
+        and vmcount.type = 'user_vm' and vmcount.tag IS NULL
         left join
     `cloud`.`resource_limit` iplimit ON domain.id = iplimit.domain_id
         and iplimit.type = 'public_ip'
@@ -75,10 +75,10 @@ from
         and ipcount.type = 'public_ip'
         left join
     `cloud`.`resource_limit` volumelimit ON domain.id = volumelimit.domain_id
-        and volumelimit.type = 'volume'
+        and volumelimit.type = 'volume' and volumelimit.tag IS NULL
         left join
     `cloud`.`resource_count` volumecount ON domain.id = volumecount.domain_id
-        and volumecount.type = 'volume'
+        and volumecount.type = 'volume' and volumecount.tag IS NULL
         left join
     `cloud`.`resource_limit` snapshotlimit ON domain.id = snapshotlimit.domain_id
         and snapshotlimit.type = 'snapshot'
@@ -111,22 +111,22 @@ from
         and networkcount.type = 'network'
         left join
     `cloud`.`resource_limit` cpulimit ON domain.id = cpulimit.domain_id
-        and cpulimit.type = 'cpu'
+        and cpulimit.type = 'cpu' and cpulimit.tag IS NULL
         left join
     `cloud`.`resource_count` cpucount ON domain.id = cpucount.domain_id
-        and cpucount.type = 'cpu'
+        and cpucount.type = 'cpu' and cpucount.tag IS NULL
         left join
     `cloud`.`resource_limit` memorylimit ON domain.id = memorylimit.domain_id
-        and memorylimit.type = 'memory'
+        and memorylimit.type = 'memory' and memorylimit.tag IS NULL
         left join
     `cloud`.`resource_count` memorycount ON domain.id = memorycount.domain_id
-        and memorycount.type = 'memory'
+        and memorycount.type = 'memory' and memorycount.tag IS NULL
         left join
     `cloud`.`resource_limit` primary_storage_limit ON domain.id = primary_storage_limit.domain_id
-        and primary_storage_limit.type = 'primary_storage'
+        and primary_storage_limit.type = 'primary_storage' and primary_storage_limit.tag IS NULL
         left join
     `cloud`.`resource_count` primary_storage_count ON domain.id = primary_storage_count.domain_id
-        and primary_storage_count.type = 'primary_storage'
+        and primary_storage_count.type = 'primary_storage' and primary_storage_count.tag IS NULL
         left join
     `cloud`.`resource_limit` secondary_storage_limit ON domain.id = secondary_storage_limit.domain_id
         and secondary_storage_limit.type = 'secondary_storage'

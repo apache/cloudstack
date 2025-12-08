@@ -87,6 +87,20 @@ public class CreateVPCCmdTest extends TestCase {
     }
 
     @Test
+    public void testGetCidrSize() {
+        int cidrSize = 24;
+        ReflectionTestUtils.setField(cmd, "cidrSize", cidrSize);
+        Assert.assertEquals(cidrSize, (int) cmd.getCidrSize());
+    }
+
+    @Test
+    public void testAsNumber() {
+        long asNumber = 10000;
+        ReflectionTestUtils.setField(cmd, "asNumber", asNumber);
+        Assert.assertEquals(asNumber, (long) cmd.getAsNumber());
+    }
+
+    @Test
     public void testGetDisplayText() {
         String displayText = "VPC Network";
         ReflectionTestUtils.setField(cmd, "displayText", displayText);

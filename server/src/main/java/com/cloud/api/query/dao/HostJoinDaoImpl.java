@@ -42,7 +42,6 @@ import org.apache.cloudstack.ha.HAResource;
 import org.apache.cloudstack.ha.dao.HAConfigDao;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
@@ -62,7 +61,6 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements HostJoinDao {
-    public static final Logger s_logger = Logger.getLogger(HostJoinDaoImpl.class);
 
     @Inject
     private ConfigurationDao _configDao;
@@ -204,8 +202,13 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 hostResponse.setHostTags(hostTags);
                 hostResponse.setIsTagARule(host.getIsTagARule());
                 hostResponse.setHaHost(containsHostHATag(hostTags));
+                hostResponse.setExplicitHostTags(host.getExplicitTag());
+                hostResponse.setImplicitHostTags(host.getImplicitTag());
 
                 hostResponse.setHypervisorVersion(host.getHypervisorVersion());
+                if (host.getArch() != null) {
+                    hostResponse.setArch(host.getArch().getType());
+                }
 
                 float cpuWithOverprovisioning = host.getCpus() * host.getSpeed() * cpuOverprovisioningFactor;
                 hostResponse.setCpuAllocatedValue(cpu);
@@ -246,7 +249,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 try {
                     hostResponse.setDetails(hostDetails, host.getHypervisorType());
                 } catch (Exception e) {
-                    s_logger.debug("failed to get host details", e);
+                    logger.debug("failed to get host details", e);
                 }
             }
 

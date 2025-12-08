@@ -23,7 +23,6 @@ import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.response.ObjectStoreResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.object.ObjectStore;
-import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,10 +32,9 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import static org.mockito.ArgumentMatchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 
 public class UpdateObjectStoragePoolCmdTest {
-    public static final Logger s_logger = Logger.getLogger(UpdateObjectStoragePoolCmdTest.class.getName());
 
     @Mock
     private StorageService storageService;
@@ -56,9 +54,11 @@ public class UpdateObjectStoragePoolCmdTest {
 
     private String provider = "Simulator";
 
+    private AutoCloseable closeable;
+
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         updateObjectStoragePoolCmd = Mockito.spy(new UpdateObjectStoragePoolCmd());
         updateObjectStoragePoolCmd._storageService = storageService;
         updateObjectStoragePoolCmd._responseGenerator = responseGenerator;
@@ -70,13 +70,14 @@ public class UpdateObjectStoragePoolCmdTest {
     @After
     public void tearDown() throws Exception {
         CallContext.unregister();
+        closeable.close();
     }
 
     @Test
     public void testUpdateObjectStore() {
         Mockito.doReturn(objectStore).when(storageService).updateObjectStore(1L, updateObjectStoragePoolCmd);
         ObjectStoreResponse objectStoreResponse = new ObjectStoreResponse();
-        Mockito.doReturn(objectStoreResponse).when(responseGenerator).createObjectStoreResponse(anyObject());
+        Mockito.doReturn(objectStoreResponse).when(responseGenerator).createObjectStoreResponse(any());
         updateObjectStoragePoolCmd.execute();
         Mockito.verify(storageService, Mockito.times(1))
                 .updateObjectStore(1L, updateObjectStoragePoolCmd);

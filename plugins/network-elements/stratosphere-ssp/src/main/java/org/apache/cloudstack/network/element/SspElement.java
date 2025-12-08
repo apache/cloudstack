@@ -29,7 +29,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.commands.AddSspCmd;
 import org.apache.cloudstack.api.commands.DeleteSspCmd;
@@ -87,7 +86,6 @@ import com.cloud.vm.dao.NicDao;
  * table for that information.
  */
 public class SspElement extends AdapterBase implements ConnectivityProvider, SspManager, SspService, NetworkMigrationResponder {
-    private static final Logger s_logger = Logger.getLogger(SspElement.class);
     public static final String s_SSP_NAME = "StratosphereSsp";
     private static final Provider s_ssp_provider = new Provider(s_SSP_NAME, false);
 
@@ -180,7 +178,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
         if (fetchSspClients(physicalNetwork.getId(), physicalNetwork.getDataCenterId(), false).size() > 0) {
             return true;
         }
-        s_logger.warn("Ssp api endpoint not found. " + physicalNetwork.toString());
+        logger.warn("Ssp api endpoint not found. " + physicalNetwork.toString());
         return false;
     }
 
@@ -194,9 +192,9 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
             if (fetchSspClients(physicalNetwork.getId(), physicalNetwork.getDataCenterId(), true).size() > 0) {
                 return true;
             }
-            s_logger.warn("enabled Ssp api endpoint not found. " + physicalNetwork.toString());
+            logger.warn("enabled Ssp api endpoint not found. " + physicalNetwork.toString());
         } else {
-            s_logger.warn("PhysicalNetwork is NULL.");
+            logger.warn("PhysicalNetwork is NULL.");
         }
         return false;
     }
@@ -204,7 +202,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
     private boolean canHandle(Network network) {
         if (canHandle(_physicalNetworkDao.findById(network.getPhysicalNetworkId()))) {
             if (!_ntwkSrvcDao.canProviderSupportServiceInNetwork(network.getId(), Service.Connectivity, getProvider())) {
-                s_logger.info("SSP is implicitly active for " + network);
+                logger.info("SSP is implicitly active for " + network);
             }
             return true;
         }
@@ -231,7 +229,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
             _sspCredentialDao.persist(credential);
         } else {
             if (cmd.getUsername() != null || cmd.getPassword() != null) {
-                s_logger.warn("Tenant credential already configured for zone:" + zoneId);
+                logger.warn("Tenant credential already configured for zone:" + zoneId);
             }
         }
 
@@ -246,7 +244,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
             _sspTenantDao.persist(tenant);
         } else {
             if (cmd.getTenantUuid() != null) {
-                s_logger.warn("Tenant uuid already configured for zone:" + zoneId);
+                logger.warn("Tenant uuid already configured for zone:" + zoneId);
             }
         }
 
@@ -266,7 +264,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
             _hostDao.loadDetails(host);
             if ("v1Api".equals(host.getDetail("sspHost"))) {
                 if (normalizedUrl.equals(host.getDetail("url"))) {
-                    s_logger.warn("Ssp host already registered " + normalizedUrl);
+                    logger.warn("Ssp host already registered " + normalizedUrl);
                     return host;
                 }
             }
@@ -289,14 +287,14 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
 
     @Override
     public boolean deleteSspHost(DeleteSspCmd cmd) {
-        s_logger.info("deleteStratosphereSsp");
+        logger.info("deleteStratosphereSsp");
         return _hostDao.remove(cmd.getHostId());
     }
 
     @Override
     public boolean createNetwork(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) {
         if (_sspUuidDao.findUuidByNetwork(network) != null) {
-            s_logger.info("Network already has ssp TenantNetwork uuid :" + network.toString());
+            logger.info("Network already has ssp TenantNetwork uuid :" + network.toString());
             return true;
         }
         if (!canHandle(network)) {
@@ -322,10 +320,10 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
             processed = true;
         }
         if (processed) {
-            s_logger.error("Could not allocate an uuid for network " + network.toString());
+            logger.error("Could not allocate an uuid for network " + network.toString());
             return false;
         } else {
-            s_logger.error("Skipping #createNetwork() for " + network.toString());
+            logger.error("Skipping #createNetwork() for " + network.toString());
             return true;
         }
     }
@@ -343,10 +341,10 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
                 }
             }
             if (!processed) {
-                s_logger.error("Ssp api tenant network deletion failed " + network.toString());
+                logger.error("Ssp api tenant network deletion failed " + network.toString());
             }
         } else {
-            s_logger.debug("Silently skipping #deleteNetwork() for " + network.toString());
+            logger.debug("Silently skipping #deleteNetwork() for " + network.toString());
         }
         return true;
     }
@@ -356,7 +354,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
     public boolean createNicEnv(Network network, NicProfile nic, DeployDestination dest, ReservationContext context) {
         String tenantNetworkUuid = _sspUuidDao.findUuidByNetwork(network);
         if (tenantNetworkUuid == null) {
-            s_logger.debug("Skipping #createNicEnv() for nic on " + network.toString());
+            logger.debug("Skipping #createNicEnv() for nic on " + network.toString());
             return true;
         }
 
@@ -364,7 +362,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
         List<SspUuidVO> tenantPortUuidVos = _sspUuidDao.listUUidVoByNicProfile(nic);
         for (SspUuidVO tenantPortUuidVo : tenantPortUuidVos) {
             if (reservationId.equals(tenantPortUuidVo.getReservationId())) {
-                s_logger.info("Skipping because reservation found " + reservationId);
+                logger.info("Skipping because reservation found " + reservationId);
                 return true;
             }
         }
@@ -386,7 +384,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
             }
         }
         if (tenantPortUuid == null) {
-            s_logger.debug("#createNicEnv() failed for nic on " + network.toString());
+            logger.debug("#createNicEnv() failed for nic on " + network.toString());
             return false;
         }
 
@@ -400,14 +398,14 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
                 return true;
             }
         }
-        s_logger.error("Updating vif failed " + nic.toString());
+        logger.error("Updating vif failed " + nic.toString());
         return false;
     }
 
     @Override
     public boolean deleteNicEnv(Network network, NicProfile nic, ReservationContext context) {
         if (context == null) {
-            s_logger.error("ReservationContext was null for " + nic + " " + network);
+            logger.error("ReservationContext was null for " + nic + " " + network);
             return false;
         }
         String reservationId = context.getReservationId();
@@ -434,7 +432,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
                 }
             }
             if (!processed) {
-                s_logger.warn("Ssp api nic detach failed " + nic.toString());
+                logger.warn("Ssp api nic detach failed " + nic.toString());
             }
             processed = false;
             for (SspClient client : fetchSspClients(network.getPhysicalNetworkId(), network.getDataCenterId(), true)) {
@@ -445,7 +443,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
                 }
             }
             if (!processed) {
-                s_logger.warn("Ssp api tenant port deletion failed " + nic.toString());
+                logger.warn("Ssp api tenant port deletion failed " + nic.toString());
             }
             _sspUuidDao.removeUuid(tenantPortUuid);
         }
@@ -467,7 +465,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
     @Override
     public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
         ResourceUnavailableException, InsufficientCapacityException {
-        s_logger.info("implement");
+        logger.info("implement");
         return createNetwork(network, offering, dest, context);
     }
 
@@ -480,7 +478,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
      */
     @Override
     public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
-        s_logger.trace("shutdown");
+        logger.trace("shutdown");
         return deleteNetwork(network);
     }
 
@@ -494,7 +492,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
         throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        s_logger.trace("prepare");
+        logger.trace("prepare");
         return createNicEnv(network, nic, dest, context);
     }
 
@@ -508,7 +506,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
     @Override
     public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException,
         ResourceUnavailableException {
-        s_logger.trace("release");
+        logger.trace("release");
         return deleteNicEnv(network, nic, context);
     }
 
@@ -520,7 +518,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
      */
     @Override
     public boolean destroy(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
-        s_logger.trace("destroy");
+        logger.trace("destroy");
         // nothing to do here.
         return true;
     }
@@ -528,19 +526,19 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
     @Override
     public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
         ResourceUnavailableException {
-        s_logger.trace("shutdownProviderInstances");
+        logger.trace("shutdownProviderInstances");
         return true;
     }
 
     @Override
     public boolean canEnableIndividualServices() {
-        s_logger.trace("canEnableIndividualServices");
+        logger.trace("canEnableIndividualServices");
         return true; // because there is only Connectivity
     }
 
     @Override
     public boolean verifyServicesCombination(Set<Service> services) {
-        s_logger.trace("verifyServicesCombination " + services.toString());
+        logger.trace("verifyServicesCombination " + services.toString());
         return true;
     }
 
@@ -549,13 +547,13 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
         try {
             prepare(network, nic, vm, dest, context);
         } catch (ConcurrentOperationException e) {
-            s_logger.error("prepareForMigration failed.", e);
+            logger.error("prepareForMigration failed.", e);
             return false;
         } catch (ResourceUnavailableException e) {
-            s_logger.error("prepareForMigration failed.", e);
+            logger.error("prepareForMigration failed.", e);
             return false;
         } catch (InsufficientCapacityException e) {
-            s_logger.error("prepareForMigration failed.", e);
+            logger.error("prepareForMigration failed.", e);
             return false;
         }
         return true;
@@ -566,9 +564,9 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
         try {
             release(network, nic, vm, dst);
         } catch (ConcurrentOperationException e) {
-            s_logger.error("rollbackMigration failed.", e);
+            logger.error("rollbackMigration failed.", e);
         } catch (ResourceUnavailableException e) {
-            s_logger.error("rollbackMigration failed.", e);
+            logger.error("rollbackMigration failed.", e);
         }
     }
 
@@ -577,9 +575,9 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
         try {
             release(network, nic, vm, src);
         } catch (ConcurrentOperationException e) {
-            s_logger.error("commitMigration failed.", e);
+            logger.error("commitMigration failed.", e);
         } catch (ResourceUnavailableException e) {
-            s_logger.error("commitMigration failed.", e);
+            logger.error("commitMigration failed.", e);
         }
     }
 

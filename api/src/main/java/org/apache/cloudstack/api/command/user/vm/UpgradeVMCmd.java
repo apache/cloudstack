@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.user.vm;
 
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -47,7 +46,6 @@ import com.cloud.vm.VirtualMachine;
         "this command to take effect.", responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class UpgradeVMCmd extends BaseCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(UpgradeVMCmd.class.getName());
     private static final String s_name = "changeserviceforvirtualmachineresponse";
 
     /////////////////////////////////////////////////////

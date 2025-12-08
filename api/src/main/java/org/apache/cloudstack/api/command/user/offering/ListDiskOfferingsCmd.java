@@ -16,28 +16,26 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.offering;
 
-import com.cloud.offering.DiskOffering.State;
+import static com.cloud.offering.DiskOffering.State.Active;
+
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
-import org.apache.cloudstack.api.response.DiskOfferingResponse;
-import org.apache.cloudstack.api.response.ListResponse;
-
-import static com.cloud.offering.DiskOffering.State.Active;
+import com.cloud.offering.DiskOffering.State;
 
 @APICommand(name = "listDiskOfferings", description = "Lists all available disk offerings.", responseObject = DiskOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListDiskOfferingsCmd extends BaseListProjectAndAccountResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListDiskOfferingsCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -76,6 +74,13 @@ public class ListDiskOfferingsCmd extends BaseListProjectAndAccountResourcesCmd 
                description = "Filter by state of the disk offering. Defaults to 'Active'. If set to 'all' shows both Active & Inactive offerings.",
                since = "4.19")
     private String diskOfferingState;
+
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
+            type = CommandType.UUID,
+            entityType = UserVmResponse.class,
+            description = "The ID of a virtual machine. Pass this in if you want to see the suitable disk offering that can be used to create and add a disk to the virtual machine. Suitability is returned with suitableforvirtualmachine flag in the response",
+            since = "4.20.0")
+    private Long virtualMachineId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -116,13 +121,16 @@ public class ListDiskOfferingsCmd extends BaseListProjectAndAccountResourcesCmd 
         return state;
     }
 
+    public Long getVirtualMachineId() {
+        return virtualMachineId;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
     @Override
     public void execute() {
-
         ListResponse<DiskOfferingResponse> response = _queryService.searchForDiskOfferings(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

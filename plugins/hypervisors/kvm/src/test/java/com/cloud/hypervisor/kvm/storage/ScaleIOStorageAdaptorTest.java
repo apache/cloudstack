@@ -53,7 +53,7 @@ public class ScaleIOStorageAdaptorTest {
     @Before
     public void setUp() {
         mockedScript = Mockito.mockStatic(Script.class);
-        scaleIOStorageAdaptor = Mockito.spy(new ScaleIOStorageAdaptor(storageLayer));
+        scaleIOStorageAdaptor = Mockito.spy(ScaleIOStorageAdaptor.class);
     }
 
     @After
@@ -116,9 +116,9 @@ public class ScaleIOStorageAdaptorTest {
 
         Ternary<Boolean, Map<String, String>, String> result = scaleIOStorageAdaptor.prepareStorageClient(Storage.StoragePoolType.PowerFlex, poolUuid, new HashMap<>());
 
-        Assert.assertTrue(result.first());
-        Assert.assertNotNull(result.second());
-        Assert.assertTrue(result.second().isEmpty());
+        Assert.assertFalse(result.first());
+        Assert.assertNull(result.second());
+        Assert.assertEquals("Couldn't get the SDC details on the host", result.third());
     }
 
     @Test

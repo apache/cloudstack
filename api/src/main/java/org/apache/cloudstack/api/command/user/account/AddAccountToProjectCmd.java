@@ -24,7 +24,6 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.response.ProjectRoleResponse;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -44,7 +43,6 @@ import com.cloud.projects.ProjectAccount;
 @APICommand(name = "addAccountToProject", description = "Adds account to a project", responseObject = SuccessResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddAccountToProjectCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(AddAccountToProjectCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

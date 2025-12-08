@@ -32,9 +32,9 @@
               </a-col>
               <a-col>
                 <h3 style="margin-bottom: 0px;">
-                  {{ menuItem.title }}
+                  {{ $t(menuItem.title) }}
                 </h3>
-                <small>{{ menuItem.subtitle }}</small>
+                <small>{{ $t(menuItem.subtitle) }}</small>
               </a-col>
             </a-row>
           </router-link>
@@ -56,50 +56,50 @@ export default {
     const menuItems = [
       {
         api: 'deployVirtualMachine',
-        title: this.$t('label.instance'),
-        subtitle: this.$t('label.create.instance'),
+        title: 'label.instance',
+        subtitle: 'label.create.instance',
         icon: 'cloud-server-outlined',
         route: { path: '/action/deployVirtualMachine' }
       },
       {
         api: 'createKubernetesCluster',
-        title: this.$t('label.kubernetes'),
-        subtitle: this.$t('label.kubernetes.cluster.create'),
+        title: 'label.kubernetes',
+        subtitle: 'label.kubernetes.cluster.create',
         icon: ['fa-solid', 'fa-dharmachakra'],
         route: { path: '/kubernetes', query: { action: 'createKubernetesCluster' } }
       },
       {
         api: 'createVolume',
-        title: this.$t('label.volume'),
-        subtitle: this.$t('label.action.create.volume'),
+        title: 'label.volume',
+        subtitle: 'label.action.create.volume',
         icon: 'hdd-outlined',
         route: { path: '/volume', query: { action: 'createVolume' } }
       },
       {
         api: 'createNetwork',
-        title: this.$t('label.network'),
-        subtitle: this.$t('label.add.network'),
+        title: 'label.network',
+        subtitle: 'label.add.network',
         icon: 'apartment-outlined',
         route: { path: '/guestnetwork', query: { action: 'createNetwork' } }
       },
       {
         api: 'createVPC',
-        title: this.$t('label.vpc'),
-        subtitle: this.$t('label.add.vpc'),
+        title: 'label.vpc',
+        subtitle: 'label.add.vpc',
         icon: 'deployment-unit-outlined',
         route: { path: '/vpc', query: { action: 'createVPC' } }
       },
       {
         api: 'registerTemplate',
-        title: this.$t('label.templatename'),
-        subtitle: this.$t('label.action.register.template'),
+        title: 'label.templatename',
+        subtitle: 'label.action.register.template',
         icon: 'picture-outlined',
         route: { path: '/template', query: { action: 'registerTemplate' } }
       },
       {
         api: 'deployVnfAppliance',
-        title: this.$t('label.vnf.appliance'),
-        subtitle: this.$t('label.vnf.appliance.add'),
+        title: 'label.vnf.appliance',
+        subtitle: 'label.vnf.appliance.add',
         icon: 'gateway-outlined',
         route: { path: '/action/deployVnfAppliance' }
       }

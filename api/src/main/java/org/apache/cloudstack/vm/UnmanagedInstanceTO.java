@@ -17,7 +17,7 @@
 
 package org.apache.cloudstack.vm;
 
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import java.util.List;
 
@@ -192,6 +192,13 @@ public class UnmanagedInstanceTO {
         this.vncPassword = vncPassword;
     }
 
+    @Override
+    public String toString() {
+        return String.format("UnmanagedInstanceTO %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "name", "internalCSName", "hostName", "clusterName"));
+    }
+
     public String getBootType() {
         return bootType;
     }
@@ -351,12 +358,9 @@ public class UnmanagedInstanceTO {
 
         @Override
         public String toString() {
-            return "Disk {" +
-                    "diskId='" + diskId + '\'' +
-                    ", capacity=" + toHumanReadableSize(capacity) +
-                    ", controller='" + controller + '\'' +
-                    ", controllerUnit=" + controllerUnit +
-                    "}";
+            return String.format("Disk %s",
+                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                            this, "diskId", "internalCSName", "controller", "controllerUnit"));
         }
     }
 
@@ -453,11 +457,9 @@ public class UnmanagedInstanceTO {
 
         @Override
         public String toString() {
-            return "Nic{" +
-                    "nicId='" + nicId + '\'' +
-                    ", adapterType='" + adapterType + '\'' +
-                    ", macAddress='" + macAddress + '\'' +
-                    "}";
+            return String.format("Nic %s",
+                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                            this, "nicId", "adapterType", "macAddress"));
         }
     }
 }

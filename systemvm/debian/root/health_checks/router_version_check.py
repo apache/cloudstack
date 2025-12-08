@@ -41,7 +41,7 @@ def main():
         data = entries[0]
 
     if len(data) == 0:
-        print "Missing routerVersion in health_checks_data, skipping"
+        print("Missing routerVersion in health_checks_data, skipping")
         exit(0)
 
     templateVersionMatches = True
@@ -52,11 +52,11 @@ def main():
         releaseFile = "/etc/cloudstack-release"
         found = getFirstLine(releaseFile)
         if found is None:
-            print "Release version not yet setup at " + releaseFile +\
-                  ", skipping."
+            print("Release version not yet setup at " + releaseFile +
+                  ", skipping.")
         elif expected != found:
-            print "Template Version mismatch. Expected: " + \
-                  expected + ", found: " + found
+            print("Template Version mismatch. Expected: " +
+                  expected + ", found: " + found)
             templateVersionMatches = False
 
     if "scriptsVersion" in data:
@@ -64,15 +64,15 @@ def main():
         sigFile = "/var/cache/cloud/cloud-scripts-signature"
         found = getFirstLine(sigFile)
         if found is None:
-            print "Scripts signature is not yet setup at " + sigFile +\
-                  ", skipping"
+            print("Scripts signature is not yet setup at " + sigFile +
+                  ", skipping")
         if expected != found:
-            print "Scripts Version mismatch. Expected: " + \
-                  expected + ", found: " + found
+            print("Scripts Version mismatch. Expected: " +
+                  expected + ", found: " + found)
             scriptVersionMatches = False
 
     if templateVersionMatches and scriptVersionMatches:
-        print "Template and scripts version match successful"
+        print("Template and scripts version match successful")
         exit(0)
     else:
         exit(1)

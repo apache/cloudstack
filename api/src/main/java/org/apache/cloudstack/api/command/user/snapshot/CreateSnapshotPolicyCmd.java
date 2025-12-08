@@ -33,7 +33,6 @@ import org.apache.cloudstack.api.response.SnapshotPolicyResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -45,7 +44,6 @@ import com.cloud.user.Account;
 @APICommand(name = "createSnapshotPolicy", description = "Creates a snapshot policy for the account.", responseObject = SnapshotPolicyResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateSnapshotPolicyCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateSnapshotPolicyCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

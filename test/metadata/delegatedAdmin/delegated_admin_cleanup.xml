@@ -17,7 +17,7 @@ specific language governing permissions and limitations
 under the License.
 -->
 <delegatedadmin>
-	
+
 <!--  EXECUTE CLEANUP FOR DOMAINS -->
 	<command>
 		<name>registerUserKeys</name>
@@ -37,7 +37,7 @@ under the License.
 				<param>secretkey</param>
 			</item>
 		</returnvalue>
-	</command>	
+	</command>
 
 	<command>
 		<name>listDomains</name>
@@ -55,8 +55,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 	<command>
 		<name>listDomains</name>
 		<usercommand>true</usercommand>
@@ -73,7 +73,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>deleteUser</name>
 		<parameters>
@@ -83,7 +83,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>deleteUser</name>
 		<parameters>
@@ -93,7 +93,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>deleteDomain</name>
 		<parameters>
@@ -123,4 +123,4 @@ under the License.
 	</command>
 
 
-</delegatedadmin>	
+</delegatedadmin>

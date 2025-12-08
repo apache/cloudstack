@@ -51,7 +51,7 @@ const err = (error) => {
       })
     }
     if (response.status === 401) {
-      if (response.config && response.config.params && ['listIdps', 'cloudianIsEnabled'].includes(response.config.params.command)) {
+      if (response.config && response.config.params && ['forgotPassword', 'listIdps', 'cloudianIsEnabled'].includes(response.config.params.command)) {
         return
       }
       const originalPath = router.currentRoute.value.fullPath

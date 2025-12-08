@@ -16,8 +16,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from CsDatabag import CsCmdLine, CsGuestNetwork
-from CsAddress import CsAddress
+from .CsDatabag import CsCmdLine, CsGuestNetwork
+from .CsAddress import CsAddress
 import logging
 
 
@@ -33,8 +33,14 @@ class CsConfig(object):
 
     def __init__(self):
         self.fw = []
-        self.ipv6_acl = []
-        self.ipv6_fw = []
+        # Each nftables rule contains
+        # 1. type. If not set, it is a rule. Another valid option is "chain".
+        # 2. chain. The chain of the rule (if type is not set), or the name of chain (if type is "chain").
+        # 3. rule. The configuration of the rule or chain.
+        self.nft_ipv4_acl = []
+        self.nft_ipv4_fw = []
+        self.nft_ipv6_acl = []
+        self.nft_ipv6_fw = []
 
     def set_address(self):
         self.ips = CsAddress("ips", self)
@@ -63,11 +69,17 @@ class CsConfig(object):
     def get_fw(self):
         return self.fw
 
+    def get_nft_ipv4_acl(self):
+        return self.nft_ipv4_acl
+
+    def get_nft_ipv4_fw(self):
+        return self.nft_ipv4_fw
+
     def get_ipv6_acl(self):
-        return self.ipv6_acl
+        return self.nft_ipv6_acl
 
     def get_ipv6_fw(self):
-        return self.ipv6_fw
+        return self.nft_ipv6_fw
 
     def get_logger(self):
         return self.__LOG_FILE
@@ -80,6 +92,9 @@ class CsConfig(object):
 
     def is_router(self):
         return self.cl.get_type() == 'router'
+
+    def is_routed(self):
+        return self.cmdline().idata().get('is_routed', 'false') == 'true'
 
     def is_dhcp(self):
         return self.cl.get_type() == 'dhcpsrvr'

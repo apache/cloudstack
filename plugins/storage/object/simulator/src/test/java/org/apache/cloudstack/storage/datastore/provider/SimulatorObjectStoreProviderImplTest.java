@@ -17,6 +17,7 @@
 package org.apache.cloudstack.storage.datastore.provider;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -29,10 +30,17 @@ public class SimulatorObjectStoreProviderImplTest {
 
     private SimulatorObjectStoreProviderImpl simulatorObjectStoreProviderImpl;
 
+    private AutoCloseable closeable;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         simulatorObjectStoreProviderImpl = new SimulatorObjectStoreProviderImpl();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test

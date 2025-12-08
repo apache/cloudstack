@@ -394,7 +394,7 @@ class TestIpv6Network(cloudstackTestCase):
             cmd,
             hypervisor=self.routerDetailsMap[router.id]['hypervisor']
         )
-        self.assertTrue(type(result) == list and len(result) > 0,
+        self.assertTrue(type(result) == list,
             "%s on router %s returned invalid result" % (cmd, router.id))
         result = '\n'.join(result)
         return result
@@ -697,15 +697,16 @@ class TestIpv6Network(cloudstackTestCase):
                 "IPv6 firewall rule ICMP code mismatch %d, %d" % (rule.icmpcode, icmp_code))
         routerCmd = "nft list chain ip6 %s %s" % (FIREWALL_TABLE, FIREWALL_CHAINS[traffic_type])
         res = self.getRouterProcessStatus(self.getNetworkRouter(self.network), routerCmd)
-        self.assertTrue(parsed_rule in res,
-            "Listing firewall rule with nft list chain failure for rule: %s" % parsed_rule)
+        parsed_rule_new = parsed_rule.replace("{ ", "").replace(" }", "")
+        self.assertTrue(parsed_rule in res or parsed_rule_new in res,
+            "Listing firewall rule with nft list chain failure for rule: '%s' is not in '%s'" % (parsed_rule, res))
         if delete == True:
             cmd = deleteIpv6FirewallRule.deleteIpv6FirewallRuleCmd()
             cmd.id = fw_rule.id
             self.userapiclient.deleteIpv6FirewallRule(cmd)
             res = self.getRouterProcessStatus(self.getNetworkRouter(self.network), routerCmd)
-            self.assertFalse(parsed_rule in res,
-                "Firewall rule present in nft list chain failure despite delete for rule: %s" % parsed_rule)
+            self.assertFalse(parsed_rule in res or parsed_rule_new in res,
+                "Firewall rule present in nft list chain failure despite delete for rule: '%s' is in '%s'" % (parsed_rule, res))
 
     def checkIpv6FirewallRule(self):
         traffic_type = "Ingress"

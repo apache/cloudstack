@@ -48,7 +48,7 @@ run the following.
 ### 1a. reset the environment with the new build
 `$ python configure.py -b build.cfg -e environment.cfg -d deployment.cfg [[--skip-host] --install-marvin]`
 
-OR 
+OR
 
 ### b. reset the environment with specific build number
 `$ python configure.py -n <build-number> -e environment.cfg -d deployment.cfg [[--skip-host] --install-marvin]`

@@ -25,7 +25,6 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ObjectStoreResponse;
-import org.apache.log4j.Logger;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -35,7 +34,6 @@ import java.util.Map;
 @APICommand(name = "addObjectStoragePool", description = "Adds a object storage pool", responseObject = ObjectStoreResponse.class, since = "4.19.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddObjectStoragePoolCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(AddObjectStoragePoolCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -125,7 +123,7 @@ public class AddObjectStoragePoolCmd extends BaseCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add object storage");
             }
         } catch (Exception ex) {
-            s_logger.error("Exception: ", ex);
+            logger.error("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
     }

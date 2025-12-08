@@ -25,14 +25,12 @@ import java.sql.SQLException;
 import java.util.Map;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class Upgrade41000to41100 implements DbUpgrade {
+public class Upgrade41000to41100 extends DbUpgradeAbstractImpl {
 
-    final static Logger LOG = Logger.getLogger(Upgrade41000to41100.class);
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -69,16 +67,16 @@ public class Upgrade41000to41100 implements DbUpgrade {
     private void checkAndEnableDynamicRoles(final Connection conn) {
         final Map<String, String> apiMap = PropertiesUtil.processConfigFile(new String[] { "commands.properties" });
         if (apiMap == null || apiMap.isEmpty()) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("No commands.properties file was found, enabling dynamic roles by setting dynamic.apichecker.enabled to true if not already enabled.");
+            if (logger.isDebugEnabled()) {
+                logger.debug("No commands.properties file was found, enabling dynamic roles by setting dynamic.apichecker.enabled to true if not already enabled.");
             }
             try (final PreparedStatement updateStatement = conn.prepareStatement("INSERT INTO cloud.configuration (category, instance, name, default_value, value) VALUES ('Advanced', 'DEFAULT', 'dynamic.apichecker.enabled', 'false', 'true') ON DUPLICATE KEY UPDATE value='true'")) {
                 updateStatement.executeUpdate();
             } catch (SQLException e) {
-                LOG.error("Failed to set dynamic.apichecker.enabled to true, please run migrate-dynamicroles.py script to manually migrate to dynamic roles.", e);
+                logger.error("Failed to set dynamic.apichecker.enabled to true, please run migrate-dynamicroles.py script to manually migrate to dynamic roles.", e);
             }
         } else {
-            LOG.warn("Old commands.properties static checker is deprecated, please use migrate-dynamicroles.py to migrate to dynamic roles. Refer http://docs.cloudstack.apache.org/projects/cloudstack-administration/en/latest/accounts.html#using-dynamic-roles");
+            logger.warn("Old commands.properties static checker is deprecated, please use migrate-dynamicroles.py to migrate to dynamic roles. Refer http://docs.cloudstack.apache.org/projects/cloudstack-administration/en/latest/accounts.html#using-dynamic-roles");
         }
     }
 
@@ -96,19 +94,19 @@ public class Upgrade41000to41100 implements DbUpgrade {
                             updateStatement.setLong(2, userVmId);
                             updateStatement.executeUpdate();
                         } catch (SQLException e) {
-                            LOG.error("Failed to update cloud.user_vm user_data for id:" + userVmId + " with exception: " + e.getMessage());
+                            logger.error("Failed to update cloud.user_vm user_data for id:" + userVmId + " with exception: " + e.getMessage());
                             throw new CloudRuntimeException("Exception while updating cloud.user_vm for id " + userVmId, e);
                         }
                     }
                 } else {
                     // Update to NULL since it's invalid
-                    LOG.warn("Removing user_data for vm id " + userVmId + " because it's invalid");
-                    LOG.warn("Removed data was: " + userData);
+                    logger.warn("Removing user_data for vm id " + userVmId + " because it's invalid");
+                    logger.warn("Removed data was: " + userData);
                     try (final PreparedStatement updateStatement = conn.prepareStatement("UPDATE `cloud`.`user_vm` SET `user_data` = NULL WHERE `id` = ? ;")) {
                         updateStatement.setLong(1, userVmId);
                         updateStatement.executeUpdate();
                     } catch (SQLException e) {
-                        LOG.error("Failed to update cloud.user_vm user_data for id:" + userVmId + " to NULL with exception: " + e.getMessage());
+                        logger.error("Failed to update cloud.user_vm user_data for id:" + userVmId + " to NULL with exception: " + e.getMessage());
                         throw new CloudRuntimeException("Exception while updating cloud.user_vm for id " + userVmId + " to NULL", e);
                     }
                 }
@@ -116,8 +114,8 @@ public class Upgrade41000to41100 implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while validating existing user_vm table's user_data column to be base64 valid with padding", e);
         }
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Done validating base64 content of user data");
+        if (logger.isDebugEnabled()) {
+            logger.debug("Done validating base64 content of user data");
         }
     }
 

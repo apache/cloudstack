@@ -82,6 +82,10 @@ export default {
         resourceType: 'IpAddress',
         component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
         show: () => { return 'listEvents' in this.$store.getters.apis }
+      },
+      {
+        name: 'comments',
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
       }],
       activeTab: ''
     }
@@ -148,17 +152,23 @@ export default {
         // VPC IPs don't have firewall
         let tabs = this.$route.meta.tabs.filter(tab => tab.name !== 'firewall')
 
+        const network = await this.fetchNetwork()
+        if (network && network.networkofferingconservemode) {
+          this.tabs = tabs
+          return
+        }
+
         this.portFWRuleCount = await this.fetchPortFWRule()
         this.loadBalancerRuleCount = await this.fetchLoadBalancerRule()
 
         // VPC IPs with PF only have PF
         if (this.portFWRuleCount > 0) {
-          tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'portforwarding'))
+          tabs = tabs.filter(tab => tab.name !== 'loadbalancing')
         }
 
         // VPC IPs with LB rules only have LB
         if (this.loadBalancerRuleCount > 0) {
-          tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'loadbalancing'))
+          tabs = tabs.filter(tab => tab.name !== 'portforwarding')
         }
         this.tabs = tabs
         return
@@ -182,6 +192,20 @@ export default {
     },
     fetchAction () {
       this.actions = this.$route.meta.actions || []
+    },
+    fetchNetwork () {
+      return new Promise((resolve, reject) => {
+        api('listNetworks', {
+          listAll: true,
+          projectid: this.resource.projectid,
+          id: this.resource.associatednetworkid
+        }).then(json => {
+          const network = json.listnetworksresponse?.network?.[0] || null
+          resolve(network)
+        }).catch(e => {
+          reject(e)
+        })
+      })
     },
     fetchPortFWRule () {
       return new Promise((resolve, reject) => {
@@ -214,6 +238,7 @@ export default {
       })
     },
     changeResource (resource) {
+      console.log(resource)
       this.resource = resource
     },
     toggleLoading () {

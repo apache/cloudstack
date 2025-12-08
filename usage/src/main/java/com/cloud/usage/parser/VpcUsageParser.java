@@ -24,16 +24,17 @@ import com.cloud.user.AccountVO;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import org.apache.cloudstack.usage.UsageTypes;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.List;
-import org.apache.log4j.Logger;
 
 @Component
 public class VpcUsageParser {
-    private static final Logger LOGGER = Logger.getLogger(VpcUsageParser.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(VpcUsageParser.class.getName());
 
     @Inject
     private UsageVpcDao vpcDao;
@@ -49,7 +50,7 @@ public class VpcUsageParser {
     }
 
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-        LOGGER.debug(String.format("Parsing all VPC usage events for account [%s].", account.getId()));
+        LOGGER.debug("Parsing all VPC usage events for account {}", account);
         if ((endDate == null) || endDate.after(new Date())) {
             endDate = new Date();
         }
@@ -78,8 +79,8 @@ public class VpcUsageParser {
             String usageDisplay = dFormat.format(usage);
 
             long vpcId = usageVPC.getVpcId();
-            LOGGER.debug(String.format("Creating VPC usage record with id [%s], usage [%s], startDate [%s], and endDate [%s], for account [%s].",
-                    vpcId, usageDisplay, startDate, endDate, account.getId()));
+            LOGGER.debug("Creating VPC usage record with id [{}], usage [{}], startDate [{}], and endDate [{}], for account [{}].",
+                    vpcId, usageDisplay, startDate, endDate, account);
 
             String description = String.format("VPC usage for VPC ID: %d", usageVPC.getVpcId());
             UsageVO usageRecord =

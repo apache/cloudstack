@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.user.event;
 
 import java.util.ArrayList;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseCmd;
@@ -30,7 +29,6 @@ import com.cloud.user.Account;
 @APICommand(name = "listEventTypes", description = "List Event Types", responseObject = EventTypeResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListEventTypesCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(ListEventTypesCmd.class.getName());
 
     @Override
     public long getEntityOwnerId() {

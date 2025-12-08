@@ -34,7 +34,6 @@ import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
@@ -60,7 +59,6 @@ import org.libvirt.LibvirtException;
 @ResourceWrapper(handles =  CreatePrivateTemplateFromVolumeCommand.class)
 public final class LibvirtCreatePrivateTemplateFromVolumeCommandWrapper extends CommandWrapper<CreatePrivateTemplateFromVolumeCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtCreatePrivateTemplateFromVolumeCommandWrapper.class);
 
     @Override
     public Answer execute(final CreatePrivateTemplateFromVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -96,7 +94,7 @@ public final class LibvirtCreatePrivateTemplateFromVolumeCommandWrapper extends 
                 final String createTmplPath = libvirtComputingResource.createTmplPath();
                 final int cmdsTimeout = libvirtComputingResource.getCmdsTimeout();
 
-                final Script scriptCommand = new Script(createTmplPath, cmdsTimeout, s_logger);
+                final Script scriptCommand = new Script(createTmplPath, cmdsTimeout, logger);
                 scriptCommand.add("-f", disk.getPath());
                 scriptCommand.add("-t", tmpltPath);
                 scriptCommand.add("-n", command.getUniqueName() + ".qcow2");
@@ -104,11 +102,11 @@ public final class LibvirtCreatePrivateTemplateFromVolumeCommandWrapper extends 
                 final String result = scriptCommand.execute();
 
                 if (result != null) {
-                    s_logger.debug("failed to create template: " + result);
+                    logger.debug("failed to create template: " + result);
                     return new CreatePrivateTemplateAnswer(command, false, result);
                 }
             } else {
-                s_logger.debug("Converting RBD disk " + disk.getPath() + " into template " + command.getUniqueName());
+                logger.debug("Converting RBD disk " + disk.getPath() + " into template " + command.getUniqueName());
 
                 final QemuImgFile srcFile =
                         new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(primary.getSourceHost(), primary.getSourcePort(), primary.getAuthUserName(),
@@ -122,7 +120,7 @@ public final class LibvirtCreatePrivateTemplateFromVolumeCommandWrapper extends 
                     final QemuImg q = new QemuImg(0);
                     q.convert(srcFile, destFile);
                 } catch (final QemuImgException | LibvirtException e) {
-                    s_logger.error("Failed to create new template while converting " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " +
+                    logger.error("Failed to create new template while converting " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " +
                             e.getMessage());
                 }
 
@@ -142,7 +140,7 @@ public final class LibvirtCreatePrivateTemplateFromVolumeCommandWrapper extends 
                     templFo.flush();
                 }catch(final IOException ex)
                 {
-                    s_logger.error("CreatePrivateTemplateAnswer:Exception:"+ex.getMessage());
+                    logger.error("CreatePrivateTemplateAnswer:Exception:"+ex.getMessage());
                 }
 
             }

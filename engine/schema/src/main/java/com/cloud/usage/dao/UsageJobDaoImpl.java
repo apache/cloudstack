@@ -23,7 +23,6 @@ import java.util.List;
 
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageJobVO;
@@ -35,7 +34,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class UsageJobDaoImpl extends GenericDaoBase<UsageJobVO, Long> implements UsageJobDao {
-    private static final Logger s_logger = Logger.getLogger(UsageJobDaoImpl.class.getName());
 
     private static final String GET_LAST_JOB_SUCCESS_DATE_MILLIS =
         "SELECT end_millis FROM cloud_usage.usage_job WHERE end_millis > 0 and success = 1 ORDER BY end_millis DESC LIMIT 1";
@@ -52,7 +50,7 @@ public class UsageJobDaoImpl extends GenericDaoBase<UsageJobVO, Long> implements
                 return rs.getLong(1);
             }
         } catch (Exception ex) {
-            s_logger.error("error getting last usage job success date", ex);
+            logger.error("error getting last usage job success date", ex);
         } finally {
             txn.close();
         }
@@ -78,7 +76,7 @@ public class UsageJobDaoImpl extends GenericDaoBase<UsageJobVO, Long> implements
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            s_logger.error("error updating job success date", ex);
+            logger.error("error updating job success date", ex);
             throw new CloudRuntimeException(ex.getMessage());
         } finally {
             txn.close();
@@ -218,10 +216,10 @@ public class UsageJobDaoImpl extends GenericDaoBase<UsageJobVO, Long> implements
         try {
             List<UsageJobVO> jobs = getLastOpenJobsOwned(hostname, pid);
             if (CollectionUtils.isNotEmpty(jobs)) {
-                s_logger.info(String.format("Found %s opens job, to remove", jobs.size()));
+                logger.info("Found {} opens job, to remove", jobs.size());
                 for (UsageJobVO job : jobs) {
-                    s_logger.debug(String.format("Removing job - id: %d, pid: %d, job type: %d, scheduled: %d, heartbeat: %s",
-                            job.getId(), job.getPid(), job.getJobType(), job.getScheduled(), job.getHeartbeat()));
+                    logger.debug("Removing job - id: {}, pid: {}, job type: {}, scheduled: {}, heartbeat: {}",
+                            job.getId(), job.getPid(), job.getJobType(), job.getScheduled(), job.getHeartbeat());
                     remove(job.getId());
                 }
             }

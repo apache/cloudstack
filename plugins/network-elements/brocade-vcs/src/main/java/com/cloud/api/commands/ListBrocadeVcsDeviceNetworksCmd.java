@@ -24,7 +24,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -48,7 +47,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @APICommand(name = "listBrocadeVcsDeviceNetworks", responseObject = NetworkResponse.class, description = "lists network that are using a brocade vcs switch", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListBrocadeVcsDeviceNetworksCmd extends BaseListCmd {
 
-    public static final Logger s_logger = Logger.getLogger(ListBrocadeVcsDeviceNetworksCmd.class.getName());
     private static final String s_name = "listbrocadevcsdevicenetworks";
     @Inject
     protected BrocadeVcsElementService brocadeVcsElementService;

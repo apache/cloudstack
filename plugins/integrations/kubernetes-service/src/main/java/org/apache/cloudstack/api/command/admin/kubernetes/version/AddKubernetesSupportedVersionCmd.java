@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.kubernetes.version;
 
 import javax.inject.Inject;
 
+import com.cloud.cpu.CPU;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -33,7 +34,6 @@ import org.apache.cloudstack.api.response.KubernetesSupportedVersionResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -48,7 +48,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
         entityType = {KubernetesSupportedVersion.class},
         authorized = {RoleType.Admin})
 public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCmd {
-    public static final Logger LOGGER = Logger.getLogger(AddKubernetesSupportedVersionCmd.class.getName());
 
     @Inject
     private KubernetesVersionService kubernetesVersionService;
@@ -88,6 +87,11 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCm
     @Parameter(name=ApiConstants.DIRECT_DOWNLOAD, type = CommandType.BOOLEAN, since="4.18.2",
             description = "If set to true the Kubernetes supported version ISO will bypass Secondary Storage and be downloaded to Primary Storage on deployment. Default is false")
     private Boolean directDownload;
+
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "the CPU arch of the Kubernetes ISO. Valid options are: x86_64, aarch64",
+            since = "4.20")
+    private String arch;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -130,6 +134,10 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCm
 
     public boolean isDirectDownload() {
         return (directDownload != null) ? directDownload : false;
+    }
+
+    public CPU.CPUArch getArch() {
+        return CPU.CPUArch.fromType(arch);
     }
 
     @Override

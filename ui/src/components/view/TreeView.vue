@@ -204,9 +204,13 @@ export default {
           return
         }
 
-        if (Object.keys(this.resource).length > 0) {
+        const resourceKeys = Object.keys(this.resource)
+        if (resourceKeys.length > 0) {
           this.selectedTreeKey = this.resource.key
           this.$emit('change-resource', this.resource)
+          if (resourceKeys.filter(x => x.endsWith('limit')).length === 0) {
+            setTimeout(() => { this.getDetailResource(this.resource.id) })
+          }
 
           // set default expand
           if (this.defaultSelected.length > 1) {

@@ -28,7 +28,8 @@ import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.object.datastore.ObjectStoreHelper;
 import org.apache.cloudstack.storage.object.datastore.ObjectStoreProviderManager;
 import org.apache.cloudstack.storage.object.store.lifecycle.ObjectStoreLifeCycle;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.HashMap;
@@ -36,7 +37,7 @@ import java.util.Map;
 
 public class MinIOObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
 
-    private static final Logger s_logger = Logger.getLogger(MinIOObjectStoreLifeCycleImpl.class);
+    protected Logger logger = LogManager.getLogger(MinIOObjectStoreLifeCycleImpl.class);
 
     @Inject
     ObjectStoreHelper objectStoreHelper;
@@ -78,9 +79,9 @@ public class MinIOObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
         try {
             // Test connection by listing buckets
             minioClient.listBuckets();
-            s_logger.debug("Successfully connected to MinIO EndPoint: "+url);
+            logger.debug("Successfully connected to MinIO EndPoint: "+url);
         } catch (Exception e) {
-            s_logger.debug("Error while initializing MinIO Object Store: "+e.getMessage());
+            logger.debug("Error while initializing MinIO Object Store: "+e.getMessage());
             throw new RuntimeException("Error while initializing MinIO Object Store. Invalid credentials or URL");
         }
 

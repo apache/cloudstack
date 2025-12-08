@@ -20,7 +20,6 @@ package com.cloud.hypervisor.ovm3.resources;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -33,7 +32,6 @@ import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachineProfile;
 
 public class Ovm3HypervisorGuru extends HypervisorGuruBase implements HypervisorGuru {
-    private final Logger LOGGER = Logger.getLogger(Ovm3HypervisorGuru.class);
     @Inject
     private GuestOSDao guestOsDao;
 
@@ -61,7 +59,7 @@ public class Ovm3HypervisorGuru extends HypervisorGuruBase implements Hypervisor
 
     @Override
     public Pair<Boolean, Long> getCommandHostDelegation(long hostId, Command cmd) {
-        LOGGER.debug("getCommandHostDelegation: " + cmd.getClass());
+        logger.debug("getCommandHostDelegation: " + cmd.getClass());
         if (cmd instanceof StorageSubSystemCommand) {
             StorageSubSystemCommand c = (StorageSubSystemCommand)cmd;
             c.setExecuteInSequence(true);

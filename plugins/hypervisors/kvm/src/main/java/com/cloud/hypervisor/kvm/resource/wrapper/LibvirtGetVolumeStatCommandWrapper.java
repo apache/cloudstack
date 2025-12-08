@@ -19,8 +19,6 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.GetVolumeStatAnswer;
 import com.cloud.agent.api.GetVolumeStatCommand;
@@ -35,7 +33,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @ResourceWrapper(handles = GetVolumeStatCommand.class)
 public final class LibvirtGetVolumeStatCommandWrapper extends CommandWrapper<GetVolumeStatCommand, Answer, LibvirtComputingResource> {
-    private static final Logger s_logger = Logger.getLogger(LibvirtGetVolumeStatCommandWrapper.class);
 
     @Override
     public Answer execute(final GetVolumeStatCommand cmd, final LibvirtComputingResource libvirtComputingResource) {
@@ -59,7 +56,7 @@ public final class LibvirtGetVolumeStatCommandWrapper extends CommandWrapper<Get
 
             return new GetVolumeStatAnswer(cmd, disk.getSize(), disk.getVirtualSize());
         } catch (CloudRuntimeException e) {
-            s_logger.error("Can't get volume stats, due to: " + e.getMessage(), e);
+            logger.error("Can't get volume stats, due to: " + e.getMessage(), e);
             return new GetVolumeStatAnswer(cmd, false, "Can't get volume stats, due to: " + e.getMessage());
         }
     }

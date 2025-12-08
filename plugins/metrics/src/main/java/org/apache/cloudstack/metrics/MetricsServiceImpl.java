@@ -22,6 +22,7 @@ import static com.cloud.utils.NumbersUtil.toReadableSize;
 import java.lang.reflect.InvocationTargetException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -32,8 +33,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.dc.ClusterVO;
-import com.cloud.utils.Ternary;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ListClustersMetricsCmd;
 import org.apache.cloudstack.api.ListDbMetricsCmd;
@@ -61,6 +60,8 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.cluster.ClusterDrsAlgorithm;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.management.ManagementServerHost.State;
 import org.apache.cloudstack.response.ClusterMetricsResponse;
 import org.apache.cloudstack.response.DbMetricsResponse;
@@ -84,7 +85,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntryBase;
@@ -99,6 +99,7 @@ import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl;
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -111,8 +112,7 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.org.Cluster;
-import com.cloud.org.Grouping;
-import com.cloud.org.Managed;
+import com.cloud.projects.Project;
 import com.cloud.server.DbStatsCollection;
 import com.cloud.server.ManagementServerHostStats;
 import com.cloud.server.StatsCollector;
@@ -125,6 +125,7 @@ import com.cloud.usage.dao.UsageJobDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.db.DbProperties;
 import com.cloud.utils.db.DbUtil;
 import com.cloud.utils.db.Filter;
@@ -142,9 +143,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VmStatsDao;
 import com.google.gson.Gson;
 
-public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements MetricsService {
-    private static final Logger LOGGER = Logger.getLogger(MetricsServiceImpl.class);
-
+public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements MetricsService, Configurable {
     @Inject
     private DataCenterDao dataCenterDao;
     @Inject
@@ -187,19 +186,15 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
 
     private static Gson gson = new Gson();
 
+    private final List<Account.Type> AccountTypesWithRecursiveUsageAccess = Arrays.asList(
+            Account.Type.ADMIN, Account.Type.DOMAIN_ADMIN, Account.Type.READ_ONLY_ADMIN
+    );
+
     protected MetricsServiceImpl() {
         super();
     }
 
-    private Double findRatioValue(final String value) {
-        if (value != null) {
-            return Double.valueOf(value);
-        }
-        return 1.0;
-    }
-
     private void updateHostMetrics(final HostMetrics hostMetrics, final HostJoinVO host) {
-        hostMetrics.incrTotalHosts();
         hostMetrics.addCpuAllocated(host.getCpuReservedCapacity() + host.getCpuUsedCapacity());
         hostMetrics.addMemoryAllocated(host.getMemReservedCapacity() + host.getMemUsedCapacity());
         final HostStats hostStats = ApiDBUtils.getHostStatistics(host.getId());
@@ -245,7 +240,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
     @Override
     public ListResponse<VolumeMetricsStatsResponse> searchForVolumeMetricsStats(ListVolumesUsageHistoryCmd cmd) {
         Pair<List<VolumeVO>, Integer> volumeList = searchForVolumesInternal(cmd);
-        Map<Long,List<VolumeStatsVO>> volumeStatsList = searchForVolumeMetricsStatsInternal(cmd, volumeList.first());
+        Map<Long, List<VolumeStatsVO>> volumeStatsList = searchForVolumeMetricsStatsInternal(cmd, volumeList.first());
         return createVolumeMetricsStatsResponse(volumeList, volumeStatsList);
     }
 
@@ -256,17 +251,30 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
      * @return the list of VMs.
      */
     protected Pair<List<UserVmVO>, Integer> searchForUserVmsInternal(ListVMsUsageHistoryCmd cmd) {
+        final Long id = cmd.getId();
+        Account caller = CallContext.current().getCallingAccount();
+        List<Long> permittedAccounts = new ArrayList<>();
+        boolean recursive = AccountTypesWithRecursiveUsageAccess.contains(caller.getType());
+        Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(null, recursive, null);
+        accountMgr.buildACLSearchParameters(caller, id, null, null, permittedAccounts, domainIdRecursiveListProject, true, false);
+        Long domainId = domainIdRecursiveListProject.first();
+        Boolean isRecursive = domainIdRecursiveListProject.second();
+        Project.ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+
         Filter searchFilter = new Filter(UserVmVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
         String name = cmd.getName();
         String keyword = cmd.getKeyword();
 
         SearchBuilder<UserVmVO> sb =  userVmDao.createSearchBuilder();
+        sb.select(null, SearchCriteria.Func.DISTINCT, sb.entity().getId()); // select distinct
+        accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
 
         SearchCriteria<UserVmVO> sc = sb.create();
+        accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         if (CollectionUtils.isNotEmpty(ids)) {
             sc.setParameters("idIN", ids.toArray());
         }
@@ -280,7 +288,14 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
             sc.addAnd("displayName", SearchCriteria.Op.SC, ssc);
         }
 
-        return userVmDao.searchAndCount(sc, searchFilter);
+        Pair<List<UserVmVO>, Integer> uniqueVmPair = userVmDao.searchAndCount(sc, searchFilter);
+        Integer count = uniqueVmPair.second();
+        if (count == 0) {
+            return new Pair<>(new ArrayList<>(), count);
+        }
+        List<Long> vmIds = uniqueVmPair.first().stream().map(UserVmVO::getId).collect(Collectors.toList());
+        List<UserVmVO> vms = userVmDao.listByIds(vmIds);
+        return new Pair<>(vms, count);
     }
 
     /**
@@ -342,17 +357,49 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
      * @return the list of VMs.
      */
     protected Pair<List<VolumeVO>, Integer> searchForVolumesInternal(ListVolumesUsageHistoryCmd cmd) {
+        final Long id = cmd.getId();
+        Account caller = CallContext.current().getCallingAccount();
+        List<Long> permittedAccounts = new ArrayList<>();
+        boolean recursive = AccountTypesWithRecursiveUsageAccess.contains(caller.getType());
+        Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(null, recursive, null);
+        accountMgr.buildACLSearchParameters(caller, id, null, null, permittedAccounts, domainIdRecursiveListProject, true, false);
+        Long domainId = domainIdRecursiveListProject.first();
+        Boolean isRecursive = domainIdRecursiveListProject.second();
+        Project.ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+
         Filter searchFilter = new Filter(VolumeVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
         String name = cmd.getName();
         String keyword = cmd.getKeyword();
 
         SearchBuilder<VolumeVO> sb =  volumeDao.createSearchBuilder();
+        sb.select(null, SearchCriteria.Func.DISTINCT, sb.entity().getId()); // select distinct
+        accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
 
+        boolean shouldListSystemVmVolumes = accountMgr.isRootAdmin(CallContext.current().getCallingAccountId());
+        List<Long> vmIds = new ArrayList<>();
+        if (!shouldListSystemVmVolumes) {
+            SearchBuilder<UserVmVO> vmSearch = userVmDao.createSearchBuilder();
+            vmSearch.select(null, SearchCriteria.Func.DISTINCT, vmSearch.entity().getId());
+            accountMgr.buildACLSearchBuilder(vmSearch, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+            SearchCriteria<UserVmVO> vmSc = vmSearch.create();
+            accountMgr.buildACLSearchCriteria(vmSc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+            List<UserVmVO> vms = userVmDao.search(vmSc, null);
+            vmIds = vms.stream().map(UserVmVO::getId).collect(Collectors.toList());
+            if (vmIds.isEmpty()) {
+                sb.and("instanceIdNull", sb.entity().getInstanceId(), SearchCriteria.Op.NULL);
+            } else {
+                sb.and().op("instanceIdNull", sb.entity().getInstanceId(), SearchCriteria.Op.NULL);
+                sb.or("instanceIds", sb.entity().getInstanceId(), SearchCriteria.Op.IN);
+                sb.cp();
+            }
+        }
+
         SearchCriteria<VolumeVO> sc = sb.create();
+        accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         if (CollectionUtils.isNotEmpty(ids)) {
             sc.setParameters("idIN", ids.toArray());
         }
@@ -365,8 +412,18 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
             ssc.addOr("state", SearchCriteria.Op.EQ, keyword);
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
+        if (!shouldListSystemVmVolumes && CollectionUtils.isNotEmpty(vmIds)) {
+            sc.setParameters("instanceIds", vmIds.toArray());
+        }
 
-        return volumeDao.searchAndCount(sc, searchFilter);
+        Pair<List<VolumeVO>, Integer> uniqueVolumePair = volumeDao.searchAndCount(sc, searchFilter);
+        Integer count = uniqueVolumePair.second();
+        if (count == 0) {
+            return new Pair<>(new ArrayList<>(), count);
+        }
+        List<Long> volumeIds = uniqueVolumePair.first().stream().map(VolumeVO::getId).collect(Collectors.toList());
+        List<VolumeVO> volumes = volumeDao.listByIds(volumeIds);
+        return new Pair<>(volumes, count);
     }
 
     /**
@@ -563,22 +620,17 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         response.setZones(dataCenterDao.countAll());
         response.setPods(podDao.countAll());
         response.setClusters(clusterDao.countAll());
-        response.setHosts(hostDao.countAllByType(Host.Type.Routing));
+        Pair<Integer, Integer> hostCountAndCpuSockets = hostDao.countAllHostsAndCPUSocketsByType(Host.Type.Routing);
+        response.setHosts(hostCountAndCpuSockets.first());
         response.setStoragePools(storagePoolDao.countAll());
         response.setImageStores(imageStoreDao.countAllImageStores());
         response.setObjectStores(objectStoreDao.countAllObjectStores());
-        response.setSystemvms(vmInstanceDao.listByTypes(VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm).size());
+        response.setSystemvms(vmInstanceDao.countByTypes(VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm));
         response.setRouters(domainRouterDao.countAllByRole(VirtualRouter.Role.VIRTUAL_ROUTER));
         response.setInternalLbs(domainRouterDao.countAllByRole(VirtualRouter.Role.INTERNAL_LB_VM));
         response.setAlerts(alertDao.countAll());
-        int cpuSockets = 0;
-        for (final Host host : hostDao.listByType(Host.Type.Routing)) {
-            if (host.getCpuSockets() != null) {
-                cpuSockets += host.getCpuSockets();
-            }
-        }
-        response.setCpuSockets(cpuSockets);
-        response.setManagementServers(managementServerHostDao.listAll().size());
+        response.setCpuSockets(hostCountAndCpuSockets.second());
+        response.setManagementServers(managementServerHostDao.countAll());
         return response;
     }
 
@@ -766,38 +818,40 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
             final CapacityDaoImpl.SummedCapacity cpuCapacity = getCapacity(Capacity.CAPACITY_TYPE_CPU, null, clusterId);
             final CapacityDaoImpl.SummedCapacity memoryCapacity = getCapacity(Capacity.CAPACITY_TYPE_MEMORY, null, clusterId);
             final HostMetrics hostMetrics = new HostMetrics(cpuCapacity, memoryCapacity);
+            hostMetrics.setUpResources(Long.valueOf(hostDao.countAllInClusterByTypeAndStates(clusterId, Host.Type.Routing, List.of(Status.Up))));
+            hostMetrics.setTotalResources(Long.valueOf(hostDao.countAllInClusterByTypeAndStates(clusterId, Host.Type.Routing, null)));
+            hostMetrics.setTotalHosts(hostMetrics.getTotalResources());
 
-            List<Ternary<Long, Long, Long>> cpuList = new ArrayList<>();
-            List<Ternary<Long, Long, Long>> memoryList = new ArrayList<>();
-
-            for (final Host host: hostDao.findByClusterId(clusterId)) {
-                if (host == null || host.getType() != Host.Type.Routing) {
-                    continue;
+            if (AllowListMetricsComputation.value()) {
+                List<Ternary<Long, Long, Long>> cpuList = new ArrayList<>();
+                List<Ternary<Long, Long, Long>> memoryList = new ArrayList<>();
+                for (final HostJoinVO host : hostJoinDao.findByClusterId(clusterId, Host.Type.Routing)) {
+                    updateHostMetrics(hostMetrics, host);
+                    cpuList.add(new Ternary<>(host.getCpuUsedCapacity(), host.getCpuReservedCapacity(), host.getCpus() * host.getSpeed()));
+                    memoryList.add(new Ternary<>(host.getMemUsedCapacity(), host.getMemReservedCapacity(), host.getTotalMemory()));
                 }
-                if (host.getStatus() == Status.Up) {
-                    hostMetrics.incrUpResources();
+                try {
+                    Double imbalance = ClusterDrsAlgorithm.getClusterImbalance(clusterId, cpuList, memoryList, null);
+                    metricsResponse.setDrsImbalance(imbalance.isNaN() ? null : 100.0 * imbalance);
+                } catch (ConfigurationException e) {
+                    logger.warn("Failed to get cluster imbalance for cluster {}", clusterId, e);
                 }
-                hostMetrics.incrTotalResources();
-                HostJoinVO hostJoin = hostJoinDao.findById(host.getId());
-                updateHostMetrics(hostMetrics, hostJoin);
-
-                cpuList.add(new Ternary<>(hostJoin.getCpuUsedCapacity(), hostJoin.getCpuReservedCapacity(), hostJoin.getCpus() * hostJoin.getSpeed()));
-                memoryList.add(new Ternary<>(hostJoin.getMemUsedCapacity(), hostJoin.getMemReservedCapacity(), hostJoin.getTotalMemory()));
+            } else {
+                if (cpuCapacity != null) {
+                    hostMetrics.setCpuAllocated(cpuCapacity.getAllocatedCapacity());
+                }
+                if (memoryCapacity != null) {
+                    hostMetrics.setMemoryAllocated(memoryCapacity.getAllocatedCapacity());
+                }
             }
 
-            try {
-                Double imbalance = ClusterDrsAlgorithm.getClusterImbalance(clusterId, cpuList, memoryList, null);
-                metricsResponse.setDrsImbalance(imbalance.isNaN() ? null : 100.0 * imbalance);
-            } catch (ConfigurationException e) {
-                LOGGER.warn("Failed to get cluster imbalance for cluster " + clusterId, e);
-            }
-
-            metricsResponse.setState(clusterResponse.getAllocationState(), clusterResponse.getManagedState());
-            metricsResponse.setResources(hostMetrics.getUpResources(), hostMetrics.getTotalResources());
             addHostCpuMetricsToResponse(metricsResponse, clusterId, hostMetrics);
             addHostMemoryMetricsToResponse(metricsResponse, clusterId, hostMetrics);
 
             metricsResponse.setHasAnnotation(clusterResponse.hasAnnotation());
+            metricsResponse.setState(clusterResponse.getAllocationState(), clusterResponse.getManagedState());
+            metricsResponse.setResources(hostMetrics.getUpResources(), hostMetrics.getTotalResources());
+
             metricsResponses.add(metricsResponse);
         }
         return metricsResponses;
@@ -848,19 +902,19 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
     @Override
     public List<ManagementServerMetricsResponse> listManagementServerMetrics(List<ManagementServerResponse> managementServerResponses) {
         final List<ManagementServerMetricsResponse> metricsResponses = new ArrayList<>();
-        if(LOGGER.isDebugEnabled()) {
-            LOGGER.debug(String.format("Getting metrics for %d MS hosts.", managementServerResponses.size()));
+        if(logger.isDebugEnabled()) {
+            logger.debug(String.format("Getting metrics for %d MS hosts.", managementServerResponses.size()));
         }
         for (final ManagementServerResponse managementServerResponse: managementServerResponses) {
-            if(LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("Processing metrics for MS hosts %s.", managementServerResponse.getId()));
+            if(logger.isDebugEnabled()) {
+                logger.debug("Processing metrics for MS host [id: {}, name: {}].", managementServerResponse.getId(), managementServerResponse.getName());
             }
             ManagementServerMetricsResponse metricsResponse = new ManagementServerMetricsResponse();
 
             try {
                 BeanUtils.copyProperties(metricsResponse, managementServerResponse);
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace(String.format("Bean copy result %s.", new ReflectionToStringBuilder(metricsResponse, ToStringStyle.SIMPLE_STYLE).toString()));
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("Bean copy result %s.", new ReflectionToStringBuilder(metricsResponse, ToStringStyle.SIMPLE_STYLE).toString()));
                 }
             } catch (IllegalAccessException | InvocationTargetException e) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to generate zone metrics response.");
@@ -877,15 +931,15 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
      * Get the transient/in memory data.
      */
     private void updateManagementServerMetrics(ManagementServerMetricsResponse metricsResponse, ManagementServerResponse managementServerResponse) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(String.format("Getting stats for %s[%s]", managementServerResponse.getName(), managementServerResponse.getId()));
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Getting stats for %s[%s]", managementServerResponse.getName(), managementServerResponse.getId()));
         }
         ManagementServerHostStats status = ApiDBUtils.getManagementServerHostStatistics(managementServerResponse.getId());
         if (status == null ) {
-            LOGGER.info(String.format("No status object found for MS %s - %s.", managementServerResponse.getName(), managementServerResponse.getId()));
+            logger.info(String.format("No status object found for MS %s - %s.", managementServerResponse.getName(), managementServerResponse.getId()));
         } else {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("Status object found for MS %s - %s.", managementServerResponse.getName(), new ReflectionToStringBuilder(status)));
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("Status object found for MS %s - %s.", managementServerResponse.getName(), new ReflectionToStringBuilder(status)));
             }
             if (StatsCollector.MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL.value() > 0) {
                 copyManagementServerStatusToResponse(metricsResponse, status);
@@ -944,34 +998,34 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
             final CapacityDaoImpl.SummedCapacity cpuCapacity = getCapacity((int) Capacity.CAPACITY_TYPE_CPU, zoneId, null);
             final CapacityDaoImpl.SummedCapacity memoryCapacity = getCapacity((int) Capacity.CAPACITY_TYPE_MEMORY, zoneId, null);
             final HostMetrics hostMetrics = new HostMetrics(cpuCapacity, memoryCapacity);
+            hostMetrics.setUpResources(Long.valueOf(clusterDao.countAllManagedAndEnabledByDcId(zoneId)));
+            hostMetrics.setTotalResources(Long.valueOf(clusterDao.countAllByDcId(zoneId)));
+            hostMetrics.setTotalHosts(Long.valueOf(hostDao.countAllByTypeInZone(zoneId, Host.Type.Routing)));
 
-            for (final Cluster cluster : clusterDao.listClustersByDcId(zoneId)) {
-                if (cluster == null) {
-                    continue;
-                }
-                hostMetrics.incrTotalResources();
-                if (cluster.getAllocationState() == Grouping.AllocationState.Enabled
-                        && cluster.getManagedState() == Managed.ManagedState.Managed) {
-                    hostMetrics.incrUpResources();
-                }
-
-                for (final Host host: hostDao.findByClusterId(cluster.getId())) {
-                    if (host == null || host.getType() != Host.Type.Routing) {
+            if (AllowListMetricsComputation.value()) {
+                for (final Cluster cluster : clusterDao.listClustersByDcId(zoneId)) {
+                    if (cluster == null) {
                         continue;
                     }
-                    updateHostMetrics(hostMetrics, hostJoinDao.findById(host.getId()));
+                    for (final HostJoinVO host: hostJoinDao.findByClusterId(cluster.getId(), Host.Type.Routing)) {
+                        updateHostMetrics(hostMetrics, host);
+                    }
+                }
+            } else {
+                if (cpuCapacity != null) {
+                    hostMetrics.setCpuAllocated(cpuCapacity.getAllocatedCapacity());
+                }
+                if (memoryCapacity != null) {
+                    hostMetrics.setMemoryAllocated(memoryCapacity.getAllocatedCapacity());
                 }
             }
+
+            addHostCpuMetricsToResponse(metricsResponse, null, hostMetrics);
+            addHostMemoryMetricsToResponse(metricsResponse, null, hostMetrics);
 
             metricsResponse.setHasAnnotation(zoneResponse.hasAnnotation());
             metricsResponse.setState(zoneResponse.getAllocationState());
             metricsResponse.setResource(hostMetrics.getUpResources(), hostMetrics.getTotalResources());
-
-            final Long totalHosts = hostMetrics.getTotalHosts();
-            // CPU
-            addHostCpuMetricsToResponse(metricsResponse, null, hostMetrics);
-            // Memory
-            addHostMemoryMetricsToResponse(metricsResponse, null, hostMetrics);
 
             metricsResponses.add(metricsResponse);
         }
@@ -1020,8 +1074,8 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
 
         getQueryHistory(response);
 
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(new ReflectionToStringBuilder(response));
+        if (logger.isTraceEnabled()) {
+            logger.trace(new ReflectionToStringBuilder(response));
         }
 
         response.setObjectName("dbMetrics");
@@ -1030,12 +1084,14 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
 
     private void getQueryHistory(DbMetricsResponse response) {
         Map<String, Object> dbStats = ApiDBUtils.getDbStatistics();
-        if (dbStats != null) {
-            response.setQueries((Long)dbStats.get(DbStatsCollection.queries));
-            response.setUptime((Long)dbStats.get(DbStatsCollection.uptime));
+        if (dbStats == null) {
+            return;
         }
 
-        List<Double> loadHistory = (List<Double>) dbStats.get(DbStatsCollection.loadAvarages);
+        response.setQueries((Long)dbStats.getOrDefault(DbStatsCollection.queries, -1L));
+        response.setUptime((Long)dbStats.getOrDefault(DbStatsCollection.uptime, -1L));
+
+        List<Double> loadHistory = (List<Double>) dbStats.getOrDefault(DbStatsCollection.loadAvarages, new ArrayList<Double>());
         double[] loadAverages = new double[loadHistory.size()];
 
         int index = 0;
@@ -1079,8 +1135,8 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         boolean local = false;
         String usageStatus = Script.runSimpleBashScript("systemctl status cloudstack-usage | grep \"  Active:\"");
 
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("The current usage status is: %s.", usageStatus));
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("The current usage status is: %s.", usageStatus));
         }
 
         if (StringUtils.isNotBlank(usageStatus)) {
@@ -1110,6 +1166,16 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         return cmdList;
     }
 
+    @Override
+    public String getConfigComponentName() {
+        return MetricsService.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {AllowListMetricsComputation};
+    }
+
     private class HostMetrics {
         // CPU metrics
         private Long totalCpu = 0L;
@@ -1133,6 +1199,14 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
             if (totalMemory != null) {
                 this.totalMemory = totalMemory.getTotalCapacity();
             }
+        }
+
+        public void setCpuAllocated(Long cpuAllocated) {
+            this.cpuAllocated = cpuAllocated;
+        }
+
+        public void setMemoryAllocated(Long memoryAllocated) {
+            this.memoryAllocated = memoryAllocated;
         }
 
         public void addCpuAllocated(Long cpuAllocated) {
@@ -1163,16 +1237,16 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
             }
         }
 
-        public void incrTotalHosts() {
-            this.totalHosts++;
+        public void setTotalHosts(Long totalHosts) {
+            this.totalHosts = totalHosts;
         }
 
-        public void incrTotalResources() {
-            this.totalResources++;
+        public void setTotalResources(Long totalResources) {
+            this.totalResources = totalResources;
         }
 
-        public void incrUpResources() {
-            this.upResources++;
+        public void setUpResources(Long upResources) {
+            this.upResources = upResources;
         }
 
         public Long getTotalCpu() {

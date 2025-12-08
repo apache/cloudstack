@@ -24,6 +24,7 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
 import junit.framework.TestCase;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -76,9 +77,11 @@ public class SecurityGroupJoinDaoImplTest extends TestCase {
     private final String uuidOne = "463e022a-249d-4212-bdf4-726bc9047aa7";
     private final String uuidTwo = "d8714c5f-766f-4b14-bdf4-17571042b9c5";
 
+    private AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
 
         // Security group without vms associated.
         List<SecurityGroupVMMapVO> securityGroupVmMap_empty = new ArrayList<SecurityGroupVMMapVO>();
@@ -109,6 +112,12 @@ public class SecurityGroupJoinDaoImplTest extends TestCase {
         // Mock _userVmDao to return a non null instance of UserVmVO.
         when(userVmVOone.getUuid()).thenReturn(uuidOne);
         when(userVmVOtwo.getUuid()).thenReturn(uuidTwo);
+    }
+
+    @Override
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test

@@ -48,4 +48,7 @@ public interface LoadBalancingServiceProvider extends NetworkElement, IpDeployin
     List<LoadBalancerTO> updateHealthChecks(Network network, List<LoadBalancingRule> lbrules);
 
     boolean handlesOnlyRulesInTransitionState();
+
+    default void expungeLbVmRefs(List<Long> vmIds, Long batchSize) {
+    }
 }

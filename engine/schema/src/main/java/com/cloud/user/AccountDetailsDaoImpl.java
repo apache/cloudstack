@@ -26,19 +26,18 @@ import javax.inject.Inject;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.domain.DomainDetailVO;
 import com.cloud.domain.DomainVO;
-import com.cloud.domain.dao.DomainDetailsDao;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.domain.dao.DomainDetailsDao;
 import com.cloud.user.dao.AccountDao;
-
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 
 public class AccountDetailsDaoImpl extends ResourceDetailsDaoBase<AccountDetailVO> implements AccountDetailsDao, ScopedConfigStorage {
@@ -64,7 +63,7 @@ public class AccountDetailsDaoImpl extends ResourceDetailsDaoBase<AccountDetailV
         QueryBuilder<AccountDetailVO> sc = QueryBuilder.create(AccountDetailVO.class);
         sc.and(sc.entity().getResourceId(), Op.EQ, accountId);
         List<AccountDetailVO> results = sc.list();
-        Map<String, String> details = new HashMap<String, String>(results.size());
+        Map<String, String> details = new HashMap<>(results.size());
         for (AccountDetailVO r : results) {
             details.put(r.getName(), r.getValue());
         }
@@ -121,9 +120,9 @@ public class AccountDetailsDaoImpl extends ResourceDetailsDaoBase<AccountDetailV
     }
 
     @Override
-    public String getConfigValue(long id, ConfigKey<?> key) {
+    public String getConfigValue(long id, String key) {
         // check if account level setting is configured
-        AccountDetailVO vo = findDetail(id, key.key());
+        AccountDetailVO vo = findDetail(id, key);
         String value = vo == null ? null : getActualValue(vo);
         if (value != null) {
             return value;
@@ -143,7 +142,7 @@ public class AccountDetailsDaoImpl extends ResourceDetailsDaoBase<AccountDetailV
             if (account.isPresent()) {
                 DomainVO domain = _domainDao.findById(account.get().getDomainId());
                 while (domain != null) {
-                    DomainDetailVO domainVO = _domainDetailsDao.findDetail(domain.getId(), key.key());
+                    DomainDetailVO domainVO = _domainDetailsDao.findDetail(domain.getId(), key);
                     if (domainVO != null) {
                         value = _domainDetailsDao.getActualValue(domainVO);
                         break;

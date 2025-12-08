@@ -343,13 +343,41 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item
+          name="arch"
+          ref="arch">
+          <template #label>
+            <tooltip-label :title="$t('label.arch')" :tooltip="apiParams.arch.description"/>
+          </template>
+          <a-select
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            v-model:value="form.arch"
+            :placeholder="apiParams.arch.description">
+            <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item ref="templatetag" name="templatetag" v-if="isAdminRole">
+          <template #label>
+            <tooltip-label :title="$t('label.templatetag')" :tooltip="apiParams.templatetag.description"/>
+          </template>
+          <a-input
+            v-model:value="form.templatetag"
+            :placeholder="apiParams.templatetag.description"
+            v-focus="currentForm !== 'Create'"/>
+        </a-form-item>
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
             <a-form-item
               name="userdataid"
               ref="userdataid">
               <template #label>
-                <tooltip-label :title="$t('label.userdata')" :tooltip="linkUserDataParams.userdataid.description"/>
+                <tooltip-label :title="$t('label.user.data')" :tooltip="linkUserDataParams.userdataid.description"/>
               </template>
               <a-select
                 showSearch
@@ -369,7 +397,7 @@
           <a-col :md="24" :lg="12">
             <a-form-item ref="userdatapolicy" name="userdatapolicy">
               <template #label>
-                <tooltip-label :title="$t('label.userdatapolicy')" :tooltip="linkUserDataParams.userdatapolicy.description"/>
+                <tooltip-label :title="$t('label.user.data.policy')" :tooltip="linkUserDataParams.userdatapolicy.description"/>
               </template>
               <a-select
                 showSearch
@@ -502,7 +530,8 @@ export default {
       domainLoading: false,
       domainid: null,
       account: null,
-      customHypervisorName: 'Custom'
+      customHypervisorName: 'Custom',
+      architectureTypes: {}
     }
   },
   beforeCreate () {
@@ -554,6 +583,7 @@ export default {
       this.fetchZone()
       this.fetchOsTypes()
       this.fetchTemplateTypes()
+      this.architectureTypes.opts = this.$fetchCpuArchitectureTypes()
       this.fetchUserData()
       this.fetchUserdataPolicy()
       if ('listDomains' in this.$store.getters.apis) {

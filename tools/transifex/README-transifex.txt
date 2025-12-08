@@ -45,13 +45,13 @@ with the translatons from traductors.
 =====
 The sync-transifex-ui provide too the ability to :
 
-* Download from Transifex the source language resource files. Be carrefully, 
+* Download from Transifex the source language resource files. Be carrefully,
 with this, you can remove some transaction on Transifex if some keys has
 been removed inside the source language resource files.
 
  ./sync-transifex-ui.sh download-source-language CloudStack_UI.410_messagesjson
 
-* Upload the L10N resource files on Transifex. 
+* Upload the L10N resource files on Transifex.
 
  ./sync-transifex-ui.sh upload-l10n-languages CloudStack_UI.410_messagesjson
 

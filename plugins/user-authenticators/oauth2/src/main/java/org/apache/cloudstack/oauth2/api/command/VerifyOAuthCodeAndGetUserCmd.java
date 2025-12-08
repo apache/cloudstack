@@ -36,7 +36,6 @@ import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.oauth2.OAuth2AuthManager;
 import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.log4j.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -46,7 +45,6 @@ import javax.servlet.http.HttpSession;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User}, since = "4.19.0")
 public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuthenticator {
-    public static final Logger s_logger = Logger.getLogger(VerifyOAuthCodeAndGetUserCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -124,7 +122,7 @@ public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuth
             }
         }
         if (_oauth2mgr == null) {
-            s_logger.error("No suitable Pluggable Authentication Manager found for listing OAuth providers");
+            logger.error("No suitable Pluggable Authentication Manager found for listing OAuth providers");
         }
     }
 }

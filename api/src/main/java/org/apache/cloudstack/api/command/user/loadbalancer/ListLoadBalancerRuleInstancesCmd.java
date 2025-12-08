@@ -23,7 +23,6 @@ import com.cloud.vm.VirtualMachine;
 
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.LoadBalancerRuleVmMapResponse;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -41,7 +40,6 @@ import com.cloud.utils.Pair;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
 public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(ListLoadBalancerRuleInstancesCmd.class.getName());
 
     private static final String s_name = "listloadbalancerruleinstancesresponse";
 
@@ -97,10 +95,10 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd implements Use
     public void execute() {
         Pair<List<? extends UserVm>, List<String>> vmServiceMap =  _lbService.listLoadBalancerInstances(this);
         List<? extends UserVm> result = vmServiceMap.first();
-        s_logger.debug(String.format("A total of [%s] user VMs were obtained when listing the load balancer instances: [%s].", result.size(), result));
+        logger.debug(String.format("A total of [%s] user VMs were obtained when listing the load balancer instances: [%s].", result.size(), result));
 
         List<String> serviceStates  = vmServiceMap.second();
-        s_logger.debug(String.format("A total of [%s] service states were obtained when listing the load balancer instances: [%s].", serviceStates.size(), serviceStates));
+        logger.debug(String.format("A total of [%s] service states were obtained when listing the load balancer instances: [%s].", serviceStates.size(), serviceStates));
 
         if (!isListLbVmip()) {
             ListResponse<UserVmResponse> response = new ListResponse<>();

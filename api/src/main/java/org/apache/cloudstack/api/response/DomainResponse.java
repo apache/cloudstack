@@ -26,6 +26,7 @@ import com.cloud.domain.Domain;
 import com.cloud.serializer.Param;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 @EntityReference(value = Domain.class)
@@ -183,6 +184,10 @@ public class DomainResponse extends BaseResponseWithAnnotations implements Resou
     @SerializedName(ApiConstants.DOMAIN_DETAILS)
     @Param(description = "details for the domain")
     private Map<String, String> details;
+
+    @SerializedName(ApiConstants.TAGGED_RESOURCES)
+    @Param(description = "The tagged resource limit and count for the domain", since = "4.20.0")
+    List<TaggedResourceLimitAndCountResponse> taggedResources;
 
     public String getId() {
         return this.id;
@@ -446,5 +451,10 @@ public class DomainResponse extends BaseResponseWithAnnotations implements Resou
 
     public void setDetails(Map<String, String> details) {
         this.details = details;
+    }
+
+    @Override
+    public void setTaggedResourceLimitsAndCounts(List<TaggedResourceLimitAndCountResponse> taggedResourceLimitsAndCounts) {
+        this.taggedResources = taggedResourceLimitsAndCounts;
     }
 }

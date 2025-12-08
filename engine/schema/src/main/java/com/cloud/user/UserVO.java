@@ -115,6 +115,9 @@ public class UserVO implements User, Identity, InternalIdentity {
     @Column(name = "key_for_2fa")
     private String keyFor2fa;
 
+    @Column(name = "api_key_access")
+    private Boolean apiKeyAccess;
+
     public UserVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -293,7 +296,7 @@ public class UserVO implements User, Identity, InternalIdentity {
 
     @Override
     public String toString() {
-        return String.format("User %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "username", "uuid"));
+        return String.format("User %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "username"));
     }
 
     @Override
@@ -350,4 +353,13 @@ public class UserVO implements User, Identity, InternalIdentity {
         this.user2faProvider = user2faProvider;
     }
 
+    @Override
+    public void setApiKeyAccess(Boolean apiKeyAccess) {
+        this.apiKeyAccess = apiKeyAccess;
+    }
+
+    @Override
+    public Boolean getApiKeyAccess() {
+        return apiKeyAccess;
+    }
 }

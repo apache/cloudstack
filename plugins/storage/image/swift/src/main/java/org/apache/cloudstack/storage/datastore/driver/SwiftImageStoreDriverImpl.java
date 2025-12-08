@@ -39,7 +39,6 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.image.BaseImageStoreDriverImpl;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -51,7 +50,6 @@ import com.cloud.utils.SwiftUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
-    private static final Logger s_logger = Logger.getLogger(SwiftImageStoreDriverImpl.class);
 
     @Inject
     ImageStoreDetailsDao _imageStoreDetailsDao;
@@ -78,7 +76,7 @@ public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
 
         if (!result) {
             String errMsg = "Unable to set Temp-Key: " + tempKey;
-            s_logger.error(errMsg);
+            logger.error(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
 
@@ -89,7 +87,7 @@ public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
 
         URL swiftUrl = SwiftUtil.generateTempUrl(swiftTO, containerName, objectName, tempKey, urlExpirationInterval);
         if (swiftUrl != null) {
-            s_logger.debug("Swift temp-url: " + swiftUrl.toString());
+            logger.debug("Swift temp-url: " + swiftUrl.toString());
             return swiftUrl.toString();
         }
 
@@ -103,7 +101,7 @@ public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
         if (cacheStore == null) {
             String errMsg = String.format("No cache store found for scope: %s",
                     dataStore.getScope().getScopeType().name());
-            s_logger.error(errMsg);
+            logger.error(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
         DownloadCommand dcmd = new DownloadCommand((TemplateObjectTO)(data.getTO()), maxTemplateSizeInBytes);
@@ -113,7 +111,7 @@ public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
         EndPoint ep = _epSelector.select(data);
         if (ep == null) {
             String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
-            s_logger.error(errMsg);
+            logger.error(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
 
