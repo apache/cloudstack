@@ -300,33 +300,21 @@ export default {
       }
     },
     setDefaultRole () {
+      if (this.roles.length === 0) return
+
+      let targetRoleType = null
+
       if (this.isAdmin()) {
-        if (this.isNonRootDomain) {
-          const domainAdminRole = this.roles.find(role => role.type === 'DomainAdmin')
-          if (domainAdminRole) {
-            this.form.roleid = domainAdminRole.id
-            return
-          }
-        } else {
-          const rootAdminRole = this.roles.find(role => role.type === 'Admin')
-          if (rootAdminRole) {
-            this.form.roleid = rootAdminRole.id
-            return
-          }
-        }
+        targetRoleType = this.isNonRootDomain ? 'DomainAdmin' : 'Admin'
+      } else if (this.isDomainAdmin()) {
+        targetRoleType = 'User'
       }
 
-      if (this.isDomainAdmin()) {
-        const userRole = this.roles.find(role => role.type === 'User')
-        if (userRole) {
-          this.form.roleid = userRole.id
-          return
-        }
-      }
+      const targetRole = targetRoleType
+        ? this.roles.find(role => role.type === targetRoleType)
+        : this.roles[0]
 
-      if (this.roles.length > 0) {
-        this.form.roleid = this.roles[0].id
-      }
+      this.form.roleid = (targetRole || this.roles[0]).id
     },
     async validateConfirmPassword (rule, value) {
       if (!value || value.length === 0) {
