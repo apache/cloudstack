@@ -22,20 +22,73 @@ export default {
   name: 'managementserver',
   title: 'label.management.servers',
   icon: 'CloudServerOutlined',
+  docHelp: 'conceptsandterminology/concepts.html#management-server-overview',
   permission: ['listManagementServersMetrics'],
+  resourceType: 'ManagementServer',
   columns: () => {
-    const fields = ['name', 'state', 'version']
-    const metricsFields = ['collectiontime', 'availableprocessors', 'cpuload', 'heapmemoryused', 'agentcount']
+    const fields = ['name', 'state', 'ipaddress', 'version', 'osdistribution']
+    const metricsFields = ['agentcount', 'collectiontime', 'availableprocessors', 'cpuload', 'heapmemoryused']
     if (store.getters.metrics) {
       fields.push(...metricsFields)
     }
     return fields
   },
-  details: ['collectiontime', 'usageislocal', 'dbislocal', 'lastserverstart', 'lastserverstop', 'lastboottime', 'version', 'loginfo', 'systemtotalcpucycles', 'systemloadaverages', 'systemcycleusage', 'systemmemorytotal', 'systemmemoryfree', 'systemmemoryvirtualsize', 'availableprocessors', 'javadistribution', 'javaversion', 'osdistribution', 'kernelversion', 'agentcount', 'sessions', 'heapmemoryused', 'heapmemorytotal', 'threadsblockedcount', 'threadsdeamoncount', 'threadsnewcount', 'threadsrunnablecount', 'threadsterminatedcount', 'threadstotalcount', 'threadswaitingcount'],
+  details: ['ipaddress', 'collectiontime', 'usageislocal', 'dbislocal', 'lastserverstart', 'lastserverstop', 'lastboottime', 'version', 'loginfo', 'systemtotalcpucycles', 'systemloadaverages', 'systemcycleusage', 'systemmemorytotal', 'systemmemoryfree', 'systemmemoryvirtualsize', 'availableprocessors', 'javadistribution', 'javaversion', 'osdistribution', 'kernelversion', 'agentcount', 'sessions', 'heapmemoryused', 'heapmemorytotal', 'threadsblockedcount', 'threadsdeamoncount', 'threadsnewcount', 'threadsrunnablecount', 'threadsterminatedcount', 'threadstotalcount', 'threadswaitingcount'],
   tabs: [
     {
       name: 'details',
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+    },
+    {
+      name: 'pending.jobs',
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/AsyncJobsTab.vue')))
+    },
+    {
+      name: 'management.server.peers',
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ManagementServerPeerTab.vue')))
+    },
+    {
+      name: 'comments',
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
+    }
+  ],
+  actions: [
+    {
+      api: 'prepareForShutdown',
+      icon: 'exclamation-circle-outlined',
+      label: 'label.prepare.for.shutdown',
+      message: 'message.prepare.for.shutdown',
+      dataView: true,
+      popup: true,
+      confirmationText: 'SHUTDOWN',
+      show: (record, store) => { return record.state === 'Up' },
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/Confirmation.vue')))
+    },
+    {
+      api: 'triggerShutdown',
+      icon: 'poweroff-outlined',
+      label: 'label.trigger.shutdown',
+      message: 'message.trigger.shutdown',
+      dataView: true,
+      popup: true,
+      confirmationText: 'SHUTDOWN',
+      show: (record, store) => { return ['Up', 'PreparingToShutDown', 'ReadyToShutDown'].includes(record.state) },
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/Confirmation.vue')))
+    },
+    {
+      api: 'cancelShutdown',
+      icon: 'close-circle-outlined',
+      label: 'label.cancel.shutdown',
+      message: 'message.cancel.shutdown',
+      docHelp: 'installguide/configuration.html#adding-a-zone',
+      dataView: true,
+      popup: true,
+      show: (record, store) => { return ['PreparingToShutDown', 'ReadyToShutDown', 'ShuttingDown'].includes(record.state) },
+      mapping: {
+        managementserverid: {
+          value: (record, params) => { return record.id }
+        }
+      }
     }
   ]
 }

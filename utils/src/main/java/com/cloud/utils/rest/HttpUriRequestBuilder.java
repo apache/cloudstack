@@ -22,6 +22,7 @@ package com.cloud.utils.rest;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -47,7 +48,7 @@ public class HttpUriRequestBuilder {
     private String path;
     private Optional<String> jsonPayload = ABSENT;
     private final Map<String, String> parameters = new HashMap<String, String>();
-    private final Map<String, String> methodParameters = new HashMap<String, String>();
+    private final Map<String, String> methodParameters = new LinkedHashMap<String, String>();
 
     private HttpUriRequestBuilder() {
 

@@ -28,7 +28,8 @@ import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.util.EntityUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.base.Optional;
 import com.google.gson.FieldNamingPolicy;
@@ -44,7 +45,7 @@ import com.google.gson.JsonDeserializer;
  */
 public class RESTServiceConnector {
 
-    private static final Logger s_logger = Logger.getLogger(RESTServiceConnector.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private static final Optional<String> ABSENT = Optional.absent();
 
@@ -69,7 +70,7 @@ public class RESTServiceConnector {
     }
 
     public <T> void executeUpdateObject(final T newObject, final String path, final Map<String, String> parameters) throws CloudstackRESTException {
-        s_logger.debug("Executing update object on " + path);
+        logger.debug("Executing update object on " + path);
         client.closeResponse(createAndExecuteRequest(HttpMethods.PUT, path, parameters, Optional.fromNullable(gson.toJson(newObject))));
     }
 
@@ -79,7 +80,7 @@ public class RESTServiceConnector {
 
     @SuppressWarnings("unchecked")
     public <T> T executeCreateObject(final T newObject, final String path, final Map<String, String> parameters) throws CloudstackRESTException {
-        s_logger.debug("Executing create object on " + path);
+        logger.debug("Executing create object on " + path);
         final CloseableHttpResponse response = createAndExecuteRequest(HttpMethods.POST, path, parameters, Optional.fromNullable(gson.toJson(newObject)));
         return (T) readResponseBody(response, newObject.getClass());
     }
@@ -89,12 +90,12 @@ public class RESTServiceConnector {
     }
 
     public void executeDeleteObject(final String path) throws CloudstackRESTException {
-        s_logger.debug("Executing delete object on " + path);
+        logger.debug("Executing delete object on " + path);
         client.closeResponse(createAndExecuteRequest(HttpMethods.DELETE, path, new HashMap<String, String>(), ABSENT));
     }
 
     public <T> T executeRetrieveObject(final Type returnObjectType, final String path, final Map<String, String> parameters) throws CloudstackRESTException {
-        s_logger.debug("Executing retrieve object on " + path);
+        logger.debug("Executing retrieve object on " + path);
         final CloseableHttpResponse response = createAndExecuteRequest(HttpMethods.GET, path, parameters, ABSENT);
         return readResponseBody(response, returnObjectType);
     }
@@ -112,14 +113,14 @@ public class RESTServiceConnector {
             .method(method)
             .build();
         if (jsonPayLoad.isPresent()) {
-            s_logger.debug("Built request '" + httpRequest + "' with payload: " + jsonPayLoad);
+            logger.debug("Built request '" + httpRequest + "' with payload: " + jsonPayLoad);
         }
         return executeRequest(httpRequest);
     }
 
     private CloseableHttpResponse executeRequest(final HttpUriRequest httpRequest) throws CloudstackRESTException {
         final CloseableHttpResponse response = client.execute(httpRequest);
-        s_logger.debug("Executed request: " + httpRequest + " status was " + response.getStatusLine().toString());
+        logger.debug("Executed request: " + httpRequest + " status was " + response.getStatusLine().toString());
         return response;
     }
 
@@ -127,7 +128,7 @@ public class RESTServiceConnector {
         final HttpEntity entity = response.getEntity();
         try {
             final String stringEntity = EntityUtils.toString(entity);
-            //s_logger.debug("Response entity: " + stringEntity);
+            //logger.debug("Response entity: " + stringEntity);
             EntityUtils.consumeQuietly(entity);
             return gson.fromJson(stringEntity, type);
         } catch (final IOException e) {

@@ -22,7 +22,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -39,7 +38,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.hypervisor.vmware.VmwareDatacenter;
+import com.cloud.dc.VmwareDatacenter;
 import com.cloud.hypervisor.vmware.VmwareDatacenterService;
 import com.cloud.user.Account;
 
@@ -50,7 +49,6 @@ public class ListVmwareDcsCmd extends BaseListCmd {
     @Inject
     public VmwareDatacenterService _vmwareDatacenterService;
 
-    public static final Logger s_logger = Logger.getLogger(ListVmwareDcsCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

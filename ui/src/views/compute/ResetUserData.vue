@@ -41,8 +41,10 @@
               :dataSource="templateUserDataParams"
               :pagination="false"
               :rowKey="record => record.key">
-              <template #value="{ record }">
-                <a-input v-model:value="templateUserDataValues[record.key]" />
+              <template #bodyCell="{ column, record }">
+                <template v-if="column.key === 'value'">
+                  <a-input v-model:value="templateUserDataValues[record.key]" />
+                </template>
               </template>
             </a-table>
           </a-input-group>
@@ -50,11 +52,11 @@
       </div>
       <div v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE' || userdataDefaultOverridePolicy === 'APPEND' || !userdataDefaultOverridePolicy">
         <span v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE'" >
-          {{ $t('label.userdata.do.override') }}
+          {{ $t('label.user.data.do.override') }}
           <a-switch v-model:checked="doUserdataOverride" style="margin-left: 10px"/>
         </span>
         <span v-if="userdataDefaultOverridePolicy === 'APPEND'">
-          {{ $t('label.userdata.do.append') }}
+          {{ $t('label.user.data.do.append') }}
           <a-switch v-model:checked="doUserdataAppend" style="margin-left: 10px"/>
         </span>
         <a-step>
@@ -87,8 +89,10 @@
                               :dataSource="userDataParams"
                               :pagination="false"
                               :rowKey="record => record.key">
-                              <template #value="{ record }">
-                                <a-input v-model:value="userDataValues[record.key]" />
+                              <template #bodyCell="{ column, record }">
+                                <template v-if="column.key === 'value'">
+                                  <a-input v-model:value="userDataValues[record.key]" />
+                                </template>
                               </template>
                             </a-table>
                           </a-input-group>
@@ -147,17 +151,17 @@ export default {
         {
           dataIndex: 'name',
           title: this.$t('label.name'),
-          sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') },
+          sorter: (a, b) => genericCompare(a?.name || '', b?.name || ''),
           width: '40%'
         },
         {
           dataIndex: 'account',
-          slots: { title: 'account' },
+          title: this.$t('account'),
           width: '30%'
         },
         {
           dataIndex: 'domain',
-          slots: { title: 'domain' },
+          title: this.$t('domain'),
           width: '30%'
         }
       ],
@@ -188,17 +192,17 @@ export default {
         {
           title: this.$t('label.value'),
           dataIndex: 'value',
-          slots: { customRender: 'value' }
+          key: 'value'
         }
       ],
       userDataValues: {},
       templateUserDataCols: [
         {
-          title: this.$t('label.userdata'),
+          title: this.$t('label.user.data'),
           dataIndex: 'userdata'
         },
         {
-          title: this.$t('label.userdatapolicy'),
+          title: this.$t('label.user.data.policy'),
           dataIndex: 'userdataoverridepolicy'
         }
       ],
@@ -278,11 +282,11 @@ export default {
     loadUserdataTabList () {
       this.userdataTabList = [{
         key: 'userdataregistered',
-        tab: this.$t('label.userdata.registered')
+        tab: this.$t('label.user.data.registered')
       },
       {
         key: 'userdatatext',
-        tab: this.$t('label.userdata.text')
+        tab: this.$t('label.user.data.text')
       }]
     },
     onUserdataTabChange (key, type) {
@@ -301,7 +305,7 @@ export default {
       this.userDataParams = []
       api('listUserData', { id: id }).then(json => {
         const resp = json?.listuserdataresponse?.userdata || []
-        if (resp) {
+        if (resp.length > 0) {
           var params = resp[0].params
           if (params) {
             var dataParams = params.split(',')
@@ -364,7 +368,7 @@ export default {
 
       api(resetUserDataApiName, args, httpMethod, data).then(json => {
         this.$message.success({
-          content: `${this.$t('label.action.userdata.reset')} - ${this.$t('label.success')}`,
+          content: `${this.$t('label.action.user.data.reset')} - ${this.$t('label.success')}`,
           duration: 2
         })
         this.$emit('refresh-data')

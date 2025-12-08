@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.w3c.dom.Element;
 
 import com.vmware.vim25.HttpNfcLeaseInfo;
@@ -36,7 +35,6 @@ import com.vmware.vim25.OvfFileItem;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class HttpNfcLeaseMO extends BaseMO {
-    private static final Logger s_logger = Logger.getLogger(HttpNfcLeaseMO.class);
 
     public HttpNfcLeaseMO(VmwareContext context, ManagedObjectReference morHttpNfcLease) {
         super(context, morHttpNfcLease);
@@ -148,8 +146,8 @@ public class HttpNfcLeaseMO extends BaseMO {
         }
 
         public void close() {
-            if (s_logger.isInfoEnabled())
-                s_logger.info("close ProgressReporter, interrupt reporter runner to let it quit");
+            if (logger.isInfoEnabled())
+                logger.info("close ProgressReporter, interrupt reporter runner to let it quit");
 
             _done = true;
             interrupt();
@@ -159,19 +157,19 @@ public class HttpNfcLeaseMO extends BaseMO {
         public void run() {
             while (!_done) {
                 try {
-                    Thread.sleep(1000);            // update progess every 1 second
+                    Thread.sleep(1000);            // update progress every 1 second
                     updateLeaseProgress(_percent);
                 } catch (InterruptedException e) {
-                    if (s_logger.isInfoEnabled())
-                        s_logger.info("ProgressReporter is interrupted, quiting");
+                    if (logger.isInfoEnabled())
+                        logger.info("ProgressReporter is interrupted, quitting");
                     break;
                 } catch (Exception e) {
-                    s_logger.warn("Unexpected exception ", e);
+                    logger.warn("Unexpected exception ", e);
                 }
             }
 
-            if (s_logger.isInfoEnabled())
-                s_logger.info("ProgressReporter stopped");
+            if (logger.isInfoEnabled())
+                logger.info("ProgressReporter stopped");
         }
     }
 }

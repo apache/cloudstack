@@ -15,8 +15,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import Cookies from 'js-cookie'
 import { axios, sourceToken } from '@/utils/request'
 import { message, notification } from 'ant-design-vue'
+import { vueProps } from '@/vue-app'
+import {
+  ACCESS_TOKEN
+} from '@/store/mutation-types'
 
 export function api (command, args = {}, method = 'GET', data = {}) {
   let params = {}
@@ -28,6 +33,11 @@ export function api (command, args = {}, method = 'GET', data = {}) {
     Object.entries(data).forEach(([key, value]) => {
       params.append(key, value)
     })
+  }
+
+  const sessionkey = vueProps.$localStorage.get(ACCESS_TOKEN) || Cookies.get('sessionkey')
+  if (sessionkey) {
+    args.sessionkey = sessionkey
   }
 
   return axios({
@@ -65,8 +75,32 @@ export function login (arg) {
 }
 
 export function logout () {
-  sourceToken.cancel()
   message.destroy()
   notification.destroy()
   return api('logout')
+}
+
+export function oauthlogin (arg) {
+  if (!sourceToken.checkExistSource()) {
+    sourceToken.init()
+  }
+
+  // Logout before login is called to purge any duplicate sessionkey cookies
+  api('logout')
+
+  const params = new URLSearchParams()
+  params.append('command', 'oauthlogin')
+  params.append('email', arg.email)
+  params.append('secretcode', arg.secretcode)
+  params.append('provider', arg.provider)
+  params.append('domain', arg.domain)
+  params.append('response', 'json')
+  return axios({
+    url: '/',
+    method: 'post',
+    data: params,
+    headers: {
+      'content-type': 'application/x-www-form-urlencoded'
+    }
+  })
 }

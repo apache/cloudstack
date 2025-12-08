@@ -32,7 +32,6 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -44,7 +43,7 @@ import com.cloud.network.NetworkModel;
 import com.cloud.user.UserData;
 
 @APICommand(name = "registerUserData",
-        description = "Register a new userdata.",
+        description = "Register a new User Data.",
         since = "4.18",
         responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false,
@@ -52,32 +51,38 @@ import com.cloud.user.UserData;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class RegisterUserDataCmd extends BaseCmd {
 
-    public static final Logger s_logger = Logger.getLogger(RegisterUserDataCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Name of the userdata")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Name of the User Data")
     private String name;
 
     //Owner information
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the userdata. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the User Data. Must be used with domainId.")
     private String accountName;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.UUID,
             entityType = DomainResponse.class,
-            description = "an optional domainId for the userdata. If the account parameter is used, domainId must also be used.")
+            description = "an optional domainId for the User Data. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the userdata")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the User Data")
     private Long projectId;
 
-    @Parameter(name = ApiConstants.USER_DATA, type = CommandType.STRING, required = true, description = "Userdata content", length = 1048576)
+    @Parameter(name = ApiConstants.USER_DATA,
+            type = CommandType.STRING,
+            required = true,
+            description = "Base64 encoded User Data content. " +
+                    "Using HTTP GET (via querystring), you can send up to 4KB of data after base64 encoding. " +
+                    "Using HTTP POST (via POST body), you can send up to 32KB of data after base64 encoding, " +
+                    "which can be increased upto 1MB using the vm.userdata.max.length setting",
+            length = 1048576)
     private String userData;
 
-    @Parameter(name = ApiConstants.PARAMS, type = CommandType.STRING, description = "comma separated list of variables declared in userdata content")
+    @Parameter(name = ApiConstants.PARAMS, type = CommandType.STRING, description = "comma separated list of variables declared in the User Data content")
     private String params;
 
 
@@ -142,5 +147,4 @@ public class RegisterUserDataCmd extends BaseCmd {
         response.setObjectName(ApiConstants.USER_DATA);
         setResponseObject(response);
     }
-
-    }
+}

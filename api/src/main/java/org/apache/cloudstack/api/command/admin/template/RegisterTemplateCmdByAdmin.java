@@ -18,9 +18,11 @@ package org.apache.cloudstack.api.command.admin.template;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.api.response.TemplateResponse;
 
 @APICommand(name = "registerTemplate", description = "Registers an existing template into the CloudStack cloud.", responseObject = TemplateResponse.class, responseView = ResponseView.Full,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class RegisterTemplateCmdByAdmin extends RegisterTemplateCmd {}
+public class RegisterTemplateCmdByAdmin extends RegisterTemplateCmd implements AdminCmd {
+}

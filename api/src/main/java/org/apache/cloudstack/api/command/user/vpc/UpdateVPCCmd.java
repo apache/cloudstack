@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command.user.vpc;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -34,13 +33,14 @@ import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.VpcResponse;
 
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 
 @APICommand(name = "updateVPC", description = "Updates a VPC", responseObject = VpcResponse.class, responseView = ResponseView.Restricted, entityType = {Vpc.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateVPCCmd extends BaseAsyncCustomIdCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateVPCCmd.class.getName());
     private static final String s_name = "updatevpcresponse";
 
     /////////////////////////////////////////////////////
@@ -62,6 +62,12 @@ public class UpdateVPCCmd extends BaseAsyncCustomIdCmd implements UserCmd {
     @Parameter(name = ApiConstants.PUBLIC_MTU, type = CommandType.INTEGER,
             description = "MTU to be configured on the network VR's public facing interfaces", since = "4.18.0")
     private Integer publicMtu;
+
+    @Parameter(name = ApiConstants.SOURCE_NAT_IP,
+            type = CommandType.STRING,
+            description = "IPV4 address to be assigned to the public interface of the network router. This address must already be acquired for this VPC",
+            since = "4.19")
+    private String sourceNatIP;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -87,6 +93,10 @@ public class UpdateVPCCmd extends BaseAsyncCustomIdCmd implements UserCmd {
         return publicMtu;
     }
 
+    public String getSourceNatIP() {
+        return sourceNatIP;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -107,13 +117,22 @@ public class UpdateVPCCmd extends BaseAsyncCustomIdCmd implements UserCmd {
 
     @Override
     public void execute() {
-        Vpc result = _vpcService.updateVpc(getId(), getVpcName(), getDisplayText(), getCustomId(), isDisplayVpc(), getPublicMtu());
-        if (result != null) {
-            VpcResponse response = _responseGenerator.createVpcResponse(getResponseView(), result);
-            response.setResponseName(getCommandName());
-            setResponseObject(response);
-        } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update VPC");
+        try {
+            Vpc result = _vpcService.updateVpc(this);
+            if (result != null) {
+                VpcResponse response = _responseGenerator.createVpcResponse(getResponseView(), result);
+                response.setResponseName(getCommandName());
+                setResponseObject(response);
+            } else {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update VPC");
+            }
+        } catch (final ResourceUnavailableException ex) {
+            logger.warn("Exception: ", ex);
+            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+        } catch (final InsufficientCapacityException ex) {
+            logger.info(ex);
+            logger.trace(ex);
+            throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
         }
     }
 

@@ -16,7 +16,7 @@
 # under the License.
 import logging
 from cs.CsDatabag import CsDataBag
-from CsFile import CsFile
+from .CsFile import CsFile
 import json
 
 MON_CONFIG = "/etc/monitor.conf"

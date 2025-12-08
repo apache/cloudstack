@@ -22,7 +22,7 @@
 
 SET foreign_key_checks = 0;
 
--- DB upgrade steps from 302-40 
+-- DB upgrade steps from 302-40
 CREATE TABLE `cloud`.`external_nicira_nvp_devices` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(255) UNIQUE,
@@ -51,7 +51,7 @@ ALTER TABLE `storage_pool` ADD `user_info` VARCHAR( 255 ) NULL COMMENT 'Authoriz
 INSERT INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `description`) VALUES ('Advanced', 'DEFAULT', 'management-server', 'event.purge.interval', '86400', 'The interval (in seconds) to wait before running the event purge thread');
 -- rrq 5839
 -- Remove the unique constraint on physical_network_id, provider_name from physical_network_service_providers
--- Because the name of this contraint is not set we need this roundabout way
+-- Because the name of this constraint is not set we need this roundabout way
 -- The key is also used by the foreign key constraint so drop and recreate that one
 ALTER TABLE physical_network_service_providers DROP FOREIGN KEY fk_pnetwork_service_providers__physical_network_id;
 SET @constraintname = (select CONCAT(CONCAT('DROP INDEX ', A.CONSTRAINT_NAME), ' ON physical_network_service_providers' )
@@ -59,9 +59,9 @@ from information_schema.key_column_usage A
 JOIN information_schema.key_column_usage B ON B.table_name = 'physical_network_service_providers' AND B.COLUMN_NAME = 'provider_name' AND A.COLUMN_NAME ='physical_network_id' AND B.CONSTRAINT_NAME=A.CONSTRAINT_NAME
 where A.table_name = 'physical_network_service_providers' LIMIT 1);
 
-PREPARE stmt1 FROM @constraintname; 
-EXECUTE stmt1; 
-DEALLOCATE PREPARE stmt1; 
+PREPARE stmt1 FROM @constraintname;
+EXECUTE stmt1;
+DEALLOCATE PREPARE stmt1;
 
 AlTER TABLE physical_network_service_providers ADD CONSTRAINT `fk_pnetwork_service_providers__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE;
 UPDATE `cloud`.`configuration` SET description='Do URL encoding for the api response, false by default' WHERE name='encode.api.response';
@@ -351,8 +351,8 @@ ALTER TABLE `cloud`.`vlan` ADD COLUMN `ip6_range` varchar(255);
 ALTER TABLE `cloud`.`data_center` ADD COLUMN `ip6_dns1` varchar(255);
 ALTER TABLE `cloud`.`data_center` ADD COLUMN `ip6_dns2` varchar(255);
 
-UPDATE `cloud`.`networks` INNER JOIN `cloud`.`vlan` ON networks.id = vlan.network_id 
-SET networks.gateway = vlan.vlan_gateway, networks.ip6_gateway = vlan.ip6_gateway, networks.ip6_cidr = vlan.ip6_cidr 
+UPDATE `cloud`.`networks` INNER JOIN `cloud`.`vlan` ON networks.id = vlan.network_id
+SET networks.gateway = vlan.vlan_gateway, networks.ip6_gateway = vlan.ip6_gateway, networks.ip6_cidr = vlan.ip6_cidr
 WHERE networks.data_center_id = vlan.data_center_id AND networks.physical_network_id = vlan.physical_network_id;
 
 -- DB views for list api

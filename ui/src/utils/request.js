@@ -51,7 +51,7 @@ const err = (error) => {
       })
     }
     if (response.status === 401) {
-      if (response.config && response.config.params && ['listIdps', 'cloudianIsEnabled'].includes(response.config.params.command)) {
+      if (response.config && response.config.params && ['forgotPassword', 'listIdps', 'cloudianIsEnabled'].includes(response.config.params.command)) {
         return
       }
       const originalPath = router.currentRoute.value.fullPath
@@ -109,8 +109,6 @@ const err = (error) => {
         if (originalPath !== '/user/login') {
           router.push({ path: '/user/login', query: { redirect: originalPath } })
         }
-        store.commit('SET_COUNT_NOTIFY', 0)
-        notification.destroy()
       })
     }
     if (response.status === 404) {
@@ -196,6 +194,7 @@ const sourceToken = {
     if (!source) sourceToken.init()
     if (source) {
       source.cancel()
+      source = null
     } else {
       console.log('Source token failed to be cancelled')
     }

@@ -23,5 +23,13 @@ import java.util.List;
 
 public interface KubernetesClusterVmMapDao extends GenericDao<KubernetesClusterVmMapVO, Long> {
     public List<KubernetesClusterVmMapVO> listByClusterId(long clusterId);
+
+    public KubernetesClusterVmMapVO getClusterMapFromVmId(long vmId);
     public List<KubernetesClusterVmMapVO> listByClusterIdAndVmIdsIn(long clusterId, List<Long> vmIds);
+
+    int removeByClusterIdAndVmIdsIn(long clusterId, List<Long> vmIds);
+
+    public int removeByClusterId(long clusterId);
+
+    KubernetesClusterVmMapVO findByVmId(long vmId);
 }

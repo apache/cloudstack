@@ -18,27 +18,20 @@ package com.cloud.consoleproxy;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.info.ConsoleProxyInfo;
-import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceVO;
 
 /**
  * This class is intended to replace the use of console proxy VMs managed by the Apache CloudStack (ACS)
  * to non ACS console proxy services. The documentation that describe its use and requirements can be found in <a href="https://cwiki.apache.org/confluence/display/CLOUDSTACK/QuickCloud">QuickCloud</a>.
  */
 public class AgentBasedStandaloneConsoleProxyManager extends AgentBasedConsoleProxyManager {
-    private static final Logger s_logger = Logger.getLogger(AgentBasedStandaloneConsoleProxyManager.class);
 
     @Override
-    public ConsoleProxyInfo assignProxy(long dataCenterId, long userVmId) {
-        UserVmVO userVm = _userVmDao.findById(userVmId);
-        if (userVm == null) {
-            s_logger.warn("User VM " + userVmId + " no longer exists, return a null proxy for user vm:" + userVmId);
-            return null;
-        }
+    public ConsoleProxyInfo assignProxy(long dataCenterId, VMInstanceVO userVm) {
 
         HostVO host = findHost(userVm);
         if (host != null) {
@@ -61,22 +54,23 @@ public class AgentBasedStandaloneConsoleProxyManager extends AgentBasedConsolePr
                 }
             }
             if (allocatedHost == null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Failed to find a console proxy at host: " + host.getName() + " and in the pod: " + host.getPodId() + " to user vm " + userVmId);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Failed to find a console proxy at host: {} and in the pod: {} to user vm {}",
+                            host::toString, () -> podDao.findById(host.getPodId()), userVm::toString);
                 }
                 return null;
             }
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Assign standalone console proxy running at " + allocatedHost.getName() + " to user vm " + userVmId + " with public IP "
-                        + allocatedHost.getPublicIpAddress());
+            if (logger.isDebugEnabled()) {
+                logger.debug("Assign standalone console proxy running at {} to user vm {} with public IP {}", allocatedHost, userVm, allocatedHost.getPublicIpAddress());
             }
 
             // only private IP, public IP, host id have meaningful values, rest of all are place-holder values
             String publicIp = allocatedHost.getPublicIpAddress();
             if (publicIp == null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Host " + allocatedHost.getName() + "/" + allocatedHost.getPrivateIpAddress()
-                            + " does not have public interface, we will return its private IP for cosole proxy.");
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Host {} (private IP address: {}) does not have public " +
+                            "interface, we will return its private IP for console proxy.",
+                            allocatedHost, allocatedHost.getPrivateIpAddress());
                 }
                 publicIp = allocatedHost.getPrivateIpAddress();
             }
@@ -88,7 +82,7 @@ public class AgentBasedStandaloneConsoleProxyManager extends AgentBasedConsolePr
 
             return new ConsoleProxyInfo(_sslEnabled, publicIp, _consoleProxyPort, urlPort, _consoleProxyUrlDomain);
         } else {
-            s_logger.warn("Host that VM is running is no longer available, console access to VM " + userVmId + " will be temporarily unavailable.");
+            logger.warn("Host that VM is running is no longer available, console access to VM {} will be temporarily unavailable.", userVm);
         }
         return null;
     }

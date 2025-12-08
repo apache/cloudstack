@@ -37,10 +37,9 @@ import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.xensource.xenapi.Connection;
@@ -51,7 +50,7 @@ import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Types.InternalError;
 import com.xensource.xenapi.Types.XenAPIException;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class Xenserver625StorageProcessorTest {
 
     @InjectMocks
@@ -109,10 +108,8 @@ public class Xenserver625StorageProcessorTest {
     @Test
     public void createFileSRTestSrAlreadyConfigured() {
         SR srMockRetrievedMethod = Mockito.mock(SR.class);
-        SR srMockCreateMethod = Mockito.mock(SR.class);
 
         Mockito.doReturn(srMockRetrievedMethod).when(xenserver625StorageProcessor).retrieveAlreadyConfiguredSrWithoutException(connectionMock, pathMock);
-        Mockito.doReturn(srMockCreateMethod).when(xenserver625StorageProcessor).createNewFileSr(connectionMock, pathMock);
 
         SR methodCreateFileSrResult = xenserver625StorageProcessor.createFileSR(connectionMock, pathMock);
 
@@ -172,47 +169,39 @@ public class Xenserver625StorageProcessorTest {
     }
 
     @Test
-    @PrepareForTest(SR.class)
     public void retrieveAlreadyConfiguredSrTestNoSrFound() throws XenAPIException, XmlRpcException {
-        prepareToReturnSrs(null);
+        try (MockedStatic<SR> srMocked = Mockito.mockStatic(SR.class)) {
+            Mockito.when(SR.getByNameLabel(connectionMock, pathMock)).thenReturn(null);
+            SR sr = xenserver625StorageProcessor.retrieveAlreadyConfiguredSr(connectionMock, pathMock);
 
-        SR sr = xenserver625StorageProcessor.retrieveAlreadyConfiguredSr(connectionMock, pathMock);
-
-        PowerMockito.verifyStatic(SR.class);
-        SR.getByNameLabel(connectionMock, pathMock);
-        Assert.assertNull(sr);
+            srMocked.verify(() -> SR.getByNameLabel(connectionMock, pathMock), times(1));
+            Assert.assertNull(sr);
+        }
     }
 
-    private void prepareToReturnSrs(Set<SR> srs) throws XenAPIException, XmlRpcException {
-        PowerMockito.mockStatic(SR.class);
-        PowerMockito.when(SR.getByNameLabel(connectionMock, pathMock)).thenReturn(srs);
-    }
-
-    @PrepareForTest(SR.class)
     @Test(expected = CloudRuntimeException.class)
     public void retrieveAlreadyConfiguredSrTestMultipleSrsFound() throws XenAPIException, XmlRpcException {
         HashSet<SR> srs = new HashSet<>();
         srs.add(Mockito.mock(SR.class));
         srs.add(Mockito.mock(SR.class));
 
-        prepareToReturnSrs(srs);
+        try (MockedStatic<SR> ignored = Mockito.mockStatic(SR.class)) {
+            Mockito.when(SR.getByNameLabel(connectionMock, pathMock)).thenReturn(srs);
 
-        xenserver625StorageProcessor.retrieveAlreadyConfiguredSr(connectionMock, pathMock);
+            xenserver625StorageProcessor.retrieveAlreadyConfiguredSr(connectionMock, pathMock);
+        }
     }
 
     @Test
-    @PrepareForTest(SR.class)
     public void retrieveAlreadyConfiguredSrTestSrFailsSanityCheckWithXenAPIException() throws XenAPIException, XmlRpcException {
         configureAndExecuteMethodRetrieveAlreadyConfiguredSrTestSrFailsSanityCheckForException(XenAPIException.class);
     }
 
     @Test
-    @PrepareForTest(SR.class)
     public void retrieveAlreadyConfiguredSrTestSrFailsSanityCheckWithXmlRpcException() throws XenAPIException, XmlRpcException {
         configureAndExecuteMethodRetrieveAlreadyConfiguredSrTestSrFailsSanityCheckForException(XmlRpcException.class);
     }
 
-    @PrepareForTest(SR.class)
     @Test(expected = RuntimeException.class)
     public void retrieveAlreadyConfiguredSrTestSrFailsSanityCheckWithRuntimeException() throws XenAPIException, XmlRpcException {
         configureAndExecuteMethodRetrieveAlreadyConfiguredSrTestSrFailsSanityCheckForException(RuntimeException.class);
@@ -225,17 +214,18 @@ public class Xenserver625StorageProcessorTest {
         HashSet<SR> srs = new HashSet<>();
         srs.add(srMock);
 
-        prepareToReturnSrs(srs);
-        Mockito.doNothing().when(xenserver625StorageProcessor).forgetSr(connectionMock, srMock);
+        try (MockedStatic<SR> ignored = Mockito.mockStatic(SR.class)) {
+            Mockito.when(SR.getByNameLabel(connectionMock, pathMock)).thenReturn(srs);
+            Mockito.doNothing().when(xenserver625StorageProcessor).forgetSr(connectionMock, srMock);
 
-        SR sr = xenserver625StorageProcessor.retrieveAlreadyConfiguredSr(connectionMock, pathMock);
+            SR sr = xenserver625StorageProcessor.retrieveAlreadyConfiguredSr(connectionMock, pathMock);
 
-        Assert.assertNull(sr);
-        Mockito.verify(xenserver625StorageProcessor).forgetSr(connectionMock, srMock);
+            Assert.assertNull(sr);
+            Mockito.verify(xenserver625StorageProcessor).forgetSr(connectionMock, srMock);
+        }
     }
 
     @Test
-    @PrepareForTest(SR.class)
     public void methodRetrieveAlreadyConfiguredSrTestSrScanSucceeds() throws XenAPIException, XmlRpcException {
         SR srMock = Mockito.mock(SR.class);
         Mockito.doNothing().when(srMock).scan(connectionMock);
@@ -243,13 +233,14 @@ public class Xenserver625StorageProcessorTest {
         HashSet<SR> srs = new HashSet<>();
         srs.add(srMock);
 
-        prepareToReturnSrs(srs);
-        Mockito.doNothing().when(xenserver625StorageProcessor).forgetSr(connectionMock, srMock);
+        try (MockedStatic<SR> ignored = Mockito.mockStatic(SR.class)) {
+            Mockito.when(SR.getByNameLabel(connectionMock, pathMock)).thenReturn(srs);
 
-        SR sr = xenserver625StorageProcessor.retrieveAlreadyConfiguredSr(connectionMock, pathMock);
+            SR sr = xenserver625StorageProcessor.retrieveAlreadyConfiguredSr(connectionMock, pathMock);
 
-        Assert.assertEquals(srMock, sr);
-        Mockito.verify(xenserver625StorageProcessor, times(0)).forgetSr(connectionMock, srMock);
+            Assert.assertEquals(srMock, sr);
+            Mockito.verify(xenserver625StorageProcessor, times(0)).forgetSr(connectionMock, srMock);
+        }
     }
 
     @Test
@@ -301,19 +292,16 @@ public class Xenserver625StorageProcessorTest {
     }
 
     @Test
-    @PrepareForTest({Host.class, SR.class})
     public void createNewFileSrTestThrowingXenAPIException() throws XenAPIException, XmlRpcException {
         prepareAndExecuteTestcreateNewFileSrTestThrowingException(XenAPIException.class);
     }
 
     @Test
-    @PrepareForTest({Host.class, SR.class})
     public void createNewFileSrTestThrowingXmlRpcException() throws XenAPIException, XmlRpcException {
         prepareAndExecuteTestcreateNewFileSrTestThrowingException(XmlRpcException.class);
     }
 
     @Test(expected = RuntimeException.class)
-    @PrepareForTest({Host.class, SR.class})
     public void createNewFileSrTestThrowingRuntimeException() throws XenAPIException, XmlRpcException {
         prepareAndExecuteTestcreateNewFileSrTestThrowingException(RuntimeException.class);
     }
@@ -326,23 +314,23 @@ public class Xenserver625StorageProcessorTest {
 
         Host hostMock = Mockito.mock(Host.class);
 
-        PowerMockito.mockStatic(Host.class);
-        PowerMockito.when(Host.getByUuid(connectionMock, uuid)).thenReturn(hostMock);
+        try (MockedStatic<Host> ignored = Mockito.mockStatic(
+                Host.class); MockedStatic<SR> ignored1 = Mockito.mockStatic(SR.class)) {
+            Mockito.when(Host.getByUuid(connectionMock, uuid)).thenReturn(hostMock);
+            Mockito.when(SR.introduce(Mockito.eq(connectionMock), Mockito.eq(srUuid), Mockito.eq(pathMock),
+                    Mockito.eq(pathMock), Mockito.eq("file"), Mockito.eq("file"), Mockito.eq(false),
+                    Mockito.anyMap())).thenThrow(Mockito.mock(exceptionClass));
 
-        PowerMockito.mockStatic(SR.class);
-        PowerMockito.when(SR.introduce(Mockito.eq(connectionMock), Mockito.eq(srUuid), Mockito.eq(pathMock), Mockito.eq(pathMock), Mockito.eq("file"), Mockito.eq("file"), Mockito.eq(false),
-                Mockito.anyMapOf(String.class, String.class))).thenThrow(Mockito.mock(exceptionClass));
 
-        Mockito.doNothing().when(xenserver625StorageProcessor).removeSrAndPbdIfPossible(Mockito.eq(connectionMock), Mockito.any(SR.class), Mockito.any(PBD.class));
+            SR sr = xenserver625StorageProcessor.createNewFileSr(connectionMock, pathMock);
 
-        SR sr = xenserver625StorageProcessor.createNewFileSr(connectionMock, pathMock);
-
-        assertNull(sr);
-        Mockito.verify(xenserver625StorageProcessor).removeSrAndPbdIfPossible(Mockito.eq(connectionMock), nullable(SR.class), nullable(PBD.class));
+            assertNull(sr);
+            Mockito.verify(xenserver625StorageProcessor).removeSrAndPbdIfPossible(Mockito.eq(connectionMock),
+                    nullable(SR.class), nullable(PBD.class));
+        }
     }
 
     @Test
-    @PrepareForTest({Host.class, SR.class})
     public void createNewFileSrTestThrowingDbUniqueException() throws XenAPIException, XmlRpcException {
         String uuid = "hostUuid";
         Mockito.when(citrixResourceBase._host.getUuid()).thenReturn(uuid);
@@ -353,61 +341,66 @@ public class Xenserver625StorageProcessorTest {
 
         Host hostMock = Mockito.mock(Host.class);
 
-        PowerMockito.mockStatic(Host.class);
-        PowerMockito.when(Host.getByUuid(connectionMock, uuid)).thenReturn(hostMock);
+        try (MockedStatic<Host> ignored = Mockito.mockStatic(Host.class);MockedStatic<SR> ignored1 =
+                Mockito.mockStatic(SR.class) ) {
+            Mockito.when(Host.getByUuid(connectionMock, uuid)).thenReturn(hostMock);
 
-        PowerMockito.mockStatic(SR.class);
-        InternalError dbUniquenessException = new InternalError("message: Db_exn.Uniqueness_constraint_violation(\"SR\", \"uuid\", \"fd3edbcf-f142-83d1-3fcb-029ca2446b68\")");
+            InternalError dbUniquenessException = new InternalError(
+                    "message: Db_exn.Uniqueness_constraint_violation(\"SR\", \"uuid\", \"fd3edbcf-f142-83d1-3fcb-029ca2446b68\")");
 
-        PowerMockito.when(SR.introduce(Mockito.eq(connectionMock), Mockito.eq(srUuid), Mockito.eq(pathMock), Mockito.eq(pathMock), Mockito.eq("file"), Mockito.eq("file"), Mockito.eq(false),
-                Mockito.anyMapOf(String.class, String.class))).thenThrow(dbUniquenessException);
+            Mockito.when(SR.introduce(Mockito.eq(connectionMock), Mockito.eq(srUuid), Mockito.eq(pathMock),
+                    Mockito.eq(pathMock), Mockito.eq("file"), Mockito.eq("file"), Mockito.eq(false),
+                    Mockito.anyMap())).thenThrow(dbUniquenessException);
 
-        Mockito.doNothing().when(xenserver625StorageProcessor).removeSrAndPbdIfPossible(Mockito.eq(connectionMock), Mockito.any(SR.class), Mockito.any(PBD.class));
+            SR sr = xenserver625StorageProcessor.createNewFileSr(connectionMock, pathMock);
 
-        SR sr = xenserver625StorageProcessor.createNewFileSr(connectionMock, pathMock);
-
-        Assert.assertEquals(srMock, sr);
-        Mockito.verify(xenserver625StorageProcessor, times(0)).removeSrAndPbdIfPossible(Mockito.eq(connectionMock), Mockito.any(SR.class), Mockito.any(PBD.class));
-        Mockito.verify(xenserver625StorageProcessor).retrieveAlreadyConfiguredSrWithoutException(connectionMock, pathMock);
+            Assert.assertEquals(srMock, sr);
+            Mockito.verify(xenserver625StorageProcessor, times(0)).removeSrAndPbdIfPossible(Mockito.eq(connectionMock),
+                    Mockito.any(SR.class), Mockito.any(PBD.class));
+            Mockito.verify(xenserver625StorageProcessor).retrieveAlreadyConfiguredSrWithoutException(connectionMock,
+                    pathMock);
+        }
     }
 
     @Test
-    @PrepareForTest({Host.class, SR.class, PBD.class})
     public void createNewFileSrTest() throws XenAPIException, XmlRpcException {
         String uuid = "hostUuid";
         Mockito.when(citrixResourceBase._host.getUuid()).thenReturn(uuid);
 
         SR srMock = Mockito.mock(SR.class);
-        Mockito.doReturn(srMock).when(xenserver625StorageProcessor).retrieveAlreadyConfiguredSrWithoutException(connectionMock, pathMock);
         String srUuid = UUID.nameUUIDFromBytes(pathMock.getBytes()).toString();
 
         Host hostMock = Mockito.mock(Host.class);
 
-        PowerMockito.mockStatic(Host.class);
-        PowerMockito.when(Host.getByUuid(connectionMock, uuid)).thenReturn(hostMock);
+        try (MockedStatic<Host> ignored = Mockito.mockStatic(Host.class);MockedStatic<SR> ignored1 =
+                Mockito.mockStatic(SR.class);MockedStatic<PBD> pbdMockedStatic = Mockito.mockStatic(PBD.class)) {
+            Mockito.when(Host.getByUuid(connectionMock, uuid)).thenReturn(hostMock);
 
-        PowerMockito.mockStatic(SR.class);
-        PowerMockito.when(SR.introduce(Mockito.eq(connectionMock), Mockito.eq(srUuid), Mockito.eq(pathMock), Mockito.eq(pathMock), Mockito.eq("file"), Mockito.eq("file"), Mockito.eq(false),
-                Mockito.anyMapOf(String.class, String.class))).thenReturn(srMock);
 
-        PowerMockito.mockStatic(PBD.class);
-        PBD pbdMock = Mockito.mock(PBD.class);
-        PowerMockito.when(PBD.create(Mockito.eq(connectionMock), Mockito.any(Record.class))).thenReturn(pbdMock);
+            Mockito.when(SR.introduce(Mockito.eq(connectionMock), Mockito.eq(srUuid), Mockito.eq(pathMock),
+                    Mockito.eq(pathMock), Mockito.eq("file"), Mockito.eq("file"), Mockito.eq(false),
+                    Mockito.anyMap())).thenReturn(srMock);
 
-        Mockito.doNothing().when(xenserver625StorageProcessor).removeSrAndPbdIfPossible(Mockito.eq(connectionMock), Mockito.any(SR.class), Mockito.any(PBD.class));
-        SR sr = xenserver625StorageProcessor.createNewFileSr(connectionMock, pathMock);
+            PBD pbdMock = Mockito.mock(PBD.class);
+            Mockito.when(PBD.create(Mockito.eq(connectionMock), Mockito.any(Record.class))).thenReturn(pbdMock);
 
-        Assert.assertEquals(srMock, sr);
-        Mockito.verify(xenserver625StorageProcessor, times(0)).removeSrAndPbdIfPossible(Mockito.eq(connectionMock), Mockito.any(SR.class), Mockito.any(PBD.class));
-        Mockito.verify(xenserver625StorageProcessor, times(0)).retrieveAlreadyConfiguredSrWithoutException(connectionMock, pathMock);
+            SR sr = xenserver625StorageProcessor.createNewFileSr(connectionMock, pathMock);
 
-        Mockito.verify(srMock).scan(connectionMock);
-        Mockito.verify(pbdMock).plug(connectionMock);
+            Assert.assertEquals(srMock, sr);
+            Mockito.verify(xenserver625StorageProcessor, times(0)).removeSrAndPbdIfPossible(Mockito.eq(connectionMock),
+                    Mockito.any(SR.class), Mockito.any(PBD.class));
+            Mockito.verify(xenserver625StorageProcessor, times(0)).retrieveAlreadyConfiguredSrWithoutException(
+                    connectionMock, pathMock);
 
-        PowerMockito.verifyStatic(PBD.class);
-        SR.introduce(Mockito.eq(connectionMock), Mockito.eq(srUuid), Mockito.eq(pathMock), Mockito.eq(pathMock), Mockito.eq("file"), Mockito.eq("file"), Mockito.eq(false),
-                Mockito.anyMapOf(String.class, String.class));
-        PBD.create(Mockito.eq(connectionMock), Mockito.any(Record.class));
+            Mockito.verify(srMock).scan(connectionMock);
+            Mockito.verify(pbdMock).plug(connectionMock);
+
+            SR.introduce(Mockito.eq(connectionMock), Mockito.eq(srUuid), Mockito.eq(pathMock), Mockito.eq(pathMock),
+                    Mockito.eq("file"), Mockito.eq("file"), Mockito.eq(false),
+                    Mockito.anyMap());
+
+            pbdMockedStatic.verify(() -> PBD.create(Mockito.eq(connectionMock), Mockito.any(Record.class)));
+        }
     }
 
     @Test

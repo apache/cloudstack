@@ -40,12 +40,13 @@
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option
             v-for="(volume, index) in volumes"
             :value="volume.id"
-            :key="index">
+            :key="index"
+            :label="volume.displaytext || volume.name">
             {{ volume.displaytext || volume.name }}
           </a-select-option>
         </a-select>

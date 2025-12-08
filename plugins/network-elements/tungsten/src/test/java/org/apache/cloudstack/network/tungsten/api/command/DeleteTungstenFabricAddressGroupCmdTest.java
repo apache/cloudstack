@@ -18,6 +18,7 @@ package org.apache.cloudstack.network.tungsten.api.command;
 
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,13 +27,10 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(DeleteTungstenFabricAddressGroupCmd.class)
+@RunWith(MockitoJUnitRunner.class)
 public class DeleteTungstenFabricAddressGroupCmdTest {
 
     @Mock
@@ -40,13 +38,20 @@ public class DeleteTungstenFabricAddressGroupCmdTest {
 
     DeleteTungstenFabricAddressGroupCmd deleteTungstenFabricAddressGroupCmd;
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         deleteTungstenFabricAddressGroupCmd = new DeleteTungstenFabricAddressGroupCmd();
         deleteTungstenFabricAddressGroupCmd.tungstenService = tungstenService;
-        Whitebox.setInternalState(deleteTungstenFabricAddressGroupCmd, "zoneId", 1L);
-        Whitebox.setInternalState(deleteTungstenFabricAddressGroupCmd, "addressGroupUuid", "test");
+        ReflectionTestUtils.setField(deleteTungstenFabricAddressGroupCmd, "zoneId", 1L);
+        ReflectionTestUtils.setField(deleteTungstenFabricAddressGroupCmd, "addressGroupUuid", "test");
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
@@ -54,8 +59,7 @@ public class DeleteTungstenFabricAddressGroupCmdTest {
         SuccessResponse successResponse = Mockito.mock(SuccessResponse.class);
         Mockito.when(tungstenService.deleteTungstenAddressGroup(ArgumentMatchers.anyLong(),
                 ArgumentMatchers.anyString())).thenReturn(true);
-        PowerMockito.whenNew(SuccessResponse.class).withAnyArguments().thenReturn(successResponse);
         deleteTungstenFabricAddressGroupCmd.execute();
-        Assert.assertEquals(successResponse, deleteTungstenFabricAddressGroupCmd.getResponseObject());
+        Assert.assertTrue(((SuccessResponse) deleteTungstenFabricAddressGroupCmd.getResponseObject()).getSuccess());
     }
 }

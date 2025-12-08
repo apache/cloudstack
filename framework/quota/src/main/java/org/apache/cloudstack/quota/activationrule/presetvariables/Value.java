@@ -23,24 +23,77 @@ import java.util.Map;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.vm.snapshot.VMSnapshot;
+import org.apache.cloudstack.quota.constant.QuotaTypes;
 
 public class Value extends GenericPresetVariable {
+
+    @PresetVariableDefinition(description = "ID of the resource.", supportedTypes = {QuotaTypes.ALLOCATED_VM, QuotaTypes.RUNNING_VM, QuotaTypes.VOLUME, QuotaTypes.TEMPLATE,
+            QuotaTypes.ISO, QuotaTypes.SNAPSHOT, QuotaTypes.NETWORK_OFFERING, QuotaTypes.VM_SNAPSHOT})
+    private String id;
+
+    @PresetVariableDefinition(description = "Name of the resource.", supportedTypes = {QuotaTypes.ALLOCATED_VM, QuotaTypes.RUNNING_VM, QuotaTypes.VOLUME, QuotaTypes.TEMPLATE,
+            QuotaTypes.ISO, QuotaTypes.SNAPSHOT, QuotaTypes.NETWORK_OFFERING, QuotaTypes.VM_SNAPSHOT})
+    private String name;
+
+    @PresetVariableDefinition(description = "Host where the VM is running.", supportedTypes = {QuotaTypes.RUNNING_VM})
     private Host host;
+
+    @PresetVariableDefinition(description = "OS of the VM/template.", supportedTypes = {QuotaTypes.RUNNING_VM, QuotaTypes.ALLOCATED_VM, QuotaTypes.TEMPLATE, QuotaTypes.ISO})
     private String osName;
+
+    @PresetVariableDefinition(description = "A list of resources of the account between the start and end date of the usage record being calculated " +
+            "(i.e.: [{zoneId: ..., domainId:...}]).")
     private List<Resource> accountResources;
+
+    @PresetVariableDefinition(supportedTypes = {QuotaTypes.ALLOCATED_VM, QuotaTypes.RUNNING_VM, QuotaTypes.VOLUME, QuotaTypes.TEMPLATE, QuotaTypes.ISO, QuotaTypes.SNAPSHOT,
+            QuotaTypes.VM_SNAPSHOT}, description = "List of tags of the resource in the format key:value (i.e.: {\"a\":\"b\", \"c\":\"d\"}).")
     private Map<String, String> tags;
+
+    @PresetVariableDefinition(description = "Tag of the network offering.", supportedTypes = {QuotaTypes.NETWORK_OFFERING})
     private String tag;
+
+    @PresetVariableDefinition(description = "Size of the resource (in MiB).", supportedTypes = {QuotaTypes.TEMPLATE, QuotaTypes.ISO, QuotaTypes.VOLUME, QuotaTypes.SNAPSHOT,
+            QuotaTypes.BACKUP})
     private Long size;
+
+    @PresetVariableDefinition(description = "Virtual size of the backup.", supportedTypes = {QuotaTypes.BACKUP})
     private Long virtualSize;
+
+    @PresetVariableDefinition(description = "Provisioning type of the resource. Values can be: thin, sparse or fat.", supportedTypes = {QuotaTypes.VOLUME})
     private ProvisioningType provisioningType;
+
+    @PresetVariableDefinition(description = "Type of the snapshot. Values can be: MANUAL, RECURRING, HOURLY, DAILY, WEEKLY and MONTHLY.", supportedTypes = {QuotaTypes.SNAPSHOT})
     private Snapshot.Type snapshotType;
+
+    @PresetVariableDefinition(description = "Type of the VM snapshot. Values can be: Disk or DiskAndMemory.", supportedTypes = {QuotaTypes.VM_SNAPSHOT})
     private VMSnapshot.Type vmSnapshotType;
+
+    @PresetVariableDefinition(description = "Computing offering of the VM.", supportedTypes = {QuotaTypes.RUNNING_VM, QuotaTypes.ALLOCATED_VM})
     private ComputeOffering computeOffering;
+
+    @PresetVariableDefinition(description = "Template/ISO with which the VM was created.", supportedTypes = {QuotaTypes.RUNNING_VM, QuotaTypes.ALLOCATED_VM})
     private GenericPresetVariable template;
+
+    @PresetVariableDefinition(description = "Disk offering of the volume.", supportedTypes = {QuotaTypes.VOLUME})
     private GenericPresetVariable diskOffering;
+
+    @PresetVariableDefinition(description = "Storage where the volume or snapshot is. While handling with snapshots, this value can be from the primary storage if the global " +
+            "setting 'snapshot.backup.to.secondary' is false, otherwise it will be from secondary storage.", supportedTypes = {QuotaTypes.VOLUME, QuotaTypes.SNAPSHOT})
     private Storage storage;
+
+    @PresetVariableDefinition(description = "Computing resources consumed by the VM.", supportedTypes = {QuotaTypes.RUNNING_VM})
     private ComputingResources computingResources;
+
+    @PresetVariableDefinition(description = "Backup offering of the backup.", supportedTypes = {QuotaTypes.BACKUP})
     private BackupOffering backupOffering;
+
+    @PresetVariableDefinition(description = "The hypervisor where the resource was deployed. Values can be: XenServer, KVM, VMware, Hyperv, BareMetal, Ovm, Ovm3 and LXC.",
+            supportedTypes = {QuotaTypes.RUNNING_VM, QuotaTypes.ALLOCATED_VM, QuotaTypes.VM_SNAPSHOT, QuotaTypes.SNAPSHOT})
+    private String hypervisorType;
+
+    @PresetVariableDefinition(description = "The volume format. Values can be: RAW, VHD, VHDX, OVA and QCOW2.", supportedTypes = {QuotaTypes.VOLUME, QuotaTypes.VOLUME_SECONDARY})
+    private String volumeFormat;
+    private String state;
 
     public Host getHost() {
         return host;
@@ -184,5 +237,32 @@ public class Value extends GenericPresetVariable {
     public void setBackupOffering(BackupOffering backupOffering) {
         this.backupOffering = backupOffering;
         fieldNamesToIncludeInToString.add("backupOffering");
+    }
+
+    public void setHypervisorType(String hypervisorType) {
+        this.hypervisorType = hypervisorType;
+        fieldNamesToIncludeInToString.add("hypervisorType");
+    }
+
+    public String getHypervisorType() {
+        return hypervisorType;
+    }
+
+    public void setVolumeFormat(String volumeFormat) {
+        this.volumeFormat = volumeFormat;
+        fieldNamesToIncludeInToString.add("volumeFormat");
+    }
+
+    public String getVolumeFormat() {
+        return volumeFormat;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+        fieldNamesToIncludeInToString.add("state");
     }
 }

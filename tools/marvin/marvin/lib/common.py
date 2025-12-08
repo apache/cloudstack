@@ -58,6 +58,7 @@ from marvin.cloudstackAPI import (listConfigurations,
                                   listNetworkOfferings,
                                   listResourceLimits,
                                   listVPCOfferings,
+                                  listManagementServers,
                                   migrateSystemVm)
 from marvin.sshClient import SshClient
 from marvin.codes import (PASS, FAILED, ISOLATED_NETWORK, VPC_NETWORK,
@@ -1056,6 +1057,14 @@ def list_vpc_offerings(apiclient, **kwargs):
         cmd.listall=True
     return(apiclient.listVPCOfferings(cmd))
 
+def list_mgmt_servers(apiclient, **kwargs):
+    """ Lists Management Servers """
+
+    cmd = listManagementServers.listManagementServersCmd()
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
+        cmd.listall=True
+    return(apiclient.listManagementServers(cmd))
 
 def update_resource_count(apiclient, domainid, accountid=None,
                           projectid=None, rtype=None):

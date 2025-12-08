@@ -30,14 +30,12 @@ import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Spy;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(value = {LibvirtOvsFetchInterfaceCommandWrapper.class})
+@RunWith(MockitoJUnitRunner.class)
 public class LibvirtOvsFetchInterfaceCommandWrapperTest {
 
     @Spy

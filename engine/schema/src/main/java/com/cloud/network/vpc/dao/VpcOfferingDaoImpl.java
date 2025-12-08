@@ -19,6 +19,7 @@ package com.cloud.network.vpc.dao;
 
 import javax.inject.Inject;
 
+import com.cloud.offering.NetworkOffering;
 import org.apache.cloudstack.api.ApiConstants;
 import org.springframework.stereotype.Component;
 
@@ -83,5 +84,10 @@ public class VpcOfferingDaoImpl extends GenericDaoBase<VpcOfferingVO, Long> impl
     public boolean isIpv6Supported(long offeringId) {
         NetUtils.InternetProtocol internetProtocol = getVpcOfferingInternetProtocol(offeringId);
         return NetUtils.InternetProtocol.isIpv6EnabledProtocol(internetProtocol);
+    }
+
+    @Override
+    public boolean isRoutedVpc(long offeringId) {
+        return NetworkOffering.NetworkMode.ROUTED.equals(findById(offeringId).getNetworkMode());
     }
 }

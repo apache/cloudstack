@@ -26,12 +26,16 @@
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }"
           @change="handleChangeDomain"
           v-focus="true"
           v-model:value="domainId">
-          <a-select-option v-for="(domain, index) in domainsList" :value="domain.id" :key="index">
+          <a-select-option
+            v-for="(domain, index) in domainsList"
+            :value="domain.id"
+            :key="index"
+            :label="domain.path || domain.name || domain.description">
             {{ domain.path || domain.name || domain.description }}
           </a-select-option>
         </a-select>
@@ -43,9 +47,9 @@
         style="width: 100%"
         @change="handleChangeAccount"
         showSearch
-        optionFilterProp="label"
+        optionFilterProp="value"
         :filterOption="(input, option) => {
-          return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
         }" >
         <a-select-option v-for="(account, index) in accountsList" :value="account.name" :key="index">
           {{ account.name }}

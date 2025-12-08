@@ -55,14 +55,14 @@ public class CheckUrlCommand extends Command {
         this.followRedirects = followRedirects;
     }
 
-    public CheckUrlCommand(final String format,final String url, Integer connectTimeout,
-               Integer connectionRequestTimeout, Integer socketTimeout, final boolean followRedirects) {
+    public CheckUrlCommand(final String format,final String url, Integer connectTimeout, Integer connectionRequestTimeout, Integer socketTimeout, final boolean followRedirects) {
         super();
         this.format = format;
         this.url = url;
         this.connectTimeout = connectTimeout;
         this.socketTimeout = socketTimeout;
         this.connectionRequestTimeout = connectionRequestTimeout;
+        this.followRedirects = followRedirects;
     }
 
     @Override

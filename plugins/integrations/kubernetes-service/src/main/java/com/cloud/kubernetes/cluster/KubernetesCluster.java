@@ -32,6 +32,10 @@ import com.cloud.utils.fsm.StateMachine2;
  */
 public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm.StateObject<KubernetesCluster.State>, Identity, InternalIdentity, Displayable {
 
+    enum ClusterType {
+        CloudManaged, ExternalManaged;
+    };
+
     enum Event {
         StartRequested,
         StopRequested,
@@ -54,6 +58,7 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
         Stopping("Resources for the Kubernetes cluster are being destroyed"),
         Stopped("All resources for the Kubernetes cluster are destroyed, Kubernetes cluster may still have ephemeral resource like persistent volumes provisioned"),
         Scaling("Transient state in which resources are either getting scaled up/down"),
+        ScalingStoppedCluster("Transient state in which the service offerings of stopped clusters are getting scaled"),
         Upgrading("Transient state in which cluster is getting upgraded"),
         Alert("State to represent Kubernetes clusters which are not in expected desired state (operationally in active control place, stopped cluster VM's etc)."),
         Recovering("State in which Kubernetes cluster is recovering from alert state"),
@@ -85,8 +90,11 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
             s_fsm.addTransition(State.Running, Event.AutoscaleRequested, State.Scaling);
             s_fsm.addTransition(State.Running, Event.ScaleUpRequested, State.Scaling);
             s_fsm.addTransition(State.Running, Event.ScaleDownRequested, State.Scaling);
+            s_fsm.addTransition(State.Stopped, Event.ScaleUpRequested, State.ScalingStoppedCluster);
             s_fsm.addTransition(State.Scaling, Event.OperationSucceeded, State.Running);
             s_fsm.addTransition(State.Scaling, Event.OperationFailed, State.Alert);
+            s_fsm.addTransition(State.ScalingStoppedCluster, Event.OperationSucceeded, State.Stopped);
+            s_fsm.addTransition(State.ScalingStoppedCluster, Event.OperationFailed, State.Alert);
 
             s_fsm.addTransition(State.Running, Event.UpgradeRequested, State.Upgrading);
             s_fsm.addTransition(State.Upgrading, Event.OperationSucceeded, State.Running);
@@ -115,10 +123,10 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
     String getName();
     String getDescription();
     long getZoneId();
-    long getKubernetesVersionId();
-    long getServiceOfferingId();
-    long getTemplateId();
-    long getNetworkId();
+    Long getKubernetesVersionId();
+    Long getServiceOfferingId();
+    Long getTemplateId();
+    Long getNetworkId();
     long getDomainId();
     long getAccountId();
     long getControlNodeCount();
@@ -137,4 +145,5 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
     Long getMinSize();
     Long getMaxSize();
     Long getSecurityGroupId();
+    ClusterType getClusterType();
 }

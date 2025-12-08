@@ -28,8 +28,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
@@ -38,8 +37,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(value = {LibvirtPrepareForMigrationCommandWrapper.class})
+@RunWith(MockitoJUnitRunner.class)
 public class LibvirtPrepareForMigrationCommandWrapperTest {
 
     @Mock

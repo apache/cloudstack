@@ -17,8 +17,13 @@
 
 package com.cloud.api;
 
-import java.util.HashMap;
-
+import com.cloud.api.dispatch.DispatchChain;
+import com.cloud.api.dispatch.DispatchTask;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
@@ -29,13 +34,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import com.cloud.api.dispatch.DispatchChain;
-import com.cloud.api.dispatch.DispatchTask;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
+import java.util.HashMap;
 
 public class ApiDispatcherTest {
     protected static final Long resourceId = 1L;

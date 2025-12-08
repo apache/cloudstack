@@ -34,7 +34,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
@@ -59,7 +60,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 public class HypervStorageMotionStrategy implements DataMotionStrategy {
-    private static final Logger s_logger = Logger.getLogger(HypervStorageMotionStrategy.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     @Inject AgentManager agentMgr;
     @Inject VolumeDao volDao;
     @Inject VolumeDataFactory volFactory;
@@ -99,7 +100,7 @@ public class HypervStorageMotionStrategy implements DataMotionStrategy {
                 throw new CloudRuntimeException("Unsupported operation requested for moving data.");
             }
         } catch (Exception e) {
-            s_logger.error("copy failed", e);
+            logger.error("copy failed", e);
             errMsg = e.toString();
         }
 
@@ -124,10 +125,10 @@ public class HypervStorageMotionStrategy implements DataMotionStrategy {
             MigrateWithStorageCommand command = new MigrateWithStorageCommand(to, volumeToFilerto, destHost.getPrivateIpAddress());
             MigrateWithStorageAnswer answer = (MigrateWithStorageAnswer) agentMgr.send(srcHost.getId(), command);
             if (answer == null) {
-                s_logger.error("Migration with storage of vm " + vm + " failed.");
+                logger.error("Migration with storage of vm " + vm + " failed.");
                 throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost);
             } else if (!answer.getResult()) {
-                s_logger.error("Migration with storage of vm " + vm+ " failed. Details: " + answer.getDetails());
+                logger.error("Migration with storage of vm " + vm+ " failed. Details: " + answer.getDetails());
                 throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost +
                         ". " + answer.getDetails());
             } else {
@@ -137,7 +138,7 @@ public class HypervStorageMotionStrategy implements DataMotionStrategy {
 
             return answer;
         } catch (OperationTimedoutException e) {
-            s_logger.error("Error while migrating vm " + vm + " to host " + destHost, e);
+            logger.error("Error while migrating vm " + vm + " to host " + destHost, e);
             throw new AgentUnavailableException("Operation timed out on storage motion for " + vm, destHost.getId());
         }
     }
@@ -170,7 +171,7 @@ public class HypervStorageMotionStrategy implements DataMotionStrategy {
             }
 
             if (!updated) {
-                s_logger.error("Volume path wasn't updated for volume " + volume + " after it was migrated.");
+                logger.error("Volume path wasn't updated for volume " + volume + " after it was migrated.");
             }
         }
     }

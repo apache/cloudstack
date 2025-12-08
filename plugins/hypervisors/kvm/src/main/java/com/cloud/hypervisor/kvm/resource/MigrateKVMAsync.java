@@ -22,7 +22,8 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
@@ -31,7 +32,7 @@ import org.libvirt.TypedStringParameter;
 import org.libvirt.TypedUlongParameter;
 
 public class MigrateKVMAsync implements Callable<Domain> {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private final LibvirtComputingResource libvirtComputingResource;
 
@@ -122,8 +123,10 @@ public class MigrateKVMAsync implements Callable<Domain> {
             if (migrateNonSharedInc) {
                 flags |= VIR_MIGRATE_PERSIST_DEST;
                 flags |= VIR_MIGRATE_NON_SHARED_INC;
+                logger.debug("Setting VIR_MIGRATE_NON_SHARED_INC for linked clone migration.");
             } else {
                 flags |= VIR_MIGRATE_NON_SHARED_DISK;
+                logger.debug("Setting VIR_MIGRATE_NON_SHARED_DISK for full clone migration.");
             }
         }
 

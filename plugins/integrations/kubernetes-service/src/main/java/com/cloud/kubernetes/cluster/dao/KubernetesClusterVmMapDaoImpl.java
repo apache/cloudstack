@@ -31,12 +31,17 @@ import com.cloud.utils.db.SearchCriteria;
 public class KubernetesClusterVmMapDaoImpl extends GenericDaoBase<KubernetesClusterVmMapVO, Long> implements KubernetesClusterVmMapDao {
 
     private final SearchBuilder<KubernetesClusterVmMapVO> clusterIdSearch;
+    private final SearchBuilder<KubernetesClusterVmMapVO> vmIdSearch;
 
     public KubernetesClusterVmMapDaoImpl() {
         clusterIdSearch = createSearchBuilder();
         clusterIdSearch.and("clusterId", clusterIdSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
         clusterIdSearch.and("vmIdsIN", clusterIdSearch.entity().getVmId(), SearchCriteria.Op.IN);
         clusterIdSearch.done();
+
+        vmIdSearch = createSearchBuilder();
+        vmIdSearch.and("vmId", vmIdSearch.entity().getVmId(), SearchCriteria.Op.EQ);
+        vmIdSearch.done();
     }
 
     @Override
@@ -48,10 +53,42 @@ public class KubernetesClusterVmMapDaoImpl extends GenericDaoBase<KubernetesClus
     }
 
     @Override
+    public KubernetesClusterVmMapVO getClusterMapFromVmId(long vmId) {
+        SearchCriteria<KubernetesClusterVmMapVO> sc = vmIdSearch.create();
+        sc.setParameters("vmId", vmId);
+        return findOneBy(sc);
+    }
+
+    @Override
     public List<KubernetesClusterVmMapVO> listByClusterIdAndVmIdsIn(long clusterId, List<Long> vmIds) {
         SearchCriteria<KubernetesClusterVmMapVO> sc = clusterIdSearch.create();
         sc.setParameters("clusterId", clusterId);
         sc.setParameters("vmIdsIN", vmIds.toArray());
         return listBy(sc);
+    }
+
+    @Override
+    public int removeByClusterIdAndVmIdsIn(long clusterId, List<Long> vmIds) {
+        SearchCriteria<KubernetesClusterVmMapVO> sc = clusterIdSearch.create();
+        sc.setParameters("clusterId", clusterId);
+        sc.setParameters("vmIdsIN", vmIds.toArray());
+        return remove(sc);
+    }
+
+    @Override
+    public int removeByClusterId(long clusterId) {
+        SearchCriteria<KubernetesClusterVmMapVO> sc = clusterIdSearch.create();
+        sc.setParameters("clusterId", clusterId);
+        return remove(sc);
+    }
+
+    @Override
+    public KubernetesClusterVmMapVO findByVmId(long vmId) {
+        SearchBuilder<KubernetesClusterVmMapVO> sb = createSearchBuilder();
+        sb.and("vmId", sb.entity().getVmId(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<KubernetesClusterVmMapVO> sc = sb.create();
+        sc.setParameters("vmId", vmId);
+        return findOneBy(sc);
     }
 }

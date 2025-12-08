@@ -22,39 +22,41 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
-import com.cloud.utils.fsm.StateMachine2;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.events.EventBus;
-import org.apache.cloudstack.framework.events.EventBusException;
+import org.apache.cloudstack.framework.events.EventDistributor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.event.EventCategory;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.server.ManagementService;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Event;
 import com.cloud.storage.Volume.State;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.fsm.StateListener;
+import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.VMInstanceDao;
 
 public class VolumeStateListener implements StateListener<State, Event, Volume> {
 
-    protected static EventBus s_eventBus = null;
     protected ConfigurationDao _configDao;
     protected VMInstanceDao _vmInstanceDao;
 
-    private static final Logger s_logger = Logger.getLogger(VolumeStateListener.class);
+    private EventDistributor eventDistributor;
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public VolumeStateListener(ConfigurationDao configDao, VMInstanceDao vmInstanceDao) {
         this._configDao = configDao;
         this._vmInstanceDao = vmInstanceDao;
+    }
+
+    public void setEventDistributor(EventDistributor eventDistributor) {
+        this.eventDistributor = eventDistributor;
     }
 
     @Override
@@ -92,23 +94,21 @@ public class VolumeStateListener implements StateListener<State, Event, Volume> 
       return true;
     }
 
-  private void pubishOnEventBus(String event, String status, Volume vo, State oldState, State newState) {
+    private void pubishOnEventBus(String event, String status, Volume vo, State oldState, State newState) {
 
         String configKey = Config.PublishResourceStateEvent.key();
         String value = _configDao.getValue(configKey);
         boolean configValue = Boolean.parseBoolean(value);
         if(!configValue)
             return;
-        try {
-            s_eventBus = ComponentContext.getComponent(EventBus.class);
-        } catch (NoSuchBeanDefinitionException nbe) {
-            return; // no provider is configured to provide events bus, so just return
+        if (eventDistributor == null) {
+            setEventDistributor(ComponentContext.getComponent(EventDistributor.class));
         }
 
         String resourceName = getEntityFromClassName(Volume.class.getName());
         org.apache.cloudstack.framework.events.Event eventMsg =
             new org.apache.cloudstack.framework.events.Event(ManagementService.Name, EventCategory.RESOURCE_STATE_CHANGE_EVENT.getName(), event, resourceName,
-                vo.getUuid());
+                    vo.getUuid());
         Map<String, String> eventDescription = new HashMap<String, String>();
         eventDescription.put("resource", resourceName);
         eventDescription.put("id", vo.getUuid());
@@ -119,11 +119,7 @@ public class VolumeStateListener implements StateListener<State, Event, Volume> 
         eventDescription.put("eventDateTime", eventDate);
 
         eventMsg.setDescription(eventDescription);
-        try {
-            s_eventBus.publish(eventMsg);
-        } catch (EventBusException e) {
-            s_logger.warn("Failed to state change event on the the event bus.");
-        }
+        eventDistributor.publish(eventMsg);
     }
 
     private String getEntityFromClassName(String entityClassName) {

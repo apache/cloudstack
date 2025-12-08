@@ -21,6 +21,18 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 public interface Role extends RoleEntity, InternalIdentity, Identity {
+
+    enum State {
+        ENABLED, DISABLED;
+
+        @Override
+        public String toString(){
+            return super.toString().toLowerCase();
+        }
+    }
+
     RoleType getRoleType();
     boolean isDefault();
+    boolean isPublicRole();
+    State getState();
 }

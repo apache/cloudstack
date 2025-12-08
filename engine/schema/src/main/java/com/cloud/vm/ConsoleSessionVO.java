@@ -19,13 +19,16 @@
 
 package com.cloud.vm;
 
+import java.util.Date;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import java.util.Date;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 @Entity
 @Table(name = "console_session")
@@ -55,7 +58,8 @@ public class ConsoleSessionVO {
     private long hostId;
 
     @Column(name = "acquired")
-    private boolean acquired;
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date acquired;
 
     @Column(name = "removed")
     private Date removed;
@@ -124,11 +128,11 @@ public class ConsoleSessionVO {
         this.removed = removed;
     }
 
-    public boolean isAcquired() {
+    public Date getAcquired() {
         return acquired;
     }
 
-    public void setAcquired(boolean acquired) {
+    public void setAcquired(Date acquired) {
         this.acquired = acquired;
     }
 }

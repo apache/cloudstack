@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,11 +18,11 @@
 
 
 # $Id: createvm.sh 10292 2010-07-07 00:24:04Z edison $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/storage/qcow2/createvm.sh $
-# createvm.sh -- create a vm image 
+# createvm.sh -- create a vm image
 
 usage() {
   echo "Usage (clone VM from template): createvm.sh -t <template dir>  -i <rootdisk dir> -f <datadisk folder> -n <datadisk name> -s <datadisk size in GB>\n\
-Usage (create blank rootdisk): createvm.sh -i <rootdisk dir> -S <rootdisk size in GB> \n" 
+Usage (create blank rootdisk): createvm.sh -i <rootdisk dir> -S <rootdisk size in GB> \n"
 }
 
 check_params() {
@@ -43,7 +43,7 @@ check_params() {
       return 1
     fi
   fi
-  
+
   return 0
 }
 
@@ -53,7 +53,7 @@ cleanup_and_exit_if_error() {
   local rootdiskfolder=$3
   local datadiskfolder=$4
   local datadiskname=$5
-  
+
   if [ $return_code -gt 0 ]
   then
     cleanup_disks $rootdiskfolder $datadiskfolder $datadiskname
@@ -71,24 +71,24 @@ cleanup_disks() {
   then
     datadiskpath="${datadiskfolder}/${datadiskname}"
   fi
-  
+
   if [ "$rootdiskfolder" != "" ] && [ -d $rootdiskfolder ]
   then
     rm -rf $rootdiskfolder
   fi
-  
+
   if [ "$datadiskpath" != "" ] && [ -f $datadiskpath ]
   then
     rm $datadiskpath
   fi
-  
+
   return 0
 }
 
 exit_if_error() {
   local return_code=$1
   local msg=$2
-  
+
   if [ $return_code -gt 0 ]
   then
     printf "${msg}\n"
@@ -98,7 +98,7 @@ exit_if_error() {
 
 make_folder() {
   local folder=$1
-  
+
   if [ ! -d ${folder} ]
   then
     mkdir -p ${folder}
@@ -121,9 +121,9 @@ check_rootdisk() {
 check_datadisk() {
   local datadiskfolder=$1
   local datadiskname=$2
-  
+
   make_folder $datadiskfolder
-  
+
   if [ -f ${datadiskfolder}/${datadiskname} ]
   then
     return 1
@@ -134,12 +134,12 @@ check_datadisk() {
 
 strip_leading_slash() {
   local folder=$1
-  
+
   if [ ${folder:0:1} != / ]
   then
     folder=/$folder
   fi
-  
+
   echo $folder
 }
 
@@ -149,7 +149,7 @@ clone_template_to_rootdisk() {
 
   curDir=$(pwd)
   cd $rootdiskfolder
-  qemu-img create -f qcow2 -b $templatepath ${rootdiskfolder}/rootdisk	
+  qemu-img create -f qcow2 -b $templatepath ${rootdiskfolder}/rootdisk
   cd $curDir
 
   return $?
@@ -158,9 +158,9 @@ clone_template_to_rootdisk() {
 create_blank_rootdisk() {
   local rootdiskfolder=$1
   local rootdisksize=$2
-  
+
   rootdisksize=$(convert_size_to_gb $rootdisksize)
-  
+
   if [ $? -gt 0 ]
   then
     return 1
@@ -176,27 +176,27 @@ create_datadisk() {
   local datadiskname=$2
   local datadisksize=$3
   local diskfmt=$4
-  
+
   datadisksize=$(convert_size_to_gb $datadisksize)
-  
+
   if [ $? -gt 0 ]
   then
     return 1
   fi
 
   qemu-img create -f $diskfmt ${datadiskfolder}/${datadiskname} $datadisksize
-  
+
   return $?
 }
 
 convert_size_to_gb() {
   local size=$1
-  
+
   suffix=${size:(-1)}
   case $suffix in
     M)
         ;;
-    G)   
+    G)
          ;;
     [0-9])   size=${size}G
          ;;
@@ -204,7 +204,7 @@ convert_size_to_gb() {
          return 1
          ;;
   esac
-  
+
   echo $size
   return 0
 }
@@ -262,7 +262,7 @@ then
   		exit_if_error $? "Failed to clone template $templatepath to $rootdiskfolder/rootdisk."
 	else
   		# A template path was not passed in, so create a blank rootdisk at the rootdisk folder
-  		create_blank_rootdisk $rootdiskfolder $rootdisksize 
+  		create_blank_rootdisk $rootdiskfolder $rootdisksize
   		exit_if_error $? "Failed to create a blank rootdisk at $rootdiskfolder/rootdisk."
 	fi
 fi
@@ -270,8 +270,8 @@ fi
 if [ -n "$datadisksize" ]
 then
   # Create the datadisk folder if necessary, and make sure there is no existing datadisk there
-  check_datadisk $datadiskfolder $datadiskname 
-  cleanup_and_exit_if_error $? "Failed to create datadisk in $datadiskfolder; datadisk with $datadiskname already exists." $rootdiskfolder 
+  check_datadisk $datadiskfolder $datadiskname
+  cleanup_and_exit_if_error $? "Failed to create datadisk in $datadiskfolder; datadisk with $datadiskname already exists." $rootdiskfolder
 
   # Create the datadisk
   create_datadisk $datadiskfolder $datadiskname $datadisksize qcow2
@@ -285,7 +285,7 @@ else
     retry=10
     while [ $retry -gt 0 ]
     do
-	success=$(losetup -a |grep $loopdev)		
+	success=$(losetup -a |grep $loopdev)
 	if [ $? -eq 0 ]
 	then
 		break
@@ -300,7 +300,7 @@ else
     	losetup -d $loopdev
         if [ $? -eq 0 ]
 	then
-       		break 
+       		break
 	fi
         retry=$(($retry-1))
 	sleep 1

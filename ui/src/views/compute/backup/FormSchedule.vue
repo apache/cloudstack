@@ -70,7 +70,8 @@
                 <a-time-picker
                   use12Hours
                   format="h:mm A"
-                  v-model:value="form.timeSelect" />
+                  v-model:value="form.timeSelect"
+                  style="width: 100%;" />
               </a-form-item>
             </a-col>
             <a-col :md="24" :lg="12" v-if="form.intervaltype==='weekly'">
@@ -80,9 +81,9 @@
                   showSearch
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }" >
-                  <a-select-option v-for="(opt, optIndex) in dayOfWeek" :key="optIndex">
+                  <a-select-option v-for="(opt, optIndex) in dayOfWeek" :key="optIndex" :label="opt.name || opt.description">
                     {{ opt.name || opt.description }}
                   </a-select-option>
                 </a-select>
@@ -95,9 +96,9 @@
                   showSearch
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }">
-                  <a-select-option v-for="opt in dayOfMonth" :key="opt.name">
+                  <a-select-option v-for="opt in dayOfMonth" :key="opt.name" :label="opt.name || opt.description">
                     {{ opt.name }}
                   </a-select-option>
                 </a-select>
@@ -110,10 +111,10 @@
                   v-model:value="form.timezone"
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                   :loading="fetching">
-                  <a-select-option v-for="opt in timeZoneMap" :key="opt.id">
+                  <a-select-option v-for="opt in timeZoneMap" :key="opt.id" :label="opt.name || opt.description">
                     {{ opt.name || opt.description }}
                   </a-select-option>
                 </a-select>

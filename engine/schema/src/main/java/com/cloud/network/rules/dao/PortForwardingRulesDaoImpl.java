@@ -20,6 +20,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.dao.FirewallRulesCidrsDao;
@@ -30,6 +31,9 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRuleVO, Long> implements PortForwardingRulesDao {
@@ -41,7 +45,7 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
     protected final SearchBuilder<PortForwardingRuleVO> ActiveRulesSearchByAccount;
 
     @Inject
-    protected FirewallRulesCidrsDao _portForwardingRulesCidrsDao;
+    protected FirewallRulesCidrsDao portForwardingRulesCidrsDao;
 
     protected PortForwardingRulesDaoImpl() {
         super();
@@ -169,5 +173,56 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
         sc.setParameters("id", id);
         sc.setParameters("dstIp", secondaryIp);
         return findOneBy(sc);
+    }
+
+    @Override
+    public int expungeByVmList(List<Long> vmIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(vmIds)) {
+            return 0;
+        }
+        SearchBuilder<PortForwardingRuleVO> sb = createSearchBuilder();
+        sb.and("vmIds", sb.entity().getVirtualMachineId(), SearchCriteria.Op.IN);
+        SearchCriteria<PortForwardingRuleVO> sc = sb.create();
+        sc.setParameters("vmIds", vmIds.toArray());
+        return batchExpunge(sc, batchSize);
+    }
+
+    public PortForwardingRuleVO persist(PortForwardingRuleVO portForwardingRule) {
+        return Transaction.execute((TransactionCallback<PortForwardingRuleVO>) transactionStatus -> {
+            PortForwardingRuleVO dbPfRule = super.persist(portForwardingRule);
+
+            portForwardingRulesCidrsDao.persist(portForwardingRule.getId(), portForwardingRule.getSourceCidrList());
+            List<String> cidrList = portForwardingRulesCidrsDao.getSourceCidrs(portForwardingRule.getId());
+            portForwardingRule.setSourceCidrList(cidrList);
+
+            return dbPfRule;
+        });
+
+    }
+
+    @Override
+    public boolean update(Long id, PortForwardingRuleVO entity) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        txn.start();
+
+        boolean success = super.update(id, entity);
+        if (!success) {
+            return false;
+        }
+
+        portForwardingRulesCidrsDao.updateSourceCidrsForRule(entity.getId(), entity.getSourceCidrList());
+        txn.commit();
+
+        return true;
+    }
+
+    @Override
+    public PortForwardingRuleVO findById(Long id) {
+        PortForwardingRuleVO rule = super.findById(id);
+
+        List<String> sourceCidrList = portForwardingRulesCidrsDao.getSourceCidrs(id);
+        rule.setSourceCidrList(sourceCidrList);
+
+        return rule;
     }
 }

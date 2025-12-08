@@ -17,16 +17,24 @@
 package com.cloud.storage.secondary;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.SecondaryStorageVm;
 import com.cloud.vm.SecondaryStorageVmVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
 
 public interface SecondaryStorageVmManager extends Manager {
 
@@ -46,6 +54,10 @@ public interface SecondaryStorageVmManager extends Manager {
     public static final String ALERT_SUBJECT = "secondarystoragevm-alert";
 
     public SecondaryStorageVmVO startSecStorageVm(long ssVmVmId);
+
+    void startSecStorageVmForHA(VirtualMachine vm, Map<VirtualMachineProfile.Param, Object> params,
+            DeploymentPlanner planner) throws InsufficientCapacityException, ResourceUnavailableException,
+            ConcurrentOperationException, OperationTimedoutException;
 
     public boolean stopSecStorageVm(long ssVmVmId);
 

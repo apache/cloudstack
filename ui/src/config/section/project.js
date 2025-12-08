@@ -101,7 +101,7 @@ export default {
       icon: 'edit-outlined',
       label: 'label.edit.project.details',
       dataView: true,
-      args: ['displaytext'],
+      args: ['name', 'displaytext'],
       show: (record, store) => {
         return (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) || record.isCurrentUserProjectAdmin
       }

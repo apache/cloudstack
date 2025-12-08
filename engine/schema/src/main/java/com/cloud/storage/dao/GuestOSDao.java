@@ -28,6 +28,7 @@ public interface GuestOSDao extends GenericDao<GuestOSVO, Long> {
 
     GuestOSVO findOneByDisplayName(String displayName);
 
+    List<GuestOSVO> listLikeDisplayName(String displayName);
     GuestOSVO findByCategoryIdAndDisplayNameOrderByCreatedDesc(long categoryId, String displayName);
 
     Set<String> findDoubleNames();

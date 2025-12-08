@@ -24,7 +24,7 @@
     </a-alert>
     <a-radio-group
       v-if="migrateVmWithVolumeAllowed"
-      :defaultValue="migrateMode"
+      v-model:value="migrateMode"
       @change="e => { handleMigrateModeChange(e.target.value) }">
       <a-radio class="radio-style" :value="1">
         {{ $t('label.migrate.instance.single.storage') }}
@@ -134,7 +134,7 @@ export default {
     },
     submitForm () {
       var isUserVm = true
-      if (this.$route.meta.name !== 'vm') {
+      if (this.$route.meta.resourceType !== 'UserVm') {
         isUserVm = false
       }
       var migrateApi = isUserVm ? 'migrateVirtualMachine' : 'migrateSystemVm'

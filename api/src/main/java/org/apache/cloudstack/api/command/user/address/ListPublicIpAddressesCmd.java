@@ -19,13 +19,13 @@ package org.apache.cloudstack.api.command.user.address;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.lang.BooleanUtils;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
+import org.apache.cloudstack.api.BaseListRetrieveOnlyResourceCountCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.UserCmd;
@@ -42,8 +42,7 @@ import com.cloud.utils.Pair;
 
 @APICommand(name = "listPublicIpAddresses", description = "Lists all public IP addresses", responseObject = IPAddressResponse.class, responseView = ResponseView.Restricted,
  requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, entityType = { IpAddress.class })
-public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(ListPublicIpAddressesCmd.class.getName());
+public class ListPublicIpAddressesCmd extends BaseListRetrieveOnlyResourceCountCmd implements UserCmd {
 
     private static final String s_name = "listpublicipaddressesresponse";
 
@@ -105,6 +104,9 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd impleme
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
+
+    @Parameter(name = ApiConstants.FOR_SYSTEM_VMS, type = CommandType.BOOLEAN, description = "true if range is dedicated for system VMs", since = "4.20.0")
+    private Boolean forSystemVMs;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -173,12 +175,12 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd impleme
         return forVirtualNetwork;
     }
 
-    public Boolean getForLoadBalancing() {
-        return forLoadBalancing;
-    }
-
     public String getState() {
         return state;
+    }
+
+    public boolean getForSystemVMs() {
+        return BooleanUtils.isTrue(forSystemVMs);
     }
 
     /////////////////////////////////////////////////////
@@ -192,12 +194,15 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd impleme
     @Override
     public void execute() {
         Pair<List<? extends IpAddress>, Integer> result = _mgr.searchForIPAddresses(this);
-        ListResponse<IPAddressResponse> response = new ListResponse<IPAddressResponse>();
-        List<IPAddressResponse> ipAddrResponses = new ArrayList<IPAddressResponse>();
-        for (IpAddress ipAddress : result.first()) {
-            IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(getResponseView(), ipAddress);
-            ipResponse.setObjectName("publicipaddress");
-            ipAddrResponses.add(ipResponse);
+        ListResponse<IPAddressResponse> response = new ListResponse<>();
+        List<IPAddressResponse> ipAddrResponses = new ArrayList<>();
+
+        if (!getRetrieveOnlyResourceCount()) {
+            for (IpAddress ipAddress : result.first()) {
+                IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(getResponseView(), ipAddress);
+                ipResponse.setObjectName("publicipaddress");
+                ipAddrResponses.add(ipResponse);
+            }
         }
 
         response.setResponses(ipAddrResponses, result.second());

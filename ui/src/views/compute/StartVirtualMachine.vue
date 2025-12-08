@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout" v-ctrl-enter="handleSubmit">
+  <div class="form-layout">
     <a-spin :spinning="loading">
       <a-alert type="warning">
         <template #message>{{ $t('message.action.start.instance') }}</template>
@@ -38,13 +38,13 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="podsLoading"
               :placeholder="apiParams.podid.description"
               @change="handlePodChange"
               v-focus="$store.getters.userInfo.roletype === 'Admin'">
-              <a-select-option v-for="pod in pods" :key="pod.id">
+              <a-select-option v-for="pod in pods" :key="pod.id" :label="pod.name">
                 {{ pod.name }}
               </a-select-option>
             </a-select>
@@ -59,12 +59,12 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="clustersLoading"
               :placeholder="apiParams.clusterid.description"
               @change="handleClusterChange">
-              <a-select-option v-for="cluster in clusters" :key="cluster.id">
+              <a-select-option v-for="cluster in clusters" :key="cluster.id" :label="cluster.name">
                 {{ cluster.name }}
               </a-select-option>
             </a-select>
@@ -79,11 +79,11 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="hostsLoading"
               :placeholder="apiParams.hostid.description">
-              <a-select-option v-for="host in hosts" :key="host.id">
+              <a-select-option v-for="host in hosts" :key="host.id" :label="host.name">
                 {{ host.name }}
               </a-select-option>
             </a-select>
@@ -93,7 +93,7 @@
             <template #label>
               <tooltip-label :title="$t('label.considerlasthost')" :tooltip="apiParams.considerlasthost.description"/>
             </template>
-            <a-switch v-model:checked="form.considerlasthost" />
+            <a-switch v-model:checked="form.considerlasthost" v-focus="true"/>
           </a-form-item>
         </div>
 
@@ -150,6 +150,12 @@ export default {
       this.fetchClusters()
       this.fetchHosts()
     }
+  },
+  mounted () {
+    document.addEventListener('keydown', this.handleKeyPress)
+  },
+  beforeUnmount () {
+    document.removeEventListener('keydown', this.handleKeyPress)
   },
   methods: {
     initForm () {
@@ -237,7 +243,7 @@ export default {
           id: this.resource.id
         }
         for (const key in values) {
-          if (values[key]) {
+          if (values[key] || values[key] === false) {
             params[key] = values[key]
           }
         }
@@ -264,6 +270,12 @@ export default {
     },
     closeAction () {
       this.$emit('close-action')
+    },
+    handleKeyPress (event) {
+      event.preventDefault()
+      if ((event.code === 'Enter' || event.code === 'NumpadEnter') && event.ctrlKey === true) {
+        this.handleSubmit(event)
+      }
     }
   }
 }

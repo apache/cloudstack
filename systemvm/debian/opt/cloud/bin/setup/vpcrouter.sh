@@ -129,3 +129,4 @@ then
   exit 1
 fi
 setup_vpcrouter
+. /opt/cloud/bin/setup/patch.sh && patch_router

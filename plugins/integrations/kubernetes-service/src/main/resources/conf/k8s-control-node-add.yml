@@ -36,6 +36,17 @@ write_files:
       exit 0
       fi
 
+      sysctl net.ipv4.conf.default.arp_announce=0
+      sysctl net.ipv4.conf.default.arp_ignore=0
+      sysctl net.ipv4.conf.all.arp_announce=0
+      sysctl net.ipv4.conf.all.arp_ignore=0
+      sysctl net.ipv4.conf.eth0.arp_announce=0
+      sysctl net.ipv4.conf.eth0.arp_ignore=0
+      sed -i "s/net.ipv4.conf.default.arp_announce =.*$/net.ipv4.conf.default.arp_announce = 0/" /etc/sysctl.conf
+      sed -i "s/net.ipv4.conf.default.arp_ignore =.*$/net.ipv4.conf.default.arp_ignore = 0/" /etc/sysctl.conf
+      sed -i "s/net.ipv4.conf.all.arp_announce =.*$/net.ipv4.conf.all.arp_announce = 0/" /etc/sysctl.conf
+      sed -i "s/net.ipv4.conf.all.arp_ignore =.*$/net.ipv4.conf.all.arp_ignore = 0/" /etc/sysctl.conf
+
       ISO_MOUNT_DIR=/mnt/k8sdisk
       BINARIES_DIR=${ISO_MOUNT_DIR}/
       K8S_CONFIG_SCRIPTS_COPY_DIR=/tmp/k8sconfigscripts/
@@ -55,7 +66,7 @@ write_files:
           break
         fi
         set +e
-        output=`blkid -o device -t TYPE=iso9660`
+        output=`blkid -o device -t LABEL=CDROM`
         set -e
         if [ "$output" != "" ]; then
           while read -r line; do

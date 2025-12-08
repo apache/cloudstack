@@ -23,15 +23,13 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -40,38 +38,30 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManag
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClientConnectionPool;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClientImpl;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.datastore.provider.ScaleIOHostListener;
 import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.ModifyStoragePoolAnswer;
-import com.cloud.agent.api.ModifyStoragePoolCommand;
-import com.cloud.host.Host;
-import com.cloud.host.HostVO;
-import com.cloud.host.Status;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.resource.ResourceManager;
-import com.cloud.resource.ResourceState;
 import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StorageManagerImpl;
 import com.cloud.storage.StoragePoolAutomation;
@@ -81,8 +71,7 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@PrepareForTest(ScaleIOGatewayClient.class)
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class ScaleIOPrimaryDataStoreLifeCycleTest {
 
     @Mock
@@ -92,11 +81,7 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
     @Mock
     private PrimaryDataStoreHelper dataStoreHelper;
     @Mock
-    private ResourceManager resourceManager;
-    @Mock
     private StoragePoolAutomation storagePoolAutomation;
-    @Mock
-    private HostDao hostDao;
     @Mock
     private StoragePoolHostDao storagePoolHostDao;
     @Mock
@@ -110,24 +95,30 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
     @Mock
     private TemplateManager templateMgr;
     @Mock
-    private AgentManager agentMgr;
+    HostDao hostDao;
     @Mock
-    ModifyStoragePoolAnswer answer;
+    DataCenterDao dataCenterDao;
 
-    @Spy
     @InjectMocks
     private StorageManager storageMgr = new StorageManagerImpl();
 
-    @Spy
-    @InjectMocks
-    private HypervisorHostListener hostListener = new ScaleIOHostListener();
+    @Mock
+    private HypervisorHostListener hostListener;
 
     @InjectMocks
     private ScaleIOPrimaryDataStoreLifeCycle scaleIOPrimaryDataStoreLifeCycleTest;
+    private AutoCloseable closeable;
 
     @Before
     public void setUp() {
-        initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
+        ReflectionTestUtils.setField(scaleIOPrimaryDataStoreLifeCycleTest, "storageMgr", storageMgr);
+        when(dataCenterDao.findById(anyLong())).thenReturn(mock(DataCenterVO.class));
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
@@ -135,50 +126,31 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
         final DataStore dataStore = mock(DataStore.class);
         when(dataStore.getId()).thenReturn(1L);
 
-        PowerMockito.mockStatic(ScaleIOGatewayClient.class);
+        MockedStatic<ScaleIOGatewayClientConnectionPool> scaleIOGatewayClientConnectionPoolMocked = mockStatic(ScaleIOGatewayClientConnectionPool.class);
         ScaleIOGatewayClientImpl client = mock(ScaleIOGatewayClientImpl.class);
-        when(ScaleIOGatewayClientConnectionPool.getInstance().getClient(1L, storagePoolDetailsDao)).thenReturn(client);
+        ScaleIOGatewayClientConnectionPool pool = mock(ScaleIOGatewayClientConnectionPool.class);
+        scaleIOGatewayClientConnectionPoolMocked.when(() -> ScaleIOGatewayClientConnectionPool.getInstance()).thenReturn(pool);
+        lenient().when(pool.getClient(dataStore, storagePoolDetailsDao)).thenReturn(client);
 
-        when(client.haveConnectedSdcs()).thenReturn(true);
+        lenient().when(client.haveConnectedSdcs()).thenReturn(true);
 
         final ZoneScope scope = new ZoneScope(1L);
 
-        List<HostVO> hostList = new ArrayList<HostVO>();
-        HostVO host1 = new HostVO(1L, "host01", Host.Type.Routing, "192.168.1.1", "255.255.255.0", null, null, null, null, null, null, null, null, null, null,
-                UUID.randomUUID().toString(), Status.Up, "1.0", null, null, 1L, null, 0, 0, "aa", 0, Storage.StoragePoolType.PowerFlex);
-        HostVO host2 = new HostVO(2L, "host02", Host.Type.Routing, "192.168.1.2", "255.255.255.0", null, null, null, null, null, null, null, null, null, null,
-                UUID.randomUUID().toString(), Status.Up, "1.0", null, null, 1L, null, 0, 0, "aa", 0, Storage.StoragePoolType.PowerFlex);
-
-        host1.setResourceState(ResourceState.Enabled);
-        host2.setResourceState(ResourceState.Enabled);
-        hostList.add(host1);
-        hostList.add(host2);
-        when(resourceManager.listAllUpAndEnabledHostsInOneZoneByHypervisor(Hypervisor.HypervisorType.KVM, 1L)).thenReturn(hostList);
+        when(hostDao.listIdsForUpEnabledByZoneAndHypervisor(scope.getScopeId(), Hypervisor.HypervisorType.KVM))
+                .thenReturn(List.of(1L, 2L));
 
         when(dataStoreMgr.getDataStore(anyLong(), eq(DataStoreRole.Primary))).thenReturn(store);
-        when(store.getId()).thenReturn(1L);
-        when(store.getPoolType()).thenReturn(Storage.StoragePoolType.PowerFlex);
         when(store.isShared()).thenReturn(true);
-        when(store.getName()).thenReturn("ScaleIOPool");
         when(store.getStorageProviderName()).thenReturn(ScaleIOUtil.PROVIDER_NAME);
 
         when(dataStoreProviderMgr.getDataStoreProvider(ScaleIOUtil.PROVIDER_NAME)).thenReturn(dataStoreProvider);
         when(dataStoreProvider.getName()).thenReturn(ScaleIOUtil.PROVIDER_NAME);
         storageMgr.registerHostListener(ScaleIOUtil.PROVIDER_NAME, hostListener);
 
-        when(agentMgr.easySend(anyLong(), Mockito.any(ModifyStoragePoolCommand.class))).thenReturn(answer);
-        when(answer.getResult()).thenReturn(true);
-
-        when(storagePoolHostDao.findByPoolHost(anyLong(), anyLong())).thenReturn(null);
-
-        when(hostDao.findById(1L)).thenReturn(host1);
-        when(hostDao.findById(2L)).thenReturn(host2);
-
         when(dataStoreHelper.attachZone(Mockito.any(DataStore.class))).thenReturn(null);
 
-        scaleIOPrimaryDataStoreLifeCycleTest.attachZone(dataStore, scope, Hypervisor.HypervisorType.KVM);
-        verify(storageMgr,times(2)).connectHostToSharedPool(Mockito.any(Long.class), Mockito.any(Long.class));
-        verify(storagePoolHostDao,times(2)).persist(Mockito.any(StoragePoolHostVO.class));
+        boolean result = scaleIOPrimaryDataStoreLifeCycleTest.attachZone(dataStore, scope, Hypervisor.HypervisorType.KVM);
+        assertThat(result).isTrue();
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -224,7 +196,6 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
     public void testDeleteDataStoreWithStoragePoolNull() {
         final PrimaryDataStore store = mock(PrimaryDataStore.class);
         when(primaryDataStoreDao.findById(anyLong())).thenReturn(null);
-        when(dataStoreHelper.deletePrimaryDataStore(any(DataStore.class))).thenReturn(true);
         final boolean result = scaleIOPrimaryDataStoreLifeCycleTest.deleteDataStore(store);
         assertThat(result).isFalse();
     }
@@ -233,6 +204,7 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
     public void testDeleteDataStore() {
         final PrimaryDataStore store = mock(PrimaryDataStore.class);
         final StoragePoolVO storagePoolVO = mock(StoragePoolVO.class);
+        when(store.getId()).thenReturn(1L);
         when(primaryDataStoreDao.findById(anyLong())).thenReturn(storagePoolVO);
         List<VMTemplateStoragePoolVO> unusedTemplates = new ArrayList<>();
         when(templateMgr.getUnusedTemplatesInPool(storagePoolVO)).thenReturn(unusedTemplates);

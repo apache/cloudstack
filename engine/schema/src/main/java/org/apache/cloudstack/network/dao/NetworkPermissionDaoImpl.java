@@ -19,7 +19,6 @@ package org.apache.cloudstack.network.dao;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.network.NetworkPermissionVO;
@@ -31,10 +30,10 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class NetworkPermissionDaoImpl extends GenericDaoBase<NetworkPermissionVO, Long> implements NetworkPermissionDao {
-    private static final Logger s_logger = Logger.getLogger(NetworkPermissionDaoImpl.class);
 
     private SearchBuilder<NetworkPermissionVO> NetworkAndAccountSearch;
     private SearchBuilder<NetworkPermissionVO> NetworkIdSearch;
+    private SearchBuilder<NetworkPermissionVO> accountSearch;
     private GenericSearchBuilder<NetworkPermissionVO, Long> FindNetworkIdsByAccount;
 
     protected NetworkPermissionDaoImpl() {
@@ -46,6 +45,10 @@ public class NetworkPermissionDaoImpl extends GenericDaoBase<NetworkPermissionVO
         NetworkIdSearch = createSearchBuilder();
         NetworkIdSearch.and("networkId", NetworkIdSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
         NetworkIdSearch.done();
+
+        accountSearch = createSearchBuilder();
+        accountSearch.and("accountId", accountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        accountSearch.done();
 
         FindNetworkIdsByAccount = createSearchBuilder(Long.class);
         FindNetworkIdsByAccount.select(null, SearchCriteria.Func.DISTINCT, FindNetworkIdsByAccount.entity().getNetworkId());
@@ -69,6 +72,16 @@ public class NetworkPermissionDaoImpl extends GenericDaoBase<NetworkPermissionVO
         SearchCriteria<NetworkPermissionVO> sc = NetworkIdSearch.create();
         sc.setParameters("networkId", networkId);
         expunge(sc);
+    }
+
+    @Override
+    public void removeAccountPermissions(long accountId) {
+        SearchCriteria<NetworkPermissionVO> sc = accountSearch.create();
+        sc.setParameters("accountId", accountId);
+        int networkPermissionRemoved = expunge(sc);
+        if (networkPermissionRemoved > 0) {
+            logger.debug(String.format("Removed [%s] network permission(s) for the account with Id [%s]", networkPermissionRemoved, accountId));
+        }
     }
 
     @Override

@@ -23,7 +23,6 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -39,7 +38,6 @@ import com.cloud.utils.Pair;
 @APICommand(name = "listLdapConfigurations", responseObject = LdapConfigurationResponse.class, description = "Lists all LDAP configurations", since = "4.2.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class LdapListConfigurationCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(LdapListConfigurationCmd.class.getName());
 
     private static final String s_name = "ldapconfigurationresponse";
 

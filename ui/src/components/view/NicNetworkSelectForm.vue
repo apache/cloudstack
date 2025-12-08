@@ -33,11 +33,13 @@
         :dataSource="networks"
         :pagination="false"
         :rowKey="record => record.id">
-        <template #select="{record}">
-          <a-radio
-            @click="updateSelection(record)"
-            :checked="selectedNetwork != null && record.id === selectedNetwork.id">
-          </a-radio>
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'select'">
+            <a-radio
+              @click="updateSelection(record)"
+              :checked="selectedNetwork != null && record.id === selectedNetwork.id">
+            </a-radio>
+          </template>
         </template>
       </a-table>
       <a-pagination
@@ -97,24 +99,28 @@ export default {
       selectedNetwork: null,
       columns: [
         {
+          key: 'name',
           title: this.$t('label.networkid'),
           dataIndex: 'name'
         },
         {
+          key: 'type',
           title: this.$t('label.guestiptype'),
           dataIndex: 'type'
         },
         {
+          key: 'vpcName',
           title: this.$t('label.vpc'),
           dataIndex: 'vpcName'
         },
         {
+          key: 'cidr',
           title: this.$t('label.cidr'),
           dataIndex: 'cidr'
         },
         {
-          title: this.$t('label.select'),
-          slots: { customRender: 'select' }
+          key: 'select',
+          title: this.$t('label.select')
         }
       ]
     }

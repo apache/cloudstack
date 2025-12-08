@@ -29,13 +29,14 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * Tool to run database scripts
  */
 public class ScriptRunner {
-    private static Logger s_logger = Logger.getLogger(ScriptRunner.class);
+    private static Logger LOGGER = LogManager.getLogger(ScriptRunner.class);
 
     private static final String DEFAULT_DELIMITER = ";";
 
@@ -208,17 +209,17 @@ public class ScriptRunner {
     private void println(Object o) {
         _logBuffer.append(o);
         if (verbosity)
-            s_logger.debug(_logBuffer.toString());
+            LOGGER.debug(_logBuffer.toString());
         _logBuffer = new StringBuffer();
     }
 
     private void printlnError(Object o) {
-        s_logger.error("" + o);
+        LOGGER.error("" + o);
     }
 
     private void flush() {
         if (_logBuffer.length() > 0) {
-            s_logger.debug(_logBuffer.toString());
+            LOGGER.debug(_logBuffer.toString());
             _logBuffer = new StringBuffer();
         }
     }

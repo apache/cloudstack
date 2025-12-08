@@ -24,12 +24,13 @@ import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactory;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
 
 public class ParserUtils {
-    private static final Logger LOGGER = Logger.getLogger(ParserUtils.class);
+    protected static Logger LOGGER = LogManager.getLogger(ParserUtils.class);
 
     public static DocumentBuilderFactory getSaferDocumentBuilderFactory() throws ParserConfigurationException {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();

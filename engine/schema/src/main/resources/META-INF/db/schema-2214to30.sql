@@ -5,9 +5,9 @@
 -- to you under the Apache License, Version 2.0 (the
 -- "License"); you may not use this file except in compliance
 -- with the License.  You may obtain a copy of the License at
--- 
+--
 --   http://www.apache.org/licenses/LICENSE-2.0
--- 
+--
 -- Unless required by applicable law or agreed to in writing,
 -- software distributed under the License is distributed on an
 -- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -54,7 +54,7 @@ CREATE TABLE  `cloud`.`projects` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_projects__project_account_id` FOREIGN KEY(`project_account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_projects__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
-  INDEX `i_projects__removed`(`removed`) 
+  INDEX `i_projects__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -177,97 +177,97 @@ ALTER TABLE `cloud`.`alert` ADD `cluster_id` bigint unsigned;
 
 ALTER TABLE `cloud`.`user_statistics` ADD COLUMN `agg_bytes_received` bigint unsigned NOT NULL default '0';
 ALTER TABLE `cloud`.`user_statistics` ADD COLUMN `agg_bytes_sent` bigint unsigned NOT NULL default '0';
-ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `uc_vm_instance_uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`async_job` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`async_job` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`async_job` ADD CONSTRAINT `uc_async__uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`domain` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`domain` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`domain` ADD CONSTRAINT `uc_domain__uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`account` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`account` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`account` ADD CONSTRAINT `uc_account__uuid` UNIQUE (`uuid`);
 
 ALTER TABLE `cloud_usage`.`account` ADD COLUMN `uuid` varchar(40);
 
-ALTER TABLE `cloud`.`user` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`user` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`user` ADD CONSTRAINT `uc_user__uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`projects` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`projects` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`projects` ADD CONSTRAINT `uc_projects__uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`data_center` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`data_center` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`data_center` ADD CONSTRAINT `uc_data_center__uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`host` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`host` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`host` ADD CONSTRAINT `uc_host__uuid` UNIQUE (`uuid`);
 ALTER TABLE `cloud`.`host` ADD COLUMN `update_count` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'atomic increase count making status update operation atomical';
 
-ALTER TABLE `cloud`.`vm_template` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`vm_template` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`vm_template` ADD CONSTRAINT `uc_vm_template__uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`disk_offering` ADD CONSTRAINT `uc_disk_offering__uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`networks` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`networks` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`networks` ADD CONSTRAINT `uc_networks__uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`security_group` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`security_group` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`security_group` ADD CONSTRAINT `uc_security_group__uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`instance_group` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`instance_group` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`instance_group` ADD CONSTRAINT `uc_instance_group__uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`host_pod_ref` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`host_pod_ref` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`host_pod_ref` ADD CONSTRAINT `uc_host_pod_ref__uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`snapshots` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`snapshots` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`snapshots` ADD CONSTRAINT `uc_snapshots__uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`snapshot_policy` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`snapshot_policy` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`snapshot_policy` ADD CONSTRAINT `uc_snapshot_policy__uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`snapshot_schedule` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`snapshot_schedule` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`snapshot_schedule` ADD CONSTRAINT `uc_snapshot_schedule__uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`volumes` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`volumes` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`volumes` ADD CONSTRAINT `uc_volumes__uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`vlan` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`vlan` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`vlan` ADD CONSTRAINT `uc_vlan__uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`user_ip_address` ADD CONSTRAINT `uc_user_ip_address__uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`firewall_rules` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`firewall_rules` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`firewall_rules` ADD CONSTRAINT `uc_firewall_rules__uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`cluster` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`cluster` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`cluster` ADD CONSTRAINT `uc_cluster__uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`network_offerings` ADD CONSTRAINT `uc_network_offerings__uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`hypervisor_capabilities` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`hypervisor_capabilities` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`hypervisor_capabilities` ADD CONSTRAINT `uc_hypervisor_capabilities__uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`vpn_users` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`vpn_users` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`vpn_users` ADD CONSTRAINT `uc_vpn_users__uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`event` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`event` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`event` ADD CONSTRAINT `uc_event__uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`alert` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`alert` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`alert` ADD CONSTRAINT `uc_alert__uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`guest_os` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`guest_os` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`guest_os` ADD CONSTRAINT `uc_guest_os__uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`guest_os_category` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`guest_os_category` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`guest_os_category` ADD CONSTRAINT `uc_guest_os_category__uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`nics` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`nics` ADD COLUMN `uuid` varchar(40);
 ALTER TABLE `cloud`.`nics` ADD CONSTRAINT `uc_nics__uuid` UNIQUE (`uuid`);
 
 ALTER TABLE `cloud`.`op_host_capacity` ADD COLUMN `created` datetime;
@@ -304,7 +304,7 @@ ALTER TABLE `cloud_usage`.`usage_ip_address` ADD COLUMN `is_system` smallint(1) 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'management-server', 'usage.sanity.check.interval', null, 'Interval (in days) to check sanity of usage data');
 
 DELETE FROM `cloud`.`configuration` WHERE name='host.capacity.checker.wait';
-DELETE FROM `cloud`.`configuration` WHERE name='host.capacity.checker.interval'; 
+DELETE FROM `cloud`.`configuration` WHERE name='host.capacity.checker.interval';
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'disable.extraction' , 'false', 'Flag for disabling extraction of template, isos and volumes');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'router.check.interval' , '30', 'Interval (in seconds) to report redundant router status.');
 
@@ -362,9 +362,9 @@ CREATE TABLE `cloud`.`physical_network` (
   `name` varchar(255) NOT NULL,
   `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id that this physical network belongs to',
   `vnet` varchar(255),
-  `speed` varchar(32),  
+  `speed` varchar(32),
   `domain_id` bigint unsigned COMMENT 'foreign key to domain id',
-  `broadcast_domain_range` varchar(32) NOT NULL DEFAULT 'POD' COMMENT 'range of broadcast domain : POD/ZONE', 
+  `broadcast_domain_range` varchar(32) NOT NULL DEFAULT 'POD' COMMENT 'range of broadcast domain : POD/ZONE',
   `state` varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'what state is this configuration in',
   `created` datetime COMMENT 'date created',
   `removed` datetime COMMENT 'date removed if not null',
@@ -372,7 +372,7 @@ CREATE TABLE `cloud`.`physical_network` (
   CONSTRAINT `fk_physical_network__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_physical_network__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`),
   CONSTRAINT `uc_physical_networks__uuid` UNIQUE (`uuid`),
-  INDEX `i_physical_network__removed`(`removed`) 
+  INDEX `i_physical_network__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`physical_network_tags` (
@@ -445,7 +445,7 @@ CREATE TABLE `cloud`.`external_load_balancer_devices` (
   `allocation_state` varchar(32) NOT NULL DEFAULT 'Free' COMMENT 'Allocation state (Free/Shared/Dedicated/Provider) of the device',
   `is_dedicated` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if device/appliance is provisioned for dedicated use only',
   `is_inline` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if load balancer will be used in in-line configuration with firewall',
-  `is_managed` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if load balancer appliance is provisioned and its life cycle is managed by by cloudstack',
+  `is_managed` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if load balancer appliance is provisioned and its life cycle is managed by cloudstack',
   `host_id` bigint unsigned NOT NULL COMMENT 'host id corresponding to the external load balancer device',
   `parent_host_id` bigint unsigned COMMENT 'if the load balancer appliance is cloudstack managed, then host id on which this appliance is provisioned',
   PRIMARY KEY (`id`),
@@ -690,7 +690,7 @@ CREATE TABLE  `cloud_usage`.`usage_security_group` (
   `vm_instance_id` bigint unsigned NOT NULL,
   `security_group_id` bigint unsigned NOT NULL,
   `created` DATETIME NOT NULL,
-  `deleted` DATETIME NULL  
+  `deleted` DATETIME NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cloud_usage`.`usage_security_group` ADD INDEX `i_usage_security_group__account_id`(`account_id`);
@@ -702,7 +702,7 @@ UPDATE `cloud`.`configuration` SET category = 'Usage' where name in ('usage.exec
 ALTER TABLE  `cloud`.`op_dc_vnet_alloc` ADD CONSTRAINT `fk_op_dc_vnet_alloc__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`domain` ADD COLUMN `type` varchar(255) NOT NULL DEFAULT 'Normal' COMMENT 'type of the domain - can be Normal or Project';
 
-UPDATE `cloud`.`configuration` SET name='vm.destroy.forcestop' where name='vm.destory.forcestop';
+UPDATE `cloud`.`configuration` SET name='vm.destroy.forcestop' where name='vm.destroy.forcestop';
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.destroy.forcestop', 'false', 'On destroy, force-stop takes this value');
 DELETE FROM `cloud`.`configuration` where name='skip.steps';
 

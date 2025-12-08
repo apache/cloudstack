@@ -37,9 +37,9 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }">
-            <a-select-option v-for="role in roles" :key="role.id">
+            <a-select-option v-for="role in roles" :key="role.id" :label="role.name + ' (' + role.type + ')'">
               {{ role.name + ' (' + role.type + ')' }}
             </a-select-option>
           </a-select>
@@ -109,7 +109,7 @@
             <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
           </template>
           <a-select
-            :loading="domainLoading"
+            :loading="domain.loading"
             v-model:value="form.domainid"
             :placeholder="apiParams.domainid.description"
             showSearch
@@ -143,9 +143,9 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }">
-            <a-select-option v-for="opt in timeZoneMap" :key="opt.id">
+            <a-select-option v-for="opt in timeZoneMap" :key="opt.id" :label="opt.name || opt.description">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -173,9 +173,9 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }">
-              <a-select-option v-for="idp in idps" :key="idp.id">
+              <a-select-option v-for="idp in idps" :key="idp.id" :label="idp.orgName">
                 {{ idp.orgName }}
               </a-select-option>
             </a-select>
@@ -207,7 +207,7 @@ export default {
     this.fetchTimeZone = debounce(this.fetchTimeZone, 800)
     return {
       loading: false,
-      domainLoading: false,
+      domain: { loading: false },
       domainsList: [],
       roleLoading: false,
       roles: [],
@@ -282,26 +282,34 @@ export default {
       }
     },
     fetchDomains () {
-      this.domainLoading = true
-      api('listDomains', {
-        listAll: true,
-        showicon: true,
-        details: 'min'
-      }).then(response => {
-        this.domainsList = response.listdomainsresponse.domain || []
-        this.form.domain = this.domainsList[0].id || ''
-      }).catch(error => {
-        this.$notification.error({
-          message: `${this.$t('label.error')} ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
+      this.domain.loading = true
+      this.loadMore('listDomains', 1, this.domain)
+    },
+    loadMore (apiToCall, page, sema) {
+      console.log('sema.loading ' + sema.loading)
+      const params = {}
+      params.listAll = true
+      params.details = 'min'
+      params.pagesize = 100
+      params.page = page
+      var count
+      api(apiToCall, params).then(json => {
+        const listDomains = json.listdomainsresponse.domain
+        count = json.listdomainsresponse.count
+        this.domainsList = this.domainsList.concat(listDomains)
       }).finally(() => {
-        this.domainLoading = false
+        if (count <= this.domainsList.length) {
+          sema.loading = false
+        } else {
+          this.loadMore(apiToCall, page + 1, sema)
+        }
       })
     },
     fetchRoles () {
       this.roleLoading = true
-      api('listRoles').then(response => {
+      const params = {}
+      params.state = 'enabled'
+      api('listRoles', params).then(response => {
         this.roles = response.listrolesresponse.role || []
         this.form.roleid = this.roles[0].id
         if (this.isDomainAdmin()) {

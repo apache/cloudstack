@@ -27,7 +27,6 @@ import java.util.Properties;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.framework.events.EventBus;
@@ -50,7 +49,6 @@ public class KafkaEventBus extends ManagerBase implements EventBus {
 
     private String _topic = null;
     private Producer<String,String> _producer;
-    private static final Logger s_logger = Logger.getLogger(KafkaEventBus.class);
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -89,19 +87,23 @@ public class KafkaEventBus extends ManagerBase implements EventBus {
 
     @Override
     public UUID subscribe(EventTopic topic, EventSubscriber subscriber) throws EventBusException {
+        logger.debug("subscribing '{}' to events of type '{}' from '{}'", subscriber.toString(), topic.getEventType(), topic.getEventSource());
+
         /* NOOP */
         return UUID.randomUUID();
     }
 
     @Override
     public void unsubscribe(UUID subscriberId, EventSubscriber subscriber) throws EventBusException {
+        logger.debug("unsubscribing '{}'", subscriberId);
         /* NOOP */
     }
 
     @Override
     public void publish(Event event) throws EventBusException {
-        ProducerRecord<String, String> record = new ProducerRecord<String,String>(_topic, event.getResourceUUID(), event.getDescription());
-        _producer.send(record);
+        logger.trace("publish '{}'", event.getDescription());
+        ProducerRecord<String, String> newRecord = new ProducerRecord<>(_topic, event.getResourceUUID(), event.getDescription());
+        _producer.send(newRecord);
     }
 
     @Override

@@ -16,13 +16,7 @@
 // under the License.
 package com.cloud.storage;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.util.HashMap;
-import java.util.Map;
-
+import com.cloud.capacity.CapacityManager;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
@@ -31,7 +25,12 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.cloud.capacity.CapacityManager;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class ImageStoreDetailsUtilTest {
 

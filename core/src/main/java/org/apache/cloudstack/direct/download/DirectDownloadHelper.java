@@ -24,11 +24,12 @@ import org.apache.cloudstack.agent.directdownload.HttpDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.HttpsDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.MetalinkDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.NfsDirectDownloadCommand;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class DirectDownloadHelper {
 
-    public static final Logger LOGGER = Logger.getLogger(DirectDownloadHelper.class.getName());
+    protected static Logger LOGGER = LogManager.getLogger(DirectDownloadHelper.class);
 
     /**
      * Get direct template downloader from direct download command and destination pool
@@ -65,11 +66,9 @@ public class DirectDownloadHelper {
         }
     }
 
-    public static boolean checkUrlExistence(String url, Integer connectTimeout, Integer connectionRequestTimeout,
-            Integer socketTimeout, boolean followRedirects) {
+    public static boolean checkUrlExistence(String url, Integer connectTimeout, Integer connectionRequestTimeout, Integer socketTimeout, boolean followRedirects) {
         try {
-            DirectTemplateDownloader checker = getCheckerDownloader(url, connectTimeout, connectionRequestTimeout,
-                    socketTimeout, followRedirects);
+            DirectTemplateDownloader checker = getCheckerDownloader(url, connectTimeout, connectionRequestTimeout, socketTimeout, followRedirects);
             return checker.checkUrl(url);
         } catch (CloudRuntimeException e) {
             LOGGER.error(String.format("Cannot check URL %s is reachable due to: %s", url, e.getMessage()), e);
@@ -77,8 +76,7 @@ public class DirectDownloadHelper {
         }
     }
 
-    private static DirectTemplateDownloader getCheckerDownloader(String url, Integer connectTimeout,
-             Integer connectionRequestTimeout, Integer socketTimeout, boolean followRedirects) {
+    private static DirectTemplateDownloader getCheckerDownloader(String url, Integer connectTimeout, Integer connectionRequestTimeout, Integer socketTimeout, boolean followRedirects) {
         if (url.toLowerCase().startsWith("https:")) {
             return new HttpsDirectTemplateDownloader(url, connectTimeout, connectionRequestTimeout, socketTimeout, followRedirects);
         } else if (url.toLowerCase().startsWith("http:")) {
@@ -97,8 +95,7 @@ public class DirectDownloadHelper {
         return checker.getRemoteFileSize(url, format);
     }
 
-    public static Long getFileSize(String url, String format, Integer connectTimeout, Integer connectionRequestTimeout,
-           Integer socketTimeout, boolean followRedirects) {
+    public static Long getFileSize(String url, String format, Integer connectTimeout, Integer connectionRequestTimeout, Integer socketTimeout, boolean followRedirects) {
         DirectTemplateDownloader checker = getCheckerDownloader(url, connectTimeout, connectionRequestTimeout, socketTimeout, followRedirects);
         return checker.getRemoteFileSize(url, format);
     }

@@ -27,7 +27,6 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiResponseHelper;
@@ -42,7 +41,6 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class EventJoinDaoImpl extends GenericDaoBase<EventJoinVO, Long> implements EventJoinDao {
-    public static final Logger s_logger = Logger.getLogger(EventJoinDaoImpl.class);
 
     private SearchBuilder<EventJoinVO> vrSearch;
 
@@ -110,6 +108,9 @@ public class EventJoinDaoImpl extends GenericDaoBase<EventJoinVO, Long> implemen
         responseEvent.setParentId(event.getStartUuid());
         responseEvent.setState(event.getState());
         responseEvent.setUsername(event.getUserName());
+        if (event.getArchived()) {
+            responseEvent.setArchived(true);
+        }
         Long resourceId = event.getResourceId();
         responseEvent.setResourceType(event.getResourceType());
         ApiCommandResourceType resourceType = ApiCommandResourceType.fromString(event.getResourceType());
@@ -130,6 +131,10 @@ public class EventJoinDaoImpl extends GenericDaoBase<EventJoinVO, Long> implemen
 
     @Override
     public List<EventJoinVO> searchByIds(Long... ids) {
+        // return empty collection if there are no ids.
+        if (ids.length == 0) {
+            return List.of();
+        }
         SearchCriteria<EventJoinVO> sc = vrSearch.create();
         sc.setParameters("idIN", ids);
         return searchIncludingRemoved(sc, null, null, false);

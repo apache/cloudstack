@@ -37,7 +37,8 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -64,7 +65,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class ApiXmlDocWriter {
-    public static final Logger s_logger = Logger.getLogger(ApiXmlDocWriter.class.getName());
+    protected static Logger LOGGER = LogManager.getLogger(ApiXmlDocWriter.class);
 
     private static String s_dirName = "";
     private static Map<String, Class<?>> s_apiNameCmdClassMap = new HashMap<String, Class<?>>();
@@ -233,7 +234,7 @@ public class ApiXmlDocWriter {
 
             out.writeObject(apiCommand);
         } else {
-            s_logger.debug("Command " + command + " is not exposed in api doc");
+            LOGGER.debug("Command " + command + " is not exposed in api doc");
         }
     }
 
@@ -388,7 +389,7 @@ public class ApiXmlDocWriter {
                 out.closeEntry();
             }catch(IOException ex)
             {
-                s_logger.error("addDir:Exception:"+ ex.getMessage(),ex);
+                LOGGER.error("addDir:Exception:"+ ex.getMessage(),ex);
             }
         }
     }
@@ -417,9 +418,9 @@ public class ApiXmlDocWriter {
                 }
             }
         } catch (IOException e) {
-            s_logger.error("Failed to create output stream to write an alert types ", e);
+            LOGGER.error("Failed to create output stream to write an alert types ", e);
         } catch (IllegalAccessException e) {
-            s_logger.error("Failed to read alert fields ", e);
+            LOGGER.error("Failed to read alert fields ", e);
         }
     }
 

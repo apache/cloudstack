@@ -22,6 +22,7 @@ import java.util.Objects;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.context.CallContext;
@@ -81,6 +82,7 @@ public class ResourceManagerUtilImpl implements ResourceManagerUtil {
         s_typeMap.put(ResourceTag.ResourceObjectType.UserVm, UserVmVO.class);
         s_typeMap.put(ResourceTag.ResourceObjectType.Volume, VolumeVO.class);
         s_typeMap.put(ResourceTag.ResourceObjectType.Template, VMTemplateVO.class);
+        s_typeMap.put(ResourceTag.ResourceObjectType.VnfTemplate, VMTemplateVO.class);
         s_typeMap.put(ResourceTag.ResourceObjectType.ISO, VMTemplateVO.class);
         s_typeMap.put(ResourceTag.ResourceObjectType.Snapshot, SnapshotVO.class);
         s_typeMap.put(ResourceTag.ResourceObjectType.Network, NetworkVO.class);
@@ -127,6 +129,11 @@ public class ResourceManagerUtilImpl implements ResourceManagerUtil {
 
     @Override
     public long getResourceId(String resourceId, ResourceTag.ResourceObjectType resourceType) {
+        return getResourceId(resourceId, resourceType, false);
+    }
+
+    @Override
+    public long getResourceId(String resourceId, ResourceTag.ResourceObjectType resourceType, boolean checkAccess) {
         Class<?> clazz = s_typeMap.get(resourceType);
         Object entity = entityMgr.findByUuid(clazz, resourceId);
         if (entity != null) {
@@ -137,6 +144,11 @@ public class ResourceManagerUtilImpl implements ResourceManagerUtil {
         }
         entity = entityMgr.findById(clazz, resourceId);
         if (entity != null) {
+            if (checkAccess && entity instanceof ControlledEntity) {
+                ControlledEntity controlledEntity = (ControlledEntity)entity;
+                Account caller = CallContext.current().getCallingAccount();
+                accountMgr.checkAccess(caller, null, false, controlledEntity);
+            }
             return ((InternalIdentity)entity).getId();
         }
         throw new InvalidParameterValueException("Unable to find resource by id " + resourceId + " and type " + resourceType);

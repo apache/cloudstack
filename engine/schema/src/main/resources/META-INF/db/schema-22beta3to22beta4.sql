@@ -5,9 +5,9 @@
 -- to you under the Apache License, Version 2.0 (the
 -- "License"); you may not use this file except in compliance
 -- with the License.  You may obtain a copy of the License at
--- 
+--
 --   http://www.apache.org/licenses/LICENSE-2.0
--- 
+--
 -- Unless required by applicable law or agreed to in writing,
 -- software distributed under the License is distributed on an
 -- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -83,7 +83,7 @@ CREATE TABLE `cloud`.`user_vm_details` (
   `value` varchar(1024) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-    
+
 CREATE TABLE `cloud`.`cluster_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `cluster_id` bigint unsigned NOT NULL COMMENT 'cluster id',
@@ -99,9 +99,9 @@ ALTER TABLE `cloud`.`service_offering` ADD COLUMN `host_tag` varchar(255);
 ALTER TABLE `cloud`.`op_it_work` change created created_at bigint unsigned NOT NULL COMMENT 'when was this work detail created';
 ALTER TABLE `cloud`.`op_it_work` change state step char(32) NOT NULL COMMENT 'state';
 ALTER TABLE `cloud`.`op_it_work` change cancel_taken updated_at bigint unsigned NOT NULL COMMENT 'time it was taken over';
-ALTER TABLE `cloud`.`op_it_work` ADD COLUMN `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance';                                                    
-ALTER TABLE `cloud`.`op_it_work` ADD COLUMN `resource_id` bigint unsigned COMMENT 'resource id being worked on';                                             
-ALTER TABLE `cloud`.`op_it_work` ADD COLUMN `resource_type` char(32) COMMENT 'type of resource being worked on';      
+ALTER TABLE `cloud`.`op_it_work` ADD COLUMN `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance';
+ALTER TABLE `cloud`.`op_it_work` ADD COLUMN `resource_id` bigint unsigned COMMENT 'resource id being worked on';
+ALTER TABLE `cloud`.`op_it_work` ADD COLUMN `resource_type` char(32) COMMENT 'type of resource being worked on';
 ALTER TABLE `cloud`.`hypervsior_properties` ADD COLUMN `is_default` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if network is default';
 ALTER TABLE `cloud`.`network_offerings` drop column TYPE;
 ALTER TABLE `cloud`.`domain_router` ADD COLUMN `host_tag` varchar(255) COMMENT 'host tag specified by the service_offering';
@@ -124,5 +124,3 @@ ALTER TABLE `cloud`.`security_group` ADD CONSTRAINT `fk_security_group___account
 
 DROP VIEW `cloud`.`user_ip_address_view`;
 CREATE VIEW `cloud`.`user_ip_address_view` AS SELECT INET_NTOA(user_ip_address.public_ip_address) as ip_address, user_ip_address.data_center_id, user_ip_address.account_id, user_ip_address.domain_id, user_ip_address.source_nat, user_ip_address.allocated, user_ip_address.vlan_db_id, user_ip_address.one_to_one_nat, user_ip_address.state, user_ip_address.mac_address, user_ip_address.network_id as associated_network_id from user_ip_address;
-
-

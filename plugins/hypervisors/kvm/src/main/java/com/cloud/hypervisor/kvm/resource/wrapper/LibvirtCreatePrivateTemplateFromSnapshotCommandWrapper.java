@@ -24,7 +24,6 @@ import java.io.IOException;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
@@ -46,7 +45,6 @@ import com.cloud.utils.script.Script;
 @ResourceWrapper(handles =  CreatePrivateTemplateFromSnapshotCommand.class)
 public final class LibvirtCreatePrivateTemplateFromSnapshotCommandWrapper extends CommandWrapper<CreatePrivateTemplateFromSnapshotCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtCreatePrivateTemplateFromSnapshotCommandWrapper.class);
 
     @Override
     public Answer execute(final CreatePrivateTemplateFromSnapshotCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -80,7 +78,7 @@ public final class LibvirtCreatePrivateTemplateFromSnapshotCommandWrapper extend
             final String createTmplPath = libvirtComputingResource.createTmplPath();
             final int cmdsTimeout = libvirtComputingResource.getCmdsTimeout();
 
-            final Script scriptCommand = new Script(createTmplPath, cmdsTimeout, s_logger);
+            final Script scriptCommand = new Script(createTmplPath, cmdsTimeout, logger);
             scriptCommand.add("-t", templatePath);
             scriptCommand.add("-n", tmplFileName);
             scriptCommand.add("-f", snapshot.getPath());

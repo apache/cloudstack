@@ -16,5 +16,5 @@
 # specific language governing permissions and limitations
 # under the License.
 
-ip tuntap add dev $1 mode tap
-ip link set $1 up
+#ip tuntap add dev $1 mode tap multi_queue
+#ip link set $1 up

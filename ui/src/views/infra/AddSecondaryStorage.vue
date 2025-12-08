@@ -33,9 +33,9 @@
             v-model:value="form.provider"
             @change="val => { form.provider = val }"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option
               :value="prov"
@@ -295,8 +295,10 @@ export default {
           const swiftParams = {
             account: values.account,
             username: values.username,
-            key: values.key,
-            storagepolicy: values.storagepolicy
+            key: values.key
+          }
+          if (values.storagepolicy) {
+            swiftParams.storagepolicy = values.storagepolicy
           }
           Object.keys(swiftParams).forEach((key, index) => {
             data['details[' + index.toString() + '].key'] = key

@@ -529,7 +529,7 @@ namespace HypervResource
         {
             // Get the virtual switch
             VirtualEthernetSwitch vSwitch = GetExternalVirtSwitch(vSwitchName);
-            //check the the recevied vSwitch is the same as vSwitchName.
+            //check the recevied vSwitch is the same as vSwitchName.
             if (!vSwitchName.Equals("")  && !vSwitch.ElementName.Equals(vSwitchName))
             {
                var errMsg = string.Format("Internal error, coudl not find Virtual Switch with the name : " +vSwitchName);

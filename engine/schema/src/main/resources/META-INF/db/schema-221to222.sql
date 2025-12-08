@@ -5,9 +5,9 @@
 -- to you under the Apache License, Version 2.0 (the
 -- "License"); you may not use this file except in compliance
 -- with the License.  You may obtain a copy of the License at
--- 
+--
 --   http://www.apache.org/licenses/LICENSE-2.0
--- 
+--
 -- Unless required by applicable law or agreed to in writing,
 -- software distributed under the License is distributed on an
 -- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -23,7 +23,7 @@ update network_offerings set firewall_service=1, lb_service=1,vpn_service=1,gate
 alter table domain add column `state` char(32) NOT NULL default 'Active' COMMENT 'state of the domain';
 alter table nics add column `vm_type` char(32);
 update nics set vm_type=(select type from vm_instance where vm_instance.id=nics.instance_id);
-INSERT INTO configuration (`category`, `instance`, `component`, `name`, `value`, `description`) VALUES ('Network','DEFAULT','none','network.guest.cidr.limit','22','size limit for guest cidr; cant be less than this value'); 
+INSERT INTO configuration (`category`, `instance`, `component`, `name`, `value`, `description`) VALUES ('Network','DEFAULT','none','network.guest.cidr.limit','22','size limit for guest cidr; cant be less than this value');
 alter table user_statistics add column `network_id` bigint unsigned;
 update op_networks set nics_count=(nics_count-1) where id in (select d.network_id from domain_router d, vm_instance i where i.state='Running' and i.id=d.id);
 update network_offerings set traffic_type='Guest' where system_only=0;
@@ -52,5 +52,3 @@ CREATE TABLE IF NOT EXISTS `cloud`.`version` (
   PRIMARY KEY (`id`),
   INDEX `i_version__version`(`version`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-

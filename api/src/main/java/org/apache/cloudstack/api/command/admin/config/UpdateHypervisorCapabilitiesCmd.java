@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.config;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -36,7 +35,6 @@ import com.cloud.user.Account;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class UpdateHypervisorCapabilitiesCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateHypervisorCapabilitiesCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -44,6 +42,12 @@ public class UpdateHypervisorCapabilitiesCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HypervisorCapabilitiesResponse.class, description = "ID of the hypervisor capability")
     private Long id;
+
+    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "the hypervisor for which the hypervisor capabilities are to be updated", since = "4.19.1")
+    private String hypervisor;
+
+    @Parameter(name = ApiConstants.HYPERVISOR_VERSION, type = CommandType.STRING, description = "the hypervisor version for which the hypervisor capabilities are to be updated", since = "4.19.1")
+    private String hypervisorVersion;
 
     @Parameter(name = ApiConstants.SECURITY_GROUP_EANBLED, type = CommandType.BOOLEAN, description = "set true to enable security group for this hypervisor.")
     private Boolean securityGroupEnabled;
@@ -73,6 +77,14 @@ public class UpdateHypervisorCapabilitiesCmd extends BaseCmd {
 
     public Long getId() {
         return id;
+    }
+
+    public String getHypervisor() {
+        return hypervisor;
+    }
+
+    public String getHypervisorVersion() {
+        return hypervisorVersion;
     }
 
     public Long getMaxGuestsLimit() {

@@ -20,6 +20,7 @@ import com.cloud.utils.component.Manager;
 import org.apache.cloudstack.api.command.user.consoleproxy.ConsoleEndpoint;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import java.util.Date;
 
 public interface ConsoleAccessManager extends Manager, Configurable {
 
@@ -44,4 +45,7 @@ public interface ConsoleAccessManager extends Manager, Configurable {
     void removeSessions(String[] sessionUuids);
 
     void acquireSession(String sessionUuid);
+
+    String genAccessTicket(String host, String port, String sid, String tag, String sessionUuid);
+    String genAccessTicket(String host, String port, String sid, String tag, Date normalizedHashTime, String sessionUuid);
 }

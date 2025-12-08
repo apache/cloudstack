@@ -18,10 +18,11 @@
 import _ from 'lodash'
 import { i18n } from '@/locales'
 import { api } from '@/api'
-import { message, notification } from 'ant-design-vue'
+import { message, notification, Modal } from 'ant-design-vue'
 import eventBus from '@/config/eventBus'
 import store from '@/store'
 import { sourceToken } from '@/utils/request'
+import { toLocalDate, toLocaleDate } from '@/utils/date'
 
 export const pollJobPlugin = {
   install (app) {
@@ -288,37 +289,26 @@ export const notifierPlugin = {
       close: (key) => notification.close(key),
       destroy: () => notification.destroy()
     }
+
+    app.config.globalProperties.$messageConfigSuccess = function (msg, configrecord) {
+      if (configrecord.isdynamic) {
+        msg += `. ${this.$t('message.setting.update.delay')}`
+      }
+      message.success(msg)
+    }
   }
 }
 
 export const toLocaleDatePlugin = {
   install (app) {
     app.config.globalProperties.$toLocaleDate = function (date) {
-      var timezoneOffset = this.$store.getters.timezoneoffset
-      if (this.$store.getters.usebrowsertimezone) {
-        // Since GMT+530 is returned as -330 (mins to GMT)
-        timezoneOffset = new Date().getTimezoneOffset() / -60
-      }
-      var milliseconds = Date.parse(date)
-      // e.g. "Tue, 08 Jun 2010 19:13:49 GMT", "Tue, 25 May 2010 12:07:01 UTC"
-      var dateWithOffset = new Date(milliseconds + (timezoneOffset * 60 * 60 * 1000)).toUTCString()
-      // e.g. "08 Jun 2010 19:13:49 GMT", "25 May 2010 12:07:01 UTC"
-      dateWithOffset = dateWithOffset.substring(dateWithOffset.indexOf(', ') + 2)
-      // e.g. "08 Jun 2010 19:13:49", "25 May 2010 12:10:16"
-      dateWithOffset = dateWithOffset.substring(0, dateWithOffset.length - 4)
-      return dateWithOffset
+      const { timezoneoffset, usebrowsertimezone } = this.$store.getters
+      return toLocaleDate({ date, timezoneoffset, usebrowsertimezone })
     }
 
     app.config.globalProperties.$toLocalDate = function (date) {
-      var timezoneOffset = this.$store.getters.timezoneoffset
-      if (this.$store.getters.usebrowsertimezone) {
-        // Since GMT+530 is returned as -330 (mins to GMT)
-        timezoneOffset = new Date().getTimezoneOffset() / -60
-      }
-      var milliseconds = Date.parse(date)
-      // e.g. "Tue, 08 Jun 2010 19:13:49 GMT", "Tue, 25 May 2010 12:07:01 UTC"
-      var dateWithOffset = new Date(milliseconds + (timezoneOffset * 60 * 60 * 1000))
-      return dateWithOffset.toISOString()
+      const { timezoneoffset, usebrowsertimezone } = this.$store.getters
+      return toLocalDate({ date, timezoneoffset, usebrowsertimezone }).toISOString()
     }
   }
 }
@@ -390,6 +380,10 @@ export const resourceTypePlugin = {
           return 'publicip'
         case 'NetworkAcl':
           return 'acllist'
+        case 'KubernetesCluster':
+          return 'kubernetes'
+        case 'KubernetesSupportedVersion':
+          return 'kubernetesiso'
         case 'SystemVm':
         case 'PhysicalNetwork':
         case 'Backup':
@@ -455,30 +449,45 @@ export const localesPlugin = {
   }
 }
 
-const KB = 1024
-const MB = 1024 * KB
-const GB = 1024 * MB
-const TB = 1024 * GB
+const KiB = 1024
+const MiB = 1024 * KiB
+const GiB = 1024 * MiB
+const TiB = 1024 * GiB
 
 export const fileSizeUtilPlugin = {
   install (app) {
+    app.config.globalProperties.$bytesToGiB = function (bytes) {
+      if (bytes == null || bytes === 0) {
+        return 0
+      }
+      return (bytes / GiB).toFixed(2)
+    }
     app.config.globalProperties.$bytesToHumanReadableSize = function (bytes) {
       if (bytes == null) {
         return ''
       }
-      if (bytes < KB && bytes >= 0) {
+      if (bytes < KiB && bytes >= 0) {
         return bytes + ' bytes'
       }
-      if (bytes < MB) {
-        return (bytes / KB).toFixed(2) + ' KB'
-      } else if (bytes < GB) {
-        return (bytes / MB).toFixed(2) + ' MB'
-      } else if (bytes < TB) {
-        return (bytes / GB).toFixed(2) + ' GB'
+      if (bytes < MiB) {
+        return (bytes / KiB).toFixed(2) + ' KiB'
+      } else if (bytes < GiB) {
+        return (bytes / MiB).toFixed(2) + ' MiB'
+      } else if (bytes < TiB) {
+        return (bytes / GiB).toFixed(2) + ' GiB'
       } else {
-        return (bytes / TB).toFixed(2) + ' TB'
+        return (bytes / TiB).toFixed(2) + ' TiB'
       }
     }
+  }
+}
+
+function isBase64 (str) {
+  try {
+    const decoded = new TextDecoder().decode(Uint8Array.from(atob(str), c => c.charCodeAt(0)))
+    return btoa(decoded) === str
+  } catch (err) {
+    return false
   }
 }
 
@@ -490,11 +499,10 @@ export const genericUtilPlugin = {
     }
 
     app.config.globalProperties.$toBase64AndURIEncoded = function (text) {
-      const base64regex = /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/
-      if (base64regex.test(text)) {
+      if (isBase64(text)) {
         return text
       }
-      return encodeURIComponent(btoa(unescape(encodeURIComponent(text))))
+      return encodeURI(btoa(unescape(encodeURIComponent(text))))
     }
   }
 }
@@ -514,4 +522,31 @@ export function createPathBasedOnVmType (vmtype, virtualmachineid) {
   }
 
   return path + virtualmachineid
+}
+
+export const dialogUtilPlugin = {
+  install (app) {
+    app.config.globalProperties.$resetConfigurationValueConfirm = function (configRecord, callback) {
+      Modal.confirm({
+        title: i18n.global.t('label.reset.config.value'),
+        content: `${i18n.global.t('message.confirm.reset.configuration.value').replace('%x', configRecord.name)}`,
+        okText: i18n.global.t('label.yes'),
+        cancelText: i18n.global.t('label.no'),
+        okType: 'primary',
+        onOk: () => callback(configRecord)
+      })
+    }
+  }
+}
+
+export const cpuArchitectureUtilPlugin = {
+  install (app) {
+    app.config.globalProperties.$fetchCpuArchitectureTypes = function () {
+      const architectures = [
+        { id: 'x86_64', name: 'AMD 64 bits (x86_64)' },
+        { id: 'aarch64', name: 'ARM 64 bits (aarch64)' }
+      ]
+      return architectures.map(item => ({ ...item, description: item.name }))
+    }
+  }
 }

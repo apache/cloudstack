@@ -34,20 +34,22 @@
         :dataSource="dataSource"
         :rowKey="item => item.uuid"
         :pagination="false">
-        <template #action="{ record }">
-          <a-popconfirm
-            :title="$t('message.delete.tungsten.tag')"
-            @confirm="removeTag(record.uuid)"
-            :okText="$t('label.yes')"
-            :cancelText="$t('label.no')">
-            <tooltip-button
-              tooltipPlacement="bottom"
-              :tooltip="$t('label.remove.tag')"
-              danger
-              type="primary"
-              icon="delete-outlined"
-              :loading="deleteLoading" />
-          </a-popconfirm>
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'actions'">
+            <a-popconfirm
+              :title="$t('message.delete.tungsten.tag')"
+              @confirm="removeTag(record.uuid)"
+              :okText="$t('label.yes')"
+              :cancelText="$t('label.no')">
+              <tooltip-button
+                tooltipPlacement="bottom"
+                :tooltip="$t('label.remove.tag')"
+                danger
+                type="primary"
+                icon="delete-outlined"
+                :loading="deleteLoading" />
+            </a-popconfirm>
+          </template>
         </template>
       </a-table>
       <a-divider/>
@@ -89,11 +91,11 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               v-model:value="form.taguuid"
               :placeholder="apiParams.taguuid.description">
-              <a-select-option v-for="opt in tagSrc.opts" :key="opt.uuid">{{ opt.name }}</a-select-option>
+              <a-select-option v-for="opt in tagSrc.opts" :key="opt.uuid" :label="opt.name">{{ opt.name }}</a-select-option>
             </a-select>
           </a-form-item>
 
@@ -141,8 +143,8 @@ export default {
         title: this.$t('label.name'),
         dataIndex: 'name'
       }, {
-        title: this.$t('label.action'),
-        slots: { customRender: 'action' },
+        title: this.$t('label.actions'),
+        key: 'actions',
         width: 80
       }],
       page: 1,

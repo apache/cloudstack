@@ -26,7 +26,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
@@ -92,7 +91,6 @@ import com.cloud.vm.VirtualMachine.PowerState;
 
 @Component
 public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
-    private static final Logger s_logger = Logger.getLogger(MockVmManagerImpl.class);
 
     @Inject
     MockVMDao _mockVmDao = null;
@@ -137,57 +135,36 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
         }
 
         if (vm == null) {
-            final int vncPort = 0;
-            if (vncPort < 0) {
-                return "Unable to allocate VNC port";
-            }
             vm = new MockVMVO();
-            vm.setCpu(cpuHz);
-            vm.setMemory(ramSize);
-            vm.setPowerState(PowerState.PowerOn);
-            vm.setName(vmName);
-            vm.setVncPort(vncPort);
-            vm.setHostId(host.getId());
-            vm.setBootargs(bootArgs);
-            if (vmName.startsWith("s-")) {
-                vm.setType("SecondaryStorageVm");
-            } else if (vmName.startsWith("v-")) {
-                vm.setType("ConsoleProxy");
-            } else if (vmName.startsWith("r-")) {
-                vm.setType("DomainRouter");
-            } else if (vmName.startsWith("i-")) {
-                vm.setType("User");
-            }
-            txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
-            try {
-                txn.start();
-                vm = _mockVmDao.persist((MockVMVO)vm);
-                txn.commit();
-            } catch (final Exception ex) {
-                txn.rollback();
-                throw new CloudRuntimeException("unable to save vm to db " + vm.getName(), ex);
-            } finally {
-                txn.close();
-                txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
-                txn.close();
-            }
-        } else {
-            if (vm.getPowerState() == PowerState.PowerOff) {
-                vm.setPowerState(PowerState.PowerOn);
-                txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
-                try {
-                    txn.start();
-                    _mockVmDao.update(vm.getId(), (MockVMVO)vm);
-                    txn.commit();
-                } catch (final Exception ex) {
-                    txn.rollback();
-                    throw new CloudRuntimeException("unable to update vm " + vm.getName(), ex);
-                } finally {
-                    txn.close();
-                    txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
-                    txn.close();
-                }
-            }
+        }
+        vm.setCpu(cpuHz);
+        vm.setMemory(ramSize);
+        vm.setPowerState(PowerState.PowerOn);
+        vm.setName(vmName);
+        vm.setVncPort(0);
+        vm.setHostId(host.getId());
+        vm.setBootargs(bootArgs);
+        if (vmName.startsWith("s-")) {
+            vm.setType("SecondaryStorageVm");
+        } else if (vmName.startsWith("v-")) {
+            vm.setType("ConsoleProxy");
+        } else if (vmName.startsWith("r-")) {
+            vm.setType("DomainRouter");
+        } else if (vmName.startsWith("i-")) {
+            vm.setType("User");
+        }
+        txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
+        try {
+            txn.start();
+            vm = _mockVmDao.persist((MockVMVO)vm);
+            txn.commit();
+        } catch (final Exception ex) {
+            txn.rollback();
+            throw new CloudRuntimeException("unable to save vm to db " + vm.getName(), ex);
+        } finally {
+            txn.close();
+            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+            txn.close();
         }
 
         if (vm.getPowerState() == PowerState.PowerOn && vmName.startsWith("s-")) {
@@ -261,12 +238,12 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
         final MockVm vm = _mockVmDao.findByVmName(router_name);
         final String args = vm.getBootargs();
         if (args.indexOf("router_pr=100") > 0) {
-            s_logger.debug("Router priority is for PRIMARY");
+            logger.debug("Router priority is for PRIMARY");
             final CheckRouterAnswer ans = new CheckRouterAnswer(cmd, "Status: PRIMARY", true);
             ans.setState(VirtualRouter.RedundantState.PRIMARY);
             return ans;
         } else {
-            s_logger.debug("Router priority is for BACKUP");
+            logger.debug("Router priority is for BACKUP");
             final CheckRouterAnswer ans = new CheckRouterAnswer(cmd, "Status: BACKUP", true);
             ans.setState(VirtualRouter.RedundantState.BACKUP);
             return ans;
@@ -459,7 +436,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             vm.setCpu(cmd.getCpus() * cmd.getMaxSpeed());
             vm.setMemory(cmd.getMaxRam());
             _mockVmDao.update(vm.getId(), vm);
-            s_logger.debug("Scaled up VM " + vmName);
+            logger.debug("Scaled up VM " + vmName);
             txn.commit();
             return new ScaleVmAnswer(cmd, true, null);
         } catch (final Exception ex) {
@@ -474,7 +451,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
 
     @Override
     public Answer plugSecondaryIp(final NetworkRulesVmSecondaryIpCommand cmd) {
-        s_logger.debug("Plugged secondary IP to VM " + cmd.getVmName());
+        logger.debug("Plugged secondary IP to VM " + cmd.getVmName());
         return new Answer(cmd, true, null);
     }
 
@@ -483,7 +460,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
         final String vmName = cmd.getVmName();
         final String vmSnapshotName = cmd.getTarget().getSnapshotName();
 
-        s_logger.debug("Created snapshot " + vmSnapshotName + " for vm " + vmName);
+        logger.debug("Created snapshot " + vmSnapshotName + " for vm " + vmName);
         return new CreateVMSnapshotAnswer(cmd, cmd.getTarget(), cmd.getVolumeTOs());
     }
 
@@ -494,7 +471,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
         if (_mockVmDao.findByVmName(cmd.getVmName()) == null) {
             return new DeleteVMSnapshotAnswer(cmd, false, "No VM by name " + cmd.getVmName());
         }
-        s_logger.debug("Removed snapshot " + snapshotName + " of VM " + vm);
+        logger.debug("Removed snapshot " + snapshotName + " of VM " + vm);
         return new DeleteVMSnapshotAnswer(cmd, cmd.getVolumeTOs());
     }
 
@@ -506,7 +483,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
         if (vmVo == null) {
             return new RevertToVMSnapshotAnswer(cmd, false, "No VM by name " + cmd.getVmName());
         }
-        s_logger.debug("Reverted to snapshot " + snapshot + " of VM " + vm);
+        logger.debug("Reverted to snapshot " + snapshot + " of VM " + vm);
         return new RevertToVMSnapshotAnswer(cmd, cmd.getVolumeTOs(), vmVo.getPowerState());
     }
 
@@ -592,40 +569,40 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
         boolean updateSeqnoAndSig = false;
         if (currSeqnum != null) {
             if (cmd.getSeqNum() > currSeqnum) {
-                s_logger.info("New seqno received: " + cmd.getSeqNum() + " curr=" + currSeqnum);
+                logger.info("New seqno received: " + cmd.getSeqNum() + " curr=" + currSeqnum);
                 updateSeqnoAndSig = true;
                 if (!cmd.getSignature().equals(currSig)) {
-                    s_logger.info("New seqno received: " + cmd.getSeqNum() + " curr=" + currSeqnum + " new signature received:" + cmd.getSignature() + " curr=" +
+                    logger.info("New seqno received: " + cmd.getSeqNum() + " curr=" + currSeqnum + " new signature received:" + cmd.getSignature() + " curr=" +
                             currSig + ", updated iptables");
                     action = ", updated iptables";
                     reason = reason + "seqno_increased_sig_changed";
                 } else {
-                    s_logger.info("New seqno received: " + cmd.getSeqNum() + " curr=" + currSeqnum + " no change in signature:" + cmd.getSignature() + ", do nothing");
+                    logger.info("New seqno received: " + cmd.getSeqNum() + " curr=" + currSeqnum + " no change in signature:" + cmd.getSignature() + ", do nothing");
                     reason = reason + "seqno_increased_sig_same";
                 }
             } else if (cmd.getSeqNum() < currSeqnum) {
-                s_logger.info("Older seqno received: " + cmd.getSeqNum() + " curr=" + currSeqnum + ", do nothing");
+                logger.info("Older seqno received: " + cmd.getSeqNum() + " curr=" + currSeqnum + ", do nothing");
                 reason = reason + "seqno_decreased";
             } else {
                 if (!cmd.getSignature().equals(currSig)) {
-                    s_logger.info("Identical seqno received: " + cmd.getSeqNum() + " new signature received:" + cmd.getSignature() + " curr=" + currSig +
+                    logger.info("Identical seqno received: " + cmd.getSeqNum() + " new signature received:" + cmd.getSignature() + " curr=" + currSig +
                             ", updated iptables");
                     action = ", updated iptables";
                     reason = reason + "seqno_same_sig_changed";
                     updateSeqnoAndSig = true;
                 } else {
-                    s_logger.info("Identical seqno received: " + cmd.getSeqNum() + " curr=" + currSeqnum + " no change in signature:" + cmd.getSignature() +
+                    logger.info("Identical seqno received: " + cmd.getSeqNum() + " curr=" + currSeqnum + " no change in signature:" + cmd.getSignature() +
                             ", do nothing");
                     reason = reason + "seqno_same_sig_same";
                 }
             }
         } else {
-            s_logger.info("New seqno received: " + cmd.getSeqNum() + " old=null");
+            logger.info("New seqno received: " + cmd.getSeqNum() + " old=null");
             updateSeqnoAndSig = true;
             action = ", updated iptables";
             reason = ", seqno_new";
         }
-        s_logger.info("Programmed network rules for vm " + cmd.getVmName() + " seqno=" + cmd.getSeqNum() + " signature=" + cmd.getSignature() + " guestIp=" +
+        logger.info("Programmed network rules for vm " + cmd.getVmName() + " seqno=" + cmd.getSeqNum() + " signature=" + cmd.getSignature() + " guestIp=" +
                 cmd.getGuestIp() + ", numIngressRules=" + cmd.getIngressRuleSet().size() + ", numEgressRules=" + cmd.getEgressRuleSet().size() + " total cidrs=" +
                 cmd.getTotalNumCidrs() + action + reason);
         return updateSeqnoAndSig;

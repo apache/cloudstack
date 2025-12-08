@@ -20,12 +20,10 @@ import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade222to224Premium extends Upgrade222to224 {
-    final static Logger s_logger = Logger.getLogger(Upgrade222to224Premium.class);
 
     @Override
     public InputStream[] getPrepareScripts() {
@@ -55,7 +53,7 @@ public class Upgrade222to224Premium extends Upgrade222to224 {
             ) {
 
             pstmt.executeUpdate();
-            s_logger.debug("Upgraded cloud_usage user_statistics with networkId");
+            logger.debug("Upgraded cloud_usage user_statistics with networkId");
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to upgrade user stats: ", e);
         }
@@ -66,7 +64,7 @@ public class Upgrade222to224Premium extends Upgrade222to224 {
                     + "us.network_id where us.account_id = un.account_id and us.data_center_id = un.zone_id and us.device_id = un.host_id");
             ) {
             pstmt1.executeUpdate();
-            s_logger.debug("Upgraded cloud_usage usage_network with networkId");
+            logger.debug("Upgraded cloud_usage usage_network with networkId");
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to upgrade user stats: ", e);
         }

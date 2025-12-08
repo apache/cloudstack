@@ -16,14 +16,16 @@
 // under the License.
 
 <template>
-  <a-tooltip placement="bottom" :title="getTooltip(text)">
-    <a-badge
-      :style="getStyle()"
-      :title="text"
-      :color="getStatusColor(text)"
-      :status="getBadgeStatus(text)"
-      :text="getText()" />
-  </a-tooltip>
+  <div style="display: inline-flex;">
+    <a-tooltip placement="bottom" :title="getTooltip(text)">
+      <a-badge
+        :style="getStyle()"
+        :title="text"
+        :color="getStatusColor(text)"
+        :status="getBadgeStatus(text)"
+        :text="getText()" />
+    </a-tooltip>
+  </div>
 </template>
 
 <script>
@@ -85,6 +87,12 @@ export default {
           case 'InProgress':
             state = this.$t('state.inprogress')
             break
+          case 'Down':
+            state = this.$t('state.down')
+            break
+          case 'Up':
+            state = this.$t('state.up')
+            break
         }
         return state.charAt(0).toUpperCase() + state.slice(1)
       }
@@ -111,6 +119,7 @@ export default {
         case 'up':
         case 'success':
         case 'poweron':
+        case 'primary':
           status = 'success'
           break
         case 'alert':
@@ -147,6 +156,7 @@ export default {
         case 'pending':
         case 'unsecure':
         case 'warning':
+        case 'backup':
           status = 'warning'
           break
       }

@@ -36,14 +36,16 @@
         :rowKey="item => item.id"
         :pagination="false" >
 
-        <template #action="{ record }">
+        <template #bodyCell="{ column, record }">
           <tooltip-button
+            v-if="column.key === 'actions'"
             tooltipPlacement="bottom"
             :tooltip="$t('label.edit')"
             type="primary"
             @click="() => { handleUpdateIpRangeModal(record) }"
             icon="swap-outlined" />
           <a-popconfirm
+            v-if="column.key === 'actions'"
             :title="$t('message.confirm.remove.ip.range')"
             @confirm="removeIpRange(record.id)"
             :okText="$t('label.yes')"
@@ -56,9 +58,10 @@
               icon="delete-outlined" />
           </a-popconfirm>
         </template>
-
       </a-table>
+
       <a-divider/>
+
       <a-pagination
         class="row-element pagination"
         size="small"
@@ -187,8 +190,8 @@ export default {
           dataIndex: 'netmask'
         },
         {
-          title: '',
-          slots: { customRender: 'action' }
+          key: 'actions',
+          title: ''
         }
       ]
     }
@@ -225,6 +228,10 @@ export default {
     },
     removeIpRange (id) {
       api('deleteVlanIpRange', { id: id }).then(json => {
+        const message = `${this.$t('message.success.delete')} ${this.$t('label.ip.range')}`
+        this.$message.success(message)
+      }).catch((error) => {
+        this.$notifyError(error)
       }).finally(() => {
         this.fetchData()
       })

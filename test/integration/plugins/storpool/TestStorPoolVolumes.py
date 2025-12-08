@@ -2073,7 +2073,7 @@ class TestStoragePool(cloudstackTestCase):
                clusterid = c.id
                )
            for conf in configuration:
-               if conf.name == 'sp.cluster.id'  and (conf.value in clusterid[1]):
+               if conf.name == 'sp.cluster.id' and (conf.value in clusterid[1]):
                    return c
 
     @classmethod
@@ -2088,7 +2088,7 @@ class TestStoragePool(cloudstackTestCase):
                clusterid = c.id
                )
            for conf in configuration:
-               if conf.name == 'sp.cluster.id'  and (conf.value not in clusterid[1]):
+               if conf.name == 'sp.cluster.id' and (conf.value not in clusterid[1]):
                    return c
 
     @classmethod

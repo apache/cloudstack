@@ -16,10 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.iso;
 
+import com.cloud.cpu.CPU;
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceTag;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -35,13 +35,13 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 
 @APICommand(name = "listIsos", description = "Lists all available ISO files.", responseObject = TemplateResponse.class, responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(ListIsosCmd.class.getName());
 
     private static final String s_name = "listisosresponse";
 
@@ -90,6 +90,11 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN, description = "flag to display the resource image for the isos")
     private Boolean showIcon;
 
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "the CPU arch of the ISO. Valid options are: x86_64, aarch64",
+            since = "4.20")
+    private String arch;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -134,6 +139,10 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
         return showUnique != null && showUnique;
     }
 
+    public Long getImageStoreId() {
+        return null;
+    }
+
     public Boolean getShowIcon () {
         return  showIcon != null ? showIcon : false;
     }
@@ -155,6 +164,13 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
         }
 
         return onlyReady;
+    }
+
+    public CPU.CPUArch getArch() {
+        if (StringUtils.isBlank(arch)) {
+            return null;
+        }
+        return CPU.CPUArch.fromType(arch);
     }
 
     /////////////////////////////////////////////////////
@@ -191,4 +207,8 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
             templateResponse.setResourceIconResponse(iconResponse);
         }
     }
+
+    public Long getStoragePoolId() {
+        return null;
+    };
 }

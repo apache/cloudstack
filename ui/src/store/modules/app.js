@@ -127,6 +127,12 @@ const app = {
     RELOAD_ALL_PROJECTS: (state, allProjects = []) => {
       vueProps.$localStorage.set(RELOAD_ALL_PROJECTS, allProjects)
       state.allProjects = allProjects
+    },
+    SET_SHUTDOWN_TRIGGERED: (state, shutdownTriggered) => {
+      state.shutdownTriggered = shutdownTriggered
+    },
+    SET_READY_FOR_SHUTDOWN_POLLING_JOB: (state, readyForShutdownPollingJob) => {
+      state.readyForShutdownPollingJob = readyForShutdownPollingJob
     }
   },
   actions: {
@@ -186,6 +192,12 @@ const app = {
     },
     ReloadAllProjects ({ commit, allProjects }) {
       commit('RELOAD_ALL_PROJECTS', allProjects)
+    },
+    SetShutdownTriggered ({ commit }, bool) {
+      commit('SET_SHUTDOWN_TRIGGERED', bool)
+    },
+    SetReadyForShutdownPollingJob ({ commit }, job) {
+      commit('SET_READY_FOR_SHUTDOWN_POLLING_JOB', job)
     }
   }
 }

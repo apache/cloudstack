@@ -5,9 +5,9 @@
 -- to you under the Apache License, Version 2.0 (the
 -- "License"); you may not use this file except in compliance
 -- with the License.  You may obtain a copy of the License at
--- 
+--
 --   http://www.apache.org/licenses/LICENSE-2.0
--- 
+--
 -- Unless required by applicable law or agreed to in writing,
 -- software distributed under the License is distributed on an
 -- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,7 +22,7 @@ ALTER TABLE `cloud`.`cluster` ADD COLUMN `guid` varchar(255) UNIQUE DEFAULT NULL
 ALTER TABLE `cloud`.`cluster` ADD COLUMN `cluster_type` varchar(64) DEFAULT 'CloudManaged';
 ALTER TABLE `cloud`.`vm_template` ADD COLUMN `hypervisor_type` varchar(32) COMMENT 'hypervisor that the template is belonged to';
 ALTER TABLE `cloud`.`vm_template` ADD COLUMN `extractable` int(1) unsigned NOT NULL default 0 COMMENT 'Is this template extractable';
-ALTER TABLE `cloud`.`template_spool_ref` ADD CONSTRAINT `fk_template_spool_ref__template_id` FOREIGN KEY (`template_id`) REFERENCES `vm_template`(`id`);    
+ALTER TABLE `cloud`.`template_spool_ref` ADD CONSTRAINT `fk_template_spool_ref__template_id` FOREIGN KEY (`template_id`) REFERENCES `vm_template`(`id`);
 
 ALTER TABLE `cloud`.`guest_os` modify `name` varchar(255) ;
 
@@ -104,7 +104,7 @@ CREATE TABLE `cloud`.`networks` (
   `broadcast_domain_type` varchar(32) NOT NULL COMMENT 'type of broadcast domain used',
   `broadcast_uri` varchar(255) COMMENT 'broadcast domain specifier',
   `gateway` varchar(15) COMMENT 'gateway for this network configuration',
-  `cidr` varchar(18) COMMENT 'network cidr', 
+  `cidr` varchar(18) COMMENT 'network cidr',
   `mode` varchar(32) COMMENT 'How to retrieve ip address in this network',
   `network_offering_id` bigint unsigned NOT NULL COMMENT 'network offering id that this configuration is created from',
   `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id that this configuration is used in',
@@ -167,7 +167,7 @@ CREATE TABLE `cloud`.`nics` (
   `ip_type` varchar(32) COMMENT 'type of ip',
   `broadcast_uri` varchar(255) COMMENT 'broadcast uri',
   `network_id` bigint unsigned NOT NULL COMMENT 'network configuration id',
-  `mode` varchar(32) COMMENT 'mode of getting ip address',  
+  `mode` varchar(32) COMMENT 'mode of getting ip address',
   `state` varchar(32) NOT NULL COMMENT 'state of the creation',
   `strategy` varchar(32) NOT NULL COMMENT 'reservation strategy',
   `reserver_name` varchar(255) COMMENT 'Name of the component that reserved the ip address',
@@ -176,7 +176,7 @@ CREATE TABLE `cloud`.`nics` (
   `update_time` timestamp NOT NULL COMMENT 'time the state was changed',
   `isolation_uri` varchar(255) COMMENT 'id for isolation',
   `ip6_address` char(40) COMMENT 'ip6 address',
-  `default_nic` tinyint NOT NULL COMMENT "None", 
+  `default_nic` tinyint NOT NULL COMMENT "None",
   `created` datetime NOT NULL COMMENT 'date created',
   `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY (`id`),
@@ -231,7 +231,7 @@ CREATE TABLE `cloud`.`port_forwarding_rules` (
   `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance id',
   `dest_ip_address` char(40) NOT NULL COMMENT 'id_address',
   `dest_port_start` int(10) NOT NULL COMMENT 'starting port of the port range to map to',
-  `dest_port_end` int(10) NOT NULL COMMENT 'end port of the the port range to map to',
+  `dest_port_end` int(10) NOT NULL COMMENT 'end port of the port range to map to',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_port_forwarding_rules__id` FOREIGN KEY(`id`) REFERENCES `firewall_rules`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -253,7 +253,7 @@ CREATE TABLE `cloud`.`op_host` (
   `id` bigint unsigned NOT NULL UNIQUE COMMENT 'host id',
   `sequence` bigint unsigned DEFAULT 1 NOT NULL COMMENT 'sequence for the host communication',
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_op_host__id` FOREIGN KEY (`id`) REFERENCES `host`(`id`) ON DELETE CASCADE 
+  CONSTRAINT `fk_op_host__id` FOREIGN KEY (`id`) REFERENCES `host`(`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`guest_os_hypervisor` (
@@ -261,7 +261,7 @@ CREATE TABLE `cloud`.`guest_os_hypervisor` (
   `hypervisor_type` varchar(32) NOT NULL,
   `guest_os_name` varchar(255) NOT NULL,
   `guest_os_id` bigint unsigned NOT NULL,
-  PRIMARY KEY  (`id`) 
+  PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 INSERT INTO op_host(id, sequence) select id, sequence from host;
@@ -269,7 +269,7 @@ INSERT INTO op_host(id, sequence) select id, sequence from host;
 -- Alter Tables to add Columns;
 
 ALTER TABLE `cloud`.`cluster` ADD COLUMN `hypervisor_type` varchar(32);
-UPDATE `cloud`.`cluster` SET hypervisor_type=(SELECT DISTINCT host.hypervisor_type from host where host.cluster_id = cluster.id GROUP BY host.hypervisor_type); 
+UPDATE `cloud`.`cluster` SET hypervisor_type=(SELECT DISTINCT host.hypervisor_type from host where host.cluster_id = cluster.id GROUP BY host.hypervisor_type);
 
 ALTER TABLE `cloud`.`volumes` ADD COLUMN `attached` datetime;
 UPDATE `cloud`.`volumes` SET attached=now() WHERE removed IS NULL AND instance_id IS NOT NULL;
@@ -286,7 +286,7 @@ ALTER TABLE `cloud`.`vlan` ADD COLUMN `network_id` bigint unsigned NOT NULL;
 
 ALTER TABLE `cloud`.`data_center` ADD COLUMN `domain` varchar(100);
 ALTER TABLE `cloud`.`data_center` ADD COLUMN `domain_id` bigint unsigned;
-ALTER TABLE `cloud`.`data_center` ADD COLUMN `networktype` varchar(255) NOT NULL DEFAULT 'Basic'; 
+ALTER TABLE `cloud`.`data_center` ADD COLUMN `networktype` varchar(255) NOT NULL DEFAULT 'Basic';
 ALTER TABLE `cloud`.`data_center` ADD COLUMN `dns_provider` char(64) DEFAULT 'VirtualRouter';
 ALTER TABLE `cloud`.`data_center` ADD COLUMN `gateway_provider` char(64) DEFAULT 'VirtualRouter';
 ALTER TABLE `cloud`.`data_center` ADD COLUMN `firewall_provider` char(64) DEFAULT 'VirtualRouter';
@@ -306,7 +306,7 @@ UPDATE `cloud`.`op_dc_link_local_ip_address_alloc` SET reservation_id=concat(cas
 ALTER TABLE `cloud`.`host_pod_ref` ADD COLUMN `enabled` tinyint NOT NULL DEFAULT 1;
 
 ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD COLUMN `reservation_id` char(40) NULL;
-UPDATE op_dc_vnet_alloc set reservation_id=concat(cast(data_center_id as CHAR), concat("-", vnet)) WHERE taken is NOT NULL; 
+UPDATE op_dc_vnet_alloc set reservation_id=concat(cast(data_center_id as CHAR), concat("-", vnet)) WHERE taken is NOT NULL;
 
 ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `service_offering_id` bigint unsigned NOT NULL;
 ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `reservation_id` char(40);
@@ -326,7 +326,7 @@ ALTER TABLE `cloud`.`user_vm` ADD COLUMN `display_name` varchar(255);
 UPDATE user_vm inner join vm_instance on user_vm.id=vm_instance.id set user_vm.iso_id=vm_instance.iso_id, user_vm.display_name=vm_instance.display_name where vm_instance.type='User';
 
 ALTER TABLE `cloud`.`template_host_ref` ADD COLUMN `physical_size` bigint unsigned DEFAULT 0;
-UPDATE template_host_ref INNER JOIN template_spool_ref ON template_host_ref.template_id=template_spool_ref.template_id SET template_host_ref.physical_size=template_spool_ref.template_size;  
+UPDATE template_host_ref INNER JOIN template_spool_ref ON template_host_ref.template_id=template_spool_ref.template_id SET template_host_ref.physical_size=template_spool_ref.template_size;
 
 
 CREATE TABLE `cloud`.`user_vm_details` (
@@ -412,7 +412,7 @@ CREATE TABLE `cloud`.`vpn_users` (
   CONSTRAINT `fk_vpn_users__owner_id` FOREIGN KEY (`owner_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_vpn_users__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
   INDEX `i_vpn_users_username`(`username`),
-  UNIQUE `i_vpn_users__account_id__username`(`owner_id`, `username`) 
+  UNIQUE `i_vpn_users__account_id__username`(`owner_id`, `username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cloud`.`storage_pool` ADD COLUMN `status` varchar(32);
@@ -490,7 +490,7 @@ CREATE TABLE  `cloud`.`usage_event` (
   `resource_name` varchar(255),
   `offering_id` bigint unsigned,
   `template_id` bigint unsigned,
-  `size` bigint unsigned,  
+  `size` bigint unsigned,
   `processed` tinyint NOT NULL default '0',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -646,7 +646,7 @@ INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (88, 6, 'W
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (89, 6, 'Windows Server 2003 Standard Edition(32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (90, 6, 'Windows Server 2003 Standard Edition(64-bit)');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (91, 6, 'Windows Server 2003 Web Edition');
-INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (92, 6, 'Microsoft Small Bussiness Server 2003');
+INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (92, 6, 'Microsoft Small Business Server 2003');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (93, 6, 'Windows XP (32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (94, 6, 'Windows XP (64-bit)');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (95, 6, 'Windows 2000 Advanced Server');
@@ -779,7 +779,7 @@ INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Microsoft Windows Server 2003, Standard Edition (32-bit)', 89);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Microsoft Windows Server 2003, Standard Edition (64-bit)', 90);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Microsoft Windows Server 2003, Web Edition', 91);
-INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Microsoft Small Bussiness Server 2003', 92);
+INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Microsoft Small Business Server 2003', 92);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Microsoft Windows Vista (32-bit)', 56);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Microsoft Windows Vista (64-bit)', 101);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Microsoft Windows XP Professional (32-bit)', 93);
@@ -1016,4 +1016,3 @@ INSERT INTO configuration (category, instance, component, name, value, descripti
 
 DELETE FROM load_balancer_vm_map WHERE load_balancer_id NOT IN (SELECT id FROM load_balancer);
 DELETE FROM vm_instance WHERE type='User' AND id NOT IN (SELECT id FROM user_vm);
-

@@ -87,6 +87,9 @@ public class MockHostVO implements MockHost, InternalIdentity {
     @Column(name = "ram")
     private long memorySize;
 
+    @Column(name = "arch")
+    private String arch;
+
     @Column(name = "capabilities")
     private String capabilities;
 
@@ -141,6 +144,14 @@ public class MockHostVO implements MockHost, InternalIdentity {
 
     public void setMemorySize(long memorySize) {
         this.memorySize = memorySize;
+    }
+
+    public String getArch() {
+        return arch;
+    }
+
+    public void setArch(String arch) {
+        this.arch = arch;
     }
 
     @Override

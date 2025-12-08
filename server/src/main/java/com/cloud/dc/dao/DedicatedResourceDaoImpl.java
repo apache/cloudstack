@@ -16,7 +16,12 @@
 // under the License.
 package com.cloud.dc.dao;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -78,6 +83,17 @@ public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO
     protected GenericSearchBuilder<DedicatedResourceVO, Long> ListHostsSearch;
     protected SearchBuilder<DedicatedResourceVO> ListHostsByCluster;
     protected SearchBuilder<DedicatedResourceVO> ListHostsByZone;
+
+    private static final String LIST_DOMAINS_OF_DEDICATED_RESOURCES_USED_BY_DOMAIN_PATH = "SELECT dr.domain_id, \n" +
+            "            GROUP_CONCAT('VM:', vm.uuid) \n" +
+            "            FROM   cloud.dedicated_resources AS dr\n" +
+            "            INNER  JOIN cloud.vm_instance AS vm ON (vm.domain_id  = dr.domain_id)\n" +
+            "            INNER  JOIN cloud.domain AS domain ON (domain.id = vm.domain_id) \n" +
+            "            INNER  JOIN cloud.domain AS domain_dr ON (domain.id = dr.domain_id) \n" +
+            "            WHERE  domain.path LIKE ? \n" +
+            "            AND    domain_dr.path NOT LIKE ? \n " +
+            "            AND    vm.removed IS NULL \n" +
+            "            GROUP  BY dr.id";
 
     protected DedicatedResourceDaoImpl() {
         PodSearch = createSearchBuilder();
@@ -427,5 +443,39 @@ public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO
             hosts.add(dedicatedResourceVO.getHostId());
         }
         return hosts;
+    }
+
+
+    @Override
+    public Map<Long, List<String>> listDomainsOfDedicatedResourcesUsedByDomainPath(String domainPath) {
+        logger.debug(String.format("Retrieving the domains of the dedicated resources used by domain with path [%s].", domainPath));
+
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try (PreparedStatement pstmt = txn.prepareStatement(LIST_DOMAINS_OF_DEDICATED_RESOURCES_USED_BY_DOMAIN_PATH)) {
+            Map<Long, List<String>> domainsOfDedicatedResourcesUsedByDomainPath = new HashMap<>();
+
+            String domainSearch = domainPath.concat("%");
+            pstmt.setString(1, domainSearch);
+            pstmt.setString(2, domainSearch);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Long domainId = rs.getLong(1);
+                    List<String> vmUuids = Arrays.asList(rs.getString(2).split(","));
+
+                    domainsOfDedicatedResourcesUsedByDomainPath.put(domainId, vmUuids);
+                }
+            }
+
+            return domainsOfDedicatedResourcesUsedByDomainPath;
+        } catch (SQLException e) {
+            logger.error(String.format("Failed to retrieve the domains of the dedicated resources used by domain with path [%s] due to [%s]. Returning an empty "
+                    + "list of domains.", domainPath, e.getMessage()));
+
+            logger.debug(String.format("Failed to retrieve the domains of the dedicated resources used by domain with path [%s]. Returning an empty "
+                    + "list of domains.", domainPath), e);
+
+            return new HashMap<>();
+        }
     }
 }

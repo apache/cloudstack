@@ -23,12 +23,12 @@ import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceTag;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.BooleanUtils;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
+import org.apache.cloudstack.api.BaseListRetrieveOnlyResourceCountCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.UserCmd;
@@ -44,8 +44,7 @@ import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = "listNetworks", description = "Lists all available networks.", responseObject = NetworkResponse.class, responseView = ResponseView.Restricted, entityType = {Network.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListNetworksCmd extends BaseListTaggedResourcesCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(ListNetworksCmd.class.getName());
+public class ListNetworksCmd extends BaseListRetrieveOnlyResourceCountCmd implements UserCmd {
     private static final String s_name = "listnetworksresponse";
 
     /////////////////////////////////////////////////////
@@ -190,14 +189,11 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd implements UserC
 
     @Override
     public Boolean getDisplay() {
-        if (display != null) {
-            return display;
-        }
-        return super.getDisplay();
+        return BooleanUtils.toBooleanDefaultIfNull(display, super.getDisplay());
     }
 
     public Boolean getShowIcon() {
-        return showIcon != null ? showIcon : false;
+        return BooleanUtils.toBooleanDefaultIfNull(showIcon, false);
     }
 
     public String getNetworkFilter() {
@@ -215,16 +211,21 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd implements UserC
     @Override
     public void execute() {
         Pair<List<? extends Network>, Integer> networks = _networkService.searchForNetworks(this);
-        ListResponse<NetworkResponse> response = new ListResponse<NetworkResponse>();
-        List<NetworkResponse> networkResponses = new ArrayList<NetworkResponse>();
-        for (Network network : networks.first()) {
-            NetworkResponse networkResponse = _responseGenerator.createNetworkResponse(getResponseView(), network);
-            networkResponses.add(networkResponse);
+        ListResponse<NetworkResponse> response = new ListResponse<>();
+        List<NetworkResponse> networkResponses = new ArrayList<>();
+
+        if (!getRetrieveOnlyResourceCount()) {
+            for (Network network : networks.first()) {
+                NetworkResponse networkResponse = _responseGenerator.createNetworkResponse(getResponseView(), network);
+                networkResponses.add(networkResponse);
+            }
         }
+
         response.setResponses(networkResponses, networks.second());
         response.setResponseName(getCommandName());
         setResponseObject(response);
-        if (response != null && response.getCount() > 0 && getShowIcon()) {
+
+        if (!getRetrieveOnlyResourceCount() && response.getCount() > 0 && getShowIcon()) {
             updateNetworkResponse(response.getResponses());
         }
     }
@@ -232,11 +233,11 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd implements UserC
     private void updateNetworkResponse(List<NetworkResponse> response) {
         for (NetworkResponse networkResponse : response) {
             ResourceIcon resourceIcon = resourceIconManager.getByResourceTypeAndUuid(ResourceTag.ResourceObjectType.Network, networkResponse.getId());
-            if (resourceIcon == null) {
+            if (resourceIcon == null && networkResponse.getVpcId() != null) {
                 resourceIcon = resourceIconManager.getByResourceTypeAndUuid(ResourceTag.ResourceObjectType.Vpc, networkResponse.getVpcId());
-                if (resourceIcon == null) {
-                    continue;
-                }
+            }
+            if (resourceIcon == null) {
+                continue;
             }
             ResourceIconResponse iconResponse = _responseGenerator.createResourceIconResponse(resourceIcon);
             networkResponse.setResourceIconResponse(iconResponse);

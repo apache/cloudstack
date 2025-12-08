@@ -41,6 +41,13 @@ public interface NetworkPermissionDao extends GenericDao<NetworkPermissionVO, Lo
     void removeAllPermissions(long networkId);
 
     /**
+     * Removes all network permissions associated with a given account.
+     *
+     * @param accountId The ID of the account from which all network permissions will be removed.
+     */
+    void removeAccountPermissions(long accountId);
+
+    /**
      * Find a Network permission by networkId, accountName, and domainId
      *
      * @param networkId

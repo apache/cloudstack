@@ -22,7 +22,8 @@ import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -38,7 +39,7 @@ import com.cloud.user.AccountService;
 import com.cloud.user.User;
 
 public class CreateAccountCmdTest {
-    public static final Logger s_logger = Logger.getLogger(CreateAccountCmdTest.class.getName());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Mock
     private AccountService accountService;
@@ -52,9 +53,11 @@ public class CreateAccountCmdTest {
     private Integer accountType = 1;
     private Long domainId = 1L;
 
+    private AutoCloseable closeable;
+
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         ReflectionTestUtils.setField(createAccountCmd, "domainId", domainId);
         ReflectionTestUtils.setField(createAccountCmd, "accountType", accountType);
         CallContext.register(Mockito.mock(User.class), Mockito.mock(Account.class));
@@ -62,6 +65,7 @@ public class CreateAccountCmdTest {
 
     @After
     public void tearDown() throws Exception {
+        closeable.close();
         CallContext.unregister();
     }
 

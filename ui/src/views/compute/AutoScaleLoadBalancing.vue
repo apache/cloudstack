@@ -33,16 +33,37 @@
       :dataSource="lbRules"
       :pagination="false"
       :rowKey="record => record.id">
-      <template #algorithm="{ record }">
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'algorithm'">
         {{ returnAlgorithmName(record.algorithm) }}
-      </template>
-      <template #protocol="{record}">
-        {{ getCapitalise(record.protocol) }}
-      </template>
-      <template #stickiness="{record}">
-        <a-button @click="() => openStickinessModal(record.id)">
-          {{ returnStickinessLabel(record.id) }}
-        </a-button>
+        </template>
+        <template v-if="column.key === 'protocol'">
+          {{ getCapitalise(record.protocol) }}
+        </template>
+        <template v-if="column.key === 'stickiness'">
+          <a-button @click="() => openStickinessModal(record.id)">
+            {{ returnStickinessLabel(record.id) }}
+          </a-button>
+        </template>
+        <template v-if="column.key === 'actions'">
+          <div class="actions">
+            <tooltip-button :tooltip="$t('label.edit')" icon="edit-outlined" @onClick="() => openEditRuleModal(record)" />
+            <tooltip-button :tooltip="$t('label.edit.tags')" :disabled="!('updateLoadBalancerRule' in $store.getters.apis)" icon="tag-outlined" @onClick="() => openTagsModal(record.id)" />
+            <a-popconfirm
+              :title="$t('label.delete') + '?'"
+              @confirm="handleDeleteRule(record)"
+              :okText="$t('label.yes')"
+              :cancelText="$t('label.no')"
+            >
+              <tooltip-button
+                :tooltip="$t('label.delete')"
+                :disabled="!('deleteLoadBalancerRule' in $store.getters.apis) || record.autoscalevmgroup"
+                type="primary"
+                :danger="true"
+                icon="delete-outlined" />
+            </a-popconfirm>
+          </div>
+        </template>
       </template>
       <template #expandedRowRender="{ record }">
         <div class="rule-instance-list">
@@ -65,25 +86,6 @@
                 @onClick="() => handleDeleteInstanceFromRule(instance, record, ip)" />
             </div>
           </div>
-        </div>
-      </template>
-      <template #actions="{record}">
-        <div class="actions">
-          <tooltip-button :tooltip="$t('label.edit')" icon="edit-outlined" @onClick="() => openEditRuleModal(record)" />
-          <tooltip-button :tooltip="$t('label.edit.tags')" :disabled="!('updateLoadBalancerRule' in $store.getters.apis)" icon="tag-outlined" @onClick="() => openTagsModal(record.id)" />
-          <a-popconfirm
-            :title="$t('label.delete') + '?'"
-            @confirm="handleDeleteRule(record)"
-            :okText="$t('label.yes')"
-            :cancelText="$t('label.no')"
-          >
-            <tooltip-button
-              :tooltip="$t('label.delete')"
-              :disabled="!('deleteLoadBalancerRule' in $store.getters.apis) || record.autoscalevmgroup"
-              type="primary"
-              :danger="true"
-              icon="delete-outlined" />
-          </a-popconfirm>
         </div>
       </template>
     </a-table>
@@ -169,12 +171,12 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="LbCookie">{{ $t('label.lb.cookie') }}</a-select-option>
-            <a-select-option value="AppCookie">{{ $t('label.app.cookie') }}</a-select-option>
-            <a-select-option value="SourceBased">{{ $t('label.source.based') }}</a-select-option>
-            <a-select-option value="none">{{ $t('label.none') }}</a-select-option>
+            <a-select-option value="LbCookie" :label="$t('label.lb.cookie')">{{ $t('label.lb.cookie') }}</a-select-option>
+            <a-select-option value="AppCookie" :label="$t('label.lb.cookie')">{{ $t('label.app.cookie') }}</a-select-option>
+            <a-select-option value="SourceBased" :label="$t('label.lb.cookie')">{{ $t('label.source.based') }}</a-select-option>
+            <a-select-option value="none" :label="$t('label.lb.cookie')">{{ $t('label.none') }}</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item
@@ -261,9 +263,9 @@
           <a-select
             v-model:value="editRuleDetails.algorithm"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option value="roundrobin">{{ $t('label.lb.algorithm.roundrobin') }}</a-select-option>
             <a-select-option value="leastconn">{{ $t('label.lb.algorithm.leastconn') }}</a-select-option>
@@ -275,9 +277,9 @@
           <a-select
             v-model:value="editRuleDetails.protocol"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option value="tcp-proxy">{{ $t('label.tcp.proxy') }}</a-select-option>
             <a-select-option value="tcp">{{ $t('label.tcp') }}</a-select-option>
@@ -355,11 +357,11 @@ export default {
         },
         {
           title: this.$t('label.algorithm'),
-          slots: { customRender: 'algorithm' }
+          key: 'algorithm'
         },
         {
           title: this.$t('label.protocol'),
-          slots: { customRender: 'protocol' }
+          key: 'protocol'
         },
         {
           title: this.$t('label.state'),
@@ -367,11 +369,11 @@ export default {
         },
         {
           title: this.$t('label.action.configure.stickiness'),
-          slots: { customRender: 'stickiness' }
+          key: 'stickiness'
         },
         {
-          title: this.$t('label.action'),
-          slots: { customRender: 'actions' }
+          title: this.$t('label.actions'),
+          key: 'actions'
         }
       ],
       tiers: {
@@ -382,13 +384,13 @@ export default {
         {
           title: this.$t('label.name'),
           dataIndex: 'name',
-          slots: { customRender: 'name' },
+          key: 'name',
           width: 220
         },
         {
           title: this.$t('label.state'),
           dataIndex: 'state',
-          slots: { customRender: 'state' }
+          key: 'state'
         },
         {
           title: this.$t('label.displayname'),
@@ -404,8 +406,8 @@ export default {
         },
         {
           title: this.$t('label.select'),
-          dataIndex: 'action',
-          slots: { customRender: 'action' },
+          dataIndex: 'actions',
+          key: 'actions',
           width: 80
         }
       ],

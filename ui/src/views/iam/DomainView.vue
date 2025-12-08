@@ -63,6 +63,7 @@
         :treeStore="domainStore"
         :loading="loading"
         :tabs="$route.meta.tabs"
+        :treeDeletedKey="treeDeletedKey"
         @change-resource="changeResource"
         @change-tree-store="changeDomainStore"/>
     </div>
@@ -109,7 +110,8 @@ export default {
       showAction: false,
       action: {},
       dataView: false,
-      domainStore: {}
+      domainStore: {},
+      treeDeletedKey: null
     }
   },
   computed: {
@@ -138,6 +140,15 @@ export default {
         this.fetchData()
       }
     })
+  },
+  watch: {
+    '$route' (to, from) {
+      // When the route changes from /domain/:id to /domain or vice versa, the component is not destroyed and created again
+    // So, we need to watch the route params to fetch the data again to update the component
+      if (to.path.startsWith('/domain') && from.params.id !== to.params.id) {
+        this.fetchData()
+      }
+    }
   },
   provide () {
     return {
@@ -194,6 +205,7 @@ export default {
       })
     },
     execAction (action) {
+      this.treeDeletedKey = action.api === 'deleteDomain' ? this.resource.key : null
       this.actionData = []
       this.action = action
       this.action.params = store.getters.apis[this.action.api].params
@@ -286,9 +298,8 @@ export default {
 
       rootItem[0].title = rootItem[0].title ? rootItem[0].title : rootItem[0].name
       rootItem[0].key = rootItem[0].id ? rootItem[0].id : 0
-      rootItem[0].slots = {
-        icon: 'leaf'
-      }
+      rootItem[0].resourceIcon = rootItem[0].icon || {}
+      delete rootItem[0].icon
 
       if (!rootItem[0].haschild) {
         rootItem[0].isLeaf = true

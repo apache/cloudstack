@@ -25,7 +25,8 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
@@ -53,7 +54,7 @@ import com.cloud.utils.component.ComponentContext;
 @Component
 public class ElastistorPrimaryDataStoreProvider implements PrimaryDataStoreProvider {
 
-    private static final Logger s_logger = Logger.getLogger(DefaultHostListener.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     // these classes will be injected by spring
     private ElastistorPrimaryDataStoreLifeCycle lifecycle;
@@ -97,7 +98,7 @@ public class ElastistorPrimaryDataStoreProvider implements PrimaryDataStoreProvi
     @Override
     public boolean configure(Map<String, Object> params) {
 
-        s_logger.info("Will configure elastistor's lifecycle, driver, listener & global configurations.");
+        logger.info("Will configure elastistor's lifecycle, driver, listener & global configurations.");
 
         lifecycle = ComponentContext.inject(ElastistorPrimaryDataStoreLifeCycle.class);
         driver = ComponentContext.inject(ElastistorPrimaryDataStoreDriver.class);
@@ -109,7 +110,7 @@ public class ElastistorPrimaryDataStoreProvider implements PrimaryDataStoreProvi
         // set the injected configuration object in elastistor util class too!!!
         ElastistorUtil.setConfigurationDao(configurationDao);
 
-        s_logger.info("Successfully configured elastistor's lifecycle, driver, listener & global configurations.");
+        logger.info("Successfully configured elastistor's lifecycle, driver, listener & global configurations.");
 
         return true;
     }

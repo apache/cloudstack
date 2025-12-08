@@ -16,19 +16,15 @@
 // under the License.
 package com.cloud.api.query.dao;
 
+import com.cloud.api.query.vo.VolumeJoinVO;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-import com.cloud.api.ApiDBUtils;
-import com.cloud.api.query.vo.VolumeJoinVO;
-
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(ApiDBUtils.class)
+@RunWith(MockitoJUnitRunner.class)
 public class VolumeJoinDaoImplTest extends GenericDaoBaseWithTagInformationBaseTest<VolumeJoinVO, VolumeResponse> {
 
     @InjectMocks

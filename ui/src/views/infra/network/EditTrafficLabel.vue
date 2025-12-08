@@ -39,9 +39,9 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option v-for="type in trafficTypes" :key="type.id">
+            <a-select-option v-for="type in trafficTypes" :key="type.id" :label="type.traffictype">
               {{ type.traffictype }}
             </a-select-option>
           </a-select>

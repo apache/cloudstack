@@ -27,31 +27,33 @@
           :loading="loading"
           :columns="columns"
           :dataSource="dataSource"
-          :rowKey="(record,idx) => record.projectid + '-' + idx"
+          :rowKey="(record, index) => record.projectid + '-' + index"
           :pagination="false">
           <template #expandedRowRender="{ record }">
             <ProjectRolePermissionTab class="table" :resource="resource" :role="record"/>
           </template>
-          <template #name="{ record }"> {{ record.name }} </template>
-          <template #description="{ record }">
-            {{ record.description }}
-          </template>
-          <template #action="{ record }">
-            <tooltip-button
-              tooltipPlacement="top"
-              :tooltip="$t('label.update.project.role')"
-              icon="edit-outlined"
-              size="small"
-              style="margin:10px"
-              @onClick="openUpdateModal(record)" />
-            <tooltip-button
-              tooltipPlacement="top"
-              :tooltip="$t('label.remove.project.role')"
-              type="primary"
-              :danger="true"
-              icon="delete-outlined"
-              size="small"
-              @onClick="deleteProjectRole(record)" />
+          <template #bodyCell="{ column, record }">
+            <template v-if="column.key === 'name'"> {{ record.name }} </template>
+            <template v-if="column.key === 'description'">
+              {{ record.description }}
+            </template>
+            <template v-if="column.key === 'actions'">
+              <tooltip-button
+                tooltipPlacement="top"
+                :tooltip="$t('label.update.project.role')"
+                icon="edit-outlined"
+                size="small"
+                style="margin:10px"
+                @onClick="openUpdateModal(record)" />
+              <tooltip-button
+                tooltipPlacement="top"
+                :tooltip="$t('label.remove.project.role')"
+                type="primary"
+                :danger="true"
+                icon="delete-outlined"
+                size="small"
+                @onClick="deleteProjectRole(record)" />
+            </template>
           </template>
         </a-table>
         <a-modal
@@ -149,37 +151,27 @@ export default {
   created () {
     this.columns = [
       {
+        key: 'name',
         title: this.$t('label.name'),
         dataIndex: 'name',
-        width: '35%',
-        slots: { customRender: 'name' }
+        width: '35%'
       },
       {
+        key: 'description',
         title: this.$t('label.description'),
         dataIndex: 'description'
       },
       {
-        title: this.$t('label.action'),
-        dataIndex: 'action',
-        width: 100,
-        slots: { customRender: 'action' }
+        key: 'actions',
+        title: this.$t('label.actions'),
+        dataIndex: 'actions',
+        width: 100
       }
     ]
     this.initForm()
   },
   mounted () {
     this.fetchData()
-  },
-  watch: {
-    resource: {
-      deep: true,
-      handler (newItem) {
-        if (!newItem || !newItem.id) {
-          return
-        }
-        this.fetchData()
-      }
-    }
   },
   methods: {
     initForm () {
@@ -189,6 +181,7 @@ export default {
     },
     fetchData () {
       this.loading = true
+      if (!this.resource.id) return
       api('listProjectRoles', { projectid: this.resource.id }).then(json => {
         const projectRoles = json.listprojectrolesresponse.projectrole
         if (!projectRoles || projectRoles.length === 0) {

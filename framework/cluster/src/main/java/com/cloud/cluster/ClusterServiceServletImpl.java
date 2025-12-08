@@ -36,7 +36,8 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.HttpUtils;
 import com.cloud.utils.Profiler;
@@ -45,7 +46,7 @@ import com.google.gson.Gson;
 
 public class ClusterServiceServletImpl implements ClusterService {
     private static final long serialVersionUID = 4574025200012566153L;
-    private static final Logger s_logger = Logger.getLogger(ClusterServiceServletImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private String serviceUrl;
 
@@ -56,8 +57,8 @@ public class ClusterServiceServletImpl implements ClusterService {
     protected static CloseableHttpClient s_client = null;
 
     private void logPostParametersForFailedEncoding(List<NameValuePair> parameters) {
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("%s encoding failed for POST parameters: %s", HttpUtils.UTF_8,
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("%s encoding failed for POST parameters: %s", HttpUtils.UTF_8,
                     gson.toJson(parameters)));
         }
     }
@@ -66,7 +67,7 @@ public class ClusterServiceServletImpl implements ClusterService {
     }
 
     public ClusterServiceServletImpl(final String serviceUrl, final CAService caService) {
-        s_logger.info(String.format("Setup cluster service servlet. service url: %s, request timeout: %d seconds", serviceUrl,
+            logger.info(String.format("Setup cluster service servlet. service url: %s, request timeout: %d seconds", serviceUrl,
                 ClusterServiceAdapter.ClusterMessageTimeOut.value()));
         this.serviceUrl = serviceUrl;
         this.caService = caService;
@@ -88,8 +89,8 @@ public class ClusterServiceServletImpl implements ClusterService {
 
     @Override
     public String execute(final ClusterServicePdu pdu) throws RemoteException {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("Executing ClusterServicePdu with service URL: %s", serviceUrl));
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Executing ClusterServicePdu with service URL: %s", serviceUrl));
         }
         final CloseableHttpClient client = getHttpClient();
         final HttpPost method = new HttpPost(serviceUrl);
@@ -97,7 +98,7 @@ public class ClusterServiceServletImpl implements ClusterService {
         try {
             method.setEntity(new UrlEncodedFormEntity(postParameters, HttpUtils.UTF_8));
         } catch (UnsupportedEncodingException e) {
-            s_logger.error("Failed to encode request POST parameters", e);
+            logger.error("Failed to encode request POST parameters", e);
             logPostParametersForFailedEncoding(postParameters);
             throw new RemoteException("Failed to encode request POST parameters", e);
         }
@@ -114,8 +115,8 @@ public class ClusterServiceServletImpl implements ClusterService {
 
     @Override
     public boolean ping(final String callingPeer) throws RemoteException {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Ping at " + serviceUrl);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Ping at " + serviceUrl);
         }
 
         final CloseableHttpClient client = getHttpClient();
@@ -125,7 +126,7 @@ public class ClusterServiceServletImpl implements ClusterService {
         try {
             method.setEntity(new UrlEncodedFormEntity(postParameters, HttpUtils.UTF_8));
         } catch (UnsupportedEncodingException e) {
-            s_logger.error("Failed to encode ping request POST parameters", e);
+            logger.error("Failed to encode ping request POST parameters", e);
             logPostParametersForFailedEncoding(postParameters);
             throw new RemoteException("Failed to encode ping request POST parameters", e);
         }
@@ -144,16 +145,16 @@ public class ClusterServiceServletImpl implements ClusterService {
             if (response == HttpStatus.SC_OK) {
                 result = EntityUtils.toString(httpResponse.getEntity());
                 profiler.stop();
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("POST " + serviceUrl + " response :" + result + ", responding time: " + profiler.getDurationInMillis() + " ms");
+                if (logger.isDebugEnabled()) {
+                    logger.debug("POST " + serviceUrl + " response :" + result + ", responding time: " + profiler.getDurationInMillis() + " ms");
                 }
             } else {
                 profiler.stop();
-                s_logger.error("Invalid response code : " + response + ", from : " + serviceUrl + ", method : " + method.getParams().getParameter("method") + " responding time: " +
+                logger.error("Invalid response code : " + response + ", from : " + serviceUrl + ", method : " + method.getParams().getParameter("method") + " responding time: " +
                         profiler.getDurationInMillis());
             }
         } catch (IOException e) {
-            s_logger.error("Exception from : " + serviceUrl + ", method : " + method.getParams().getParameter("method") + ", exception :", e);
+            logger.error("Exception from : " + serviceUrl + ", method : " + method.getParams().getParameter("method") + ", exception :", e);
         } finally {
             method.releaseConnection();
         }

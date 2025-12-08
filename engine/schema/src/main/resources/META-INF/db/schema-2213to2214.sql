@@ -5,9 +5,9 @@
 -- to you under the Apache License, Version 2.0 (the
 -- "License"); you may not use this file except in compliance
 -- with the License.  You may obtain a copy of the License at
--- 
+--
 --   http://www.apache.org/licenses/LICENSE-2.0
--- 
+--
 -- Unless required by applicable law or agreed to in writing,
 -- software distributed under the License is distributed on an
 -- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -29,7 +29,7 @@ CREATE TABLE  `cloud`.`mshost_peer` (
   `peer_runid` bigint NOT NULL,
   `peer_state` varchar(10) NOT NULL DEFAULT 'Down',
   `last_update` DATETIME NULL COMMENT 'Last record update time',
-  
+
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_mshost_peer__owner_mshost` FOREIGN KEY (`owner_mshost`) REFERENCES `mshost`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_mshost_peer__peer_mshost` FOREIGN KEY (`peer_mshost`) REFERENCES `mshost`(`id`),
@@ -87,4 +87,3 @@ ALTER TABLE `cloud_usage`.`user_statistics` MODIFY `device_type` varchar(32) NOT
 
 ALTER TABLE `cloud`.`keystore` ADD seq int;
 ALTER TABLE `cloud`.`keystore` MODIFY `cloud`.`keystore`.`key` text;
-

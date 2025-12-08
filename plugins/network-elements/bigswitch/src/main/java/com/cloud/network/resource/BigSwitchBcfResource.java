@@ -25,7 +25,6 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -70,7 +69,6 @@ import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.ManagerBase;
 
 public class BigSwitchBcfResource extends ManagerBase implements ServerResource {
-    private static final Logger s_logger = Logger.getLogger(BigSwitchBcfResource.class);
 
     private String _name;
     private String _guid;
@@ -176,20 +174,20 @@ public class BigSwitchBcfResource extends ManagerBase implements ServerResource 
                 try{
                     executeRequest(new SyncBcfTopologyCommand(true, true), _numRetries);
                 } catch(Exception e){
-                    s_logger.error("BigSwitch BCF sync error", e);
+                    logger.error("BigSwitch BCF sync error", e);
                 }
             } else {
                 try{
                     executeRequest(new SyncBcfTopologyCommand(true, false), _numRetries);
                 } catch (Exception e){
-                    s_logger.error("BigSwitch BCF sync error", e);
+                    logger.error("BigSwitch BCF sync error", e);
                 }
             }
         }
         try {
             ControlClusterStatus ccs = _bigswitchBcfApi.getControlClusterStatus();
             if (!ccs.getStatus()) {
-                s_logger.error("ControlCluster state is not ready: " + ccs.getStatus());
+                logger.error("ControlCluster state is not ready: " + ccs.getStatus());
                 return null;
             }
             if (ccs.isTopologySyncRequested()) {
@@ -200,11 +198,11 @@ public class BigSwitchBcfResource extends ManagerBase implements ServerResource 
                         executeRequest(new SyncBcfTopologyCommand(true, false), _numRetries);
                     }
                 } else {
-                    s_logger.debug("topology sync needed but no topology history");
+                    logger.debug("topology sync needed but no topology history");
                 }
             }
         } catch (BigSwitchBcfApiException e) {
-            s_logger.error("getControlClusterStatus failed", e);
+            logger.error("getControlClusterStatus failed", e);
             return null;
         }
         try {
@@ -222,7 +220,7 @@ public class BigSwitchBcfResource extends ManagerBase implements ServerResource 
             }
 
         } catch (BigSwitchBcfApiException e) {
-            s_logger.error("getCapabilities failed", e);
+            logger.error("getCapabilities failed", e);
         }
         return new PingCommand(Host.Type.L2Networking, id);
     }
@@ -274,7 +272,7 @@ public class BigSwitchBcfResource extends ManagerBase implements ServerResource 
         } else if (cmd instanceof GetControllerDataCommand) {
             return executeRequest((GetControllerDataCommand)cmd, numRetries);
         }
-        s_logger.debug("Received unsupported command " + cmd.toString());
+        logger.debug("Received unsupported command " + cmd.toString());
         return Answer.createUnsupportedCommandAnswer(cmd);
     }
 
@@ -575,7 +573,7 @@ public class BigSwitchBcfResource extends ManagerBase implements ServerResource 
     }
 
     private Answer retry(Command cmd, int numRetries) {
-        s_logger.warn("Retrying " + cmd.getClass().getSimpleName() + ". Number of retries remaining: " + numRetries);
+        logger.warn("Retrying " + cmd.getClass().getSimpleName() + ". Number of retries remaining: " + numRetries);
         return executeRequest(cmd, numRetries);
     }
 

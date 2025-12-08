@@ -23,4 +23,3 @@ AgentShell/bin/*
 ServerResource*/bin/*
 *.user
 !.nuget/
-

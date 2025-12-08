@@ -23,13 +23,11 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Properties;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.db.DbProperties;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class Upgrade307to410 implements DbUpgrade {
-    final static Logger s_logger = Logger.getLogger(Upgrade307to410.class);
+public class Upgrade307to410 extends DbUpgradeAbstractImpl {
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -71,7 +69,7 @@ public class Upgrade307to410 implements DbUpgrade {
         }
         try (PreparedStatement pstmt = conn.prepareStatement("update `cloud`.`region` set id = ?");){
             //Update regionId in region table
-            s_logger.debug("Updating region table with Id: " + region_id);
+            logger.debug("Updating region table with Id: " + region_id);
             pstmt.setInt(1, region_id);
             pstmt.executeUpdate();
 

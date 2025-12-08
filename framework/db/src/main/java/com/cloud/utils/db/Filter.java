@@ -22,6 +22,7 @@ import javax.persistence.Column;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.ReflectUtil;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  *  Try to use static initialization to help you in finding incorrect
@@ -51,8 +52,17 @@ public class Filter {
         addOrderBy(clazz, field, ascending);
     }
 
+    public Filter(Class<?> clazz, String field, boolean ascending) {
+        this(clazz, field, ascending, null, null);
+    }
+
     public Filter(long limit) {
         _orderBy = " ORDER BY RAND() LIMIT " + limit;
+    }
+
+    public Filter(Long offset, Long limit) {
+        _offset = offset;
+        _limit = limit;
     }
 
     /**
@@ -66,6 +76,10 @@ public class Filter {
     }
 
     public void addOrderBy(Class<?> clazz, String field, boolean ascending) {
+        addOrderBy(clazz, field, ascending, null);
+    }
+
+    public void addOrderBy(Class<?> clazz, String field, boolean ascending, String tableAlias) {
         if (field == null) {
             return;
         }
@@ -79,7 +93,9 @@ public class Filter {
         String name = column != null ? column.name() : field;
 
         StringBuilder order = new StringBuilder();
-        if (column == null || column.table() == null || column.table().length() == 0) {
+        if (StringUtils.isNotBlank(tableAlias)) {
+            order.append(tableAlias);
+        } else if (column == null || column.table() == null || column.table().length() == 0) {
             order.append(DbUtil.getTableName(clazz));
         } else {
             order.append(column.table());

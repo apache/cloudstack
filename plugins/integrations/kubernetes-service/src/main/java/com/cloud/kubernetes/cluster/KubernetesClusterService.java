@@ -16,17 +16,27 @@
 // under the License.
 package com.cloud.kubernetes.cluster;
 
+import java.util.List;
+
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVirtualMachinesToKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.CreateKubernetesClusterCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.DeleteKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.GetKubernetesClusterConfigCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.ListKubernetesClustersCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVirtualMachinesFromKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.ScaleKubernetesClusterCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.StartKubernetesClusterCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.StopKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.UpgradeKubernetesClusterCmd;
 import org.apache.cloudstack.api.response.KubernetesClusterConfigResponse;
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.RemoveVirtualMachinesFromKubernetesClusterResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
+import com.cloud.network.Network;
+import com.cloud.user.Account;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -35,17 +45,18 @@ public interface KubernetesClusterService extends PluggableService, Configurable
     static final int MIN_KUBERNETES_CLUSTER_NODE_CPU = 2;
     static final int MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE = 2048;
     static final String KUBEADMIN_ACCOUNT_NAME = "kubeadmin";
+    String PROJECT_KUBEADMIN_ACCOUNT_ROLE_NAME = "Project Kubernetes Service Role";
 
     static final ConfigKey<Boolean> KubernetesServiceEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class,
             "cloud.kubernetes.service.enabled",
-            "false",
+            "true",
             "Indicates whether Kubernetes Service plugin is enabled or not. Management server restart needed on change",
             false);
     static final ConfigKey<String> KubernetesClusterNetworkOffering = new ConfigKey<String>("Advanced", String.class,
             "cloud.kubernetes.cluster.network.offering",
             "DefaultNetworkOfferingforKubernetesService",
             "Name of the network offering that will be used to create isolated network in which Kubernetes cluster VMs will be launched",
-            false,
+            true,
             KubernetesServiceEnabled.key());
     static final ConfigKey<Long> KubernetesClusterStartTimeout = new ConfigKey<Long>("Advanced", Long.class,
             "cloud.kubernetes.cluster.start.timeout",
@@ -87,13 +98,19 @@ public interface KubernetesClusterService extends PluggableService, Configurable
 
     KubernetesCluster findById(final Long id);
 
-    KubernetesCluster createKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException;
+    KubernetesCluster createUnmanagedKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException;
 
-    boolean startKubernetesCluster(long kubernetesClusterId, boolean onCreate) throws CloudRuntimeException;
+    KubernetesCluster createManagedKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException;
 
-    boolean stopKubernetesCluster(long kubernetesClusterId) throws CloudRuntimeException;
+    void startKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException;
 
-    boolean deleteKubernetesCluster(Long kubernetesClusterId) throws CloudRuntimeException;
+    void startKubernetesCluster(StartKubernetesClusterCmd cmd) throws CloudRuntimeException;
+
+    boolean stopKubernetesCluster(StopKubernetesClusterCmd cmd) throws CloudRuntimeException;
+
+    boolean deleteKubernetesCluster(DeleteKubernetesClusterCmd cmd) throws CloudRuntimeException;
+
+    boolean isCommandSupported(KubernetesCluster cluster, String cmdName);
 
     ListResponse<KubernetesClusterResponse> listKubernetesClusters(ListKubernetesClustersCmd cmd);
 
@@ -104,4 +121,12 @@ public interface KubernetesClusterService extends PluggableService, Configurable
     boolean scaleKubernetesCluster(ScaleKubernetesClusterCmd cmd) throws CloudRuntimeException;
 
     boolean upgradeKubernetesCluster(UpgradeKubernetesClusterCmd cmd) throws CloudRuntimeException;
+
+    boolean addVmsToCluster(AddVirtualMachinesToKubernetesClusterCmd cmd);
+
+    List<RemoveVirtualMachinesFromKubernetesClusterResponse> removeVmsFromCluster(RemoveVirtualMachinesFromKubernetesClusterCmd cmd);
+
+    boolean isDirectAccess(Network network);
+
+    void cleanupForAccount(Account account);
 }

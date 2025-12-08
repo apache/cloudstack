@@ -23,11 +23,17 @@ public class DbUpgradeUtils {
 
     private static DatabaseAccessObject dao = new DatabaseAccessObject();
 
-    public static void addIndexIfNeeded(Connection conn, String tableName, String columnName) {
-        String indexName = dao.generateIndexName(tableName, columnName);
+    public static void addIndexIfNeeded(Connection conn, String tableName, String... columnNames) {
+        String indexName = dao.generateIndexName(tableName, columnNames);
 
         if (!dao.indexExists(conn, tableName, indexName)) {
-            dao.createIndex(conn, tableName, columnName, indexName);
+            dao.createIndex(conn, tableName, indexName, columnNames);
+        }
+    }
+
+    public static void renameIndexIfNeeded(Connection conn, String tableName, String oldName, String newName) {
+        if (!dao.indexExists(conn, tableName, oldName)) {
+            dao.renameIndex(conn, tableName, oldName, newName);
         }
     }
 

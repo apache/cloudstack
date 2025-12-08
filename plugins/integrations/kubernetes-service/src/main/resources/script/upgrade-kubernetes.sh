@@ -54,7 +54,7 @@ while true; do
     break
   fi
   set +e
-  output=`blkid -o device -t TYPE=iso9660`
+  output=`blkid -o device -t LABEL=CDROM`
   set -e
   if [ "$output" != "" ]; then
     while read -r line; do

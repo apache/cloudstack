@@ -51,7 +51,7 @@
         </template>
         <a-divider style="margin: 6px 0px; border-width: 0px"/>
         <a-row :gutter="[10, 10]">
-          <a-col :span="12">
+          <a-col :span="12" v-if="'listVirtualMachines' in $store.getters.apis">
             <router-link :to="{ path: '/vm' }">
               <a-statistic
                 :title="$t('label.instances')"
@@ -63,7 +63,7 @@
               </a-statistic>
             </router-link>
           </a-col>
-          <a-col :span="12">
+          <a-col :span="12" v-if="'listKubernetesClusters' in $store.getters.apis">
             <router-link :to="{ path: '/kubernetes' }">
               <a-statistic
                 :title="$t('label.kubernetes.cluster')"
@@ -75,7 +75,7 @@
               </a-statistic>
             </router-link>
           </a-col>
-          <a-col :span="12">
+          <a-col :span="12" v-if="'listVolumes' in $store.getters.apis">
             <router-link :to="{ path: '/volume' }">
               <a-statistic
                 :title="$t('label.volumes')"
@@ -87,7 +87,7 @@
               </a-statistic>
             </router-link>
           </a-col>
-          <a-col :span="12">
+          <a-col :span="12" v-if="'listSnapshots' in $store.getters.apis">
             <router-link :to="{ path: '/snapshot' }">
               <a-statistic
                 :title="$t('label.snapshots')"
@@ -99,7 +99,7 @@
               </a-statistic>
             </router-link>
           </a-col>
-          <a-col :span="12">
+          <a-col :span="12" v-if="'listNetworks' in $store.getters.apis">
             <router-link :to="{ path: '/guestnetwork' }">
               <a-statistic
                 :title="$t('label.guest.networks')"
@@ -111,7 +111,7 @@
               </a-statistic>
             </router-link>
           </a-col>
-          <a-col :span="12">
+          <a-col :span="12" v-if="'listVPCs' in $store.getters.apis">
             <router-link :to="{ path: '/vpc' }">
               <a-statistic
                 :title="$t('label.vpcs')"
@@ -123,7 +123,7 @@
               </a-statistic>
             </router-link>
           </a-col>
-          <a-col :span="12">
+          <a-col :span="12" v-if="'listPublicIpAddresses' in $store.getters.apis">
             <router-link :to="{ path: '/publicip' }">
               <a-statistic
                 :title="$t('label.public.ips')"
@@ -135,7 +135,7 @@
               </a-statistic>
             </router-link>
           </a-col>
-          <a-col :span="12">
+          <a-col :span="12" v-if="'listTemplates' in $store.getters.apis">
             <router-link :to="{ path: '/template', query: { templatefilter: 'self', filter: 'self' } }">
               <a-statistic
                 :title="$t('label.templates')"
@@ -150,7 +150,7 @@
         </a-row>
       </chart-card>
     </a-col>
-    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }" v-if="'listVirtualMachines' in $store.getters.apis">
       <chart-card :loading="loading" class="dashboard-card">
         <template #title>
           <div class="center">
@@ -202,7 +202,7 @@
             <a-progress
             status="active"
             :percent="parseFloat(getPercentUsed(entity[usageType + 'total'], entity[usageType + 'limit']))"
-            :format="p => resource[item + 'limit'] !== '-1' && resource[item + 'limit'] !== 'Unlimited' ? p.toFixed(0) + '%' : ''"
+            :format="p => entity[usageType + 'limit'] !== '-1' && entity[usageType + 'limit'] !== 'Unlimited' ? p.toFixed(0) + '%' : ''"
             stroke-color="#52c41a"
             size="small"
             />
@@ -238,7 +238,7 @@
             <a-progress
             status="active"
             :percent="parseFloat(getPercentUsed(entity[usageType + 'total'], entity[usageType + 'limit']))"
-            :format="p => resource[item + 'limit'] !== '-1' && resource[item + 'limit'] !== 'Unlimited' ? p.toFixed(0) + '%' : ''"
+            :format="p => entity[usageType + 'limit'] !== '-1' && entity[usageType + 'limit'] !== 'Unlimited' ? p.toFixed(0) + '%' : ''"
             stroke-color="#52c41a"
             size="small"
             />
@@ -274,7 +274,7 @@
             <a-progress
             status="active"
             :percent="parseFloat(getPercentUsed(entity[usageType + 'total'], entity[usageType + 'limit']))"
-            :format="p => resource[item + 'limit'] !== '-1' && resource[item + 'limit'] !== 'Unlimited' ? p.toFixed(0) + '%' : ''"
+            :format="p => entity[usageType + 'limit'] !== '-1' && entity[usageType + 'limit'] !== 'Unlimited' ? p.toFixed(0) + '%' : ''"
             stroke-color="#52c41a"
             size="small"
             />
@@ -287,7 +287,35 @@
         </div>
       </chart-card>
     </a-col>
-    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }" class="dashboard-card">
+      <chart-card :loading="loading" class="dashboard-card">
+        <template #title>
+          <div class="center">
+            <h3><render-icon :icon="$config.userCard.icon" /> {{ $t($config.userCard.title) }}</h3>
+          </div>
+        </template>
+        <a-divider style="margin: 6px 0px; border-width: 0px"/>
+        <a-list item-layout="horizontal" :data-source="$config.userCard.links">
+          <template #renderItem="{ item }">
+            <a-list-item>
+              <a-list-item-meta :description="item.text">
+                <template #title>
+                  <a :href="item.link" target="_blank"><h4>{{ item.title }}</h4></a>
+                </template>
+                <template #avatar>
+                  <a-avatar :style="{ backgroundColor: $config.theme['@primary-color'] }">
+                    <template #icon>
+                      <render-icon :icon="item.icon" />
+                    </template>
+                  </a-avatar>
+                </template>
+              </a-list-item-meta>
+            </a-list-item>
+          </template>
+        </a-list>
+      </chart-card>
+    </a-col>
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }" v-if="'listEvents' in $store.getters.apis">
       <chart-card :loading="loading" class="dashboard-card dashboard-event">
         <template #title>
           <div class="center">
@@ -432,9 +460,13 @@ export default {
     },
     listProject () {
       this.loading = true
-      api('listProjects', { id: store.getters.project.id }).then(json => {
+      const params = {
+        id: store.getters.project.id,
+        listall: true
+      }
+      api('listProjects', params).then(json => {
         this.loading = false
-        if (json && json.listprojectsresponse && json.listprojectsresponse.project) {
+        if (json?.listprojectsresponse?.project) {
           this.project = json.listprojectsresponse.project[0]
         }
       })
@@ -454,37 +486,60 @@ export default {
       }
       this.listInstances()
       this.listEvents()
-      this.loading = true
-      api('listKubernetesClusters', { listall: true, page: 1, pagesize: 1 }).then(json => {
-        this.loading = false
-        this.data.kubernetes = json?.listkubernetesclustersresponse?.count
-      })
-      api('listVolumes', { listall: true, page: 1, pagesize: 1 }).then(json => {
-        this.loading = false
-        this.data.volumes = json?.listvolumesresponse?.count
-      })
-      api('listSnapshots', { listall: true, page: 1, pagesize: 1 }).then(json => {
-        this.loading = false
-        this.data.snapshots = json?.listsnapshotsresponse?.count
-      })
-      api('listNetworks', { listall: true, page: 1, pagesize: 1 }).then(json => {
-        this.loading = false
-        this.data.networks = json?.listnetworksresponse?.count
-      })
-      api('listVPCs', { listall: true, page: 1, pagesize: 1 }).then(json => {
-        this.loading = false
-        this.data.vpcs = json?.listvpcsresponse?.count
-      })
-      api('listPublicIpAddresses', { listall: true, page: 1, pagesize: 1 }).then(json => {
-        this.loading = false
-        this.data.ips = json?.listpublicipaddressesresponse?.count
-      })
-      api('listTemplates', { templatefilter: 'self', listall: true, page: 1, pagesize: 1 }).then(json => {
-        this.loading = false
-        this.data.templates = json?.listtemplatesresponse?.count
-      })
+      if ('listKubernetesClusters' in this.$store.getters.apis) {
+        this.loading = true
+        api('listKubernetesClusters', { listall: true, page: 1, pagesize: 1 }).then(json => {
+          this.loading = false
+          this.data.kubernetes = json?.listkubernetesclustersresponse?.count
+        })
+      }
+      if ('listVolumes' in this.$store.getters.apis) {
+        this.loading = true
+        api('listVolumes', { listall: true, page: 1, pagesize: 1 }).then(json => {
+          this.loading = false
+          this.data.volumes = json?.listvolumesresponse?.count
+        })
+      }
+      if ('listSnapshots' in this.$store.getters.apis) {
+        this.loading = true
+        api('listSnapshots', { listall: true, page: 1, pagesize: 1 }).then(json => {
+          this.loading = false
+          this.data.snapshots = json?.listsnapshotsresponse?.count
+        })
+      }
+      if ('listNetworks' in this.$store.getters.apis) {
+        this.loading = true
+        api('listNetworks', { listall: true, page: 1, pagesize: 1 }).then(json => {
+          this.loading = false
+          this.data.networks = json?.listnetworksresponse?.count
+        })
+      }
+      if ('listVPCs' in this.$store.getters.apis) {
+        this.loading = true
+        api('listVPCs', { listall: true, page: 1, pagesize: 1 }).then(json => {
+          this.loading = false
+          this.data.vpcs = json?.listvpcsresponse?.count
+        })
+      }
+      if ('listPublicIpAddresses' in this.$store.getters.apis) {
+        this.loading = true
+        api('listPublicIpAddresses', { listall: true, page: 1, pagesize: 1 }).then(json => {
+          this.loading = false
+          this.data.ips = json?.listpublicipaddressesresponse?.count
+        })
+      }
+      if ('listTemplates' in this.$store.getters.apis) {
+        this.loading = true
+        api('listTemplates', { templatefilter: 'self', listall: true, page: 1, pagesize: 1 }).then(json => {
+          this.loading = false
+          this.data.templates = json?.listtemplatesresponse?.count
+        })
+      }
     },
-    listInstances (zone) {
+    listInstances () {
+      if (!('listVirtualMachines' in this.$store.getters.apis)) {
+        return
+      }
       this.loading = true
       api('listVirtualMachines', { listall: true, details: 'min', page: 1, pagesize: 1 }).then(json => {
         this.loading = false
@@ -500,6 +555,9 @@ export default {
       })
     },
     listEvents () {
+      if (!('listEvents' in this.$store.getters.apis)) {
+        return
+      }
       const params = {
         page: 1,
         pagesize: 8,

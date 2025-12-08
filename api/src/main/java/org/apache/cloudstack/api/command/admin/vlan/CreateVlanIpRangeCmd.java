@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command.admin.vlan;
 
 import com.cloud.utils.net.NetUtils;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -40,10 +39,11 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
+import java.util.Objects;
+
 @APICommand(name = "createVlanIpRange", description = "Creates a VLAN IP range.", responseObject = VlanIpRangeResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVlanIpRangeCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateVlanIpRangeCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -114,6 +114,9 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     @Parameter(name = ApiConstants.FOR_SYSTEM_VMS, type = CommandType.BOOLEAN, description = "true if IP range is set to system vms, false if not")
     private Boolean forSystemVms;
 
+    @Parameter(name = ApiConstants.FOR_NSX, type = CommandType.BOOLEAN, description = "true if the IP range is used for NSX resource", since = "4.20.0")
+    private boolean forNsx;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -154,8 +157,12 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
         return startIp;
     }
 
+    public boolean isForNsx() {
+        return !Objects.isNull(forNsx) && forNsx;
+    }
+
     public String getVlan() {
-        if (vlan == null || vlan.isEmpty()) {
+        if ((vlan == null || vlan.isEmpty()) && !isForNsx()) {
             vlan = "untagged";
         }
         return vlan;
@@ -226,10 +233,10 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create vlan ip range");
             }
         } catch (ConcurrentOperationException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         } catch (InsufficientCapacityException ex) {
-            s_logger.info(ex);
+            logger.info(ex);
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
         }
     }

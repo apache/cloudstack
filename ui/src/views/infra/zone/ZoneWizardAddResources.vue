@@ -108,6 +108,7 @@ import { nextTick } from 'vue'
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import StaticInputsForm from '@views/infra/zone/StaticInputsForm'
+import store from '@/store'
 
 export default {
   components: {
@@ -150,15 +151,12 @@ export default {
       return this.prefillContent?.zoneSuperType === 'Edge' || false
     },
     steps () {
-      const steps = []
+      const steps = [{
+        title: 'label.cluster',
+        fromKey: 'clusterResource',
+        description: 'message.desc.cluster'
+      }]
       const hypervisor = this.prefillContent.hypervisor ? this.prefillContent.hypervisor : null
-      if (!this.isEdgeZone) {
-        steps.push({
-          title: 'label.cluster',
-          fromKey: 'clusterResource',
-          description: 'message.desc.cluster'
-        })
-      }
       if (hypervisor !== 'VMware') {
         steps.push({
           title: 'label.host',
@@ -189,7 +187,15 @@ export default {
           title: 'label.cluster.name',
           key: 'clusterName',
           placeHolder: 'message.error.cluster.name',
-          required: true
+          required: true,
+          defaultValue: this.isEdgeZone ? 'Cluster-' + (this.prefillContent?.name || 'Edge') : undefined
+        },
+        {
+          title: 'label.arch',
+          key: 'arch',
+          required: false,
+          select: true,
+          options: this.architectureTypes
         },
         {
           title: 'label.vcenter.host',
@@ -283,7 +289,7 @@ export default {
           placeHolder: 'message.error.host.name',
           required: true,
           display: {
-            hypervisor: ['VMware', 'BareMetal', 'Ovm', 'Hyperv', 'KVM', 'XenServer', 'LXC', 'Simulator']
+            hypervisor: ['VMware', 'BareMetal', 'Ovm', 'Hyperv', 'KVM', 'XenServer', 'LXC', 'Simulator', store.getters.customHypervisorName]
           }
         },
         {
@@ -292,7 +298,7 @@ export default {
           placeHolder: 'message.error.host.username',
           required: true,
           display: {
-            hypervisor: ['VMware', 'BareMetal', 'Ovm', 'Hyperv', 'KVM', 'XenServer', 'LXC', 'Simulator']
+            hypervisor: ['VMware', 'BareMetal', 'Ovm', 'Hyperv', 'KVM', 'XenServer', 'LXC', 'Simulator', store.getters.customHypervisorName]
           }
         },
         {
@@ -329,7 +335,7 @@ export default {
           required: true,
           password: true,
           display: {
-            hypervisor: ['VMware', 'BareMetal', 'Ovm', 'Hyperv', 'KVM', 'XenServer', 'LXC', 'Simulator'],
+            hypervisor: ['VMware', 'BareMetal', 'Ovm', 'Hyperv', 'KVM', 'XenServer', 'LXC', 'Simulator', store.getters.customHypervisorName],
             authmethod: 'password'
           }
         },
@@ -390,7 +396,7 @@ export default {
           placeHolder: 'message.error.server',
           required: true,
           display: {
-            primaryStorageProtocol: ['nfs', 'iscsi', 'gluster', 'SMB', 'Linstor']
+            primaryStorageProtocol: ['nfs', 'iscsi', 'gluster', 'SMB', 'Linstor', 'datastorecluster', 'vmfs']
           }
         },
         {
@@ -527,6 +533,15 @@ export default {
           required: true,
           display: {
             primaryStorageProtocol: ['vmfs', 'datastorecluster']
+          }
+        },
+        {
+          title: 'label.nfsmountopts',
+          key: 'primaryStorageNFSMountOptions',
+          required: false,
+          display: {
+            primaryStorageProtocol: 'nfs',
+            hypervisor: ['KVM', 'Simulator']
           }
         },
         {
@@ -836,6 +851,13 @@ export default {
       primaryStorageScopes: [],
       primaryStorageProtocols: [],
       primaryStorageProviders: [],
+      architectureTypes: [{
+        id: 'x86_64',
+        description: 'AMD 64 bits (x86_64)'
+      }, {
+        id: 'aarch64',
+        description: 'ARM 64 bits (aarch64)'
+      }],
       storageProviders: [],
       currentStep: null,
       options: ['primaryStorageScope', 'primaryStorageProtocol', 'provider', 'primaryStorageProvider']

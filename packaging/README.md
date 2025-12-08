@@ -6,9 +6,9 @@ These scripts are also used by the CloudStack team to build packages for the off
 # Requirements
 The RPM and DEB packages have dependencies on versions of specific libraries. Due to these dependencies the following distributions and their versions are supported by the packages.
 
-* CentOS / RHEL: 7 and 8
-* Debian 7 (Wheezy) and 8 (Jessy) (untested!)
-* Ubuntu: 16.04 (Xenial), 18.04 (Bionic) and 20.04 (Focal)
+* CentOS / RHEL: 8 and 9
+* Ubuntu: 20.04, 22.04, 24.04
+* Debian 12 (Bookworm, untested!)
 
 # Building
 Using the scripts in the *packaging* directory the RPM and DEB packages can be build.
@@ -31,9 +31,11 @@ The following commands assume that the CloudStack source is present in **/tmp/cl
 
 ``docker run -ti -v /tmp:/src ubuntu:14.04 /bin/bash -c "apt-get update && apt-get install -y dpkg-dev python debhelper openjdk-7-jdk genisoimage python-mysql.connector maven lsb-release devscripts && /src/cloudstack/packaging/build-deb.sh"``
 
-The commands above will generate Ubuntu 14.04 and 16.04 packages which you will find in */tmp* on your system after the build succeeds.
+``docker run -ti -v /tmp:/src ubuntu:22.04 /bin/bash -c "apt-get update && apt-get install -y software-properties-common &&apt-add-repository universe --yes && apt-get update && apt-get install -y dpkg-dev debhelper lsb-release devscripts openjdk-11-jdk libws-commons-util-java genisoimage libcommons-codec-java libcommons-httpclient-java liblog4j1.2-java maven python3 python3-mysql.connector python3-setuptools python-setuptools python3-openssl python3-dev libffi-dev build-essential libssl-dev libffi-dev fakeroot python-is-python3 && curl -sL https://deb.nodesource.com/setup_14.x | bash - && apt-get install -y nodejs &&  /src/cloudstack/packaging/build-deb.sh"``
+
+The commands above will generate Ubuntu 14.04, 16.04, and 22.04 packages which you will find in */tmp* on your system after the build succeeds.
 
 ## RPM
 The *package.sh* script can be used to build RPM packages for CloudStack. In the *packaging* script you can run the following command:
 
-``./package.sh --pack oss --distribution centos7``
+``./package.sh --pack oss --distribution el8``

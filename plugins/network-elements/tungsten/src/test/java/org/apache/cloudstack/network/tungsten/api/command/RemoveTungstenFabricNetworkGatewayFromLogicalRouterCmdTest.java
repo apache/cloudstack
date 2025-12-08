@@ -24,18 +24,22 @@ import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Arrays;
 import java.util.List;
 
+@RunWith(MockitoJUnitRunner.class)
 public class RemoveTungstenFabricNetworkGatewayFromLogicalRouterCmdTest {
 
     @Mock
@@ -43,15 +47,22 @@ public class RemoveTungstenFabricNetworkGatewayFromLogicalRouterCmdTest {
 
     RemoveTungstenFabricNetworkGatewayFromLogicalRouterCmd removeTungstenFabricNetworkGatewayFromLogicalRouterCmd;
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         removeTungstenFabricNetworkGatewayFromLogicalRouterCmd =
                 new RemoveTungstenFabricNetworkGatewayFromLogicalRouterCmd();
         removeTungstenFabricNetworkGatewayFromLogicalRouterCmd.tungstenService = tungstenService;
-        Whitebox.setInternalState(removeTungstenFabricNetworkGatewayFromLogicalRouterCmd, "zoneId", 1L);
-        Whitebox.setInternalState(removeTungstenFabricNetworkGatewayFromLogicalRouterCmd, "networkUuid", "test");
-        Whitebox.setInternalState(removeTungstenFabricNetworkGatewayFromLogicalRouterCmd, "logicalRouterUuid", "test");
+        ReflectionTestUtils.setField(removeTungstenFabricNetworkGatewayFromLogicalRouterCmd, "zoneId", 1L);
+        ReflectionTestUtils.setField(removeTungstenFabricNetworkGatewayFromLogicalRouterCmd, "networkUuid", "test");
+        ReflectionTestUtils.setField(removeTungstenFabricNetworkGatewayFromLogicalRouterCmd, "logicalRouterUuid", "test");
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test

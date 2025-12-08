@@ -2426,7 +2426,7 @@ class TestResourceTags(cloudstackTestCase):
         hosts.pop(0)
         host_ids = [host.id for host in hosts]
         for id in host_ids:
-            if not id in host_ids_for_migration:
+            if id not in host_ids_for_migration:
                 self.fail("Not all hosts are available for vm migration")
         return
 

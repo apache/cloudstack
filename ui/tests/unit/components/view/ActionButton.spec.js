@@ -23,6 +23,16 @@ import mockData from '../../../mockData/ActionButton.mock.json'
 import ActionButton from '@/components/view/ActionButton'
 
 jest.mock('axios', () => mockAxios)
+jest.mock('@/vue-app', () => ({
+  vueProps: {
+    $localStorage: {
+      set: jest.fn((key, value) => {}),
+      get: jest.fn((key) => {
+        return null
+      })
+    }
+  }
+}))
 
 let router, store, i18n
 const state = {
@@ -51,6 +61,7 @@ const factory = (opts = {}) => {
 describe('Components > View > ActionButton.vue', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    jest.spyOn(console, 'warn').mockImplementation(() => {})
   })
 
   describe('Template', () => {

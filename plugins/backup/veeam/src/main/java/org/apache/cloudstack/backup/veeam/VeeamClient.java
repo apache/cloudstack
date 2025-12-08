@@ -37,6 +37,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.UUID;
+import java.util.Date;
+import java.util.Calendar;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
@@ -77,7 +79,8 @@ import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -91,7 +94,7 @@ import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
 import org.apache.commons.lang3.StringUtils;
 
 public class VeeamClient {
-    private static final Logger LOG = Logger.getLogger(VeeamClient.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private static final String FAILED_TO_DELETE = "Failed to delete";
 
     private final URI apiURI;
@@ -104,8 +107,8 @@ public class VeeamClient {
     private static final String REPOSITORY_REFERENCE = "RepositoryReference";
     private static final String RESTORE_POINT_REFERENCE = "RestorePointReference";
     private static final String BACKUP_FILE_REFERENCE = "BackupFileReference";
-    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-    private static final SimpleDateFormat newDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+    private static final ObjectMapper OBJECT_MAPPER = new XmlMapper();
 
 
     private String veeamServerIp;
@@ -124,6 +127,8 @@ public class VeeamClient {
         this.restoreTimeout = restoreTimeout;
         this.taskPollInterval = taskPollInterval;
         this.taskPollMaxRetry = taskPollMaxRetry;
+
+        OBJECT_MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
         final RequestConfig config = RequestConfig.custom()
                 .setConnectTimeout(timeout * 1000)
@@ -192,24 +197,24 @@ public class VeeamClient {
         );
         Pair<Boolean, String> response = executePowerShellCommands(cmds);
         if (response == null || !response.first() || response.second() == null || StringUtils.isBlank(response.second().trim())) {
-            LOG.error("Failed to get veeam server version, using default version");
+            logger.error("Failed to get veeam server version, using default version");
             return 0;
         } else {
             Integer majorVersion = NumbersUtil.parseInt(response.second().trim().split("\\.")[0], 0);
-            LOG.info(String.format("Veeam server full version is %s, major version is %s", response.second().trim(), majorVersion));
+            logger.info(String.format("Veeam server full version is %s, major version is %s", response.second().trim(), majorVersion));
             return majorVersion;
         }
     }
 
     private void checkResponseOK(final HttpResponse response) {
         if (response.getStatusLine().getStatusCode() == HttpStatus.SC_NO_CONTENT) {
-            LOG.debug("Requested Veeam resource does not exist");
+            logger.debug("Requested Veeam resource does not exist");
             return;
         }
         if (!(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK ||
                 response.getStatusLine().getStatusCode() == HttpStatus.SC_ACCEPTED) &&
                 response.getStatusLine().getStatusCode() != HttpStatus.SC_NO_CONTENT) {
-            LOG.debug(String.format("HTTP request failed, status code is [%s], response is: [%s].", response.getStatusLine().getStatusCode(), response.toString()));
+            logger.debug(String.format("HTTP request failed, status code is [%s], response is: [%s].", response.getStatusLine().getStatusCode(), response.toString()));
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Got invalid API status code returned by the Veeam server");
         }
     }
@@ -227,15 +232,14 @@ public class VeeamClient {
         final HttpResponse response = httpClient.execute(request);
         checkAuthFailure(response);
 
-        LOG.debug(String.format("Response received in GET request is: [%s] for URL: [%s].", response.toString(), url));
+        logger.debug(String.format("Response received in GET request is: [%s] for URL: [%s].", response.toString(), url));
         return response;
     }
 
     private HttpResponse post(final String path, final Object obj) throws IOException {
         String xml = null;
         if (obj != null) {
-            XmlMapper xmlMapper = new XmlMapper();
-            xml = xmlMapper.writer()
+            xml = OBJECT_MAPPER.writer()
                     .with(ToXmlGenerator.Feature.WRITE_XML_DECLARATION)
                     .writeValueAsString(obj);
             // Remove invalid/empty xmlns
@@ -253,7 +257,7 @@ public class VeeamClient {
         final HttpResponse response = httpClient.execute(request);
         checkAuthFailure(response);
 
-        LOG.debug(String.format("Response received in POST request with body [%s] is: [%s] for URL [%s].", xml, response.toString(), url));
+        logger.debug(String.format("Response received in POST request with body [%s] is: [%s] for URL [%s].", xml, response.toString(), url));
         return response;
     }
 
@@ -264,7 +268,7 @@ public class VeeamClient {
         final HttpResponse response = httpClient.execute(request);
         checkAuthFailure(response);
 
-        LOG.debug(String.format("Response received in DELETE request is: [%s] for URL [%s].", response.toString(), url));
+        logger.debug(String.format("Response received in DELETE request is: [%s] for URL [%s].", response.toString(), url));
         return response;
     }
 
@@ -273,33 +277,31 @@ public class VeeamClient {
     ///////////////////////////////////////////////////////////////////
 
     private String findDCHierarchy(final String vmwareDcName) {
-        LOG.debug("Trying to find hierarchy ID for vmware datacenter: " + vmwareDcName);
+        logger.debug("Trying to find hierarchy ID for vmware datacenter: " + vmwareDcName);
 
         try {
             final HttpResponse response = get("/hierarchyRoots");
             checkResponseOK(response);
-            final ObjectMapper objectMapper = new XmlMapper();
-            final EntityReferences references = objectMapper.readValue(response.getEntity().getContent(), EntityReferences.class);
+            final EntityReferences references = OBJECT_MAPPER.readValue(response.getEntity().getContent(), EntityReferences.class);
             for (final Ref ref : references.getRefs()) {
                 if (ref.getName().equals(vmwareDcName) && ref.getType().equals(HIERARCHY_ROOT_REFERENCE)) {
                     return ref.getUid();
                 }
             }
         } catch (final IOException e) {
-            LOG.error("Failed to list Veeam jobs due to:", e);
+            logger.error("Failed to list Veeam jobs due to:", e);
             checkResponseTimeOut(e);
         }
         throw new CloudRuntimeException("Failed to find hierarchy reference for VMware datacenter " + vmwareDcName + " in Veeam, please ask administrator to check Veeam B&R manager configuration");
     }
 
     private String lookupVM(final String hierarchyId, final String vmName) {
-        LOG.debug("Trying to lookup VM from veeam hierarchy:" + hierarchyId + " for vm name:" + vmName);
+        logger.debug("Trying to lookup VM from veeam hierarchy:" + hierarchyId + " for vm name:" + vmName);
 
         try {
             final HttpResponse response = get(String.format("/lookup?host=%s&type=Vm&name=%s", hierarchyId, vmName));
             checkResponseOK(response);
-            final ObjectMapper objectMapper = new XmlMapper();
-            final HierarchyItems items = objectMapper.readValue(response.getEntity().getContent(), HierarchyItems.class);
+            final HierarchyItems items = OBJECT_MAPPER.readValue(response.getEntity().getContent(), HierarchyItems.class);
             if (items == null || items.getItems() == null || items.getItems().isEmpty()) {
                 throw new CloudRuntimeException("Could not find VM " + vmName + " in Veeam, please ask administrator to check Veeam B&R manager");
             }
@@ -309,7 +311,7 @@ public class VeeamClient {
                 }
             }
         } catch (final IOException e) {
-            LOG.error("Failed to list Veeam jobs due to:", e);
+            logger.error("Failed to list Veeam jobs due to:", e);
             checkResponseTimeOut(e);
         }
         throw new CloudRuntimeException("Failed to lookup VM " + vmName + " in Veeam, please ask administrator to check Veeam B&R manager configuration");
@@ -317,14 +319,12 @@ public class VeeamClient {
 
     private Task parseTaskResponse(HttpResponse response) throws IOException {
         checkResponseOK(response);
-        final ObjectMapper objectMapper = new XmlMapper();
-        return objectMapper.readValue(response.getEntity().getContent(), Task.class);
+        return OBJECT_MAPPER.readValue(response.getEntity().getContent(), Task.class);
     }
 
     protected RestoreSession parseRestoreSessionResponse(HttpResponse response) throws IOException {
         checkResponseOK(response);
-        final ObjectMapper objectMapper = new XmlMapper();
-        return objectMapper.readValue(response.getEntity().getContent(), RestoreSession.class);
+        return OBJECT_MAPPER.readValue(response.getEntity().getContent(), RestoreSession.class);
     }
 
     private boolean checkTaskStatus(final HttpResponse response) throws IOException {
@@ -335,7 +335,7 @@ public class VeeamClient {
             if (polledTask.getState().equals("Finished")) {
                 final HttpResponse taskDeleteResponse = delete("/tasks/" + task.getTaskId());
                 if (taskDeleteResponse.getStatusLine().getStatusCode() != HttpStatus.SC_NO_CONTENT) {
-                    LOG.warn("Operation failed for veeam task id=" + task.getTaskId());
+                    logger.warn("Operation failed for veeam task id=" + task.getTaskId());
                 }
                 if (polledTask.getResult().getSuccess().equals("true")) {
                     Pair<String, String> pair = getRelatedLinkPair(polledTask.getLink());
@@ -344,7 +344,7 @@ public class VeeamClient {
                         String type = pair.second();
                         String path = url.replace(apiURI.toString(), "");
                         if (type.equals("RestoreSession")) {
-                            return checkIfRestoreSessionFinished(type, path);
+                            checkIfRestoreSessionFinished(type, path);
                         }
                     }
                     return true;
@@ -354,27 +354,39 @@ public class VeeamClient {
             try {
                 Thread.sleep(this.taskPollInterval * 1000);
             } catch (InterruptedException e) {
-                LOG.debug("Failed to sleep while polling for Veeam task status due to: ", e);
+                logger.debug("Failed to sleep while polling for Veeam task status due to: ", e);
             }
         }
         return false;
     }
 
-    protected boolean checkIfRestoreSessionFinished(String type, String path) throws IOException {
-        for (int j = 0; j < this.restoreTimeout; j++) {
+
+    /**
+     * Checks the status of the restore session. Checked states are "Success" and "Failure".<br/>
+     * There is also a timeout defined in the global configuration, backup.plugin.veeam.restore.timeout,<br/>
+     * that is used to wait for the restore to complete before throwing a {@link CloudRuntimeException}.
+     */
+    protected void checkIfRestoreSessionFinished(String type, String path) throws IOException {
+        for (int j = 0; j < restoreTimeout; j++) {
             HttpResponse relatedResponse = get(path);
             RestoreSession session = parseRestoreSessionResponse(relatedResponse);
             if (session.getResult().equals("Success")) {
-                return true;
+                return;
             }
+
             if (session.getResult().equalsIgnoreCase("Failed")) {
                 String sessionUid = session.getUid();
+                logger.error(String.format("Failed to restore backup [%s] of VM [%s] due to [%s].",
+                        sessionUid, session.getVmDisplayName(),
+                        getRestoreVmErrorDescription(StringUtils.substringAfterLast(sessionUid, ":"))));
                 throw new CloudRuntimeException(String.format("Restore job [%s] failed.", sessionUid));
             }
+            logger.debug(String.format("Waiting %s seconds, out of a total of %s seconds, for the restore backup process to finish.", j, restoreTimeout));
+
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ignored) {
-                LOG.trace(String.format("Ignoring InterruptedException [%s] when waiting for restore session finishes.", ignored.getMessage()));
+                logger.trace(String.format("Ignoring InterruptedException [%s] when waiting for restore session finishes.", ignored.getMessage()));
             }
         }
         throw new CloudRuntimeException("Related job type: " + type + " was not successful");
@@ -394,20 +406,19 @@ public class VeeamClient {
     ////////////////////////////////////////////////////////
 
     public Ref listBackupRepository(final String backupServerId, final String backupName) {
-        LOG.debug(String.format("Trying to list backup repository for backup job [name: %s] in server [id: %s].", backupName, backupServerId));
+        logger.debug(String.format("Trying to list backup repository for backup job [name: %s] in server [id: %s].", backupName, backupServerId));
         try {
             String repositoryName = getRepositoryNameFromJob(backupName);
             final HttpResponse response = get(String.format("/backupServers/%s/repositories", backupServerId));
             checkResponseOK(response);
-            final ObjectMapper objectMapper = new XmlMapper();
-            final EntityReferences references = objectMapper.readValue(response.getEntity().getContent(), EntityReferences.class);
+            final EntityReferences references = OBJECT_MAPPER.readValue(response.getEntity().getContent(), EntityReferences.class);
             for (final Ref ref : references.getRefs()) {
                 if (ref.getType().equals(REPOSITORY_REFERENCE) && ref.getName().equals(repositoryName)) {
                     return ref;
                 }
             }
         } catch (final IOException e) {
-            LOG.error(String.format("Failed to list Veeam backup repository used by backup job [name: %s] due to: [%s].", backupName, e.getMessage()), e);
+            logger.error(String.format("Failed to list Veeam backup repository used by backup job [name: %s] due to: [%s].", backupName, e.getMessage()), e);
             checkResponseTimeOut(e);
         }
         return null;
@@ -432,28 +443,26 @@ public class VeeamClient {
     }
 
     public void listAllBackups() {
-        LOG.debug("Trying to list Veeam backups");
+        logger.debug("Trying to list Veeam backups");
         try {
             final HttpResponse response = get("/backups");
             checkResponseOK(response);
-            final ObjectMapper objectMapper = new XmlMapper();
-            final EntityReferences entityReferences = objectMapper.readValue(response.getEntity().getContent(), EntityReferences.class);
+            final EntityReferences entityReferences = OBJECT_MAPPER.readValue(response.getEntity().getContent(), EntityReferences.class);
             for (final Ref ref : entityReferences.getRefs()) {
-                LOG.debug("Veeam Backup found, name: " + ref.getName() + ", uid: " + ref.getUid() + ", type: " + ref.getType());
+                logger.debug("Veeam Backup found, name: " + ref.getName() + ", uid: " + ref.getUid() + ", type: " + ref.getType());
             }
         } catch (final IOException e) {
-            LOG.error("Failed to list Veeam backups due to:", e);
+            logger.error("Failed to list Veeam backups due to:", e);
             checkResponseTimeOut(e);
         }
     }
 
     public List<BackupOffering> listJobs() {
-        LOG.debug("Trying to list backup policies that are Veeam jobs");
+        logger.debug("Trying to list backup policies that are Veeam jobs");
         try {
             final HttpResponse response = get("/jobs");
             checkResponseOK(response);
-            final ObjectMapper objectMapper = new XmlMapper();
-            final EntityReferences entityReferences = objectMapper.readValue(response.getEntity().getContent(), EntityReferences.class);
+            final EntityReferences entityReferences = OBJECT_MAPPER.readValue(response.getEntity().getContent(), EntityReferences.class);
             final List<BackupOffering> policies = new ArrayList<>();
             if (entityReferences == null || entityReferences.getRefs() == null) {
                 return policies;
@@ -463,56 +472,54 @@ public class VeeamClient {
             }
             return policies;
         } catch (final IOException e) {
-            LOG.error("Failed to list Veeam jobs due to:", e);
+            logger.error("Failed to list Veeam jobs due to:", e);
             checkResponseTimeOut(e);
         }
         return new ArrayList<>();
     }
 
     public Job listJob(final String jobId) {
-        LOG.debug("Trying to list veeam job id: " + jobId);
+        logger.debug("Trying to list veeam job id: " + jobId);
         try {
             final HttpResponse response = get(String.format("/jobs/%s?format=Entity",
                     jobId.replace("urn:veeam:Job:", "")));
             checkResponseOK(response);
-            final ObjectMapper objectMapper = new XmlMapper();
-            objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            return objectMapper.readValue(response.getEntity().getContent(), Job.class);
+            return OBJECT_MAPPER.readValue(response.getEntity().getContent(), Job.class);
         } catch (final IOException e) {
-            LOG.error("Failed to list Veeam jobs due to:", e);
+            logger.error("Failed to list Veeam jobs due to:", e);
             checkResponseTimeOut(e);
         } catch (final ServerApiException e) {
-            LOG.error(e);
+            logger.error(e);
         }
         return null;
     }
 
     public boolean toggleJobSchedule(final String jobId) {
-        LOG.debug("Trying to toggle schedule for Veeam job: " + jobId);
+        logger.debug("Trying to toggle schedule for Veeam job: " + jobId);
         try {
             final HttpResponse response = post(String.format("/jobs/%s?action=toggleScheduleEnabled", jobId), null);
             return checkTaskStatus(response);
         } catch (final IOException e) {
-            LOG.error("Failed to toggle Veeam job schedule due to:", e);
+            logger.error("Failed to toggle Veeam job schedule due to:", e);
             checkResponseTimeOut(e);
         }
         return false;
     }
 
     public boolean startBackupJob(final String jobId) {
-        LOG.debug("Trying to start ad-hoc backup for Veeam job: " + jobId);
+        logger.debug("Trying to start ad-hoc backup for Veeam job: " + jobId);
         try {
             final HttpResponse response = post(String.format("/jobs/%s?action=start", jobId), null);
             return checkTaskStatus(response);
         } catch (final IOException e) {
-            LOG.error("Failed to list Veeam jobs due to:", e);
+            logger.error("Failed to list Veeam jobs due to:", e);
             checkResponseTimeOut(e);
         }
         return false;
     }
 
     public boolean cloneVeeamJob(final Job parentJob, final String clonedJobName) {
-        LOG.debug("Trying to clone veeam job: " + parentJob.getUid() + " with backup uuid: " + clonedJobName);
+        logger.debug("Trying to clone veeam job: " + parentJob.getUid() + " with backup uuid: " + clonedJobName);
         try {
             final Ref repositoryRef = listBackupRepository(parentJob.getBackupServerId(), parentJob.getName());
             if (repositoryRef == null) {
@@ -528,13 +535,13 @@ public class VeeamClient {
             final HttpResponse response = post(String.format("/jobs/%s?action=clone", parentJob.getId()), cloneSpec);
             return checkTaskStatus(response);
         } catch (final Exception e) {
-            LOG.warn("Exception caught while trying to clone Veeam job:", e);
+            logger.warn("Exception caught while trying to clone Veeam job:", e);
         }
         return false;
     }
 
     public boolean addVMToVeeamJob(final String jobId, final String vmwareInstanceName, final String vmwareDcName) {
-        LOG.debug("Trying to add VM to backup offering that is Veeam job: " + jobId);
+        logger.debug("Trying to add VM to backup offering that is Veeam job: " + jobId);
         try {
             final String heirarchyId = findDCHierarchy(vmwareDcName);
             final String veeamVmRefId = lookupVM(heirarchyId, vmwareInstanceName);
@@ -544,24 +551,22 @@ public class VeeamClient {
             final HttpResponse response = post(String.format("/jobs/%s/includes", jobId), vmToBackupJob);
             return checkTaskStatus(response);
         } catch (final IOException e) {
-            LOG.error("Failed to add VM to Veeam job due to:", e);
+            logger.error("Failed to add VM to Veeam job due to:", e);
             checkResponseTimeOut(e);
         }
         throw new CloudRuntimeException("Failed to add VM to backup offering likely due to timeout, please check Veeam tasks");
     }
 
     public boolean removeVMFromVeeamJob(final String jobId, final String vmwareInstanceName, final String vmwareDcName) {
-        LOG.debug("Trying to remove VM from backup offering that is a Veeam job: " + jobId);
+        logger.debug("Trying to remove VM from backup offering that is a Veeam job: " + jobId);
         try {
             final String hierarchyId = findDCHierarchy(vmwareDcName);
             final String veeamVmRefId = lookupVM(hierarchyId, vmwareInstanceName);
             final HttpResponse response = get(String.format("/jobs/%s/includes", jobId));
             checkResponseOK(response);
-            final ObjectMapper objectMapper = new XmlMapper();
-            objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            final ObjectsInJob jobObjects = objectMapper.readValue(response.getEntity().getContent(), ObjectsInJob.class);
+            final ObjectsInJob jobObjects = OBJECT_MAPPER.readValue(response.getEntity().getContent(), ObjectsInJob.class);
             if (jobObjects == null || jobObjects.getObjects() == null) {
-                LOG.warn("No objects found in the Veeam job " + jobId);
+                logger.warn("No objects found in the Veeam job " + jobId);
                 return false;
             }
             for (final ObjectInJob jobObject : jobObjects.getObjects()) {
@@ -570,22 +575,22 @@ public class VeeamClient {
                     return checkTaskStatus(deleteResponse);
                 }
             }
-            LOG.warn(vmwareInstanceName + " VM was not found to be attached to Veaam job (backup offering): " + jobId);
+            logger.warn(vmwareInstanceName + " VM was not found to be attached to Veaam job (backup offering): " + jobId);
             return false;
         } catch (final IOException e) {
-            LOG.error("Failed to list Veeam jobs due to:", e);
+            logger.error("Failed to list Veeam jobs due to:", e);
             checkResponseTimeOut(e);
         }
         return false;
     }
 
     public boolean restoreFullVM(final String vmwareInstanceName, final String restorePointId) {
-        LOG.debug("Trying to restore full VM: " + vmwareInstanceName + " from backup");
+        logger.debug("Trying to restore full VM: " + vmwareInstanceName + " from backup");
         try {
             final HttpResponse response = post(String.format("/vmRestorePoints/%s?action=restore", restorePointId), null);
             return checkTaskStatus(response);
         } catch (final IOException e) {
-            LOG.error("Failed to restore full VM due to: ", e);
+            logger.error("Failed to restore full VM due to: ", e);
             checkResponseTimeOut(e);
         }
         throw new CloudRuntimeException("Failed to restore full VM from backup");
@@ -623,9 +628,9 @@ public class VeeamClient {
                     commands, 120000, 120000, 3600000);
 
             if (response == null || !response.first()) {
-                LOG.error(String.format("Veeam PowerShell commands [%s] failed due to: [%s].", commands, response != null ? response.second() : "no PowerShell output returned"));
+                logger.error(String.format("Veeam PowerShell commands [%s] failed due to: [%s].", commands, response != null ? response.second() : "no PowerShell output returned"));
             } else {
-                LOG.debug(String.format("Veeam response for PowerShell commands [%s] is: [%s].", commands, response.second()));
+                logger.debug(String.format("Veeam response for PowerShell commands [%s] is: [%s].", commands, response.second()));
             }
 
             return response;
@@ -653,7 +658,7 @@ public class VeeamClient {
     }
 
     public boolean deleteBackup(final String restorePointId) {
-        LOG.debug(String.format("Trying to delete restore point [name: %s].", restorePointId));
+        logger.debug(String.format("Trying to delete restore point [name: %s].", restorePointId));
         Pair<Boolean, String> result = executePowerShellCommands(Arrays.asList(
                 String.format("$restorePoint = Get-VBRRestorePoint ^| Where-Object { $_.Id -eq '%s' }", restorePointId),
                 "if ($restorePoint) { Remove-VBRRestorePoint -Oib $restorePoint -Confirm:$false",
@@ -666,13 +671,13 @@ public class VeeamClient {
     }
 
     public boolean syncBackupRepository() {
-        LOG.debug("Trying to sync backup repository.");
+        logger.debug("Trying to sync backup repository.");
         Pair<Boolean, String> result = executePowerShellCommands(Arrays.asList(
                 "$repo = Get-VBRBackupRepository",
                 "$Syncs = Sync-VBRBackupRepository -Repository $repo",
                 "while ((Get-VBRSession -ID $Syncs.ID).Result -ne 'Success') { Start-Sleep -Seconds 10 }"
         ));
-        LOG.debug("Done syncing backup repository.");
+        logger.debug("Done syncing backup repository.");
         return result != null && result.first();
     }
 
@@ -685,14 +690,14 @@ public class VeeamClient {
     }
 
     public Map<String, Backup.Metric> getBackupMetricsViaVeeamAPI() {
-        LOG.debug("Trying to get backup metrics via Veeam B&R API");
+        logger.debug("Trying to get backup metrics via Veeam B&R API");
 
         try {
             final HttpResponse response = get(String.format("/backupFiles?format=Entity"));
             checkResponseOK(response);
             return processHttpResponseForBackupMetrics(response.getEntity().getContent());
         } catch (final IOException e) {
-            LOG.error("Failed to get backup metrics via Veeam B&R API due to:", e);
+            logger.error("Failed to get backup metrics via Veeam B&R API due to:", e);
             checkResponseTimeOut(e);
         }
         return new HashMap<>();
@@ -701,8 +706,7 @@ public class VeeamClient {
     protected Map<String, Backup.Metric> processHttpResponseForBackupMetrics(final InputStream content) {
         Map<String, Backup.Metric> metrics = new HashMap<>();
         try {
-            final ObjectMapper objectMapper = new XmlMapper();
-            final BackupFiles backupFiles = objectMapper.readValue(content, BackupFiles.class);
+            final BackupFiles backupFiles = OBJECT_MAPPER.readValue(content, BackupFiles.class);
             if (backupFiles == null || CollectionUtils.isEmpty(backupFiles.getBackupFiles())) {
                 throw new CloudRuntimeException("Could not get backup metrics via Veeam B&R API");
             }
@@ -743,7 +747,7 @@ public class VeeamClient {
                 metrics.put(vmUuid, new Backup.Metric(usedSize, dataSize));
             }
         } catch (final IOException e) {
-            LOG.error("Failed to process response to get backup metrics via Veeam B&R API due to:", e);
+            logger.error("Failed to process response to get backup metrics via Veeam B&R API due to:", e);
             checkResponseTimeOut(e);
         }
         return metrics;
@@ -781,7 +785,7 @@ public class VeeamClient {
     }
 
     protected Map<String, Backup.Metric> processPowerShellResultForBackupMetrics(final String result) {
-        LOG.debug("Processing powershell result: " + result);
+        logger.debug("Processing powershell result: " + result);
 
         final String separator = "=====";
         final Map<String, Backup.Metric> sizes = new HashMap<>();
@@ -800,9 +804,9 @@ public class VeeamClient {
     }
 
     private Backup.RestorePoint getRestorePointFromBlock(String[] parts) {
-        LOG.debug(String.format("Processing block of restore points: [%s].", StringUtils.join(parts, ", ")));
+        logger.debug(String.format("Processing block of restore points: [%s].", StringUtils.join(parts, ", ")));
         String id = null;
-        String created = null;
+        Date created = null;
         String type = null;
         for (String part : parts) {
             if (part.matches("Id(\\s)+:(.)*")) {
@@ -810,7 +814,11 @@ public class VeeamClient {
                 id = split[1].trim();
             } else if (part.matches("CreationTime(\\s)+:(.)*")) {
                 String [] split = part.split(":", 2);
-                created = split[1].trim();
+                split[1] = StringUtils.trim(split[1]);
+                String [] time = split[1].split("[:/ ]");
+                Calendar cal = Calendar.getInstance();
+                cal.set(Integer.parseInt(time[2]), Integer.parseInt(time[0]) - 1, Integer.parseInt(time[1]), Integer.parseInt(time[3]), Integer.parseInt(time[4]), Integer.parseInt(time[5]));
+                created = cal.getTime();
             } else if (part.matches("Type(\\s)+:(.)*")) {
                 String [] split = part.split(":");
                 type = split[1].trim();
@@ -835,7 +843,7 @@ public class VeeamClient {
             if (block.isEmpty()) {
                 continue;
             }
-            LOG.debug(String.format("Found restore points from [backupName: %s, vmInternalName: %s] which is: [%s].", backupName, vmInternalName, block));
+            logger.debug(String.format("Found restore points from [backupName: %s, vmInternalName: %s] which is: [%s].", backupName, vmInternalName, block));
             final String[] parts = block.split("\r\n");
             restorePoints.add(getRestorePointFromBlock(parts));
         }
@@ -851,14 +859,14 @@ public class VeeamClient {
     }
 
     public List<Backup.RestorePoint> listVmRestorePointsViaVeeamAPI(String vmInternalName) {
-        LOG.debug(String.format("Trying to list VM restore points via Veeam B&R API for VM %s: ", vmInternalName));
+        logger.debug(String.format("Trying to list VM restore points via Veeam B&R API for VM %s: ", vmInternalName));
 
         try {
             final HttpResponse response = get(String.format("/vmRestorePoints?format=Entity"));
             checkResponseOK(response);
             return processHttpResponseForVmRestorePoints(response.getEntity().getContent(), vmInternalName);
         } catch (final IOException e) {
-            LOG.error("Failed to list VM restore points via Veeam B&R API due to:", e);
+            logger.error("Failed to list VM restore points via Veeam B&R API due to:", e);
             checkResponseTimeOut(e);
         }
         return new ArrayList<>();
@@ -867,13 +875,12 @@ public class VeeamClient {
     public List<Backup.RestorePoint> processHttpResponseForVmRestorePoints(InputStream content, String vmInternalName) {
         List<Backup.RestorePoint> vmRestorePointList = new ArrayList<>();
         try {
-            final ObjectMapper objectMapper = new XmlMapper();
-            final VmRestorePoints vmRestorePoints = objectMapper.readValue(content, VmRestorePoints.class);
+            final VmRestorePoints vmRestorePoints = OBJECT_MAPPER.readValue(content, VmRestorePoints.class);
             if (vmRestorePoints == null) {
                 throw new CloudRuntimeException("Could not get VM restore points via Veeam B&R API");
             }
             for (final VmRestorePoint vmRestorePoint : vmRestorePoints.getVmRestorePoints()) {
-                LOG.debug(String.format("Processing VM restore point Name=%s, VmDisplayName=%s for vm name=%s",
+                logger.debug(String.format("Processing VM restore point Name=%s, VmDisplayName=%s for vm name=%s",
                         vmRestorePoint.getName(), vmRestorePoint.getVmDisplayName(), vmInternalName));
                 if (!vmInternalName.equals(vmRestorePoint.getVmDisplayName())) {
                     continue;
@@ -882,7 +889,7 @@ public class VeeamClient {
                 List<Link> links = vmRestorePoint.getLink();
                 for (Link link : links) {
                     if (Arrays.asList(BACKUP_FILE_REFERENCE, RESTORE_POINT_REFERENCE).contains(link.getType()) && !link.getRel().equals("Up")) {
-                        LOG.info(String.format("The VM restore point is not ready. Reference: %s, state: %s", link.getType(), link.getRel()));
+                        logger.info(String.format("The VM restore point is not ready. Reference: %s, state: %s", link.getType(), link.getRel()));
                         isReady = false;
                         break;
                     }
@@ -891,20 +898,20 @@ public class VeeamClient {
                     continue;
                 }
                 String vmRestorePointId = vmRestorePoint.getUid().substring(vmRestorePoint.getUid().lastIndexOf(':') + 1);
-                String created = formatDate(vmRestorePoint.getCreationTimeUtc());
+                Date created = formatDate(vmRestorePoint.getCreationTimeUtc());
                 String type = vmRestorePoint.getPointType();
-                LOG.debug(String.format("Adding restore point %s, %s, %s", vmRestorePointId, created, type));
+                logger.debug(String.format("Adding restore point %s, %s, %s", vmRestorePointId, created, type));
                 vmRestorePointList.add(new Backup.RestorePoint(vmRestorePointId, created, type));
             }
         } catch (final IOException | ParseException e) {
-            LOG.error("Failed to process response to get VM restore points via Veeam B&R API due to:", e);
+            logger.error("Failed to process response to get VM restore points via Veeam B&R API due to:", e);
             checkResponseTimeOut(e);
         }
         return vmRestorePointList;
     }
 
-    private String formatDate(String date) throws ParseException {
-        return newDateFormat.format(dateFormat.parse(StringUtils.substring(date, 0, 19)));
+    private Date formatDate(String date) throws ParseException {
+        return DATE_FORMAT.parse(StringUtils.substring(date, 0, 19));
     }
 
     public Pair<Boolean, String> restoreVMToDifferentLocation(String restorePointId, String hostIp, String dataStoreUuid) {
@@ -923,6 +930,29 @@ public class VeeamClient {
             throw new CloudRuntimeException("Failed to restore VM to location " + restoreLocation);
         }
         return new Pair<>(result.first(), restoreLocation);
+    }
+
+    /**
+     * Tries to retrieve the error's description of the Veeam restore task that resulted in an error.
+     * @param uid Session uid in Veeam of the restore process;
+     * @return the description found in Veeam about the cause of error in the restore process.
+     */
+    protected String getRestoreVmErrorDescription(String uid) {
+        logger.debug(String.format("Trying to find the cause of error in the restore process [%s].", uid));
+        List<String> cmds = Arrays.asList(
+                String.format("$restoreUid = '%s'", uid),
+                "$restore = Get-VBRRestoreSession -Id $restoreUid",
+                "if ($restore) {",
+                    "Write-Output $restore.Description",
+                "} else {",
+                    "Write-Output 'Cannot find restore session with provided uid $restoreUid'",
+                "}"
+        );
+        Pair<Boolean, String> result = executePowerShellCommands(cmds);
+        if (result != null && result.first()) {
+            return result.second();
+        }
+        return String.format("Failed to get the description of the failed restore session [%s]. Please contact an administrator.", uid);
     }
 
     private boolean isLegacyServer() {

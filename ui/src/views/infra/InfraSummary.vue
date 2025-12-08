@@ -149,8 +149,10 @@
     </a-col>
     <template v-for="(section, index) in sections" :key="index">
       <a-col
+        :xs="12"
+        :sm="8"
         :md="6"
-        style="margin-bottom: 12px"
+        :style="{ marginBottom: '12px' }"
         v-if="routes[section]">
         <chart-card :loading="loading">
           <div class="chart-card-inner">
@@ -185,7 +187,7 @@ export default {
     return {
       loading: true,
       routes: {},
-      sections: ['zones', 'pods', 'clusters', 'hosts', 'storagepools', 'imagestores', 'systemvms', 'routers', 'cpusockets', 'managementservers', 'alerts', 'ilbvms', 'metrics'],
+      sections: ['zones', 'pods', 'clusters', 'hosts', 'storagepools', 'imagestores', 'objectstores', 'systemvms', 'routers', 'cpusockets', 'managementservers', 'alerts', 'ilbvms', 'metrics'],
       sslFormVisible: false,
       stats: {},
       intermediateCertificates: [],

@@ -18,12 +18,14 @@ package org.apache.cloudstack.utils.qemu;
 
 import static org.junit.Assert.assertEquals;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@Ignore
+
+@RunWith(MockitoJUnitRunner.class)
 public class QemuImgFileTest {
     @Test
     public void testFileNameAtContructor() {

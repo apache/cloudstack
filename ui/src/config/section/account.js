@@ -24,11 +24,42 @@ export default {
   icon: 'team-outlined',
   docHelp: 'adminguide/accounts.html',
   permission: ['listAccounts'],
+  searchFilters: () => {
+    var filters = ['name', 'accounttype', 'domainid']
+    if (store.getters.userInfo.roletype === 'Admin') {
+      filters.push('apikeyaccess')
+    }
+    return filters
+  },
   columns: ['name', 'state', 'rolename', 'roletype', 'domainpath'],
-  details: ['name', 'id', 'rolename', 'roletype', 'domainpath', 'networkdomain', 'iptotal', 'vmtotal', 'volumetotal', 'receivedbytes', 'sentbytes', 'created'],
+  details: ['name', 'id', 'rolename', 'roletype', 'domainpath', 'networkdomain', 'apikeyaccess', 'iptotal', 'vmtotal', 'volumetotal', 'receivedbytes', 'sentbytes', 'created'],
   related: [{
     name: 'accountuser',
     title: 'label.users',
+    param: 'account'
+  }, {
+    name: 'vm',
+    title: 'label.vms',
+    param: 'account'
+  }, {
+    name: 'volume',
+    title: 'label.volumes',
+    param: 'account'
+  }, {
+    name: 'guestnetwork',
+    title: 'label.networks',
+    param: 'account'
+  }, {
+    name: 'ssh',
+    title: 'label.sshkeypairs',
+    param: 'account'
+  }, {
+    name: 'userdata',
+    title: 'label.user.data',
+    param: 'account'
+  }, {
+    name: 'template',
+    title: 'label.templates',
     param: 'account'
   }],
   filters: () => {
@@ -91,15 +122,8 @@ export default {
       icon: 'edit-outlined',
       label: 'label.action.edit.account',
       dataView: true,
-      args: ['newname', 'account', 'domainid', 'networkdomain'],
-      mapping: {
-        account: {
-          value: (record) => { return record.name }
-        },
-        domainid: {
-          value: (record) => { return record.domainid }
-        }
-      }
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/iam/EditAccount.vue')))
     },
     {
       api: 'updateResourceCount',
@@ -199,13 +223,11 @@ export default {
       label: 'label.action.delete.account',
       message: 'message.delete.account',
       dataView: true,
-      show: (record, store) => {
-        return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
-          !(record.domain === 'ROOT' && record.name === 'admin' && record.accounttype === 1)
+      disabled: (record, store) => {
+        return store.userInfo.accountid === record?.id
       },
-      groupAction: true,
       popup: true,
-      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+      component: shallowRef(defineAsyncComponent(() => import('@/views/iam/DeleteAccountWrapper.vue')))
     }
   ]
 }

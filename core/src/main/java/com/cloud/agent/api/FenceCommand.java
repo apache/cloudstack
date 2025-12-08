@@ -19,6 +19,7 @@
 
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.to.HostTO;
 import com.cloud.host.Host;
 import com.cloud.vm.VirtualMachine;
 
@@ -32,6 +33,8 @@ public class FenceCommand extends Command {
     String hostGuid;
     String hostIp;
     boolean inSeq;
+    HostTO host;
+    boolean reportCheckFailureIfOneStorageIsDown;
 
     public FenceCommand(VirtualMachine vm, Host host) {
         super();
@@ -39,6 +42,7 @@ public class FenceCommand extends Command {
         hostGuid = host.getGuid();
         hostIp = host.getPrivateIpAddress();
         inSeq = false;
+        this.host = new HostTO(host);
     }
 
     public void setSeq(boolean inseq) {
@@ -60,5 +64,17 @@ public class FenceCommand extends Command {
     @Override
     public boolean executeInSequence() {
         return inSeq;
+    }
+
+    public HostTO getHost() {
+        return host;
+    }
+
+    public boolean isReportCheckFailureIfOneStorageIsDown() {
+        return reportCheckFailureIfOneStorageIsDown;
+    }
+
+    public void setReportCheckFailureIfOneStorageIsDown(boolean reportCheckFailureIfOneStorageIsDown) {
+        this.reportCheckFailureIfOneStorageIsDown = reportCheckFailureIfOneStorageIsDown;
     }
 }

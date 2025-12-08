@@ -41,6 +41,11 @@
               <render-icon
                 v-if="children.meta.icon && typeof (children.meta.icon) === 'string'"
                 :icon="children.meta.icon" />
+              <font-awesome-icon
+                v-else-if="children.meta.icon && Array.isArray(children.meta.icon)"
+                :icon="children.meta.icon"
+                class="anticon"
+                :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
               <render-icon v-else :svgIcon="children.meta.icon" />
               <span>{{ $t(children.meta.title) }}</span>
             </router-link>
@@ -52,6 +57,12 @@
           <render-icon
             v-if="item.meta.icon && typeof (item.meta.icon) === 'string'"
             :icon="item.meta.icon"
+            @click="() => { handleClickParentMenu(item) }" />
+          <font-awesome-icon
+            v-else-if="item.meta.icon && Array.isArray(item.meta.icon)"
+            :icon="item.meta.icon"
+            class="anticon"
+            :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]"
             @click="() => { handleClickParentMenu(item) }" />
           <span>{{ $t(item.meta.title) }}</span>
         </router-link>

@@ -26,8 +26,10 @@
       :pagination="false"
       :scroll="{ y: '55vh' }"
     >
-      <template #quota="{ text }">
-        <span v-if="text!==undefined">{{ `${currency} ${text}` }}</span>
+      <template #bodyCell="{ column, text }">
+        <template v-if="column.key === 'quota'">
+          <span v-if="text!==undefined">{{ `${currency} ${text}` }}</span>
+        </template>
       </template>
     </a-table>
   </div>
@@ -63,22 +65,22 @@ export default {
     columns () {
       return [
         {
+          key: 'name',
           title: this.$t('label.quota.type.name'),
           dataIndex: 'name',
-          width: 'calc(100% / 3)',
-          slots: { customRender: 'name' }
+          width: 'calc(100% / 3)'
         },
         {
+          key: 'unit',
           title: this.$t('label.quota.type.unit'),
           dataIndex: 'unit',
-          width: 'calc(100% / 3)',
-          slots: { customRender: 'unit' }
+          width: 'calc(100% / 3)'
         },
         {
+          key: 'quota',
           title: this.$t('label.quota.usage'),
           dataIndex: 'quota',
-          width: 'calc(100% / 3)',
-          slots: { customRender: 'quota' }
+          width: 'calc(100% / 3)'
         }
       ]
     }

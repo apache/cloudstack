@@ -20,4 +20,3 @@
 --
 
 DELETE FROM `cloud`.`configuration` where name='router.reboot.when.outofband.migrated';
-

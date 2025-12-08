@@ -35,9 +35,3 @@ ALTER TABLE `cloud_usage`.`cloud_usage` CHANGE COLUMN `virtual_size1` `virtual_s
 
 ALTER TABLE `cloud`.`network_offerings` DROP COLUMN `concurrent_connections`;
 ALTER TABLE `cloud`.`network_offerings` CHANGE COLUMN `concurrent_connections1` `concurrent_connections` int(10) unsigned COMMENT 'Load Balancer(haproxy) maximum number of concurrent connections(global max)';
-
-
-
-
-
-

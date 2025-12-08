@@ -32,25 +32,27 @@
       :dataSource="dataSource"
       :rowKey="(item, index) => index"
       :pagination="false">
-      <template #policy="{ record }">
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'policy'">
         <span v-if="record.policy.length > 0">{{ record.policy[0].name }}</span>
-      </template>
-      <template #action="{ record }">
-        <a-popconfirm
-          v-if="'removeTungstenFabricTag' in $store.getters.apis"
-          placement="topRight"
-          :title="$t('message.delete.tungsten.tag')"
-          :ok-text="$t('label.yes')"
-          :cancel-text="$t('label.no')"
-          :loading="deleteLoading"
-          @confirm="deleteRule(record)"
-        >
-          <tooltip-button
-            :tooltip="$t('label.delete.tag')"
-            danger
-            type="primary"
-            icon="delete-outlined" />
-        </a-popconfirm>
+        </template>
+        <template v-if="column.key === 'actions'">
+          <a-popconfirm
+            v-if="'removeTungstenFabricTag' in $store.getters.apis"
+            placement="topRight"
+            :title="$t('message.delete.tungsten.tag')"
+            :ok-text="$t('label.yes')"
+            :cancel-text="$t('label.no')"
+            :loading="deleteLoading"
+            @confirm="deleteRule(record)"
+          >
+            <tooltip-button
+              :tooltip="$t('label.delete.tag')"
+              danger
+              type="primary"
+              icon="delete-outlined" />
+          </a-popconfirm>
+        </template>
       </template>
     </a-table>
 
@@ -147,17 +149,17 @@ export default {
         {
           title: this.$t('label.name'),
           dataIndex: 'name',
-          slots: { customRender: 'name' }
+          key: 'name'
         },
         {
           title: this.$t('label.policy'),
           dataIndex: 'policy',
-          slots: { customRender: 'policy' }
+          key: 'policy'
         },
         {
-          title: this.$t('label.action'),
-          dataIndex: 'action',
-          slots: { customRender: 'action' },
+          title: this.$t('label.actions'),
+          dataIndex: 'actions',
+          key: 'actions',
           width: 70
         }
       ]

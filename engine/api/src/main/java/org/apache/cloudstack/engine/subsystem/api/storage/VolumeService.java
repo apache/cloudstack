@@ -18,13 +18,13 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
-import com.cloud.agent.api.Answer;
 import java.util.Map;
 
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.command.CommandResult;
 
+import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.exception.StorageAccessException;
 import com.cloud.host.Host;
@@ -35,6 +35,9 @@ import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
 public interface VolumeService {
+
+    String SNAPSHOT_ID = "SNAPSHOT_ID";
+
     class VolumeApiResult extends CommandResult {
         private final VolumeInfo volume;
 
@@ -114,4 +117,10 @@ public interface VolumeService {
       VolumeInfo sourceVolume, VolumeInfo destinationVolume, boolean retryExpungeVolumeAsync);
 
     void moveVolumeOnSecondaryStorageToAnotherAccount(Volume volume, Account sourceAccount, Account destAccount);
+
+    Pair<String, String> checkAndRepairVolume(VolumeInfo volume);
+
+    void checkAndRepairVolumeBasedOnConfig(DataObject dataObject, Host host);
+
+    void validateChangeDiskOfferingEncryptionType(long existingDiskOfferingId, long newDiskOfferingId);
 }

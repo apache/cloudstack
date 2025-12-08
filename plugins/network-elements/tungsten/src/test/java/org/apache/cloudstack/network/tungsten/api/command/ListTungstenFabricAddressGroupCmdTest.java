@@ -16,11 +16,11 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.api.command;
 
-import com.cloud.configuration.ConfigurationService;
 import com.cloud.network.element.TungstenProviderVO;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,64 +29,63 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Arrays;
 import java.util.List;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(ListTungstenFabricAddressGroupCmd.class)
+@RunWith(MockitoJUnitRunner.class)
 public class ListTungstenFabricAddressGroupCmdTest {
 
     @Mock
     TungstenService tungstenService;
 
-    @Mock
-    ConfigurationService configService;
-
     ListTungstenFabricAddressGroupCmd listTungstenFabricAddressGroupCmd;
+
+    AutoCloseable closeable;
 
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         listTungstenFabricAddressGroupCmd = new ListTungstenFabricAddressGroupCmd();
         listTungstenFabricAddressGroupCmd.tungstenService = tungstenService;
-        listTungstenFabricAddressGroupCmd._configService = configService;
-        Mockito.when(configService.getDefaultPageSize()).thenReturn(-1L);
-        listTungstenFabricAddressGroupCmd.configure();
-        Whitebox.setInternalState(listTungstenFabricAddressGroupCmd, "addressGroupUuid", "test");
-        Whitebox.setInternalState(listTungstenFabricAddressGroupCmd, "page", 1);
-        Whitebox.setInternalState(listTungstenFabricAddressGroupCmd, "pageSize", 10);
+        ReflectionTestUtils.setField(listTungstenFabricAddressGroupCmd, "addressGroupUuid", "test");
+        ReflectionTestUtils.setField(listTungstenFabricAddressGroupCmd, "page", 1);
+        ReflectionTestUtils.setField(listTungstenFabricAddressGroupCmd, "pageSize", 10);
+        ReflectionTestUtils.setField(listTungstenFabricAddressGroupCmd, "s_maxPageSize", -1L);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
     public void executeTest() throws Exception {
-        Whitebox.setInternalState(listTungstenFabricAddressGroupCmd, "zoneId", 1L);
+        ReflectionTestUtils.setField(listTungstenFabricAddressGroupCmd, "zoneId", 1L);
         BaseResponse baseResponse = Mockito.mock(BaseResponse.class);
         List<BaseResponse> baseResponseList = Arrays.asList(baseResponse);
-        ListResponse<BaseResponse> responseList = Mockito.mock(ListResponse.class);
         Mockito.when(tungstenService.listTungstenAddressGroup(ArgumentMatchers.anyLong(),
                 ArgumentMatchers.anyString())).thenReturn(baseResponseList);
-        PowerMockito.whenNew(ListResponse.class).withAnyArguments().thenReturn(responseList);
         listTungstenFabricAddressGroupCmd.execute();
-        Assert.assertEquals(responseList, listTungstenFabricAddressGroupCmd.getResponseObject());
+        ListResponse<BaseResponse> responseList = (ListResponse<BaseResponse>) listTungstenFabricAddressGroupCmd.getResponseObject();
+        Assert.assertEquals(baseResponseList, responseList.getResponses());
+        Assert.assertEquals(Integer.valueOf(1), responseList.getCount());
     }
 
     @Test
     public void executeAllZoneTest() throws Exception {
         BaseResponse baseResponse = Mockito.mock(BaseResponse.class);
         List<BaseResponse> baseResponseList = Arrays.asList(baseResponse);
-        ListResponse<BaseResponse> responseList = Mockito.mock(ListResponse.class);
         TungstenProviderVO tungstenProviderVO = Mockito.mock(TungstenProviderVO.class);
         List<TungstenProviderVO> tungstenProviderVOList = Arrays.asList(tungstenProviderVO);
         Mockito.when(tungstenService.getTungstenProviders()).thenReturn(tungstenProviderVOList);
         Mockito.when(tungstenService.listTungstenAddressGroup(ArgumentMatchers.anyLong(),
                 ArgumentMatchers.anyString())).thenReturn(baseResponseList);
-        PowerMockito.whenNew(ListResponse.class).withAnyArguments().thenReturn(responseList);
         listTungstenFabricAddressGroupCmd.execute();
-        Assert.assertEquals(responseList, listTungstenFabricAddressGroupCmd.getResponseObject());
+        ListResponse<BaseResponse> responseList = (ListResponse<BaseResponse>) listTungstenFabricAddressGroupCmd.getResponseObject();
+        Assert.assertEquals(baseResponseList, responseList.getResponses());
+        Assert.assertEquals(Integer.valueOf(1), responseList.getCount());
     }
 }

@@ -16,35 +16,60 @@
 // under the License.
 package com.cloud.api;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.cloud.domain.Domain;
+import com.cloud.user.Account;
+import com.cloud.user.User;
+import com.cloud.user.UserAccount;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.user.UserPasswordResetManager;
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(ApiServer.class)
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.apache.cloudstack.user.UserPasswordResetManager.UserPasswordResetEnabled;
+
+@RunWith(MockitoJUnitRunner.class)
 public class ApiServerTest {
 
     @InjectMocks
     ApiServer apiServer = new ApiServer();
 
-    private List<ApiServer.ListenerThread> createdListeners;
+    @Mock
+    UserPasswordResetManager userPasswordResetManager;
+
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        overrideDefaultConfigValue(UserPasswordResetEnabled, "_value", true);
+    }
+
+    @AfterClass
+    public static void afterClass() throws Exception {
+        overrideDefaultConfigValue(UserPasswordResetEnabled, "_value", false);
+    }
+
+    private static void overrideDefaultConfigValue(final ConfigKey configKey, final String name, final Object o) throws IllegalAccessException, NoSuchFieldException {
+        Field f = ConfigKey.class.getDeclaredField(name);
+        f.setAccessible(true);
+        f.set(configKey, o);
+    }
 
     private void runTestSetupIntegrationPortListenerInvalidPorts(Integer port) {
-        try {
-            ApiServer.ListenerThread mocked = Mockito.mock(ApiServer.ListenerThread.class);
-            PowerMockito.whenNew(ApiServer.ListenerThread.class).withAnyArguments().thenReturn(mocked);
+        try (MockedConstruction<ApiServer.ListenerThread> mocked =
+                     Mockito.mockConstruction(ApiServer.ListenerThread.class)) {
             apiServer.setupIntegrationPortListener(port);
-            Mockito.verify(mocked, Mockito.never()).start();
-        } catch (Exception e) {
-            Assert.fail(String.format("Exception occurred: %s", e.getMessage()));
+            Assert.assertTrue(mocked.constructed().isEmpty());
         }
     }
 
@@ -60,14 +85,95 @@ public class ApiServerTest {
     @Test
     public void testSetupIntegrationPortListenerValidPort() {
         Integer validPort = 8080;
-        try {
-            ApiServer.ListenerThread mocked = Mockito.mock(ApiServer.ListenerThread.class);
-            PowerMockito.whenNew(ApiServer.ListenerThread.class).withAnyArguments().thenReturn(mocked);
+        try (MockedConstruction<ApiServer.ListenerThread> mocked =
+                     Mockito.mockConstruction(ApiServer.ListenerThread.class)) {
             apiServer.setupIntegrationPortListener(validPort);
-            PowerMockito.verifyNew(ApiServer.ListenerThread.class).withArguments(apiServer, validPort);
-            Mockito.verify(mocked).start();
-        } catch (Exception e) {
-            Assert.fail(String.format("Exception occurred: %s", e.getMessage()));
+            Assert.assertFalse(mocked.constructed().isEmpty());
+            ApiServer.ListenerThread listenerThread = mocked.constructed().get(0);
+            Mockito.verify(listenerThread).start();
         }
+    }
+
+    @Test
+    public void testForgotPasswordSuccess() {
+        UserAccount userAccount = Mockito.mock(UserAccount.class);
+        Domain domain = Mockito.mock(Domain.class);
+
+        Mockito.when(userAccount.getEmail()).thenReturn("test@test.com");
+        Mockito.when(userAccount.getState()).thenReturn("ENABLED");
+        Mockito.when(userAccount.getAccountState()).thenReturn("ENABLED");
+        Mockito.when(domain.getState()).thenReturn(Domain.State.Active);
+        Mockito.doNothing().when(userPasswordResetManager).setResetTokenAndSend(userAccount);
+        Assert.assertTrue(apiServer.forgotPassword(userAccount, domain));
+        Mockito.verify(userPasswordResetManager).setResetTokenAndSend(userAccount);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testForgotPasswordFailureNoEmail() {
+        UserAccount userAccount = Mockito.mock(UserAccount.class);
+        Domain domain = Mockito.mock(Domain.class);
+
+        Mockito.when(userAccount.getEmail()).thenReturn("");
+        apiServer.forgotPassword(userAccount, domain);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testForgotPasswordFailureDisabledUser() {
+        UserAccount userAccount = Mockito.mock(UserAccount.class);
+        Domain domain = Mockito.mock(Domain.class);
+
+        Mockito.when(userAccount.getEmail()).thenReturn("test@test.com");
+        Mockito.when(userAccount.getState()).thenReturn("DISABLED");
+        apiServer.forgotPassword(userAccount, domain);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testForgotPasswordFailureDisabledAccount() {
+        UserAccount userAccount = Mockito.mock(UserAccount.class);
+        Domain domain = Mockito.mock(Domain.class);
+
+        Mockito.when(userAccount.getEmail()).thenReturn("test@test.com");
+        Mockito.when(userAccount.getState()).thenReturn("ENABLED");
+        Mockito.when(userAccount.getAccountState()).thenReturn("DISABLED");
+        apiServer.forgotPassword(userAccount, domain);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testForgotPasswordFailureInactiveDomain() {
+        UserAccount userAccount = Mockito.mock(UserAccount.class);
+        Domain domain = Mockito.mock(Domain.class);
+
+        Mockito.when(userAccount.getEmail()).thenReturn("test@test.com");
+        Mockito.when(userAccount.getState()).thenReturn("ENABLED");
+        Mockito.when(userAccount.getAccountState()).thenReturn("ENABLED");
+        Mockito.when(domain.getState()).thenReturn(Domain.State.Inactive);
+        apiServer.forgotPassword(userAccount, domain);
+    }
+
+    @Test
+    public void testVerifyApiKeyAccessAllowed() {
+        Long domainId = 1L;
+        User user = Mockito.mock(User.class);
+        Account account = Mockito.mock(Account.class);
+
+        Mockito.when(user.getApiKeyAccess()).thenReturn(true);
+        Assert.assertEquals(true, apiServer.verifyApiKeyAccessAllowed(user, account));
+        Mockito.verify(account, Mockito.never()).getApiKeyAccess();
+
+        Mockito.when(user.getApiKeyAccess()).thenReturn(false);
+        Assert.assertEquals(false, apiServer.verifyApiKeyAccessAllowed(user, account));
+        Mockito.verify(account, Mockito.never()).getApiKeyAccess();
+
+        Mockito.when(user.getApiKeyAccess()).thenReturn(null);
+        Mockito.when(account.getApiKeyAccess()).thenReturn(true);
+        Assert.assertEquals(true, apiServer.verifyApiKeyAccessAllowed(user, account));
+
+        Mockito.when(user.getApiKeyAccess()).thenReturn(null);
+        Mockito.when(account.getApiKeyAccess()).thenReturn(false);
+        Assert.assertEquals(false, apiServer.verifyApiKeyAccessAllowed(user, account));
+
+        Mockito.when(user.getApiKeyAccess()).thenReturn(null);
+        Mockito.when(account.getApiKeyAccess()).thenReturn(null);
+        Assert.assertEquals(true, apiServer.verifyApiKeyAccessAllowed(user, account));
     }
 }

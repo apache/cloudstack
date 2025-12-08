@@ -5,9 +5,9 @@
 -- to you under the Apache License, Version 2.0 (the
 -- "License"); you may not use this file except in compliance
 -- with the License.  You may obtain a copy of the License at
--- 
+--
 --   http://www.apache.org/licenses/LICENSE-2.0
--- 
+--
 -- Unless required by applicable law or agreed to in writing,
 -- software distributed under the License is distributed on an
 -- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`keystore` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `name` varchar(64) NOT NULL COMMENT 'unique name for the certifiation',
   `certificate` text NOT NULL COMMENT 'the actual certificate being stored in the db',
-  `key` text NOT NULL COMMENT 'private key associated wih the certificate',
+  `key` text NOT NULL COMMENT 'private key associated with the certificate',
   `domain_suffix` varchar(256) NOT NULL COMMENT 'DNS domain suffix associated with the certificate',
   PRIMARY KEY (`id`),
   UNIQUE(name)
@@ -136,9 +136,9 @@ ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `vm_type` varchar(32) NOT NULL;
 UPDATE vm_instance set vm_type=type;
 
 ALTER TABLE `cloud`.`networks` ADD COLUMN `is_domain_specific` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if network is domain specific, 0 false otherwise';
-INSERT INTO configuration (`category`, `instance`, `component`, `name`, `value`, `description`) VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'allow.subdomain.network.access', 'true', 'Allow subdomains to use networks dedicated to their parent domain(s)'); 
+INSERT INTO configuration (`category`, `instance`, `component`, `name`, `value`, `description`) VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'allow.subdomain.network.access', 'true', 'Allow subdomains to use networks dedicated to their parent domain(s)');
 
-INSERT INTO configuration (`category`, `instance`, `component`, `name`, `value`, `description`) VALUES ('Advanced', 'DEFAULT', 'management-server', 'encode.api.response', 'false', 'Do UTF-8 encoding for the api response, false by default'); 
+INSERT INTO configuration (`category`, `instance`, `component`, `name`, `value`, `description`) VALUES ('Advanced', 'DEFAULT', 'management-server', 'encode.api.response', 'false', 'Do UTF-8 encoding for the api response, false by default');
 
 
 DELETE FROM load_balancer_vm_map WHERE instance_id IN (SELECT id FROM vm_instance WHERE removed IS NOT NULL);
@@ -164,5 +164,3 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Console Proxy', 'DEFAULT', 'AgentManager', 'consoleproxy.management.state', 'Auto', 'console proxy service management state');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Console Proxy', 'DEFAULT', 'AgentManager', 'consoleproxy.management.state.last', 'Auto', 'last console proxy service management state');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'cluster.message.timeout.seconds', '300', 'Time (in seconds) to wait before a inter-management server message post times out.');
-
-

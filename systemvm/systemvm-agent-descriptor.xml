@@ -121,5 +121,12 @@
         <include>**/*</include>
       </includes>
     </fileSet>
+    <fileSet>
+      <directory>agent/packages</directory>
+      <outputDirectory>packages</outputDirectory>
+      <includes>
+        <include>**/*</include>
+      </includes>
+    </fileSet>
   </fileSets>
 </assembly>

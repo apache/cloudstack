@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpc;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -52,7 +51,6 @@ import com.cloud.network.vpc.VpcGateway;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(CreatePrivateGatewayCmd.class.getName());
 
     private static final String s_name = "createprivategatewayresponse";
 
@@ -149,11 +147,11 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd implements UserC
         try {
             result = _vpcService.createVpcPrivateGateway(this);
         } catch (InsufficientCapacityException ex) {
-            s_logger.info(ex);
-            s_logger.trace(ex);
+            logger.info(ex);
+            logger.trace(ex);
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
         } catch (ConcurrentOperationException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
 
@@ -169,7 +167,7 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd implements UserC
     public void execute() throws InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException, ResourceUnavailableException {
         PrivateGateway result = _vpcService.applyVpcPrivateGateway(getEntityId(), true);
         if (result != null) {
-            PrivateGatewayResponse response = _responseGenerator.createPrivateGatewayResponse(result);
+            PrivateGatewayResponse response = _responseGenerator.createPrivateGatewayResponse(getResponseView(), result);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {

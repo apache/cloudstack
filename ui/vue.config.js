@@ -127,6 +127,7 @@ const vueConfig = {
         modifyVars: {
           // https://ant.design/docs/spec/colors
           // https://vue.ant.design/docs/vue/customize-theme/
+          'root-entry-name': 'default'
         },
         javascriptEnabled: true
       }
@@ -141,7 +142,11 @@ const vueConfig = {
         secure: false,
         ws: false,
         changeOrigin: true,
-        proxyTimeout: 10 * 60 * 1000 // 10 minutes
+        proxyTimeout: 10 * 60 * 1000, // 10 minutes
+        cookieDomainRewrite: process.env.CS_COOKIE_HOST || 'localhost',
+        cookiePathRewrite: {
+          '/client': '/'
+        }
       }
     },
     https: process.env.HTTPS_KEY ? {

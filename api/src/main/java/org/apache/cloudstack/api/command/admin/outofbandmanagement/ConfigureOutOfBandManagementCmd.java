@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableMap;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -111,5 +112,15 @@ public class ConfigureOutOfBandManagementCmd extends BaseCmd {
         if (StringUtils.isNotEmpty(value)) {
             builder.put(option, value);
         }
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return getHostId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Host;
     }
 }

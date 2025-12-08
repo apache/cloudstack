@@ -31,8 +31,10 @@
       :pagination="false"
       size="middle"
       :scroll="{ y: 225 }">
-      <template #account><user-outlined /> {{ $t('label.account') }}</template>
-      <template #domain><block-outlined /> {{ $t('label.domain') }}</template>
+      <template #headerCell="{ column }">
+        <template v-if="column.key === 'account'"><user-outlined /> {{ $t('label.account') }}</template>
+        <template v-if="column.key === 'domain'"><block-outlined /> {{ $t('label.domain') }}</template>
+      </template>
     </a-table>
     <div style="display: block; text-align: right;">
       <a-pagination
@@ -87,18 +89,19 @@ export default {
       filter: '',
       columns: [
         {
+          key: 'name',
           dataIndex: 'name',
           title: this.$t('label.sshkeypairs'),
           width: '40%'
         },
         {
+          key: 'account',
           dataIndex: 'account',
-          slots: { title: 'account' },
           width: '30%'
         },
         {
+          key: 'domain',
           dataIndex: 'domain',
-          slots: { title: 'domain' },
           width: '30%'
         }
       ],

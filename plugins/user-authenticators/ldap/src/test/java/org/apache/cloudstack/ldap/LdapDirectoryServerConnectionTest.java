@@ -88,7 +88,7 @@ public class LdapDirectoryServerConnectionTest {
         ldapTestConfigTool.overrideConfigValue(configuration, "ldapBindPrincipal", "uid=admin,ou=system");
         ldapTestConfigTool.overrideConfigValue(configuration, "ldapMemberOfAttribute", "memberOf");
         lenient().when(userManagerFactory.getInstance(LdapUserManager.Provider.OPENLDAP)).thenReturn(new OpenLdapUserManagerImpl(configuration));
-        // construct an ellaborate structure around a single object
+        // construct an elaborate structure around a single object
         Pair<List<LdapConfigurationVO>, Integer> vos = new Pair<List<LdapConfigurationVO>, Integer>( Collections.singletonList(configurationVO),1);
         lenient().when(configurationDao.searchConfigurations(null, 0, 1L)).thenReturn(vos);
 
@@ -149,7 +149,7 @@ public class LdapDirectoryServerConnectionTest {
     public void testSchemaLoading() {
         try {
             assertTrue("standard not loaded", embeddedLdapServer.addSchemaFromClasspath("other"));
-// we need member of in ACS nowadays (backwards comptability broken):
+// we need member of in ACS nowadays (backwards compatibility broken):
 // assertTrue("memberOf schema not loaded", embeddedLdapServer.addSchemaFromPath(new File("src/test/resources/memberOf"), "microsoft"));
         } catch (LdapException | IOException e) {
             fail(e.getLocalizedMessage());

@@ -33,7 +33,7 @@ class CsDataBag(object):
             self.config = config
 
     def dump(self):
-        print self.dbag
+        print(self.dbag)
 
     def get_bag(self):
         return self.dbag
@@ -107,6 +107,18 @@ class CsCmdLine(CsDataBag):
         else:
             return "unknown"
 
+    def get_eth0_ip(self):
+        if "eth0ip" in self.idata():
+            return self.idata()['eth0ip']
+        else:
+            return False
+
+    def get_cidr_size(self):
+        if "cidrsize" in self.idata():
+            return self.idata()['cidrsize']
+        else:
+            return False
+
     def get_eth2_ip(self):
         if "eth2ip" in self.idata():
             return self.idata()['eth2ip']
@@ -151,7 +163,7 @@ class CsCmdLine(CsDataBag):
         else:
             passwd = "%s-%s" % (self.get_vpccidr(), self.get_router_id())
         md5 = hashlib.md5()
-        md5.update(passwd)
+        md5.update(passwd.encode())
         return md5.hexdigest()
 
     def get_gateway(self):
@@ -191,7 +203,7 @@ class CsGuestNetwork(CsDataBag):
     """ Get guestnetwork config parameters """
 
     def get_dev_data(self, devname):
-        if devname in self.dbag and type(self.dbag[devname]) == list and len(self.dbag[devname]) > 0:
+        if devname in self.dbag and isinstance(self.dbag[devname], list) and len(self.dbag[devname]) > 0:
             return self.dbag[devname][0]
         return {}
 
@@ -223,7 +235,7 @@ class CsGuestNetwork(CsDataBag):
         if devname:
             return self.__get_device_router_ip6prelen(devname)
         else:
-            for key in self.dbag.keys():
+            for key in list(self.dbag.keys()):
                 ip6prelen = self.__get_device_router_ip6prelen(key)
                 if ip6prelen:
                     return ip6prelen
@@ -240,7 +252,7 @@ class CsGuestNetwork(CsDataBag):
         if devname:
             return self.__get_device_router_ip6gateway(devname)
         else:
-            for key in self.dbag.keys():
+            for key in list(self.dbag.keys()):
                 ip6gateway = self.__get_device_router_ip6gateway(key)
                 if ip6gateway:
                     return ip6gateway

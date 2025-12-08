@@ -20,6 +20,7 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import java.util.Map;
 
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.StoragePool;
 
 public interface PrimaryDataStoreLifeCycle extends DataStoreLifeCycle {
@@ -29,4 +30,6 @@ public interface PrimaryDataStoreLifeCycle extends DataStoreLifeCycle {
     void updateStoragePool(StoragePool storagePool, Map<String, String> details);
     void enableStoragePool(DataStore store);
     void disableStoragePool(DataStore store);
+    void changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, Hypervisor.HypervisorType hypervisorType);
+    void changeStoragePoolScopeToCluster(DataStore store, ClusterScope clusterScope, Hypervisor.HypervisorType hypervisorType);
 }

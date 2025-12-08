@@ -60,6 +60,8 @@ public interface VirtualMachineProfile {
 
     void setConfigDriveLocation(NetworkElement.Location location);
 
+    void setServiceOffering(ServiceOffering offering);
+
     public static class Param {
 
         public static final Param VmPassword = new Param("VmPassword");

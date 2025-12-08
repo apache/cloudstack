@@ -18,27 +18,34 @@ package org.apache.cloudstack.network.tungsten.service;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 import org.apache.cloudstack.network.tungsten.vrouter.IntrospectApiConnector;
 import org.apache.cloudstack.network.tungsten.vrouter.IntrospectApiConnectorFactory;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(IntrospectApiConnectorFactory.class)
+@RunWith(MockitoJUnitRunner.class)
 public class TungstenIntrospectApiTest {
+    MockedStatic<IntrospectApiConnectorFactory> introspectApiConnectorFactoryMocked;
+
     @Before
     public void setup() {
-        mockStatic(IntrospectApiConnectorFactory.class);
+        introspectApiConnectorFactoryMocked = mockStatic(IntrospectApiConnectorFactory.class);
+    }
+
+    @After
+    public void tearDown() {
+        introspectApiConnectorFactoryMocked.close();
     }
 
     @Test
@@ -48,7 +55,7 @@ public class TungstenIntrospectApiTest {
         NodeList nodeList = mock(NodeList.class);
         Node node = mock(Node.class);
 
-        when(IntrospectApiConnectorFactory.getInstance(anyString(), anyString())).thenReturn(introspectApiConnector);
+        introspectApiConnectorFactoryMocked.when(() -> IntrospectApiConnectorFactory.getInstance(anyString(), anyString())).thenReturn(introspectApiConnector);
         when(introspectApiConnector.getSnhItfReq(anyString())).thenReturn(document);
         when(document.getElementsByTagName(anyString())).thenReturn(nodeList);
         when(nodeList.getLength()).thenReturn(1);

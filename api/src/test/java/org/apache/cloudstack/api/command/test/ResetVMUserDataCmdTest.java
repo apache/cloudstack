@@ -24,18 +24,17 @@ import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.command.user.vm.ResetVMUserDataCmd;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
@@ -45,9 +44,7 @@ import java.util.Map;
 
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(CallContext.class)
-@PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*", "org.xml.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class ResetVMUserDataCmdTest {
 
     @InjectMocks
@@ -66,13 +63,21 @@ public class ResetVMUserDataCmdTest {
     private static final long PROJECT_ID = 10L;
     private static final String ACCOUNT_NAME = "user";
 
+    private AutoCloseable closeable;
+
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         ReflectionTestUtils.setField(cmd, "accountName", ACCOUNT_NAME);
         ReflectionTestUtils.setField(cmd, "domainId", DOMAIN_ID);
         ReflectionTestUtils.setField(cmd, "projectId", PROJECT_ID);
     }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
+    }
+
 
     @Test
     public void testValidResetVMUserDataExecute() {
@@ -95,22 +100,23 @@ public class ResetVMUserDataCmdTest {
 
     @Test
     public void validateArgsCmd() {
-        PowerMockito.mockStatic(CallContext.class);
-        CallContext callContextMock = PowerMockito.mock(CallContext.class);
-        PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
 
-        ReflectionTestUtils.setField(cmd, "id", 1L);
-        ReflectionTestUtils.setField(cmd, "userdataId", 2L);
-        ReflectionTestUtils.setField(cmd, "userData", "testUserdata");
+            ReflectionTestUtils.setField(cmd, "id", 1L);
+            ReflectionTestUtils.setField(cmd, "userdataId", 2L);
+            ReflectionTestUtils.setField(cmd, "userData", "testUserdata");
 
-        UserVm vm = Mockito.mock(UserVm.class);
-        when(_responseGenerator.findUserVmById(1L)).thenReturn(vm);
-        when(vm.getAccountId()).thenReturn(200L);
+            UserVm vm = Mockito.mock(UserVm.class);
+            when(_responseGenerator.findUserVmById(1L)).thenReturn(vm);
+            when(vm.getAccountId()).thenReturn(200L);
 
-        Assert.assertEquals(1L, (long)cmd.getId());
-        Assert.assertEquals(2L, (long)cmd.getUserdataId());
-        Assert.assertEquals("testUserdata", cmd.getUserData());
-        Assert.assertEquals(200L, cmd.getEntityOwnerId());
+            Assert.assertEquals(1L, (long) cmd.getId());
+            Assert.assertEquals(2L, (long) cmd.getUserdataId());
+            Assert.assertEquals("testUserdata", cmd.getUserData());
+            Assert.assertEquals(200L, cmd.getEntityOwnerId());
+        }
     }
 
     @Test

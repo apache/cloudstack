@@ -5,9 +5,9 @@
 -- to you under the Apache License, Version 2.0 (the
 -- "License"); you may not use this file except in compliance
 -- with the License.  You may obtain a copy of the License at
--- 
+--
 --   http://www.apache.org/licenses/LICENSE-2.0
--- 
+--
 -- Unless required by applicable law or agreed to in writing,
 -- software distributed under the License is distributed on an
 -- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -220,7 +220,7 @@ CREATE TABLE  `cloud_usage`.`usage_event` (
   `offering_id` bigint unsigned,
   `template_id` bigint unsigned,
   `size` bigint unsigned,
-  `resource_type` varchar(32),  
+  `resource_type` varchar(32),
   `processed` tinyint NOT NULL default '0',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -248,7 +248,7 @@ CREATE TABLE  `cloud_usage`.`usage_network_offering` (
   `network_offering_id` bigint unsigned NOT NULL,
   `is_default` smallint(1) NOT NULL,
   `created` DATETIME NOT NULL,
-  `deleted` DATETIME NULL  
+  `deleted` DATETIME NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cloud_usage`.`usage_network_offering` ADD INDEX `i_usage_network_offering__account_id`(`account_id`);
@@ -276,7 +276,7 @@ CREATE TABLE  `cloud_usage`.`usage_security_group` (
   `vm_instance_id` bigint unsigned NOT NULL,
   `security_group_id` bigint unsigned NOT NULL,
   `created` DATETIME NOT NULL,
-  `deleted` DATETIME NULL  
+  `deleted` DATETIME NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cloud_usage`.`usage_security_group` ADD INDEX `i_usage_security_group__account_id`(`account_id`);

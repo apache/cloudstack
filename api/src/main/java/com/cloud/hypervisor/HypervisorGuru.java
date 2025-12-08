@@ -20,8 +20,10 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -32,8 +34,13 @@ import com.cloud.utils.component.Adapter;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 
 public interface HypervisorGuru extends Adapter {
+
+    ConfigKey<String> HypervisorCustomDisplayName = new ConfigKey<>(String.class,
+            "hypervisor.custom.display.name", ConfigKey.CATEGORY_ADVANCED, "Custom",
+            "Display name for custom hypervisor", true, ConfigKey.Scope.Global, null);
 
     HypervisorType getHypervisorType();
 
@@ -95,8 +102,45 @@ public interface HypervisorGuru extends Adapter {
      * Will generate commands to migrate a vm to a pool. For now this will only work for stopped VMs on Vmware.
      *
      * @param vm the stopped vm to migrate
-     * @param destination the primary storage pool to migrate to
+     * @param volumeToPool the primary storage pools to migrate to
      * @return a list of commands to perform for a successful migration
      */
     List<Command> finalizeMigrate(VirtualMachine vm, Map<Volume, StoragePool> volumeToPool);
+
+
+    /**
+     * Will return the hypervisor VM (clone VM for PowerOn VMs), performs a clone of a VM if required on an external host (if the guru can handle)
+     * @param hostIp VM's source host IP
+     * @param vmName name of the source VM (clone VM name if cloned)
+     * @param params hypervisor specific additional parameters
+     * @return a reference to the hypervisor or cloned VM, and cloned flag
+     */
+    Pair<UnmanagedInstanceTO, Boolean> getHypervisorVMOutOfBandAndCloneIfRequired(String hostIp, String vmName, Map<String, String> params);
+
+    /**
+     * Removes a VM created as a clone of a VM on an external host
+     * @param hostIp VM's source host IP
+     * @param vmName name of the VM to remove
+     * @param params hypervisor specific additional parameters
+     * @return true if the operation succeeds, false if not
+     */
+    boolean removeClonedHypervisorVMOutOfBand(String hostIp, String vmName, Map<String, String> params);
+
+    /**
+     * Create an OVA/OVF template of a VM on an external host (if the guru can handle)
+     * @param hostIp VM's source host IP
+     * @param vmName name of the source VM to create template from
+     * @param params hypervisor specific additional parameters
+     * @param templateLocation datastore to create the template file
+     * @return the created template dir/name
+     */
+    String createVMTemplateOutOfBand(String hostIp, String vmName, Map<String, String> params, DataStoreTO templateLocation, int threadsCountToExportOvf);
+
+    /**
+     * Removes the template on the location
+     * @param templateLocation datastore to remove the template file
+     * @param templateDir the template dir to remove from datastore
+     * @return true if the operation succeeds, false if not
+     */
+    boolean removeVMTemplateOutOfBand(DataStoreTO templateLocation, String templateDir);
 }

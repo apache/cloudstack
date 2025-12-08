@@ -34,26 +34,28 @@
         :dataSource="dataSource"
         :rowKey="item => item.uuid"
         :pagination="false">
-        <template #name="{ text, record }">
+        <template #bodyCell="{ column, text, record }">
+          <template v-if="column.key === 'name'">
           <router-link :to="{ path: '/tungstenfirewallpolicy/' + record.uuid, query: { zoneid: zoneId } }">{{ text }}</router-link>
-        </template>
-        <template #firewallrule="{ record }">
-          <span v-if="record.firewallrule.length > 0">{{ record.firewallrule[0].name }}</span>
-        </template>
-        <template #action="{ record }">
-          <a-popconfirm
-            :title="$t('label.confirm.delete.tungsten.firewall.policy')"
-            @confirm="removeFirewallRule(record.uuid)"
-            :okText="$t('label.yes')"
-            :cancelText="$t('label.no')">
-            <tooltip-button
-              tooltipPlacement="bottom"
-              :tooltip="$t('label.delete.tungsten.firewall.policy')"
-              danger
-              type="primary"
-              icon="delete-outlined"
-              :loading="deleteLoading" />
-          </a-popconfirm>
+          </template>
+          <template v-if="column.key === 'firewallrule'">
+            <span v-if="record.firewallrule.length > 0">{{ record.firewallrule[0].name }}</span>
+          </template>
+          <template v-if="column.key === 'actions'">
+            <a-popconfirm
+              :title="$t('label.confirm.delete.tungsten.firewall.policy')"
+              @confirm="removeFirewallRule(record.uuid)"
+              :okText="$t('label.yes')"
+              :cancelText="$t('label.no')">
+              <tooltip-button
+                tooltipPlacement="bottom"
+                :tooltip="$t('label.delete.tungsten.firewall.policy')"
+                danger
+                type="primary"
+                icon="delete-outlined"
+                :loading="deleteLoading" />
+            </a-popconfirm>
+          </template>
         </template>
       </a-table>
       <div style="display: block; text-align: right; margin-top: 10px;">
@@ -146,14 +148,14 @@ export default {
       columns: [{
         title: this.$t('label.name'),
         dataIndex: 'name',
-        slots: { customRender: 'name' }
+        key: 'name'
       }, {
         title: this.$t('label.firewallrule'),
         dataIndex: 'firewallrule',
-        slots: { customRender: 'firewallrule' }
+        key: 'firewallrule'
       }, {
-        title: this.$t('label.action'),
-        slots: { customRender: 'action' },
+        title: this.$t('label.actions'),
+        key: 'actions',
         width: 80
       }],
       dataSource: [],

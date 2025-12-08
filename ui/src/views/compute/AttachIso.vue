@@ -31,9 +31,9 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }">
-            <a-select-option v-for="iso in isos" :key="iso.id">
+            <a-select-option v-for="iso in isos" :key="iso.id" :label="iso.displaytext || iso.name">
               {{ iso.displaytext || iso.name }}
             </a-select-option>
           </a-select>

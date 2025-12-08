@@ -2046,7 +2046,7 @@ class TestVMDeployVPC(cloudstackTestCase):
             self.fail("Failed to enable static NAT on IP: %s - %s" % (
                                         public_ip_4.ipaddress.ipaddress, e))
 
-        self.debug("Adding NetwrokACl rules to make NAT rule accessible with network %s" % network_1.id)
+        self.debug("Adding NetworkACl rules to make NAT rule accessible with network %s" % network_1.id)
         NetworkACL.create(
                                          self.apiclient,
                                          networkid=network_1.id,

@@ -23,10 +23,11 @@
           :loading="loading"
           :resource="resource"
           :dataSource="dataSource"
+          :resourceType="'Volume'"
           @close-action="closeAction"
           @refresh="handleRefresh"/>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.scheduled.snapshots')" key="2">
+      <a-tab-pane :tab="$t('label.action.recurring.snapshot')" key="2">
         <ScheduledSnapshots
           :loading="loading"
           :resource="resource"

@@ -25,12 +25,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class Upgrade452to460 implements DbUpgrade {
-    final static Logger s_logger = Logger.getLogger(Upgrade452to460.class);
+public class Upgrade452to460 extends DbUpgradeAbstractImpl {
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -67,7 +65,7 @@ public class Upgrade452to460 implements DbUpgrade {
     public void updateVMInstanceUserId(final Connection conn) {
         // For schemas before this, copy first user from an account_id which
         // deployed already running VMs
-        s_logger.debug("Updating vm_instance column user_id using first user in vm_instance's account_id");
+        logger.debug("Updating vm_instance column user_id using first user in vm_instance's account_id");
         final String vmInstanceSql = "SELECT id, account_id FROM `cloud`.`vm_instance`";
         final String userSql = "SELECT id FROM `cloud`.`user` where account_id=?";
         final String userIdUpdateSql = "update `cloud`.`vm_instance` set user_id=? where id=?";
@@ -97,7 +95,7 @@ public class Upgrade452to460 implements DbUpgrade {
         } catch (final SQLException e) {
             throw new CloudRuntimeException("Unable to update user Ids for previously deployed VMs", e);
         }
-        s_logger.debug("Done updating user Ids for previously deployed VMs");
+        logger.debug("Done updating user Ids for previously deployed VMs");
         addRedundancyForNwAndVpc(conn);
         removeBumPriorityColumn(conn);
     }
@@ -142,14 +140,14 @@ public class Upgrade452to460 implements DbUpgrade {
     private void addIndexForVMInstance(final Connection conn) {
         // Drop index if it exists
         final List<String> indexList = new ArrayList<String>();
-        s_logger.debug("Dropping index i_vm_instance__instance_name from vm_instance table if it exists");
+        logger.debug("Dropping index i_vm_instance__instance_name from vm_instance table if it exists");
         indexList.add("i_vm_instance__instance_name");
         DbUpgradeUtils.dropKeysIfExist(conn, "vm_instance", indexList, false);
 
         // Now add index
         try (PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`vm_instance` ADD INDEX `i_vm_instance__instance_name`(`instance_name`)");) {
             pstmt.executeUpdate();
-            s_logger.debug("Added index i_vm_instance__instance_name to vm_instance table");
+            logger.debug("Added index i_vm_instance__instance_name to vm_instance table");
         } catch (final SQLException e) {
             throw new CloudRuntimeException("Unable to add index i_vm_instance__instance_name to vm_instance table for the column instance_name", e);
         }

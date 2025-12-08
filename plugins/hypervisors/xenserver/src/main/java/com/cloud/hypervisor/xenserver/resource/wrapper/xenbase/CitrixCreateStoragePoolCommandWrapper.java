@@ -21,7 +21,6 @@ package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CreateStoragePoolCommand;
@@ -35,7 +34,6 @@ import com.xensource.xenapi.Connection;
 @ResourceWrapper(handles =  CreateStoragePoolCommand.class)
 public final class CitrixCreateStoragePoolCommandWrapper extends CommandWrapper<CreateStoragePoolCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixCreateStoragePoolCommandWrapper.class);
 
     @Override
     public Answer execute(final CreateStoragePoolCommand command, final CitrixResourceBase citrixResourceBase) {
@@ -68,7 +66,7 @@ public final class CitrixCreateStoragePoolCommandWrapper extends CommandWrapper<
             final String msg = "Catch Exception " + e.getClass().getName() + ", create StoragePool failed due to " + e.toString() + " on host:"
                     + citrixResourceBase.getHost().getUuid() + " pool: " + pool.getHost() + pool.getPath();
 
-            s_logger.warn(msg, e);
+            logger.warn(msg, e);
 
             return new Answer(command, false, msg);
         }

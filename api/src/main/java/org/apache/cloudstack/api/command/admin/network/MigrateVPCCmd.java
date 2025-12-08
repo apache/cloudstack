@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.admin.network;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -50,7 +49,6 @@ import com.cloud.user.User;
             since = "4.11.0",
             authorized = {RoleType.Admin})
 public class MigrateVPCCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(MigrateVPCCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

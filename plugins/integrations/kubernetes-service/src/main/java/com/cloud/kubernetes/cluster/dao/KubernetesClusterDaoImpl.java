@@ -30,25 +30,36 @@ import com.cloud.utils.db.TransactionLegacy;
 @Component
 public class KubernetesClusterDaoImpl extends GenericDaoBase<KubernetesClusterVO, Long> implements KubernetesClusterDao {
 
-    private final SearchBuilder<KubernetesClusterVO> AccountIdSearch;
+    private final SearchBuilder<KubernetesClusterVO> CleanupAccountIdSearch;
+    private final SearchBuilder<KubernetesClusterVO> NotForGCByAccountIDCount;
     private final SearchBuilder<KubernetesClusterVO> GarbageCollectedSearch;
-    private final SearchBuilder<KubernetesClusterVO> StateSearch;
+    private final SearchBuilder<KubernetesClusterVO> ManagedStateSearch;
     private final SearchBuilder<KubernetesClusterVO> SameNetworkSearch;
     private final SearchBuilder<KubernetesClusterVO> KubernetesVersionSearch;
 
     public KubernetesClusterDaoImpl() {
-        AccountIdSearch = createSearchBuilder();
-        AccountIdSearch.and("account", AccountIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        AccountIdSearch.done();
+        CleanupAccountIdSearch = createSearchBuilder();
+        CleanupAccountIdSearch.and("account", CleanupAccountIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        CleanupAccountIdSearch.and("cluster_type", CleanupAccountIdSearch.entity().getClusterType(), SearchCriteria.Op.EQ);
+        CleanupAccountIdSearch.done();
+
+        NotForGCByAccountIDCount = createSearchBuilder();
+        NotForGCByAccountIDCount.and("gc", NotForGCByAccountIDCount.entity().isCheckForGc(), SearchCriteria.Op.EQ);
+        NotForGCByAccountIDCount.and("account", NotForGCByAccountIDCount.entity().getAccountId(), SearchCriteria.Op.EQ);
+        NotForGCByAccountIDCount.and("cluster_type", NotForGCByAccountIDCount.entity().getClusterType(), SearchCriteria.Op.EQ);
+        NotForGCByAccountIDCount.select(null, SearchCriteria.Func.COUNT, null);
+        NotForGCByAccountIDCount.done();
 
         GarbageCollectedSearch = createSearchBuilder();
         GarbageCollectedSearch.and("gc", GarbageCollectedSearch.entity().isCheckForGc(), SearchCriteria.Op.EQ);
         GarbageCollectedSearch.and("state", GarbageCollectedSearch.entity().getState(), SearchCriteria.Op.EQ);
+        GarbageCollectedSearch.and("cluster_type", GarbageCollectedSearch.entity().getClusterType(), SearchCriteria.Op.EQ);
         GarbageCollectedSearch.done();
 
-        StateSearch = createSearchBuilder();
-        StateSearch.and("state", StateSearch.entity().getState(), SearchCriteria.Op.EQ);
-        StateSearch.done();
+        ManagedStateSearch = createSearchBuilder();
+        ManagedStateSearch.and("state", ManagedStateSearch.entity().getState(), SearchCriteria.Op.EQ);
+        ManagedStateSearch.and("cluster_type", ManagedStateSearch.entity().getClusterType(), SearchCriteria.Op.EQ);
+        ManagedStateSearch.done();
 
         SameNetworkSearch = createSearchBuilder();
         SameNetworkSearch.and("network_id", SameNetworkSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
@@ -60,10 +71,20 @@ public class KubernetesClusterDaoImpl extends GenericDaoBase<KubernetesClusterVO
     }
 
     @Override
-    public List<KubernetesClusterVO> listByAccount(long accountId) {
-        SearchCriteria<KubernetesClusterVO> sc = AccountIdSearch.create();
+    public List<KubernetesClusterVO> listForCleanupByAccount(long accountId) {
+        SearchCriteria<KubernetesClusterVO> sc = CleanupAccountIdSearch.create();
+        sc.setParameters("cluster_type", KubernetesCluster.ClusterType.CloudManaged);
         sc.setParameters("account", accountId);
-        return listBy(sc, null);
+        return listBy(sc);
+    }
+
+    @Override
+    public int countNotForGCByAccount(long accountId) {
+        SearchCriteria<KubernetesClusterVO> sc = NotForGCByAccountIDCount.create();
+        sc.setParameters("cluster_type", KubernetesCluster.ClusterType.CloudManaged);
+        sc.setParameters("account", accountId);
+        sc.setParameters("gc", false);
+        return getCount(sc);
     }
 
     @Override
@@ -71,13 +92,15 @@ public class KubernetesClusterDaoImpl extends GenericDaoBase<KubernetesClusterVO
         SearchCriteria<KubernetesClusterVO> sc = GarbageCollectedSearch.create();
         sc.setParameters("gc", true);
         sc.setParameters("state", KubernetesCluster.State.Destroying);
+        sc.setParameters("cluster_type", KubernetesCluster.ClusterType.CloudManaged);
         return listBy(sc);
     }
 
     @Override
-    public List<KubernetesClusterVO> findKubernetesClustersInState(KubernetesCluster.State state) {
-        SearchCriteria<KubernetesClusterVO> sc = StateSearch.create();
+    public List<KubernetesClusterVO> findManagedKubernetesClustersInState(KubernetesCluster.State state) {
+        SearchCriteria<KubernetesClusterVO> sc = ManagedStateSearch.create();
         sc.setParameters("state", state);
+        sc.setParameters("cluster_type", KubernetesCluster.ClusterType.CloudManaged);
         return listBy(sc);
     }
 

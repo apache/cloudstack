@@ -25,13 +25,15 @@
     :pagination="false"
     :loading="fetchLoading"
   >
-    <template #name="{ text, record }">
-      <router-link v-if="record.issystem === false && !record.projectid" :to="{ path: '/guestnetwork/' + record.id }" >{{ text }}</router-link>
-      <router-link v-else-if="record.issystem === false && record.projectid" :to="{ path: '/guestnetwork/' + record.id, query: { projectid: record.projectid}}" >{{ text }}</router-link>
-      <span v-else>{{ text }}</span>
-    </template>
-    <template #state="{ record }">
-      <status :text="record.state" displayText></status>
+    <template #bodyCell="{ column, text, record }">
+      <template v-if="column.key === 'name'">
+        <router-link v-if="record.issystem === false && !record.projectid" :to="{ path: '/guestnetwork/' + record.id }" >{{ text }}</router-link>
+        <router-link v-else-if="record.issystem === false && record.projectid" :to="{ path: '/guestnetwork/' + record.id, query: { projectid: record.projectid}}" >{{ text }}</router-link>
+        <span v-else>{{ text }}</span>
+      </template>
+      <template v-if="column.key === 'state'">
+        <status :text="record.state" displayText></status>
+      </template>
     </template>
   </a-table>
 </template>
@@ -61,17 +63,17 @@ export default {
       networks: [],
       columns: [
         {
+          key: 'name',
           title: this.$t('label.name'),
-          dataIndex: 'name',
-          slots: { customRender: 'name' }
+          dataIndex: 'name'
         },
         {
           title: this.$t('label.type'),
           dataIndex: 'type'
         },
         {
-          title: this.$t('label.state'),
-          slots: { customRender: 'state' }
+          key: 'state',
+          title: this.$t('label.state')
         },
         {
           title: this.$t('label.broadcasturi'),

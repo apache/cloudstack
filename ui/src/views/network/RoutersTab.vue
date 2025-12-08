@@ -25,20 +25,22 @@
     :pagination="false"
     :loading="fetchLoading"
   >
-    <template #name="{ text, record }">
-      <router-link :to="{ path: '/router/' + record.id }" >{{ text }}</router-link>
-    </template>
-    <template #status="{ record }">
-      <status class="status" :text="record.state" displayText />
-    </template>
-    <template #requiresupgrade="{ record }">
-      {{ record.requiresupgrade ? $t('label.yes') : $t('label.no') }}
-    </template>
-    <template #isredundantrouter="{ record }">
-      {{ record.isredundantrouter ? record.redundantstate : record.isredundantrouter }}
-    </template>
-    <template #hostname="{ record }">
-      <router-link :to="{ path: '/host/' + record.hostid }" >{{ record.hostname || record.hostid }}</router-link>
+    <template #bodyCell="{ column, text, record }">
+      <template v-if="column.key === 'name'">
+        <router-link :to="{ path: '/router/' + record.id }" >{{ text }}</router-link>
+      </template>
+      <template v-if="column.key === 'status'">
+        <status class="status" :text="record.state" displayText />
+      </template>
+      <template v-if="column.key === 'requiresupgrade'">
+        {{ record.requiresupgrade ? $t('label.yes') : $t('label.no') }}
+      </template>
+      <template v-if="column.key === 'isredundantrouter'">
+        {{ record.isredundantrouter ? record.redundantstate : record.isredundantrouter }}
+      </template>
+      <template v-if="column.key === 'hostname'">
+        <router-link :to="{ path: '/host/' + record.hostid }" >{{ record.hostname || record.hostid }}</router-link>
+      </template>
     </template>
   </a-table>
 </template>
@@ -68,14 +70,14 @@ export default {
       routers: [],
       columns: [
         {
+          key: 'name',
           title: this.$t('label.name'),
-          dataIndex: 'name',
-          slots: { customRender: 'name' }
+          dataIndex: 'name'
         },
         {
+          key: 'status',
           title: this.$t('label.status'),
-          dataIndex: 'state',
-          slots: { customRender: 'status' }
+          dataIndex: 'state'
         },
         {
           title: this.$t('label.ip'),
@@ -86,19 +88,19 @@ export default {
           dataIndex: 'version'
         },
         {
+          key: 'requiresupgrade',
           title: this.$t('label.requiresupgrade'),
-          dataIndex: 'requiresupgrade',
-          slots: { customRender: 'requiresupgrade' }
+          dataIndex: 'requiresupgrade'
         },
         {
+          key: 'isredundantrouter',
           title: this.$t('label.isredundantrouter'),
-          dataIndex: 'isredundantrouter',
-          slots: { customRender: 'isredundantrouter' }
+          dataIndex: 'isredundantrouter'
         },
         {
+          key: 'hostname',
           title: this.$t('label.hostname'),
-          dataIndex: 'hostname',
-          slots: { customRender: 'hostname' }
+          dataIndex: 'hostname'
         }
       ]
     }

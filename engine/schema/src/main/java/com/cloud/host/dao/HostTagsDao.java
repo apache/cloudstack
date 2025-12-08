@@ -20,15 +20,29 @@ import java.util.List;
 
 import com.cloud.host.HostTagVO;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.response.HostTagResponse;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface HostTagsDao extends GenericDao<HostTagVO, Long> {
 
-    void persist(long hostId, List<String> hostTags);
+    ConfigKey<Long> hostTagRuleExecutionTimeout = new ConfigKey<>("Advanced", Long.class, "host.tag.rule.execution.timeout", "2000", "The maximum runtime, in milliseconds, " +
+        "to execute a host tag rule; if it is reached, a timeout will happen.", true);
 
-    List<String> getHostTags(long hostId);
+    void persist(long hostId, List<String> hostTags, Boolean isTagARule);
+
+    List<HostTagVO> getHostTags(long hostId);
 
     List<String> getDistinctImplicitHostTags(List<Long> hostIds, String[] implicitHostTags);
 
     void deleteTags(long hostId);
 
+    boolean updateImplicitTags(long hostId, List<String> hostTags);
+
+    List<HostTagVO> getExplicitHostTags(long hostId);
+
+    List<HostTagVO> findHostRuleTags();
+
+    HostTagResponse newHostTagResponse(HostTagVO hostTag);
+
+    List<HostTagVO> searchByIds(Long... hostTagIds);
 }
