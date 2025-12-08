@@ -24,7 +24,7 @@
 </template>
 
 <script>
-import { postApi } from '@/api'
+import { postAPI } from '@/api'
 import VpnCustomerGateway from './VpnCustomerGateway.vue'
 
 export default {
@@ -40,7 +40,7 @@ export default {
       this.$emit('close-action')
     },
     handleSubmit ({ payload }) {
-      postApi('createVpnCustomerGateway', payload).then(response => {
+      postAPI('createVpnCustomerGateway', payload).then(response => {
         this.$pollJob({
           jobId: response.createvpncustomergatewayresponse.jobid,
           title: this.$t('message.add.vpn.customer.gateway'),

@@ -324,7 +324,7 @@
 </template>
 <script>
 
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import { ref, reactive, toRaw } from 'vue'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -497,7 +497,7 @@ export default {
 
       this.loadingParameters = true
 
-      const response = await api('listCapabilities')
+      const response = await getAPI('listCapabilities')
       const capability = response.listcapabilitiesresponse?.capability || {}
       const parameters = capability.vpncustomergatewayparameters || {}
 

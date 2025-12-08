@@ -247,7 +247,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     private void validateVpnCryptographicParameters(String ikePolicy, String espPolicy, String ikeVersion, Long domainId) {
         Pair<Boolean, String> validationResult = validateVpnCryptoAgainstExcludedList(ikePolicy, espPolicy, ikeVersion, domainId);
         if (Boolean.TRUE.equals(validationResult.first())) {
-            throw new InvalidParameterValueException(validationResult.second() + " is excluded and cannot be used for VPN Customer Gateway creation.");
+            throw new InvalidParameterValueException(validationResult.second() + "' is excluded and cannot be used for VPN Customer Gateway creation.");
         }
     }
 

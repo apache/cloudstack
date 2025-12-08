@@ -25,7 +25,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import VpnCustomerGateway from './VpnCustomerGateway.vue'
 
 export default {
@@ -93,7 +93,7 @@ export default {
       return { encryption, hash, dh: dhGroup }
     },
     handleSubmit ({ payload }) {
-      api('updateVpnCustomerGateway', {
+      postAPI('updateVpnCustomerGateway', {
         id: this.resource.id,
         ...payload
       }).then(response => {
