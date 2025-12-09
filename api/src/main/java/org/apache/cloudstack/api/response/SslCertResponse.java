@@ -27,8 +27,6 @@ import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.network.tls.SslCert;
 import com.cloud.serializer.Param;
 
-//import org.apache.cloudstack.api.EntityReference;
-
 @EntityReference(value = SslCert.class)
 public class SslCertResponse extends BaseResponse {
 

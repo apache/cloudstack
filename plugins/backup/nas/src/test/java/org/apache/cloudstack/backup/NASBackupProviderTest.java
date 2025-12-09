@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -91,6 +92,9 @@ public class NASBackupProviderTest {
 
     @Mock
     private PrimaryDataStoreDao storagePoolDao;
+
+    @Mock
+    private VMSnapshotDao vmSnapshotDaoMock;
 
     @Test
     public void testDeleteBackup() throws OperationTimedoutException, AgentUnavailableException {

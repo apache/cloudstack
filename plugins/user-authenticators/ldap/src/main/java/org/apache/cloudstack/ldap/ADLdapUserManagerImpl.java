@@ -49,7 +49,7 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
         searchControls.setReturningAttributes(_ldapConfiguration.getReturnAttributes(domainId));
 
         NamingEnumeration<SearchResult> results = context.search(basedn, generateADGroupSearchFilter(groupName, domainId), searchControls);
-        final List<LdapUser> users = new ArrayList<LdapUser>();
+        final List<LdapUser> users = new ArrayList<>();
         while (results.hasMoreElements()) {
             final SearchResult result = results.nextElement();
             users.add(createUser(result, domainId));
@@ -58,10 +58,8 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
     }
 
     String generateADGroupSearchFilter(String groupName, Long domainId) {
-        final StringBuilder userObjectFilter = new StringBuilder();
-        userObjectFilter.append("(objectClass=");
-        userObjectFilter.append(_ldapConfiguration.getUserObject(domainId));
-        userObjectFilter.append(")");
+
+        final StringBuilder userObjectFilter = getUserObjectFilter(domainId);
 
         final StringBuilder memberOfFilter = new StringBuilder();
         String groupCnName =  _ldapConfiguration.getCommonNameAttribute() + "=" +groupName + "," +  _ldapConfiguration.getBaseDn(domainId);
@@ -75,8 +73,16 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
         result.append(memberOfFilter);
         result.append(")");
 
-        logger.debug("group search filter = " + result);
+        logger.debug("group search filter = {}", result);
         return result.toString();
+    }
+
+    StringBuilder getUserObjectFilter(Long domainId) {
+        final StringBuilder userObjectFilter = new StringBuilder();
+        userObjectFilter.append("(&(objectCategory=person)");
+        userObjectFilter.append(super.getUserObjectFilter(domainId));
+        userObjectFilter.append(")");
+        return userObjectFilter;
     }
 
     protected boolean isUserDisabled(SearchResult result) throws NamingException {

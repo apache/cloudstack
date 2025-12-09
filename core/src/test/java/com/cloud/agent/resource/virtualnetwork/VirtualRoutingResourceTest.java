@@ -417,8 +417,6 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
             // FIXME Check the json content
             assertEquals(VRScripts.UPDATE_CONFIG, script);
             assertEquals(VRScripts.NETWORK_ACL_CONFIG, args);
-            // assertEquals(args, " -d eth3 -M 01:23:45:67:89:AB -i 192.168.1.1 -m 24 -a Egress:ALL:0:0:192.168.0.1/24-192.168.0.2/24:ACCEPT:," +
-            //        "Ingress:ICMP:0:0:192.168.0.1/24-192.168.0.2/24:DROP:,Ingress:TCP:20:80:192.168.0.1/24-192.168.0.2/24:ACCEPT:,");
             break;
         case 2:
             assertEquals(VRScripts.UPDATE_CONFIG, script);
@@ -464,8 +462,6 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
 
     private void verifyArgs(final SetupGuestNetworkCommand cmd, final String script, final String args) {
         // TODO Check the contents of the json file
-        //assertEquals(script, VRScripts.VPC_GUEST_NETWORK);
-        //assertEquals(args, " -C -M 01:23:45:67:89:AB -d eth4 -i 10.1.1.2 -g 10.1.1.1 -m 24 -n 10.1.1.0 -s 8.8.8.8,8.8.4.4 -e cloud.test");
     }
 
     @Test

@@ -3256,6 +3256,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         PhysicalNetwork pnet = ApiDBUtils.findPhysicalNetworkById(result.getPhysicalNetworkId());
         if (pnet != null) {
             response.setPhysicalNetworkId(pnet.getUuid());
+            if (!pnet.getIsolationMethods().isEmpty()) {
+                response.setIsolationMethods(String.join(",", pnet.getIsolationMethods()));
+            }
         }
         if (result.getTrafficType() != null) {
             response.setTrafficType(result.getTrafficType().toString());
@@ -3266,6 +3269,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setVmwareLabel(result.getVmwareNetworkLabel());
         response.setHypervLabel(result.getHypervNetworkLabel());
         response.setOvm3Label(result.getOvm3NetworkLabel());
+        response.setVlan(result.getVlan());
 
         response.setObjectName("traffictype");
         return response;
@@ -4297,6 +4301,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                 builder.append("Volume usage ");
                 if (volume != null) {
                     builder.append("for ").append(volume.getName()).append(" (").append(volume.getUuid()).append(")");
+                }
+                if (vmInstance != null) {
+                    builder.append(" attached to VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(")");
                 }
                 if (diskOff != null) {
                     builder.append(" with disk offering ").append(diskOff.getName()).append(" (").append(diskOff.getUuid()).append(")");
