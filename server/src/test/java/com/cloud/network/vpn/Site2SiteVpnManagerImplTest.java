@@ -35,6 +35,7 @@ import com.cloud.network.element.Site2SiteVpnServiceProvider;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -104,6 +105,8 @@ public class Site2SiteVpnManagerImplTest {
     private AnnotationDao annotationDao;
     @Mock
     private List<Site2SiteVpnServiceProvider> _s2sProviders;
+    @Mock
+    VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
 
     @InjectMocks
     private Site2SiteVpnManagerImpl site2SiteVpnManager;
@@ -427,6 +430,7 @@ public class Site2SiteVpnManagerImplTest {
         try (MockedStatic<NetUtils> netUtilsMock = Mockito.mockStatic(NetUtils.class)) {
             netUtilsMock.when(() -> NetUtils.isValidIp4("1.2.3.4")).thenReturn(true);
             netUtilsMock.when(() -> NetUtils.isValidCidrList(tooManyCidrs)).thenReturn(true);
+            netUtilsMock.when(() -> NetUtils.getCleanIp4CidrList(tooManyCidrs)).thenReturn(tooManyCidrs);
             netUtilsMock.when(() -> NetUtils.isValidS2SVpnPolicy("ike", "aes128-sha256;modp2048")).thenReturn(true);
             netUtilsMock.when(() -> NetUtils.isValidS2SVpnPolicy("esp", "aes128-sha256;modp2048")).thenReturn(true);
 
@@ -444,8 +448,10 @@ public class Site2SiteVpnManagerImplTest {
         when(cmd.getEntityOwnerId()).thenReturn(ACCOUNT_ID);
 
         try (MockedStatic<NetUtils> netUtilsMock = Mockito.mockStatic(NetUtils.class)) {
+            String cidrList = "192.168.1.0/24,192.168.1.0/25";
             netUtilsMock.when(() -> NetUtils.isValidIp4("1.2.3.4")).thenReturn(true);
-            netUtilsMock.when(() -> NetUtils.isValidCidrList("192.168.1.0/24,192.168.1.0/25")).thenReturn(true);
+            netUtilsMock.when(() -> NetUtils.isValidCidrList(cidrList)).thenReturn(true);
+            netUtilsMock.when(() -> NetUtils.getCleanIp4CidrList(cidrList)).thenReturn(cidrList);
             netUtilsMock.when(() -> NetUtils.isValidS2SVpnPolicy("ike", "aes128-sha256;modp2048")).thenReturn(true);
             netUtilsMock.when(() -> NetUtils.isValidS2SVpnPolicy("esp", "aes128-sha256;modp2048")).thenReturn(true);
             netUtilsMock.when(() -> NetUtils.isNetworksOverlap("192.168.1.0/24", "192.168.1.0/25")).thenReturn(true);
@@ -558,6 +564,8 @@ public class Site2SiteVpnManagerImplTest {
 
         when(_vpnConnectionDao.findById(VPN_CONNECTION_ID)).thenReturn(vpnConnection);
         vpnConnection.setState(State.Pending);
+        when(_vpnGatewayDao.findById(VPN_GATEWAY_ID)).thenReturn(vpnGateway);
+        when(_vpcMgr.applyStaticRouteForVpcVpnIfNeeded(anyLong(), anyBoolean())).thenReturn(true);
 
         boolean result = site2SiteVpnManager.deleteVpnConnection(cmd);
 
@@ -569,10 +577,12 @@ public class Site2SiteVpnManagerImplTest {
     public void testStartVpnConnectionSuccess() throws ResourceUnavailableException {
         when(_vpnConnectionDao.acquireInLockTable(VPN_CONNECTION_ID)).thenReturn(vpnConnection);
         vpnConnection.setState(State.Pending);
+        when(_vpnGatewayDao.findById(VPN_GATEWAY_ID)).thenReturn(vpnGateway);
         Site2SiteVpnServiceProvider provider = mock(Site2SiteVpnServiceProvider.class);
         when(provider.startSite2SiteVpn(any(Site2SiteVpnConnection.class))).thenReturn(true);
         when(_s2sProviders.iterator()).thenReturn(List.of(provider).iterator());
         when(_vpnConnectionDao.persist(any(Site2SiteVpnConnectionVO.class))).thenReturn(vpnConnection);
+        when(_vpcMgr.applyStaticRouteForVpcVpnIfNeeded(anyLong(), anyBoolean())).thenReturn(true);
 
         Site2SiteVpnConnection result = site2SiteVpnManager.startVpnConnection(VPN_CONNECTION_ID);
 
@@ -596,12 +606,13 @@ public class Site2SiteVpnManagerImplTest {
         when(_vpnConnectionDao.findById(VPN_CONNECTION_ID)).thenReturn(vpnConnection);
         vpnConnection.setState(State.Connected);
         when(_vpnConnectionDao.acquireInLockTable(VPN_CONNECTION_ID)).thenReturn(vpnConnection);
+        when(_vpnGatewayDao.findById(VPN_GATEWAY_ID)).thenReturn(vpnGateway);
         Site2SiteVpnServiceProvider provider = mock(Site2SiteVpnServiceProvider.class);
         when(provider.stopSite2SiteVpn(any(Site2SiteVpnConnection.class))).thenReturn(true);
         when(provider.startSite2SiteVpn(any(Site2SiteVpnConnection.class))).thenReturn(true);
         when(_s2sProviders.iterator()).thenReturn(List.of(provider).iterator());
         when(_vpnConnectionDao.persist(any(Site2SiteVpnConnectionVO.class))).thenReturn(vpnConnection);
-        when(_vpnConnectionDao.findById(VPN_CONNECTION_ID)).thenReturn(vpnConnection);
+        when(_vpcMgr.applyStaticRouteForVpcVpnIfNeeded(anyLong(), anyBoolean())).thenReturn(true);
 
         Site2SiteVpnConnection result = site2SiteVpnManager.resetVpnConnection(cmd);
 
@@ -679,13 +690,16 @@ public class Site2SiteVpnManagerImplTest {
         when(conn.getId()).thenReturn(VPN_CONNECTION_ID);
         when(conn.getState()).thenReturn(State.Disconnected);
         when(conn.getCustomerGatewayId()).thenReturn(CUSTOMER_GATEWAY_ID);
+        when(conn.getVpnGatewayId()).thenReturn(VPN_GATEWAY_ID);
         when(_vpnConnectionDao.listByVpcId(VPC_ID)).thenReturn(List.of(conn));
         when(_customerGatewayDao.findById(CUSTOMER_GATEWAY_ID)).thenReturn(customerGateway);
         when(_vpnConnectionDao.acquireInLockTable(VPN_CONNECTION_ID)).thenReturn(conn);
+        when(_vpnGatewayDao.findById(VPN_GATEWAY_ID)).thenReturn(vpnGateway);
         Site2SiteVpnServiceProvider provider = mock(Site2SiteVpnServiceProvider.class);
         when(provider.startSite2SiteVpn(any(Site2SiteVpnConnection.class))).thenReturn(true);
         when(_s2sProviders.iterator()).thenReturn(List.of(provider).iterator());
         when(_vpnConnectionDao.persist(any(Site2SiteVpnConnectionVO.class))).thenReturn(conn);
+        when(_vpcMgr.applyStaticRouteForVpcVpnIfNeeded(anyLong(), anyBoolean())).thenReturn(true);
 
         site2SiteVpnManager.reconnectDisconnectedVpnByVpc(VPC_ID);
 
