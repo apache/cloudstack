@@ -89,7 +89,7 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCm
     private Boolean directDownload;
 
     @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
-            description = "the CPU arch of the Kubernetes ISO. Valid options are: x86_64, aarch64",
+            description = "the CPU arch of the Kubernetes ISO. Valid options are: x86_64, aarch64, s390x",
             since = "4.20")
     private String arch;
 

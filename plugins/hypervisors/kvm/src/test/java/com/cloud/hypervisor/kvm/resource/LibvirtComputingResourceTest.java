@@ -865,7 +865,9 @@ public class LibvirtComputingResourceTest {
     private void verifyFeatures(Document domainDoc) {
         assertNodeExists(domainDoc, "/domain/features/pae");
         assertNodeExists(domainDoc, "/domain/features/apic");
-        assertNodeExists(domainDoc, "/domain/features/acpi");
+        if (!"s390x".equals(System.getProperty("os.arch"))) {
+            assertNodeExists(domainDoc, "/domain/features/acpi");
+        }
     }
 
     private void verifyHeader(Document domainDoc, String hvsType, String name, String uuid, String os) {

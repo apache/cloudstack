@@ -180,7 +180,7 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
     private String templateType;
 
     @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
-            description = "the CPU arch of the template. Valid options are: x86_64, aarch64",
+            description = "the CPU arch of the template. Valid options are: x86_64, aarch64, s390x",
             since = "4.20")
     private String arch;
 
