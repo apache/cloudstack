@@ -478,11 +478,10 @@ public class UserVmManagerImplTest {
             Field f = ConfigKey.class.getDeclaredField(name);
             f.setAccessible(true);
             String stringVal = String.valueOf(o);
-            f.set(configKey, stringVal);
-            if (revert) {
-                return;
+            if (!revert) {
+                originalConfigValues.put(configKey, f.get(configKey));
             }
-            originalConfigValues.put(configKey, f.get(configKey));
+            f.set(configKey, stringVal);
         } catch (IllegalAccessException | NoSuchFieldException  e) {
             Assert.fail("Failed to mock config " + configKey.key() + " value due to " + e.getMessage());
         }
