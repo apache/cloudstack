@@ -199,7 +199,7 @@
                 v-for="item in networkOfferings"
                 :key="item.id"
                 :value=“item.id"
-                :label="item.displaytext || item.name || item.description”
+                :label="item.displaytext || item.name || item.description"
                 :title="item.displaytext || item.name || item.description">
                 {{ item.displaytext || item.name || item.description }}
               </a-select-option>
