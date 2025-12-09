@@ -28,7 +28,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "lockAccount",
-            description = "This deprecated function used to lock an account. Look for the API DisableAccount instead",
+            description = "This deprecated function used to lock an Account. Look for the API DisableAccount instead",
             responseObject = AccountResponse.class,
             entityType = {Account.class},
             requestHasSensitiveInfo = false,

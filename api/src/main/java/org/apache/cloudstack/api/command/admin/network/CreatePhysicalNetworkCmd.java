@@ -36,7 +36,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.user.Account;
 
-@APICommand(name = "createPhysicalNetwork", description = "Creates a physical network", responseObject = PhysicalNetworkResponse.class, since = "3.0.0",
+@APICommand(name = "createPhysicalNetwork", description = "Creates a physical Network", responseObject = PhysicalNetworkResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
 
@@ -49,10 +49,10 @@ public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
                type = CommandType.UUID,
                entityType = ZoneResponse.class,
                required = true,
-               description = "The Zone ID for the physical network")
+               description = "The Zone ID for the physical Network")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "The VLAN for the physical network")
+    @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "The VLAN for the physical Network")
     private String vlan;
 
     @Parameter(name = ApiConstants.NETWORK_SPEED, type = CommandType.STRING, description = "The speed for the physical Network[1G/10G]")
@@ -139,7 +139,7 @@ public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "creating Physical Network. Id: " + getEntityId();
+        return "Creating Physical Network. ID: " + getEntityId();
     }
 
     /////////////////////////////////////////////////////
@@ -148,14 +148,14 @@ public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Physical Network Id: " + getEntityId());
+        CallContext.current().setEventDetails("Physical Network ID: " + getEntityId());
         PhysicalNetwork result = _networkService.getCreatedPhysicalNetwork(getEntityId());
         if (result != null) {
             PhysicalNetworkResponse response = _responseGenerator.createPhysicalNetworkResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create physical network");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create physical Network");
         }
     }
 
@@ -168,7 +168,7 @@ public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create physical network entity");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create physical Network entity");
         }
     }
 

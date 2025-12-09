@@ -75,7 +75,7 @@ public class StopInternalLBVMCmd extends BaseAsyncCmd {
         if (vm != null && vm.getRole() == Role.INTERNAL_LB_VM) {
             return vm.getAccountId();
         } else {
-            throw new InvalidParameterValueException("Unable to find Internal LB Instance by id");
+            throw new InvalidParameterValueException("Unable to find Internal LB Instance by ID");
         }
     }
 
@@ -105,11 +105,11 @@ public class StopInternalLBVMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException {
-        CallContext.current().setEventDetails("Internal lb vm Id: " + getId());
+        CallContext.current().setEventDetails("Internal LB Instance Id: " + getId());
         VirtualRouter result = null;
         VirtualRouter vm = _routerService.findRouter(getId());
         if (vm == null || vm.getRole() != Role.INTERNAL_LB_VM) {
-            throw new InvalidParameterValueException("Can't find internal lb vm by id");
+            throw new InvalidParameterValueException("Can't find Internal LB Instance by ID");
         } else {
             result = _internalLbSvc.stopInternalLbVm(getId(), isForced(), CallContext.current().getCallingAccount(), CallContext.current().getCallingUserId());
         }
@@ -119,7 +119,7 @@ public class StopInternalLBVMCmd extends BaseAsyncCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to stop internal lb vm");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to stop Internal LB Instance");
         }
     }
 }

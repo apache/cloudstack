@@ -35,7 +35,7 @@ import org.apache.cloudstack.region.RegionService;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteAccount", description = "Deletes an account and all users associated with this account", responseObject = SuccessResponse.class, entityType = {Account.class},
+@APICommand(name = "deleteAccount", description = "Deletes an Account and all Users associated with this Account", responseObject = SuccessResponse.class, entityType = {Account.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteAccountCmd extends BaseAsyncCmd {
 

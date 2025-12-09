@@ -46,10 +46,10 @@ public abstract class BaseUpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "The Template ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.IS_FEATURED, type = CommandType.BOOLEAN, description = "True for featured Template/iso, false otherwise")
+    @Parameter(name = ApiConstants.IS_FEATURED, type = CommandType.BOOLEAN, description = "True for featured Template/ISO, false otherwise")
     private Boolean featured;
 
-    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "True for public Template/iso, false for private Templates/ISOs")
+    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "True for public Template/ISO, false for private Templates/ISOs")
     private Boolean isPublic;
 
     @Parameter(name = ApiConstants.IS_EXTRACTABLE,
@@ -121,7 +121,7 @@ public abstract class BaseUpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update Template/iso permissions");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update Template/ISO permissions");
         }
     }
 }

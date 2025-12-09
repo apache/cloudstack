@@ -47,7 +47,7 @@ public class UpdateHostCmd extends BaseCmd {
     @Parameter(name = ApiConstants.OS_CATEGORY_ID,
                type = CommandType.UUID,
                entityType = GuestOSCategoryResponse.class,
-               description = "The ID of Os category to update the host with")
+               description = "The ID of OS category to update the host with")
     private Long osCategoryId;
 
     @Parameter(name = ApiConstants.ALLOCATION_STATE,

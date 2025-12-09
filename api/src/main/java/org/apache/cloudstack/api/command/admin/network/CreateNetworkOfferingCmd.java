@@ -83,7 +83,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.TAGS, type = CommandType.STRING, description = "The tags for the network offering.", length = 4096)
     private String tags;
 
-    @Parameter(name = ApiConstants.SPECIFY_VLAN, type = CommandType.BOOLEAN, description = "True if network offering supports vlans")
+    @Parameter(name = ApiConstants.SPECIFY_VLAN, type = CommandType.BOOLEAN, description = "True if network offering supports VLANs")
     private Boolean specifyVlan;
 
     @Parameter(name = ApiConstants.AVAILABILITY, type = CommandType.STRING, description = "The availability of network offering. The default value is Optional. "

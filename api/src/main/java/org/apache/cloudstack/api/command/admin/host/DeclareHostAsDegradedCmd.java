@@ -33,7 +33,7 @@ import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.context.CallContext;
 
 @APICommand(name = "declareHostAsDegraded",
-        description = "Declare host as 'Degraded'. Host must be on 'Disconnected' or 'Alert' state. The ADMIN must be sure that there are no Instances running on the respective host otherwise this command might corrupted VMs that were running on the 'Degraded' host.",
+        description = "Declare host as 'Degraded'. Host must be on 'Disconnected' or 'Alert' state. The ADMIN must be sure that there are no Instances running on the respective host otherwise this command might corrupted Instances that were running on the 'Degraded' host.",
         since = "4.16.0.0",
         responseObject = HostResponse.class,
         requestHasSensitiveInfo = false,

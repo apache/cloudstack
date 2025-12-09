@@ -35,7 +35,7 @@ import org.apache.cloudstack.context.CallContext;
 public class RemoveAnnotationCmd extends BaseCmd {
 
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.STRING, required = true, description = "The id of the annotation")
+    @Parameter(name = ApiConstants.ID, type = CommandType.STRING, required = true, description = "The ID of the annotation")
     private String uuid;
 
     public String getUuid() {
