@@ -61,7 +61,6 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import com.cloud.storage.dao.SnapshotPolicyDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -144,9 +143,9 @@ import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.LoadBalancerVMMapVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRule;
@@ -174,6 +173,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.VirtualMachineTemplate;
@@ -469,13 +469,20 @@ public class UserVmManagerImplTest {
     Class<InvalidParameterValueException> expectedInvalidParameterValueException = InvalidParameterValueException.class;
     Class<CloudRuntimeException> expectedCloudRuntimeException = CloudRuntimeException.class;
 
+    private Map<ConfigKey, Object> originalConfigValues = new HashMap<>();
 
-    private void overrideDefaultConfigValue(final ConfigKey configKey, final Object o) {
+
+    private void updateDefaultConfigValue(final ConfigKey configKey, final Object o, boolean revert) {
         try {
             final String name = "_defaultValue";
             Field f = ConfigKey.class.getDeclaredField(name);
             f.setAccessible(true);
-            f.set(configKey, String.valueOf(o));
+            String stringVal = String.valueOf(o);
+            f.set(configKey, stringVal);
+            if (revert) {
+                return;
+            }
+            originalConfigValues.put(configKey, f.get(configKey));
         } catch (IllegalAccessException | NoSuchFieldException  e) {
             Assert.fail("Failed to mock config " + configKey.key() + " value due to " + e.getMessage());
         }
@@ -510,6 +517,9 @@ public class UserVmManagerImplTest {
     public void afterTest() {
         CallContext.unregister();
         unmanagedVMsManagerMockedStatic.close();
+        for (Map.Entry<ConfigKey, Object> entry : originalConfigValues.entrySet()) {
+            updateDefaultConfigValue(entry.getKey(), entry.getValue(), true);
+        }
     }
 
     @Test
@@ -4211,7 +4221,7 @@ public class UserVmManagerImplTest {
         when(userVm.getAccountId()).thenReturn(1L);
         when(userVm.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
         doNothing().when(userVmManagerImpl).persistExtraConfigKvm(anyString(), eq(userVm));
-        overrideDefaultConfigValue(UserVmManagerImpl.EnableAdditionalVmConfig, true);
+        updateDefaultConfigValue(UserVmManagerImpl.EnableAdditionalVmConfig, true, false);
 
         userVmManagerImpl.updateVmExtraConfig(userVm, "validConfig", false);
 
@@ -4223,7 +4233,7 @@ public class UserVmManagerImplTest {
     public void updateVmExtraConfigThrowsExceptionWhenConfigDisabled() {
         UserVmVO userVm = mock(UserVmVO.class);
         when(userVm.getAccountId()).thenReturn(1L);
-        overrideDefaultConfigValue(UserVmManagerImpl.EnableAdditionalVmConfig, false);
+        updateDefaultConfigValue(UserVmManagerImpl.EnableAdditionalVmConfig, false, false);
 
         userVmManagerImpl.updateVmExtraConfig(userVm, "validConfig", false);
     }
