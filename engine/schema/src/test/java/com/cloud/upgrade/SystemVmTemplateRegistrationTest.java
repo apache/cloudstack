@@ -25,10 +25,13 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -55,6 +58,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import com.cloud.cpu.CPU;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.utils.HttpUtils;
@@ -363,6 +367,7 @@ public class SystemVmTemplateRegistrationTest {
         systemVmTemplateRegistration.validateTemplates(list);
     }
 
+    @Test
     public void testValidateTemplates_downloadableFileNotFound() {
         CPU.CPUArch arch = SystemVmTemplateRegistration.DOWNLOADABLE_TEMPLATE_ARCH_TYPES.get(0);
         List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> list = new ArrayList<>();
@@ -396,6 +401,8 @@ public class SystemVmTemplateRegistrationTest {
         String filePath = "dummyFilePath";
         String nfsVersion = "nfs3";
         Pair<String, Long> storeUrlAndId = new Pair<>("nfs://dummy", 100L);
+        String name = "existing";
+        String url = "url";
         doReturn(storeUrlAndId).when(systemVmTemplateRegistration).getNfsStoreInZone(zoneId);
         doReturn(nfsVersion).when(systemVmTemplateRegistration).getNfsVersion(storeUrlAndId.second());
         try (MockedStatic<SystemVmTemplateRegistration> mockedStatic = Mockito.mockStatic(
@@ -407,13 +414,11 @@ public class SystemVmTemplateRegistrationTest {
             doReturn(hypervisorArchList).when(clusterDao).listDistinctHypervisorsAndArchExcludingExternalType(zoneId);
             SystemVmTemplateRegistration.MetadataTemplateDetails details =
                     Mockito.mock(SystemVmTemplateRegistration.MetadataTemplateDetails.class);
-            String name = "existing";
-            Mockito.when(details.getArch()).thenReturn(CPU.CPUArch.getDefault());
-            Mockito.when(details.getName()).thenReturn(name);
+            when(details.getArch()).thenReturn(CPU.CPUArch.getDefault());
+            when(details.getName()).thenReturn(name);
+            when(details.getUrl()).thenReturn(url);
             mockedStatic.when(() -> SystemVmTemplateRegistration.getMetadataTemplateDetails(Mockito.any(),
                     Mockito.any())).thenReturn(details);
-            when(systemVmTemplateRegistration.getRegisteredTemplate(name, arch))
-                    .thenReturn(null);
             doNothing().when(systemVmTemplateRegistration).registerTemplateForNonExistingEntries(
                     hypervisorType, arch,
                     name, storeUrlAndId, filePath);
@@ -423,5 +428,80 @@ public class SystemVmTemplateRegistrationTest {
             verify(systemVmTemplateRegistration).registerTemplateForNonExistingEntries(hypervisorType,
                     arch, name, storeUrlAndId, filePath);
         }
+    }
+
+    @Test
+    public void registerOrUpdateSystemVmTemplate_UpdatesRegisteredTemplate() {
+        SystemVmTemplateRegistration.MetadataTemplateDetails templateDetails = Mockito.mock(SystemVmTemplateRegistration.MetadataTemplateDetails.class);
+        when(templateDetails.getName()).thenReturn("templateName");
+        when(templateDetails.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(templateDetails.getArch()).thenReturn(CPU.CPUArch.amd64);
+        when(templateDetails.getUrl()).thenReturn("http://example.com/template");
+        VMTemplateVO registeredTemplate = Mockito.mock(VMTemplateVO.class);
+        when(registeredTemplate.getId()).thenReturn(1L);
+        doReturn(registeredTemplate).when(systemVmTemplateRegistration).getRegisteredTemplate(
+                "templateName", Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64, "http://example.com/template");
+        doNothing().when(systemVmTemplateRegistration).updateRegisteredTemplateDetails(1L, templateDetails);
+
+        boolean result = systemVmTemplateRegistration.registerOrUpdateSystemVmTemplate(templateDetails, new ArrayList<>());
+
+        assertFalse(result);
+        verify(systemVmTemplateRegistration).updateRegisteredTemplateDetails(eq(1L), eq(templateDetails));
+    }
+
+    @Test
+    public void registerOrUpdateSystemVmTemplate_SkipsUnusedHypervisorArch() {
+        SystemVmTemplateRegistration.MetadataTemplateDetails templateDetails = Mockito.mock(SystemVmTemplateRegistration.MetadataTemplateDetails.class);
+        when(templateDetails.getName()).thenReturn("templateName");
+        when(templateDetails.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(templateDetails.getArch()).thenReturn(CPU.CPUArch.amd64);
+        when(templateDetails.getUrl()).thenReturn("http://example.com/template");
+        doReturn(null).when(systemVmTemplateRegistration).getRegisteredTemplate(
+                "templateName", Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64, "http://example.com/template");
+        doReturn(null).when(vmTemplateDao).findLatestTemplateByTypeAndHypervisorAndArch(
+                Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64, Storage.TemplateType.SYSTEM);
+
+        boolean result = systemVmTemplateRegistration.registerOrUpdateSystemVmTemplate(templateDetails, new ArrayList<>());
+
+        assertFalse(result);
+        verify(systemVmTemplateRegistration, never()).registerTemplates(anyList());
+    }
+
+    @Test
+    public void registerOrUpdateSystemVmTemplate_RegistersNewTemplate() {
+        SystemVmTemplateRegistration.MetadataTemplateDetails templateDetails = Mockito.mock(SystemVmTemplateRegistration.MetadataTemplateDetails.class);
+        when(templateDetails.getName()).thenReturn("templateName");
+        when(templateDetails.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(templateDetails.getArch()).thenReturn(CPU.CPUArch.amd64);
+        when(templateDetails.getUrl()).thenReturn("http://example.com/template");
+        doReturn(null).when(systemVmTemplateRegistration).getRegisteredTemplate(
+                "templateName", Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64, "http://example.com/template");
+        List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> hypervisorsInUse = new ArrayList<>();
+        hypervisorsInUse.add(new Pair<>(Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64));
+        doNothing().when(systemVmTemplateRegistration).registerTemplates(hypervisorsInUse);
+
+        boolean result = systemVmTemplateRegistration.registerOrUpdateSystemVmTemplate(templateDetails, hypervisorsInUse);
+
+        assertTrue(result);
+        verify(systemVmTemplateRegistration).registerTemplates(eq(hypervisorsInUse));
+    }
+
+    @Test
+    public void registerOrUpdateSystemVmTemplate_ThrowsExceptionOnRegistrationFailure() {
+        SystemVmTemplateRegistration.MetadataTemplateDetails templateDetails = Mockito.mock(SystemVmTemplateRegistration.MetadataTemplateDetails.class);
+        when(templateDetails.getName()).thenReturn("templateName");
+        when(templateDetails.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(templateDetails.getArch()).thenReturn(CPU.CPUArch.amd64);
+        when(templateDetails.getUrl()).thenReturn("http://example.com/template");
+        doReturn(null).when(systemVmTemplateRegistration).getRegisteredTemplate(
+                "templateName", Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64, "http://example.com/template");
+        List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> hypervisorsInUse = new ArrayList<>();
+        hypervisorsInUse.add(new Pair<>(Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64));
+        doThrow(new CloudRuntimeException("Registration failed")).when(systemVmTemplateRegistration).registerTemplates(hypervisorsInUse);
+
+        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class,
+                () -> systemVmTemplateRegistration.registerOrUpdateSystemVmTemplate(templateDetails, hypervisorsInUse));
+
+        assertTrue(exception.getMessage().contains("Failed to register"));
     }
 }

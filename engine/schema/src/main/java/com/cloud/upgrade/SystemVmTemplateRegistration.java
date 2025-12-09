@@ -417,8 +417,15 @@ public class SystemVmTemplateRegistration {
         return NewTemplateMap.get(getHypervisorArchKey(hypervisorType, arch));
     }
 
-    public VMTemplateVO getRegisteredTemplate(String templateName, CPU.CPUArch arch) {
-        return vmTemplateDao.findLatestTemplateByName(templateName, arch);
+    public VMTemplateVO getRegisteredTemplate(String templateName, Hypervisor.HypervisorType hypervisorType,
+                  CPU.CPUArch arch, String url) {
+        VMTemplateVO registeredTemplate = vmTemplateDao.findLatestTemplateByName(templateName, hypervisorType, arch);
+        if (registeredTemplate == null && StringUtils.isNotBlank(url)) {
+            String urlPath = url.substring(url.lastIndexOf("/") + 1);
+            registeredTemplate = vmTemplateDao.findActiveSystemTemplateByHypervisorArchAndUrlPath(hypervisorType, arch,
+                    urlPath);
+        }
+        return registeredTemplate;
     }
 
     private static boolean isRunningInTest() {
@@ -940,7 +947,8 @@ public class SystemVmTemplateRegistration {
             if (templateDetails == null) {
                 continue;
             }
-            VMTemplateVO templateVO  = getRegisteredTemplate(templateDetails.getName(), templateDetails.getArch());
+            VMTemplateVO templateVO  = getRegisteredTemplate(templateDetails.getName(),
+                    templateDetails.getHypervisorType(), templateDetails.getArch(), templateDetails.getUrl());
             if (templateVO != null) {
                 TemplateDataStoreVO templateDataStoreVO =
                         templateDataStoreDao.findByStoreTemplate(storeUrlAndId.second(), templateVO.getId());
@@ -999,7 +1007,7 @@ public class SystemVmTemplateRegistration {
         }
     }
 
-    private void updateRegisteredTemplateDetails(Long templateId, MetadataTemplateDetails templateDetails) {
+    protected void updateRegisteredTemplateDetails(Long templateId, MetadataTemplateDetails templateDetails) {
         VMTemplateVO templateVO = vmTemplateDao.findById(templateId);
         templateVO.setTemplateType(Storage.TemplateType.SYSTEM);
         GuestOSVO guestOS = guestOSDao.findOneByDisplayName(templateDetails.getGuestOs());
@@ -1039,37 +1047,36 @@ public class SystemVmTemplateRegistration {
     protected boolean registerOrUpdateSystemVmTemplate(MetadataTemplateDetails templateDetails,
                    List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> hypervisorsInUse) {
         LOGGER.debug("Updating System VM template for {}", templateDetails.getHypervisorArchLog());
-        VMTemplateVO registeredTemplate = getRegisteredTemplate(templateDetails.getName(), templateDetails.getArch());
-        // change template type to SYSTEM
+        VMTemplateVO registeredTemplate = getRegisteredTemplate(templateDetails.getName(),
+                templateDetails.getHypervisorType(), templateDetails.getArch(), templateDetails.getUrl());
         if (registeredTemplate != null) {
             updateRegisteredTemplateDetails(registeredTemplate.getId(), templateDetails);
-        } else {
-            boolean isHypervisorArchMatchMetadata = hypervisorsInUse.stream()
-                    .anyMatch(p -> p.first().equals(templateDetails.getHypervisorType())
-                            && Objects.equals(p.second(), templateDetails.getArch()));
-            if (isHypervisorArchMatchMetadata) {
-                try {
-                    registerTemplates(hypervisorsInUse);
-                    return true;
-                } catch (final Exception e) {
-                    throw new CloudRuntimeException(String.format("Failed to register %s templates for hypervisors: [%s]. " +
-                                    "Cannot upgrade system VMs",
-                            getSystemVmTemplateVersion(),
-                            StringUtils.join(hypervisorsInUse.stream()
-                                    .map(x -> getHypervisorArchKey(x.first(), x.second()))
-                                    .collect(Collectors.toList()), ",")), e);
-                }
-            } else {
-                LOGGER.warn("Cannot upgrade {} system VM template for {} as it is not used, not failing upgrade",
-                        getSystemVmTemplateVersion(), templateDetails.getHypervisorArchLog());
-                VMTemplateVO templateVO = vmTemplateDao.findLatestTemplateByTypeAndHypervisorAndArch(
-                        templateDetails.getHypervisorType(), templateDetails.getArch(), Storage.TemplateType.SYSTEM);
-                if (templateVO != null) {
-                    updateTemplateUrlChecksumAndGuestOsId(templateVO, templateDetails);
-                }
-            }
+            return false;
         }
-        return false;
+        boolean isHypervisorArchMatchMetadata = hypervisorsInUse.stream()
+                .anyMatch(p -> p.first().equals(templateDetails.getHypervisorType())
+                        && Objects.equals(p.second(), templateDetails.getArch()));
+        if (!isHypervisorArchMatchMetadata) {
+            LOGGER.warn("Skipping upgrading {} system VM template for {} as it is not used, not failing upgrade",
+                    getSystemVmTemplateVersion(), templateDetails.getHypervisorArchLog());
+            VMTemplateVO templateVO = vmTemplateDao.findLatestTemplateByTypeAndHypervisorAndArch(
+                    templateDetails.getHypervisorType(), templateDetails.getArch(), Storage.TemplateType.SYSTEM);
+            if (templateVO != null) {
+                updateTemplateUrlChecksumAndGuestOsId(templateVO, templateDetails);
+            }
+            return false;
+        }
+        try {
+            registerTemplates(hypervisorsInUse);
+            return true;
+        } catch (final Exception e) {
+            throw new CloudRuntimeException(String.format("Failed to register %s templates for hypervisors: [%s]. " +
+                            "Cannot upgrade system VMs",
+                    getSystemVmTemplateVersion(),
+                    StringUtils.join(hypervisorsInUse.stream()
+                            .map(x -> getHypervisorArchKey(x.first(), x.second()))
+                            .collect(Collectors.toList()), ",")), e);
+        }
     }
 
     public void updateSystemVmTemplates(final Connection conn) {
