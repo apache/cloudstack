@@ -1155,6 +1155,8 @@ public class BackupManagerTest {
         VMInstanceVO vm = mock(VMInstanceVO.class);
         when(vm.getId()).thenReturn(vmId);
         BackupOfferingVO offering = mock(BackupOfferingVO.class);
+        Account owner = mock(Account.class);
+
 
         overrideBackupFrameworkConfigValue();
 
@@ -1165,6 +1167,8 @@ public class BackupManagerTest {
         when(vm.getBackupOfferingId()).thenReturn(null);
         when(offering.getProvider()).thenReturn("testbackupprovider");
         when(backupProvider.assignVMToBackupOffering(vm, offering)).thenReturn(true);
+        when(vm.getAccountId()).thenReturn(3L);
+        when(accountManager.getAccount(vm.getAccountId())).thenReturn(owner);
         when(vmInstanceDao.update(1L, vm)).thenReturn(true);
 
         try (MockedStatic<UsageEventUtils> ignored2 = Mockito.mockStatic(UsageEventUtils.class)) {

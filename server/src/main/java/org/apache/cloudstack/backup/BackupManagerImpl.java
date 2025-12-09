@@ -539,7 +539,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("Provided backup offering does not exist");
         }
 
-        accountManager.checkAccess(CallContext.current().getCallingAccount(), offering);
+        Account owner = accountManager.getAccount(vm.getAccountId());
+        if (owner == null) {
+            throw new CloudRuntimeException("Unable to find the owner of the VM");
+        }
+        accountManager.checkAccess(owner, offering);
 
         final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
         if (backupProvider == null) {
@@ -601,8 +605,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (offering == null) {
             throw new CloudRuntimeException("No previously configured backup offering found for the VM");
         }
-
-        accountManager.checkAccess(CallContext.current().getCallingAccount(), offering);
 
         final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
         if (backupProvider == null) {
@@ -867,7 +869,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (offering == null) {
             throw new CloudRuntimeException("VM backup offering not found");
         }
-        accountManager.checkAccess(caller, offering);
 
         final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
         if (backupProvider == null) {

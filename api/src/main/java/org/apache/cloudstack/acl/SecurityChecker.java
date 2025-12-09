@@ -148,7 +148,5 @@ public interface SecurityChecker extends Adapter {
 
     boolean checkAccess(Account account, VpcOffering vof, DataCenter zone) throws PermissionDeniedException;
 
-    default boolean checkAccess(Account account, BackupOffering bof) throws PermissionDeniedException {
-        return true;
-    }
+    boolean checkAccess(Account account, BackupOffering bof) throws PermissionDeniedException;
 }

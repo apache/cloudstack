@@ -189,7 +189,6 @@ public class DomainCheckerTest {
         AccountVO owner = Mockito.mock(AccountVO.class);
         Mockito.when(_accountService.isDomainAdmin(domainAdmin.getId())).thenReturn(true);
         Mockito.when(domainAdmin.getDomainId()).thenReturn(10L);
-        Mockito.when(owner.getDomainId()).thenReturn(101L);
         Mockito.when(_domainDao.isChildDomain(100L, 10L)).thenReturn(true);
         Mockito.when(backupOfferingDetailsDao.findDomainIds(backupOfferingVO.getId())).thenReturn(Collections.singletonList(100L));
 
@@ -204,7 +203,6 @@ public class DomainCheckerTest {
         BackupOfferingVO backupOfferingVO = Mockito.mock(BackupOfferingVO.class);
         Mockito.when(_accountService.isRootAdmin(normalUser.getId())).thenReturn(false);
         Mockito.when(_accountService.isDomainAdmin(normalUser.getId())).thenReturn(false);
-        Mockito.when(backupOfferingDetailsDao.findDomainIds(backupOfferingVO.getId())).thenReturn(Collections.singletonList(100L));
 
         boolean hasAccess = domainChecker.checkAccess(normalUser, backupOfferingVO);
         Assert.assertFalse(hasAccess);
