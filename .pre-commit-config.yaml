@@ -53,6 +53,16 @@ repos:
         files: \.md$
         stages: [manual]
       - id: insert-license
+        name: add license for all cfg files
+        description: automatically adds a licence header to all cfg files that don't have a license header
+        files: \.cfg$
+        args:
+          - --comment-style
+          - '|#|'
+          - --license-filepath
+          - .github/workflows/license-templates/LICENSE.txt
+          - --fuzzy-match-generates-todo
+      - id: insert-license
         name: add license for all Markdown files
         files: \.md$
         args:
