@@ -32,7 +32,6 @@ import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.utils.Pair;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.api.ApiConstants;
