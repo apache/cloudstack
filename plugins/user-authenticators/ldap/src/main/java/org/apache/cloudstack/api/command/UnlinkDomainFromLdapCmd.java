@@ -39,7 +39,7 @@ import javax.inject.Inject;
         responseObject = SuccessResponse.class, since = "4.23.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UnlinkDomainFromLdapCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = true, entityType = DomainResponse.class,
-            description = "The id of the Domain which has to be unlinked from LDAP.")
+            description = "The ID of the Domain which has to be unlinked from LDAP.")
     private Long domainId;
 
     @Inject
