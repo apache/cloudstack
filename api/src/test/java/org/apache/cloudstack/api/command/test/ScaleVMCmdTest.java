@@ -78,10 +78,6 @@ public class ScaleVMCmdTest extends TestCase {
         scaleVMCmd._responseGenerator = responseGenerator;
 
         UserVmResponse userVmResponse = Mockito.mock(UserVmResponse.class);
-        //List<UserVmResponse> list = Mockito.mock(UserVmResponse.class);
-        //list.add(userVmResponse);
-        //LinkedList<UserVmResponse> mockedList = Mockito.mock(LinkedList.class);
-        //Mockito.when(mockedList.get(0)).thenReturn(userVmResponse);
 
         List<UserVmResponse> list = new LinkedList<UserVmResponse>();
         list.add(userVmResponse);
