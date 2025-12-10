@@ -91,7 +91,7 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
                     }
                 } else {
                     if (logger.isTraceEnabled()) {
-                        logger.trace("'this' domain ({}) is not linked to ldap follow normal authentication", domainId);
+                        logger.trace("'this' domain ({}) is not linked to LDAP follow normal authentication", domainId);
                     }
                     rc = authenticate(username, password, domainId, user);
                 }

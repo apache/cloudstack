@@ -223,7 +223,7 @@ public class LdapListUsersCmd extends BaseListCmd {
         if (CollectionUtils.isNotEmpty(cloudstackUsers)) {
             for (final UserResponse cloudstackUser : cloudstackUsers) {
                 if (username.equals(cloudstackUser.getUsername())) {
-                    logger.trace("found user {} in cloudstack user {}", username, cloudstackUser.getUsername());
+                    logger.trace("Found user {} in CloudStack", cloudstackUser.getUsername());
                     rc = true;
                     break;
                 } else {
@@ -414,7 +414,7 @@ public class LdapListUsersCmd extends BaseListCmd {
             logger.trace("should be filtering potential imports!!!");
         }
         // functional possibility do not add only users not yet in cloudstack but include users that would be moved if they are so in ldap?
-        // this means if they are part of an account linked to a ldap group/ou
+        // This means if they are part of an Account linked to an LDAP Group/OU
         input.removeIf(ldapUser ->
                 (
                         (isACloudStackUser(ldapUser))

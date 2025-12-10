@@ -105,14 +105,14 @@ public class LdapImportUsersCmd extends BaseListCmd {
     private void createCloudstackUserAccount(LdapUser user, String accountName, Domain domain) {
         Account account = _accountService.getActiveAccountByName(accountName, domain.getId());
         if (account == null) {
-            logger.debug("No account exists with name: {} creating the account and an user with name: {} in the account", accountName, user.getUsername());
+            logger.debug("No account exists with name: {}. Creating the account and a user with name: {} in the account", accountName, user.getUsername());
             _accountService.createUserAccount(user.getUsername(), generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone, accountName, getAccountType(), getRoleId(),
                     domain.getId(), domain.getNetworkDomain(), details, UUID.randomUUID().toString(), UUID.randomUUID().toString(), User.Source.LDAP);
         } else {
 //            check if the user exists. if yes, call update
             UserAccount csuser = _accountService.getActiveUserAccount(user.getUsername(), domain.getId());
             if (csuser == null) {
-                logger.debug("No user exists with name: {} creating a user in the account: {}", user.getUsername(), accountName);
+                logger.debug("No user exists with name: {}. Creating a user in the account: {}", user.getUsername(), accountName);
                 _accountService.createUser(user.getUsername(), generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone, accountName, domain.getId(),
                         UUID.randomUUID().toString(), User.Source.LDAP);
             } else {
@@ -201,11 +201,11 @@ public class LdapImportUsersCmd extends BaseListCmd {
     private Domain getDomain(LdapUser user) {
         Domain domain;
         if (_domain != null) {
-            //this means either domain id or group name is passed and this will be same for all the users in this call. hence returning it.
+            // This means that either a domain id or group name is passed and this will be same for all the users in this call, hence returning it.
             domain = _domain;
         } else {
             if (domainId != null) {
-                // a domain ID is passed. use it for this user and all the users in the same api call (by setting _domain)
+                // a domain ID is passed. Use it for this user and all the users in the same API call (by setting _domain)
                 domain = _domain = _domainService.getDomain(domainId);
             } else {
                 // a group name is passed. use it for this user and all the users in the same api call(by setting _domain)

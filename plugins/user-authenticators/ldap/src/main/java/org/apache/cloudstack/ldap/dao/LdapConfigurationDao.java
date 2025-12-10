@@ -29,8 +29,8 @@ import com.cloud.utils.db.GenericDao;
 public interface LdapConfigurationDao extends GenericDao<LdapConfigurationVO, Long> {
     /**
      * @deprecated there might well be more then one ldap implementation on a host and or a double binding of several domains
-     * @param hostname the hostname or ip address of the ldap server
-     * @return the ldap configuration for the given hostname
+     * @param hostname the hostname or ip address of the LDAP server
+     * @return the LDAP configuration for the given hostname
      */
     @Deprecated
     LdapConfigurationVO findByHostname(String hostname);

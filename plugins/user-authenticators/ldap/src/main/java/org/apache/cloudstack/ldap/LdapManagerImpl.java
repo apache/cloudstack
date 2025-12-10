@@ -180,7 +180,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
                 context = _ldapContextFactory.createBindContext(providerUrl,domainId);
                 configuration = new LdapConfigurationVO(hostname, port, domainId);
                 _ldapConfigurationDao.persist(configuration);
-                logger.info("Added new ldap server with url: {}{}", providerUrl, domainId == null ? "" : " for domain " + domainId);
+                logger.info("Added a new LDAP server with URL: {}{}", providerUrl, domainId == null ? "" : " for domain " + domainId);
                 return createLdapConfigurationResponse(configuration);
             } catch (NamingException | IOException e) {
                 logger.debug("NamingException while doing an LDAP bind", e);
@@ -215,7 +215,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
             return true;
         } catch (NamingException | IOException e) {/* AuthenticationException is caught as NamingException */
             logger.debug("Exception while doing an LDAP bind for user  {}", principal, e);
-            logger.info("Failed to authenticate user: {}. incorrect password.", principal);
+            logger.info("Failed to authenticate user: {}. Incorrect password.", principal);
             return false;
         }
     }
