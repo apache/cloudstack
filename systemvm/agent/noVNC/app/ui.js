@@ -1775,10 +1775,6 @@ const UI = {
 
     // Release all currently pressed modifier keys
     _releaseAllModifierKeys() {
-        if (!UI.rfb) {
-            return false;
-        }
-
         let keysReleased = false;
 
         // Release all modifier keys
@@ -1789,7 +1785,6 @@ const UI = {
         }
         return keysReleased;
     },
-
 
     // Move focus to the screen in order to be able to use the
     // keyboard right after these extra keys.
