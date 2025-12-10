@@ -37,7 +37,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.user.Account;
 
-@APICommand(name = "importNetworkACL", description = "Imports network ACL rules.",
+@APICommand(name = "importNetworkACL", description = "Imports Network ACL rules.",
         responseObject = NetworkACLItemResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.22.1")
@@ -52,7 +52,7 @@ public class ImportNetworkACLCmd extends BaseAsyncCmd {
             type = CommandType.UUID,
             entityType = NetworkACLResponse.class,
             required = true,
-            description = "The ID of the network ACL to which the rules will be imported"
+            description = "The ID of the Network ACL to which the rules will be imported"
     )
     private Long aclId;
 
@@ -126,7 +126,7 @@ public class ImportNetworkACLCmd extends BaseAsyncCmd {
         }
 
         if (getAclId() == null || _networkACLService.getNetworkACL(getAclId()) == null) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to find network ACL with provided aclid");
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to find Network ACL with provided ACL ID");
         }
     }
 }
