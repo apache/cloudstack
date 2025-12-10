@@ -3640,6 +3640,7 @@
 "message.move.acl.order.processing": "Moving ACL rule...",
 "message.network.acl.default.allow": "Warning: With this policy all traffic will be allowed through the firewall to this VPC Network Tier. You should consider securing your Network.",
 "message.network.acl.default.deny": "Warning: With this policy all traffic will be denied through the firewall to this VPC Network Tier. In order to allow traffic through you will need to change policies.",
+"message.network.acl.import.note": "Note: Only valid rules from the CSV will be imported. Invalid entries will be discarded.",
 "message.network.addvm.desc": "Please specify the Network that you would like to add this Instance to. A new NIC will be added for this Network.",
 "message.network.description": "Setup Network and traffic.",
 "message.network.error": "Network Error",

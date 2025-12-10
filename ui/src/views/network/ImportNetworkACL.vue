@@ -36,7 +36,7 @@
           </a-descriptions>
         </div>
 
-         <a-form-item name="file" ref="file">
+        <a-form-item name="file" ref="file">
           <template #label>
             <tooltip-label :title="$t('label.rules.file')" :tooltip="$t('label.rules.file.to.import')"/>
           </template>
@@ -81,6 +81,8 @@
           </div>
         </a-form-item>
 
+        <span>{{ $t('message.network.acl.import.note') }}</span><br/>
+
         <div :span="24" class="action-button">
           <a-button class="button-cancel" @click="closeAction">{{ $t('label.cancel') }}</a-button>
           <a-button
@@ -99,7 +101,6 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-// import { Tag } from 'ant-design-vue'
 import { postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -182,7 +183,7 @@ export default {
       this.form = reactive({})
       this.rules = reactive({
         file: [
-          { required: true, message: this.$t('this.$message.error.required.input') },
+          { required: true, message: this.$t('message.error.required.input') },
           {
             validator: this.checkCsvRulesFile,
             message: this.$t('label.error.rules.file.import')
@@ -262,7 +263,7 @@ export default {
     readCsvFile (file) {
       return new Promise((resolve, reject) => {
         if (window.FileReader) {
-          var reader = new FileReader()
+          const reader = new FileReader()
           reader.onload = (event) => {
             const text = event.target.result
             const lines = text.split('\n').filter(line => line.trim() !== '')

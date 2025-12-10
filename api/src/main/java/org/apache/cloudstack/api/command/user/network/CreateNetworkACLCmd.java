@@ -58,7 +58,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     private Integer publicEndPort;
 
     @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the CIDR list to allow traffic from/to. Multiple entries must be separated by a single comma character (,).")
-    private List<String> cidrlist;
+    private List<String> cidrList;
 
     @Parameter(name = ApiConstants.ICMP_TYPE, type = CommandType.INTEGER, description = "type of the ICMP message being sent")
     private Integer icmpType;
@@ -118,8 +118,8 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     }
 
     public List<String> getSourceCidrList() {
-        if (cidrlist != null) {
-            return cidrlist;
+        if (cidrList != null) {
+            return cidrList;
         } else {
             List<String> oneCidrList = new ArrayList<String>();
             oneCidrList.add(NetUtils.ALL_IP4_CIDRS);
@@ -238,8 +238,8 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
         return reason;
     }
 
-    public void setCidrlist(List<String> cidrlist) {
-        this.cidrlist = cidrlist;
+    public void setCidrList(List<String> cidrList) {
+        this.cidrList = cidrList;
     }
 
     public void setIcmpType(Integer icmpType) {

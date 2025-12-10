@@ -1101,7 +1101,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
         String action = (String) ruleMap.getOrDefault(ApiConstants.ACTION, "deny");
         String trafficType = (String) ruleMap.getOrDefault(ApiConstants.TRAFFIC_TYPE, NetworkACLItem.TrafficType.Ingress);
-        String forDisplay = (String ) ruleMap.getOrDefault(ApiConstants.FOR_DISPLAY, "true");
+        String forDisplay = (String) ruleMap.getOrDefault(ApiConstants.FOR_DISPLAY, "true");
 
         // Create ACL rule using the service
         CreateNetworkACLCmd cmd = new CreateNetworkACLCmd();
@@ -1122,7 +1122,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             } else if (cidrObj instanceof List) {
                 cidrList.addAll((List<String>) cidrObj);
             }
-            cmd.setCidrlist(cidrList);
+            cmd.setCidrList(cidrList);
         }
 
         if (ruleMap.containsKey(ApiConstants.START_PORT)) {

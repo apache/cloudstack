@@ -39,7 +39,8 @@ import com.cloud.user.Account;
 
 @APICommand(name = "importNetworkACL", description = "Imports network ACL rules.",
         responseObject = NetworkACLItemResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        since = "4.22.1")
 public class ImportNetworkACLCmd extends BaseAsyncCmd {
 
     // ///////////////////////////////////////////////////
@@ -51,19 +52,17 @@ public class ImportNetworkACLCmd extends BaseAsyncCmd {
             type = CommandType.UUID,
             entityType = NetworkACLResponse.class,
             required = true,
-            description = "The ID of the network ACL to which the rules will be imported",
-            since = "4.22.0"
+            description = "The ID of the network ACL to which the rules will be imported"
     )
     private Long aclId;
 
     @Parameter(name = ApiConstants.RULES, type = CommandType.MAP, required = true,
-            description = "Rules param list, id and protocol are must. Example: " +
+            description = "Rules param list, id and protocol are must. Invalid rules will be discarded. Example: " +
                     "rules[0].id=101&rules[0].protocol=tcp&rules[0].traffictype=ingress&rules[0].state=active&rules[0].cidrlist=192.168.1.0/24" +
                     "&rules[0].tags=web&rules[0].aclid=acl-001&rules[0].aclname=web-acl&rules[0].number=1&rules[0].action=allow&rules[0].fordisplay=true" +
                     "&rules[0].description=allow%20web%20traffic&rules[1].id=102&rules[1].protocol=udp&rules[1].traffictype=egress&rules[1].state=enabled" +
                     "&rules[1].cidrlist=10.0.0.0/8&rules[1].tags=db&rules[1].aclid=acl-002&rules[1].aclname=db-acl&rules[1].number=2&rules[1].action=deny" +
-                    "&rules[1].fordisplay=false&rules[1].description=deny%20database%20traffic",
-    since = "4.22.0")
+                    "&rules[1].fordisplay=false&rules[1].description=deny%20database%20traffic")
     private Map rules;
 
 
@@ -112,7 +111,7 @@ public class ImportNetworkACLCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_NETWORK_ACL_CREATE;
+        return EventTypes.EVENT_NETWORK_ACL_IMPORT;
     }
 
     @Override
