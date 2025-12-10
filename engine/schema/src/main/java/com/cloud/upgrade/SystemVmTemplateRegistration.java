@@ -422,9 +422,13 @@ public class SystemVmTemplateRegistration {
         VMTemplateVO registeredTemplate = vmTemplateDao.findLatestTemplateByName(templateName, hypervisorType, arch);
         if (registeredTemplate == null && StringUtils.isNotBlank(url)) {
             String urlPath = url.substring(url.lastIndexOf("/") + 1);
+            LOGGER.debug("No template found by name, falling back to search existing SYSTEM template by " +
+                            "urlPath: {}, hypervisor: {}, arch:{}", urlPath, hypervisorType, arch);
             registeredTemplate = vmTemplateDao.findActiveSystemTemplateByHypervisorArchAndUrlPath(hypervisorType, arch,
                     urlPath);
         }
+        LOGGER.debug("Found existing registered template for hypervisor: {}, arch: {}: {}", hypervisorType,
+                arch, registeredTemplate);
         return registeredTemplate;
     }
 
@@ -1046,10 +1050,15 @@ public class SystemVmTemplateRegistration {
 
     protected boolean registerOrUpdateSystemVmTemplate(MetadataTemplateDetails templateDetails,
                    List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> hypervisorsInUse) {
-        LOGGER.debug("Updating System VM template for {}", templateDetails.getHypervisorArchLog());
+        String systemVmTemplateLog = String.format("%s system VM template for %s", getSystemVmTemplateVersion(),
+                templateDetails.getHypervisorArchLog());
+        LOGGER.debug("Registering or updating {}", systemVmTemplateLog,
+                templateDetails.getHypervisorArchLog());
         VMTemplateVO registeredTemplate = getRegisteredTemplate(templateDetails.getName(),
                 templateDetails.getHypervisorType(), templateDetails.getArch(), templateDetails.getUrl());
         if (registeredTemplate != null) {
+            LOGGER.info("{} is already registered, updating details for: {}",
+                    systemVmTemplateLog, templateDetails.getHypervisorArchLog(), registeredTemplate);
             updateRegisteredTemplateDetails(registeredTemplate.getId(), templateDetails);
             return false;
         }
@@ -1057,7 +1066,7 @@ public class SystemVmTemplateRegistration {
                 .anyMatch(p -> p.first().equals(templateDetails.getHypervisorType())
                         && Objects.equals(p.second(), templateDetails.getArch()));
         if (!isHypervisorArchMatchMetadata) {
-            LOGGER.warn("Skipping upgrading {} system VM template for {} as it is not used, not failing upgrade",
+            LOGGER.warn("Skipping upgrading {} as it is not used, not failing upgrade",
                     getSystemVmTemplateVersion(), templateDetails.getHypervisorArchLog());
             VMTemplateVO templateVO = vmTemplateDao.findLatestTemplateByTypeAndHypervisorAndArch(
                     templateDetails.getHypervisorType(), templateDetails.getArch(), Storage.TemplateType.SYSTEM);
@@ -1163,7 +1172,7 @@ public class SystemVmTemplateRegistration {
         }
 
         public CPU.CPUArch getArch() {
-            return arch;
+            return arch != null ? arch : CPU.CPUArch.getDefault();
         }
 
         public String getGuestOs() {
