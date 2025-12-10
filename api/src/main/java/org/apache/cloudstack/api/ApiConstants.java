@@ -1364,8 +1364,8 @@ public class ApiConstants {
     public static final String RECURSIVE_DOMAINS = "recursivedomains";
 
     public static final String VPN_CUSTOMER_GATEWAY_PARAMETERS = "vpncustomergatewayparameters";
-    public static final String CONTAINS_OBSOLETE_PARAMETERS = "containsobsoleteparameters";
-    public static final String CONTAINS_EXCLUDED_PARAMETERS = "containsexcludedparameters";
+    public static final String OBSOLETE_PARAMETERS = "obsoleteparameters";
+    public static final String EXCLUDED_PARAMETERS = "excludedparameters";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.

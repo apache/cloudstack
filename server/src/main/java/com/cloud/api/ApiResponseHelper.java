@@ -3887,8 +3887,16 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setRemoved(result.getRemoved());
         response.setIkeVersion(result.getIkeVersion());
         response.setSplitConnections(result.getSplitConnections());
-        response.setContainsExcludedParameters(site2SiteVpnManager.vpnGatewayContainsExcludedParameters(result));
-        response.setContainsObsoleteParameters(site2SiteVpnManager.vpnGatewayContainsObsoleteParameters(result));
+
+        Set<String> obsoleteParameters = site2SiteVpnManager.getObsoleteVpnGatewayParameters(result);
+        if (!obsoleteParameters.isEmpty()) {
+            response.setContainsObsoleteParameters(obsoleteParameters.toString());
+        }
+        Set<String> excludedParameters = site2SiteVpnManager.getExcludedVpnGatewayParameters(result);
+        if (!excludedParameters.isEmpty()) {
+            response.setContainsExcludedParameters(excludedParameters.toString());
+        }
+
         response.setObjectName("vpncustomergateway");
         response.setHasAnnotation(annotationDao.hasAnnotations(result.getUuid(), AnnotationService.EntityType.VPN_CUSTOMER_GATEWAY.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));

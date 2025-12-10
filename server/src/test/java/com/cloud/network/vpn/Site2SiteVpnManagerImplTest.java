@@ -741,8 +741,9 @@ public class Site2SiteVpnManagerImplTest {
         setConfigKeyValue(Site2SiteVpnManagerImpl.VpnCustomerGatewayExcludedHashingAlgorithms, "");
         setConfigKeyValue(Site2SiteVpnManagerImpl.VpnCustomerGatewayExcludedDhGroup, "");
 
-        boolean result = site2SiteVpnManager.vpnGatewayContainsExcludedParameters(gw);
-        assertTrue("Should detect excluded IKE version", result);
+        java.util.Set<String> result = site2SiteVpnManager.getExcludedVpnGatewayParameters(gw);
+        assertFalse("Should detect excluded IKE version", result.isEmpty());
+        assertEquals("Should detect excluded IKE version", "[ikev1]", result.toString());
     }
 
     @Test
@@ -758,8 +759,9 @@ public class Site2SiteVpnManagerImplTest {
         setConfigKeyValue(Site2SiteVpnManagerImpl.VpnCustomerGatewayExcludedHashingAlgorithms, "");
         setConfigKeyValue(Site2SiteVpnManagerImpl.VpnCustomerGatewayExcludedDhGroup, "");
 
-        boolean result = site2SiteVpnManager.vpnGatewayContainsExcludedParameters(gw);
-        assertTrue("Should detect excluded encryption algorithm", result);
+        java.util.Set<String> result = site2SiteVpnManager.getExcludedVpnGatewayParameters(gw);
+        assertFalse("Should detect excluded encryption algorithm", result.isEmpty());
+        assertEquals("Should detect excluded encryption algorithm", "[3des]", result.toString());
     }
 
     @Test
@@ -771,12 +773,13 @@ public class Site2SiteVpnManagerImplTest {
         when(gw.getDomainId()).thenReturn(DOMAIN_ID);
 
         setConfigKeyValue(Site2SiteVpnManagerImpl.VpnCustomerGatewayExcludedIkeVersions, "");
-        setConfigKeyValue(Site2SiteVpnManagerImpl.VpnCustomerGatewayExcludedEncryptionAlgorithms, "");
+        setConfigKeyValue(Site2SiteVpnManagerImpl.VpnCustomerGatewayExcludedEncryptionAlgorithms, "aes128");
         setConfigKeyValue(Site2SiteVpnManagerImpl.VpnCustomerGatewayExcludedHashingAlgorithms, "md5");
         setConfigKeyValue(Site2SiteVpnManagerImpl.VpnCustomerGatewayExcludedDhGroup, "");
 
-        boolean result = site2SiteVpnManager.vpnGatewayContainsExcludedParameters(gw);
-        assertTrue("Should detect excluded hashing algorithm", result);
+        java.util.Set<String> result = site2SiteVpnManager.getExcludedVpnGatewayParameters(gw);
+        assertFalse("Should detect excluded algorithms", result.isEmpty());
+        assertEquals("Should detect excluded algorithms", "[aes128, md5]", result.toString());
     }
 
     @Test
@@ -792,8 +795,9 @@ public class Site2SiteVpnManagerImplTest {
         setConfigKeyValue(Site2SiteVpnManagerImpl.VpnCustomerGatewayExcludedHashingAlgorithms, "");
         setConfigKeyValue(Site2SiteVpnManagerImpl.VpnCustomerGatewayExcludedDhGroup, "modp1024");
 
-        boolean result = site2SiteVpnManager.vpnGatewayContainsExcludedParameters(gw);
-        assertTrue("Should detect excluded DH group", result);
+        java.util.Set<String> result = site2SiteVpnManager.getExcludedVpnGatewayParameters(gw);
+        assertFalse("Should detect excluded DH group", result.isEmpty());
+        assertEquals("Should detect excluded DH group", "[modp1024]", result.toString());
     }
 
     @Test
@@ -809,8 +813,8 @@ public class Site2SiteVpnManagerImplTest {
         setConfigKeyValue(Site2SiteVpnManagerImpl.VpnCustomerGatewayExcludedHashingAlgorithms, "");
         setConfigKeyValue(Site2SiteVpnManagerImpl.VpnCustomerGatewayExcludedDhGroup, "");
 
-        boolean result = site2SiteVpnManager.vpnGatewayContainsExcludedParameters(gw);
-        assertFalse("Should not detect excluded parameters when none are configured", result);
+        java.util.Set<String> result = site2SiteVpnManager.getExcludedVpnGatewayParameters(gw);
+        assertTrue("Should not detect excluded parameters when none are configured", result.isEmpty());
     }
 
     @Test
@@ -826,8 +830,9 @@ public class Site2SiteVpnManagerImplTest {
         setConfigKeyValue(Site2SiteVpnManagerImpl.VpnCustomerGatewayExcludedHashingAlgorithms, "");
         setConfigKeyValue(Site2SiteVpnManagerImpl.VpnCustomerGatewayExcludedDhGroup, "");
 
-        boolean result = site2SiteVpnManager.vpnGatewayContainsExcludedParameters(gw);
-        assertTrue("Should detect excluded encryption in ESP policy", result);
+        java.util.Set<String> result = site2SiteVpnManager.getExcludedVpnGatewayParameters(gw);
+        assertFalse("Should detect excluded encryption in ESP policy", result.isEmpty());
+        assertEquals("Should detect excluded encryption in ESP policy", "[3des]", result.toString());
     }
 
     @Test
@@ -843,8 +848,9 @@ public class Site2SiteVpnManagerImplTest {
         setConfigKeyValue(Site2SiteVpnManagerImpl.VpnCustomerGatewayObsoleteHashingAlgorithms, "");
         setConfigKeyValue(Site2SiteVpnManagerImpl.VpnCustomerGatewayObsoleteDhGroup, "");
 
-        boolean result = site2SiteVpnManager.vpnGatewayContainsObsoleteParameters(gw);
-        assertTrue("Should detect obsolete IKE version", result);
+        java.util.Set<String> result = site2SiteVpnManager.getObsoleteVpnGatewayParameters(gw);
+        assertFalse("Should detect obsolete IKE version", result.isEmpty());
+        assertEquals("Should detect obsolete IKE version", "[ikev1]", result.toString());
     }
 
     @Test
@@ -860,8 +866,9 @@ public class Site2SiteVpnManagerImplTest {
         setConfigKeyValue(Site2SiteVpnManagerImpl.VpnCustomerGatewayObsoleteHashingAlgorithms, "");
         setConfigKeyValue(Site2SiteVpnManagerImpl.VpnCustomerGatewayObsoleteDhGroup, "");
 
-        boolean result = site2SiteVpnManager.vpnGatewayContainsObsoleteParameters(gw);
-        assertTrue("Should detect obsolete encryption algorithm", result);
+        java.util.Set<String> result = site2SiteVpnManager.getObsoleteVpnGatewayParameters(gw);
+        assertFalse("Should detect obsolete encryption algorithm", result.isEmpty());
+        assertEquals("Should detect obsolete encryption algorithm", "[3des]", result.toString());
     }
 
     @Test
@@ -877,8 +884,9 @@ public class Site2SiteVpnManagerImplTest {
         setConfigKeyValue(Site2SiteVpnManagerImpl.VpnCustomerGatewayObsoleteHashingAlgorithms, "md5");
         setConfigKeyValue(Site2SiteVpnManagerImpl.VpnCustomerGatewayObsoleteDhGroup, "");
 
-        boolean result = site2SiteVpnManager.vpnGatewayContainsObsoleteParameters(gw);
-        assertTrue("Should detect obsolete hashing algorithm", result);
+        java.util.Set<String> result = site2SiteVpnManager.getObsoleteVpnGatewayParameters(gw);
+        assertFalse("Should detect obsolete hashing algorithm", result.isEmpty());
+        assertEquals("Should detect obsolete hashing algorithm", "[md5]", result.toString());
     }
 
     @Test
@@ -894,8 +902,9 @@ public class Site2SiteVpnManagerImplTest {
         setConfigKeyValue(Site2SiteVpnManagerImpl.VpnCustomerGatewayObsoleteHashingAlgorithms, "");
         setConfigKeyValue(Site2SiteVpnManagerImpl.VpnCustomerGatewayObsoleteDhGroup, "modp1024");
 
-        boolean result = site2SiteVpnManager.vpnGatewayContainsObsoleteParameters(gw);
-        assertTrue("Should detect obsolete DH group", result);
+        java.util.Set<String> result = site2SiteVpnManager.getObsoleteVpnGatewayParameters(gw);
+        assertFalse("Should detect obsolete DH group", result.isEmpty());
+        assertEquals("Should detect obsolete DH group", "[modp1024]", result.toString());
     }
 
     @Test
@@ -911,8 +920,8 @@ public class Site2SiteVpnManagerImplTest {
         setConfigKeyValue(Site2SiteVpnManagerImpl.VpnCustomerGatewayObsoleteHashingAlgorithms, "");
         setConfigKeyValue(Site2SiteVpnManagerImpl.VpnCustomerGatewayObsoleteDhGroup, "");
 
-        boolean result = site2SiteVpnManager.vpnGatewayContainsObsoleteParameters(gw);
-        assertFalse("Should not detect obsolete parameters when none are configured", result);
+        java.util.Set<String> result = site2SiteVpnManager.getObsoleteVpnGatewayParameters(gw);
+        assertTrue("Should not detect obsolete parameters when none are configured", result.isEmpty());
     }
 
     @Test
@@ -928,7 +937,8 @@ public class Site2SiteVpnManagerImplTest {
         setConfigKeyValue(Site2SiteVpnManagerImpl.VpnCustomerGatewayObsoleteHashingAlgorithms, "");
         setConfigKeyValue(Site2SiteVpnManagerImpl.VpnCustomerGatewayObsoleteDhGroup, "");
 
-        boolean result = site2SiteVpnManager.vpnGatewayContainsObsoleteParameters(gw);
-        assertTrue("Should detect obsolete encryption in ESP policy", result);
+        java.util.Set<String> result = site2SiteVpnManager.getObsoleteVpnGatewayParameters(gw);
+        assertFalse("Should detect obsolete encryption in ESP policy", result.isEmpty());
+        assertEquals("Should detect obsolete encryption in ESP policy", "[3des]", result.toString());
     }
 }

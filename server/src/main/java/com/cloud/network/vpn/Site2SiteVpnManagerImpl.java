@@ -17,8 +17,12 @@
 package com.cloud.network.vpn;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -27,6 +31,7 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.command.user.vpn.CreateVpnConnectionCmd;
@@ -43,9 +48,12 @@ import org.apache.cloudstack.api.command.user.vpn.UpdateVpnCustomerGatewayCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 
+import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
 import com.cloud.event.ActionEvent;
+import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -74,6 +82,7 @@ import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -132,6 +141,11 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         "Comma-separated list of Diffie-Hellman groups that are marked as obsolete/insecure for VPN Customer Gateways." +
         "Applies to both IKE and ESP phases. Allowed values are modp1024, modp1536, modp2048, modp3072, modp4096, modp6144 and modp8192.",
         true, ConfigKey.Scope.Domain);
+    public static final ConfigKey<Long> VpnCustomerGatewayObsoleteCheckInterval = new ConfigKey<Long>(
+        ConfigKey.CATEGORY_NETWORK, Long.class, "vpn.customer.gateway.obsolete.check.interval", "0",
+        "Interval in minutes to periodically check VPN customer gateways for obsolete/excluded parameters and generate events and alerts. " +
+        "Set to 0 to disable. Default: 0 (disabled).",
+        true, ConfigKey.Scope.Global);
 
     List<Site2SiteVpnServiceProvider> _s2sProviders;
     @Inject
@@ -160,9 +174,12 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     private IpAddressManager ipAddressManager;
     @Inject
     private VpcManager vpcManager;
+    @Inject
+    private AlertManager _alertMgr;
 
     int _connLimit;
     int _subnetsLimit;
+    private Timer _vpnCheckTimer;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -170,6 +187,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         _connLimit = NumbersUtil.parseInt(configs.get(Config.Site2SiteVpnConnectionPerVpnGatewayLimit.key()), 4);
         _subnetsLimit = NumbersUtil.parseInt(configs.get(Config.Site2SiteVpnSubnetsPerCustomerGatewayLimit.key()), 10);
         assert (_s2sProviders.iterator().hasNext()) : "Did not get injected with a list of S2S providers!";
+        _vpnCheckTimer = new Timer("VpnCustomerGateway-ObsoleteCheck", true);
         return true;
     }
 
@@ -230,72 +248,73 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         }
     }
 
-    @Override
-    public boolean vpnGatewayContainsExcludedParameters(Site2SiteCustomerGateway customerGateway) {
-        return Boolean.TRUE.equals(
-                validateVpnCryptoAgainstExcludedList(
-                        customerGateway.getIkePolicy(), customerGateway.getEspPolicy(), customerGateway.getIkeVersion(), customerGateway.getDomainId()).first());
-    }
-
-    @Override
-    public boolean vpnGatewayContainsObsoleteParameters(Site2SiteCustomerGateway customerGateway) {
-        return Boolean.TRUE.equals(
-                validateVpnCryptoAgainstObsoleteList(
-                        customerGateway.getIkePolicy(), customerGateway.getEspPolicy(), customerGateway.getIkeVersion(), customerGateway.getDomainId()).first());
-    }
-
     private void validateVpnCryptographicParameters(String ikePolicy, String espPolicy, String ikeVersion, Long domainId) {
-        Pair<Boolean, String> validationResult = validateVpnCryptoAgainstExcludedList(ikePolicy, espPolicy, ikeVersion, domainId);
-        if (Boolean.TRUE.equals(validationResult.first())) {
-            throw new InvalidParameterValueException(validationResult.second() + "' is excluded and cannot be used for VPN Customer Gateway creation.");
-        }
-    }
-
-    private Pair<Boolean, String> validateVpnCryptoAgainstExcludedList(String ikePolicy, String espPolicy, String ikeVersion, Long domainId) {
         String excludedEncryption = VpnCustomerGatewayExcludedEncryptionAlgorithms.valueIn(domainId);
         String excludedHashing = VpnCustomerGatewayExcludedHashingAlgorithms.valueIn(domainId);
         String excludedIkeVersions = VpnCustomerGatewayExcludedIkeVersions.valueIn(domainId);
         String excludedDhGroup = VpnCustomerGatewayExcludedDhGroup.valueIn(domainId);
 
-        return validateVpnCryptoAgainstList(ikePolicy, espPolicy, ikeVersion, excludedEncryption, excludedHashing, excludedIkeVersions, excludedDhGroup);
+        Set<String> excludedParameters = getVpnGatewayParametersInBlockedList(ikePolicy, espPolicy, ikeVersion,
+                excludedEncryption, excludedHashing, excludedIkeVersions, excludedDhGroup);
+        if (!excludedParameters.isEmpty()) {
+            throw new InvalidParameterValueException("The following excluded cryptographic parameter(s) cannot be used in a VPN Customer Gateway: " + excludedParameters.toString());
+        }
     }
 
-    private Pair<Boolean, String> validateVpnCryptoAgainstObsoleteList(String ikePolicy, String espPolicy, String ikeVersion, Long domainId) {
+    @Override
+    public Set<String> getExcludedVpnGatewayParameters(Site2SiteCustomerGateway customerGw) {
+        Long domainId = customerGw.getDomainId();
+        String excludedEncryption = VpnCustomerGatewayExcludedEncryptionAlgorithms.valueIn(domainId);
+        String excludedHashing = VpnCustomerGatewayExcludedHashingAlgorithms.valueIn(domainId);
+        String excludedIkeVersions = VpnCustomerGatewayExcludedIkeVersions.valueIn(domainId);
+        String excludedDhGroup = VpnCustomerGatewayExcludedDhGroup.valueIn(domainId);
+
+        return getVpnGatewayParametersInBlockedList(customerGw.getIkePolicy(), customerGw.getEspPolicy(), customerGw.getIkeVersion(),
+                excludedEncryption, excludedHashing, excludedIkeVersions, excludedDhGroup);
+    }
+
+    @Override
+    public Set<String> getObsoleteVpnGatewayParameters(Site2SiteCustomerGateway customerGw) {
+        Long domainId = customerGw.getDomainId();
         String obsoleteEncryption = VpnCustomerGatewayObsoleteEncryptionAlgorithms.valueIn(domainId);
         String obsoleteHashing = VpnCustomerGatewayObsoleteHashingAlgorithms.valueIn(domainId);
         String obsoleteIkeVersions = VpnCustomerGatewayObsoleteIkeVersions.valueIn(domainId);
         String obsoleteDhGroup = VpnCustomerGatewayObsoleteDhGroup.valueIn(domainId);
 
-        return validateVpnCryptoAgainstList(ikePolicy, espPolicy, ikeVersion, obsoleteEncryption, obsoleteHashing, obsoleteIkeVersions, obsoleteDhGroup);
+        return getVpnGatewayParametersInBlockedList(customerGw.getIkePolicy(), customerGw.getEspPolicy(), customerGw.getIkeVersion(),
+                obsoleteEncryption, obsoleteHashing, obsoleteIkeVersions, obsoleteDhGroup);
     }
 
-    private Pair<Boolean, String> validateVpnCryptoAgainstList(String ikePolicy, String espPolicy, String ikeVersion, String blockedEncryptionList, String blockedHashingList,
-                                                               String blockedIkeVersionList, String blockedDhGroupList) {
+    private Set<String> getVpnGatewayParametersInBlockedList(String ikePolicy, String espPolicy, String ikeVersion,
+                                                             String blockedEncryptionList, String blockedHashingList,
+                                                             String blockedIkeVersionList, String blockedDhGroupList) {
 
-        if (isParameterInList(ikeVersion, blockedIkeVersionList)) {
-            String message = "IKE version '" + ikeVersion;
-            return new Pair<>(true, message);
-        }
-
-        Pair<Boolean, String> ikePolicyResult = validatePolicyAgainstList(ikePolicy, "IKE", blockedEncryptionList, blockedHashingList, blockedDhGroupList);
-        if (Boolean.TRUE.equals(ikePolicyResult.first())) {
-            return ikePolicyResult;
-        }
-
-        Pair<Boolean, String> espPolicyResult = validatePolicyAgainstList(espPolicy, "ESP", blockedEncryptionList, blockedHashingList, blockedDhGroupList);
-        if (Boolean.TRUE.equals(espPolicyResult.first())) {
-            return espPolicyResult;
-        }
-
-        return new Pair<>(false, null);
-    }
-
-    private Pair<Boolean, String> validatePolicyAgainstList(String policy, String policyType, String blockedEncryptionList, String blockedHashingList, String blockedDhGroupList) {
+        Set<String> blockedParameters = new HashSet<>();
         if (StringUtils.isEmpty(blockedEncryptionList)
                 && StringUtils.isEmpty(blockedHashingList)
+                && StringUtils.isEmpty(blockedIkeVersionList)
                 && StringUtils.isEmpty(blockedDhGroupList)) {
-            return new Pair<>(false, null);
+            return blockedParameters;
         }
+
+        if (isParameterInList(ikeVersion, blockedIkeVersionList)) {
+            blockedParameters.add(ikeVersion);
+        }
+
+        Set<String> ikePolicyResult = getVpnGatewayPolicyParametersInBlockedList(ikePolicy, "IKE", blockedEncryptionList, blockedHashingList, blockedDhGroupList);
+        if (!ikePolicyResult.isEmpty()) {
+            blockedParameters.addAll(ikePolicyResult);
+        }
+
+        Set<String> espPolicyResult = getVpnGatewayPolicyParametersInBlockedList(espPolicy, "ESP", blockedEncryptionList, blockedHashingList, blockedDhGroupList);
+        if (!espPolicyResult.isEmpty()) {
+            blockedParameters.addAll(espPolicyResult);
+        }
+
+        return blockedParameters;
+    }
+
+    private Set<String> getVpnGatewayPolicyParametersInBlockedList(String policy, String policyType, String blockedEncryptionList, String blockedHashingList, String blockedDhGroupList) {
 
         String trimmedPolicy = policy.trim();
         String cipherHash = trimmedPolicy.split(";")[0];
@@ -304,25 +323,22 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         String encryption = parts[0].trim();
         String hashing = parts.length > 1 ? parts[1].trim() : "";
 
+        Set<String> blockedParameters = new HashSet<>();
         if (isParameterInList(encryption, blockedEncryptionList)) {
-            String message = policyType + " policy encryption algorithm '" + encryption;
-            return new Pair<>(true, message);
+            blockedParameters.add(encryption);
         }
 
         if (isParameterInList(hashing, blockedHashingList)) {
-            String message = policyType + " policy hashing algorithm '" + hashing;
-            return new Pair<>(true, message);
+            blockedParameters.add(hashing);
         }
 
         if (!trimmedPolicy.equals(cipherHash)) {
             String dhGroup = trimmedPolicy.split(";")[1].trim();
             if (isParameterInList(dhGroup, blockedDhGroupList)) {
-                String message = policyType + " policy Diffie-Hellman group '" + dhGroup;
-                return new Pair<>(true, message);
+                blockedParameters.add(dhGroup);
             }
         }
-
-        return new Pair<>(false, null);
+        return blockedParameters;
     }
 
     private boolean isParameterInList(String parameter, String list) {
@@ -1135,6 +1151,27 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     }
 
     @Override
+    public boolean start() {
+        final long checkInterval = VpnCustomerGatewayObsoleteCheckInterval.value();
+        if (checkInterval > 0) {
+            TimerTask task = new CheckVpnCustomerGatewayObsoleteParametersTask();
+            _vpnCheckTimer.schedule(task, checkInterval * 60 * 1000L, checkInterval * 60 * 1000L);
+            logger.info("Scheduled VPN customer gateway obsolete parameters check with interval: " + checkInterval + " minutes");
+        } else {
+            logger.debug("VPN customer gateway obsolete check is disabled (interval = 0)");
+        }
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        if (_vpnCheckTimer != null) {
+            _vpnCheckTimer.cancel();
+        }
+        return true;
+    }
+
+    @Override
     public String getConfigComponentName() {
         return Site2SiteVpnManager.class.getSimpleName();
     }
@@ -1143,6 +1180,58 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] { VpnCustomerGatewayExcludedEncryptionAlgorithms, VpnCustomerGatewayExcludedHashingAlgorithms,
                 VpnCustomerGatewayExcludedIkeVersions, VpnCustomerGatewayExcludedDhGroup, VpnCustomerGatewayObsoleteEncryptionAlgorithms,
-                VpnCustomerGatewayObsoleteHashingAlgorithms, VpnCustomerGatewayObsoleteIkeVersions, VpnCustomerGatewayObsoleteDhGroup};
+                VpnCustomerGatewayObsoleteHashingAlgorithms, VpnCustomerGatewayObsoleteIkeVersions, VpnCustomerGatewayObsoleteDhGroup,
+                VpnCustomerGatewayObsoleteCheckInterval};
+    }
+
+    protected class CheckVpnCustomerGatewayObsoleteParametersTask extends ManagedContextTimerTask {
+
+        @Override
+        protected void runInContext() {
+            List<Site2SiteCustomerGatewayVO> allGateways = _customerGatewayDao.listAll();
+            int obsoleteCount = 0;
+            int excludedCount = 0;
+
+            for (Site2SiteCustomerGatewayVO gateway : allGateways) {
+                Set<String> excludedParameters = getExcludedVpnGatewayParameters(gateway);
+                Set<String> obsoleteParameters = getObsoleteVpnGatewayParameters(gateway);
+
+                String message = "";
+                if (!excludedParameters.isEmpty()) {
+                    excludedCount++;
+                    message += "excluded parameter(s) " + excludedParameters.toString();
+                }
+                if (!obsoleteParameters.isEmpty()) {
+                    obsoleteCount++;
+                    if (StringUtils.isNotEmpty(message)) {
+                        message += " and ";
+                    }
+                    message += "obsolete parameter(s) " + obsoleteParameters.toString();
+                }
+
+                if (StringUtils.isNotEmpty(message)) {
+                    Account account = _accountDao.findById(gateway.getAccountId());
+                    String description = String.format("VPN customer gateway '%s' (Account: %s) contains %s.", gateway.getName(), account.getAccountName(), message);
+                    ActionEventUtils.onActionEvent(User.UID_SYSTEM, gateway.getAccountId(), gateway.getDomainId(),
+                            EventTypes.EVENT_S2S_VPN_GATEWAY_OBSOLETE_PARAMS, description,
+                            gateway.getId(), Site2SiteCustomerGateway.class.getSimpleName());
+                }
+            }
+
+            String message = "";
+            if (obsoleteCount > 0) {
+                message += "VPN Customer Gateways with obsolete parameters: " + obsoleteCount;
+            }
+            if (excludedCount > 0) {
+                if (StringUtils.isNotEmpty(message)) {
+                    message += " and ";
+                }
+                message += "VPN Customer Gateways with excluded parameters: " + excludedCount;
+            }
+            if (StringUtils.isNotEmpty(message)) {
+                _alertMgr.clearAlert(AlertService.AlertType.ALERT_TYPE_VPN_GATEWAY_OBSOLETE_PARAMETERS, 0L, 0L);
+                _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_VPN_GATEWAY_OBSOLETE_PARAMETERS, 0L, 0L, message, null);
+            }
+        }
     }
 }

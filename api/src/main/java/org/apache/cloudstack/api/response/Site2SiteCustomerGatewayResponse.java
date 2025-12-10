@@ -114,13 +114,13 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponseWithAnnotation
     @Param(description = "Which IKE Version to use, one of ike (autoselect), ikev1, or ikev2. Defaults to ike")
     private String ikeVersion;
 
-    @SerializedName(ApiConstants.CONTAINS_OBSOLETE_PARAMETERS)
-    @Param(description = "Whether the vpn customer gateway contains obsolete parameters. The listCapabilities api can be used to determine which parameters are obsolete.")
-    private Boolean containsObsoleteAlgorithms;
+    @SerializedName(ApiConstants.OBSOLETE_PARAMETERS)
+    @Param(description = "Contains the list of obsolete/insecure cryptographic parameters that the vpn customer gateway is using.", since = "4.23.0")
+    private String obsoleteParameters;
 
-    @SerializedName(ApiConstants.CONTAINS_EXCLUDED_PARAMETERS)
-    @Param(description = "Whether the vpn customer gateway contains excluded parameters. The listCapabilities api can be used to determine which parameters are excluded.")
-    private Boolean containsExcludedAlgorithms;
+    @SerializedName(ApiConstants.EXCLUDED_PARAMETERS)
+    @Param(description = "Contains the list of excluded/not allowed cryptographic parameters that the vpn customer gateway is using.", since = "4.23.0")
+    private String excludedParameters;
 
     public void setId(String id) {
         this.id = id;
@@ -210,12 +210,12 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponseWithAnnotation
         this.domainPath = domainPath;
     }
 
-    public void setContainsObsoleteParameters(Boolean containsObsoleteAlgorithms) {
-        this.containsObsoleteAlgorithms = containsObsoleteAlgorithms;
+    public void setContainsObsoleteParameters(String obsoleteParameters) {
+        this.obsoleteParameters = obsoleteParameters;
     }
 
-    public void setContainsExcludedParameters(Boolean containsExcludedAlgorithms) {
-        this.containsExcludedAlgorithms = containsExcludedAlgorithms;
+    public void setContainsExcludedParameters(String excludedParameters) {
+        this.excludedParameters = excludedParameters;
     }
 
 }
