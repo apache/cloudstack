@@ -141,10 +141,12 @@ public class KVMGuruTest {
         Mockito.verify(vmTO).setCpuQuotaPercentage(Mockito.anyDouble());
     }
 
-    @Test(expected = CloudRuntimeException.class)
+    @Test
     public void testSetVmQuotaPercentageNullHost() {
         Mockito.when(hostDao.findById(hostId)).thenReturn(null);
+        Mockito.when(vm.getLastHostId()).thenReturn(null);
         guru.setVmQuotaPercentage(vmTO, vmProfile);
+        Mockito.verify(vmTO, Mockito.never()).setCpuQuotaPercentage(Mockito.anyDouble());
     }
 
     @Test
