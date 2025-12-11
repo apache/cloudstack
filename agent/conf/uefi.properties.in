@@ -15,16 +15,10 @@
 # specific language governing permissions and limitations
 # under the License.
 
-/etc/cloudstack/agent/agent.properties
-/etc/cloudstack/agent/uefi.properties
-/etc/cloudstack/agent/environment.properties
-/etc/cloudstack/agent/log4j-cloud.xml
-/etc/default/cloudstack-agent
-/etc/profile.d/cloudstack-agent-profile.sh
-/etc/logrotate.d/cloudstack-agent
-/usr/bin/cloudstack-setup-agent
-/usr/bin/cloudstack-ssh
-/usr/bin/cloudstack-agent-upgrade
-/usr/bin/cloudstack-guest-tool
-/usr/share/cloudstack-agent/lib/*
-/usr/share/cloudstack-agent/plugins
+# Configuration file for UEFI
+
+guest.nvram.template.legacy=@GUESTNVRAMTEMPLATELEGACY@
+guest.loader.legacy=@GUESTLOADERLEGACY@
+guest.nvram.template.secure=@GUESTNVRAMTEMPLATESECURE@
+guest.loader.secure=@GUESTLOADERSECURE@
+guest.nvram.path=@GUESTNVRAMPATH@

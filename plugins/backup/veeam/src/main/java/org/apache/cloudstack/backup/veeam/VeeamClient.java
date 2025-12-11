@@ -105,7 +105,8 @@ public class VeeamClient {
     private static final String REPOSITORY_REFERENCE = "RepositoryReference";
     private static final String RESTORE_POINT_REFERENCE = "RestorePointReference";
     private static final String BACKUP_FILE_REFERENCE = "BackupFileReference";
-    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+    private static final ObjectMapper OBJECT_MAPPER = new XmlMapper();
 
     private String veeamServerIp;
     private final Integer veeamServerVersion;
@@ -123,6 +124,8 @@ public class VeeamClient {
         this.restoreTimeout = restoreTimeout;
         this.taskPollInterval = taskPollInterval;
         this.taskPollMaxRetry = taskPollMaxRetry;
+
+        OBJECT_MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
         final RequestConfig config = RequestConfig.custom()
                 .setConnectTimeout(timeout * 1000)
@@ -233,8 +236,7 @@ public class VeeamClient {
     private HttpResponse post(final String path, final Object obj) throws IOException {
         String xml = null;
         if (obj != null) {
-            XmlMapper xmlMapper = new XmlMapper();
-            xml = xmlMapper.writer()
+            xml = OBJECT_MAPPER.writer()
                     .with(ToXmlGenerator.Feature.WRITE_XML_DECLARATION)
                     .writeValueAsString(obj);
             // Remove invalid/empty xmlns
@@ -277,8 +279,7 @@ public class VeeamClient {
         try {
             final HttpResponse response = get("/hierarchyRoots");
             checkResponseOK(response);
-            final ObjectMapper objectMapper = new XmlMapper();
-            final EntityReferences references = objectMapper.readValue(response.getEntity().getContent(), EntityReferences.class);
+            final EntityReferences references = OBJECT_MAPPER.readValue(response.getEntity().getContent(), EntityReferences.class);
             for (final Ref ref : references.getRefs()) {
                 if (ref.getName().equals(vmwareDcName) && ref.getType().equals(HIERARCHY_ROOT_REFERENCE)) {
                     return ref.getUid();
@@ -297,8 +298,7 @@ public class VeeamClient {
         try {
             final HttpResponse response = get(String.format("/lookup?host=%s&type=Vm&name=%s", hierarchyId, vmName));
             checkResponseOK(response);
-            final ObjectMapper objectMapper = new XmlMapper();
-            final HierarchyItems items = objectMapper.readValue(response.getEntity().getContent(), HierarchyItems.class);
+            final HierarchyItems items = OBJECT_MAPPER.readValue(response.getEntity().getContent(), HierarchyItems.class);
             if (items == null || items.getItems() == null || items.getItems().isEmpty()) {
                 throw new CloudRuntimeException("Could not find VM " + vmName + " in Veeam, please ask administrator to check Veeam B&R manager");
             }
@@ -316,14 +316,12 @@ public class VeeamClient {
 
     private Task parseTaskResponse(HttpResponse response) throws IOException {
         checkResponseOK(response);
-        final ObjectMapper objectMapper = new XmlMapper();
-        return objectMapper.readValue(response.getEntity().getContent(), Task.class);
+        return OBJECT_MAPPER.readValue(response.getEntity().getContent(), Task.class);
     }
 
     protected RestoreSession parseRestoreSessionResponse(HttpResponse response) throws IOException {
         checkResponseOK(response);
-        final ObjectMapper objectMapper = new XmlMapper();
-        return objectMapper.readValue(response.getEntity().getContent(), RestoreSession.class);
+        return OBJECT_MAPPER.readValue(response.getEntity().getContent(), RestoreSession.class);
     }
 
     private boolean checkTaskStatus(final HttpResponse response) throws IOException {
@@ -410,8 +408,7 @@ public class VeeamClient {
             String repositoryName = getRepositoryNameFromJob(backupName);
             final HttpResponse response = get(String.format("/backupServers/%s/repositories", backupServerId));
             checkResponseOK(response);
-            final ObjectMapper objectMapper = new XmlMapper();
-            final EntityReferences references = objectMapper.readValue(response.getEntity().getContent(), EntityReferences.class);
+            final EntityReferences references = OBJECT_MAPPER.readValue(response.getEntity().getContent(), EntityReferences.class);
             for (final Ref ref : references.getRefs()) {
                 if (ref.getType().equals(REPOSITORY_REFERENCE) && ref.getName().equals(repositoryName)) {
                     return ref;
@@ -447,8 +444,7 @@ public class VeeamClient {
         try {
             final HttpResponse response = get("/backups");
             checkResponseOK(response);
-            final ObjectMapper objectMapper = new XmlMapper();
-            final EntityReferences entityReferences = objectMapper.readValue(response.getEntity().getContent(), EntityReferences.class);
+            final EntityReferences entityReferences = OBJECT_MAPPER.readValue(response.getEntity().getContent(), EntityReferences.class);
             for (final Ref ref : entityReferences.getRefs()) {
                 logger.debug("Veeam Backup found, name: " + ref.getName() + ", uid: " + ref.getUid() + ", type: " + ref.getType());
             }
@@ -463,8 +459,7 @@ public class VeeamClient {
         try {
             final HttpResponse response = get("/jobs");
             checkResponseOK(response);
-            final ObjectMapper objectMapper = new XmlMapper();
-            final EntityReferences entityReferences = objectMapper.readValue(response.getEntity().getContent(), EntityReferences.class);
+            final EntityReferences entityReferences = OBJECT_MAPPER.readValue(response.getEntity().getContent(), EntityReferences.class);
             final List<BackupOffering> policies = new ArrayList<>();
             if (entityReferences == null || entityReferences.getRefs() == null) {
                 return policies;
@@ -486,9 +481,7 @@ public class VeeamClient {
             final HttpResponse response = get(String.format("/jobs/%s?format=Entity",
                     jobId.replace("urn:veeam:Job:", "")));
             checkResponseOK(response);
-            final ObjectMapper objectMapper = new XmlMapper();
-            objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            return objectMapper.readValue(response.getEntity().getContent(), Job.class);
+            return OBJECT_MAPPER.readValue(response.getEntity().getContent(), Job.class);
         } catch (final IOException e) {
             logger.error("Failed to list Veeam jobs due to:", e);
             checkResponseTimeOut(e);
@@ -568,9 +561,7 @@ public class VeeamClient {
             final String veeamVmRefId = lookupVM(hierarchyId, vmwareInstanceName);
             final HttpResponse response = get(String.format("/jobs/%s/includes", jobId));
             checkResponseOK(response);
-            final ObjectMapper objectMapper = new XmlMapper();
-            objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            final ObjectsInJob jobObjects = objectMapper.readValue(response.getEntity().getContent(), ObjectsInJob.class);
+            final ObjectsInJob jobObjects = OBJECT_MAPPER.readValue(response.getEntity().getContent(), ObjectsInJob.class);
             if (jobObjects == null || jobObjects.getObjects() == null) {
                 logger.warn("No objects found in the Veeam job " + jobId);
                 return false;
@@ -710,8 +701,7 @@ public class VeeamClient {
     protected Map<String, Backup.Metric> processHttpResponseForBackupMetrics(final InputStream content) {
         Map<String, Backup.Metric> metrics = new HashMap<>();
         try {
-            final ObjectMapper objectMapper = new XmlMapper();
-            final BackupFiles backupFiles = objectMapper.readValue(content, BackupFiles.class);
+            final BackupFiles backupFiles = OBJECT_MAPPER.readValue(content, BackupFiles.class);
             if (backupFiles == null || CollectionUtils.isEmpty(backupFiles.getBackupFiles())) {
                 throw new CloudRuntimeException("Could not get backup metrics via Veeam B&R API");
             }
@@ -855,8 +845,7 @@ public class VeeamClient {
     public List<Backup.RestorePoint> processHttpResponseForVmRestorePoints(InputStream content, String vmwareDcName, String vmInternalName, Map<String, Backup.Metric> metricsMap) {
         List<Backup.RestorePoint> vmRestorePointList = new ArrayList<>();
         try {
-            final ObjectMapper objectMapper = new XmlMapper();
-            final VmRestorePoints vmRestorePoints = objectMapper.readValue(content, VmRestorePoints.class);
+            final VmRestorePoints vmRestorePoints = OBJECT_MAPPER.readValue(content, VmRestorePoints.class);
             final String hierarchyId = findDCHierarchy(vmwareDcName);
             final String hierarchyUuid = StringUtils.substringAfterLast(hierarchyId, ":");
             if (vmRestorePoints == null) {
@@ -907,7 +896,7 @@ public class VeeamClient {
     }
 
     private Date formatDate(String date) throws ParseException {
-        return dateFormat.parse(StringUtils.substring(date, 0, 19));
+        return DATE_FORMAT.parse(StringUtils.substring(date, 0, 19));
     }
 
     public Pair<Boolean, String> restoreVMToDifferentLocation(String restorePointId, String restoreLocation, String hostIp, String dataStoreUuid) {
