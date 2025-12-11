@@ -3889,11 +3889,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setSplitConnections(result.getSplitConnections());
 
         Set<String> obsoleteParameters = site2SiteVpnManager.getObsoleteVpnGatewayParameters(result);
-        if (!obsoleteParameters.isEmpty()) {
+        if (CollectionUtils.isNotEmpty(obsoleteParameters)) {
             response.setContainsObsoleteParameters(obsoleteParameters.toString());
         }
         Set<String> excludedParameters = site2SiteVpnManager.getExcludedVpnGatewayParameters(result);
-        if (!excludedParameters.isEmpty()) {
+        if (CollectionUtils.isNotEmpty(excludedParameters)) {
             response.setContainsExcludedParameters(excludedParameters.toString());
         }
 

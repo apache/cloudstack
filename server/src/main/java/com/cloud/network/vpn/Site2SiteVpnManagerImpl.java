@@ -302,12 +302,12 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         }
 
         Set<String> ikePolicyResult = getVpnGatewayPolicyParametersInBlockedList(ikePolicy, "IKE", blockedEncryptionList, blockedHashingList, blockedDhGroupList);
-        if (!ikePolicyResult.isEmpty()) {
+        if (CollectionUtils.isNotEmpty(ikePolicyResult)) {
             blockedParameters.addAll(ikePolicyResult);
         }
 
         Set<String> espPolicyResult = getVpnGatewayPolicyParametersInBlockedList(espPolicy, "ESP", blockedEncryptionList, blockedHashingList, blockedDhGroupList);
-        if (!espPolicyResult.isEmpty()) {
+        if (CollectionUtils.isNotEmpty(espPolicyResult)) {
             blockedParameters.addAll(espPolicyResult);
         }
 
@@ -1196,41 +1196,37 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
                 Set<String> excludedParameters = getExcludedVpnGatewayParameters(gateway);
                 Set<String> obsoleteParameters = getObsoleteVpnGatewayParameters(gateway);
 
-                String message = "";
-                if (!excludedParameters.isEmpty()) {
+                List<String> message = new ArrayList<>();
+                if (CollectionUtils.isNotEmpty(excludedParameters)) {
                     excludedCount++;
-                    message += "excluded parameter(s) " + excludedParameters.toString();
+                    message.add("excluded parameter(s) " + excludedParameters.toString());
                 }
-                if (!obsoleteParameters.isEmpty()) {
+                if (CollectionUtils.isNotEmpty(obsoleteParameters)) {
                     obsoleteCount++;
-                    if (StringUtils.isNotEmpty(message)) {
-                        message += " and ";
-                    }
-                    message += "obsolete parameter(s) " + obsoleteParameters.toString();
+                    message.add("obsolete parameter(s) " + excludedParameters.toString());
                 }
 
-                if (StringUtils.isNotEmpty(message)) {
+                if (CollectionUtils.isNotEmpty(message)) {
                     Account account = _accountDao.findById(gateway.getAccountId());
-                    String description = String.format("VPN customer gateway '%s' (Account: %s) contains %s.", gateway.getName(), account.getAccountName(), message);
+                    String description = String.format("VPN customer gateway '%s' (Account: %s) contains %s.",
+                            gateway.getName(), account.getAccountName(), String.join(" and ", message));
                     ActionEventUtils.onActionEvent(User.UID_SYSTEM, gateway.getAccountId(), gateway.getDomainId(),
                             EventTypes.EVENT_S2S_VPN_GATEWAY_OBSOLETE_PARAMS, description,
                             gateway.getId(), Site2SiteCustomerGateway.class.getSimpleName());
                 }
             }
 
-            String message = "";
-            if (obsoleteCount > 0) {
-                message += "VPN Customer Gateways with obsolete parameters: " + obsoleteCount;
-            }
+            List<String> message = new ArrayList<>();
             if (excludedCount > 0) {
-                if (StringUtils.isNotEmpty(message)) {
-                    message += " and ";
-                }
-                message += "VPN Customer Gateways with excluded parameters: " + excludedCount;
+                message.add("excluded parameters: " + excludedCount);
             }
-            if (StringUtils.isNotEmpty(message)) {
+            if (obsoleteCount > 0) {
+                message.add("obsolete parameters: " + obsoleteCount);
+            }
+            if (CollectionUtils.isNotEmpty(message)) {
+                String subject = String.format("VPN customer gateways using " + String.join(", ", message));
                 _alertMgr.clearAlert(AlertService.AlertType.ALERT_TYPE_VPN_GATEWAY_OBSOLETE_PARAMETERS, 0L, 0L);
-                _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_VPN_GATEWAY_OBSOLETE_PARAMETERS, 0L, 0L, message, null);
+                _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_VPN_GATEWAY_OBSOLETE_PARAMETERS, 0L, 0L, subject, null);
             }
         }
     }
