@@ -19,10 +19,10 @@ package org.apache.cloudstack.mom.webhook.api.command.user;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Date;
 import java.util.UUID;
 
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.mom.webhook.WebhookApiService;
 import org.junit.Assert;
@@ -40,8 +40,7 @@ import com.cloud.user.UserVO;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @RunWith(MockitoJUnitRunner.class)
-public class DeleteWebhookDeliveryCmdTest {
-
+public class DeleteWebhookFilterCmdTest {
     @Mock
     WebhookApiService webhookApiService;
 
@@ -77,67 +76,38 @@ public class DeleteWebhookDeliveryCmdTest {
     }
 
     @Test
-    public void testGetManagementServerId() {
-        runLongMemberTest("managementServerId");
-    }
+    public void executeDeletesWebhookFilterSuccessfully() {
+        DeleteWebhookFilterCmd cmd = new DeleteWebhookFilterCmd();
+        cmd.webhookApiService = webhookApiService;
 
-    @Test
-    public void testGetEntityOwnerId() {
-        Account account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
-        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
-        CallContext.register(user, account);
-        DeleteWebhookDeliveryCmd cmd = new DeleteWebhookDeliveryCmd();
-        Assert.assertEquals(account.getId(), cmd.getEntityOwnerId());
+        Mockito.when(webhookApiService.deleteWebhookFilter(cmd)).thenReturn(1);
+
+        cmd.execute();
+
+        Mockito.verify(webhookApiService, Mockito.times(1)).deleteWebhookFilter(cmd);
+        Assert.assertNotNull(cmd.getResponseObject());
+        Assert.assertTrue(cmd.getResponseObject() instanceof SuccessResponse);
+        Assert.assertEquals(cmd.getCommandName(), ((SuccessResponse) cmd.getResponseObject()).getResponseName());
     }
 
     @Test(expected = ServerApiException.class)
-    public void testExecuteCRE() {
-        DeleteWebhookDeliveryCmd cmd = new DeleteWebhookDeliveryCmd();
+    public void executeThrowsExceptionWhenServiceFails() {
+        DeleteWebhookFilterCmd cmd = new DeleteWebhookFilterCmd();
         cmd.webhookApiService = webhookApiService;
-        Mockito.when(webhookApiService.deleteWebhookDelivery(cmd)).thenThrow(CloudRuntimeException.class);
+
+        Mockito.doThrow(new CloudRuntimeException("Service failure")).when(webhookApiService).deleteWebhookFilter(cmd);
+
         cmd.execute();
     }
 
     @Test
-    public void testExecute() {
-        DeleteWebhookDeliveryCmd cmd = new DeleteWebhookDeliveryCmd();
-        cmd.webhookApiService = webhookApiService;
-        Mockito.when(webhookApiService.deleteWebhookDelivery(cmd)).thenReturn(10);
-        cmd.execute();
-        Assert.assertNotNull(cmd.getResponseObject());
-    }
+    public void getEntityOwnerIdReturnsCallingAccountId() {
+        Account account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
+        CallContext.register(user, account);
 
-    @Test
-    public void getStartDateReturnsCorrectValue() {
-        DeleteWebhookDeliveryCmd cmd = new DeleteWebhookDeliveryCmd();
-        Date date = new Date();
-        ReflectionTestUtils.setField(cmd, "startDate", date);
+        DeleteWebhookFilterCmd cmd = new DeleteWebhookFilterCmd();
 
-        Assert.assertEquals(date, cmd.getStartDate());
-    }
-
-    @Test
-    public void getStartDateReturnsNullWhenNotSet() {
-        DeleteWebhookDeliveryCmd cmd = new DeleteWebhookDeliveryCmd();
-        ReflectionTestUtils.setField(cmd, "startDate", null);
-
-        Assert.assertNull(cmd.getStartDate());
-    }
-
-    @Test
-    public void getEndDateReturnsCorrectValue() {
-        DeleteWebhookDeliveryCmd cmd = new DeleteWebhookDeliveryCmd();
-        Date date = new Date();
-        ReflectionTestUtils.setField(cmd, "endDate", date);
-
-        Assert.assertEquals(date, cmd.getEndDate());
-    }
-
-    @Test
-    public void getEndDateReturnsNullWhenNotSet() {
-        DeleteWebhookDeliveryCmd cmd = new DeleteWebhookDeliveryCmd();
-        ReflectionTestUtils.setField(cmd, "endDate", null);
-
-        Assert.assertNull(cmd.getEndDate());
+        Assert.assertEquals(account.getId(), cmd.getEntityOwnerId());
     }
 }
