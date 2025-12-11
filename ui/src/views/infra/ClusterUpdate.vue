@@ -168,6 +168,10 @@ export default {
         id: 'aarch64',
         description: 'ARM 64 bits (aarch64)'
       })
+      typesList.push({
+        id: 's390x',
+        description: 'S390X 64 bits (s390x)'
+      })
       this.architectureTypes.opts = typesList
     },
     fetchExtensionResourceMapDetails () {

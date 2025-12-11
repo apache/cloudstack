@@ -975,6 +975,9 @@ export default {
           }, {
             id: 'aarch64',
             description: 'ARM 64 bits (aarch64)'
+          }, {
+            id: 's390x',
+            description: 'IBM Z 64 bits (s390x)'
           }
         ]
       }

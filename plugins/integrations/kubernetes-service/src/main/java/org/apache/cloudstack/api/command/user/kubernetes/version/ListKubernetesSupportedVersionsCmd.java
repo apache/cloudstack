@@ -67,7 +67,7 @@ public class ListKubernetesSupportedVersionsCmd extends BaseListCmd {
     private Long minimumKubernetesVersionId;
 
     @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
-            description = "the CPU arch of the binaries ISO. Valid options are: x86_64, aarch64",
+            description = "the CPU arch of the binaries ISO. Valid options are: x86_64, aarch64, s390x",
             since = "4.20")
     private String arch;
 

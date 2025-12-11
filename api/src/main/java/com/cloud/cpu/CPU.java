@@ -22,7 +22,8 @@ public class CPU {
     public enum CPUArch {
         x86("i686", 32),
         amd64("x86_64", 64),
-        arm64("aarch64", 64);
+        arm64("aarch64", 64),
+        s390x("s390x", 64);
 
         private final String type;
         private final int bits;

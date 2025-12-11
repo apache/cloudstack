@@ -420,7 +420,9 @@ public class LibvirtVMDef {
                         guestDef.append("<boot dev='" + bo + "'/>\n");
                     }
                 }
-                guestDef.append("<smbios mode='sysinfo'/>\n");
+                if (!(_arch != null && _arch.equals("s390x"))) {
+                    guestDef.append("<smbios mode='sysinfo'/>\n");
+                }
                 guestDef.append("</os>\n");
                 if (iothreads) {
                     guestDef.append(String.format("<iothreads>%s</iothreads>", NUMBER_OF_IOTHREADS));

@@ -84,7 +84,7 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
     private Boolean cleanupDetails;
 
     @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
-            description = "the CPU arch of the template/ISO. Valid options are: x86_64, aarch64",
+            description = "the CPU arch of the template/ISO. Valid options are: x86_64, aarch64, s390x",
             since = "4.20")
     private String arch;
 
