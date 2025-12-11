@@ -4025,56 +4025,57 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
         }
         SystemVmTemplateRegistration.mountStore(storeUrlAndId.first(), filePath, nfsVersion);
-        if (templateDataStoreVO != null) {
-            systemVmTemplateRegistration.validateAndRegisterTemplate(hypervisorType, templateName,
-                    storeUrlAndId.second(), registeredTemplate, templateDataStoreVO, filePath);
+        if (registeredTemplate != null) {
+            systemVmTemplateRegistration.validateAndAddTemplateToStore(registeredTemplate, templateDataStoreVO, zoneId,
+                    storeUrlAndId.second(), filePath);
         } else {
-            systemVmTemplateRegistration.validateAndRegisterTemplateForNonExistingEntries(hypervisorType, arch,
-                    templateName, storeUrlAndId, filePath);
+            systemVmTemplateRegistration.validateAndRegisterNewTemplate(hypervisorType, arch, templateName, zoneId,
+                    storeUrlAndId.second(), filePath);
         }
     }
 
     private void registerSystemVmTemplateOnFirstNfsStore(Long zoneId, String providerName, String url, DataStore store) {
-        if (DataStoreProvider.NFS_IMAGE.equals(providerName) && zoneId != null) {
-            Transaction.execute(new TransactionCallbackNoReturn() {
-                @Override
-                public void doInTransactionWithoutResult(final TransactionStatus status) {
-                    List<ImageStoreVO> stores = _imageStoreDao.listAllStoresInZoneExceptId(zoneId, providerName,
-                            DataStoreRole.Image, store.getId());
-                    if (CollectionUtils.isEmpty(stores)) {
-                        List<Pair<HypervisorType, CPU.CPUArch>> hypervisorTypes =
-                                _clusterDao.listDistinctHypervisorsAndArchExcludingExternalType(zoneId);
-                        TransactionLegacy txn = TransactionLegacy.open("AutomaticTemplateRegister");
-                        SystemVmTemplateRegistration systemVmTemplateRegistration = new SystemVmTemplateRegistration();
-                        String filePath = null;
-                        try {
-                            filePath = Files.createTempDirectory(SystemVmTemplateRegistration.TEMPORARY_SECONDARY_STORE).toString();
-                            if (filePath == null) {
-                                throw new CloudRuntimeException("Failed to create temporary file path to mount the store");
+        if (zoneId == null || !DataStoreProvider.NFS_IMAGE.equals(providerName)) {
+            logger.debug("Skipping system VM template registration as either zoneId is null or {} " +
+                    "provider is not NFS", store);
+            return;
+        }
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(final TransactionStatus status) {
+                List<ImageStoreVO> stores = _imageStoreDao.listAllStoresInZoneExceptId(zoneId, providerName,
+                        DataStoreRole.Image, store.getId());
+                if (CollectionUtils.isEmpty(stores)) {
+                    List<Pair<HypervisorType, CPU.CPUArch>> hypervisorArchTypes =
+                            _clusterDao.listDistinctHypervisorsAndArchExcludingExternalType(zoneId);
+                    TransactionLegacy txn = TransactionLegacy.open("AutomaticTemplateRegister");
+                    SystemVmTemplateRegistration systemVmTemplateRegistration = new SystemVmTemplateRegistration();
+                    String filePath = null;
+                    try {
+                        filePath = Files.createTempDirectory(SystemVmTemplateRegistration.TEMPORARY_SECONDARY_STORE)
+                                .toString();
+                        Pair<String, Long> storeUrlAndId = new Pair<>(url, store.getId());
+                        String nfsVersion = imageStoreDetailsUtil.getNfsVersion(store.getId());
+                        for (Pair<HypervisorType, CPU.CPUArch> hypervisorArchType : hypervisorArchTypes) {
+                            try {
+                                registerSystemVmTemplateForHypervisorArch(hypervisorArchType.first(),
+                                        hypervisorArchType.second(), zoneId, url, store,
+                                        systemVmTemplateRegistration, filePath, storeUrlAndId, nfsVersion);
+                            } catch (CloudRuntimeException e) {
+                                SystemVmTemplateRegistration.unmountStore(filePath);
+                                logger.error("Failed to register system VM template for hypervisor: {} {}",
+                                        hypervisorArchType.first().name(), hypervisorArchType.second().name(), e);
                             }
-                            Pair<String, Long> storeUrlAndId = new Pair<>(url, store.getId());
-                            String nfsVersion = imageStoreDetailsUtil.getNfsVersion(store.getId());
-                            for (Pair<HypervisorType, CPU.CPUArch> hypervisorArchType : hypervisorTypes) {
-                                try {
-                                    registerSystemVmTemplateForHypervisorArch(hypervisorArchType.first(),
-                                            hypervisorArchType.second(), zoneId, url, store,
-                                            systemVmTemplateRegistration, filePath, storeUrlAndId, nfsVersion);
-                                } catch (CloudRuntimeException e) {
-                                    SystemVmTemplateRegistration.unmountStore(filePath);
-                                    logger.error("Failed to register system VM template for hypervisor: {} {}",
-                                            hypervisorArchType.first().name(), hypervisorArchType.second().name(), e);
-                                }
-                            }
-                        } catch (Exception e) {
-                            logger.error("Failed to register systemVM template(s) due to: ", e);
-                        } finally {
-                            SystemVmTemplateRegistration.unmountStore(filePath);
-                            txn.close();
                         }
+                    } catch (Exception e) {
+                        logger.error("Failed to register systemVM template(s) due to: ", e);
+                    } finally {
+                        SystemVmTemplateRegistration.unmountStore(filePath);
+                        txn.close();
                     }
                 }
-            });
-        }
+            }
+        });
     }
     @Override
     public ImageStore migrateToObjectStore(String name, String url, String providerName, Map<String, String> details) throws DiscoveryException, InvalidParameterValueException {

@@ -31,6 +31,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -46,6 +47,7 @@ import java.util.List;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -80,6 +82,11 @@ public class SystemVmTemplateRegistrationTest {
     @InjectMocks
     SystemVmTemplateRegistration systemVmTemplateRegistration = new SystemVmTemplateRegistration();
 
+    @Before
+    public void setup() {
+        SystemVmTemplateRegistration.METADATA_TEMPLATE_LIST.clear();
+    }
+
     private void setupMetadataFile(MockedStatic<SystemVmTemplateRegistration> mockedStatic, String content) {
         try {
             String location = "metadata.ini";
@@ -102,7 +109,7 @@ public class SystemVmTemplateRegistrationTest {
             setupMetadataFile(mockedStatic, null);
             CloudRuntimeException exception = assertThrows(CloudRuntimeException.class,
                     SystemVmTemplateRegistration::parseMetadataFile);
-            assertTrue(exception.getMessage().contains("Failed to parse systemVM template metadata file"));
+            assertTrue(exception.getMessage().startsWith("Failed to parse system VM template metadata file"));
         }
     }
 
@@ -113,7 +120,7 @@ public class SystemVmTemplateRegistrationTest {
             setupMetadataFile(mockedStatic, "abc");
             CloudRuntimeException exception = assertThrows(CloudRuntimeException.class,
                     SystemVmTemplateRegistration::parseMetadataFile);
-            assertTrue(exception.getMessage().contains("Failed to parse systemVM template metadata file"));
+            assertTrue(exception.getMessage().startsWith("Failed to parse system VM template metadata file"));
         }
     }
 
@@ -145,21 +152,25 @@ public class SystemVmTemplateRegistrationTest {
             String version = SystemVmTemplateRegistration.parseMetadataFile();
             assertEquals("x.y.z.0", version);
         }
-        assertNull(SystemVmTemplateRegistration.NewTemplateMap.get("xenserver"));
+        assertNull(SystemVmTemplateRegistration.getMetadataTemplateDetails(Hypervisor.HypervisorType.XenServer,
+                CPU.CPUArch.getDefault()));
         SystemVmTemplateRegistration.MetadataTemplateDetails templateDetails =
-                SystemVmTemplateRegistration.NewTemplateMap.get("kvm-x86_64");
+                SystemVmTemplateRegistration.getMetadataTemplateDetails(Hypervisor.HypervisorType.KVM,
+                        CPU.CPUArch.amd64);
         assertNotNull(templateDetails);
         assertEquals(CPU.CPUArch.amd64, templateDetails.getArch());
         assertEquals(Hypervisor.HypervisorType.KVM, templateDetails.getHypervisorType());
         templateDetails =
-                SystemVmTemplateRegistration.NewTemplateMap.get("kvm-aarch64");
+                SystemVmTemplateRegistration.getMetadataTemplateDetails(Hypervisor.HypervisorType.KVM,
+                        CPU.CPUArch.arm64);
         assertNotNull(templateDetails);
         assertEquals(CPU.CPUArch.arm64, templateDetails.getArch());
         assertEquals(Hypervisor.HypervisorType.KVM, templateDetails.getHypervisorType());
         templateDetails =
-                SystemVmTemplateRegistration.NewTemplateMap.get("vmware");
+                SystemVmTemplateRegistration.getMetadataTemplateDetails(Hypervisor.HypervisorType.VMware,
+                        CPU.CPUArch.getDefault());
         assertNotNull(templateDetails);
-        assertNull(templateDetails.getArch());
+        assertEquals(CPU.CPUArch.getDefault(), templateDetails.getArch());
         assertEquals(Hypervisor.HypervisorType.VMware, templateDetails.getHypervisorType());
     }
 
@@ -197,11 +208,10 @@ public class SystemVmTemplateRegistrationTest {
         SystemVmTemplateRegistration.MetadataTemplateDetails details =
                 new SystemVmTemplateRegistration.MetadataTemplateDetails(Hypervisor.HypervisorType.KVM,
                         "name", "file", "url", "checksum", CPU.CPUArch.amd64, "guestos");
-        SystemVmTemplateRegistration.NewTemplateMap.put(SystemVmTemplateRegistration.getHypervisorArchKey(
-                details.getHypervisorType(), details.getArch()), details);
+        SystemVmTemplateRegistration.METADATA_TEMPLATE_LIST.add(details);
         doReturn(null).when(systemVmTemplateRegistration).getTemplateFile(details);
         try {
-            systemVmTemplateRegistration.validateTemplateFileForHypervisorAndArch(details.getHypervisorType(),
+            systemVmTemplateRegistration.getValidatedTemplateDetailsForHypervisorAndArch(details.getHypervisorType(),
                     details.getArch());
             fail("Expected CloudRuntimeException due to missing template file");
         } catch (CloudRuntimeException e) {
@@ -215,12 +225,11 @@ public class SystemVmTemplateRegistrationTest {
                 new SystemVmTemplateRegistration.MetadataTemplateDetails(Hypervisor.HypervisorType.KVM,
                         "name", "file", "url", "checksum", CPU.CPUArch.amd64, "guestos");
         File dummyFile = new File("dummy.txt");
-        SystemVmTemplateRegistration.NewTemplateMap.put(SystemVmTemplateRegistration.getHypervisorArchKey(
-                details.getHypervisorType(), details.getArch()), details);
+        SystemVmTemplateRegistration.METADATA_TEMPLATE_LIST.add(details);
         doReturn(dummyFile).when(systemVmTemplateRegistration).getTemplateFile(details);
-        doReturn(true).when(systemVmTemplateRegistration).isTemplateFileChecksumDifferent(details, dummyFile);
-        try {
-            systemVmTemplateRegistration.validateTemplateFileForHypervisorAndArch(details.getHypervisorType(),
+        try (MockedStatic<DigestHelper> digestMock = Mockito.mockStatic(DigestHelper.class)) {
+            digestMock.when(() -> DigestHelper.calculateChecksum(dummyFile)).thenReturn("differentChecksum");
+            systemVmTemplateRegistration.getValidatedTemplateDetailsForHypervisorAndArch(details.getHypervisorType(),
                     details.getArch());
             fail("Expected CloudRuntimeException due to checksum failure");
         } catch (CloudRuntimeException e) {
@@ -234,42 +243,55 @@ public class SystemVmTemplateRegistrationTest {
                 new SystemVmTemplateRegistration.MetadataTemplateDetails(Hypervisor.HypervisorType.KVM,
                         "name", "file", "url", "checksum", CPU.CPUArch.amd64, "guestos");
         File dummyFile = new File("dummy.txt");
-        SystemVmTemplateRegistration.NewTemplateMap.put(SystemVmTemplateRegistration.getHypervisorArchKey(
-                details.getHypervisorType(), details.getArch()), details);
+        SystemVmTemplateRegistration.METADATA_TEMPLATE_LIST.add(details);
         doReturn(dummyFile).when(systemVmTemplateRegistration).getTemplateFile(details);
-        doReturn(false).when(systemVmTemplateRegistration).isTemplateFileChecksumDifferent(details, dummyFile);
-        systemVmTemplateRegistration.validateTemplateFileForHypervisorAndArch(details.getHypervisorType(),
-                details.getArch());
+        try (MockedStatic<DigestHelper> digestMock = Mockito.mockStatic(DigestHelper.class)) {
+            digestMock.when(() -> DigestHelper.calculateChecksum(dummyFile)).thenReturn("checksum");
+            systemVmTemplateRegistration.getValidatedTemplateDetailsForHypervisorAndArch(details.getHypervisorType(),
+                    details.getArch());
+        }
     }
 
     @Test
-    public void testValidateAndRegisterTemplate() {
+    public void testValidateAndAddExistingTemplateToStore() {
+        long zoneId = 1L;
         Hypervisor.HypervisorType hypervisor = Hypervisor.HypervisorType.KVM;
-        String name = "TestTemplate";
-        Long storeId = 123L;
         VMTemplateVO templateVO = new VMTemplateVO();
-        templateVO.setArch(CPU.CPUArch.x86);
+        templateVO.setHypervisorType(hypervisor);
+        templateVO.setArch(CPU.CPUArch.getDefault());
         TemplateDataStoreVO templateDataStoreVO = new TemplateDataStoreVO();
+        Long storeId = 123L;
         String filePath = "/dummy/path";
-        doNothing().when(systemVmTemplateRegistration).validateTemplateFileForHypervisorAndArch(hypervisor, templateVO.getArch());
-        doNothing().when(systemVmTemplateRegistration).registerTemplate(hypervisor, name, storeId, templateVO, templateDataStoreVO, filePath);
-        systemVmTemplateRegistration.validateAndRegisterTemplate(hypervisor, name, storeId, templateVO, templateDataStoreVO, filePath);
-        verify(systemVmTemplateRegistration).validateTemplateFileForHypervisorAndArch(eq(hypervisor), eq(templateVO.getArch()));
-        verify(systemVmTemplateRegistration).registerTemplate(eq(hypervisor), eq(name), eq(storeId), eq(templateVO), eq(templateDataStoreVO), eq(filePath));
+        SystemVmTemplateRegistration.MetadataTemplateDetails details =
+                mock(SystemVmTemplateRegistration.MetadataTemplateDetails.class);
+        doReturn(details).when(systemVmTemplateRegistration)
+                .getValidatedTemplateDetailsForHypervisorAndArch(hypervisor, templateVO.getArch());
+        doNothing().when(systemVmTemplateRegistration).addExistingTemplateToStore(templateVO, details,
+                templateDataStoreVO, zoneId, storeId, filePath);
+        systemVmTemplateRegistration.validateAndAddTemplateToStore(templateVO, templateDataStoreVO, zoneId, storeId,
+                filePath);
+        verify(systemVmTemplateRegistration)
+                .getValidatedTemplateDetailsForHypervisorAndArch(hypervisor, templateVO.getArch());
+        verify(systemVmTemplateRegistration).addExistingTemplateToStore(templateVO, details, templateDataStoreVO,
+                zoneId, storeId, filePath);
     }
 
     @Test
-    public void testValidateAndRegisterTemplateForNonExistingEntries() {
+    public void testValidateAndAddExistingTemplateToStoreForNonExistingEntries() {
+        long zoneId = 1L;
         Hypervisor.HypervisorType hypervisor = Hypervisor.HypervisorType.KVM;
         CPU.CPUArch arch = CPU.CPUArch.amd64;
         String name = "TestTemplateNonExisting";
-        Pair<String, Long> storeUrlAndId = new Pair<>("nfs://dummy", 456L);
+        long storeId = 123L;
         String filePath = "/dummy/path/nonexisting";
-        doNothing().when(systemVmTemplateRegistration).validateTemplateFileForHypervisorAndArch(hypervisor, arch);
-        doNothing().when(systemVmTemplateRegistration).registerTemplateForNonExistingEntries(hypervisor, arch, name, storeUrlAndId, filePath);
-        systemVmTemplateRegistration.validateAndRegisterTemplateForNonExistingEntries(hypervisor, arch, name, storeUrlAndId, filePath);
-        verify(systemVmTemplateRegistration).validateTemplateFileForHypervisorAndArch(eq(hypervisor), eq(arch));
-        verify(systemVmTemplateRegistration).registerTemplateForNonExistingEntries(eq(hypervisor), eq(arch), eq(name), eq(storeUrlAndId), eq(filePath));
+        SystemVmTemplateRegistration.MetadataTemplateDetails details =
+                mock(SystemVmTemplateRegistration.MetadataTemplateDetails.class);
+        doReturn(details).when(systemVmTemplateRegistration)
+                .getValidatedTemplateDetailsForHypervisorAndArch(hypervisor, arch);
+        doNothing().when(systemVmTemplateRegistration).registerNewTemplate(name, details, zoneId, storeId, filePath);
+        systemVmTemplateRegistration.validateAndRegisterNewTemplate(hypervisor, arch, name, zoneId, storeId, filePath);
+        verify(systemVmTemplateRegistration) .getValidatedTemplateDetailsForHypervisorAndArch(hypervisor, arch);
+        verify(systemVmTemplateRegistration).registerNewTemplate(name, details, zoneId, storeId, filePath);
     }
 
     @Test
@@ -320,83 +342,67 @@ public class SystemVmTemplateRegistrationTest {
     }
 
     @Test
-    public void testIsTemplateFileChecksumDifferent_noMismatch() {
-        SystemVmTemplateRegistration.MetadataTemplateDetails details =
-                Mockito.mock(SystemVmTemplateRegistration.MetadataTemplateDetails.class);
-        when(details.getChecksum()).thenReturn("dummyChecksum");
-        File file = new File("dummy.txt");
-        try (MockedStatic<DigestHelper> digestMock = Mockito.mockStatic(DigestHelper.class)) {
-            digestMock.when(() -> DigestHelper.calculateChecksum(file)).thenReturn("dummyChecksum");
-            boolean result = systemVmTemplateRegistration.isTemplateFileChecksumDifferent(details, file);
-            assertFalse(result);
-        }
-    }
-
-    @Test
-    public void testIsTemplateFileChecksumDifferent_mismatch() {
-        SystemVmTemplateRegistration.MetadataTemplateDetails details =
-                Mockito.mock(SystemVmTemplateRegistration.MetadataTemplateDetails.class);
-        when(details.getChecksum()).thenReturn("expectedChecksum");
-        File file = new File("dummy.txt");
-        try (MockedStatic<DigestHelper> digestMock = Mockito.mockStatic(DigestHelper.class)) {
-            digestMock.when(() -> DigestHelper.calculateChecksum(file)).thenReturn("actualChecksum");
-            boolean result = systemVmTemplateRegistration.isTemplateFileChecksumDifferent(details, file);
-            assertTrue(result);
-        }
-    }
-
-    @Test(expected = CloudRuntimeException.class)
-    public void testValidateTemplates_metadataTemplateFailure() {
+    public void testValidateTemplates_metadataTemplateSkip() {
+        Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.VMware;
+        CPU.CPUArch arch = CPU.CPUArch.arm64;
         List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> list = new ArrayList<>();
-        list.add(new Pair<>(Hypervisor.HypervisorType.VMware, CPU.CPUArch.arm64));
+        list.add(new Pair<>(hypervisorType, arch));
         systemVmTemplateRegistration.validateTemplates(list);
+        verify(systemVmTemplateRegistration, never()).getValidatedTemplateDetailsForHypervisorAndArch(hypervisorType,
+                arch);
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void testValidateTemplates_fileFailure() {
+        Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.KVM;
+        CPU.CPUArch arch = CPU.CPUArch.amd64;
         List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> list = new ArrayList<>();
-        list.add(new Pair<>(Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64));
-
+        list.add(new Pair<>(hypervisorType, arch));
         SystemVmTemplateRegistration.MetadataTemplateDetails details =
                 Mockito.mock(SystemVmTemplateRegistration.MetadataTemplateDetails.class);
-        SystemVmTemplateRegistration.NewTemplateMap.put(SystemVmTemplateRegistration.getHypervisorArchKey(
-                Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64), details);
+        when(details.getHypervisorType()).thenReturn(hypervisorType);
+        when(details.getArch()).thenReturn(arch);
         File mockFile = Mockito.mock(File.class);
+        when(details.isFileChecksumDifferent(mockFile)).thenReturn(true);
+        SystemVmTemplateRegistration.METADATA_TEMPLATE_LIST.add(details);
         doReturn(mockFile).when(systemVmTemplateRegistration).getTemplateFile(details);
-        doReturn(true).when(systemVmTemplateRegistration).isTemplateFileChecksumDifferent(details, mockFile);
         systemVmTemplateRegistration.validateTemplates(list);
     }
 
-    @Test
+    @Test(expected = CloudRuntimeException.class)
     public void testValidateTemplates_downloadableFileNotFound() {
         CPU.CPUArch arch = SystemVmTemplateRegistration.DOWNLOADABLE_TEMPLATE_ARCH_TYPES.get(0);
         List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> list = new ArrayList<>();
-        list.add(new Pair<>(Hypervisor.HypervisorType.KVM, arch));
+        Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.KVM;
+        list.add(new Pair<>(hypervisorType, arch));
         SystemVmTemplateRegistration.MetadataTemplateDetails details =
                 Mockito.mock(SystemVmTemplateRegistration.MetadataTemplateDetails.class);
-        SystemVmTemplateRegistration.NewTemplateMap.put(SystemVmTemplateRegistration.getHypervisorArchKey(
-                Hypervisor.HypervisorType.KVM, arch), details);
+        when(details.getHypervisorType()).thenReturn(hypervisorType);
+        when(details.getArch()).thenReturn(arch);
+        SystemVmTemplateRegistration.METADATA_TEMPLATE_LIST.add(details);
         doReturn(null).when(systemVmTemplateRegistration).getTemplateFile(details);
         systemVmTemplateRegistration.validateTemplates(list);
     }
 
     @Test
     public void testValidateTemplates_success() {
+        Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.KVM;
+        CPU.CPUArch arch = CPU.CPUArch.amd64;
         List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> list = new ArrayList<>();
-        list.add(new Pair<>(Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64));
-
+        list.add(new Pair<>(hypervisorType, arch));
         SystemVmTemplateRegistration.MetadataTemplateDetails details =
                 Mockito.mock(SystemVmTemplateRegistration.MetadataTemplateDetails.class);
-        SystemVmTemplateRegistration.NewTemplateMap.put(SystemVmTemplateRegistration.getHypervisorArchKey(
-                Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64), details);
+        when(details.getHypervisorType()).thenReturn(hypervisorType);
+        when(details.getArch()).thenReturn(arch);
         File mockFile = Mockito.mock(File.class);
+        when(details.isFileChecksumDifferent(mockFile)).thenReturn(false);
+        SystemVmTemplateRegistration.METADATA_TEMPLATE_LIST.add(details);
         doReturn(mockFile).when(systemVmTemplateRegistration).getTemplateFile(details);
-        doReturn(false).when(systemVmTemplateRegistration).isTemplateFileChecksumDifferent(details, mockFile);
         systemVmTemplateRegistration.validateTemplates(list);
     }
 
     @Test
-    public void testRegisterTemplatesForZone() {
+    public void testAddExistingTemplatesForZoneToStore() {
         long zoneId = 1L;
         String filePath = "dummyFilePath";
         String nfsVersion = "nfs3";
@@ -419,19 +425,18 @@ public class SystemVmTemplateRegistrationTest {
             when(details.getUrl()).thenReturn(url);
             mockedStatic.when(() -> SystemVmTemplateRegistration.getMetadataTemplateDetails(Mockito.any(),
                     Mockito.any())).thenReturn(details);
-            doNothing().when(systemVmTemplateRegistration).registerTemplateForNonExistingEntries(
-                    hypervisorType, arch,
-                    name, storeUrlAndId, filePath);
+            doNothing().when(systemVmTemplateRegistration).registerNewTemplate(name, details, zoneId,
+                    storeUrlAndId.second(), filePath);
             systemVmTemplateRegistration.registerTemplatesForZone(zoneId, filePath);
             mockedStatic.verify(() -> SystemVmTemplateRegistration.mountStore(storeUrlAndId.first(), filePath,
                     nfsVersion));
-            verify(systemVmTemplateRegistration).registerTemplateForNonExistingEntries(hypervisorType,
-                    arch, name, storeUrlAndId, filePath);
+            verify(systemVmTemplateRegistration).registerNewTemplate(name, details, zoneId,
+                    storeUrlAndId.second(), filePath);
         }
     }
 
     @Test
-    public void registerOrUpdateSystemVmTemplate_UpdatesRegisteredTemplate() {
+    public void updateOrRegisterSystemVmTemplate_UpdatesRegisteredTemplate() {
         SystemVmTemplateRegistration.MetadataTemplateDetails templateDetails = Mockito.mock(SystemVmTemplateRegistration.MetadataTemplateDetails.class);
         when(templateDetails.getName()).thenReturn("templateName");
         when(templateDetails.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
@@ -441,16 +446,18 @@ public class SystemVmTemplateRegistrationTest {
         when(registeredTemplate.getId()).thenReturn(1L);
         doReturn(registeredTemplate).when(systemVmTemplateRegistration).getRegisteredTemplate(
                 "templateName", Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64, "http://example.com/template");
-        doNothing().when(systemVmTemplateRegistration).updateRegisteredTemplateDetails(1L, templateDetails);
+        doNothing().when(systemVmTemplateRegistration).updateRegisteredTemplateDetails(1L, templateDetails,
+                null);
 
-        boolean result = systemVmTemplateRegistration.registerOrUpdateSystemVmTemplate(templateDetails, new ArrayList<>());
+        boolean result = systemVmTemplateRegistration.updateOrRegisterSystemVmTemplate(templateDetails,
+                new ArrayList<>());
 
         assertFalse(result);
-        verify(systemVmTemplateRegistration).updateRegisteredTemplateDetails(eq(1L), eq(templateDetails));
+        verify(systemVmTemplateRegistration).updateRegisteredTemplateDetails(1L, templateDetails, null);
     }
 
     @Test
-    public void registerOrUpdateSystemVmTemplate_SkipsUnusedHypervisorArch() {
+    public void updateOrRegisterSystemVmTemplate_SkipsUnusedHypervisorArch() {
         SystemVmTemplateRegistration.MetadataTemplateDetails templateDetails = Mockito.mock(SystemVmTemplateRegistration.MetadataTemplateDetails.class);
         when(templateDetails.getName()).thenReturn("templateName");
         when(templateDetails.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
@@ -461,14 +468,14 @@ public class SystemVmTemplateRegistrationTest {
         doReturn(null).when(vmTemplateDao).findLatestTemplateByTypeAndHypervisorAndArch(
                 Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64, Storage.TemplateType.SYSTEM);
 
-        boolean result = systemVmTemplateRegistration.registerOrUpdateSystemVmTemplate(templateDetails, new ArrayList<>());
+        boolean result = systemVmTemplateRegistration.updateOrRegisterSystemVmTemplate(templateDetails, new ArrayList<>());
 
         assertFalse(result);
         verify(systemVmTemplateRegistration, never()).registerTemplates(anyList());
     }
 
     @Test
-    public void registerOrUpdateSystemVmTemplate_RegistersNewTemplate() {
+    public void updateOrRegisterSystemVmTemplate_RegistersNewTemplate() {
         SystemVmTemplateRegistration.MetadataTemplateDetails templateDetails = Mockito.mock(SystemVmTemplateRegistration.MetadataTemplateDetails.class);
         when(templateDetails.getName()).thenReturn("templateName");
         when(templateDetails.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
@@ -480,14 +487,14 @@ public class SystemVmTemplateRegistrationTest {
         hypervisorsInUse.add(new Pair<>(Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64));
         doNothing().when(systemVmTemplateRegistration).registerTemplates(hypervisorsInUse);
 
-        boolean result = systemVmTemplateRegistration.registerOrUpdateSystemVmTemplate(templateDetails, hypervisorsInUse);
+        boolean result = systemVmTemplateRegistration.updateOrRegisterSystemVmTemplate(templateDetails, hypervisorsInUse);
 
         assertTrue(result);
         verify(systemVmTemplateRegistration).registerTemplates(eq(hypervisorsInUse));
     }
 
     @Test
-    public void registerOrUpdateSystemVmTemplate_ThrowsExceptionOnRegistrationFailure() {
+    public void updateOrRegisterSystemVmTemplate_ThrowsExceptionOnRegistrationFailure() {
         SystemVmTemplateRegistration.MetadataTemplateDetails templateDetails = Mockito.mock(SystemVmTemplateRegistration.MetadataTemplateDetails.class);
         when(templateDetails.getName()).thenReturn("templateName");
         when(templateDetails.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
@@ -500,7 +507,7 @@ public class SystemVmTemplateRegistrationTest {
         doThrow(new CloudRuntimeException("Registration failed")).when(systemVmTemplateRegistration).registerTemplates(hypervisorsInUse);
 
         CloudRuntimeException exception = assertThrows(CloudRuntimeException.class,
-                () -> systemVmTemplateRegistration.registerOrUpdateSystemVmTemplate(templateDetails, hypervisorsInUse));
+                () -> systemVmTemplateRegistration.updateOrRegisterSystemVmTemplate(templateDetails, hypervisorsInUse));
 
         assertTrue(exception.getMessage().contains("Failed to register"));
     }
