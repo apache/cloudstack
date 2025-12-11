@@ -44,6 +44,7 @@
 "label.accounttype": "Account type",
 "label.acl.export": "Export ACL rules",
 "label.acl.id": "ACL ID",
+"label.aclname": "ACL Name",
 "label.acl.rules": "ACL rules",
 "label.acl.reason.description": "Enter the reason behind an ACL rule.",
 "label.aclid": "ACL",
