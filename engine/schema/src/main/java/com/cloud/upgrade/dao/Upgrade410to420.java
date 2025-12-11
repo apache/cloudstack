@@ -1195,9 +1195,9 @@ public class Upgrade410to420 extends DbUpgradeAbstractImpl {
                             plannerName = "FirstFitPlanner";
                         } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.firstfit.toString())) {
                             plannerName = "FirstFitPlanner";
-                        } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.userconcentratedpod_firstfit.toString())) {
+                        } else if (globalValue.equals("userconcentratedpod_firstfit")) {
                             plannerName = "UserConcentratedPodPlanner";
-                        } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.userconcentratedpod_random.toString())) {
+                        } else if (globalValue.equals("userconcentratedpod_random")) {
                             plannerName = "UserConcentratedPodPlanner";
                         } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.userdispersing.toString())) {
                             plannerName = "UserDispersingPlanner";
