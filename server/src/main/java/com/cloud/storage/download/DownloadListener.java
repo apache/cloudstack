@@ -206,6 +206,8 @@ public class DownloadListener implements Listener {
                     dcmd.setResourceType(ResourceType.VOLUME);
                 } else if (object.getType() == DataObjectType.SNAPSHOT) {
                     dcmd.setResourceType(ResourceType.SNAPSHOT);
+                } else if (object.getType() == DataObjectType.ARCHIVE) {
+                    dcmd.setResourceType(ResourceType.ARCHIVE);
                 }
                 _ssAgent.sendMessageAsync(dcmd, new UploadListener.Callback(_ssAgent.getId(), this));
             } catch (Exception e) {

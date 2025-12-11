@@ -24,12 +24,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
-
+import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.cloudstack.management.ManagementServerHost.State;
 import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.cluster.ClusterInvalidSessionException;
-import org.apache.cloudstack.management.ManagementServerHost;
-import org.apache.cloudstack.management.ManagementServerHost.State;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.DB;
@@ -318,4 +317,18 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         return CollectionUtils.isNotEmpty(msHosts) ? msHosts.get(0) : null;
     }
 
+    @Override
+    public List<ManagementServerHostVO> listUpByIds(List<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return new ArrayList<>();
+        }
+        SearchBuilder<ManagementServerHostVO> sb = createSearchBuilder();
+        sb.and("ids", sb.entity().getId(), SearchCriteria.Op.IN);
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<ManagementServerHostVO> sc = sb.create();
+        sc.setParameters("ids", ids.toArray());
+        sc.setParameters("state", ManagementServerHost.State.Up);
+        return listBy(sc);
+    }
 }
