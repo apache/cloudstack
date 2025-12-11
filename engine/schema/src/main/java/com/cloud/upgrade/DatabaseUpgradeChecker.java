@@ -34,6 +34,7 @@ import java.util.List;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.utils.CloudStackVersion;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -452,6 +453,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
 
     @Override
     public void check() {
+        initDistributedLock();
         GlobalLock lock = GlobalLock.getInternLock("DatabaseUpgrade");
         try {
             LOGGER.info("Grabbing lock to check for database upgrade.");
@@ -492,6 +494,41 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             }
         } finally {
             lock.releaseRef();
+        }
+    }
+
+    private void initDistributedLock() {
+        LOGGER.info("Setting up distributed lock table if not created.");
+        TransactionLegacy txn = TransactionLegacy.open("initDistributedLock");
+        txn.start();
+        String errorMessage = "Unable to get the database connections";
+        try {
+            Connection conn = txn.getConnection();
+            errorMessage = "Unable to create distributed_lock table in the 'cloud' database ";
+            String sql = "CREATE TABLE IF NOT EXISTS `cloud`.`distributed_lock` (" +
+                         "  `name` varchar(1024) NOT NULL," +
+                         "  `thread` varchar(1024) NOT NULL," +
+                         "  `ms_id` bigint NOT NULL," +
+                         "  `pid` int NOT NULL," +
+                         "  `created` datetime DEFAULT NULL," +
+                         "  PRIMARY KEY (`name`)," +
+                         "  UNIQUE KEY `name` (`name`)" +
+                         ") ENGINE=InnoDB DEFAULT CHARSET=utf8";
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.execute();
+            }
+            LOGGER.info("Deleting existing distributed locks with ms_id = " + ManagementServerNode.getManagementServerId());
+            try (PreparedStatement pstmt = conn.prepareStatement("DELETE FROM cloud.distributed_lock WHERE ms_id=?")) {
+                pstmt.setLong(1, ManagementServerNode.getManagementServerId());
+                pstmt.execute();
+            }
+            txn.commit();
+        } catch (CloudRuntimeException | SQLException e) {
+            LOGGER.error(e.getMessage());
+            errorMessage = String.format("%s due to %s.", errorMessage, e.getMessage());
+            throw new CloudRuntimeException(errorMessage, e);
+        } finally {
+            txn.close();
         }
     }
 
