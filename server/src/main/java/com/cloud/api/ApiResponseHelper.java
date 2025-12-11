@@ -50,6 +50,7 @@ import com.cloud.dc.dao.ASNumberRangeDao;
 import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.vpc.VpcGateway;
+import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.storage.BucketVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -527,6 +528,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     BgpPeerDao bgpPeerDao;
     @Inject
     RoutedIpv4Manager routedIpv4Manager;
+    @Inject
+    Site2SiteVpnManager site2SiteVpnManager;
     @Inject
     ResourceIconManager resourceIconManager;
 
@@ -3884,6 +3887,16 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setRemoved(result.getRemoved());
         response.setIkeVersion(result.getIkeVersion());
         response.setSplitConnections(result.getSplitConnections());
+
+        Set<String> obsoleteParameters = site2SiteVpnManager.getObsoleteVpnGatewayParameters(result);
+        if (CollectionUtils.isNotEmpty(obsoleteParameters)) {
+            response.setContainsObsoleteParameters(obsoleteParameters.toString());
+        }
+        Set<String> excludedParameters = site2SiteVpnManager.getExcludedVpnGatewayParameters(result);
+        if (CollectionUtils.isNotEmpty(excludedParameters)) {
+            response.setContainsExcludedParameters(excludedParameters.toString());
+        }
+
         response.setObjectName("vpncustomergateway");
         response.setHasAnnotation(annotationDao.hasAnnotations(result.getUuid(), AnnotationService.EntityType.VPN_CUSTOMER_GATEWAY.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
