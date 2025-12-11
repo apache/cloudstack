@@ -31,6 +31,15 @@ repos:
       - id: doctoc
         name: Add TOC for Markdown files
         files: ^CONTRIBUTING\.md$|^INSTALL\.md$|^README\.md$
+  - repo: https://github.com/biomejs/pre-commit
+    rev: v0.6.1
+    hooks:
+      - id: biome-check
+        name: run biome-check
+        description: format, lint, and more in a fraction of a second
+        files: ^ui/public/locales/.*\.json$
+        args: [--config-path=.github/linters/biome.json]
+        additional_dependencies: ["@biomejs/biome@2.3.8"]
   - repo: https://github.com/oxipng/oxipng
     rev: v9.1.5
     hooks:
