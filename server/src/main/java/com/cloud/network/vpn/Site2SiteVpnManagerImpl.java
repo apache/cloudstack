@@ -143,7 +143,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         true, ConfigKey.Scope.Domain);
     public static final ConfigKey<Long> VpnCustomerGatewayObsoleteCheckInterval = new ConfigKey<Long>(
         ConfigKey.CATEGORY_NETWORK, Long.class, "vpn.customer.gateway.obsolete.check.interval", "0",
-        "Interval in minutes to periodically check VPN customer gateways for obsolete/excluded parameters and generate events and alerts. " +
+        "Interval in hours to periodically check VPN customer gateways for obsolete/excluded parameters and generate events and alerts. " +
         "Set to 0 to disable. Default: 0 (disabled).",
         true, ConfigKey.Scope.Global);
 
@@ -1155,8 +1155,8 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         final long checkInterval = VpnCustomerGatewayObsoleteCheckInterval.value();
         if (checkInterval > 0) {
             TimerTask task = new CheckVpnCustomerGatewayObsoleteParametersTask();
-            _vpnCheckTimer.schedule(task, checkInterval * 60 * 1000L, checkInterval * 60 * 1000L);
-            logger.info("Scheduled VPN customer gateway obsolete parameters check with interval: " + checkInterval + " minutes");
+            _vpnCheckTimer.schedule(task, checkInterval * 60 * 60 * 1000L, checkInterval * 60 * 60 * 1000L);
+            logger.info("Scheduled VPN customer gateway obsolete parameters check with interval: " + checkInterval + " hours");
         } else {
             logger.debug("VPN customer gateway obsolete check is disabled (interval = 0)");
         }
@@ -1225,7 +1225,6 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
             }
             if (CollectionUtils.isNotEmpty(message)) {
                 String subject = String.format("VPN customer gateways using " + String.join(", ", message));
-                _alertMgr.clearAlert(AlertService.AlertType.ALERT_TYPE_VPN_GATEWAY_OBSOLETE_PARAMETERS, 0L, 0L);
                 _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_VPN_GATEWAY_OBSOLETE_PARAMETERS, 0L, 0L, subject, null);
             }
         }
