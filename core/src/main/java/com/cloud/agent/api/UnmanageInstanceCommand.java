@@ -28,6 +28,7 @@ public class UnmanageInstanceCommand extends Command {
     boolean executeInSequence = false;
     VirtualMachineTO vm;
     boolean isConfigDriveAttached;
+    boolean isLibvirtMetadataCleanUpEnabled;
 
     @Override
     public boolean executeInSequence() {
@@ -57,5 +58,11 @@ public class UnmanageInstanceCommand extends Command {
 
     public void setConfigDriveAttached(boolean configDriveAttached) {
         isConfigDriveAttached = configDriveAttached;
+    }
+
+    public boolean isLibvirtMetadataCleanupEnabled() {return isLibvirtMetadataCleanUpEnabled;}
+
+    public void setLibvirtMetadataCleanup(boolean libvirtMetadataCleanUp) {
+        isLibvirtMetadataCleanUpEnabled = libvirtMetadataCleanUp;
     }
 }
