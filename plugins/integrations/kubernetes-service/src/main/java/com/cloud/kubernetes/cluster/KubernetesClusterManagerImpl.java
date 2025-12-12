@@ -47,6 +47,8 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.configuration.Resource;
+import com.cloud.user.ResourceLimitService;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RolePermissionEntity;
@@ -398,6 +400,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     public ProjectManager projectManager;
     @Inject
     RoleService roleService;
+    @Inject
+    ResourceLimitService resourceLimitService;
 
     private void logMessage(final Level logLevel, final String message, final Exception e) {
         if (logLevel == Level.WARN) {
@@ -1341,7 +1345,57 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         validateServiceOfferingsForNodeTypesScale(serviceOfferingNodeTypeMap, defaultServiceOfferingId, kubernetesCluster, clusterVersion);
 
         validateKubernetesClusterScaleSize(kubernetesCluster, clusterSize, maxClusterSize, zone);
+
+        ensureResourceLimitsForScale(kubernetesCluster, serviceOfferingNodeTypeMap,
+                clusterSize != null ? clusterSize : null,
+                kubernetesCluster.getAccountId());
     }
+
+    protected void ensureResourceLimitsForScale(final KubernetesClusterVO cluster,
+                                                final Map<String, Long> requestedServiceOfferingIds,
+                                                final Long targetNodeCounts,
+                                                final Long accountId) {
+
+        long totalAdditionalVms = 0L;
+        long totalAdditionalCpuUnits = 0L;
+        long totalAdditionalRamMb = 0L;
+
+
+        List<KubernetesClusterVmMapVO> clusterVmMapVOS = kubernetesClusterVmMapDao.listByClusterIdAndVmType(cluster.getId(), WORKER);
+        long currentCount = clusterVmMapVOS != null ? clusterVmMapVOS.size() : 0L;
+        long desiredCount = targetNodeCounts != null ? targetNodeCounts : currentCount;
+        long additional = Math.max(0L, desiredCount - currentCount);
+        if (additional == 0L) {
+            return;
+        }
+
+        Long offeringId = (requestedServiceOfferingIds != null && requestedServiceOfferingIds.containsKey(WORKER.name())) ?
+                requestedServiceOfferingIds.get(WORKER.name()) :
+                getExistingServiceOfferingIdForNodeType(WORKER.name(), cluster);
+
+        if (offeringId == null) {
+            offeringId = cluster.getServiceOfferingId();
+        }
+
+        ServiceOffering so = serviceOfferingDao.findById(offeringId);
+        if (so == null) {
+            throw new InvalidParameterValueException(String.format("Invalid service offering for node type %s", WORKER.name()));
+        }
+
+        totalAdditionalVms += additional;
+        long effectiveCpu = (long) so.getCpu() * so.getSpeed();
+        totalAdditionalCpuUnits += effectiveCpu * additional;
+        totalAdditionalRamMb += so.getRamSize() * additional;
+
+        try {
+            resourceLimitService.checkResourceLimit(accountDao.findById(accountId), Resource.ResourceType.user_vm, totalAdditionalVms);
+            resourceLimitService.checkResourceLimit(accountDao.findById(accountId), Resource.ResourceType.cpu, totalAdditionalCpuUnits);
+            resourceLimitService.checkResourceLimit(accountDao.findById(accountId), Resource.ResourceType.memory, totalAdditionalRamMb);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Resource limits prevent scaling the cluster: " + e.getMessage(), e);
+        }
+    }
+
 
     protected void validateServiceOfferingsForNodeTypesScale(Map<String, Long> map, Long defaultServiceOfferingId, KubernetesClusterVO kubernetesCluster, KubernetesSupportedVersion clusterVersion) {
         for (String key : CLUSTER_NODES_TYPES_LIST) {
