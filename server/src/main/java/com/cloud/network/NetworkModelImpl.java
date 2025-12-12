@@ -1430,11 +1430,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             return null;
         }
 
+        NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
         Long physicalNetworkId = null;
         if (effectiveTrafficType != TrafficType.Guest) {
             physicalNetworkId = getNonGuestNetworkPhysicalNetworkId(network, effectiveTrafficType);
         } else {
-            NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
             physicalNetworkId = network.getPhysicalNetworkId();
             if (physicalNetworkId == null) {
                 physicalNetworkId = findPhysicalNetworkId(network.getDataCenterId(), offering.getTags(), offering.getTrafficType());
@@ -1447,6 +1447,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             return null;
         }
 
+        if (offering != null && TrafficType.Guest.equals(offering.getTrafficType()) && offering.isSystemOnly()) {
+            // For private gateway, do not check the Guest traffic type
+            return _pNTrafficTypeDao.getNetworkTag(physicalNetworkId, null, hType);
+        }
         return _pNTrafficTypeDao.getNetworkTag(physicalNetworkId, effectiveTrafficType, hType);
     }
 
