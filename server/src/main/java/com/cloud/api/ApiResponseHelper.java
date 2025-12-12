@@ -583,16 +583,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (domain.getChildCount() > 0) {
             domainResponse.setHasChild(true);
         }
-        List<ResourceTagJoinVO> tags = ApiDBUtils.listResourceTagViewByResourceUUID(domain.getUuid(),
-                ResourceTag.ResourceObjectType.Domain);
-        if (CollectionUtils.isNotEmpty(tags)) {
-            Set<ResourceTagResponse> tagResponses = new HashSet<>();
-            for (ResourceTagJoinVO tag : tags) {
-                ResourceTagResponse tagResponse = ApiDBUtils.newResourceTagResponse(tag, true);
-                tagResponses.add(tagResponse);
-            }
-            domainResponse.setTags(tagResponses);
-        }
+        populateDomainTags(domain.getUuid(), domainResponse);
         domainResponse.setObjectName("domain");
         return domainResponse;
     }
@@ -3053,6 +3044,20 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDomainId(object.getDomainUuid());
         response.setDomainName(object.getDomainName());
         response.setDomainPath(getPrettyDomainPath(object.getDomainPath()));
+    }
+
+    public static void populateDomainTags(String domainUuid, DomainResponse domainResponse) {
+        List<ResourceTagJoinVO> tags = ApiDBUtils.listResourceTagViewByResourceUUID(domainUuid,
+                ResourceTag.ResourceObjectType.Domain);
+        if (CollectionUtils.isEmpty(tags)) {
+            return;
+        }
+        Set<ResourceTagResponse> tagResponses = new HashSet<>();
+        for (ResourceTagJoinVO tag : tags) {
+            ResourceTagResponse tagResponse = ApiDBUtils.newResourceTagResponse(tag, true);
+            tagResponses.add(tagResponse);
+        }
+        domainResponse.setTags(tagResponses);
     }
 
     private void populateAccount(ControlledEntityResponse response, long accountId) {
