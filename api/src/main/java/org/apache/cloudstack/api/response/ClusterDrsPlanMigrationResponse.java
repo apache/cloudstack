@@ -50,13 +50,13 @@ public class ClusterDrsPlanMigrationResponse extends BaseResponse {
     @Param(description = "Destination host for VM migration")
     String destHostName;
 
-    @SerializedName(ApiConstants.JOB_ID)
+    @SerializedName(ApiConstants.MIGRATION_JOB_ID)
     @Param(description = "id of VM migration async job")
-    private Long jobId;
+    private Long migrationJobId;
 
-    @SerializedName(ApiConstants.JOB_STATUS)
+    @SerializedName(ApiConstants.MIGRATION_JOB_STATUS)
     @Param(description = "Job status of VM migration async job")
-    private JobInfo.Status jobStatus;
+    private JobInfo.Status migrationJobStatus;
 
 
     public ClusterDrsPlanMigrationResponse(String vmId, String vmName, String srcHostId, String srcHostName,
@@ -68,8 +68,8 @@ public class ClusterDrsPlanMigrationResponse extends BaseResponse {
         this.srcHostName = srcHostName;
         this.destHostId = destHostId;
         this.destHostName = destHostName;
-        this.jobId = jobId;
-        this.jobStatus = jobStatus;
+        this.migrationJobId = jobId;
+        this.migrationJobStatus = jobStatus;
         this.setObjectName(ApiConstants.MIGRATIONS);
     }
 }

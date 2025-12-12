@@ -43,4 +43,6 @@ public interface Pod extends InfrastructureEntity, Grouping, Identity, InternalI
     AllocationState getAllocationState();
 
     boolean getExternalDhcp();
+
+    String getStorageAccessGroups();
 }

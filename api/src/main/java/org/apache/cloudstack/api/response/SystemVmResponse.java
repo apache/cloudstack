@@ -38,14 +38,6 @@ public class SystemVmResponse extends BaseResponseWithAnnotations {
     @Param(description = "the system VM type")
     private String systemVmType;
 
-    @SerializedName("jobid")
-    @Param(description = "the job ID associated with the system VM. This is only displayed if the router listed is part of a currently running asynchronous job.")
-    private String jobId;
-
-    @SerializedName("jobstatus")
-    @Param(description = "the job status associated with the system VM.  This is only displayed if the router listed is part of a currently running asynchronous job.")
-    private Integer jobStatus;
-
     @SerializedName("zoneid")
     @Param(description = "the Zone ID for the system VM")
     private String zoneId;
@@ -185,6 +177,10 @@ public class SystemVmResponse extends BaseResponseWithAnnotations {
     @SerializedName("serviceofferingname")
     @Param(description = "the name of the service offering of the system virtual machine.")
     private String serviceOfferingName;
+
+    @SerializedName(ApiConstants.ARCH)
+    @Param(description = "CPU arch of the system VM", since = "4.20.1")
+    private String arch;
 
     @Override
     public String getObjectId() {
@@ -489,5 +485,9 @@ public class SystemVmResponse extends BaseResponseWithAnnotations {
 
     public void setServiceOfferingName(String serviceOfferingName) {
         this.serviceOfferingName = serviceOfferingName;
+    }
+
+    public void setArch(String arch) {
+        this.arch = arch;
     }
 }

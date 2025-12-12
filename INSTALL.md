@@ -1,15 +1,46 @@
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+ -->
+
 # Apache CloudStack Installation basics
 
 This document describes how to develop, build, package and install Apache
-CloudStack. For more information please refer to the official [documentation](http://docs.cloudstack.apache.org)
+CloudStack. For more information please refer to the official [documentation](https://docs.cloudstack.apache.org)
 or the developer [wiki](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Home).
 
 Apache CloudStack developers use various platforms for development, this guide
 was tested against a CentOS 7 x86_64 setup.
 
-* [Setting up development environment](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Setting+up+CloudStack+Development+Environment) for Apache CloudStack.
-* [Building](https://cwiki.apache.org/confluence/display/CLOUDSTACK/How+to+build+CloudStack) Apache CloudStack.
-* [Appliance based development](https://github.com/rhtyd/monkeybox)
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+- [Setting up Development Environment](#setting-up-development-environment)
+  - [Using jenv and/or pyenv for Version Management](#using-jenv-andor-pyenv-for-version-management)
+- [Getting the Source Code](#getting-the-source-code)
+- [Building](#building)
+- [To bring up CloudStack UI](#to-bring-up-cloudstack-ui)
+- [Building with non-redistributable plugins](#building-with-non-redistributable-plugins)
+- [Packaging and Installation](#packaging-and-installation)
+  - [Debian/Ubuntu](#debianubuntu)
+  - [RHEL/CentOS](#rhelcentos)
+- [Notes](#notes)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## Setting up Development Environment
 
@@ -18,29 +49,30 @@ Install tools and dependencies used for development:
     # yum -y install git java-17-openjdk java-17-openjdk-devel \
       mysql mysql-server mkisofs git gcc python MySQL-python openssh-clients wget
 
-Set up Maven (3.6.0):
+Set up Maven (3.9.10):
 
-    # wget http://www.us.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz
-    # tar -zxvf apache-maven-3.6.3-bin.tar.gz -C /usr/local
+    # wget https://dlcdn.apache.org/maven/maven-3/3.9.10/binaries/apache-maven-3.9.10-bin.tar.gz
+    # sudo tar -zxvf apache-maven-3.9.10-bin.tar.gz -C /usr/local
     # cd /usr/local
-    # ln -s apache-maven-3.6.3 maven
+    # sudo ln -s apache-maven-3.9.10 maven
     # echo export M2_HOME=/usr/local/maven >> ~/.bashrc # or .zshrc or .profile
     # echo export PATH=/usr/local/maven/bin:${PATH} >> ~/.bashrc # or .zshrc or .profile
     # source ~/.bashrc
 
-Setup up NodeJS (LTS):
+Setup up Node.js 16:
 
-    # curl -sL https://rpm.nodesource.com/setup_12.x | sudo bash -
+    # curl -sL https://rpm.nodesource.com/setup_16.x | sudo -E bash -
     # sudo yum install nodejs
     # sudo npm install -g @vue/cli npm-check-updates
 
 Start the MySQL service:
 
     $ service mysqld start
+    $ mysql_secure_installation
 
 ### Using jenv and/or pyenv for Version Management
 
-CloudStack is built using Java and Python.  To make selection of these tools versions more consistent and ease installation for developers, optional support for [jenv](http://www.jenv.be/) and [pyenv](https://github.com/yyuu/pyenv) with [virtualenv]|(https://github.com/yyuu/pyenv-virtualenv) is provided.  jenv installation instructions are available here and pyenv installation instructions are available here.  For users of [oh-my-zsh](http://ohmyz.sh/) there is a pyenv plugin available to trigger configuration of pyenv in a shell session.
+CloudStack is built using Java and Python.  To make selection of these tools versions more consistent and ease installation for developers, optional support for [jenv](http://www.jenv.be/) and [pyenv](https://github.com/yyuu/pyenv) with [virtualenv]|(https://github.com/yyuu/pyenv-virtualenv) is provided.  jenv installation instructions are available here and pyenv installation instructions are available here.  For users of [oh-my-zsh](https://ohmyz.sh/) there is a pyenv plugin available to trigger configuration of pyenv in a shell session.
 
 Following installation, execute the following commands to configure jenv and pyenv for use with CloudStack development:
 
@@ -86,12 +118,32 @@ Start the management server:
 
 If this works, you've successfully setup a single server Apache CloudStack installation.
 
-Open the following URL on your browser to access the Management Server UI:
-
-    http://localhost:8080/client/
+To access the Management Server UI, follow the following procedure:
 
 The default credentials are; user: admin, password: password and the domain
 field should be left blank which is defaulted to the ROOT domain.
+
+## To bring up CloudStack UI
+
+Move to UI Directory
+
+    $ cd /path/to/cloudstack/ui
+
+To install dependencies.
+
+    $ npm install
+
+To build the project.
+
+    $ npm run build
+
+For Development Mode.
+
+    $ npm start
+
+Make sure to set `CS_URL=http://localhost:8080` on the `.env.local` file on UI.
+
+You should be able to run the management server on http://localhost:5050
 
 ## Building with non-redistributable plugins
 
@@ -150,7 +202,7 @@ All the rpm packages will be created in `dist/rpmbuild/RPMS/x86_64` directory.
 
 ## Notes
 
-If you will be using Xen as your hypervisor, please download [vhd-util](http://download.cloudstack.org/tools/vhd-util)
+If you will be using Xen as your hypervisor, please download [vhd-util](https://download.cloudstack.org/tools/vhd-util)
 
 If management server is installed on RHEL/CentOS, then copy vhd-util into:
 

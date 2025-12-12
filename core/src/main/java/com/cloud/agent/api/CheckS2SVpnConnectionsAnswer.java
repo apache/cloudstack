@@ -25,7 +25,6 @@ import java.util.Map;
 public class CheckS2SVpnConnectionsAnswer extends Answer {
     Map<String, Boolean> ipToConnected;
     Map<String, String> ipToDetail;
-    String details;
 
     protected CheckS2SVpnConnectionsAnswer() {
         ipToConnected = new HashMap<String, Boolean>();

@@ -822,7 +822,7 @@ public class NetworkOrchestratorTest extends TestCase {
         Mockito.when(network.getId()).thenReturn(networkId);
         Mockito.when(dataCenter.getId()).thenReturn(dataCenterId);
         Mockito.when(ipAddresses.getIp4Address()).thenReturn(requestedIp);
-        Mockito.when(testOrchestrator._ipAddressDao.findByIp(requestedIp)).thenReturn(ipAddressVO);
+        Mockito.when(testOrchestrator._ipAddressDao.findByIpAndSourceNetworkId(networkId, requestedIp)).thenReturn(ipAddressVO);
         String ipAddress = testOrchestrator.getSelectedIpForNicImport(network, dataCenter, ipAddresses);
         Assert.assertEquals(requestedIp, ipAddress);
     }
@@ -891,7 +891,7 @@ public class NetworkOrchestratorTest extends TestCase {
         boolean shutdownNetworkStatus = testOrchestrator.shutdownNetwork(networkId, reservationContext, false);
         Assert.assertFalse(shutdownNetworkStatus);
 
-        verify(network, times(3)).getState();
+        verify(network).getState();
         verify(testOrchestrator._networksDao, times(1)).acquireInLockTable(networkId, NetworkLockTimeout.value());
         verify(testOrchestrator._networksDao, times(1)).releaseFromLockTable(networkId);
     }

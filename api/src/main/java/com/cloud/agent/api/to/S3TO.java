@@ -22,6 +22,7 @@ import com.cloud.agent.api.LogLevel;
 import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.storage.S3.ClientOptions;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 public final class S3TO implements ClientOptions, DataStoreTO {
 
@@ -66,6 +67,13 @@ public final class S3TO implements ClientOptions, DataStoreTO {
         this.connectionTtl = connectionTtl;
         this.useTCPKeepAlive = useTCPKeepAlive;
 
+    }
+
+    @Override
+    public String toString() {
+        return String.format("S3TO %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "bucketName"));
     }
 
     public Long getId() {

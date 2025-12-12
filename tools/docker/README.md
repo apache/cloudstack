@@ -1,10 +1,27 @@
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+ -->
+
 # Docker Files for Apache CloudStack
 
 Dockerfiles used to build CloudStack images are available on Docker hub.
 
-
 ## Using images from docker-hub
-
 
 ### CloudStack Simulator
 
@@ -60,7 +77,7 @@ docker run -ti --name cloudstack --link cloudstack-mysql:mysql -d -p 8080:8080 -
 ### Marvin
 
 Use marvin to deploy or test your CloudStack environment.
-Use Marvin with cloudstack connection thru the API port (8096)
+Use Marvin with cloudstack connection through the API port (8096)
 
 ```
 docker pull cloudstack/marvin
@@ -90,7 +107,6 @@ docker run -ti --rm --link simulator:8096 \
 
 Image provided by CloudStack are automatically built by Jenkins performing following tasks:
 
-
 ### CentOS 6
 
 CentOS 6 image use RPM's from jenkins.buildacloud.org
@@ -102,7 +118,7 @@ tag:latest = main branch
    docker build -f Dockerfile.centos6 -t cloudstack/management_centos6 .
    ```
 
-2. on jenkins, database and systemvm.iso are pre-deployed. the inital start require privileged container to
+2. on jenkins, database and systemvm.iso are pre-deployed. the initial start require privileged container to
    mount systemvm.iso and copy ssh_rsa.pub into it.
 
    ```
@@ -113,7 +129,6 @@ tag:latest = main branch
    docker stop cloudstack
    docker commit -m "init system.iso" -a "Apache CloudStack" cloudstack cloudstack/management_centos6
    ```
-
 
 ### Marvin
 

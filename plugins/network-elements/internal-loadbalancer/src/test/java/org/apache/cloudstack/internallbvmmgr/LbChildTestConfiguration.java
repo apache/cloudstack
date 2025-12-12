@@ -18,6 +18,7 @@ package org.apache.cloudstack.internallbvmmgr;
 
 import java.io.IOException;
 
+import org.apache.cloudstack.userdata.UserDataManager;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -164,6 +165,11 @@ public class LbChildTestConfiguration {
         @Bean
         public AccountDao accountDao() {
             return Mockito.mock(AccountDao.class);
+        }
+
+        @Bean
+        public UserDataManager userDataManager() {
+            return Mockito.mock(UserDataManager.class);
         }
 
         @Override

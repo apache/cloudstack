@@ -23,11 +23,12 @@ import logging
 import time
 from collections.abc import Iterable
 
+from marvin.codes import FAILED
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackAPI import (migrateSystemVm, listRouters, listSystemVms)
 from marvin.lib.base import (Cluster, Configurations, Host, Network, NetworkOffering, ServiceOffering, VirtualMachine,
                              Zone)
-from marvin.lib.common import (get_domain, get_zone, get_template)
+from marvin.lib.common import (get_domain, get_zone, get_test_template)
 from marvin.lib.utils import wait_until
 from marvin import jsonHelper
 from nose.plugins.attrib import attr
@@ -43,7 +44,15 @@ class TestClusterDRS(cloudstackTestCase):
 
         zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.zone = Zone(zone.__dict__)
-        cls.template = get_template(cls.apiclient, cls.zone.id)
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.template = get_test_template(
+            cls.apiclient,
+            cls.zone.id,
+            cls.hypervisor
+        )
+        if cls.template == FAILED:
+            assert False, "get_test_template() failed to return template\
+                        with hypervisor %s" % cls.hypervisor
         cls._cleanup = []
 
         cls.logger = logging.getLogger("TestClusterDRS")

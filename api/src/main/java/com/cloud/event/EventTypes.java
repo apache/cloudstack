@@ -27,15 +27,21 @@ import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.backup.BackupRepositoryService;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.datacenter.DataCenterIpv4GuestSubnet;
+import org.apache.cloudstack.extension.Extension;
+import org.apache.cloudstack.extension.ExtensionCustomAction;
+import org.apache.cloudstack.gpu.GpuCard;
+import org.apache.cloudstack.gpu.GpuDevice;
+import org.apache.cloudstack.gpu.VgpuProfile;
 import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
 import org.apache.cloudstack.quota.QuotaTariff;
-import org.apache.cloudstack.storage.sharedfs.SharedFS;
 import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.storage.object.ObjectStore;
+import org.apache.cloudstack.storage.sharedfs.SharedFS;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.vm.schedule.VMSchedule;
 
@@ -289,6 +295,8 @@ public class EventTypes {
 
     //registering userdata events
     public static final String EVENT_REGISTER_USER_DATA = "REGISTER.USER.DATA";
+    public static final String EVENT_REGISTER_CNI_CONFIG = "REGISTER.CNI.CONFIG";
+    public static final String EVENT_DELETE_CNI_CONFIG = "DELETE.CNI.CONFIG";
 
     //register for user API and secret keys
     public static final String EVENT_REGISTER_FOR_SECRET_API_KEY = "REGISTER.USER.KEY";
@@ -373,6 +381,21 @@ public class EventTypes {
     public static final String EVENT_DISK_OFFERING_CREATE = "DISK.OFFERING.CREATE";
     public static final String EVENT_DISK_OFFERING_EDIT = "DISK.OFFERING.EDIT";
     public static final String EVENT_DISK_OFFERING_DELETE = "DISK.OFFERING.DELETE";
+
+    // GPU Cards
+    public static final String EVENT_GPU_CARD_CREATE = "GPU.CARD.CREATE";
+    public static final String EVENT_GPU_CARD_EDIT = "GPU.CARD.EDIT";
+    public static final String EVENT_GPU_CARD_DELETE = "GPU.CARD.DELETE";
+
+    // vGPU Profile
+    public static final String EVENT_VGPU_PROFILE_CREATE = "VGPU.PROFILE.CREATE";
+    public static final String EVENT_VGPU_PROFILE_EDIT = "VGPU.PROFILE.EDIT";
+    public static final String EVENT_VGPU_PROFILE_DELETE = "VGPU.PROFILE.DELETE";
+
+    // GPU Devices
+    public static final String EVENT_GPU_DEVICE_CREATE = "GPU.DEVICE.CREATE";
+    public static final String EVENT_GPU_DEVICE_EDIT = "GPU.DEVICE.EDIT";
+    public static final String EVENT_GPU_DEVICE_DELETE = "GPU.DEVICE.DELETE";
 
     // Network offerings
     public static final String EVENT_NETWORK_OFFERING_CREATE = "NETWORK.OFFERING.CREATE";
@@ -465,6 +488,7 @@ public class EventTypes {
     public static final String EVENT_ENABLE_PRIMARY_STORAGE = "ENABLE.PS";
     public static final String EVENT_DISABLE_PRIMARY_STORAGE = "DISABLE.PS";
     public static final String EVENT_SYNC_STORAGE_POOL = "SYNC.STORAGE.POOL";
+    public static final String EVENT_CONFIGURE_STORAGE_ACCESS = "CONFIGURE.STORAGE.ACCESS";
     public static final String EVENT_CHANGE_STORAGE_POOL_SCOPE = "CHANGE.STORAGE.POOL.SCOPE";
 
     // VPN
@@ -496,6 +520,8 @@ public class EventTypes {
 
     public static final String EVENT_ZONE_VLAN_ASSIGN = "ZONE.VLAN.ASSIGN";
     public static final String EVENT_ZONE_VLAN_RELEASE = "ZONE.VLAN.RELEASE";
+    public static final String EVENT_ZONE_VXLAN_ASSIGN = "ZONE.VXLAN.ASSIGN";
+    public static final String EVENT_ZONE_VXLAN_RELEASE = "ZONE.VXLAN.RELEASE";
 
     // Projects
     public static final String EVENT_PROJECT_CREATE = "PROJECT.CREATE";
@@ -607,11 +633,13 @@ public class EventTypes {
     public static final String EVENT_VM_BACKUP_CREATE = "BACKUP.CREATE";
     public static final String EVENT_VM_BACKUP_RESTORE = "BACKUP.RESTORE";
     public static final String EVENT_VM_BACKUP_DELETE = "BACKUP.DELETE";
+    public static final String EVENT_VM_BACKUP_OFFERING_REMOVED_AND_BACKUPS_DELETED = "BACKUP.OFFERING.BACKUPS.DEL";
     public static final String EVENT_VM_BACKUP_RESTORE_VOLUME_TO_VM = "BACKUP.RESTORE.VOLUME.TO.VM";
     public static final String EVENT_VM_BACKUP_SCHEDULE_CONFIGURE = "BACKUP.SCHEDULE.CONFIGURE";
     public static final String EVENT_VM_BACKUP_SCHEDULE_DELETE = "BACKUP.SCHEDULE.DELETE";
     public static final String EVENT_VM_BACKUP_USAGE_METRIC = "BACKUP.USAGE.METRIC";
     public static final String EVENT_VM_BACKUP_EDIT = "BACKUP.OFFERING.EDIT";
+    public static final String EVENT_VM_CREATE_FROM_BACKUP = "VM.CREATE.FROM.BACKUP";
 
     // external network device events
     public static final String EVENT_EXTERNAL_NVP_CONTROLLER_ADD = "PHYSICAL.NVPCONTROLLER.ADD";
@@ -687,6 +715,9 @@ public class EventTypes {
     public static final String EVENT_EXTERNAL_OPENDAYLIGHT_CONFIGURE_CONTROLLER = "PHYSICAL.ODLCONTROLLER.CONFIGURE";
 
     //Guest OS related events
+    public static final String EVENT_GUEST_OS_CATEGORY_ADD = "GUEST.OS.CATEGORY.ADD";
+    public static final String EVENT_GUEST_OS_CATEGORY_DELETE = "GUEST.OS.CATEGORY.DELETE";
+    public static final String EVENT_GUEST_OS_CATEGORY_UPDATE = "GUEST.OS.CATEGORY.UPDATE";
     public static final String EVENT_GUEST_OS_ADD = "GUEST.OS.ADD";
     public static final String EVENT_GUEST_OS_REMOVE = "GUEST.OS.REMOVE";
     public static final String EVENT_GUEST_OS_UPDATE = "GUEST.OS.UPDATE";
@@ -739,6 +770,13 @@ public class EventTypes {
     //Purge resources
     public static final String EVENT_PURGE_EXPUNGED_RESOURCES = "PURGE.EXPUNGED.RESOURCES";
 
+    // Management Server
+    public static final String EVENT_MS_MAINTENANCE_PREPARE = "MS.MAINTENANCE.PREPARE";
+    public static final String EVENT_MS_MAINTENANCE_CANCEL = "MS.MAINTENANCE.CANCEL";
+    public static final String EVENT_MS_SHUTDOWN_PREPARE = "MS.SHUTDOWN.PREPARE";
+    public static final String EVENT_MS_SHUTDOWN_CANCEL = "MS.SHUTDOWN.CANCEL";
+    public static final String EVENT_MS_SHUTDOWN = "MS.SHUTDOWN";
+
     // OBJECT STORE
     public static final String EVENT_OBJECT_STORE_CREATE = "OBJECT.STORE.CREATE";
     public static final String EVENT_OBJECT_STORE_DELETE = "OBJECT.STORE.DELETE";
@@ -784,6 +822,40 @@ public class EventTypes {
     public static final String EVENT_SHAREDFS_DESTROY = "SHAREDFS.DESTROY";
     public static final String EVENT_SHAREDFS_EXPUNGE = "SHAREDFS.EXPUNGE";
     public static final String EVENT_SHAREDFS_RECOVER = "SHAREDFS.RECOVER";
+
+    // Resource Limit
+    public static final String EVENT_RESOURCE_LIMIT_UPDATE = "RESOURCE.LIMIT.UPDATE";
+
+    // Management Server
+    public static final String EVENT_MANAGEMENT_SERVER_REMOVE = "MANAGEMENT.SERVER.REMOVE";
+
+    // VM Lease
+    public static final String VM_LEASE_EXPIRED = "VM.LEASE.EXPIRED";
+    public static final String VM_LEASE_DISABLED = "VM.LEASE.DISABLED";
+    public static final String VM_LEASE_CANCELLED = "VM.LEASE.CANCELLED";
+    public static final String VM_LEASE_EXPIRING = "VM.LEASE.EXPIRING";
+
+    // GUI Theme
+    public static final String EVENT_GUI_THEME_CREATE = "GUI.THEME.CREATE";
+    public static final String EVENT_GUI_THEME_REMOVE = "GUI.THEME.REMOVE";
+    public static final String EVENT_GUI_THEME_UPDATE = "GUI.THEME.UPDATE";
+
+    // Extension
+    public static final String EVENT_EXTENSION_CREATE = "EXTENSION.CREATE";
+    public static final String EVENT_EXTENSION_UPDATE = "EXTENSION.UPDATE";
+    public static final String EVENT_EXTENSION_DELETE = "EXTENSION.DELETE";
+    public static final String EVENT_EXTENSION_RESOURCE_REGISTER = "EXTENSION.RESOURCE.REGISTER";
+    public static final String EVENT_EXTENSION_RESOURCE_UNREGISTER = "EXTENSION.RESOURCE.UNREGISTER";
+    public static final String EVENT_EXTENSION_CUSTOM_ACTION_ADD = "EXTENSION.CUSTOM.ACTION.ADD";
+    public static final String EVENT_EXTENSION_CUSTOM_ACTION_UPDATE = "EXTENSION.CUSTOM.ACTION.UPDATE";
+    public static final String EVENT_EXTENSION_CUSTOM_ACTION_DELETE = "EXTENSION.CUSTOM.ACTION.DELETE";
+
+    // Custom Action
+    public static final String EVENT_CUSTOM_ACTION = "CUSTOM.ACTION";
+
+    // Backup Repository
+    public static final String EVENT_BACKUP_REPOSITORY_ADD = "BACKUP.REPOSITORY.ADD";
+    public static final String EVENT_BACKUP_REPOSITORY_UPDATE = "BACKUP.REPOSITORY.UPDATE";
 
     static {
 
@@ -978,6 +1050,21 @@ public class EventTypes {
         entityEventDetails.put(EVENT_DISK_OFFERING_CREATE, DiskOffering.class);
         entityEventDetails.put(EVENT_DISK_OFFERING_EDIT, DiskOffering.class);
         entityEventDetails.put(EVENT_DISK_OFFERING_DELETE, DiskOffering.class);
+
+        // GPU Cards
+        entityEventDetails.put(EVENT_GPU_CARD_CREATE, GpuCard.class);
+        entityEventDetails.put(EVENT_GPU_CARD_EDIT, GpuCard.class);
+        entityEventDetails.put(EVENT_GPU_CARD_DELETE, GpuCard.class);
+
+        // vGPU Profiles
+        entityEventDetails.put(EVENT_VGPU_PROFILE_CREATE, VgpuProfile.class);
+        entityEventDetails.put(EVENT_VGPU_PROFILE_EDIT, VgpuProfile.class);
+        entityEventDetails.put(EVENT_VGPU_PROFILE_DELETE, VgpuProfile.class);
+
+        // GPU Devices
+        entityEventDetails.put(EVENT_GPU_DEVICE_CREATE, GpuDevice.class);
+        entityEventDetails.put(EVENT_GPU_DEVICE_EDIT, GpuDevice.class);
+        entityEventDetails.put(EVENT_GPU_DEVICE_DELETE, GpuDevice.class);
 
         // Network offerings
         entityEventDetails.put(EVENT_NETWORK_OFFERING_CREATE, NetworkOffering.class);
@@ -1230,6 +1317,12 @@ public class EventTypes {
         entityEventDetails.put(EVENT_UPDATE_IMAGE_STORE_ACCESS_STATE, ImageStore.class);
         entityEventDetails.put(EVENT_LIVE_PATCH_SYSTEMVM, "SystemVMs");
 
+        entityEventDetails.put(EVENT_MS_MAINTENANCE_PREPARE, "ManagementServer");
+        entityEventDetails.put(EVENT_MS_MAINTENANCE_CANCEL, "ManagementServer");
+        entityEventDetails.put(EVENT_MS_SHUTDOWN_PREPARE, "ManagementServer");
+        entityEventDetails.put(EVENT_MS_SHUTDOWN_CANCEL, "ManagementServer");
+        entityEventDetails.put(EVENT_MS_SHUTDOWN, "ManagementServer");
+
         //Object Store
         entityEventDetails.put(EVENT_OBJECT_STORE_CREATE, ObjectStore.class);
         entityEventDetails.put(EVENT_OBJECT_STORE_UPDATE, ObjectStore.class);
@@ -1273,6 +1366,34 @@ public class EventTypes {
         entityEventDetails.put(EVENT_SHAREDFS_DESTROY, SharedFS.class);
         entityEventDetails.put(EVENT_SHAREDFS_EXPUNGE, SharedFS.class);
         entityEventDetails.put(EVENT_SHAREDFS_RECOVER, SharedFS.class);
+
+        // Management Server
+        entityEventDetails.put(EVENT_MANAGEMENT_SERVER_REMOVE, "ManagementServer");
+
+        // VM Lease
+        entityEventDetails.put(VM_LEASE_EXPIRED, VirtualMachine.class);
+        entityEventDetails.put(VM_LEASE_EXPIRING, VirtualMachine.class);
+        entityEventDetails.put(VM_LEASE_DISABLED, VirtualMachine.class);
+        entityEventDetails.put(VM_LEASE_CANCELLED, VirtualMachine.class);
+
+        // GUI theme
+        entityEventDetails.put(EVENT_GUI_THEME_CREATE, "GuiTheme");
+        entityEventDetails.put(EVENT_GUI_THEME_REMOVE, "GuiTheme");
+        entityEventDetails.put(EVENT_GUI_THEME_UPDATE, "GuiTheme");
+
+        // Extension
+        entityEventDetails.put(EVENT_EXTENSION_CREATE, Extension.class);
+        entityEventDetails.put(EVENT_EXTENSION_UPDATE, Extension.class);
+        entityEventDetails.put(EVENT_EXTENSION_DELETE, Extension.class);
+        entityEventDetails.put(EVENT_EXTENSION_RESOURCE_REGISTER, Extension.class);
+        entityEventDetails.put(EVENT_EXTENSION_RESOURCE_UNREGISTER, Extension.class);
+        entityEventDetails.put(EVENT_EXTENSION_CUSTOM_ACTION_ADD, ExtensionCustomAction.class);
+        entityEventDetails.put(EVENT_EXTENSION_CUSTOM_ACTION_UPDATE, ExtensionCustomAction.class);
+        entityEventDetails.put(EVENT_EXTENSION_CUSTOM_ACTION_DELETE, ExtensionCustomAction.class);
+
+        // Backup Repository
+        entityEventDetails.put(EVENT_BACKUP_REPOSITORY_ADD, BackupRepositoryService.class);
+        entityEventDetails.put(EVENT_BACKUP_REPOSITORY_UPDATE, BackupRepositoryService.class);
     }
 
     public static boolean isNetworkEvent(String eventType) {

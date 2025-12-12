@@ -22,10 +22,18 @@
 #
 #############################################################################################
 
+SCRIPT_NAME=$(basename "$0")
+
+if [[ $(pgrep -f ${SCRIPT_NAME}) != "$$" ]]; then
+        echo "Another instance of ${SCRIPT_NAME} is already running! Exiting"
+        exit
+fi
+
+
 cd $(dirname $0)
 
 for WWID in $(multipathd list maps status | awk '{ if ($4 == 0) { print substr($1,2); }}'); do
-  ./removeVolume.sh ${WWID}
+  ./disconnectVolume.sh ${WWID}
 done
 
 exit 0

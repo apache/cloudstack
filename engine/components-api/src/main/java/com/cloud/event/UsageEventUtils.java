@@ -25,14 +25,16 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.network.Network;
+import org.apache.commons.collections.MapUtils;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventDistributor;
-import org.apache.commons.collections.MapUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -90,6 +92,14 @@ public class UsageEventUtils {
         }
         publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
 
+    }
+
+    public static void publishUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,
+                                         Long size, String entityType, String entityUUID, Long vmId, boolean displayResource) {
+        if (displayResource) {
+            saveUsageEvent(usageType, accountId, zoneId, resourceId, offeringId, templateId, size, vmId, resourceName);
+        }
+        publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
     }
 
     public static void publishUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,
@@ -200,6 +210,10 @@ public class UsageEventUtils {
         s_usageEventDao.persist(new UsageEventVO(usageType, accountId, zoneId, vmId, securityGroupId));
     }
 
+    public static void saveUsageEvent(String usageType, long accountId, long zoneId, long resourceId, Long offeringId, Long templateId, Long size, Long vmId, String resourceName) {
+        s_usageEventDao.persist(new UsageEventVO(usageType, accountId, zoneId, resourceId, offeringId, templateId, size, vmId, resourceName));
+    }
+
     private static void publishUsageEvent(String usageEventType, Long accountId, Long zoneId, String resourceType, String resourceUUID) {
         String configKey = "publish.usage.events";
         String value = s_configDao.getValue(configKey);
@@ -242,5 +256,23 @@ public class UsageEventUtils {
     }
 
     static final String Name = "management-server";
+
+    public static void publishNetworkCreation(Network network) {
+        publishUsageEvent(EventTypes.EVENT_NETWORK_CREATE, network.getAccountId(), network.getDataCenterId(),
+                network.getId(), network.getName(), network.getNetworkOfferingId(), null, null, null, network.getState().name(),
+                network.getUuid());
+    }
+
+    public static void publishNetworkUpdate(Network network) {
+        publishUsageEvent(EventTypes.EVENT_NETWORK_UPDATE, network.getAccountId(), network.getDataCenterId(),
+                network.getId(), network.getName(), network.getNetworkOfferingId(), null, network.getState().name(),
+                Network.class.getName(), network.getUuid(), true);
+    }
+
+    public static void publishNetworkDeletion(Network network) {
+        publishUsageEvent(EventTypes.EVENT_NETWORK_DELETE, network.getAccountId(), network.getDataCenterId(),
+                network.getId(), network.getName(), network.getNetworkOfferingId(), null, null, null,
+                Network.class.getName(), network.getUuid());
+    }
 
 }

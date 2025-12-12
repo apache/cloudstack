@@ -74,6 +74,11 @@ public class LocalHostEndpoint implements EndPoint {
     }
 
     @Override
+    public String getUuid() {
+        return "";
+    }
+
+    @Override
     public String getHostAddr() {
         return "127.0.0.0";
     }

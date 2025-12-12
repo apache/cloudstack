@@ -55,7 +55,7 @@ UPDATE `cloud`.`service_offering` SET ram_size = 512 WHERE unique_name IN ("Clou
                                                        AND system_use = 1 AND ram_size < 512;
 
 -- NSX Plugin --
-CREATE TABLE `cloud`.`nsx_providers` (
+CREATE TABLE IF NOT EXISTS `cloud`.`nsx_providers` (
                                          `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
                                          `uuid` varchar(40),
                                          `zone_id` bigint unsigned NOT NULL COMMENT 'Zone ID',
@@ -425,10 +425,3 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervi
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_instance', 'delete_protection', 'boolean DEFAULT FALSE COMMENT "delete protection for vm" ');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes', 'delete_protection', 'boolean DEFAULT FALSE COMMENT "delete protection for volumes" ');
-
--- Modify index for mshost_peer
-DELETE FROM `cloud`.`mshost_peer`;
-CALL `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY`('cloud.mshost_peer','fk_mshost_peer__owner_mshost');
-CALL `cloud`.`IDEMPOTENT_DROP_INDEX`('i_mshost_peer__owner_peer_runid','mshost_peer');
-CALL `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY`('cloud.mshost_peer', 'i_mshost_peer__owner_peer', '(owner_mshost, peer_mshost)');
-CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.mshost_peer', 'fk_mshost_peer__owner_mshost', '(owner_mshost)', '`mshost`(`id`)');

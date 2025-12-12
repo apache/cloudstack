@@ -60,14 +60,14 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 
 export default {
   name: 'DedicateDomain',
   props: {
     error: {
       type: Boolean,
-      requried: true
+      required: true
     }
   },
   data () {
@@ -90,7 +90,7 @@ export default {
   methods: {
     fetchData () {
       this.domainsLoading = true
-      api('listDomains', {
+      getAPI('listDomains', {
         listAll: true,
         details: 'min'
       }).then(response => {
@@ -107,7 +107,7 @@ export default {
       })
     },
     fetchAccounts () {
-      api('listAccounts', {
+      getAPI('listAccounts', {
         domainid: this.domainId
       }).then(response => {
         this.accountsList = response.listaccountsresponse.account || []

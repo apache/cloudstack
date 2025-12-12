@@ -16,9 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.user;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceTag;
 import com.cloud.user.Account;
+import com.cloud.user.User;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
@@ -30,6 +32,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserResponse;
+import org.apache.commons.lang3.EnumUtils;
 
 import java.util.List;
 
@@ -63,6 +66,10 @@ public class ListUsersCmd extends BaseListAccountResourcesCmd implements UserCmd
             description = "flag to display the resource icon for users")
     private Boolean showIcon;
 
+    @Parameter(name = ApiConstants.USER_SOURCE, type = CommandType.STRING, since = "4.21.0.0",
+            description = "List users by their authentication source. Valid values are: native, ldap, saml2 and saml2disabled.")
+    private String userSource;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -89,6 +96,23 @@ public class ListUsersCmd extends BaseListAccountResourcesCmd implements UserCmd
 
     public Boolean getShowIcon() {
         return showIcon != null ? showIcon : false;
+    }
+
+    public User.Source getUserSource() {
+        if (userSource == null) {
+            return null;
+        }
+
+        User.Source source = EnumUtils.getEnumIgnoreCase(User.Source.class, userSource);
+        if (source == null || List.of(User.Source.OAUTH2, User.Source.UNKNOWN).contains(source)) {
+            throw new InvalidParameterValueException(String.format("Invalid user source: %s. Valid values are: native, ldap, saml2 and saml2disabled.", userSource));
+        }
+
+        if (source == User.Source.NATIVE) {
+            return User.Source.UNKNOWN;
+        }
+
+        return source;
     }
 
     /////////////////////////////////////////////////////

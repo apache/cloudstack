@@ -17,6 +17,8 @@
 
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
+import { isZoneCreated } from '@/utils/zone'
+import kubernetesIcon from '@/assets/icons/kubernetes.svg?inline'
 
 export default {
   name: 'compute',
@@ -28,8 +30,7 @@ export default {
       title: 'label.instances',
       icon: 'cloud-server-outlined',
       docHelp: 'adminguide/virtual_machines.html',
-      permission: ['listVirtualMachines', 'listVirtualMachinesMetrics'],
-      getApiToCall: () => store.getters.metrics ? 'listVirtualMachinesMetrics' : 'listVirtualMachines',
+      permission: ['listVirtualMachinesMetrics'],
       resourceType: 'UserVm',
       params: () => {
         var params = { details: 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp,backoff' }
@@ -44,6 +45,9 @@ export default {
         if (!(store.getters.project && store.getters.project.id)) {
           filters.unshift('self')
         }
+        if (store.getters.features.instanceleaseenabled) {
+          filters.push('leased')
+        }
         return filters
       },
       columns: () => {
@@ -51,8 +55,8 @@ export default {
         const metricsFields = ['cpunumber', 'cputotal', 'cpuused', 'memorytotal',
           {
             memoryused: (record) => {
-              if (record.memoryintfreekbs <= 0 || record.memorykbs <= 0) {
-                return '-'
+              if (!record.memoryintfreekbs || record.memoryintfreekbs <= 0 || record.memorykbs <= 0) {
+                return ''
               }
               return parseFloat(100.0 * (record.memorykbs - record.memoryintfreekbs) / record.memorykbs).toFixed(2) + '%'
             }
@@ -62,6 +66,7 @@ export default {
         if (store.getters.metrics) {
           fields.push(...metricsFields)
         }
+        fields.push('arch')
         if (store.getters.userInfo.roletype === 'Admin') {
           fields.splice(2, 0, 'instancename')
           fields.push('hostname')
@@ -77,12 +82,12 @@ export default {
         fields.push('zonename')
         return fields
       },
-      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'groupid', 'tags'],
+      searchFilters: ['name', 'gpuenabled', 'zoneid', 'domainid', 'account', 'groupid', 'arch', 'extensionid', 'tags'],
       details: () => {
         var fields = ['name', 'displayname', 'id', 'state', 'ipaddress', 'ip6address', 'templatename', 'ostypename',
-          'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'boottype', 'bootmode', 'account',
+          'serviceofferingname', 'gpucount', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'arch', 'boottype', 'bootmode', 'account',
           'domain', 'zonename', 'userdataid', 'userdataname', 'userdataparams', 'userdatadetails', 'userdatapolicy',
-          'hostcontrolstate', 'deleteprotection']
+          'hostcontrolstate', 'deleteprotection', 'leaseexpirydate', 'leaseexpiryaction']
         const listZoneHaveSGEnabled = store.getters.zones.filter(zone => zone.securitygroupsenabled === true)
         if (!listZoneHaveSGEnabled || listZoneHaveSGEnabled.length === 0) {
           return fields
@@ -100,6 +105,7 @@ export default {
           label: 'label.vm.add',
           docHelp: 'adminguide/virtual_machines.html#creating-vms',
           listView: true,
+          show: isZoneCreated,
           component: () => import('@/views/compute/DeployVM.vue')
         },
         {
@@ -121,7 +127,7 @@ export default {
           dataView: true,
           groupAction: true,
           popup: true,
-          groupMap: (selection, values) => { return selection.map(x => { return { id: x, considerlasthost: values.considerlasthost } }) },
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, considerlasthost: values.considerlasthost === true } }) },
           args: (record, store) => {
             if (['Admin'].includes(store.userInfo.roletype)) {
               return ['considerlasthost']
@@ -177,7 +183,7 @@ export default {
           message: 'message.reinstall.vm',
           dataView: true,
           popup: true,
-          show: (record) => { return ['Running', 'Stopped'].includes(record.state) && record.vmtype !== 'sharedfsvm' },
+          show: (record) => { return record.hypervisor !== 'External' && ['Running', 'Stopped'].includes(record.state) && record.vmtype !== 'sharedfsvm' },
           disabled: (record) => { return record.hostcontrolstate === 'Offline' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ReinstallVm.vue')))
         },
@@ -187,11 +193,17 @@ export default {
           label: 'label.action.vmsnapshot.create',
           docHelp: 'adminguide/virtual_machines.html#virtual-machine-snapshots',
           dataView: true,
-          args: ['virtualmachineid', 'name', 'description', 'snapshotmemory', 'quiescevm'],
+          args: (record, store) => {
+            var args = ['virtualmachineid', 'name', 'description', 'snapshotmemory']
+            if (['KVM', 'VMware'].includes(record.hypervisor)) {
+              args.push('quiescevm')
+            }
+            return args
+          },
           show: (record) => {
-            return (((['Running'].includes(record.state) && record.hypervisor !== 'LXC') ||
-              (['Stopped'].includes(record.state) && ((record.hypervisor !== 'KVM' && record.hypervisor !== 'LXC') ||
-              (record.hypervisor === 'KVM' && record.pooltype === 'PowerFlex')))) && record.vmtype !== 'sharedfsvm')
+            return record.hypervisor !== 'External' && (((['Running'].includes(record.state) && record.hypervisor !== 'LXC') ||
+              (['Stopped'].includes(record.state) && (!['KVM', 'LXC'].includes(record.hypervisor) ||
+              (record.hypervisor === 'KVM' && ['PowerFlex', 'Filesystem', 'NetworkFilesystem', 'SharedMountPoint'].includes(record.pooltype))))) && record.vmtype !== 'sharedfsvm')
           },
           disabled: (record) => { return record.hostcontrolstate === 'Offline' && record.hypervisor === 'KVM' },
           mapping: {
@@ -207,9 +219,10 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#virtual-machine-snapshots',
           dataView: true,
           popup: true,
-          show: (record) => {
-            return ((['Running'].includes(record.state) && record.hypervisor !== 'LXC') ||
-              (['Stopped'].includes(record.state) && !['KVM', 'LXC'].includes(record.hypervisor)))
+          show: (record, store) => {
+            return record.hypervisor !== 'External' && ((record.hypervisor !== 'KVM') ||
+              ['Stopped', 'Destroyed'].includes(record.state) ||
+              store.features.kvmsnapshotenabled)
           },
           disabled: (record) => { return record.hostcontrolstate === 'Offline' && record.hypervisor === 'KVM' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/CreateSnapshotWizard.vue')))
@@ -222,8 +235,12 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#backup-offerings',
           dataView: true,
           args: ['virtualmachineid', 'backupofferingid'],
-          show: (record) => { return !record.backupofferingid },
+          show: (record) => { return ['Running', 'Stopped', 'Shutdown'].includes(record.state) && record.hypervisor !== 'External' && !record.backupofferingid },
           mapping: {
+            backupofferingid: {
+              api: 'listBackupOfferings',
+              params: (record) => { return { zoneid: record.zoneid } }
+            },
             virtualmachineid: {
               value: (record, params) => { return record.id }
             }
@@ -236,13 +253,9 @@ export default {
           message: 'message.backup.create',
           docHelp: 'adminguide/virtual_machines.html#creating-vm-backups',
           dataView: true,
-          args: ['virtualmachineid'],
           show: (record) => { return record.backupofferingid },
-          mapping: {
-            virtualmachineid: {
-              value: (record, params) => { return record.id }
-            }
-          }
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/StartBackup.vue')))
         },
         {
           api: 'createBackupSchedule',
@@ -284,7 +297,7 @@ export default {
           docHelp: 'adminguide/templates.html#attaching-an-iso-to-a-vm',
           dataView: true,
           popup: true,
-          show: (record) => { return ['Running', 'Stopped'].includes(record.state) && !record.isoid && record.vmtype !== 'sharedfsvm' },
+          show: (record) => { return record.hypervisor !== 'External' && ['Running', 'Stopped'].includes(record.state) && !record.isoid && record.vmtype !== 'sharedfsvm' },
           disabled: (record) => { return record.hostcontrolstate === 'Offline' || record.hostcontrolstate === 'Maintenance' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AttachIso.vue')))
         },
@@ -301,7 +314,7 @@ export default {
             }
             return args
           },
-          show: (record) => { return ['Running', 'Stopped'].includes(record.state) && 'isoid' in record && record.isoid && record.vmtype !== 'sharedfsvm' },
+          show: (record) => { return record.hypervisor !== 'External' && ['Running', 'Stopped'].includes(record.state) && 'isoid' in record && record.isoid && record.vmtype !== 'sharedfsvm' },
           disabled: (record) => { return record.hostcontrolstate === 'Offline' || record.hostcontrolstate === 'Maintenance' },
           mapping: {
             virtualmachineid: {
@@ -316,7 +329,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#change-affinity-group-for-an-existing-vm',
           dataView: true,
           args: ['affinitygroupids'],
-          show: (record) => { return ['Stopped'].includes(record.state) && record.vmtype !== 'sharedfsvm' },
+          show: (record) => { return record.hypervisor !== 'External' && ['Stopped'].includes(record.state) && record.vmtype !== 'sharedfsvm' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ChangeAffinity'))),
           popup: true
         },
@@ -326,7 +339,7 @@ export default {
           label: 'label.scale.vm',
           docHelp: 'adminguide/virtual_machines.html#how-to-dynamically-scale-cpu-and-ram',
           dataView: true,
-          show: (record) => { return (['Stopped'].includes(record.state) || (['Running'].includes(record.state) && record.hypervisor !== 'LXC')) && record.vmtype !== 'sharedfsvm' },
+          show: (record) => { return record.hypervisor !== 'External' && (['Stopped'].includes(record.state) || (['Running'].includes(record.state) && record.hypervisor !== 'LXC')) && record.vmtype !== 'sharedfsvm' },
           disabled: (record) => { return record.state === 'Running' && !record.isdynamicallyscalable },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ScaleVM.vue')))
@@ -337,7 +350,7 @@ export default {
           label: 'label.migrate.instance.to.host',
           docHelp: 'adminguide/virtual_machines.html#moving-vms-between-hosts-manual-live-migration',
           dataView: true,
-          show: (record, store) => { return ['Running'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
+          show: (record, store) => { return record.hypervisor !== 'External' && ['Running'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
           disabled: (record) => { return record.hostcontrolstate === 'Offline' },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/MigrateWizard.vue')))
@@ -349,7 +362,7 @@ export default {
           message: 'message.migrate.instance.to.ps',
           docHelp: 'adminguide/virtual_machines.html#moving-vms-between-hosts-manual-live-migration',
           dataView: true,
-          show: (record, store) => { return ['Stopped'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
+          show: (record, store) => { return record.hypervisor !== 'External' && ['Stopped'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
           disabled: (record) => { return record.hostcontrolstate === 'Offline' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/MigrateVMStorage'))),
           popup: true
@@ -361,7 +374,7 @@ export default {
           message: 'message.action.instance.reset.password',
           dataView: true,
           args: ['password'],
-          show: (record) => { return ['Stopped'].includes(record.state) && record.passwordenabled },
+          show: (record) => { return record.hypervisor !== 'External' && ['Stopped'].includes(record.state) && record.passwordenabled },
           response: (result) => {
             return {
               message: result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${result.virtualmachine.displayname}</b> is <b>${result.virtualmachine.password}</b>` : null,
@@ -377,18 +390,18 @@ export default {
           message: 'message.desc.reset.ssh.key.pair',
           docHelp: 'adminguide/virtual_machines.html#resetting-ssh-keys',
           dataView: true,
-          show: (record) => { return ['Stopped'].includes(record.state) && record.vmtype !== 'sharedfsvm' },
+          show: (record) => { return record.hypervisor !== 'External' && ['Stopped'].includes(record.state) && record.vmtype !== 'sharedfsvm' },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ResetSshKeyPair')))
         },
         {
           api: 'resetUserDataForVirtualMachine',
           icon: 'solution-outlined',
-          label: 'label.reset.userdata.on.vm',
+          label: 'label.reset.user.data.on.vm',
           message: 'message.desc.reset.userdata',
           docHelp: 'adminguide/virtual_machines.html#resetting-userdata',
           dataView: true,
-          show: (record) => { return ['Stopped'].includes(record.state) && record.vmtype !== 'sharedfsvm' },
+          show: (record) => { return record.hypervisor !== 'External' && ['Stopped'].includes(record.state) && record.vmtype !== 'sharedfsvm' },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ResetUserData')))
         },
@@ -399,7 +412,7 @@ export default {
           dataView: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AssignInstance'))),
           popup: true,
-          show: (record) => { return ['Stopped'].includes(record.state) && record.vmtype !== 'sharedfsvm' }
+          show: (record) => { return record.hypervisor !== 'External' && ['Stopped'].includes(record.state) && record.vmtype !== 'sharedfsvm' }
         },
         {
           api: 'recoverVirtualMachine',
@@ -407,7 +420,16 @@ export default {
           label: 'label.recover.vm',
           message: 'message.recover.vm',
           dataView: true,
-          show: (record, store) => { return ['Destroyed'].includes(record.state) && store.features.allowuserexpungerecovervm && record.vmtype !== 'sharedfsvm' }
+          show: (record, store) => { return record.hypervisor !== 'External' && ['Destroyed'].includes(record.state) && store.features.allowuserexpungerecovervm && record.vmtype !== 'sharedfsvm' }
+        },
+        {
+          api: 'runCustomAction',
+          icon: 'play-square-outlined',
+          label: 'label.run.custom.action',
+          dataView: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/extension/RunCustomAction'))),
+          popup: true,
+          show: (record) => { return ['External'].includes(record.hypervisor) }
         },
         {
           api: 'unmanageVirtualMachine',
@@ -415,7 +437,7 @@ export default {
           label: 'label.action.unmanage.virtualmachine',
           message: 'message.action.unmanage.virtualmachine',
           dataView: true,
-          show: (record) => { return ['Running', 'Stopped'].includes(record.state) && ['VMware', 'KVM'].includes(record.hypervisor) && record.vmtype !== 'sharedfsvm' }
+          show: (record) => { return record.hypervisor !== 'External' && ['Running', 'Stopped'].includes(record.state) && ['VMware', 'KVM'].includes(record.hypervisor) && record.vmtype !== 'sharedfsvm' }
         },
         {
           api: 'expungeVirtualMachine',
@@ -530,7 +552,7 @@ export default {
     {
       name: 'kubernetes',
       title: 'label.kubernetes',
-      icon: ['fa-solid', 'fa-dharmachakra'],
+      icon: kubernetesIcon,
       docHelp: 'plugins/cloudstack-kubernetes-service.html',
       searchFilters: ['name', 'domainid', 'account', 'state'],
       permission: ['listKubernetesClusters'],
@@ -552,7 +574,7 @@ export default {
         const filters = ['cloud.managed', 'external.managed']
         return filters
       },
-      details: ['name', 'description', 'zonename', 'kubernetesversionname', 'autoscalingenabled', 'minsize', 'maxsize', 'size', 'controlnodes', 'cpunumber', 'memory', 'keypair', 'associatednetworkname', 'account', 'domain', 'zonename', 'clustertype', 'created'],
+      details: ['name', 'description', 'zonename', 'kubernetesversionname', 'autoscalingenabled', 'csienabled', 'minsize', 'maxsize', 'size', 'controlnodes', 'etcdnodes', 'cpunumber', 'memory', 'keypair', 'cniconfigname', 'associatednetworkname', 'account', 'domain', 'zonename', 'clustertype', 'created'],
       tabs: [
         {
           name: 'k8s',
@@ -568,6 +590,7 @@ export default {
           docHelp: 'plugins/cloudstack-kubernetes-service.html#creating-a-new-kubernetes-cluster',
           listView: true,
           popup: true,
+          show: isZoneCreated,
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/CreateKubernetesCluster.vue')))
         },
         {
@@ -615,6 +638,26 @@ export default {
           show: (record) => { return ['Created', 'Running'].includes(record.state) && record.clustertype === 'CloudManaged' },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/UpgradeKubernetesCluster.vue')))
+        },
+        {
+          api: 'addNodesToKubernetesCluster',
+          icon: 'plus-outlined',
+          label: 'label.kubernetes.cluster.add.nodes.to.cluster',
+          message: 'message.kubernetes.cluster.add.nodes',
+          dataView: true,
+          show: (record) => { return ['Running', 'Alert'].includes(record.state) && record.clustertype === 'CloudManaged' },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/KubernetesAddNodes.vue')))
+        },
+        {
+          api: 'removeNodesFromKubernetesCluster',
+          icon: 'minus-outlined',
+          label: 'label.kubernetes.cluster.remove.nodes.from.cluster',
+          message: 'message.kubernetes.cluster.remove.nodes',
+          dataView: true,
+          show: (record) => { return ['Running', 'Alert'].includes(record.state) && record.clustertype === 'CloudManaged' && (record.virtualmachines.filter(vm => vm.isexternalnode) || []).length > 0 },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/KubernetesRemoveNodes.vue')))
         },
         {
           api: 'deleteKubernetesCluster',
@@ -696,6 +739,7 @@ export default {
           icon: 'plus-outlined',
           label: 'label.new.autoscale.vmgroup',
           listView: true,
+          show: isZoneCreated,
           component: () => import('@/views/compute/CreateAutoScaleVmGroup.vue')
         },
         {
@@ -786,6 +830,7 @@ export default {
           icon: 'plus-outlined',
           label: 'label.new.instance.group',
           listView: true,
+          show: isZoneCreated,
           args: ['name']
         },
         {
@@ -893,10 +938,93 @@ export default {
     },
     {
       name: 'userdata',
-      title: 'label.user.data',
+      title: 'label.user.data.library',
       icon: 'solution-outlined',
       docHelp: 'adminguide/virtual_machines.html#user-data-and-meta-data',
       permission: ['listUserData'],
+      columns: () => {
+        var fields = ['name', 'id']
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          fields.push('account')
+          if (store.getters.listAllProjects) {
+            fields.push('project')
+          }
+          fields.push('domain')
+        } else if (store.getters.listAllProjects) {
+          fields.push('project')
+        }
+        return fields
+      },
+      resourceType: 'UserData',
+      details: ['id', 'name', 'userdata', 'account', 'domain', 'params'],
+      related: [{
+        name: 'vm',
+        title: 'label.instances',
+        param: 'userdataid'
+      }],
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'comments',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
+        }
+      ],
+      actions: [
+        {
+          api: 'registerUserData',
+          icon: 'plus-outlined',
+          label: 'label.register.user.data',
+          docHelp: 'adminguide/virtual_machines.html#user-data-and-meta-data',
+          listView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/RegisterUserData.vue')))
+        },
+        {
+          api: 'deleteUserData',
+          icon: 'delete-outlined',
+          label: 'label.remove.user.data',
+          message: 'message.please.confirm.remove.user.data',
+          dataView: true,
+          args: ['id', 'account', 'domainid', 'projectid'],
+          mapping: {
+            id: {
+              value: (record, params) => { return record.id }
+            },
+            projectid: {
+              value: (record, params) => { return record.projectid }
+            },
+            account: {
+              value: (record, params) => { return record.account }
+            },
+            domainid: {
+              value: (record, params) => { return record.domainid }
+            }
+          },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection, values, record) => {
+            return selection.map(x => {
+              const data = record.filter(y => { return y.id === x })
+              return {
+                id: x,
+                account: data[0].account,
+                domainid: data[0].domainid,
+                projectid: data[0].projectid
+              }
+            })
+          }
+        }
+      ]
+    },
+    {
+      name: 'cniconfiguration',
+      title: 'label.cniconfiguration',
+      icon: 'solution-outlined',
+      docHelp: 'adminguide/virtual_machines.html#user-data-and-meta-data',
+      permission: ['listCniConfiguration'],
       columns: () => {
         var fields = ['name', 'id']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
@@ -929,24 +1057,27 @@ export default {
       ],
       actions: [
         {
-          api: 'registerUserData',
+          api: 'registerCniConfiguration',
           icon: 'plus-outlined',
-          label: 'label.register.user.data',
+          label: 'label.register.cni.config',
           docHelp: 'adminguide/virtual_machines.html#creating-the-ssh-keypair',
           listView: true,
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/RegisterUserData.vue')))
         },
         {
-          api: 'deleteUserData',
+          api: 'deleteCniConfiguration',
           icon: 'delete-outlined',
-          label: 'label.remove.user.data',
-          message: 'message.please.confirm.remove.user.data',
+          label: 'label.remove.cni.configuration',
+          message: 'message.please.confirm.remove.cni.configuration',
           dataView: true,
-          args: ['id', 'account', 'domainid'],
+          args: ['id', 'account', 'domainid', 'projectid'],
           mapping: {
             id: {
               value: (record, params) => { return record.id }
+            },
+            projectid: {
+              value: (record, params) => { return record.projectid }
             },
             account: {
               value: (record, params) => { return record.account }
@@ -961,7 +1092,10 @@ export default {
             return selection.map(x => {
               const data = record.filter(y => { return y.id === x })
               return {
-                id: x, account: data[0].account, domainid: data[0].domainid
+                id: x,
+                account: data[0].account,
+                domainid: data[0].domainid,
+                projectid: data[0].projectid
               }
             })
           }

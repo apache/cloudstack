@@ -53,6 +53,7 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.StateMachine;
 import org.apache.cloudstack.util.CPUArchConverter;
 import org.apache.cloudstack.util.HypervisorTypeConverter;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "host")
@@ -371,6 +372,9 @@ public class EngineHostVO implements EngineHost, Identity {
     @Column(name = "mgmt_server_id")
     private Long managementServerId;
 
+    @Column(name = "last_mgmt_server_id")
+    private Long lastManagementServerId;
+
     @Column(name = "dom0_memory")
     private long dom0MinMemory;
 
@@ -400,6 +404,9 @@ public class EngineHostVO implements EngineHost, Identity {
     @StateMachine(state = State.class, event = Event.class)
     @Column(name = "engine_state", updatable = true, nullable = false, length = 32)
     protected State orchestrationState = null;
+
+    @Column(name = "storage_access_groups")
+    private String storageAccessGroups = null;
 
     public EngineHostVO(String guid) {
         this.guid = guid;
@@ -555,6 +562,10 @@ public class EngineHostVO implements EngineHost, Identity {
         this.managementServerId = managementServerId;
     }
 
+    public void setLastManagementServerId(Long lastManagementServerId) {
+        this.lastManagementServerId = lastManagementServerId;
+    }
+
     @Override
     public long getLastPinged() {
         return lastPinged;
@@ -622,6 +633,11 @@ public class EngineHostVO implements EngineHost, Identity {
     @Override
     public Long getManagementServerId() {
         return managementServerId;
+    }
+
+    @Override
+    public Long getLastManagementServerId() {
+        return lastManagementServerId;
     }
 
     @Override
@@ -697,7 +713,9 @@ public class EngineHostVO implements EngineHost, Identity {
 
     @Override
     public String toString() {
-        return new StringBuilder("Host[").append("-").append(id).append("-").append(type).append("]").toString();
+        return String.format("EngineHost %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name", "type"));
     }
 
     public void setHypervisorType(HypervisorType hypervisorType) {
@@ -791,5 +809,14 @@ public class EngineHostVO implements EngineHost, Identity {
     @Override
     public PartitionType partitionType() {
         return PartitionType.Host;
+    }
+
+    @Override
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
+    }
+
+    public void setStorageAccessGroups(String storageAccessGroups) {
+        this.storageAccessGroups = storageAccessGroups;
     }
 }

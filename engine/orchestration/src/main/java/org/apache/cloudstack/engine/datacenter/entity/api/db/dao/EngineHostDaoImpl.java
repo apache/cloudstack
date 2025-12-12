@@ -213,7 +213,6 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
 
         SequenceSearch = createSearchBuilder();
         SequenceSearch.and("id", SequenceSearch.entity().getId(), SearchCriteria.Op.EQ);
-        // SequenceSearch.addRetrieve("sequence", SequenceSearch.entity().getSequence());
         SequenceSearch.done();
 
         DirectlyConnectedSearch = createSearchBuilder();
@@ -451,7 +450,7 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
                     .append("; updatedTime=")
                     .append(oldUpdatedTime);
             } else {
-                logger.debug("Unable to update dataCenter: id=" + vo.getId() + ", as there is no such dataCenter exists in the database anymore");
+                logger.debug("Unable to update dataCenter: {}, as there is no such dataCenter exists in the database anymore", vo);
             }
         }
         return rows > 0;

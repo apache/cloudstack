@@ -183,7 +183,7 @@ public class EngineHostPodDaoImpl extends GenericDaoBase<EngineHostPodVO, Long> 
                     .append("; updatedTime=")
                     .append(oldUpdatedTime);
             } else {
-                logger.debug("Unable to update dataCenter: id=" + vo.getId() + ", as there is no such dataCenter exists in the database anymore");
+                logger.debug("Unable to update dataCenter: {}, as there is no such dataCenter exists in the database anymore", vo);
             }
         }
         return rows > 0;

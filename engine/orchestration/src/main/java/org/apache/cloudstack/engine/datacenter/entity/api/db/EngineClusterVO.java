@@ -29,6 +29,7 @@ import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEnti
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
 import org.apache.cloudstack.util.CPUArchConverter;
 import org.apache.cloudstack.util.HypervisorTypeConverter;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -113,6 +114,9 @@ public class EngineClusterVO implements EngineCluster, Identity {
     @Column(name = "engine_state", updatable = true, nullable = false, length = 32)
     protected State state = null;
 
+    @Column(name = "storage_access_groups")
+    String storageAccessGroups;
+
     public EngineClusterVO() {
         clusterType = Cluster.ClusterType.CloudManaged;
         allocationState = Grouping.AllocationState.Enabled;
@@ -173,6 +177,11 @@ public class EngineClusterVO implements EngineCluster, Identity {
     @Override
     public ManagedState getManagedState() {
         return managedState;
+    }
+
+    @Override
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
     }
 
     public void setManagedState(ManagedState managedState) {
@@ -263,5 +272,12 @@ public class EngineClusterVO implements EngineCluster, Identity {
     @Override
     public PartitionType partitionType() {
         return PartitionType.Cluster;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("EngineCluster %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name"));
     }
 }

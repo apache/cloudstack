@@ -21,6 +21,8 @@ import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.ConfigurationManagerImpl;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
@@ -128,33 +130,33 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
      * @param vmProfile vm profile
      */
     protected void setVmQuotaPercentage(VirtualMachineTO to, VirtualMachineProfile vmProfile) {
-        if (to.getLimitCpuUse()) {
+        if (to.isLimitCpuUse()) {
             VirtualMachine vm = vmProfile.getVirtualMachine();
             HostVO host = hostDao.findById(vm.getHostId());
             if (host == null) {
                 throw new CloudRuntimeException("Host with id: " + vm.getHostId() + " not found");
             }
-            logger.debug("Limiting CPU usage for VM: " + vm.getUuid() + " on host: " + host.getUuid());
+            logger.debug("Limiting CPU usage for VM: {} on host: {}", vm, host);
             double hostMaxSpeed = getHostCPUSpeed(host);
             double maxSpeed = getVmSpeed(to);
             try {
                 BigDecimal percent = new BigDecimal(maxSpeed / hostMaxSpeed);
                 percent = percent.setScale(2, RoundingMode.HALF_DOWN);
                 if (percent.compareTo(new BigDecimal(1)) == 1) {
-                    logger.debug("VM " + vm.getUuid() + " CPU MHz exceeded host " + host.getUuid() + " CPU MHz, limiting VM CPU to the host maximum");
+                    logger.debug("VM {} CPU MHz exceeded host {} CPU MHz, limiting VM CPU to the host maximum", vm, host);
                     percent = new BigDecimal(1);
                 }
                 to.setCpuQuotaPercentage(percent.doubleValue());
-                logger.debug("Host: " + host.getUuid() + " max CPU speed = " + hostMaxSpeed + "MHz, VM: " + vm.getUuid() +
-                        "max CPU speed = " + maxSpeed + "MHz. Setting CPU quota percentage as: " + percent.doubleValue());
+                logger.debug("Host: {} max CPU speed = {} MHz, VM: {} max CPU speed = {} MHz. " +
+                        "Setting CPU quota percentage as: {}",
+                        host, hostMaxSpeed, vm, maxSpeed, percent.doubleValue());
             } catch (NumberFormatException e) {
-                logger.error("Error calculating VM: " + vm.getUuid() + " quota percentage, it wll not be set. Error: " + e.getMessage(), e);
+                logger.error("Error calculating VM: {} quota percentage, it will not be set. Error: {}", vm, e.getMessage(), e);
             }
         }
     }
 
     @Override
-
     public VirtualMachineTO implement(VirtualMachineProfile vm) {
         VirtualMachineTO to = toVirtualMachineTO(vm);
         setVmQuotaPercentage(to, vm);
@@ -169,6 +171,9 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         configureVmOsDescription(virtualMachine, to, host);
 
         configureVmMemoryAndCpuCores(to, host, virtualMachine, vm);
+
+        to.setMetadata(makeVirtualMachineMetadata(vm));
+
         return to;
     }
 
@@ -241,9 +246,11 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         }
 
         Long lastHostId = virtualMachine.getLastHostId();
-        logger.info(String.format("%s is not running; therefore, we use the last host [%s] that the VM was running on to derive the unconstrained service offering max CPU and memory.", vmDescription, lastHostId));
 
         HostVO lastHost = lastHostId == null ? null : hostDao.findById(lastHostId);
+        logger.info("{} is not running; therefore, we use the last host [{}] with id {} that the " +
+                        "VM was running on to derive the unconstrained service offering max CPU " +
+                "and memory.", vmDescription, lastHost, lastHostId);
         if (lastHost != null) {
             maxHostMemory = lastHost.getTotalMemory();
             maxHostCpuCore = lastHost.getCpus();
@@ -367,6 +374,8 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
                    _volumeDao.update(volume.getId(), volume);
                    _volumeDao.attachVolume(volume.getId(), vm.getId(), getNextAvailableDeviceId(vmVolumes));
                }
+               UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_ATTACH, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                       volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid(), vm.getId(), volume.isDisplay());
            }
         } catch (Exception e) {
             throw new RuntimeException("Could not restore VM " + vm.getName() + " due to : " + e.getMessage());
@@ -384,6 +393,8 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
                 _volumeDao.attachVolume(restoredVolume.getId(), vm.getId(), getNextAvailableDeviceId(vmVolumes));
                 restoredVolume.setState(Volume.State.Ready);
                 _volumeDao.update(restoredVolume.getId(), restoredVolume);
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_ATTACH, restoredVolume.getAccountId(), restoredVolume.getDataCenterId(), restoredVolume.getId(), restoredVolume.getName(),
+                        restoredVolume.getDiskOfferingId(), restoredVolume.getTemplateId(), restoredVolume.getSize(), Volume.class.getName(), restoredVolume.getUuid(), vm.getId(), restoredVolume.isDisplay());
                 return true;
             } catch (Exception e) {
                 restoredVolume.setDisplay(false);

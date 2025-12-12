@@ -29,7 +29,7 @@
 
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.21.0.0-SNAPSHOT</version>
+    <version>4.23.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Apache CloudStack</name>
     <description>Apache CloudStack is an IaaS ("Infrastructure as a Service") cloud orchestration platform.</description>
@@ -51,7 +51,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.systemvm.template.location>https://download.cloudstack.org/systemvm</project.systemvm.template.location>
-        <project.systemvm.template.version>4.20.0.0</project.systemvm.template.version>
+        <project.systemvm.template.version>4.22.0.0</project.systemvm.template.version>
         <sonar.organization>apache</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
 
@@ -59,7 +59,7 @@
         <cs.jdk.version>11</cs.jdk.version>
         <cs.target.dir>target</cs.target.dir>
         <cs.replace.properties>build/replace.properties</cs.replace.properties>
-        <argLine>-Djava.security.egd=file:/dev/./urandom -noverify --add-opens=java.base/java.lang=ALL-UNNAMED --add-exports=java.base/sun.security.x509=ALL-UNNAMED --add-opens=java.base/javax.net.ssl=ALL-UNNAMED</argLine>
+        <argLine>-Djava.security.egd=file:/dev/./urandom -noverify --add-opens=java.base/java.lang=ALL-UNNAMED --add-exports=java.base/sun.security.x509=ALL-UNNAMED --add-exports=java.base/sun.security.provider=ALL-UNNAMED --add-opens=java.base/javax.net.ssl=ALL-UNNAMED</argLine>
 
         <!-- Plugins versions -->
         <cs.antrun-plugin.version>1.8</cs.antrun-plugin.version>
@@ -117,9 +117,7 @@
         <cs.junit.dataprovider.version>1.13.1</cs.junit.dataprovider.version>
         <cs.junit.jupiter.version>5.9.1</cs.junit.jupiter.version>
         <cs.guava-testlib.version>18.0</cs.guava-testlib.version>
-        <cs.mockito.version>4.11.0</cs.mockito.version>
-        <cs.selenium.server.version>1.0-20081010.060147</cs.selenium.server.version>
-        <cs.selenium-java-client-driver.version>1.0.1</cs.selenium-java-client-driver.version>
+        <cs.mockito.version>5.16.1</cs.mockito.version>
         <cs.testng.version>7.1.0</cs.testng.version>
         <cs.wiremock.version>2.27.2</cs.wiremock.version>
         <cs.xercesImpl.version>2.12.2</cs.xercesImpl.version>
@@ -143,7 +141,7 @@
         <cs.gmavenplus.version>3.0.2</cs.gmavenplus.version>
         <cs.google-http-client>1.42.3</cs.google-http-client>
         <cs.groovy.version>2.4.17</cs.groovy.version>
-        <cs.gson.version>1.7.2</cs.gson.version>
+        <cs.gson.version>2.10.1</cs.gson.version>
         <cs.guava.version>31.1-jre</cs.guava.version>
         <cs.httpclient.version>4.5.14</cs.httpclient.version>
         <cs.httpcore.version>4.4.16</cs.httpcore.version>
@@ -159,7 +157,7 @@
         <cs.jakarta.xml.bind.version>2.3.3</cs.jakarta.xml.bind.version>
         <cs.jaxws.version>2.3.7</cs.jaxws.version>
         <cs.jersey-client.version>2.26</cs.jersey-client.version>
-        <cs.jetty.version>9.4.51.v20230217</cs.jetty.version>
+        <cs.jetty.version>9.4.58.v20250814</cs.jetty.version>
         <cs.jetty-maven-plugin.version>9.4.27.v20200227</cs.jetty-maven-plugin.version>
         <cs.jna.version>5.5.0</cs.jna.version>
         <cs.joda-time.version>2.12.5</cs.joda-time.version>
@@ -176,7 +174,7 @@
         <cs.nitro.version>10.1</cs.nitro.version>
         <cs.opensaml.version>2.6.6</cs.opensaml.version>
         <cs.rados-java.version>0.6.0</cs.rados-java.version>
-        <cs.java-linstor.version>0.5.2</cs.java-linstor.version>
+        <cs.java-linstor.version>0.6.1</cs.java-linstor.version>
         <cs.reflections.version>0.10.2</cs.reflections.version>
         <cs.servicemix.version>3.4.4_1</cs.servicemix.version>
         <cs.servlet.version>4.0.1</cs.servlet.version>
@@ -185,7 +183,7 @@
         <cs.trilead.version>build-217-jenkins-27</cs.trilead.version>
         <cs.vmware.api.version>8.0</cs.vmware.api.version>
         <cs.winrm4j.version>0.5.0</cs.winrm4j.version>
-        <cs.xapi.version>6.2.0-3.1</cs.xapi.version>
+        <cs.xapi.version>8.1.0</cs.xapi.version>
         <cs.xmlrpc.version>3.1.3</cs.xmlrpc.version>
         <cs.xstream.version>1.4.20</cs.xstream.version>
         <org.springframework.version>5.3.26</org.springframework.version>
@@ -294,6 +292,11 @@
             <dependency>
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-core</artifactId>
+                <version>${cs.aws.sdk.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-iam</artifactId>
                 <version>${cs.aws.sdk.version}</version>
             </dependency>
             <dependency>
@@ -746,7 +749,7 @@
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
-            <artifactId>mockito-inline</artifactId>
+            <artifactId>mockito-core</artifactId>
             <version>${cs.mockito.version}</version>
             <scope>test</scope>
             <exclusions>
@@ -1013,19 +1016,17 @@
                             <exclude>**/.vagrant</exclude>
                             <exclude>**/*.json</exclude>
                             <exclude>**/.checkstyle</exclude>
-                            <exclude>**/*.md</exclude>
                             <exclude>.java-version</exclude>
                             <exclude>.python-version</exclude>
-                            <exclude>systemvm/.pythen-version</exclude>
                             <exclude>.idea/</exclude>
                             <exclude>.metadata/**</exclude>
                             <exclude>.git/**</exclude>
                             <exclude>.github/linters/codespell.txt</exclude>
                             <exclude>.gitignore</exclude>
+                            <exclude>.markdownlintignore</exclude>
                             <exclude>CHANGES.md</exclude>
-                            <exclude>CONTRIBUTING.md</exclude>
-                            <exclude>README.md</exclude>
-                            <exclude>INSTALL.md</exclude>
+                            <exclude>ISSUE_TEMPLATE.md</exclude>
+                            <exclude>PULL_REQUEST_TEMPLATE.md</exclude>
                             <exclude>build/build.number</exclude>
                             <exclude>debian/cloudstack-agent.dirs</exclude>
                             <exclude>debian/cloudstack-usage.dirs</exclude>
@@ -1037,15 +1038,19 @@
                             <exclude>dist/console-proxy/js/jquery.js</exclude>
                             <exclude>engine/schema/dist/**</exclude>
                             <exclude>plugins/hypervisors/hyperv/conf/agent.properties</exclude>
+                            <exclude>plugins/hypervisors/hyperv/conf/uefi.properties</exclude>
                             <exclude>plugins/hypervisors/hyperv/DotNet/ServerResource/**</exclude>
                             <exclude>scripts/installer/windows/acs_license.rtf</exclude>
                             <exclude>scripts/vm/systemvm/id_rsa.cloud</exclude>
                             <exclude>services/console-proxy/server/conf/agent.properties</exclude>
+                            <exclude>services/console-proxy/server/conf/uefi.properties</exclude>
                             <exclude>services/console-proxy/server/conf/environment.properties</exclude>
                             <exclude>services/console-proxy/server/js/jquery.js</exclude>
                             <exclude>services/secondary-storage/conf/agent.properties</exclude>
+                            <exclude>services/secondary-storage/conf/uefi.properties</exclude>
                             <exclude>services/secondary-storage/conf/environment.properties</exclude>
                             <exclude>systemvm/agent/conf/agent.properties</exclude>
+                            <exclude>systemvm/agent/conf/uefi.properties</exclude>
                             <exclude>systemvm/agent/conf/environment.properties</exclude>
                             <exclude>systemvm/agent/js/jquery.js</exclude>
                             <exclude>systemvm/agent/js/jquery.flot.navigate.js</exclude>
@@ -1053,7 +1058,6 @@
                             <exclude>systemvm/agent/packages/**</exclude>
                             <exclude>systemvm/debian/**</exclude>
                             <exclude>test/integration/component/test_host_ha.sh</exclude>
-                            <exclude>test/systemvm/README.md</exclude>
                             <exclude>tools/appliance/*/template.json</exclude>
                             <exclude>tools/cli/cloudmonkey.egg-info/*</exclude>
                             <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
@@ -1067,11 +1071,14 @@
                             <exclude>tools/transifex/.tx/config</exclude>
                             <exclude>ui/.*</exclude>
                             <exclude>ui/.*/**</exclude>
+                            <exclude>ui/docs/full-test-plan.template.md</exclude>
+                            <exclude>ui/docs/smoke-test-plan.template.md</exclude>
                             <exclude>ui/src/assets/**</exclude>
                             <exclude>ui/public/**</exclude>
                             <exclude>ui/legacy/**</exclude>
                             <exclude>utils/testsmallfileinactive</exclude>
                             <exclude>**/src/test/resources/mockito-extensions/org.mockito.plugins.MockMaker</exclude>
+                            <exclude>.github/workflows/dependabot.yaml</exclude>
                         </excludes>
                     </configuration>
                 </plugin>

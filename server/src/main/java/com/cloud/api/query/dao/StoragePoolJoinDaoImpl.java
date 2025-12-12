@@ -17,6 +17,7 @@
 package com.cloud.api.query.dao;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -39,6 +40,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.capacity.CapacityManager;
+import com.cloud.server.ResourceTag;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
@@ -103,6 +105,16 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
     }
 
     @Override
+    public StoragePoolResponse newMinimalStoragePoolResponse(StoragePoolJoinVO pool) {
+        StoragePool storagePool = storagePoolDao.findById(pool.getId());
+        StoragePoolResponse poolResponse = new StoragePoolResponse();
+        poolResponse.setId(pool.getUuid());
+        poolResponse.setName(pool.getName());
+        poolResponse.setObjectName("storagepool");
+        return poolResponse;
+    }
+
+    @Override
     public StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO pool, boolean customStats) {
         StoragePool storagePool = storagePoolDao.findById(pool.getId());
         StoragePoolResponse poolResponse = new StoragePoolResponse();
@@ -141,9 +153,12 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
                 }
             }
         }
+        poolResponse.setCapacityBytes(pool.getCapacityBytes());
         poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
         poolResponse.setDiskSizeAllocated(allocatedSize);
+        poolResponse.setDiskSizeUsed(pool.getUsedBytes());
         poolResponse.setCapacityIops(pool.getCapacityIops());
+        poolResponse.setUsedIops(pool.getUsedIops());
 
         if (storagePool.isManaged()) {
             DataStore store = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
@@ -159,20 +174,16 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
             }
         }
 
-        // TODO: StatsCollector does not persist data
-        StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());
-        if (stats != null) {
-            Long used = stats.getByteUsed();
-            poolResponse.setDiskSizeUsed(used);
-        }
-
         poolResponse.setClusterId(pool.getClusterUuid());
         poolResponse.setClusterName(pool.getClusterName());
         poolResponse.setProvider(pool.getStorageProviderName());
         poolResponse.setTags(pool.getTag());
+        poolResponse.setStorageAccessGroups(pool.getStorageAccessGroup());
         poolResponse.setIsTagARule(pool.getIsTagARule());
         poolResponse.setOverProvisionFactor(Double.toString(CapacityManager.StorageOverprovisioningFactor.valueIn(pool.getId())));
         poolResponse.setManaged(storagePool.isManaged());
+        Map<String, String> details = ApiDBUtils.getResourceDetails(pool.getId(), ResourceTag.ResourceObjectType.Storage);
+        poolResponse.setDetails(details);
 
         // set async job
         if (pool.getJobId() != null) {
@@ -190,10 +201,26 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
     public StoragePoolResponse setStoragePoolResponse(StoragePoolResponse response, StoragePoolJoinVO sp) {
         String tag = sp.getTag();
         if (tag != null) {
-            if (response.getTags() != null && response.getTags().length() > 0) {
-                response.setTags(response.getTags() + "," + tag);
+            if (response.getTags() != null && !response.getTags().isEmpty()) {
+                List<String> tagsList = new ArrayList<>(Arrays.asList(response.getTags().split(",")));
+                if (!tagsList.contains(tag)) {
+                    tagsList.add(tag);
+                }
+                response.setTags(String.join(",", tagsList));
             } else {
                 response.setTags(tag);
+            }
+        }
+        String storageAccessGroup = sp.getStorageAccessGroup();
+        if (storageAccessGroup != null) {
+            if (response.getStorageAccessGroups() != null && !response.getStorageAccessGroups().isEmpty()) {
+                List<String> groupList = new ArrayList<>(Arrays.asList(response.getStorageAccessGroups().split(",")));
+                if (!groupList.contains(storageAccessGroup)) {
+                    groupList.add(storageAccessGroup);
+                }
+                response.setStorageAccessGroups(String.join(",", groupList));
+            } else {
+                response.setStorageAccessGroups(storageAccessGroup);
             }
         }
         if (response.hasAnnotation() == null) {
@@ -229,6 +256,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         }
 
         long allocatedSize = pool.getUsedCapacity();
+        poolResponse.setCapacityBytes(pool.getCapacityBytes());
         poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
         poolResponse.setDiskSizeAllocated(allocatedSize);
         poolResponse.setCapacityIops(pool.getCapacityIops());
@@ -256,6 +284,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setClusterName(pool.getClusterName());
         poolResponse.setProvider(pool.getStorageProviderName());
         poolResponse.setTags(pool.getTag());
+        poolResponse.setStorageAccessGroups(pool.getStorageAccessGroup());
         poolResponse.setIsTagARule(pool.getIsTagARule());
 
         // set async job
@@ -274,6 +303,14 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
                 response.setTags(response.getTags() + "," + tag);
             } else {
                 response.setTags(tag);
+            }
+        }
+        String storageAccessGroup = sp.getStorageAccessGroup();
+        if (storageAccessGroup != null) {
+            if (response.getStorageAccessGroups() != null && response.getStorageAccessGroups().length() > 0) {
+                response.setStorageAccessGroups(response.getStorageAccessGroups() + "," + storageAccessGroup);
+            } else {
+                response.setStorageAccessGroups(storageAccessGroup);
             }
         }
         return response;

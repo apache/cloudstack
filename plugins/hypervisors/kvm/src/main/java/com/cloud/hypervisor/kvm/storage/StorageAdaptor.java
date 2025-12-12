@@ -44,6 +44,10 @@ public interface StorageAdaptor {
 
     public boolean deleteStoragePool(String uuid);
 
+    public default boolean deleteStoragePool(String uuid, Map<String, String> details) {
+        return true;
+    }
+
     public default KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool,
                                                       PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, Long usableSize, byte[] passphrase) {
         return createPhysicalDisk(name, pool, format, provisioningType, size, passphrase);
@@ -52,8 +56,15 @@ public interface StorageAdaptor {
     public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool,
             PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase);
 
-    // given disk path (per database) and pool, prepare disk on host
-    public boolean connectPhysicalDisk(String volumePath, KVMStoragePool pool, Map<String, String> details);
+    /**
+     * given disk path (per database) and pool, prepare disk on host
+     * @param volumePath volume path
+     * @param pool storage pool the disk is part of
+     * @param details disk details map
+     * @param isVMMigrate Indicates if request is while VM is migration
+     * @return true if connect was a success
+     */
+    public boolean connectPhysicalDisk(String volumePath, KVMStoragePool pool, Map<String, String> details, boolean isVMMigrate);
 
     // given disk path (per database) and pool, clean up disk on host
     public boolean disconnectPhysicalDisk(String volumePath, KVMStoragePool pool);
@@ -120,22 +131,21 @@ public interface StorageAdaptor {
 
     /**
      * Prepares the storage client.
-     * @param type type of the storage pool
      * @param uuid uuid of the storage pool
      * @param details any details of the storage pool that are required for client preparation
      * @return status, client details, & message in case failed
      */
-    default Ternary<Boolean, Map<String, String>, String> prepareStorageClient(StoragePoolType type, String uuid, Map<String, String> details) {
+    default Ternary<Boolean, Map<String, String>, String> prepareStorageClient(String uuid, Map<String, String> details) {
         return new Ternary<>(true, new HashMap<>(), "");
     }
 
     /**
      * Unprepares the storage client.
-     * @param type type of the storage pool
      * @param uuid uuid of the storage pool
+     * @param details any details of the storage pool that are required for client unpreparation
      * @return status, & message in case failed
      */
-    default Pair<Boolean, String> unprepareStorageClient(StoragePoolType type, String uuid) {
+    default Pair<Boolean, String> unprepareStorageClient(String uuid, Map<String, String> details) {
         return new Pair<>(true, "");
     }
 }

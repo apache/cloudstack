@@ -84,7 +84,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public boolean connectPhysicalDisk(String volumeUuid, KVMStoragePool pool, Map<String, String> details) {
+    public boolean connectPhysicalDisk(String volumeUuid, KVMStoragePool pool, Map<String, String> details, boolean isVMMigrate) {
         // ex. sudo iscsiadm -m node -T iqn.2012-03.com.test:volume1 -p 192.168.233.10:3260 -o new
         Script iScsiAdmCmd = new Script(true, "iscsiadm", 0, logger);
 
@@ -410,9 +410,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         KVMStoragePool srcPool = srcDisk.getPool();
 
         if (srcPool.getType() == StoragePoolType.RBD) {
-            srcFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(srcPool.getSourceHost(), srcPool.getSourcePort(),
-                                                                       srcPool.getAuthUserName(), srcPool.getAuthSecret(),
-                                                                       srcDisk.getPath()),srcDisk.getFormat());
+            srcFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(srcPool, srcDisk.getPath()), srcDisk.getFormat());
         } else {
             srcFile = new QemuImgFile(srcDisk.getPath(), srcDisk.getFormat());
         }
