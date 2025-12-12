@@ -65,7 +65,7 @@ public class RemoveFromGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
                collectionType = CommandType.UUID,
                entityType = FirewallRuleResponse.class,
                required = true,
-               description = "the list load balancer rules that will be assigned to global load balancer rule")
+               description = "The list load balancer rules that will be assigned to global load balancer rule")
     private List<Long> loadBalancerRulesIds;
 
     /////////////////////////////////////////////////////

@@ -47,25 +47,25 @@ public class UpdateVPCCmd extends BaseAsyncCustomIdCmd implements UserCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VpcResponse.class, required = true, description = "the id of the VPC")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VpcResponse.class, required = true, description = "The ID of the VPC")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the VPC")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the VPC")
     private String vpcName;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the VPC")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "The display text of the VPC")
     private String displayText;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the vpc to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "Optional field, should we display the VPC to the end User or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     @Parameter(name = ApiConstants.PUBLIC_MTU, type = CommandType.INTEGER,
-            description = "MTU to be configured on the network VR's public facing interfaces", since = "4.18.0")
+            description = "MTU to be configured on the Network VR's public facing interfaces", since = "4.18.0")
     private Integer publicMtu;
 
     @Parameter(name = ApiConstants.SOURCE_NAT_IP,
             type = CommandType.STRING,
-            description = "IPV4 address to be assigned to the public interface of the network router. This address must already be acquired for this VPC",
+            description = "IPV4 address to be assigned to the public interface of the Network router. This address must already be acquired for this VPC",
             since = "4.19")
     private String sourceNatIP;
 

@@ -48,23 +48,23 @@ public class UpdateAutoScalePolicyCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.NAME,
             type = CommandType.STRING,
-            description = "the name of the autoscale policy",
+            description = "The name of the autoscale policy",
             since = "4.18.0")
     private String name;
 
-    @Parameter(name = ApiConstants.DURATION, type = CommandType.INTEGER, description = "the duration in which the conditions have to be true before action is taken")
+    @Parameter(name = ApiConstants.DURATION, type = CommandType.INTEGER, description = "The duration in which the conditions have to be true before action is taken")
     private Integer duration;
 
     @Parameter(name = ApiConstants.QUIETTIME,
                type = CommandType.INTEGER,
-               description = "the cool down period in which the policy should not be evaluated after the action has been taken")
+               description = "The cool down period in which the policy should not be evaluated after the action has been taken")
     private Integer quietTime;
 
     @Parameter(name = ApiConstants.CONDITION_IDS,
                type = CommandType.LIST,
                collectionType = CommandType.UUID,
                entityType = ConditionResponse.class,
-               description = "the list of IDs of the conditions that are being evaluated on every interval")
+               description = "The list of IDs of the conditions that are being evaluated on every interval")
     private List<Long> conditionIds;
 
     @ACL(accessType = AccessType.OperateEntry)
@@ -72,7 +72,7 @@ public class UpdateAutoScalePolicyCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = AutoScalePolicyResponse.class,
                required = true,
-               description = "the ID of the autoscale policy")
+               description = "The ID of the autoscale policy")
     private Long id;
 
     @Override

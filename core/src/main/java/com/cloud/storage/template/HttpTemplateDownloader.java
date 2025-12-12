@@ -578,7 +578,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
                     logger.debug("Error on http connection : " + ex.getMessage());
                 }
                 status = Status.UNRECOVERABLE_ERROR;
-                errorString = "Template content is unsupported, or mismatch between selected format and template content. Found  : " + unsupportedFormat;
+                errorString = "Template content is unsupported, or mismatch between selected format and Template content. Found  : " + unsupportedFormat;
                 throw new CloudRuntimeException(errorString);
             } else {
                 logger.debug("Verified format of downloading file " + file.getAbsolutePath() + " is supported");

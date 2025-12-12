@@ -51,24 +51,24 @@ public class CreateNetworkPermissionsCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ACCOUNTS,
             type = CommandType.LIST,
             collectionType = CommandType.STRING,
-            description = "a comma delimited list of accounts within owner's domain. If specified, \"op\" parameter has to be passed in.")
+            description = "A comma delimited list of accounts within owner's domain. If specified, \"op\" parameter has to be passed in.")
     private List<String> accountNames;
 
     @Parameter(name = ApiConstants.ACCOUNT_IDS,
             type = CommandType.LIST,
             collectionType = CommandType.UUID,
             entityType = AccountResponse.class,
-            description = "a comma delimited list of account IDs within owner's domain. If specified, \"op\" parameter has to be passed in.")
+            description = "A comma delimited list of account IDs within owner's domain. If specified, \"op\" parameter has to be passed in.")
     private List<Long> accountIds;
 
-    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, required = true, description = "the network ID")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, required = true, description = "The network ID")
     private Long networkId;
 
     @Parameter(name = ApiConstants.PROJECT_IDS,
             type = CommandType.LIST,
             collectionType = CommandType.UUID,
             entityType = ProjectResponse.class,
-            description = "a comma delimited list of projects within owner's domain. If specified, \"op\" parameter has to be passed in.")
+            description = "A comma delimited list of projects within owner's domain. If specified, \"op\" parameter has to be passed in.")
     private List<Long> projectIds;
 
     // ///////////////////////////////////////////////////

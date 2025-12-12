@@ -28,23 +28,23 @@ import org.apache.cloudstack.api.EntityReference;
 public class VsphereStoragePoliciesResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the Storage Policy")
+    @Param(description = "The ID of the Storage Policy")
     private String id;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the ID of the Zone")
+    @Param(description = "The ID of the Zone")
     private String zoneId;
 
     @SerializedName(ApiConstants.POLICY_ID)
-    @Param(description = "the identifier of the Storage Policy in vSphere DataCenter")
+    @Param(description = "The identifier of the Storage Policy in vSphere DataCenter")
     private String policyId;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the Storage Policy")
+    @Param(description = "The name of the Storage Policy")
     private String name;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "the description of the Storage Policy")
+    @Param(description = "The description of the Storage Policy")
     private String description;
 
     public String getId() {

@@ -120,7 +120,7 @@ public class NfsSecondaryStorageResourceTest {
     }
 
     private void performGetSnapshotFilepathForDeleteTest(String expected, String path, String name) {
-        Assert.assertEquals("Incorrect resultant snapshot delete path", expected, resource.getSnapshotFilepathForDelete(path, name));
+        Assert.assertEquals("Incorrect resultant Snapshot delete path", expected, resource.getSnapshotFilepathForDelete(path, name));
     }
 
     @Test
