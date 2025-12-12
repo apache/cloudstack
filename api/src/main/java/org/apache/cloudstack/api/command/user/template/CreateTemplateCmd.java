@@ -211,7 +211,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
     }
 
     public String getTemplateTag() {
-        return templateTag;
+        return StringUtils.isBlank(templateTag) ? null : templateTag;
     }
 
     public Map getDetails() {
