@@ -1417,7 +1417,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         throw new CloudRuntimeException("There are active VMs using the host's local storage pool. Please stop all VMs on this host that use local storage.");
                     }
                 } else {
-                    logger.info("Maintenance: scheduling migration of VM {} from host {}", vm, host);
+                    logger.info("Maintenance: scheduling migration of {} from {}", vm, host);
                     _haMgr.scheduleMigration(vm, HighAvailabilityManager.ReasonType.HostMaintenance);
                 }
             }
