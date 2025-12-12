@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
@@ -250,6 +251,12 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
     @Inject
     private MessageBus messageBus;
+
+    private static final Set<String> sensitiveFields = new HashSet<>(Arrays.asList(
+        "password", "secretkey", "apikey", "token",
+        "sessionkey", "accesskey", "signature",
+        "authorization", "credential", "secret"
+    ));
 
     private static final ConfigKey<Integer> IntegrationAPIPort = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED
             , Integer.class
@@ -624,10 +631,23 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 logger.error("invalid request, no command sent");
                 if (logger.isTraceEnabled()) {
                     logger.trace("dumping request parameters");
-                    for (final  Object key : params.keySet()) {
-                        final String keyStr = (String)key;
-                        final String[] value = (String[])params.get(key);
-                        logger.trace("   key: " + keyStr + ", value: " + ((value == null) ? "'null'" : value[0]));
+
+                    for (final Object key : params.keySet()) {
+                        final String keyStr = (String) key;
+                        final String[] value = (String[]) params.get(key);
+
+                        String lowerKeyStr = keyStr.toLowerCase();
+                        boolean isSensitive = sensitiveFields.stream()
+                            .anyMatch(lowerKeyStr::contains);
+
+                        String logValue;
+                        if (isSensitive) {
+                            logValue = "******"; // mask sensitive values
+                        } else {
+                            logValue = (value == null) ? "'null'" : value[0];
+                        }
+
+                        logger.trace("   key: " + keyStr + ", value: " + logValue);
                     }
                 }
                 throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "Invalid request, no command sent");

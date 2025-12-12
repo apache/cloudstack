@@ -4605,7 +4605,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     vmMo.mountToolsInstaller();
                     logger.debug(String.format("Successfully re-mounted vmware tools installer for :[%s].", cmd.getVmName()));
                 } catch (Exception e) {
-                    logger.error(String.format("Unabled to re-mount vmware tools installer for: [%s].", cmd.getVmName()), e);
+                    logger.error(String.format("Unable to re-mount vmware tools installer for: [%s].", cmd.getVmName()), e);
                 }
             }
         }
@@ -7072,7 +7072,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         if (s_serviceContext.get() != null) {
             context = s_serviceContext.get();
             String poolKey = VmwareContextPool.composePoolKey(_vCenterAddress, _username);
-            // Before re-using the thread local context, ensure it corresponds to the right vCenter API session and that it is valid to make calls.
+            // Before reusing the thread local context, ensure it corresponds to the right vCenter API session and that it is valid to make calls.
             if (context.getPoolKey().equals(poolKey)) {
                 if (context.validate()) {
                     if (logger.isTraceEnabled()) {

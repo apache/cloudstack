@@ -16,5 +16,12 @@
 -- under the License.
 
 --;
--- Schema upgrade cleanup from 4.22.0.0 to 4.23.0.0
+-- Schema upgrade from 4.22.0.0 to 4.22.1.0
 --;
+
+-- Add vm_id column to usage_event table for volume usage events
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.usage_event','vm_id', 'bigint UNSIGNED NULL COMMENT "VM ID associated with volume usage events"');
+CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.usage_event','vm_id', 'bigint UNSIGNED NULL COMMENT "VM ID associated with volume usage events"');
+
+-- Add vm_id column to cloud_usage.usage_volume table
+CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.usage_volume','vm_id', 'bigint UNSIGNED NULL COMMENT "VM ID associated with the volume usage"');
