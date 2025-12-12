@@ -31,7 +31,8 @@ public class DataCenterDetailsDaoImpl extends ResourceDetailsDaoBase<DataCenterD
 
     private final SearchBuilder<DataCenterDetailVO> DetailSearch;
 
-    DataCenterDetailsDaoImpl() {
+    public DataCenterDetailsDaoImpl() {
+        super();
         DetailSearch = createSearchBuilder();
         DetailSearch.and("zoneId", DetailSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
         DetailSearch.and("name", DetailSearch.entity().getName(), SearchCriteria.Op.EQ);

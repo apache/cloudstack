@@ -245,13 +245,17 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
 
     @Override
-    public VMTemplateVO findLatestTemplateByName(String name, CPU.CPUArch arch) {
+    public VMTemplateVO findLatestTemplateByName(String name, HypervisorType hypervisorType, CPU.CPUArch arch) {
         SearchBuilder<VMTemplateVO> sb = createSearchBuilder();
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         sb.and("arch", sb.entity().getArch(), SearchCriteria.Op.EQ);
         sb.done();
         SearchCriteria<VMTemplateVO> sc = sb.create();
         sc.setParameters("name", name);
+        if (hypervisorType != null) {
+            sc.setParameters("hypervisorType", hypervisorType);
+        }
         if (arch != null) {
             sc.setParameters("arch", arch);
         }
@@ -848,6 +852,37 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         SearchCriteria<Long> sc = sb.create();
         sc.setParameters("extensionId", extensionId);
         return customSearch(sc, null);
+    }
+
+    @Override
+    public VMTemplateVO findActiveSystemTemplateByHypervisorArchAndUrlPath(HypervisorType hypervisorType,
+                   CPU.CPUArch arch, String urlPathSuffix) {
+        if (StringUtils.isBlank(urlPathSuffix)) {
+            return null;
+        }
+        SearchBuilder<VMTemplateVO> sb = createSearchBuilder();
+        sb.and("templateType", sb.entity().getTemplateType(), SearchCriteria.Op.EQ);
+        sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        sb.and("arch", sb.entity().getArch(), SearchCriteria.Op.EQ);
+        sb.and("urlPathSuffix", sb.entity().getUrl(), SearchCriteria.Op.LIKE);
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<VMTemplateVO> sc = sb.create();
+        sc.setParameters("templateType", TemplateType.SYSTEM);
+        if (hypervisorType != null) {
+            sc.setParameters("hypervisorType", hypervisorType);
+        }
+        if (arch != null) {
+            sc.setParameters("arch", arch);
+        }
+        sc.setParameters("urlPathSuffix", "%" + urlPathSuffix);
+        sc.setParameters("state", VirtualMachineTemplate.State.Active);
+        Filter filter = new Filter(VMTemplateVO.class, "id", false, null, 1L);
+        List<VMTemplateVO> templates = listBy(sc, filter);
+        if (CollectionUtils.isNotEmpty(templates)) {
+            return templates.get(0);
+        }
+        return null;
     }
 
     @Override
