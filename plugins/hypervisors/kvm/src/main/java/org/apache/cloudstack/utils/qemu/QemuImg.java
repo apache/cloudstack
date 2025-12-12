@@ -717,6 +717,17 @@ public class QemuImg {
         s.add(optionsStr);
     }
 
+    protected void addScriptResizeOptionsFromMap(Map<String, String> options, Script s) {
+        if (MapUtils.isEmpty(options)) {
+            return;
+        }
+        if (options.containsKey(PREALLOCATION)) {
+            s.add(String.format("--%s=%s", PREALLOCATION, options.get(PREALLOCATION)));
+            options.remove(PREALLOCATION);
+        }
+        addScriptOptionsFromMap(options, s);
+    }
+
     /**
      * Rebases the backing file of the image.
      *
@@ -792,7 +803,7 @@ public class QemuImg {
 
         final Script s = new Script(_qemuImgPath);
         s.add("resize");
-        addScriptOptionsFromMap(options, s);
+        addScriptResizeOptionsFromMap(options, s);
         s.add(file.getFileName());
         s.add(newSize);
         s.execute();

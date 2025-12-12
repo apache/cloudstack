@@ -511,4 +511,55 @@ public class QemuImgTest {
         assertEquals(1, result.size());
         assertEquals("full", result.get(QemuImg.PREALLOCATION));
     }
+
+    @Test
+    public void addScriptResizeOptionsFromMapAddsPreallocationOption() throws LibvirtException, QemuImgException {
+        Script script = Mockito.mock(Script.class);
+        Map<String, String> options = new HashMap<>();
+        options.put(QemuImg.PREALLOCATION, "metadata");
+
+        QemuImg qemuImg = new QemuImg(0);
+        qemuImg.addScriptResizeOptionsFromMap(options, script);
+
+        Mockito.verify(script, Mockito.times(1)).add("--preallocation=metadata");
+        Mockito.verify(script, Mockito.never()).add("-o");
+        assertTrue(options.isEmpty());
+    }
+
+    @Test
+    public void addScriptResizeOptionsFromMapHandlesEmptyOptions() throws LibvirtException, QemuImgException {
+        Script script = Mockito.mock(Script.class);
+        Map<String, String> options = new HashMap<>();
+
+        QemuImg qemuImg = new QemuImg(0);
+        qemuImg.addScriptResizeOptionsFromMap(options, script);
+
+        Mockito.verify(script, Mockito.never()).add(Mockito.anyString());
+    }
+
+    @Test
+    public void addScriptResizeOptionsFromMapHandlesNullOptions() throws LibvirtException, QemuImgException {
+        Script script = Mockito.mock(Script.class);
+
+        QemuImg qemuImg = new QemuImg(0);
+        qemuImg.addScriptResizeOptionsFromMap(null, script);
+
+        Mockito.verify(script, Mockito.never()).add(Mockito.anyString());
+    }
+
+    @Test
+    public void addScriptResizeOptionsFromMapHandlesMixedOptions() throws LibvirtException, QemuImgException {
+        Script script = Mockito.mock(Script.class);
+        Map<String, String> options = new HashMap<>();
+        options.put(QemuImg.PREALLOCATION, "full");
+        options.put("key", "value");
+
+        QemuImg qemuImg = new QemuImg(0);
+        qemuImg.addScriptResizeOptionsFromMap(options, script);
+
+        Mockito.verify(script, Mockito.times(1)).add("--preallocation=full");
+        Mockito.verify(script, Mockito.times(1)).add("-o");
+        Mockito.verify(script, Mockito.times(1)).add("key=value");
+        assertFalse(options.containsKey(QemuImg.PREALLOCATION));
+    }
 }
