@@ -17,6 +17,10 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import java.io.File;
+import java.io.StringWriter;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -29,9 +33,25 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import com.cloud.agent.api.to.VirtualMachineMetadataTO;
+
 
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
 public class LibvirtVMDef {
     protected static Logger LOGGER = LogManager.getLogger(LibvirtVMDef.class);
@@ -45,6 +65,157 @@ public class LibvirtVMDef {
     private String _platformEmulator;
     private final Map<String, Object> components = new HashMap<String, Object>();
     private static final int NUMBER_OF_IOTHREADS = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.IOTHREADS);
+
+    public static class MetadataDef {
+        private VirtualMachineMetadataTO metaTO;
+
+        public MetadataDef(VirtualMachineMetadataTO data) {
+            metaTO = data;
+        }
+
+        public VirtualMachineMetadataTO getMetadata() {
+            return metaTO;
+        }
+
+        @Override
+        public String toString() {
+            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            docFactory.setNamespaceAware(true);
+            Document doc = null;
+            try {
+                doc = docFactory.newDocumentBuilder().newDocument();
+            } catch (ParserConfigurationException e) {
+                LOGGER.warn("Could not create a new DOM XML document. The metadata will not be included in the libvirt domain XML: {}", e.getMessage());
+                return "";
+            }
+            Element metadata = doc.createElement("metadata"); // <metadata>
+            Element instance = doc.createElementNS("http://cloudstack.apache.org/instance", "cloudstack:instance"); // <cloudstack:instance>
+
+            Element zone = doc.createElement("cloudstack:zone");
+            zone.setAttribute("uuid", metaTO.getZoneUuid());
+            zone.setTextContent(metaTO.getZoneName());
+            instance.appendChild(zone);
+
+            Element pod = doc.createElement("cloudstack:pod");
+            pod.setAttribute("uuid", metaTO.getPodUuid());
+            pod.setTextContent(metaTO.getPodName());
+            instance.appendChild(pod);
+
+            Element cluster = doc.createElement("cloudstack:cluster");
+            cluster.setAttribute("uuid", metaTO.getClusterUuid());
+            cluster.setTextContent(metaTO.getClusterName());
+            instance.appendChild(cluster);
+
+            Element instanceName = doc.createElement("cloudstack:name");
+            instanceName.setTextContent(metaTO.getName());
+            instance.appendChild(instanceName);
+
+            Element instanceInternalName = doc.createElement("cloudstack:internal_name");
+            instanceInternalName.setTextContent(metaTO.getInternalName());
+            instance.appendChild(instanceInternalName);
+
+            Element instanceDisplayName = doc.createElement("cloudstack:display_name");
+            instanceDisplayName.setTextContent(metaTO.getDisplayName());
+            instance.appendChild(instanceDisplayName);
+
+            Element instanceUuid = doc.createElement("cloudstack:uuid");
+            instanceUuid.setTextContent(metaTO.getInstanceUuid());
+            instance.appendChild(instanceUuid);
+
+            Element serviceOffering = doc.createElement("cloudstack:service_offering"); // <service_offering>
+
+            Element computeOfferingName = doc.createElement("cloudstack:name");
+            computeOfferingName.setTextContent(metaTO.getserviceOfferingName());
+            serviceOffering.appendChild(computeOfferingName);
+
+            Element cpu = doc.createElement("cloudstack:cpu");
+            cpu.setTextContent(metaTO.getCpuCores().toString());
+            serviceOffering.appendChild(cpu);
+
+            Element memory = doc.createElement("cloudstack:memory");
+            memory.setTextContent(metaTO.getMemory().toString());
+            serviceOffering.appendChild(memory);
+
+            Element hostTags = doc.createElement("cloudstack:host_tags");
+            List<String> tags = metaTO.getserviceOfferingHostTags();
+            if (tags != null) {
+                for (String i : metaTO.getserviceOfferingHostTags()) {
+                    Element tag = doc.createElement("cloudstack:tag");
+                    tag.setTextContent(i);
+                    hostTags.appendChild(tag);
+                }
+            }
+            serviceOffering.appendChild(hostTags);
+
+            instance.appendChild(serviceOffering); // </service_offering>
+
+            Element creationTime = doc.createElement("cloudstack:created_at");
+            creationTime.setTextContent(
+                    LocalDateTime.ofInstant(Instant.ofEpochSecond(metaTO.getCreated()), ZoneOffset.UTC).format(ISO_LOCAL_DATE_TIME)
+            );
+            instance.appendChild(creationTime);
+
+            Element startedTime = doc.createElement("cloudstack:started_at");
+            startedTime.setTextContent(
+                    LocalDateTime.ofInstant(Instant.ofEpochSecond(metaTO.getStarted()), ZoneOffset.UTC).format(ISO_LOCAL_DATE_TIME)
+            );
+            instance.appendChild(startedTime);
+
+            Element owner = doc.createElement("cloudstack:owner"); // <owner>
+
+            Element domain = doc.createElement("cloudstack:domain");
+            domain.setAttribute("uuid", metaTO.getOwnerDomainUuid());
+            domain.setTextContent(metaTO.getOwnerDomainName());
+            owner.appendChild(domain);
+
+            Element account = doc.createElement("cloudstack:account");
+            account.setAttribute("uuid", metaTO.getOwnerAccountUuid());
+            account.setTextContent(metaTO.getOwnerAccountName());
+            owner.appendChild(account);
+
+            Element project = doc.createElement("cloudstack:project");
+            project.setAttribute("uuid", metaTO.getOwnerProjectUuid());
+            project.setTextContent(metaTO.getOwnerProjectName());
+            owner.appendChild(project);
+
+            instance.appendChild(owner); // </owner>
+
+            Element resourceTags = doc.createElement("cloudstack:resource_tags"); // <resource_tags>
+            for (Map.Entry<String, String> entry : metaTO.getResourceTags().entrySet()) {
+                Element tag = doc.createElement("cloudstack:resource_tag"); // <resource_tag>
+                tag.setAttribute("key", entry.getKey());
+                tag.setTextContent(entry.getValue());
+                resourceTags.appendChild(tag); // </resource_tag>
+            }
+            instance.appendChild(resourceTags); // </resource_tags>
+
+            metadata.appendChild(instance); // </cloudstack:instance>
+            doc.appendChild(metadata); // </metadata>
+
+            Transformer transformer = null;
+            try {
+                transformer = TransformerFactory.newInstance().newTransformer();
+            } catch (TransformerConfigurationException e) {
+                LOGGER.warn("Could not create an XML transformer. The metadata will not be included in the libvirt domain XML: {}", e.getMessage());
+                return "";
+            }
+            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+            transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+
+            DOMSource domSource = new DOMSource(doc);
+            StringWriter writer = new StringWriter();
+            StreamResult result = new StreamResult(writer);
+            try {
+                transformer.transform(domSource, result);
+            } catch (TransformerException e) {
+                LOGGER.warn("Could not generate metadata XML. The metadata will not be included in the libvirt domain XML: {}", e.getMessage());
+                return "";
+            }
+
+            return writer.toString();
+        }
+    }
 
     public static class GuestDef {
         enum GuestType {
@@ -2163,34 +2334,6 @@ public class LibvirtVMDef {
         }
     }
 
-    public class MetadataDef {
-        Map<String, Object> customNodes = new HashMap<>();
-
-        public <T> T getMetadataNode(Class<T> fieldClass) {
-            T field = (T) customNodes.get(fieldClass.getName());
-            if (field == null) {
-                try {
-                    field = fieldClass.newInstance();
-                    customNodes.put(field.getClass().getName(), field);
-                } catch (InstantiationException | IllegalAccessException e) {
-                    LOGGER.debug("No default constructor available in class " + fieldClass.getName() + ", ignoring exception", e);
-                }
-            }
-            return field;
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder fsBuilder = new StringBuilder();
-            fsBuilder.append("<metadata>\n");
-            for (Object field : customNodes.values()) {
-                fsBuilder.append(field.toString());
-            }
-            fsBuilder.append("</metadata>\n");
-            return fsBuilder.toString();
-        }
-    }
-
     public static class RngDef {
         enum RngModel {
             VIRTIO("virtio");
@@ -2493,15 +2636,6 @@ public class LibvirtVMDef {
         return null;
     }
 
-    public MetadataDef getMetaData() {
-        MetadataDef o = (MetadataDef) components.get(MetadataDef.class.toString());
-        if (o == null) {
-            o = new MetadataDef();
-            addComp(o);
-        }
-        return o;
-    }
-
     @Override
     public String toString() {
         StringBuilder vmBuilder = new StringBuilder();
@@ -2513,6 +2647,7 @@ public class LibvirtVMDef {
         if (_desc != null) {
             vmBuilder.append("<description>" + _desc + "</description>\n");
         }
+
         for (Object o : components.values()) {
             vmBuilder.append(o.toString());
         }
