@@ -2055,7 +2055,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         _accountMgr.checkAccess(caller, null, true, vmInstance);
 
-        //Check if it's a scale "up"
+        // Check if it's a scale "up"
         ServiceOfferingVO newServiceOffering = serviceOfferingDao.findById(newServiceOfferingId);
         if (newServiceOffering.isDynamic()) {
             newServiceOffering.setDynamicFlag(true);
@@ -3847,7 +3847,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (networkIdList == null || networkIdList.isEmpty()) {
             Network networkWithSecurityGroup = _networkModel.getNetworkWithSGWithFreeIPs(owner, zone.getId());
             if (networkWithSecurityGroup == null) {
-                throw new InvalidParameterValueException("No network with security enabled is found in zone ID=" + zone.getUuid());
+                throw new InvalidParameterValueException("No network with security enabled is found in zone ID = " + zone.getUuid());
             }
 
             networkList.add(_networkDao.findById(networkWithSecurityGroup.getId()));
@@ -4774,7 +4774,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 List<String> hostNames = _vmInstanceDao.listDistinctHostNames(ntwkId);
                 // * verify that there are no duplicates
                 if (hostNames.contains(hostName)) {
-                    throw new InvalidParameterValueException("The VM with hostName " + hostName + " already exists in the network domain: " + ntwkDomain.getKey() + "; network="
+                    throw new InvalidParameterValueException("The VM with hostName " + hostName + " already exists in the network domain: " + ntwkDomain.getKey() + "; network = "
                             + ((_networkModel.getNetwork(ntwkId) != null) ? _networkModel.getNetwork(ntwkId).getName() : "<unknown>"));
                 }
             }
@@ -5899,7 +5899,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
             destinationPod = _podDao.findById(podId);
             if (destinationPod == null) {
-                throw new InvalidParameterValueException("Unable to find the pod to deploy the VM, pod ID=" + podId);
+                throw new InvalidParameterValueException("Unable to find the pod to deploy the VM, pod ID = " + podId);
             }
         }
         return destinationPod;
@@ -5914,7 +5914,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
             destinationCluster = _clusterDao.findById(clusterId);
             if (destinationCluster == null) {
-                throw new InvalidParameterValueException("Unable to find the cluster to deploy the VM, cluster ID=" + clusterId);
+                throw new InvalidParameterValueException("Unable to find the cluster to deploy the VM, cluster ID = " + clusterId);
             }
         }
         return destinationCluster;
@@ -5929,7 +5929,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
             destinationHost = _hostDao.findById(hostId);
             if (destinationHost == null) {
-                throw new InvalidParameterValueException("Unable to find the host to deploy the VM, host ID=" + hostId);
+                throw new InvalidParameterValueException("Unable to find the host to deploy the VM, host ID = " + hostId);
             } else if (destinationHost.getResourceState() != ResourceState.Enabled || destinationHost.getStatus() != Status.Up ) {
                 throw new InvalidParameterValueException("Unable to deploy the VM as the host: " + destinationHost.getName() + " is not in the right state");
             }
@@ -6996,7 +6996,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         VMInstanceVO vm = _vmInstanceDao.findById(vmId);
         if (vm == null) {
-            throw new InvalidParameterValueException("Unable to find the VM by ID=" + vmId);
+            throw new InvalidParameterValueException("Unable to find the VM by ID = " + vmId);
         }
 
         if (vm.getState() != State.Stopped) {
@@ -7138,7 +7138,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         VMInstanceVO vm = _vmInstanceDao.findById(vmId);
         if (vm == null) {
-            throw new InvalidParameterValueException("Unable to find the VM by ID=" + vmId);
+            throw new InvalidParameterValueException("Unable to find the VM by ID = " + vmId);
         }
         // business logic
         if (vm.getState() != State.Running) {
@@ -9021,7 +9021,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
             } catch (Exception e) {
                 logger.debug("Unable to start VM " + vm.getUuid(), e);
-                CloudRuntimeException ex = new CloudRuntimeException("Unable to start VM with specified ID" + e.getMessage());
+                CloudRuntimeException ex = new CloudRuntimeException("Unable to start VM with specified ID." + e.getMessage());
                 ex.addProxyObject(vm.getUuid(), "vmId");
                 throw ex;
             }
