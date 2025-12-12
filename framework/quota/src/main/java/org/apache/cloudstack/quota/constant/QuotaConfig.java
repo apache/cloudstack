@@ -24,7 +24,7 @@ public interface QuotaConfig {
     public static final ConfigKey<Boolean> QuotaPluginEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "quota.enable.service", "false",
             "Indicates whether Quota plugin is enabled or not.", true);
 
-    public static final ConfigKey<String> QuotaEnableEnforcement = new ConfigKey<String>("Advanced", String.class, "quota.enable.enforcement", "false",
+    public static final ConfigKey<Boolean> QuotaEnableEnforcement = new ConfigKey<Boolean>("Advanced", Boolean.class, "quota.enable.enforcement", "false",
             "Enable the usage quota enforcement, i.e. on true when exceeding quota the respective account will be locked.", true);
 
     public static final ConfigKey<String> QuotaCurrencySymbol = new ConfigKey<String>("Advanced", String.class, "quota.currency.symbol", "$",
@@ -57,7 +57,7 @@ public interface QuotaConfig {
     public static final ConfigKey<String> QuotaSmtpEnabledSecurityProtocols = new ConfigKey<String>("Advanced", String.class, "quota.usage.smtp.enabledSecurityProtocols", "",
             "White-space separated security protocols; ex: \"TLSv1 TLSv1.1\". Supported protocols: SSLv2Hello, SSLv3, TLSv1, TLSv1.1 and TLSv1.2.", true);
 
-    public static final ConfigKey<String> QuotaSmtpUseStartTLS = new ConfigKey<String>("Advanced", String.class, "quota.usage.smtp.useStartTLS", "false",
+    public static final ConfigKey<Boolean> QuotaSmtpUseStartTLS = new ConfigKey<Boolean>("Advanced", Boolean.class, "quota.usage.smtp.useStartTLS", "false",
             "If set to true and if we enable security via quota.usage.smtp.useAuth, this will enable StartTLS to secure the connection.", true);
 
     public static final ConfigKey<Long> QuotaActivationRuleTimeout = new ConfigKey<>("Advanced", Long.class, "quota.activationrule.timeout", "2000", "The maximum runtime,"
