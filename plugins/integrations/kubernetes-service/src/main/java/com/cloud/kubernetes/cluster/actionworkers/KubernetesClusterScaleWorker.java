@@ -341,9 +341,9 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             VMTemplateVO clusterTemplate = templateDao.findById(kubernetesCluster.getTemplateId());
             try {
                 if (originalState.equals(KubernetesCluster.State.Running)) {
-                    plan(newVmRequiredCount, zone, clusterServiceOffering, kubernetesCluster.getDomainId(), kubernetesCluster.getAccountId(), clusterTemplate.getHypervisorType());
+                    plan(newVmRequiredCount, zone, clusterServiceOffering, kubernetesCluster.getDomainId(), kubernetesCluster.getAccountId(), clusterTemplate.getHypervisorType(), clusterTemplate.getArch());
                 } else {
-                    plan(kubernetesCluster.getTotalNodeCount() + newVmRequiredCount, zone, clusterServiceOffering, kubernetesCluster.getDomainId(), kubernetesCluster.getAccountId(), clusterTemplate.getHypervisorType());
+                    plan(kubernetesCluster.getTotalNodeCount() + newVmRequiredCount, zone, clusterServiceOffering, kubernetesCluster.getDomainId(), kubernetesCluster.getAccountId(), clusterTemplate.getHypervisorType(), clusterTemplate.getArch());
                 }
             } catch (InsufficientCapacityException e) {
                 logTransitStateToFailedIfNeededAndThrow(Level.WARN, String.format("Scaling failed for Kubernetes cluster : %s in zone : %s, insufficient capacity", kubernetesCluster.getName(), zone.getName()));
@@ -358,7 +358,8 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
     private void scaleKubernetesClusterOffering(KubernetesClusterNodeType nodeType, ServiceOffering serviceOffering,
                                                 boolean updateNodeOffering, boolean updateClusterOffering) throws CloudRuntimeException {
         validateKubernetesClusterScaleOfferingParameters();
-        if (!kubernetesCluster.getState().equals(KubernetesCluster.State.Scaling)) {
+        List<KubernetesCluster.State> scalingStates = List.of(KubernetesCluster.State.Scaling, KubernetesCluster.State.ScalingStoppedCluster);
+        if (!scalingStates.contains(kubernetesCluster.getState())) {
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.ScaleUpRequested);
         }
         if (KubernetesCluster.State.Created.equals(originalState)) {

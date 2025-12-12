@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.cloudstack.api.response.ConsoleSessionResponse;
+import org.apache.cloudstack.consoleproxy.ConsoleSession;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
@@ -579,4 +581,6 @@ public interface ResponseGenerator {
     void updateTemplateIsoResponsesForIcons(List<TemplateResponse> responses, ResourceTag.ResourceObjectType type);
 
     GuiThemeResponse createGuiThemeResponse(GuiThemeJoin guiThemeJoin);
+
+    ConsoleSessionResponse createConsoleSessionResponse(ConsoleSession consoleSession, ResponseView responseView);
 }

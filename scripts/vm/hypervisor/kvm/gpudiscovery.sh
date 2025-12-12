@@ -324,7 +324,40 @@
 #           "used_by_vm": null
 #         }
 #       ]
-#     }
+#     },
+#	  {
+#	   "pci_address":"05:00.0",
+#   	"vendor_id":"1002",
+#	   "device_id":"74a5",
+#   	"vendor":"Advanced Micro Devices, Inc. [AMD/ATI]",
+#	   "device":"Aqua Vanjaram [Instinct MI325X]",
+#   	"driver":"amdgpu",
+#	   "pci_class":"Processing accelerators [1200]",
+#   	"iommu_group":"null",
+#	   "pci_root":"0000:05:00.0",
+#   	"numa_node":-1,
+#	   "sriov_totalvfs":0,
+#   	"sriov_numvfs":0,
+#	   "max_instances":null,
+#   	"video_ram":null,
+#	   "max_heads":null,
+#   	"max_resolution_x":null,
+#	   "max_resolution_y":null,
+#
+#   	"full_passthrough": {
+#     	  "enabled":1,
+#		  "libvirt_address": {
+#         "domain":"0x0000",
+#         "bus":"0x05",
+#         "slot":"0x00",
+#         "function":"0x0"
+#     	},
+#     	"used_by_vm":null
+#   	},
+
+#   	"vgpu_instances":[],
+#   	"vf_instances":[]
+# 	  }
 #   ]
 # }
 #
@@ -348,6 +381,130 @@ json_escape() {
 
 # Cache for nodedev XML data to avoid repeated virsh calls
 declare -A nodedev_cache
+
+# Cache for nvidia-smi vgpu profile data
+declare -A nvidia_vgpu_profiles
+
+# Parse nvidia-smi vgpu -s -v output and populate profile cache
+parse_nvidia_vgpu_profiles() {
+	local gpu_address=""
+	local profile_id=""
+	local profile_name=""
+	local max_instances=""
+	local fb_memory=""
+	local max_heads=""
+	local max_x_res=""
+	local max_y_res=""
+
+	# Function to store current profile data
+	store_profile_data() {
+		if [[ -n "$gpu_address" && -n "$profile_id" && -n "$profile_name" ]]; then
+			local key="${gpu_address}:${profile_id}"
+			nvidia_vgpu_profiles["$key"]="$profile_name|${max_instances:-0}|${fb_memory:-0}|${max_heads:-0}|${max_x_res:-0}|${max_y_res:-0}"
+		fi
+	}
+
+	# Skip if nvidia-smi is not available
+	if ! command -v nvidia-smi >/dev/null 2>&1; then
+		return
+	fi
+
+	while IFS= read -r line; do
+		# Match GPU address line
+		if [[ $line =~ ^GPU[[:space:]]+([0-9A-Fa-f:]+\.[0-9A-Fa-f]+) ]]; then
+			# Store previous profile data before starting new GPU
+			store_profile_data
+
+			gpu_address="${BASH_REMATCH[1]}"
+			# Convert from format like 00000000:AF:00.0 to AF:00.0 and normalize to lowercase
+			if [[ $gpu_address =~ [0-9A-Fa-f]+:([0-9A-Fa-f]+:[0-9A-Fa-f]+\.[0-9A-Fa-f]+) ]]; then
+				gpu_address="${BASH_REMATCH[1],,}"
+			else
+				gpu_address="${gpu_address,,}"
+			fi
+			# Reset profile variables for new GPU
+			profile_id=""
+			profile_name=""
+			max_instances=""
+			fb_memory=""
+			max_heads=""
+			max_x_res=""
+			max_y_res=""
+		elif [[ $line =~ ^[[:space:]]*vGPU[[:space:]]+Type[[:space:]]+ID[[:space:]]*:[[:space:]]*0x([0-9A-Fa-f]+) ]]; then
+			# Store previous profile data before starting new profile
+			store_profile_data
+
+			# Normalize to lowercase hex without 0x prefix
+			profile_id="${BASH_REMATCH[1],,}"
+			# Reset profile-specific variables
+			profile_name=""
+			max_instances=""
+			fb_memory=""
+			max_heads=""
+			max_x_res=""
+			max_y_res=""
+		elif [[ $line =~ ^[[:space:]]*Name[[:space:]]*:[[:space:]]*(.+)$ ]]; then
+			profile_name="${BASH_REMATCH[1]}"
+		elif [[ $line =~ ^[[:space:]]*Max[[:space:]]+Instances[[:space:]]*:[[:space:]]*([0-9]+) ]]; then
+			max_instances="${BASH_REMATCH[1]}"
+		elif [[ $line =~ ^[[:space:]]*FB[[:space:]]+Memory[[:space:]]*:[[:space:]]*([0-9]+)[[:space:]]*MiB ]]; then
+			fb_memory="${BASH_REMATCH[1]}"
+		elif [[ $line =~ ^[[:space:]]*Display[[:space:]]+Heads[[:space:]]*:[[:space:]]*([0-9]+) ]]; then
+			max_heads="${BASH_REMATCH[1]}"
+		elif [[ $line =~ ^[[:space:]]*Maximum[[:space:]]+X[[:space:]]+Resolution[[:space:]]*:[[:space:]]*([0-9]+) ]]; then
+			max_x_res="${BASH_REMATCH[1]}"
+		elif [[ $line =~ ^[[:space:]]*Maximum[[:space:]]+Y[[:space:]]+Resolution[[:space:]]*:[[:space:]]*([0-9]+) ]]; then
+			max_y_res="${BASH_REMATCH[1]}"
+		fi
+	done < <(nvidia-smi vgpu -s -v 2>/dev/null || true)
+
+	# Store the last profile data after processing all lines
+	store_profile_data
+}
+
+# Get current vGPU type ID for a VF from sysfs
+get_current_vgpu_type() {
+	local vf_path="$1"
+	local current_type_file="$vf_path/nvidia/current_vgpu_type"
+
+	if [[ -f "$current_type_file" ]]; then
+		local type_id
+		type_id=$(<"$current_type_file")
+
+		# Remove any whitespace
+		type_id="${type_id// /}"
+
+		# Handle different input formats and normalize to lowercase hex without 0x
+		if [[ $type_id =~ ^0x([0-9A-Fa-f]+)$ ]]; then
+			# Input is hex with 0x prefix (e.g., "0x252")
+			echo "${BASH_REMATCH[1],,}"
+		elif [[ $type_id =~ ^[0-9]+$ ]]; then
+			# Input is decimal (e.g., "594")
+			printf "%x" "$type_id"
+		elif [[ $type_id =~ ^[0-9A-Fa-f]+$ ]]; then
+			# Input is hex without 0x prefix (e.g., "252")
+			echo "${type_id,,}"
+		else
+			# Fallback for unknown format
+			echo "0"
+		fi
+	else
+		echo "0"
+	fi
+}
+
+# Get profile information from nvidia-smi cache
+get_nvidia_profile_info() {
+	local gpu_address="$1"
+	local profile_id="$2"
+	local key="${gpu_address}:${profile_id}"
+
+	if [[ -n "${nvidia_vgpu_profiles[$key]:-}" ]]; then
+		echo "${nvidia_vgpu_profiles[$key]}"
+	else
+		echo "|0|0|0|0|0"  # Default empty values
+	fi
+}
 
 # Get nodedev name for a PCI address (e.g. "00:02.0" -> "pci_0000_00_02_0")
 get_nodedev_name() {
@@ -473,7 +630,7 @@ for VM in "${VMS[@]}"; do
 	# -- MDEV hostdevs: use xmlstarlet to extract UUIDs --
 	while IFS= read -r UUID; do
 		[[ -n "$UUID" ]] && mdev_to_vm["$UUID"]="$VM"
-	done < <(echo "$xml" | xmlstarlet sel -T -t -m "//hostdev[@type='mdev']" -v "@uuid" -n 2>/dev/null || true)
+	done < <(echo "$xml" | xmlstarlet sel -T -t -m "//hostdev[@type='mdev']/source/address" -v "@uuid" -n 2>/dev/null || true)
 done
 
 # Helper: convert a VM name to JSON value (quoted string or null)
@@ -516,7 +673,59 @@ parse_and_add_gpu_properties() {
     fi
 }
 
+# Finds and formats mdev instances for a given PCI device (PF or VF).
+# Appends JSON strings for each found mdev instance to the global 'vlist' array.
+# Arguments:
+#   $1: mdev_base_path (e.g., /sys/bus/pci/devices/.../mdev_supported_types)
+#   $2: bdf (e.g., 01:00.0)
+process_mdev_instances() {
+	local mdev_base_path="$1"
+	local bdf="$2"
+
+	if [[ ! -d "$mdev_base_path" ]]; then
+		return
+	fi
+
+	for PROF_DIR in "$mdev_base_path"/*; do
+		[[ -d "$PROF_DIR" ]] || continue
+
+		local PROFILE_NAME
+		if [[ -f "$PROF_DIR/name" ]]; then
+			PROFILE_NAME=$(<"$PROF_DIR/name")
+		else
+			PROFILE_NAME=$(basename "$PROF_DIR")
+		fi
+
+		parse_and_add_gpu_properties "$PROF_DIR/description"
+
+		local DEVICE_DIR="$PROF_DIR/devices"
+		if [[ -d "$DEVICE_DIR" ]]; then
+			for UDIR in "$DEVICE_DIR"/*; do
+				[[ -d "$UDIR" ]] || continue
+				local MDEV_UUID
+				MDEV_UUID=$(basename "$UDIR")
+
+				local DOMAIN="0x0000"
+				local BUS="0x${bdf:0:2}"
+				local SLOT="0x${bdf:3:2}"
+				local FUNC="0x${bdf:6:1}"
+
+				local raw
+				raw="${mdev_to_vm[$MDEV_UUID]:-}"
+				local USED_JSON
+				USED_JSON=$(to_json_vm "$raw")
+
+				vlist+=(
+					"{\"mdev_uuid\":\"$MDEV_UUID\",\"profile_name\":$(json_escape "$PROFILE_NAME"),\"max_instances\":$MAX_INSTANCES,\"video_ram\":$VIDEO_RAM,\"max_heads\":$MAX_HEADS,\"max_resolution_x\":$MAX_RESOLUTION_X,\"max_resolution_y\":$MAX_RESOLUTION_Y,\"libvirt_address\":{\"domain\":\"$DOMAIN\",\"bus\":\"$BUS\",\"slot\":\"$SLOT\",\"function\":\"$FUNC\"},\"used_by_vm\":$USED_JSON}")
+			done
+		fi
+	done
+}
+
 # === GPU Discovery ===
+
+# Parse nvidia-smi vgpu profiles once at the beginning
+parse_nvidia_vgpu_profiles
 
 mapfile -t LINES < <(lspci -nnm)
 
@@ -526,7 +735,7 @@ first_gpu=true
 for LINE in "${LINES[@]}"; do
 	# Parse lspci -nnm fields: SLOT "CLASS [CODE]" "VENDOR [VID]" "DEVICE [DID]" ...
 	if [[ $LINE =~ ^([^[:space:]]+)[[:space:]]\"([^\"]+)\"[[:space:]]\"([^\"]+)\"[[:space:]]\"([^\"]+)\" ]]; then
-		PCI_ADDR="${BASH_REMATCH[1]}"
+		PCI_ADDR="${BASH_REMATCH[1],,}"  # Normalize to lowercase
 		PCI_CLASS="${BASH_REMATCH[2]}"
 		VENDOR_FIELD="${BASH_REMATCH[3]}"
 		DEVICE_FIELD="${BASH_REMATCH[4]}"
@@ -540,7 +749,7 @@ for LINE in "${LINES[@]}"; do
 	fi
 
 	# Only process GPU classes (3D controller)
-	if [[ ! "$PCI_CLASS" =~ (3D\ controller) ]]; then
+	if [[ ! "$PCI_CLASS" =~ (3D\ controller|Processing\ accelerators) ]]; then
 		continue
 	fi
 
@@ -588,51 +797,9 @@ for LINE in "${LINES[@]}"; do
 	# === vGPU (MDEV) instances ===
 	VGPU_ARRAY="[]"
 	declare -a vlist=()
+	# Process mdev on the Physical Function
 	MDEV_BASE="/sys/bus/pci/devices/0000:$PCI_ADDR/mdev_supported_types"
-	if [[ -d "$MDEV_BASE" ]]; then
-		for PROF_DIR in "$MDEV_BASE"/*; do
-			[[ -d "$PROF_DIR" ]] || continue
-
-			# Read the human-readable profile name from the 'name' file
-			if [[ -f "$PROF_DIR/name" ]]; then
-				PROFILE_NAME=$(<"$PROF_DIR/name")
-			else
-				PROFILE_NAME=$(basename "$PROF_DIR")
-			fi
-
-			# Fetch max_instance from the description file, if present
-			parse_and_add_gpu_properties "$PROF_DIR/description"
-
-			# Under each profile, existing UUIDs appear in:
-			#    /sys/bus/pci/devices/0000:$PCI_ADDR/mdev_supported_types/<PROFILE>/devices/*
-			DEVICE_DIR="$PROF_DIR/devices"
-			if [[ -d "$DEVICE_DIR" ]]; then
-				for UDIR in "$DEVICE_DIR"/*; do
-					[[ -d $UDIR ]] || continue
-					MDEV_UUID=$(basename "$UDIR")
-
-					# libvirt_address uses PF BDF
-					DOMAIN="0x0000"
-					BUS="0x${PCI_ADDR:0:2}"
-					SLOT="0x${PCI_ADDR:3:2}"
-					FUNC="0x${PCI_ADDR:6:1}"
-
-					# Determine which VM uses this UUID
-					raw="${mdev_to_vm[$MDEV_UUID]:-}"
-					USED_JSON=$(to_json_vm "$raw")
-
-					vlist+=(
-						"{\"mdev_uuid\":\"$MDEV_UUID\",\"profile_name\":$(json_escape "$PROFILE_NAME"),\"max_instances\":$MAX_INSTANCES,\"video_ram\":$VIDEO_RAM,\"max_heads\":$MAX_HEADS,\"max_resolution_x\":$MAX_RESOLUTION_X,\"max_resolution_y\":$MAX_RESOLUTION_Y,\"libvirt_address\":{\"domain\":\"$DOMAIN\",\"bus\":\"$BUS\",\"slot\":\"$SLOT\",\"function\":\"$FUNC\"},\"used_by_vm\":$USED_JSON}")
-				done
-			fi
-		done
-		if [ ${#vlist[@]} -gt 0 ]; then
-			VGPU_ARRAY="[$(
-				IFS=,
-				echo "${vlist[*]}"
-			)]"
-		fi
-	fi
+	process_mdev_instances "$MDEV_BASE" "$PCI_ADDR"
 
 	# === VF instances (SR-IOV / MIG) ===
 	VF_ARRAY="[]"
@@ -644,17 +811,44 @@ for LINE in "${LINES[@]}"; do
 			VF_ADDR=${VF_PATH##*/} # e.g. "0000:65:00.2"
 			VF_BDF="${VF_ADDR:5}"  # "65:00.2"
 
+			# For NVIDIA SR-IOV, check for vGPU (mdev) on the VF itself
+			if [[ "$VENDOR_ID" == "10de" ]]; then
+				VF_MDEV_BASE="$VF_PATH/mdev_supported_types"
+				process_mdev_instances "$VF_MDEV_BASE" "$VF_BDF"
+			fi
+
 			DOMAIN="0x0000"
 			BUS="0x${VF_BDF:0:2}"
 			SLOT="0x${VF_BDF:3:2}"
 			FUNC="0x${VF_BDF:6:1}"
 
-			# Determine vf_profile
+			# Determine vf_profile using nvidia-smi information
 			VF_PROFILE=""
-			if VF_LINE=$(lspci -nnm -s "$VF_BDF" 2>/dev/null); then
-				if [[ $VF_LINE =~ \"([^\"]+)\"[[:space:]]\"([^\"]+)\"[[:space:]]\"([^\"]+)\"[[:space:]]\"([^\"]+)\" ]]; then
-					VF_DEVICE_FIELD="${BASH_REMATCH[4]}"
-					VF_PROFILE=$(sed -E 's/ \[[0-9A-Fa-f]{4}\]$//' <<<"$VF_DEVICE_FIELD")
+			VF_PROFILE_NAME=""
+			VF_MAX_INSTANCES="null"
+			VF_VIDEO_RAM="null"
+			VF_MAX_HEADS="null"
+			VF_MAX_RESOLUTION_X="null"
+			VF_MAX_RESOLUTION_Y="null"
+
+			if [[ "$VENDOR_ID" == "10de" ]]; then
+				# For NVIDIA GPUs, check current vGPU type
+				current_vgpu_type=$(get_current_vgpu_type "$VF_PATH")
+				if [[ "$current_vgpu_type" != "0" ]]; then
+					# Get profile info from nvidia-smi cache
+					profile_info=$(get_nvidia_profile_info "$PCI_ADDR" "$current_vgpu_type")
+					IFS='|' read -r VF_PROFILE_NAME VF_MAX_INSTANCES VF_VIDEO_RAM VF_MAX_HEADS VF_MAX_RESOLUTION_X VF_MAX_RESOLUTION_Y <<< "$profile_info"
+					VF_PROFILE="$VF_PROFILE_NAME"
+				fi
+			fi
+
+			# Fallback to lspci parsing if no nvidia-smi profile found
+			if [[ -z "$VF_PROFILE" ]]; then
+				if VF_LINE=$(lspci -nnm -s "$VF_BDF" 2>/dev/null); then
+					if [[ $VF_LINE =~ \"([^\"]+)\"[[:space:]]\"([^\"]+)\"[[:space:]]\"([^\"]+)\"[[:space:]]\"([^\"]+)\" ]]; then
+						VF_DEVICE_FIELD="${BASH_REMATCH[4]}"
+						VF_PROFILE=$(sed -E 's/ \[[0-9A-Fa-f]{4}\]$//' <<<"$VF_DEVICE_FIELD")
+					fi
 				fi
 			fi
 			VF_PROFILE_JSON=$(json_escape "$VF_PROFILE")
@@ -664,7 +858,7 @@ for LINE in "${LINES[@]}"; do
 			USED_JSON=$(to_json_vm "$raw")
 
 			flist+=(
-				"{\"vf_pci_address\":\"$VF_BDF\",\"vf_profile\":$VF_PROFILE_JSON,\"libvirt_address\":{\"domain\":\"$DOMAIN\",\"bus\":\"$BUS\",\"slot\":\"$SLOT\",\"function\":\"$FUNC\"},\"used_by_vm\":$USED_JSON}")
+				"{\"vf_pci_address\":\"$VF_BDF\",\"vf_profile\":$VF_PROFILE_JSON,\"max_instances\":$VF_MAX_INSTANCES,\"video_ram\":$VF_VIDEO_RAM,\"max_heads\":$VF_MAX_HEADS,\"max_resolution_x\":$VF_MAX_RESOLUTION_X,\"max_resolution_y\":$VF_MAX_RESOLUTION_Y,\"libvirt_address\":{\"domain\":\"$DOMAIN\",\"bus\":\"$BUS\",\"slot\":\"$SLOT\",\"function\":\"$FUNC\"},\"used_by_vm\":$USED_JSON}")
 		done
 		if [ ${#flist[@]} -gt 0 ]; then
 			VF_ARRAY="[$(
@@ -672,6 +866,14 @@ for LINE in "${LINES[@]}"; do
 				echo "${flist[*]}"
 			)]"
 		fi
+	fi
+
+	# Consolidate all vGPU instances (from PF and VFs)
+	if [ ${#vlist[@]} -gt 0 ]; then
+		VGPU_ARRAY="[$(
+			IFS=,
+			echo "${vlist[*]}"
+		)]"
 	fi
 
 	# === full_passthrough block ===

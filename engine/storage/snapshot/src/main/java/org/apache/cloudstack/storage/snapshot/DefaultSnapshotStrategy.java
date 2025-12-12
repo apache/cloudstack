@@ -627,9 +627,14 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
 
     @Override
     public StrategyPriority canHandle(Snapshot snapshot, Long zoneId, SnapshotOperation op) {
+        if (SnapshotOperation.COPY.equals(op)) {
+            return StrategyPriority.CANT_HANDLE;
+        }
+
         if (SnapshotOperation.TAKE.equals(op)) {
             return validateVmSnapshot(snapshot);
         }
+
         if (SnapshotOperation.REVERT.equals(op)) {
             long volumeId = snapshot.getVolumeId();
             VolumeVO volumeVO = volumeDao.findById(volumeId);
@@ -665,6 +670,12 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                         "together for KVM. As restoring volume snapshots will erase the VM snapshots and cause data loss.", vm.getUuid());
                 return StrategyPriority.CANT_HANDLE;
             }
+        }
+
+        if (CollectionUtils.isNotEmpty(vmSnapshotDao.findByVmAndByType(volumeVO.getInstanceId(), VMSnapshot.Type.DiskAndMemory))) {
+            logger.debug("DefaultSnapshotStrategy cannot handle snapshot [{}] for volume [{}] as the volume is attached to a VM with disk-and-memory VM snapshots." +
+                    "Restoring the volume snapshot will corrupt any newer disk-and-memory VM snapshots.", snapshot);
+            return StrategyPriority.CANT_HANDLE;
         }
 
         return StrategyPriority.DEFAULT;

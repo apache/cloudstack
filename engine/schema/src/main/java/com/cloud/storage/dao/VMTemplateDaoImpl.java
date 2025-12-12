@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -99,7 +100,6 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     private SearchBuilder<VMTemplateVO> PublicIsoSearch;
     private SearchBuilder<VMTemplateVO> UserIsoSearch;
     private GenericSearchBuilder<VMTemplateVO, Long> CountTemplatesByAccount;
-    // private SearchBuilder<VMTemplateVO> updateStateSearch;
     private SearchBuilder<VMTemplateVO> AllFieldsSearch;
     protected SearchBuilder<VMTemplateVO> ParentTemplateIdSearch;
     private SearchBuilder<VMTemplateVO> InactiveUnremovedTmpltSearch;
@@ -403,12 +403,6 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         CountTemplatesByAccount.and("state", CountTemplatesByAccount.entity().getState(), SearchCriteria.Op.EQ);
         CountTemplatesByAccount.done();
 
-        //        updateStateSearch = this.createSearchBuilder();
-        //        updateStateSearch.and("id", updateStateSearch.entity().getId(), Op.EQ);
-        //        updateStateSearch.and("state", updateStateSearch.entity().getState(), Op.EQ);
-        //        updateStateSearch.and("updatedCount", updateStateSearch.entity().getUpdatedCount(), Op.EQ);
-        //        updateStateSearch.done();
-
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
@@ -621,10 +615,18 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
 
     @Override
-    public VMTemplateVO findSystemVMReadyTemplate(long zoneId, HypervisorType hypervisorType) {
+    public VMTemplateVO findSystemVMReadyTemplate(long zoneId, HypervisorType hypervisorType, String preferredArch) {
         List<VMTemplateVO> templates = listAllReadySystemVMTemplates(zoneId);
         if (CollectionUtils.isEmpty(templates)) {
             return null;
+        }
+        if (StringUtils.isNotBlank(preferredArch)) {
+            // Sort the templates by preferred architecture first
+            templates = templates.stream()
+                    .sorted(Comparator.comparing(
+                            x -> !x.getArch().getType().equalsIgnoreCase(preferredArch)
+                    ))
+                    .collect(Collectors.toList());
         }
         if (hypervisorType == HypervisorType.Any) {
             return templates.get(0);

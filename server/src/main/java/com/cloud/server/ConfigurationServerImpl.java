@@ -328,8 +328,6 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         // setup XenServer default PV driver version
         initiateXenServerPVDriverVersion();
 
-        // We should not update seed data UUID column here since this will be invoked in upgrade case as well.
-        //updateUuids();
         // Set init to true
         _configDao.update("init", "Hidden", "true");
 
@@ -1119,7 +1117,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 NetworkOfferingVO defaultNetworkOfferingForVpcNetworks =
                         new NetworkOfferingVO(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks,
                                 "Offering for Isolated Vpc networks with Source Nat service enabled", TrafficType.Guest, false, false, null, null, true, Availability.Optional,
-                                null, Network.GuestType.Isolated, false, false, false, false, true, true);
+                                null, Network.GuestType.Isolated, true, false, false, false, true, true);
 
                 defaultNetworkOfferingForVpcNetworks.setState(NetworkOffering.State.Enabled);
                 defaultNetworkOfferingForVpcNetworks.setSupportsVmAutoScaling(true);

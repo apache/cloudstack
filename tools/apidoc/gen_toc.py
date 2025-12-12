@@ -228,7 +228,8 @@ known_categories = {
     'Rolling': 'Rolling Maintenance',
     'importVsphereStoragePolicies' : 'vSphere storage policies',
     'listVsphereStoragePolicies' : 'vSphere storage policies',
-    'ConsoleEndpoint': 'Console Endpoint',
+    'createConsoleEndpoint': 'Console Session',
+    'listConsoleSessions': 'Console Session',
     'importVm': 'Virtual Machine',
     'revertToVMSnapshot': 'Virtual Machine',
     'listQuarantinedIp': 'IP Quarantine',
@@ -271,7 +272,8 @@ known_categories = {
     'Extension' : 'Extension',
     'Extensions' : 'Extension',
     'CustomAction' : 'Extension',
-    'CustomActions' : 'Extension'
+    'CustomActions' : 'Extension',
+    'ImportVmTask': 'Import VM Task'
 }
 
 

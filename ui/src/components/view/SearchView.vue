@@ -314,7 +314,7 @@ export default {
         if (item === 'usagetype' && !('listUsageTypes' in this.$store.getters.apis)) {
           return true
         }
-        if (item === 'isencrypted' && !('listVolumes' in this.$store.getters.apis)) {
+        if (['isencrypted', 'volumeid'].includes(item) && !('listVolumes' in this.$store.getters.apis)) {
           return true
         }
         if (item === 'backupofferingid' && !('listBackupOfferings' in this.$store.getters.apis)) {
@@ -325,7 +325,7 @@ export default {
           'type', 'scope', 'managementserverid', 'serviceofferingid',
           'diskofferingid', 'networkid', 'usagetype', 'restartrequired', 'gpuenabled',
           'displaynetwork', 'guestiptype', 'usersource', 'arch', 'oscategoryid', 'templatetype', 'gpucardid', 'vgpuprofileid',
-          'extensionid', 'backupoffering'].includes(item)
+          'extensionid', 'backupoffering', 'volumeid', 'virtualmachineid'].includes(item)
         ) {
           type = 'list'
         } else if (item === 'tags') {
@@ -510,6 +510,7 @@ export default {
       let networkIndex = -1
       let usageTypeIndex = -1
       let volumeIndex = -1
+      let virtualmachineIndex = -1
       let backupOfferingIndex = -1
       let osCategoryIndex = -1
       let gpuCardIndex = -1
@@ -588,6 +589,12 @@ export default {
         promises.push(await this.fetchInstanceGroups(searchKeyword))
       }
 
+      if (arrayField.includes('virtualmachineid')) {
+        virtualmachineIndex = this.fields.findIndex(item => item.name === 'virtualmachineid')
+        this.fields[virtualmachineIndex].loading = true
+        promises.push(await this.fetchVirtualMachines(searchKeyword))
+      }
+
       if (arrayField.includes('managementserverid')) {
         managementServerIdIndex = this.fields.findIndex(item => item.name === 'managementserverid')
         this.fields[managementServerIdIndex].loading = true
@@ -646,6 +653,12 @@ export default {
         vgpuProfileIndex = this.fields.findIndex(item => item.name === 'vgpuprofileid')
         this.fields[vgpuProfileIndex].loading = true
         promises.push(await this.fetchVgpuProfiles(searchKeyword))
+      }
+
+      if (arrayField.includes('volumeid')) {
+        volumeIndex = this.fields.findIndex(item => item.name === 'volumeid')
+        this.fields[volumeIndex].loading = true
+        promises.push(await this.fetchVolumes(searchKeyword))
       }
 
       Promise.all(promises).then(response => {
@@ -778,6 +791,20 @@ export default {
             this.fields[vgpuProfileIndex].opts = this.sortArray(vgpuProfiles[0].data)
           }
         }
+
+        if (volumeIndex > -1) {
+          const volumes = response.filter(item => ['volumeid', 'isencrypted'].includes(item.type))
+          if (volumes && volumes.length > 0) {
+            this.fields[volumeIndex].opts = this.sortArray(volumes[0].data)
+          }
+        }
+
+        if (virtualmachineIndex > -1) {
+          const virtualMachines = response.filter(item => item.type === 'virtualmachineid')
+          if (virtualMachines && virtualMachines.length > 0) {
+            this.fields[virtualmachineIndex].opts = this.sortArray(virtualMachines[0].data)
+          }
+        }
       }).finally(() => {
         if (typeIndex > -1) {
           this.fields[typeIndex].loading = false
@@ -838,6 +865,12 @@ export default {
         }
         if (vgpuProfileIndex > -1) {
           this.fields[vgpuProfileIndex].loading = false
+        }
+        if (volumeIndex > -1) {
+          this.fields[volumeIndex].loading = false
+        }
+        if (virtualmachineIndex > -1) {
+          this.fields[virtualmachineIndex].loading = false
         }
         if (Array.isArray(arrayField)) {
           this.fillFormFieldValues()
@@ -1123,6 +1156,19 @@ export default {
         })
       })
     },
+    fetchVirtualMachines (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        getAPI('listVirtualMachines', { listAll: true, keyword: searchKeyword }).then(json => {
+          const virtualMachines = json.listvirtualmachinesresponse.virtualmachine
+          resolve({
+            type: 'virtualmachineid',
+            data: virtualMachines
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
     fetchManagementServers (searchKeyword) {
       return new Promise((resolve, reject) => {
         getAPI('listManagementServers', { listAll: true, keyword: searchKeyword }).then(json => {
@@ -1378,6 +1424,25 @@ export default {
           {
             id: 'Disabled',
             name: 'label.disabled'
+          }
+        ]
+      } else if (this.apiName.indexOf('listEvents') > -1) {
+        state = [
+          {
+            id: 'Created',
+            name: 'label.created'
+          },
+          {
+            id: 'Scheduled',
+            name: 'label.scheduled'
+          },
+          {
+            id: 'Started',
+            name: 'label.started'
+          },
+          {
+            id: 'Completed',
+            name: 'label.completed'
           }
         ]
       }

@@ -1345,7 +1345,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (ObjectUtils.allNotNull(cidr, cidrSize)) {
             throw new InvalidParameterValueException("VPC cidr and cidr size are mutually exclusive");
         }
-        if (routedIpv4Manager.isVpcVirtualRouterGateway(vpcOffering)) {
+        if (routedIpv4Manager.isValidGateway(vpcOffering)) {
             if (cidr != null) {
                 if (!_accountMgr.isRootAdmin(caller.getId())) {
                     throw new InvalidParameterValueException("Only root admin can set the gateway/netmask of VPC with ROUTED mode");

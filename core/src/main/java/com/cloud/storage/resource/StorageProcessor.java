@@ -21,7 +21,7 @@ package com.cloud.storage.resource;
 
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.storage.command.AttachCommand;
-import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplianceCommand;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
@@ -82,7 +82,7 @@ public interface StorageProcessor {
 
     Answer copyVolumeFromPrimaryToPrimary(CopyCommand cmd);
 
-    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplainceCommand cmd);
+    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplianceCommand cmd);
 
     public Answer syncVolumePath(SyncVolumePathCommand cmd);
 }

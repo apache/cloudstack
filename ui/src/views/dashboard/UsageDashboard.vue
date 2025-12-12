@@ -299,7 +299,14 @@
         </div>
       </chart-card>
     </a-col>
-    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }" class="dashboard-card">
+    <a-col
+      v-if="$config.userCard.enabled ?? true"
+      :xs="{ span: 24 }"
+      :lg="{ span: 12 }"
+      :xl="{ span: 8 }"
+      :xxl="{ span: 8 }"
+      class="dashboard-card"
+    >
       <chart-card :loading="loading" class="dashboard-card">
         <template #title>
           <div class="center">

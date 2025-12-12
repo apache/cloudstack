@@ -133,9 +133,9 @@
                       :guestOsCategories="options.guestOsCategories"
                       :guestOsCategoriesLoading="loading.guestOsCategories"
                       :selectedGuestOsCategoryId="form.guestoscategoryid"
-                      :imageItems="imageType === 'isoid' ? options.isos : options.templates"
-                      :imagesLoading="imageType === 'isoid' ? loading.isos : loading.templates"
-                      :diskSizeSelectionAllowed="imageType !== 'isoid'"
+                      :imageItems="imageType === 'isoid' ? options.isos : imageType === 'volumeid' ? options.volumes : imageType === 'snapshotid' ? options.snapshots : options.templates"
+                      :imagesLoading="imageType === 'isoid' ? loading.isos : imageType === 'volumeid' ? loading.volumes : imageType === 'snapshotid' ? loading.snapshots : loading.templates"
+                      :diskSizeSelectionAllowed="imageType !== 'isoid' && imageType !== 'volumeid' && imageType !== 'snapshotid'"
                       :diskSizeSelectionDeployAsIsMessageVisible="template && template.deployasis"
                       :rootDiskOverrideDisabled="rootDiskSizeFixed > 0 || (template && template.deployasis) || showOverrideDiskOfferingOption"
                       :rootDiskOverrideChecked="form.rootdisksizeitem"
@@ -210,6 +210,12 @@
                     </a-form-item>
                     <a-form-item class="form-item-hidden">
                       <a-input v-model:value="form.isoid" />
+                    </a-form-item>
+                    <a-form-item class="form-item-hidden">
+                      <a-input v-model:value="form.volumeid" />
+                    </a-form-item>
+                    <a-form-item class="form-item-hidden">
+                      <a-input v-model:value="form.snapshotid" />
                     </a-form-item>
                     <a-form-item class="form-item-hidden">
                       <a-input v-model:value="form.rootdisksize" />
@@ -535,6 +541,25 @@
                 </template>
               </a-step>
               <a-step
+                v-if="zoneAllowsBackupOperations"
+                :title="$t('label.backup')"
+                :status="zoneSelected ? 'process' : 'wait'">
+                <template #description>
+                  <div v-if="zoneSelected" style="margin-top: 15px">
+                    <deploy-instance-backup-selection
+                      :zoneId="zoneId"
+                      v-model:backupOfferingId="form.backupofferingid"
+                      :backupSchedules="backupSchedules"
+                      @change-backup-offering="onChangeBackupOffering"
+                      @add-backup-schedule="onAddBackupSchedule"
+                      @delete-backup-schedule="backupSchedules = backupSchedules.filter(schedule => schedule.id !== $event.id)" />
+                    <a-form-item class="form-item-hidden">
+                      <a-input v-model:value="form.backupofferingid" />
+                    </a-form-item>
+                  </div>
+                </template>
+              </a-step>
+              <a-step
                 :title="$t('label.advanced.mode')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description v-if="zoneSelected">
@@ -737,6 +762,12 @@
                         </div>
                       </a-card>
                     </a-form-item>
+                    <a-form-item v-if="extraConfigEnabled" name="extraconfig" ref="extraconfig">
+                      <template #label>
+                        <tooltip-label :title="$t('label.extraconfig')" :tooltip="$t('label.extraconfig.tooltip')"/>
+                      </template>
+                      <a-textarea v-model:value="form.extraconfig"/>
+                    </a-form-item>
                     <a-form-item :label="$t('label.affinity.groups')">
                       <affinity-group-selection
                         :items="options.affinityGroups"
@@ -895,8 +926,9 @@
 
 <script>
 import { ref, reactive, toRaw, nextTick, h } from 'vue'
-import { Button } from 'ant-design-vue'
+import { Button, message } from 'ant-design-vue'
 import { getAPI, postAPI } from '@/api'
+import { isAdmin } from '@/role'
 import _ from 'lodash'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
 import store from '@/store'
@@ -924,6 +956,7 @@ import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import InstanceNicsNetworkSelectListView from '@/components/view/InstanceNicsNetworkSelectListView'
 import DetailsInput from '@/components/widgets/DetailsInput'
+import DeployInstanceBackupSelection from '@views/compute/wizard/DeployInstanceBackupSelection'
 
 export default {
   name: 'Wizard',
@@ -949,7 +982,8 @@ export default {
     SecurityGroupSelection,
     TooltipLabel,
     InstanceNicsNetworkSelectListView,
-    DetailsInput
+    DetailsInput,
+    DeployInstanceBackupSelection
   },
   props: {
     visible: {
@@ -997,6 +1031,8 @@ export default {
       },
       options: {
         guestOsCategories: [],
+        volumes: {},
+        snapshots: {},
         templates: {},
         isos: {},
         hypervisors: [],
@@ -1020,6 +1056,8 @@ export default {
       loading: {
         deploy: false,
         guestOsCategories: false,
+        volumes: false,
+        snapshots: false,
         templates: false,
         isos: false,
         hypervisors: false,
@@ -1125,7 +1163,10 @@ export default {
         opts: []
       },
       externalDetailsEnabled: false,
-      selectedExtensionId: null
+      selectedExtensionId: null,
+      zoneAllowsBackupOperations: false,
+      selectedBackupOffering: null,
+      backupSchedules: []
     }
   },
   computed: {
@@ -1192,6 +1233,7 @@ export default {
       return _.map(this.affinityGroups, 'id')
     },
     params () {
+      const listAll = isAdmin()
       return {
         serviceOfferings: {
           list: 'listServiceOfferings',
@@ -1239,7 +1281,7 @@ export default {
             domainid: this.owner.domainid,
             projectid: this.owner.projectid,
             keyword: undefined,
-            listall: false
+            listall: listAll
           }
         },
         sshKeyPairs: {
@@ -1247,8 +1289,11 @@ export default {
           options: {
             page: 1,
             pageSize: 10,
+            account: this.owner.account,
+            domainid: this.owner.domainid,
+            projectid: this.owner.projectid,
             keyword: undefined,
-            listall: false
+            listall: listAll
           }
         },
         userDatas: {
@@ -1256,8 +1301,11 @@ export default {
           options: {
             page: 1,
             pageSize: 10,
+            account: this.owner.account,
+            domainid: this.owner.domainid,
+            projectid: this.owner.projectid,
             keyword: undefined,
-            listall: false
+            listall: listAll
           }
         },
         networks: {
@@ -1400,6 +1448,12 @@ export default {
     queryArchId () {
       return this.$route.query.arch || null
     },
+    querySnapshotId () {
+      return this.$route.query.snapshotid || null
+    },
+    queryVolumeId () {
+      return this.$route.query.volumeid || null
+    },
     queryTemplateId () {
       return this.$route.query.templateid || null
     },
@@ -1470,6 +1524,9 @@ export default {
     dynamicScalingVmConfigValue () {
       return this.$store.getters.features.dynamicscalingenabled
     },
+    extraConfigEnabled () {
+      return this.$store.getters.features.additionalconfigenabled
+    },
     isCustomizedDiskIOPS () {
       return this.diskSelected?.iscustomizediops || false
     },
@@ -1492,6 +1549,9 @@ export default {
       return this.$config.showAllCategoryForModernImageSelection
     },
     guestOsCategoriesSelectionDisallowed () {
+      if (this.imageType === 'volumeid' || this.imageType === 'snapshotid') {
+        return true
+      }
       return (!this.queryGuestOsCategoryId || this.options.guestOsCategories.length === 0) && (!!this.queryTemplateId || !!this.queryIsoId)
     },
     isTemplateHypervisorExternal () {
@@ -1652,6 +1712,13 @@ export default {
 
         if (this.leaseduration < 1) {
           this.vm.leaseduration = undefined
+        }
+
+        delete this.vm.backupofferingid
+        delete this.vm.backupofferingname
+        if (this.form.backupofferingid && this.selectedBackupOffering) {
+          this.vm.backupofferingid = this.selectedBackupOffering.id
+          this.vm.backupofferingname = this.selectedBackupOffering.name
         }
       }
     }
@@ -1853,7 +1920,7 @@ export default {
       }
       this.fetchBootTypes()
       this.fetchBootModes()
-      this.fetchInstaceGroups()
+      this.fetchInstanceGroups()
       this.fetchIoPolicyTypes()
       nextTick().then(() => {
         ['name', 'keyboard', 'boottype', 'bootmode', 'userdata', 'iothreadsenabled', 'iodriverpolicy', 'nicmultiqueuenumber', 'nicpackedvirtqueues'].forEach(this.fillValue)
@@ -1909,7 +1976,7 @@ export default {
         { id: 'storage_specific', description: 'storage_specific' }
       ]
     },
-    fetchInstaceGroups () {
+    fetchInstanceGroups () {
       this.options.instanceGroups = []
       getAPI('listInstanceGroups', {
         account: this.$store.getters.project?.id ? null : this.$store.getters.userInfo.account,
@@ -1955,6 +2022,8 @@ export default {
         this.imageType = 'templateid'
         this.form.templateid = value
         this.form.isoid = null
+        this.form.volumeid = null
+        this.form.snapshotid = null
         this.resetFromTemplateConfiguration()
         let template = ''
         for (const entry of Object.values(this.options.templates)) {
@@ -1991,6 +2060,8 @@ export default {
         this.resetFromTemplateConfiguration()
         this.form.isoid = value
         this.form.templateid = null
+        this.form.volumeid = null
+        this.form.snapshotid = null
         let iso = null
         for (const entry of Object.values(this.options.isos)) {
           iso = entry?.iso.find(option => option.id === value)
@@ -2003,11 +2074,57 @@ export default {
           this.updateTemplateLinkedUserData(this.iso.userdataid)
           this.userdataDefaultOverridePolicy = this.iso.userdatapolicy
         }
+      } else if (name === 'volumeid') {
+        this.updateFieldValueForVolume(value)
+      } else if (name === 'snapshotid') {
+        this.updateFieldValueForSnapshot(value)
       } else if (['cpuspeed', 'cpunumber', 'memory'].includes(name)) {
         this.vm[name] = value
         this.form[name] = value
       } else {
         this.form[name] = value
+      }
+    },
+    updateFieldValueForVolume (value) {
+      this.imageType = 'volumeid'
+      this.resetTemplateAssociatedResources()
+      this.resetFromTemplateConfiguration()
+      this.form.templateid = null
+      this.form.isoid = null
+      this.form.volumeid = value
+      this.form.snapshotid = null
+      let volume = null
+      for (const entry of Object.values(this.options.volumes)) {
+        volume = entry?.volume.find(option => option.id === value)
+        if (volume) {
+          this.volume = volume
+          break
+        }
+      }
+      if (volume) {
+        this.updateTemplateLinkedUserData(this.volume.userdataid)
+        this.userdataDefaultOverridePolicy = this.volume.userdatapolicy
+      }
+    },
+    updateFieldValueForSnapshot (value) {
+      this.imageType = 'snapshotid'
+      this.resetTemplateAssociatedResources()
+      this.resetFromTemplateConfiguration()
+      this.form.templateid = null
+      this.form.isoid = null
+      this.form.volumeid = null
+      this.form.snapshotid = value
+      let snapshot = null
+      for (const entry of Object.values(this.options.snapshots)) {
+        snapshot = entry?.snapshot.find(option => option.id === value)
+        if (snapshot) {
+          this.snapshot = snapshot
+          break
+        }
+      }
+      if (snapshot) {
+        this.updateTemplateLinkedUserData(this.snapshot.userdataid)
+        this.userdataDefaultOverridePolicy = this.snapshot.userdatapolicy
       }
     },
     updateComputeOffering (id) {
@@ -2171,7 +2288,7 @@ export default {
       if (this.loading.deploy) return
       this.formRef.value.validate().then(async () => {
         const values = toRaw(this.form)
-        if (!values.templateid && !values.isoid) {
+        if (!values.templateid && !values.isoid && !values.volumeid && !values.snapshotid) {
           this.$notification.error({
             message: this.$t('message.request.failed'),
             description: this.$t('message.template.iso')
@@ -2223,10 +2340,17 @@ export default {
         if (isUserdataAllowed && values.userdata && values.userdata.length > 0) {
           deployVmData.userdata = this.$toBase64AndURIEncoded(values.userdata)
         }
+        if (values.extraconfig && values.extraconfig.length > 0) {
+          deployVmData.extraconfig = encodeURIComponent(values.extraconfig)
+        }
         // step 2: select template/iso
         if (this.imageType === 'templateid') {
           deployVmData.templateid = values.templateid
           values.hypervisor = null
+        } else if (this.imageType === 'volumeid') {
+          deployVmData.volumeid = values.volumeid
+        } else if (this.imageType === 'snapshotid') {
+          deployVmData.snapshotid = values.snapshotid
         } else {
           deployVmData.templateid = values.isoid
         }
@@ -2434,6 +2558,7 @@ export default {
                     duration: 0
                   })
                 }
+                this.performPostDeployBackupActions(vm)
                 eventBus.emit('vm-refresh-data')
               },
               loadingMessage: `${title} ${this.$t('label.in.progress')}`,
@@ -2599,15 +2724,97 @@ export default {
         })
       })
     },
+    fetchUnattachedVolumes (volumeFilter, params) {
+      const args = Object.assign({}, params)
+      if (args.keyword || (args.category && args.category !== volumeFilter)) {
+        args.page = 1
+        args.pageSize = args.pageSize || 10
+      }
+      args.zoneid = _.get(this.zone, 'id')
+      if (this.isZoneSelectedMultiArch) {
+        args.arch = this.selectedArchitecture
+      }
+      args.account = store.getters.project?.id ? null : this.owner.account
+      args.domainid = store.getters.project?.id ? null : this.owner.domainid
+      args.projectid = store.getters.project?.id || this.owner.projectid
+      args.id = this.queryVolumeId
+      args.state = 'Ready'
+      const pageSize = args.pageSize ? args.pageSize : 10
+      const pageStart = (args.page ? args.page - 1 : 0) * pageSize
+      const pageEnd = pageSize * (pageStart + 1)
+
+      delete args.category
+      delete args.public
+      delete args.featured
+      delete args.page
+      delete args.pageSize
+
+      return new Promise((resolve, reject) => {
+        getAPI('listVolumes', args).then((response) => {
+          let count = 0
+          const volumes = []
+          response.listvolumesresponse.volume.forEach(volume => {
+            if (!volume.virtualmachineid) {
+              count += 1
+              volumes.push({ ...volume, displaytext: volume.name })
+            }
+          })
+          resolve({ listvolumesresponse: { count, volume: volumes.slice(pageStart, pageEnd) } })
+        }).catch((reason) => {
+          // ToDo: Handle errors
+          reject(reason)
+        })
+      })
+    },
+    fetchRootSnapshots (snapshotFilter, params) {
+      const args = Object.assign({}, params)
+      if (args.keyword || (args.category && args.category !== snapshotFilter)) {
+        args.page = 1
+        args.pageSize = args.pageSize || 10
+      }
+      args.zoneid = _.get(this.zone, 'id')
+      if (this.isZoneSelectedMultiArch) {
+        args.arch = this.selectedArchitecture
+      }
+      args.account = store.getters.project?.id ? null : this.owner.account
+      args.domainid = store.getters.project?.id ? null : this.owner.domainid
+      args.projectid = store.getters.project?.id || this.owner.projectid
+      const pageSize = args.pageSize ? args.pageSize : 10
+      const pageStart = (args.page ? args.page - 1 : 0) * pageSize
+      const pageEnd = pageSize * (pageStart + 1)
+
+      delete args.category
+      delete args.public
+      delete args.featured
+      delete args.page
+      delete args.pageSize
+
+      return new Promise((resolve, reject) => {
+        getAPI('listSnapshots', args).then((response) => {
+          let count = 0
+          const snapshots = []
+          response.listsnapshotsresponse.snapshot.forEach(snapshot => {
+            if (snapshot.volumetype === 'ROOT') {
+              count += 1
+              snapshots.push({ ...snapshot, displaytext: snapshot.name })
+            }
+          })
+          resolve({ listsnapshotsresponse: { count, snapshot: snapshots.slice(pageStart, pageEnd) } })
+        }).catch((reason) => {
+          // ToDo: Handle errors
+          reject(reason)
+        })
+      })
+    },
     fetchTemplates (templateFilter, params) {
       const args = Object.assign({}, params)
       if (this.isModernImageSelection && this.form.guestoscategoryid && !['-1', '0'].includes(this.form.guestoscategoryid)) {
         args.oscategoryid = this.form.guestoscategoryid
       }
-      if (args.keyword || (args.category && args.category !== templateFilter)) {
+      if (!args.page || args.keyword || (args.category && args.category !== templateFilter)) {
         args.page = 1
-        args.pageSize = args.pageSize || 10
       }
+      args.pageSize = args.pageSize || 10
       args.zoneid = _.get(this.zone, 'id')
       if (this.isZoneSelectedMultiArch) {
         args.arch = this.selectedArchitecture
@@ -2643,10 +2850,10 @@ export default {
       if (this.isModernImageSelection && this.form.guestoscategoryid) {
         args.oscategoryid = this.form.guestoscategoryid
       }
-      if (args.keyword || args.category !== isoFilter) {
+      if (!args.page || args.keyword || (args.category && args.category !== isoFilter)) {
         args.page = 1
-        args.pageSize = args.pageSize || 10
       }
+      args.pageSize = args.pageSize || 10
       args.zoneid = _.get(this.zone, 'id')
       if (this.isZoneSelectedMultiArch) {
         args.arch = this.selectedArchitecture
@@ -2676,6 +2883,14 @@ export default {
     fetchImages (params) {
       if (this.imageType === 'isoid') {
         this.fetchAllIsos(params)
+        return
+      }
+      if (this.imageType === 'volumeid') {
+        this.fetchAllVolumes(params)
+        return
+      }
+      if (this.imageType === 'snapshotid') {
+        this.fetchAllSnapshots(params)
         return
       }
       this.fetchAllTemplates(params)
@@ -2722,6 +2937,50 @@ export default {
         console.log(reason)
       }).finally(() => {
         this.loading.isos = false
+      })
+    },
+    fetchAllVolumes (params) {
+      const promises = []
+      const volumes = {}
+      this.loading.volumes = true
+      this.imageSearchFilters = params
+      const volumeFilters = this.getImageFilters(params)
+      volumeFilters.forEach((filter) => {
+        volumes[filter] = { count: 0, volume: [] }
+        promises.push(this.fetchUnattachedVolumes(filter, params))
+      })
+      this.options.volumes = volumes
+      Promise.all(promises).then((response) => {
+        response.forEach((resItem, idx) => {
+          volumes[volumeFilters[idx]] = _.isEmpty(resItem.listvolumesresponse) ? { count: 0, volume: [] } : resItem.listvolumesresponse
+          this.options.volumes = { ...volumes }
+        })
+      }).catch((reason) => {
+        console.log(reason)
+      }).finally(() => {
+        this.loading.volumes = false
+      })
+    },
+    fetchAllSnapshots (params) {
+      const promises = []
+      const snapshots = {}
+      this.loading.snapshots = true
+      this.imageSearchFilters = params
+      const snapshotFilters = this.getImageFilters(params)
+      snapshotFilters.forEach((filter) => {
+        snapshots[filter] = { count: 0, snapshot: [] }
+        promises.push(this.fetchRootSnapshots(filter, params))
+      })
+      this.options.snapshots = snapshots
+      Promise.all(promises).then((response) => {
+        response.forEach((resItem, idx) => {
+          snapshots[snapshotFilters[idx]] = _.isEmpty(resItem.listsnapshotsresponse) ? { count: 0, snapshot: [] } : resItem.listsnapshotsresponse
+          this.options.snapshots = { ...snapshots }
+        })
+      }).catch((reason) => {
+        console.log(reason)
+      }).finally(() => {
+        this.loading.snapshots = false
       })
     },
     filterOption (input, option) {
@@ -2772,6 +3031,31 @@ export default {
       this.updateTemplateKey()
       this.formModel = toRaw(this.form)
     },
+    async updateZoneAllowsBackupOperations () {
+      this.zoneAllowsBackupOperations = false
+      if (!this.zoneId) {
+        return
+      }
+      if (!('listBackupOfferings' in this.$store.getters.apis) ||
+        !('assignVirtualMachineToBackupOffering' in this.$store.getters.apis)) {
+        return
+      }
+      const params = {
+        zoneid: this.zoneId,
+        issystem: false,
+        listall: true,
+        page: 1,
+        pageSize: 1
+      }
+      try {
+        const response = await getAPI('listBackupOfferings', params)
+        const backupOfferings = response.listbackupofferingsresponse.backupoffering || []
+        this.zoneAllowsBackupOperations = backupOfferings.length > 0
+      } catch (error) {
+        console.error('Error fetching backup offerings:', error)
+        this.zoneAllowsBackupOperations = false
+      }
+    },
     onSelectZoneId (value) {
       if (this.dataPreFill.zoneid !== value) {
         this.dataPreFill = {}
@@ -2797,7 +3081,10 @@ export default {
       this.resetTemplatesList()
       this.resetIsosList()
       this.imageType = this.queryIsoId ? 'isoid' : 'templateid'
+      this.form.backupofferingid = undefined
+      this.selectedBackupOffering = null
       this.fetchZoneOptions()
+      this.updateZoneAllowsBackupOperations()
     },
     onSelectPodId (value) {
       this.podId = value
@@ -2830,7 +3117,7 @@ export default {
       }
     },
     updateImages () {
-      if (this.isModernImageSelection) {
+      if (this.isModernImageSelection && this.imageType !== 'snapshotid' && this.imageType !== 'volumeid') {
         this.fetchGuestOsCategories()
         return
       }
@@ -2937,12 +3224,12 @@ export default {
           configuration.cpunumber = 0
           configuration.cpuspeed = 0
           configuration.memory = 0
-          for (var harwareItem of configuration.hardwareItems) {
-            if (harwareItem.resourceType === 'Processor') {
-              configuration.cpunumber = harwareItem.virtualQuantity
-              configuration.cpuspeed = harwareItem.reservation
-            } else if (harwareItem.resourceType === 'Memory') {
-              configuration.memory = harwareItem.virtualQuantity
+          for (var hardwareItem of configuration.hardwareItems) {
+            if (hardwareItem.resourceType === 'Processor') {
+              configuration.cpunumber = hardwareItem.virtualQuantity
+              configuration.cpuspeed = hardwareItem.reservation
+            } else if (hardwareItem.resourceType === 'Memory') {
+              configuration.memory = hardwareItem.virtualQuantity
             }
           }
           configurations.push(configuration)
@@ -3188,6 +3475,113 @@ export default {
         return
       }
       this.form.externaldetails = undefined
+    },
+    onChangeBackupOffering (val) {
+      if (!val || !val.id) {
+        this.selectedBackupOffering = null
+        this.backupSchedules = []
+        return
+      }
+      this.selectedBackupOffering = val
+      if (this.backupSchedules && this.backupSchedules.length > 0 && !this.$isBackupProviderSupportsQuiesceVm(val.provider)) {
+        this.backupSchedules = this.backupSchedules.filter(item => !item.quiescevm)
+      }
+    },
+    onAddBackupSchedule (schedule) {
+      if (!schedule) {
+        return
+      }
+      // This is in accordance with the API behavior that only one schedule per intervaltype is allowed
+      const existingIndex = this.backupSchedules.findIndex(item => item.intervaltype === schedule.intervaltype)
+      if (existingIndex !== -1) {
+        message.warning({
+          content: this.$t('message.backup.update.existing.schedule') + ' ' + schedule.intervaltype,
+          duration: 2
+        })
+        this.backupSchedules.splice(existingIndex, 1, schedule)
+        return
+      }
+      this.backupSchedules.push(schedule)
+    },
+    async performPostDeployBackupActions (vm) {
+      if (!this.zoneAllowsBackupOperations) {
+        return
+      }
+      const assigned = await this.assignVirtualMachineToBackupOfferingIfNeeded(vm)
+      if (assigned) {
+        await this.createVirtualMachineBackupSchedulesIfNeeded(vm)
+      }
+    },
+    assignVirtualMachineToBackupOfferingIfNeeded (vm) {
+      if (!this.form.backupofferingid || !vm || !vm.id) {
+        return Promise.resolve(false)
+      }
+      const params = {
+        virtualmachineid: vm.id,
+        backupofferingid: this.form.backupofferingid
+      }
+      return new Promise((resolve, reject) => {
+        postAPI('assignVirtualMachineToBackupOffering', params).then(json => {
+          const jobId = json.assignvirtualmachinetobackupofferingresponse?.jobid
+          if (!jobId) {
+            resolve(false)
+            return
+          }
+          this.$pollJob({
+            jobId,
+            loadingMessage: `${this.$t('label.backup.offering.assign')} ${this.$t('label.in.progress')}`,
+            successMethod: () => {
+              resolve(true)
+            },
+            errorMethod: (result) => {
+              this.$notification.error({
+                message: this.$t('label.backup.offering.assign.failed'),
+                description: result?.jobresult?.errortext || this.$t('error.fetching.async.job.result')
+              })
+              resolve(false)
+            },
+            catchMessage: this.$t('error.fetching.async.job.result')
+          })
+        }).catch(error => {
+          this.$notification.error({
+            message: this.$t('label.backup.offering.assign.failed'),
+            description: error.message || error
+          })
+          resolve(false)
+        })
+      })
+    },
+    createVirtualMachineBackupSchedulesIfNeeded (vm) {
+      if (!vm || !vm.id || !this.backupSchedules) {
+        return Promise.resolve()
+      }
+      const promises = (this.backupSchedules || []).map(item =>
+        this.createVirtualMachineBackupSchedule(vm, item)
+      )
+      return Promise.all(promises)
+    },
+    createVirtualMachineBackupSchedule (vm, item) {
+      const params = {
+        virtualmachineid: vm.id,
+        intervaltype: item.intervaltype,
+        maxbackups: item.maxbackups,
+        timezone: item.timezone,
+        schedule: item.schedule
+      }
+      if (item.quiescevm) {
+        params.quiescevm = item.quiescevm
+      }
+      return new Promise((resolve, reject) => {
+        postAPI('createBackupSchedule', params).then(response => {
+          resolve(response)
+        }).catch(error => {
+          this.$notification.error({
+            message: this.$t('label.backup.schedule.create.failed'),
+            description: error.message || error
+          })
+          reject(error)
+        })
+      })
     }
   }
 }

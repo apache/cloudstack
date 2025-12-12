@@ -72,7 +72,7 @@
             :placeholder="apiParams.cidr.description"/>
         </a-form-item>
         <a-form-item
-          v-if="selectedVpcOffering && selectedVpcOffering.networkmode === 'ROUTED'"
+          v-if="selectedVpcOfferingHavingRoutedNetworkMode"
           ref="cidrsize"
           name="cidrsize">
           <template #label>
@@ -220,6 +220,7 @@
 import { ref, reactive, toRaw } from 'vue'
 import { getAPI, postAPI } from '@/api'
 import { isAdmin, isAdminOrDomainAdmin } from '@/role'
+import { isValidIPv4Cidr } from '@/utils/util.js'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import OwnershipSelection from '@/views/compute/wizard/OwnershipSelection.vue'
@@ -276,6 +277,9 @@ export default {
         return sourcenatService && sourcenatService.length === 1
       }
       return false
+    },
+    selectedVpcOfferingHavingRoutedNetworkMode () {
+      return this.selectedVpcOffering && this.selectedVpcOffering.networkmode === 'ROUTED'
     }
   },
   methods: {
@@ -288,6 +292,7 @@ export default {
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
         zoneid: [{ required: true, message: this.$t('label.required') }],
+        cidr: [{ validator: isValidIPv4Cidr }],
         vpcofferingid: [{ required: true, message: this.$t('label.required') }]
       })
     },
@@ -397,6 +402,7 @@ export default {
     handleVpcOfferingChange (value) {
       this.selectedVpcOffering = {}
       if (!value) {
+        this.updateCidrRule()
         return
       }
       for (var offering of this.vpcOfferings) {
@@ -406,8 +412,16 @@ export default {
           if (this.isASNumberRequired()) {
             this.fetchZoneASNumbers()
           }
-          return
+          break
         }
+      }
+      this.updateCidrRule()
+    },
+    updateCidrRule () {
+      if (!this.selectedVpcOfferingHavingRoutedNetworkMode) {
+        this.rules.cidr = [{ required: true, message: this.$t('message.error.required.input') }, { validator: isValidIPv4Cidr }]
+      } else {
+        delete this.rules.cidr
       }
     },
     handleASNumberChange (selectedIndex) {

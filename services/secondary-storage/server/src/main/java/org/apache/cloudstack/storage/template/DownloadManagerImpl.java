@@ -86,6 +86,7 @@ import com.cloud.storage.template.TemplateProp;
 import com.cloud.storage.template.VhdProcessor;
 import com.cloud.storage.template.VmdkProcessor;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Proxy;
@@ -595,7 +596,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         if (extension.equals("iso")) {
             templateName = jobs.get(jobId).getTmpltName().trim().replace(" ", "_");
         } else {
-            templateName = UUID.nameUUIDFromBytes((jobs.get(jobId).getTmpltName() + System.currentTimeMillis()).getBytes(com.cloud.utils.StringUtils.getPreferredCharset())).toString();
+            templateName = UuidUtils.nameUUIDFromBytes((jobs.get(jobId).getTmpltName() + System.currentTimeMillis()).getBytes(com.cloud.utils.StringUtils.getPreferredCharset())).toString();
         }
         return templateName;
     }
@@ -1057,7 +1058,6 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             try {
                 if (!loc.load()) {
                     logger.warn("Post download installation was not completed for " + path);
-                    // loc.purge();
                     _storage.cleanup(path, templateDir);
                     continue;
                 }
@@ -1103,7 +1103,6 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             try {
                 if (!loc.load()) {
                     logger.warn("Post download installation was not completed for " + path);
-                    // loc.purge();
                     _storage.cleanup(path, volumeDir);
                     continue;
                 }

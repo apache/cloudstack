@@ -27,22 +27,23 @@ import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.Profiler;
 
-//
-// Wrapper class for global database lock to reduce contention for database connections from within process
-//
-// Example of using dynamic named locks
-//
-//        GlobalLock lock = GlobalLock.getInternLock("some table name" + rowId);
-//
-//        if(lock.lock()) {
-//            try {
-//                do something
-//            } finally {
-//                lock.unlock();
-//            }
-//        }
-//        lock.releaseRef();
-//
+/**
+  * Wrapper class for global database lock to reduce contention for database connections from within process
+  * This class is used to acquire a global lock for a specific operation, identified by a unique name.
+  * Example of using dynamic named locks
+  * <p>
+  *        GlobalLock lock = GlobalLock.getInternLock("some table name" + rowId);
+  *
+  *        if(lock.lock()) {
+  *            try {
+  *                do something
+  *            } finally {
+  *                lock.unlock();
+  *            }
+  *        }
+  *        lock.releaseRef();
+  * </p>
+  */
 public class GlobalLock {
     protected Logger logger = LogManager.getLogger(getClass());
 

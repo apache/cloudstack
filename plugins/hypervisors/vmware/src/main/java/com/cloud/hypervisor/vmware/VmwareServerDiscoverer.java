@@ -22,7 +22,6 @@ import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -75,6 +74,7 @@ import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
+import com.cloud.utils.UuidUtils;
 import com.vmware.vim25.ManagedObjectReference;
 
 public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer, ResourceStateAdapter {
@@ -397,7 +397,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
 
             // place a place holder guid derived from cluster ID
             try{
-                cluster.setGuid(UUID.nameUUIDFromBytes(String.valueOf(clusterId).getBytes("UTF-8")).toString());
+                cluster.setGuid(UuidUtils.nameUUIDFromBytes(String.valueOf(clusterId).getBytes("UTF-8")).toString());
             }catch(UnsupportedEncodingException e){
                 throw new DiscoveredWithErrorException("Unable to create UUID based on string " + String.valueOf(clusterId) + ". Bad clusterId or UTF-8 encoding error.");
             }

@@ -53,6 +53,8 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+import com.cloud.utils.storage.TemplateDownloaderUtil;
+
 import org.apache.commons.lang3.StringUtils;
 
 public class ScaleIOStorageAdaptor implements StorageAdaptor {
@@ -572,10 +574,10 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
                 throw new CloudRuntimeException("Failed to find the disk: " + destTemplatePath + " of the storage pool: " + destPool.getUuid());
             }
 
-            if (isTemplateExtractable(templateFilePath)) {
+            if (TemplateDownloaderUtil.isTemplateExtractable(templateFilePath)) {
                 srcTemplateFilePath = sourceFile.getParent() + "/" + UUID.randomUUID().toString();
                 logger.debug("Extract the downloaded template " + templateFilePath + " to " + srcTemplateFilePath);
-                String extractCommand = getExtractCommandForDownloadedFile(templateFilePath, srcTemplateFilePath);
+                String extractCommand = TemplateDownloaderUtil.getExtractCommandForDownloadedFile(templateFilePath, srcTemplateFilePath);
                 Script.runSimpleBashScript(extractCommand);
                 Script.runSimpleBashScript("rm -f " + templateFilePath);
             }
@@ -611,23 +613,6 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
         return destDisk;
     }
 
-    private boolean isTemplateExtractable(String templatePath) {
-        String type = Script.runSimpleBashScript("file " + templatePath + " | awk -F' ' '{print $2}'");
-        return type.equalsIgnoreCase("bzip2") || type.equalsIgnoreCase("gzip") || type.equalsIgnoreCase("zip");
-    }
-
-    private String getExtractCommandForDownloadedFile(String downloadedTemplateFile, String templateFile) {
-        if (downloadedTemplateFile.endsWith(".zip")) {
-            return "unzip -p " + downloadedTemplateFile + " | cat > " + templateFile;
-        } else if (downloadedTemplateFile.endsWith(".bz2")) {
-            return "bunzip2 -c " + downloadedTemplateFile + " > " + templateFile;
-        } else if (downloadedTemplateFile.endsWith(".gz")) {
-            return "gunzip -c " + downloadedTemplateFile + " > " + templateFile;
-        } else {
-            throw new CloudRuntimeException("Unable to extract template " + downloadedTemplateFile);
-        }
-    }
-
     public void resizeQcow2ToVolume(String volumePath, QemuImageOptions options, List<QemuObject> objects, Integer timeout) throws QemuImgException, LibvirtException {
         long rawSizeBytes = getPhysicalDiskSize(volumePath);
         long usableSizeBytes = getUsableBytesFromRawBytes(rawSizeBytes);
@@ -653,10 +638,24 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             if (!ScaleIOUtil.startSDCService()) {
                 return new Ternary<>(false, null, "Couldn't start SDC service on host");
             }
-        } else {
-            logger.debug("SDC service is active on host, re-starting it");
-            if (!ScaleIOUtil.restartSDCService()) {
-                return new Ternary<>(false, null, "Couldn't restart SDC service on host");
+        }
+
+        if (MapUtils.isNotEmpty(details) && details.containsKey(ScaleIOGatewayClient.STORAGE_POOL_MDMS)) {
+            // Assuming SDC service is started, add mdms
+            String mdms = details.get(ScaleIOGatewayClient.STORAGE_POOL_MDMS);
+            String[] mdmAddresses = mdms.split(",");
+            if (mdmAddresses.length > 0) {
+                if (ScaleIOUtil.isMdmPresent(mdmAddresses[0])) {
+                    return new Ternary<>(true, getSDCDetails(details), "MDM added, no need to prepare the SDC client");
+                }
+
+                ScaleIOUtil.addMdms(mdmAddresses);
+                if (!ScaleIOUtil.isMdmPresent(mdmAddresses[0])) {
+                    return new Ternary<>(false, null, "Failed to add MDMs");
+                } else {
+                    logger.debug(String.format("MDMs %s added to storage pool %s", mdms, uuid));
+                    applyMdmsChangeWaitTime(details);
+                }
             }
         }
 
@@ -784,12 +783,12 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             if (sdcId != null) {
                 sdcDetails.put(ScaleIOGatewayClient.SDC_ID, sdcId);
                 return sdcDetails;
-            } else {
-                String sdcGuId = ScaleIOUtil.getSdcGuid();
-                if (sdcGuId != null) {
-                    sdcDetails.put(ScaleIOGatewayClient.SDC_GUID, sdcGuId);
-                    return sdcDetails;
-                }
+            }
+
+            String sdcGuId = ScaleIOUtil.getSdcGuid();
+            if (sdcGuId != null) {
+                sdcDetails.put(ScaleIOGatewayClient.SDC_GUID, sdcGuId);
+                return sdcDetails;
             }
 
             try {

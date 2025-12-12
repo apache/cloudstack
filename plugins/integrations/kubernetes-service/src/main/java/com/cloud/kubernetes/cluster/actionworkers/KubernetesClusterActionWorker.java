@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.kubernetes.version.KubernetesSupportedVersionVO;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -231,13 +232,17 @@ public class KubernetesClusterActionWorker {
 
     protected final String deploySecretsScriptFilename = "deploy-cloudstack-secret";
     protected final String deployProviderScriptFilename = "deploy-provider";
+    protected final String deployCsiDriverScriptFilename = "deploy-csi-driver";
+    protected final String deletePvScriptFilename = "delete-pv-reclaimpolicy-delete";
     protected final String autoscaleScriptFilename = "autoscale-kube-cluster";
     protected final String validateNodeScript = "validate-cks-node";
     protected final String removeNodeFromClusterScript = "remove-node-from-cluster";
     protected final String scriptPath = "/opt/bin/";
     protected File deploySecretsScriptFile;
     protected File deployProviderScriptFile;
+    protected File deployCsiDriverScriptFile;
     protected File autoscaleScriptFile;
+    protected File deletePvScriptFile;
     protected KubernetesClusterManagerImpl manager;
     protected String[] keys;
 
@@ -257,7 +262,8 @@ public class KubernetesClusterActionWorker {
         DataCenterVO dataCenterVO = dataCenterDao.findById(zoneId);
         VMTemplateVO template = templateDao.findById(templateId);
         Hypervisor.HypervisorType type = template.getHypervisorType();
-        this.clusterTemplate = manager.getKubernetesServiceTemplate(dataCenterVO, type, null, KubernetesClusterNodeType.DEFAULT);
+        KubernetesSupportedVersionVO kubernetesSupportedVersion = kubernetesSupportedVersionDao.findById(this.kubernetesCluster.getKubernetesVersionId());
+        this.clusterTemplate = manager.getKubernetesServiceTemplate(dataCenterVO, type, null, KubernetesClusterNodeType.DEFAULT, kubernetesSupportedVersion);
         this.controlNodeTemplate = templateDao.findById(this.kubernetesCluster.getControlNodeTemplateId());
         this.workerNodeTemplate = templateDao.findById(this.kubernetesCluster.getWorkerNodeTemplateId());
         this.etcdTemplate = templateDao.findById(this.kubernetesCluster.getEtcdNodeTemplateId());
@@ -713,12 +719,16 @@ public class KubernetesClusterActionWorker {
     protected void retrieveScriptFiles() {
         deploySecretsScriptFile = retrieveScriptFile(deploySecretsScriptFilename);
         deployProviderScriptFile = retrieveScriptFile(deployProviderScriptFilename);
+        deployCsiDriverScriptFile = retrieveScriptFile(deployCsiDriverScriptFilename);
+        deletePvScriptFile = retrieveScriptFile(deletePvScriptFilename);
         autoscaleScriptFile = retrieveScriptFile(autoscaleScriptFilename);
     }
 
     protected void copyScripts(String nodeAddress, final int sshPort) {
         copyScriptFile(nodeAddress, sshPort, deploySecretsScriptFile, deploySecretsScriptFilename);
         copyScriptFile(nodeAddress, sshPort, deployProviderScriptFile, deployProviderScriptFilename);
+        copyScriptFile(nodeAddress, sshPort, deployCsiDriverScriptFile, deployCsiDriverScriptFilename);
+        copyScriptFile(nodeAddress, sshPort, deletePvScriptFile, deletePvScriptFilename);
         copyScriptFile(nodeAddress, sshPort, autoscaleScriptFile, autoscaleScriptFilename);
     }
 
@@ -796,6 +806,43 @@ public class KubernetesClusterActionWorker {
             // Maybe the file isn't present. Try and copy it
             if (!result.first()) {
                 logMessage(Level.INFO, "Provider files missing. Adding them now", null);
+                retrieveScriptFiles();
+                copyScripts(publicIpAddress, sshPort);
+
+                if (!createCloudStackSecret(keys)) {
+                    logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup keys for Kubernetes cluster %s",
+                            kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+                }
+
+                // If at first you don't succeed ...
+                result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
+                        pkFile, null, command, 10000, 10000, 60000);
+                if (!result.first()) {
+                    throw new CloudRuntimeException(result.second());
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            String msg = String.format("Failed to deploy kubernetes provider: %s : %s", kubernetesCluster.getName(), e.getMessage());
+            logAndThrow(Level.ERROR, msg);
+            return false;
+        }
+    }
+
+    protected boolean deployCsiDriver() {
+        File pkFile = getManagementServerSshPublicKeyFile();
+        Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
+        publicIpAddress = publicIpSshPort.first();
+        sshPort = publicIpSshPort.second();
+
+        try {
+            String command = String.format("sudo %s/%s", scriptPath, deployCsiDriverScriptFilename);
+            Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
+                    pkFile, null, command, 10000, 10000, 60000);
+
+            // Maybe the file isn't present. Try and copy it
+            if (!result.first()) {
+                logMessage(Level.INFO, "CSI files missing. Adding them now", null);
                 retrieveScriptFiles();
                 copyScripts(publicIpAddress, sshPort);
 

@@ -16,6 +16,24 @@
 // under the License.
 package com.cloud.network.lb;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.UUID;
+
+import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerRuleCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InOrder;
+import org.mockito.Mockito;
+
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
@@ -35,27 +53,10 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
-import com.cloud.user.MockAccountManagerImpl;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
-import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerRuleCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.InOrder;
-import org.mockito.Mockito;
-
-import java.util.ArrayList;
-import java.util.UUID;
-
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
 
 public class UpdateLoadBalancerTest {
 
@@ -73,7 +74,7 @@ public class UpdateLoadBalancerTest {
 
     @Before
     public void setUp() {
-        _lbMgr._accountMgr = new MockAccountManagerImpl();
+        _lbMgr._accountMgr = Mockito.mock(AccountManager.class);
         _lbMgr._autoScaleVmGroupDao = Mockito.mock(AutoScaleVmGroupDao.class);
         _lbMgr._networkDao = netDao;
         _lbMgr._networkOfferingServiceDao = ntwkOffServiceMapDao;

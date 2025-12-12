@@ -1,18 +1,17 @@
-
 // Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements. See the NOTICE file
+// or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
-// regarding copyright ownership. The ASF licenses this file
+// regarding copyright ownership.  The ASF licenses this file
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
-// with the License. You may obtain a copy of the License at
+// with the License.  You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied. See the License for the
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 
@@ -167,15 +166,7 @@ export default {
       Object.values(cardGroups).forEach(cardGroup => {
         const profileCount = Object.keys(cardGroup.profiles).length
 
-        // Filter devices for card summary calculation
-        // Exclude passthrough profile devices from aggregates if there are multiple profiles
-        let cardDevicesForSummary = cardGroup.devices
-        if (profileCount > 1) {
-          cardDevicesForSummary = cardGroup.devices.filter(device => !device.vgpuprofilename || device.vgpuprofilename.toLowerCase() !== 'passthrough'
-          )
-        }
-
-        const cardSummary = this.calculateSummary(cardDevicesForSummary)
+        const cardSummary = this.calculateSummary(cardGroup.devices)
         const cardKey = `card-${cardGroup.gpucardname}`
 
         const cardNode = {
@@ -192,7 +183,6 @@ export default {
           expandedKeys.push(cardKey)
 
           cardNode.children = Object.values(cardGroup.profiles)
-            .filter(profile => profile.vgpuprofilename.toLowerCase() !== 'passthrough')
             .map(profile => {
               const profileSummary = this.calculateSummary(profile.devices)
               return {
@@ -204,7 +194,6 @@ export default {
               }
             })
         }
-
         summaryTree.push(cardNode)
       })
 
@@ -222,6 +211,9 @@ export default {
       }
 
       devices.forEach(device => {
+        if (device.gpudevicetype === 'VGPUOnly') {
+          return
+        }
         summary.total++
 
         if (device.virtualmachineid) {

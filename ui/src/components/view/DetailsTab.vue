@@ -75,17 +75,22 @@
           </div>
           <div v-else-if="['template', 'iso'].includes($route.meta.name) && item === 'size'">
             <div>
-              {{ parseFloat(dataResource.size / (1024.0 * 1024.0 * 1024.0)).toFixed(2) }} GiB
+              {{ sizeInGiB(dataResource.size) }} GiB
             </div>
           </div>
           <div v-else-if="['volume', 'snapshot', 'template', 'iso'].includes($route.meta.name) && item === 'physicalsize'">
             <div>
-              {{ parseFloat(dataResource.physicalsize / (1024.0 * 1024.0 * 1024.0)).toFixed(2) }} GiB
+              {{ sizeInGiB(dataResource.physicalsize) }} GiB
             </div>
           </div>
           <div v-else-if="['volume', 'snapshot', 'template', 'iso'].includes($route.meta.name) && item === 'virtualsize'">
             <div>
-              {{ parseFloat(dataResource.virtualsize / (1024.0 * 1024.0 * 1024.0)).toFixed(2) }} GiB
+              {{ sizeInGiB(dataResource.virtualsize) }} GiB
+            </div>
+          </div>
+          <div v-else-if="$route.meta.name === 'snapshot' && item === 'chainsize'">
+            <div>
+              {{ sizeInGiB(dataResource.chainsize) }} GiB
             </div>
           </div>
           <div v-else-if="['name', 'type'].includes(item)">
@@ -150,6 +155,13 @@
         </div>
       </a-list-item>
       <a-list-item v-else-if="(item === 'privatemtu' && !['L2', 'Shared'].includes(dataResource['type'])) || (item === 'publicmtu' && dataResource['type'] !== 'L2')">
+        <div>
+          <strong>{{ $t('label.' + String(item).toLowerCase()) }}</strong>
+          <br/>
+          <div>{{ dataResource[item] }}</div>
+        </div>
+      </a-list-item>
+      <a-list-item v-else-if="(item === 'zoneid' && $route.path.includes('/snapshotpolicy'))">
         <div>
           <strong>{{ $t('label.' + String(item).toLowerCase()) }}</strong>
           <br/>
@@ -473,6 +485,12 @@ export default {
       }
 
       return `label.${source}`
+    },
+    sizeInGiB (sizeInBytes) {
+      if (!sizeInBytes || sizeInBytes === 0) {
+        return '0.00'
+      }
+      return parseFloat(sizeInBytes / (1024.0 * 1024.0 * 1024.0)).toFixed(2)
     }
   }
 }
