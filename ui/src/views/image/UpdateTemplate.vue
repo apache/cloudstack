@@ -109,7 +109,7 @@
             <a-form-item
               name="userdataid"
               ref="userdataid"
-              :label="$t('label.userdata')">
+              :label="$t('label.user.data')">
               <a-select
                 showSearch
                 optionFilterProp="label"
@@ -128,7 +128,7 @@
           <a-col :md="24" :lg="12">
             <a-form-item ref="userdatapolicy" name="userdatapolicy">
               <template #label>
-                <tooltip-label :title="$t('label.userdatapolicy')" :tooltip="$t('label.userdatapolicy.tooltip')"/>
+                <tooltip-label :title="$t('label.user.data.policy')" :tooltip="$t('label.user.data.policy.tooltip')"/>
               </template>
               <a-select
                 showSearch
@@ -310,7 +310,7 @@ export default {
     },
     fetchData () {
       this.fetchOsTypes()
-      this.fetchArchitectureTypes()
+      this.architectureTypes.opts = this.$fetchCpuArchitectureTypes()
       this.fetchRootDiskControllerTypes(this.resource.hypervisor)
       this.fetchNicAdapterTypes()
       this.fetchKeyboardTypes()
@@ -334,19 +334,6 @@ export default {
       }).finally(() => {
         this.osTypes.loading = false
       })
-    },
-    fetchArchitectureTypes () {
-      this.architectureTypes.opts = []
-      const typesList = []
-      typesList.push({
-        id: 'x86_64',
-        description: 'AMD 64 bits (x86_64)'
-      })
-      typesList.push({
-        id: 'aarch64',
-        description: 'ARM 64 bits (aarch64)'
-      })
-      this.architectureTypes.opts = typesList
     },
     fetchRootDiskControllerTypes (hyperVisor) {
       const controller = []

@@ -562,8 +562,8 @@ public class NetUtilsTest {
     }
 
     @Test
-    public void testIsNetowrkASubsetOrSupersetOfNetworkBWithEmptyValues() {
-        assertEquals(SupersetOrSubset.errorInCidrFormat, NetUtils.isNetowrkASubsetOrSupersetOfNetworkB("", null));
+    public void testIsNetworkASubsetOrSupersetOfNetworkBWithEmptyValues() {
+        assertEquals(SupersetOrSubset.errorInCidrFormat, NetUtils.isNetworkASubsetOrSupersetOfNetworkB("", null));
     }
 
     @Test

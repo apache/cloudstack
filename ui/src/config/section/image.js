@@ -43,7 +43,7 @@ export default {
               }
               return 'Not Ready'
             }
-          }, 'ostypename', 'hypervisor']
+          }, 'ostypename', 'arch', 'hypervisor']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('size')
           fields.push('account')
@@ -67,7 +67,7 @@ export default {
         return fields
       },
       searchFilters: () => {
-        var filters = ['name', 'zoneid', 'tags']
+        var filters = ['name', 'zoneid', 'tags', 'arch']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           filters.push('storageid')
           filters.push('imagestoreid')
@@ -220,7 +220,7 @@ export default {
               }
               return 'Not Ready'
             }
-          }, 'ostypename']
+          }, 'ostypename', 'arch']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('size')
           fields.push('account')
@@ -235,7 +235,7 @@ export default {
       },
       details: ['name', 'id', 'displaytext', 'checksum', 'ostypename', 'size', 'arch', 'bootable', 'isready', 'passwordenabled', 'directdownload', 'isextractable', 'ispublic', 'isfeatured', 'isdynamicallyscalable', 'crosszones', 'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy', 'url'],
       searchFilters: () => {
-        var filters = ['name', 'zoneid', 'tags']
+        var filters = ['name', 'zoneid', 'tags', 'arch']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           filters.push('storageid')
           filters.push('imagestoreid')
@@ -370,9 +370,9 @@ export default {
       icon: ['fa-solid', 'fa-dharmachakra'],
       docHelp: 'plugins/cloudstack-kubernetes-service.html#kubernetes-supported-versions',
       permission: ['listKubernetesSupportedVersions'],
-      searchFilters: ['zoneid', 'minimumsemanticversion'],
-      columns: ['name', 'state', 'semanticversion', 'isostate', 'mincpunumber', 'minmemory', 'zonename'],
-      details: ['name', 'semanticversion', 'supportsautoscaling', 'zoneid', 'zonename', 'isoid', 'isoname', 'isostate', 'mincpunumber', 'minmemory', 'supportsha', 'state', 'created'],
+      searchFilters: ['zoneid', 'minimumsemanticversion', 'arch'],
+      columns: ['name', 'state', 'semanticversion', 'isostate', 'mincpunumber', 'minmemory', 'arch', 'zonename'],
+      details: ['name', 'semanticversion', 'supportsautoscaling', 'zoneid', 'zonename', 'isoid', 'isoname', 'isostate', 'arch', 'mincpunumber', 'minmemory', 'supportsha', 'state', 'created'],
       tabs: [
         {
           name: 'details',

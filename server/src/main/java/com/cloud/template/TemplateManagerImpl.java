@@ -488,7 +488,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         String mode = cmd.getMode();
         Long eventId = cmd.getStartEventId();
 
-        return extract(account, templateId, url, zoneId, mode, eventId, true);
+        String extractUrl = extract(account, templateId, url, zoneId, mode, eventId, true);
+        CallContext.current().setEventDetails(String.format("Download URL: %s, ISO ID: %s", extractUrl, _tmpltDao.findById(templateId).getUuid()));
+        return extractUrl;
     }
 
     @Override
@@ -506,7 +508,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("unable to find template with id " + templateId);
         }
 
-        return extract(caller, templateId, url, zoneId, mode, eventId, false);
+        String extractUrl = extract(caller, templateId, url, zoneId, mode, eventId, false);
+        CallContext.current().setEventDetails(String.format("Download URL: %s, template ID: %s", extractUrl, template.getUuid()));
+        return extractUrl;
     }
 
     @Override
@@ -1020,31 +1024,51 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         return adapter.delete(new TemplateProfile(userId, template, zoneId));
     }
 
+    private Boolean templateIsUnusedInPool(VMTemplateStoragePoolVO templatePoolVO) {
+        VMTemplateVO template = _tmpltDao.findByIdIncludingRemoved(templatePoolVO.getTemplateId());
+
+        // If this is a routing template, consider it in use
+        if (template.getTemplateType() == TemplateType.SYSTEM) {
+            return false;
+        }
+
+        // If the template is not yet downloaded to the pool, consider it in use
+        if (templatePoolVO.getDownloadState() != Status.DOWNLOADED) {
+            return false;
+        }
+
+        if (template.getFormat() == ImageFormat.ISO || _volumeDao.isAnyVolumeActivelyUsingTemplateOnPool(template.getId(), templatePoolVO.getPoolId())) {
+            return false;
+        }
+        return true;
+    }
+
     @Override
     public List<VMTemplateStoragePoolVO> getUnusedTemplatesInPool(StoragePoolVO pool) {
         List<VMTemplateStoragePoolVO> unusedTemplatesInPool = new ArrayList<VMTemplateStoragePoolVO>();
         List<VMTemplateStoragePoolVO> allTemplatesInPool = _tmpltPoolDao.listByPoolId(pool.getId());
 
         for (VMTemplateStoragePoolVO templatePoolVO : allTemplatesInPool) {
-            VMTemplateVO template = _tmpltDao.findByIdIncludingRemoved(templatePoolVO.getTemplateId());
-
-            // If this is a routing template, consider it in use
-            if (template.getTemplateType() == TemplateType.SYSTEM) {
-                continue;
-            }
-
-            // If the template is not yet downloaded to the pool, consider it in
-            // use
-            if (templatePoolVO.getDownloadState() != Status.DOWNLOADED) {
-                continue;
-            }
-
-            if (template.getFormat() != ImageFormat.ISO && !_volumeDao.isAnyVolumeActivelyUsingTemplateOnPool(template.getId(), pool.getId())) {
+            if (templateIsUnusedInPool(templatePoolVO)) {
                 unusedTemplatesInPool.add(templatePoolVO);
             }
         }
-
         return unusedTemplatesInPool;
+    }
+
+    @Override
+    public void evictTemplateFromStoragePoolsForZones(Long templateId, List<Long> zoneIds) {
+        List<Long> poolIds = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(zoneIds)) {
+            List<StoragePoolVO> pools = _poolDao.listByDataCenterIds(zoneIds);
+            poolIds = pools.stream().map(StoragePoolVO::getId).collect(Collectors.toList());
+        }
+        List<VMTemplateStoragePoolVO> templateStoragePoolVOS = _tmpltPoolDao.listByPoolIdsAndTemplate(poolIds, templateId);
+        for (VMTemplateStoragePoolVO templateStoragePoolVO: templateStoragePoolVOS) {
+            if (templateIsUnusedInPool(templateStoragePoolVO)) {
+                evictTemplateFromStoragePool(templateStoragePoolVO);
+            }
+        }
     }
 
     @Override
@@ -1827,6 +1851,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Failed to create private template record, please specify only one of volume ID (" + volumeId +
                     ") and snapshot ID (" + snapshotId + ")");
         }
+        CPU.CPUArch arch = cmd.getArch();
 
         HypervisorType hyperType;
         VolumeVO volume = null;
@@ -1919,7 +1944,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         String description = cmd.getDisplayText();
         boolean isExtractable = false;
         Long sourceTemplateId = null;
-        CPU.CPUArch arch = CPU.CPUArch.amd64;
         if (volume != null) {
             VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
             isExtractable = template != null && template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
@@ -2364,7 +2388,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {AllowPublicUserTemplates, TemplatePreloaderPoolSize, ValidateUrlIsResolvableBeforeRegisteringTemplate};
+        return new ConfigKey<?>[] {AllowPublicUserTemplates,
+                TemplatePreloaderPoolSize,
+                ValidateUrlIsResolvableBeforeRegisteringTemplate,
+                TemplateDeleteFromPrimaryStorage};
     }
 
     public List<TemplateAdapter> getTemplateAdapters() {

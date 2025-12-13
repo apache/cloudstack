@@ -82,7 +82,7 @@ class CsDhcp(CsDataBag):
                 CsHelper.service("dnsmasq", "reload")
 
     def configure_server(self):
-        # self.conf.addeq("dhcp-hostsfile=%s" % DHCP_HOSTS)
+        self.conf.add("bind-interfaces", 0)
         idx = 0
         listen_address = ["127.0.0.1"]
         for i in self.devinfo:
@@ -226,7 +226,7 @@ class CsDhcp(CsDataBag):
         i = IPAddress(entry['ipv4_address'])
         # Calculate the device
         for v in self.devinfo:
-            if i > v['network'].network and i < v['network'].broadcast:
+            if i > v['network'].network and v['network'].broadcast and i < v['network'].broadcast:
                 v['dnsmasq'] = True
                 # Virtual Router
                 v['gateway'] = entry['default_gateway']

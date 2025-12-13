@@ -44,6 +44,9 @@
           <span v-if="record.icon && record.icon.base64image">
             <resource-icon :image="record.icon.base64image" size="2x"/>
           </span>
+          <span v-else-if="record.vmtype === 'sharedfsvm'">
+            <file-text-outlined style="font-size: 18px;" />
+          </span>
           <os-logo v-else :osId="record.ostypeid" :osName="record.osdisplayname" size="xl" />
         </span>
         <span style="min-width: 120px" >
@@ -159,6 +162,10 @@
         <span v-if="record.isstaticnat">
           &nbsp;
           <a-tag>static-nat</a-tag>
+        </span>
+        <span v-if="record.issystem">
+          &nbsp;
+          <a-tag>system</a-tag>
         </span>
       </template>
       <template v-if="column.key === 'ip6address'" href="javascript:;">
@@ -358,7 +365,14 @@
         <resource-label :resourceType="record.resourcetype" :resourceId="record.resourceid" :resourceName="record.resourcename" />
       </template>
       <template v-if="column.key === 'domain'">
-        <router-link v-if="record.domainid && !record.domainid.toString().includes(',') && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + record.domainid, query: { tab: 'details' } }">{{ text }}</router-link>
+        <span v-if="record.domainid && $store.getters.userInfo.roletype !== 'User'">
+          <template v-for="(id, idx) in record.domainid.split(',')" :key="id">
+            <router-link :to="{ path: '/domain/' + id, query: { tab: 'details' } }">
+              {{ record.domain.split(',')[idx] || id }}
+            </router-link>
+            <span v-if="idx < record.domainid.split(',').length - 1">, </span>
+          </template>
+        </span>
         <span v-else>{{ text }}</span>
       </template>
       <template v-if="column.key === 'domainpath'">
@@ -412,8 +426,8 @@
         <status :text="record.enabled ? record.enabled.toString() : 'false'" />
         {{ record.enabled ? 'Enabled' : 'Disabled' }}
       </template>
-      <template v-if="['created', 'sent', 'removed', 'effectiveDate', 'endDate'].includes(column.key) || (['startdate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1])) || (column.key === 'allocated' && ['asnumbers', 'publicip', 'ipv4subnets'].includes($route.meta.name) && text)">
-        {{ $toLocaleDate(text) }}
+      <template v-if="['created', 'sent', 'removed', 'effectiveDate', 'endDate', 'allocated'].includes(column.key) || (['startdate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1])) || (column.key === 'allocated' && ['asnumbers', 'publicip', 'ipv4subnets'].includes($route.meta.name) && text)">
+        {{ text && $toLocaleDate(text) }}
       </template>
       <template v-if="['startdate', 'enddate'].includes(column.key) && ['vm', 'vnfapp'].includes($route.path.split('/')[1])">
         {{ getDateAtTimeZone(text, record.timezone) }}
@@ -530,7 +544,7 @@
           iconTwoToneColor="#52c41a" />
         <tooltip-button
           :tooltip="$t('label.reset.config.value')"
-          @onClick="resetConfig(record)"
+          @onClick="$resetConfigurationValueConfirm(item, resetConfig)"
           v-if="editableValueKey !== record.key"
           icon="reload-outlined"
           :disabled="!('updateConfiguration' in $store.getters.apis)" />
@@ -587,6 +601,7 @@ import { createPathBasedOnVmType } from '@/utils/plugins'
 import { validateLinks } from '@/utils/links'
 import cronstrue from 'cronstrue/i18n'
 import moment from 'moment-timezone'
+import { FileTextOutlined } from '@ant-design/icons-vue'
 
 export default {
   name: 'ListView',
@@ -597,7 +612,8 @@ export default {
     CopyLabel,
     TooltipButton,
     ResourceIcon,
-    ResourceLabel
+    ResourceLabel,
+    FileTextOutlined
   },
   props: {
     columns: {

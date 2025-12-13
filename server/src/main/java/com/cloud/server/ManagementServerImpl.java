@@ -44,7 +44,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.cpu.CPU;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -674,6 +673,7 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.consoleproxy.ConsoleProxyManagementState;
 import com.cloud.consoleproxy.ConsoleProxyManager;
+import com.cloud.cpu.CPU;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
@@ -692,6 +692,7 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.deploy.DeploymentPlanningManager;
@@ -1040,6 +1041,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     protected List<DeploymentPlanner> _planners;
 
+    private boolean jsInterpretationEnabled = false;
+
     private final List<HypervisorType> supportedHypervisors = new ArrayList<>();
 
     public List<DeploymentPlanner> getPlanners() {
@@ -1125,6 +1128,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         supportedHypervisors.add(HypervisorType.KVM);
         supportedHypervisors.add(HypervisorType.XenServer);
+
+        jsInterpretationEnabled = JsInterpretationEnabled.value();
 
         return true;
     }
@@ -1274,6 +1279,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Object clusterType = cmd.getClusterType();
         final Object allocationState = cmd.getAllocationState();
         final String keyword = cmd.getKeyword();
+        final CPU.CPUArch arch = cmd.getArch();
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), zoneId);
 
         final Filter searchFilter = new Filter(ClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -1286,6 +1292,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         sb.and("clusterType", sb.entity().getClusterType(), SearchCriteria.Op.EQ);
         sb.and("allocationState", sb.entity().getAllocationState(), SearchCriteria.Op.EQ);
+        sb.and("arch", sb.entity().getArch(), SearchCriteria.Op.EQ);
 
         final SearchCriteria<ClusterVO> sc = sb.create();
         if (id != null) {
@@ -1323,6 +1330,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("hypervisorType", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        if (arch != null) {
+            sc.setParameters("arch", arch);
         }
 
         final Pair<List<ClusterVO>, Integer> result = _clusterDao.searchAndCount(sc, searchFilter);
@@ -1444,17 +1455,27 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return false;
     }
 
-    @Override
-    public Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(final VirtualMachine vm, final Long startIndex, final Long pageSize,
-            final String keyword, List<VirtualMachine> vmList) {
+    /**
+     * Get technically compatible hosts for VM migration (storage, hypervisor, UEFI filtering).
+     * This determines which hosts are technically capable of hosting the VM based on
+     * storage requirements, hypervisor capabilities, and UEFI requirements.
+     *
+     * @param vm The virtual machine to migrate
+     * @param startIndex Starting index for pagination
+     * @param pageSize Page size for pagination
+     * @param keyword Keyword filter for host search
+     * @return Ternary containing: (all hosts with count, filtered compatible hosts, storage motion requirements map)
+     */
+    Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> getTechnicallyCompatibleHosts(
+            final VirtualMachine vm,
+            final Long startIndex,
+            final Long pageSize,
+            final String keyword) {
 
-        validateVmForHostMigration(vm);
-
+        // GPU check
         if (_serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
-            logger.info(" Live Migration of GPU enabled VM : " + vm.getInstanceName() + " is not supported");
-            // Return empty list.
-            return new Ternary<>(new Pair<>(new ArrayList<>(), 0),
-                    new ArrayList<>(), new HashMap<>());
+            logger.info("Live Migration of GPU enabled VM : {} is not supported", vm);
+            return new Ternary<>(new Pair<>(new ArrayList<>(), 0), new ArrayList<>(), new HashMap<>());
         }
 
         final long srcHostId = vm.getHostId();
@@ -1468,6 +1489,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
+
         String srcHostVersion = srcHost.getHypervisorVersion();
         if (HypervisorType.KVM.equals(srcHost.getHypervisorType()) && srcHostVersion == null) {
             srcHostVersion = "";
@@ -1503,7 +1525,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         List<HostVO> allHosts = null;
         List<HostVO> filteredHosts = null;
         final Map<Host, Boolean> requiresStorageMotion = new HashMap<>();
-        DataCenterDeployment plan = null;
+
         if (canMigrateWithStorage) {
             Long podId = !VirtualMachine.Type.User.equals(vm.getType()) ? srcHost.getPodId() : null;
             allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), podId, null, null, keyword,
@@ -1552,7 +1574,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             if (CollectionUtils.isEmpty(filteredHosts)) {
                 return new Ternary<>(new Pair<>(allHosts, allHostsPair.second()), new ArrayList<>(), new HashMap<>());
             }
-            plan = new DataCenterDeployment(srcHost.getDataCenterId(), podId, null, null, null, null);
         } else {
             final Long cluster = srcHost.getClusterId();
             if (logger.isDebugEnabled()) {
@@ -1561,22 +1582,38 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, null, null, cluster, null, keyword, null, null, null,
                 null, srcHost.getId());
             allHosts = allHostsPair.first();
-            plan = new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null, null);
+            filteredHosts = allHosts;
         }
 
-        final Pair<List<? extends Host>, Integer> otherHosts = new Pair<>(allHosts, allHostsPair.second());
+        final Pair<List<? extends Host>, Integer> allHostsPairResult = new Pair<>(allHosts, allHostsPair.second());
         Pair<Boolean, List<HostVO>> uefiFilteredResult = filterUefiHostsForMigration(allHosts, filteredHosts, vm);
         if (!uefiFilteredResult.first()) {
-            return new Ternary<>(otherHosts, new ArrayList<>(), new HashMap<>());
+            return new Ternary<>(allHostsPairResult, new ArrayList<>(), new HashMap<>());
         }
         filteredHosts = uefiFilteredResult.second();
 
-        List<Host> suitableHosts = new ArrayList<>();
+        return new Ternary<>(allHostsPairResult, filteredHosts, requiresStorageMotion);
+    }
+
+    /**
+     * Apply affinity group constraints and other exclusion rules for VM migration.
+     * This builds an ExcludeList based on affinity groups, DPDK requirements, and dedicated resources.
+     *
+     * @param vm The virtual machine to migrate
+     * @param vmProfile The VM profile
+     * @param plan The deployment plan
+     * @param vmList List of VMs with current/simulated placements for affinity processing
+     * @return ExcludeList containing hosts to avoid
+     */
+    @Override
+    public ExcludeList applyAffinityConstraints(VirtualMachine vm, VirtualMachineProfile vmProfile, DeploymentPlan plan, List<VirtualMachine> vmList) {
         final ExcludeList excludes = new ExcludeList();
-        excludes.addHost(srcHostId);
+        excludes.addHost(vm.getHostId());
 
         if (dpdkHelper.isVMDpdkEnabled(vm.getId())) {
-            excludeNonDPDKEnabledHosts(plan, excludes);
+            if (plan instanceof DataCenterDeployment) {
+                excludeNonDPDKEnabledHosts((DataCenterDeployment) plan, excludes);
+            }
         }
 
         // call affinitygroup chain
@@ -1589,13 +1626,37 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (vm.getType() == VirtualMachine.Type.User || vm.getType() == VirtualMachine.Type.DomainRouter) {
-            final DataCenterVO dc = _dcDao.findById(srcHost.getDataCenterId());
+            final DataCenterVO dc = _dcDao.findById(plan.getDataCenterId());
             _dpMgr.checkForNonDedicatedResources(vmProfile, dc, excludes);
         }
 
+        return excludes;
+    }
+
+    /**
+     * Get hosts with available capacity using host allocators, and apply architecture filtering.
+     *
+     * @param vm The virtual machine (for architecture filtering)
+     * @param vmProfile The VM profile
+     * @param plan The deployment plan
+     * @param compatibleHosts List of technically compatible hosts
+     * @param excludes ExcludeList with hosts to avoid
+     * @param srcHost Source host (for architecture filtering)
+     * @return List of suitable hosts with capacity
+     */
+    protected List<Host> getCapableSuitableHosts(
+            final VirtualMachine vm,
+            final VirtualMachineProfile vmProfile,
+            final DataCenterDeployment plan,
+            final List<? extends Host> compatibleHosts,
+            final ExcludeList excludes,
+            final Host srcHost) {
+
+        List<Host> suitableHosts = new ArrayList<>();
+
         for (final HostAllocator allocator : hostAllocators) {
-            if (CollectionUtils.isNotEmpty(filteredHosts)) {
-                suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, filteredHosts, HostAllocator.RETURN_UPTO_ALL, false);
+            if (CollectionUtils.isNotEmpty(compatibleHosts)) {
+                suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, compatibleHosts, HostAllocator.RETURN_UPTO_ALL, false);
             } else {
                 suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, HostAllocator.RETURN_UPTO_ALL, false);
             }
@@ -1621,6 +1682,43 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
         }
 
+        return suitableHosts;
+    }
+
+    @Override
+    public Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(final VirtualMachine vm, final Long startIndex, final Long pageSize,
+            final String keyword, List<VirtualMachine> vmList) {
+
+        validateVmForHostMigration(vm);
+
+        // Get technically compatible hosts (storage, hypervisor, UEFI)
+        Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> compatibilityResult =
+            getTechnicallyCompatibleHosts(vm, startIndex, pageSize, keyword);
+
+        Pair<List<? extends Host>, Integer> allHostsPair = compatibilityResult.first();
+        List<? extends Host> filteredHosts = compatibilityResult.second();
+        Map<Host, Boolean> requiresStorageMotion = compatibilityResult.third();
+
+        // If no compatible hosts, return early
+        if (CollectionUtils.isEmpty(filteredHosts)) {
+            final Pair<List<? extends Host>, Integer> otherHosts = new Pair<>(allHostsPair.first(), allHostsPair.second());
+            return new Ternary<>(otherHosts, new ArrayList<>(), requiresStorageMotion);
+        }
+
+        // Create deployment plan and VM profile
+        final Host srcHost = _hostDao.findById(vm.getHostId());
+        final DataCenterDeployment plan = new DataCenterDeployment(
+            srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null, null);
+        final VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(
+            vm, null, _offeringDao.findById(vm.getId(), vm.getServiceOfferingId()), null, null);
+
+        // Apply affinity constraints
+        final ExcludeList excludes = applyAffinityConstraints(vm, vmProfile, plan, vmList);
+
+        // Get hosts with capacity
+        List<Host> suitableHosts = getCapableSuitableHosts(vm, vmProfile, plan, filteredHosts, excludes, srcHost);
+
+        final Pair<List<? extends Host>, Integer> otherHosts = new Pair<>(allHostsPair.first(), allHostsPair.second());
         return new Ternary<>(otherHosts, suitableHosts, requiresStorageMotion);
     }
 
@@ -1913,7 +2011,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return suitablePools;
     }
 
-    private Pair<List<HostVO>, Integer> searchForServers(final Long startIndex, final Long pageSize, final Object name, final Object type,
+    Pair<List<HostVO>, Integer> searchForServers(final Long startIndex, final Long pageSize, final Object name, final Object type,
         final Object state, final Object zone, final Object pod, final Object cluster, final Object id, final Object keyword,
         final Object resourceState, final Object haHosts, final Object hypervisorType, final Object hypervisorVersion, final Object... excludes) {
         final Filter searchFilter = new Filter(HostVO.class, "id", Boolean.TRUE, startIndex, pageSize);
@@ -4016,8 +4114,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListGuestVlansCmd.class);
         cmdList.add(AssignVolumeCmd.class);
         cmdList.add(ListSecondaryStorageSelectorsCmd.class);
-        cmdList.add(CreateSecondaryStorageSelectorCmd.class);
-        cmdList.add(UpdateSecondaryStorageSelectorCmd.class);
+        if (jsInterpretationEnabled) {
+            cmdList.add(CreateSecondaryStorageSelectorCmd.class);
+            cmdList.add(UpdateSecondaryStorageSelectorCmd.class);
+        }
         cmdList.add(RemoveSecondaryStorageSelectorCmd.class);
         cmdList.add(ListAffectedVmsForStorageScopeChangeCmd.class);
 
@@ -4060,7 +4160,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {vmPasswordLength, sshKeyLength, humanReadableSizes, customCsIdentifier};
+        return new ConfigKey<?>[] {vmPasswordLength, sshKeyLength, humanReadableSizes, customCsIdentifier,
+                JsInterpretationEnabled};
     }
 
     protected class EventPurgeTask extends ManagedContextRunnable {
@@ -4187,6 +4288,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long podId = cmd.getPodId();
         final Long hostId = cmd.getHostId();
         final Long storageId = cmd.getStorageId();
+        final CPU.CPUArch arch = cmd.getArch();
 
         final Filter searchFilter = new Filter(VMInstanceVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         final SearchBuilder<VMInstanceVO> sb = _vmInstanceDao.createSearchBuilder();
@@ -4211,6 +4313,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 volumeSearch.and("poolId", volumeSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
                 sb.join("volumeSearch", volumeSearch, sb.entity().getId(), volumeSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
             }
+        }
+
+        boolean templateJoinNeeded = arch != null;
+        if (templateJoinNeeded) {
+            SearchBuilder<VMTemplateVO> templateSearch = templateDao.createSearchBuilder();
+            templateSearch.and("templateArch", templateSearch.entity().getArch(), SearchCriteria.Op.EQ);
+            sb.join("vmTemplate", templateSearch, templateSearch.entity().getId(), sb.entity().getTemplateId(), JoinBuilder.JoinType.INNER);
         }
 
         final SearchCriteria<VMInstanceVO> sc = sb.create();
@@ -4258,6 +4367,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             } else {
                 sc.setJoinParameters("volumeSearch", "poolId", storageId);
             }
+        }
+
+        if (arch != null) {
+            sc.setJoinParameters("vmTemplate", "templateArch", arch);
         }
 
         final Pair<List<VMInstanceVO>, Integer> result = _vmInstanceDao.searchAndCount(sc, searchFilter);
@@ -4510,12 +4623,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put(ApiConstants.INSTANCES_STATS_USER_ONLY, StatsCollector.vmStatsCollectUserVMOnly.value());
         capabilities.put(ApiConstants.INSTANCES_DISKS_STATS_RETENTION_ENABLED, StatsCollector.vmDiskStatsRetentionEnabled.value());
         capabilities.put(ApiConstants.INSTANCES_DISKS_STATS_RETENTION_TIME, StatsCollector.vmDiskStatsMaxRetentionTime.value());
+        capabilities.put(ApiConstants.DYNAMIC_SCALING_ENABLED, UserVmManager.EnableDynamicallyScaleVm.value());
         if (apiLimitEnabled) {
             capabilities.put("apiLimitInterval", apiLimitInterval);
             capabilities.put("apiLimitMax", apiLimitMax);
         }
         capabilities.put(ApiConstants.SHAREDFSVM_MIN_CPU_COUNT, fsVmMinCpu);
         capabilities.put(ApiConstants.SHAREDFSVM_MIN_RAM_SIZE, fsVmMinRam);
+        capabilities.put(ApiConstants.ADDITONAL_CONFIG_ENABLED, UserVmManager.EnableAdditionalVmConfig.valueIn(caller.getId()));
+
 
         return capabilities;
     }
@@ -5502,4 +5618,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         _lockControllerListener = lockControllerListener;
     }
 
+    @Override
+    public void checkJsInterpretationAllowedIfNeededForParameterValue(String paramName, boolean paramValue) {
+        if (!paramValue || jsInterpretationEnabled) {
+            return;
+        }
+        throw new InvalidParameterValueException(String.format(
+                "The parameter %s cannot be set to true as JS interpretation is disabled",
+                paramName));
+    }
 }

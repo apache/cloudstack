@@ -36,8 +36,8 @@ import com.cloud.dc.VmwareDatacenterVO;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "addVmwareDc", description = "Adds a Vmware datacenter to specified zone",
-        responseObject = VmwareDatacenterResponse.class, responseHasSensitiveInfo = false)
+@APICommand(name = "addVmwareDc", description = "Adds a VMware datacenter to specified zone", responseObject = VmwareDatacenterResponse.class,
+        requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public class AddVmwareDcCmd extends BaseCmd {
 
     @Inject
@@ -45,7 +45,7 @@ public class AddVmwareDcCmd extends BaseCmd {
 
 
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Name of Vmware datacenter to be added to specified zone.")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Name of VMware datacenter to be added to specified zone.")
     private String name;
 
     @Parameter(name = ApiConstants.VCENTER,
@@ -54,10 +54,10 @@ public class AddVmwareDcCmd extends BaseCmd {
                description = "The name/ip of vCenter. Make sure it is IP address or full qualified domain name for host running vCenter server.")
     private String vCenter;
 
-    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, description = "The Username required to connect to resource.")
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = false, description = "The Username required to connect to resource.")
     private String username;
 
-    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, description = "The password for specified username.")
+    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = false, description = "The password for specified username.")
     private String password;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The Zone ID.")
@@ -99,7 +99,7 @@ public class AddVmwareDcCmd extends BaseCmd {
                 response.setResponseName(getCommandName());
                 response.setObjectName("vmwaredc");
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add Vmware Datacenter to zone.");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add VMware Datacenter to zone.");
             }
             this.setResponseObject(response);
         } catch (DiscoveryException ex) {

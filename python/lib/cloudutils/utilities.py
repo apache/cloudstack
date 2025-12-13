@@ -63,7 +63,7 @@ class bash:
         return self.stdout.decode('utf-8').strip('\n')
 
     def getLines(self):
-        return self.stdout.decode('utf-8').strip('\n')
+        return self.stdout.decode('utf-8').strip('\n').split('\n')
 
     def getStderr(self):
         return self.stderr.decode('utf-8').strip('\n')
@@ -124,6 +124,10 @@ class Distribution:
                 version.find("Red Hat Enterprise Linux release 9") != -1 or version.find("Linux release 9.") != -1 or
                 version.find("Linux release 9") != -1):
                 self.distro = "RHEL9"
+            elif (version.find("Red Hat Enterprise Linux Server release 10") != -1 or version.find("Scientific Linux release 10") != -1 or
+                version.find("Red Hat Enterprise Linux release 10") != -1 or version.find("Linux release 10.") != -1 or
+                version.find("Linux release 10") != -1):
+                self.distro = "RHEL10"
             elif version.find("CentOS") != -1:
                 self.distro = "CentOS"
             else:

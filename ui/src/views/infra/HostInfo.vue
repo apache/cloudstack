@@ -56,6 +56,22 @@
           </div>
         </div>
       </a-list-item>
+      <a-list-item v-if="host.details && host.details['host.virtv2v.version']">
+        <div>
+          <strong>{{ $t('label.host.virtv2v.version') }}</strong>
+          <div>
+            {{ host.details['host.virtv2v.version'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="host.details && host.details['host.ovftool.version']">
+        <div>
+          <strong>{{ $t('label.host.ovftool.version') }}</strong>
+          <div>
+            {{ host.details['host.ovftool.version'] }}
+          </div>
+        </div>
+      </a-list-item>
       <a-list-item v-if="host.hosttags">
         <div>
           <strong>{{ $t('label.hosttags') }}</strong>
@@ -86,14 +102,48 @@
           </div>
         </div>
       </a-list-item>
-      <a-list-item v-if="host.outofbandmanagement">
-        <div>
-          <strong>{{ $t('label.powerstate') }}</strong>
+      <span v-if="host?.outofbandmanagement?.enabled">
+        <a-list-item>
           <div>
-            {{ host.outofbandmanagement.powerstate }}
+            <strong>{{ $t('label.oobm.username') }}</strong>
+            <div>
+              {{ host.outofbandmanagement.username }}
+            </div>
           </div>
-        </div>
-      </a-list-item>
+        </a-list-item>
+        <a-list-item>
+          <div>
+            <strong>{{ $t('label.oobm.powerstate') }}</strong>
+            <div>
+              {{ host.outofbandmanagement.powerstate }}
+            </div>
+          </div>
+        </a-list-item>
+        <a-list-item>
+          <div>
+            <strong>{{ $t('label.oobm.driver') }}</strong>
+            <div>
+              {{ host.outofbandmanagement.driver }}
+            </div>
+          </div>
+        </a-list-item>
+        <a-list-item>
+          <div>
+            <strong>{{ $t('label.oobm.address') }}</strong>
+            <div>
+              {{ host.outofbandmanagement.address }}
+            </div>
+          </div>
+        </a-list-item>
+        <a-list-item>
+          <div>
+            <strong>{{ $t('label.oobm.port') }}</strong>
+            <div>
+              {{ host.outofbandmanagement.port }}
+            </div>
+          </div>
+        </a-list-item>
+      </span>
       <a-list-item v-if="host.hostha">
         <div>
           <strong>{{ $t('label.haenable') }}</strong>

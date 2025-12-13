@@ -293,7 +293,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     }
 
     /**
-     * For each zone ID in {@link TemplateProfile#zoneIdList}, verifies if there is active heuristic rules for allocating template and returns the
+     * For each zone ID in {@link TemplateProfile#getZoneIdList()}, verifies if there is active heuristic rules for allocating template and returns the
      * {@link DataStore} returned by the heuristic rule. If there is not an active heuristic rule, then allocate it to a random {@link DataStore}, if the ISO/template is private
      * or allocate it to all {@link DataStore} in the zone, if it is public.
      * @param profile
@@ -453,10 +453,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
     /**
      * If the template/ISO is marked as private, then it is allocated to a random secondary storage; otherwise, allocates to every storage pool in every zone given by the
-     * {@link TemplateProfile#zoneIdList}.
+     * {@link TemplateProfile#getZoneIdList()}.
      */
     private void postUploadAllocation(List<DataStore> imageStores, VMTemplateVO template, List<TemplateOrVolumePostUploadCommand> payloads) {
-        Set<Long> zoneSet = new HashSet<Long>();
+        Set<Long> zoneSet = new HashSet<>();
         Collections.shuffle(imageStores);
         for (DataStore imageStore : imageStores) {
             Long zoneId_is = imageStore.getScope().getScopeId();
@@ -627,7 +627,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
                 boolean dataDiskDeletetionResult = true;
                 List<VMTemplateVO> dataDiskTemplates = templateDao.listByParentTemplatetId(template.getId());
-                if (dataDiskTemplates != null && dataDiskTemplates.size() > 0) {
+                if (CollectionUtils.isNotEmpty(dataDiskTemplates)) {
                     logger.info("Template: {} has Datadisk template(s) associated with it. Delete Datadisk templates before deleting the template", template);
                     for (VMTemplateVO dataDiskTemplate : dataDiskTemplates) {
                         logger.info("Delete Datadisk template: {} from image store: {}", dataDiskTemplate, imageStore);
@@ -693,19 +693,22 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         if (success) {
             if ((imageStores != null && imageStores.size() > 1) && (profile.getZoneIdList() != null)) {
                 //if template is stored in more than one image stores, and the zone id is not null, then don't delete other templates.
+                if (templateMgr.TemplateDeleteFromPrimaryStorage.value()) {
+                    templateMgr.evictTemplateFromStoragePoolsForZones(template.getId(), profile.getZoneIdList());
+                }
                 return cleanupTemplate(template, success);
             }
 
             // delete all cache entries for this template
-            List<TemplateInfo> cacheTmpls = imageFactory.listTemplateOnCache(template.getId());
-            for (TemplateInfo tmplOnCache : cacheTmpls) {
+            List<TemplateInfo> cachedTemplates = imageFactory.listTemplateOnCache(template.getId());
+            for (TemplateInfo tmplOnCache : cachedTemplates) {
                 logger.info("Delete template: {} from image cache store: {}", tmplOnCache, tmplOnCache.getDataStore());
                 tmplOnCache.delete();
             }
 
             // find all eligible image stores for this template
             List<DataStore> iStores = templateMgr.getImageStoreByTemplate(template.getId(), null);
-            if (iStores == null || iStores.size() == 0) {
+            if (CollectionUtils.isEmpty(iStores)) {
                 // remove any references from template_zone_ref
                 List<VMTemplateZoneVO> templateZones = templateZoneDao.listByTemplateId(template.getId());
                 if (templateZones != null) {
@@ -726,19 +729,28 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
             }
 
+            if (templateMgr.TemplateDeleteFromPrimaryStorage.value()) {
+                templateMgr.evictTemplateFromStoragePoolsForZones(template.getId(), profile.getZoneIdList());
+            }
+
             // remove its related ACL permission
-            Pair<Class<?>, Long> tmplt = new Pair<Class<?>, Long>(VirtualMachineTemplate.class, template.getId());
-            _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, tmplt);
+            Pair<Class<?>, Long> templateClassForId = new Pair<>(VirtualMachineTemplate.class, template.getId());
+            _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, templateClassForId);
 
-            checkAndRemoveTemplateDetails(template);
-
-            // Remove comments (if any)
-            AnnotationService.EntityType entityType = template.getFormat().equals(ImageFormat.ISO) ?
-                    AnnotationService.EntityType.ISO : AnnotationService.EntityType.TEMPLATE;
-            annotationDao.removeByEntityType(entityType.name(), template.getUuid());
-
+            List<VMTemplateZoneVO> zoneRegistrations = templateZoneDao.listByTemplateId(template.getId());
+            if (zoneRegistrations.isEmpty()) {
+                removeTemplateDetails(template);
+                removeTemplateAnnotations(template);
+            }
         }
         return success;
+    }
+
+    private void removeTemplateAnnotations(VMTemplateVO template) {
+        // Remove comments (if any)
+        AnnotationService.EntityType entityType = template.getFormat().equals(ImageFormat.ISO) ?
+                AnnotationService.EntityType.ISO : AnnotationService.EntityType.TEMPLATE;
+        annotationDao.removeByEntityType(entityType.name(), template.getUuid());
     }
 
     /**
@@ -747,7 +759,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
      * then it also deletes the details related to deploy as is only if there are no VMs using the template
      * @param template
      */
-    void checkAndRemoveTemplateDetails(VMTemplateVO template) {
+    private void removeTemplateDetails(VMTemplateVO template) {
         templateDetailsDao.removeDetails(template.getId());
 
         if (template.isDeployAsIs()) {

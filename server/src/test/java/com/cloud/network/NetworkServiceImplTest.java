@@ -555,7 +555,7 @@ public class NetworkServiceImplTest {
         Mockito.when(vpcVO.getPublicMtu()).thenReturn(vpcMtu);
 
         Pair<Integer, Integer> updatedMtus = service.validateMtuConfig(publicMtu, privateMtu, zoneId);
-        service.mtuCheckForVpcNetwork(vpcId, updatedMtus, publicMtu, privateMtu);
+        service.mtuCheckForVpcNetwork(vpcId, updatedMtus, publicMtu);
         Assert.assertEquals(vpcMtu, updatedMtus.first());
         Assert.assertEquals(privateMtu, updatedMtus.second());
     }

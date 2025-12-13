@@ -39,7 +39,7 @@ export default {
         }
       },
       columns: () => {
-        const fields = ['name', 'state', 'sizegb', 'type', 'vmname']
+        const fields = ['name', 'state', 'size', 'type', 'vmname']
         const metricsFields = ['diskkbsread', 'diskkbswrite', 'diskiopstotal']
 
         if (store.getters.userInfo.roletype === 'Admin') {
@@ -228,7 +228,7 @@ export default {
           label: 'label.change.offering.for.volume',
           args: ['id', 'diskofferingid', 'size', 'miniops', 'maxiops', 'automigrate'],
           dataView: true,
-          show: (record, store) => { return ['Allocated', 'Ready'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
+          show: (record, store) => { return ['Allocated', 'Ready'].includes(record.state) },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/ChangeOfferingForVolume.vue')))
         },
@@ -258,25 +258,8 @@ export default {
           show: (record) => {
             return record.state === 'Ready' && (record.vmstate === 'Stopped' || !record.virtualmachineid)
           },
-          args: (record, store) => {
-            var fields = ['volumeid', 'name', 'displaytext', 'ostypeid', 'isdynamicallyscalable', 'requireshvm', 'passwordenabled']
-            if (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) {
-              fields.push('domainid')
-              fields.push('account')
-            }
-            if (['Admin'].includes(store.userInfo.roletype) || store.features.userpublictemplateenabled) {
-              fields.push('ispublic')
-            }
-            if (['Admin'].includes(store.userInfo.roletype)) {
-              fields.push('isfeatured')
-            }
-            return fields
-          },
-          mapping: {
-            volumeid: {
-              value: (record) => { return record.id }
-            }
-          }
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateTemplate.vue')))
         },
         {
           api: 'recoverVolume',

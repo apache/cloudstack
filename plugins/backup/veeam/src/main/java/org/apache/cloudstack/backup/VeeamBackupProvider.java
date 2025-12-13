@@ -200,6 +200,9 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     public boolean removeVMFromBackupOffering(final VirtualMachine vm) {
         final VeeamClient client = getClient(vm.getDataCenterId());
         final VmwareDatacenter vmwareDC = findVmwareDatacenterForVM(vm);
+        if (vm.getBackupExternalId() == null) {
+            throw new CloudRuntimeException("The VM does not have a backup job assigned.");
+        }
         try {
             if (!client.removeVMFromVeeamJob(vm.getBackupExternalId(), vm.getInstanceName(), vmwareDC.getVcenterHost())) {
                 logger.warn("Failed to remove VM from Veeam Job id: " + vm.getBackupExternalId());

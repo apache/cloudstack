@@ -167,6 +167,7 @@
             <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
           </template>
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             showSearch
             optionFilterProp="label"
             v-model:value="form.serviceofferingid"
@@ -189,6 +190,7 @@
           </template>
           <a-select
             mode="multiple"
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.domainid"
             showSearch
             optionFilterProp="label"
@@ -213,6 +215,7 @@
           <a-select
             id="zone-selection"
             mode="multiple"
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.zoneid"
             showSearch
             optionFilterProp="label"
@@ -449,12 +452,16 @@ export default {
         services.push({
           name: 'Dhcp',
           provider: [
-            { name: 'VpcVirtualRouter' }
+            { name: 'VpcVirtualRouter' },
+            { name: 'ConfigDrive' }
           ]
         })
         services.push({
           name: 'Dns',
-          provider: [{ name: 'VpcVirtualRouter' }]
+          provider: [
+            { name: 'VpcVirtualRouter' },
+            { name: 'ConfigDrive' }
+          ]
         })
         services.push({
           name: 'Lb',

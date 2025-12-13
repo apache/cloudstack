@@ -43,6 +43,7 @@ CREATE TABLE  `simulator`.`mockhost` (
   `cpus` int(10) unsigned,
   `speed` int(10) unsigned,
   `ram` bigint unsigned,
+  `arch` varchar(8) DEFAULT "x86_64" COMMENT "the CPU architecture of the host",
   `capabilities` varchar(255) COMMENT 'host capabilities in comma separated list',
   `vm_id` bigint unsigned,
   `resource` varchar(255) DEFAULT NULL COMMENT 'If it is a local resource, this is the class name',

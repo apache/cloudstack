@@ -25,14 +25,16 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.network.Network;
+import org.apache.commons.collections.MapUtils;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventDistributor;
-import org.apache.commons.collections.MapUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -242,5 +244,23 @@ public class UsageEventUtils {
     }
 
     static final String Name = "management-server";
+
+    public static void publishNetworkCreation(Network network) {
+        publishUsageEvent(EventTypes.EVENT_NETWORK_CREATE, network.getAccountId(), network.getDataCenterId(),
+                network.getId(), network.getName(), network.getNetworkOfferingId(), null, null, null, network.getState().name(),
+                network.getUuid());
+    }
+
+    public static void publishNetworkUpdate(Network network) {
+        publishUsageEvent(EventTypes.EVENT_NETWORK_UPDATE, network.getAccountId(), network.getDataCenterId(),
+                network.getId(), network.getName(), network.getNetworkOfferingId(), null, network.getState().name(),
+                Network.class.getName(), network.getUuid(), true);
+    }
+
+    public static void publishNetworkDeletion(Network network) {
+        publishUsageEvent(EventTypes.EVENT_NETWORK_DELETE, network.getAccountId(), network.getDataCenterId(),
+                network.getId(), network.getName(), network.getNetworkOfferingId(), null, null, null,
+                Network.class.getName(), network.getUuid());
+    }
 
 }

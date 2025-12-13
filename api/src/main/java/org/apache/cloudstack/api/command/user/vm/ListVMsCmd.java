@@ -41,13 +41,16 @@ import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.cpu.CPU;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceTag;
@@ -149,6 +152,14 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
     @Parameter(name = ApiConstants.USER_DATA, type = CommandType.BOOLEAN, description = "Whether to return the VMs' user data or not. By default, user data will not be returned.", since = "4.18.0.0")
     private Boolean showUserData;
 
+    @Parameter(name = ApiConstants.USER_DATA_ID, type = CommandType.UUID, entityType = UserDataResponse.class, required = false, description = "the instances by userdata", since = "4.20.1")
+    private Long userdataId;
+
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "CPU arch of the VM",
+            since = "4.20.1")
+    private String arch;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -243,6 +254,10 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
         return CollectionUtils.isEmpty(viewDetails);
     }
 
+    public Long getUserdataId() {
+        return userdataId;
+    }
+
     public EnumSet<VMDetails> getDetails() throws InvalidParameterValueException {
         if (isViewDetailsEmpty()) {
             if (_queryService.ReturnVmStatsOnVmList.value()) {
@@ -282,6 +297,10 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
 
     public Boolean getVnf() {
         return isVnf;
+    }
+
+    public CPU.CPUArch getArch() {
+        return StringUtils.isBlank(arch) ? null : CPU.CPUArch.fromType(arch);
     }
 
     /////////////////////////////////////////////////////

@@ -15,24 +15,27 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.api.command.admin.zone;
+package org.apache.cloudstack.storage.heuristics.presetvariables;
 
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ResponseObject;
-import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
-public class VmwareRequestResponse<T extends ResponseObject> extends ListResponse<T> {
-    @SerializedName(ApiConstants.TOKEN)
-    @Param(description = "The Vmware API token to use for retrieving further responses with")
-    private String token;
+@RunWith(MockitoJUnitRunner.class)
+public class DomainTest {
 
-    public String getToken() {
-        return token;
+    @Test
+    public void toStringTestReturnsValidJson() {
+        Domain variable = new Domain();
+        variable.setName("test name");
+        variable.setId("test id");
+
+        String expected = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(variable, "name", "id");
+        String result = variable.toString();
+
+        Assert.assertEquals(expected, result);
     }
 
-    public void setToken(String token) {
-        this.token = token;
-    }
 }

@@ -102,7 +102,7 @@ The Apache CloudStack files shared between agent and management server
 Summary: CloudStack Agent for KVM hypervisors
 Requires: (openssh-clients or openssh)
 Requires: java-17-openjdk
-Requires: tzdata-java
+Requires: (tzdata-java or timezone-java)
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: libvirt-daemon-driver-storage-rbd
@@ -114,6 +114,7 @@ Requires: iproute
 Requires: ipset
 Requires: perl
 Requires: rsync
+Requires: cifs-utils
 Requires: (python3-libvirt or python3-libvirt-python)
 Requires: (qemu-img or qemu-tools)
 Requires: qemu-kvm
@@ -142,7 +143,7 @@ The CloudStack baremetal agent
 %package usage
 Summary: CloudStack Usage calculation server
 Requires: java-17-openjdk
-Requires: tzdata-java
+Requires: (tzdata-java or timezone-java)
 Group: System Environment/Libraries
 %description usage
 The CloudStack usage calculation service
@@ -469,6 +470,8 @@ if [ -f %{_sysconfdir}/sysconfig/%{name}-management ] ; then
 fi
 
 chown -R cloud:cloud /var/log/cloudstack/management
+chown -R cloud:cloud /usr/share/cloudstack-management/templates
+find /usr/share/cloudstack-management/templates -type d -exec chmod 0770 {} \;
 
 systemctl daemon-reload
 
@@ -609,6 +612,9 @@ pip3 install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %{_datadir}/%{name}-management/setup/*.sh
 %{_datadir}/%{name}-management/setup/server-setup.xml
 %{_datadir}/%{name}-management/webapp/*
+%dir %attr(0770, cloud, cloud) %{_datadir}/%{name}-management/templates
+%dir %attr(0770, cloud, cloud) %{_datadir}/%{name}-management/templates/systemvm
+%attr(0644, cloud, cloud) %{_datadir}/%{name}-management/templates/systemvm/*
 %attr(0755,root,root) %{_bindir}/%{name}-external-ipallocator.py
 %attr(0755,root,root) %{_initrddir}/%{name}-ipallocator
 %dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/ipallocator

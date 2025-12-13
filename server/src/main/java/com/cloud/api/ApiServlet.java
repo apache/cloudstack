@@ -21,7 +21,6 @@ import java.net.InetAddress;
 import java.net.URLDecoder;
 import java.net.UnknownHostException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,9 +75,7 @@ import com.cloud.utils.net.NetUtils;
 @Component("apiServlet")
 public class ApiServlet extends HttpServlet {
     protected static Logger LOGGER = LogManager.getLogger(ApiServlet.class);
-    private final static List<String> s_clientAddressHeaders = Collections
-            .unmodifiableList(Arrays.asList("X-Forwarded-For",
-                    "HTTP_CLIENT_IP", "HTTP_X_FORWARDED_FOR", "Remote_Addr"));
+    private static final Logger ACCESSLOGGER = LogManager.getLogger("apiserver." + ApiServlet.class.getName());
     private static final String REPLACEMENT = "_";
     private static final String LOGGER_REPLACEMENTS = "[\n\r\t]";
 
@@ -374,7 +371,7 @@ public class ApiServlet extends HttpServlet {
             LOGGER.error("unknown exception writing api response", ex);
             auditTrailSb.append(" unknown exception writing api response");
         } finally {
-            LOGGER.info(auditTrailSb.toString());
+            ACCESSLOGGER.info(auditTrailSb.toString());
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("===END=== " + reqStr);
             }

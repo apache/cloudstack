@@ -107,7 +107,7 @@ export const QUOTA_TYPES = [
   },
   {
     id: 29,
-    type: 'VPC'
+    type: 'BUCKET'
   },
   {
     id: 30,
@@ -115,7 +115,7 @@ export const QUOTA_TYPES = [
   },
   {
     id: 31,
-    type: 'BACKUP_OBJECT'
+    type: 'VPC'
   }
 ]
 
