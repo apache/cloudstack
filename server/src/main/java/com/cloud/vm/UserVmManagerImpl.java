@@ -60,6 +60,8 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.storage.SnapshotPolicyVO;
+import com.cloud.storage.dao.SnapshotPolicyDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -103,8 +105,10 @@ import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
 import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.backup.BackupManager;
+import org.apache.cloudstack.backup.BackupScheduleVO;
 import org.apache.cloudstack.backup.BackupVO;
 import org.apache.cloudstack.backup.dao.BackupDao;
+import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
@@ -607,6 +611,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     ReservationDao reservationDao;
     @Inject
     ResourceLimitService resourceLimitService;
+    @Inject
+    SnapshotPolicyDao snapshotPolicyDao;
+    @Inject
+    BackupScheduleDao backupScheduleDao;
 
     @Inject
     private StatsCollector statsCollector;
@@ -2400,6 +2408,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (Volume.State.Destroy.equals(volume.getState())) {
             _volumeService.recoverVolume(volume.getId());
             _volsDao.attachVolume(volume.getId(), vmId, ROOT_DEVICE_ID);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_ATTACH, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                    volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid(), vmId, volume.isDisplay());
         } else {
             _volumeService.publishVolumeCreationUsageEvent(volume);
         }
@@ -4690,23 +4700,75 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
-    private void checkIfHostNameUniqueInNtwkDomain(String hostName, List<? extends Network> networkList) {
-        // Check that hostName is unique in the network domain
-        Map<String, List<Long>> ntwkDomains = new HashMap<String, List<Long>>();
+    private List<NetworkVO> getNetworksWithSameNetworkDomainInDomains(List<NetworkVO> networkList, boolean checkSubDomains) {
+        Set<String> uniqueNtwkDomains = networkList.stream().map(NetworkVO::getNetworkDomain).collect(Collectors.toSet());
+        Set<Long> domainIdList = new HashSet<>();
         for (Network network : networkList) {
-            String ntwkDomain = network.getNetworkDomain();
-            if (!ntwkDomains.containsKey(ntwkDomain)) {
-                List<Long> ntwkIds = new ArrayList<Long>();
-                ntwkIds.add(network.getId());
-                ntwkDomains.put(ntwkDomain, ntwkIds);
-            } else {
-                List<Long> ntwkIds = ntwkDomains.get(ntwkDomain);
-                ntwkIds.add(network.getId());
-                ntwkDomains.put(ntwkDomain, ntwkIds);
+            domainIdList.add(network.getDomainId());
+        }
+        Set<Long> finalDomainIdSet = new HashSet<>(domainIdList);
+        if (checkSubDomains) {
+            for (Long domainId : domainIdList) {
+                DomainVO domain = _domainDao.findById(domainId);
+                List<Long> childDomainIds = _domainDao.getDomainChildrenIds(domain.getPath());
+                finalDomainIdSet.addAll(childDomainIds);
             }
         }
+        return _networkDao.listByNetworkDomainsAndDomainIds(uniqueNtwkDomains, finalDomainIdSet);
+    }
 
-        for (Entry<String, List<Long>> ntwkDomain : ntwkDomains.entrySet()) {
+    private List<NetworkVO> getNetworksForCheckUniqueHostName(List<NetworkVO> networkList) {
+        List<NetworkVO> finalNetworkList;
+        Set<String> uniqueNtwkDomains;
+        switch (VmDistinctHostNameScope.value()) {
+            case "global":
+                uniqueNtwkDomains = networkList.stream().map(NetworkVO::getNetworkDomain).collect(Collectors.toSet());
+                finalNetworkList = _networkDao.listByNetworkDomains(uniqueNtwkDomains);
+                break;
+            case "domain":
+                finalNetworkList = getNetworksWithSameNetworkDomainInDomains(networkList, false);
+                break;
+            case "subdomain":
+                finalNetworkList = getNetworksWithSameNetworkDomainInDomains(networkList, true);
+                break;
+            case "account":
+                uniqueNtwkDomains = networkList.stream().map(NetworkVO::getNetworkDomain).collect(Collectors.toSet());
+                Set<Long> accountIds = networkList.stream().map(Network::getAccountId).collect(Collectors.toSet());
+                finalNetworkList = _networkDao.listByNetworkDomainsAndAccountIds(uniqueNtwkDomains, accountIds);
+                break;
+            default:
+                Set<Long> vpcIds = networkList.stream().map(Network::getVpcId).filter(Objects::nonNull).collect(Collectors.toSet());
+                finalNetworkList = new ArrayList<>(networkList);
+                for (Long vpcId : vpcIds) {
+                    finalNetworkList.addAll(_networkDao.listByVpc(vpcId));
+                }
+                break;
+        }
+        return finalNetworkList;
+    }
+
+    private Map<String, Set<Long>> getNetworkIdPerNetworkDomain(List<NetworkVO> networkList) {
+        Map<String, Set<Long>> ntwkDomains = new HashMap<>();
+
+        List<NetworkVO> updatedNetworkList = getNetworksForCheckUniqueHostName(networkList);
+        for (Network network : updatedNetworkList) {
+            String ntwkDomain = network.getNetworkDomain();
+            Set<Long> ntwkIds;
+            if (!ntwkDomains.containsKey(ntwkDomain)) {
+                ntwkIds = new HashSet<>();
+            } else {
+                ntwkIds = ntwkDomains.get(ntwkDomain);
+            }
+            ntwkIds.add(network.getId());
+            ntwkDomains.put(ntwkDomain, ntwkIds);
+        }
+        return ntwkDomains;
+    }
+
+    private void checkIfHostNameUniqueInNtwkDomain(String hostName, List<NetworkVO> networkList) {
+        // Check that hostName is unique
+        Map<String, Set<Long>> ntwkDomains = getNetworkIdPerNetworkDomain(networkList);
+        for (Entry<String, Set<Long>> ntwkDomain : ntwkDomains.entrySet()) {
             for (Long ntwkId : ntwkDomain.getValue()) {
                 // * get all vms hostNames in the network
                 List<String> hostNames = _vmInstanceDao.listDistinctHostNames(ntwkId);
@@ -8045,6 +8107,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         updateVolumesOwner(volumes, oldAccount, newAccount, newAccountId);
 
+        updateSnapshotPolicyOwnership(volumes, newAccount);
+        updateBackupScheduleOwnership(vm, newAccount);
+
         try {
             updateVmNetwork(cmd, caller, vm, newAccount, template);
         } catch (InsufficientCapacityException | ResourceAllocationException e) {
@@ -8093,7 +8158,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             logger.trace("Generating a create volume event for volume [{}].", volume);
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
-                    volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
+                    volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid(), volume.getInstanceId(), volume.isDisplayVolume());
         }
     }
 
@@ -8519,6 +8584,36 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
+    protected void updateSnapshotPolicyOwnership(List<VolumeVO> volumes, Account newAccount) {
+        logger.debug("Updating snapshot policy ownership for volumes of VM being assigned to account [{}]", newAccount);
+
+        for (VolumeVO volume : volumes) {
+            List<SnapshotPolicyVO> snapshotPolicies = snapshotPolicyDao.listByVolumeId(volume.getId());
+            for (SnapshotPolicyVO policy : snapshotPolicies) {
+                logger.trace("Updating snapshot policy [{}] ownership from account [{}] to account [{}]",
+                        policy.getId(), policy.getAccountId(), newAccount.getAccountId());
+
+                policy.setAccountId(newAccount.getAccountId());
+                policy.setDomainId(newAccount.getDomainId());
+                snapshotPolicyDao.update(policy.getId(), policy);
+            }
+        }
+    }
+
+    protected void updateBackupScheduleOwnership(UserVmVO vm, Account newAccount) {
+        logger.debug("Updating backup schedule ownership for VM [{}] being assigned to account [{}]", vm, newAccount);
+
+        List<BackupScheduleVO> backupSchedules = backupScheduleDao.listByVM(vm.getId());
+        for (BackupScheduleVO schedule : backupSchedules) {
+            logger.trace("Updating backup schedule [{}] ownership from account [{}] to account [{}]",
+                    schedule.getId(), schedule.getAccountId(), newAccount.getAccountId());
+
+            schedule.setAccountId(newAccount.getAccountId());
+            schedule.setDomainId(newAccount.getDomainId());
+            backupScheduleDao.update(schedule.getId(), schedule);
+        }
+    }
+
     /**
      * Attempts to create a network suitable for the creation of a VM ({@link NetworkOrchestrationService#createGuestNetwork}).
      * If no physical network is found, throws a {@link InvalidParameterValueException}.
@@ -8866,6 +8961,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 handleManagedStorage(vm, root);
 
                 _volsDao.attachVolume(newVol.getId(), vmId, newVol.getDeviceId());
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_ATTACH, newVol.getAccountId(), newVol.getDataCenterId(), newVol.getId(), newVol.getName(),
+                        newVol.getDiskOfferingId(), newVol.getTemplateId(), newVol.getSize(), Volume.class.getName(), newVol.getUuid(), vmId, newVol.isDisplay());
 
                 // Detach, destroy and create the usage event for the old root volume.
                 _volsDao.detachVolume(root.getId());
@@ -9243,7 +9340,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return new ConfigKey<?>[] {EnableDynamicallyScaleVm, AllowDiskOfferingChangeDuringScaleVm, AllowUserExpungeRecoverVm, VmIpFetchWaitInterval, VmIpFetchTrialMax,
                 VmIpFetchThreadPoolMax, VmIpFetchTaskWorkers, AllowDeployVmIfGivenHostFails, EnableAdditionalVmConfig, DisplayVMOVFProperties,
                 KvmAdditionalConfigAllowList, XenServerAdditionalConfigAllowList, VmwareAdditionalConfigAllowList, DestroyRootVolumeOnVmDestruction,
-                EnforceStrictResourceLimitHostTagCheck, StrictHostTags, AllowUserForceStopVm};
+                EnforceStrictResourceLimitHostTagCheck, StrictHostTags, AllowUserForceStopVm, VmDistinctHostNameScope};
     }
 
     @Override
@@ -9513,11 +9610,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         } else {
             String serviceOfferingUuid = backup.getDetail(ApiConstants.SERVICE_OFFERING_ID);
             if (serviceOfferingUuid == null) {
-                throw new CloudRuntimeException("Backup doesn't contain service offering uuid. Please specify a valid service offering id while creating the instance");
+                throw new CloudRuntimeException("Backup doesn't contain a Service Offering UUID. Please specify a valid Service Offering while creating the Instance");
             }
             serviceOffering = serviceOfferingDao.findByUuid(serviceOfferingUuid);
             if (serviceOffering == null) {
-                throw new CloudRuntimeException("Unable to find service offering with the uuid stored in backup. Please specify a valid service offering id while creating instance");
+                throw new CloudRuntimeException("Unable to find Service Offering with the UUID stored in the Backup. Please specify a valid Service Offering while creating the Instance");
             }
         }
         verifyServiceOffering(cmd, serviceOffering);
@@ -9532,11 +9629,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         } else {
             String templateUuid = backup.getDetail(ApiConstants.TEMPLATE_ID);
             if (templateUuid == null) {
-                throw new CloudRuntimeException("Backup doesn't contain Template uuid. Please specify a valid Template/ISO while creating the instance");
+                throw new CloudRuntimeException("Backup doesn't contain a Template UUID. Please specify a valid Template/ISO while creating the Instance");
             }
             template = _templateDao.findByUuid(templateUuid);
             if (template == null) {
-                throw new CloudRuntimeException("Unable to find template associated with the backup. Please specify a valid Template/ISO while creating instance");
+                throw new CloudRuntimeException("Unable to find Template with the UUID stored in the Backup. Please specify a valid Template/ISO while creating the Instance");
             }
         }
         verifyTemplate(cmd, template, serviceOffering.getId());

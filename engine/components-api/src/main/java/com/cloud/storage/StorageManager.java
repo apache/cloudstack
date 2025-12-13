@@ -230,7 +230,7 @@ public interface StorageManager extends StorageService {
 
     /**
      * should we execute in sequence not involving any storages?
-     * @return tru if commands should execute in sequence
+     * @return true if commands should execute in sequence
      */
     static boolean shouldExecuteInSequenceOnVmware() {
         return shouldExecuteInSequenceOnVmware(null, null);
@@ -301,6 +301,8 @@ public interface StorageManager extends StorageService {
     void createCapacityEntry(StoragePoolVO storagePool, short capacityType, long allocated);
 
     Answer sendToPool(StoragePool pool, long[] hostIdsToTryFirst, Command cmd) throws StorageUnavailableException;
+
+    void updateStoragePoolHostVOAndBytes(StoragePool pool, long hostId, ModifyStoragePoolAnswer mspAnswer);
 
     CapacityVO getSecondaryStorageUsedStats(Long hostId, Long zoneId);
 

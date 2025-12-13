@@ -488,6 +488,8 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             throw new InvalidParameterValueException("Cannot create Network ACL Item. ACL Id or network Id is required");
         }
         Network network = networkModel.getNetwork(createNetworkACLCmd.getNetworkId());
+        Account caller = CallContext.current().getCallingAccount();
+        _accountMgr.checkAccess(caller, null, true, network);
         if (network.getVpcId() == null) {
             throw new InvalidParameterValueException("Network: " + network.getUuid() + " does not belong to VPC");
         }
@@ -749,6 +751,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
         if (networkId != null) {
             final Network network = _networkDao.findById(networkId);
+            _accountMgr.checkAccess(caller, null, true, network);
             aclId = network.getNetworkACLId();
             if (aclId == null) {
                 // No aclId associated with the network.

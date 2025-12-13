@@ -66,7 +66,7 @@ public class UpdateVpnConnectionCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public String getEventDescription() {
-        return "Updating site-to-site VPN connection id= " + id;
+        return "Updating site-to-site VPN connection ID = " + id;
     }
 
     @Override

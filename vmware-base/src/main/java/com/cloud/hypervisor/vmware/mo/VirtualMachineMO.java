@@ -1713,7 +1713,6 @@ public class VirtualMachineMO extends BaseMO {
         cdRom.setBacking(backingInfo);
 
         VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
-        //VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
         VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
 
         deviceConfigSpec.setDevice(cdRom);
@@ -1723,7 +1722,6 @@ public class VirtualMachineMO extends BaseMO {
             deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.EDIT);
         }
 
-        //deviceConfigSpecArray[0] = deviceConfigSpec;
         reConfigSpec.getDeviceChange().add(deviceConfigSpec);
 
         ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
@@ -1765,13 +1763,11 @@ public class VirtualMachineMO extends BaseMO {
         device.setBacking(backingInfo);
 
         VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
-        //VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
         VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
 
         deviceConfigSpec.setDevice(device);
         deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.EDIT);
 
-        //deviceConfigSpecArray[0] = deviceConfigSpec;
         reConfigSpec.getDeviceChange().add(deviceConfigSpec);
 
         ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
