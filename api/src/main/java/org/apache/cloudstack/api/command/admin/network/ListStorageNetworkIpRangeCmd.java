@@ -97,7 +97,7 @@ public class ListStorageNetworkIpRangeCmd extends BaseListCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } catch (Exception e) {
-            logger.warn("Failed to list storage network ip range for rangeId=" + getRangeId() + " podId=" + getPodId() + " zoneId=" + getZoneId());
+            logger.warn("Failed to list storage network ip range for rangeId={} podId={} zoneId={}", getRangeId(), getPodId(), getZoneId());
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }

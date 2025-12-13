@@ -101,7 +101,7 @@ public class DeleteAutoScaleVmGroupCmd extends BaseAsyncCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            logger.warn("Failed to delete autoscale vm group " + getId());
+            logger.warn("Failed to delete autoscale vm group {}", getId());
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete autoscale vm group");
         }
     }

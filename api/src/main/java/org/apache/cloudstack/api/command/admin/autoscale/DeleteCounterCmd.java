@@ -61,7 +61,7 @@ public class DeleteCounterCmd extends BaseAsyncCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            logger.warn("Failed to delete counter with Id: " + getId());
+            logger.warn("Failed to delete counter with Id: {}", getId());
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete counter.");
         }
     }
