@@ -196,7 +196,7 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru implements Networ
                 DeleteTungstenVmCommand cmd = new DeleteTungstenVmCommand(vm.getUuid());
                 tungstenFabricUtils.sendTungstenCommand(cmd, config.getDataCenterId());
             } catch (IllegalArgumentException e) {
-                throw new CloudRuntimeException("Failing to expunge the vm from Tungsten-Fabric with the uuid " + vm.getUuid());
+                throw new CloudRuntimeException(String.format("Failing to expunge the vm %s from Tungsten-Fabric", vm));
             }
         }
     }
@@ -290,7 +290,7 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru implements Networ
                 }
             }
         } catch (Exception ex) {
-            throw new CloudRuntimeException("unable to create Tungsten-Fabric network " + network.getUuid());
+            throw new CloudRuntimeException(String.format("unable to create Tungsten-Fabric network %s", network));
         }
         return implemented;
     }

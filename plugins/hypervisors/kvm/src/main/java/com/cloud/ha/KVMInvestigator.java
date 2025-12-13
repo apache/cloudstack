@@ -38,6 +38,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import javax.inject.Inject;
+import java.util.Arrays;
 import java.util.List;
 
 public class KVMInvestigator extends AdapterBase implements Investigator {
@@ -60,7 +61,7 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
             return haManager.isVMAliveOnHost(host);
         }
         Status status = isAgentAlive(host);
-        logger.debug("HA: HOST is ineligible legacy state " + status + " for host " + host.getId());
+        logger.debug("HA: HOST is ineligible legacy state {} for host {}", status, host);
         if (status == null) {
             throw new UnknownVM();
         }
@@ -81,16 +82,15 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
             return haManager.getHostStatus(agent);
         }
 
-        List<StoragePoolVO> clusterPools = _storagePoolDao.listPoolsByCluster(agent.getClusterId());
+        List<StoragePoolVO> clusterPools = _storagePoolDao.findPoolsInClusters(Arrays.asList(agent.getClusterId()), null);
         boolean storageSupportHA = storageSupportHa(clusterPools);
         if (!storageSupportHA) {
             List<StoragePoolVO> zonePools = _storagePoolDao.findZoneWideStoragePoolsByHypervisor(agent.getDataCenterId(), agent.getHypervisorType());
             storageSupportHA = storageSupportHa(zonePools);
         }
         if (!storageSupportHA) {
-            logger.warn(
-                    "Agent investigation was requested on host " + agent + ", but host does not support investigation because it has no NFS storage. Skipping investigation.");
-            return Status.Disconnected;
+            logger.warn("Agent investigation was requested on host {}, but host does not support investigation because it has no NFS storage. Skipping investigation.", agent);
+            return null;
         }
 
         Status hostStatus = null;
@@ -104,7 +104,7 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
                 hostStatus = answer.getResult() ? Status.Down : Status.Up;
             }
         } catch (Exception e) {
-            logger.debug("Failed to send command to host: " + agent.getId());
+            logger.debug("Failed to send command to host: {}", agent);
         }
         if (hostStatus == null) {
             hostStatus = Status.Disconnected;
@@ -116,18 +116,18 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
                     || (neighbor.getHypervisorType() != Hypervisor.HypervisorType.KVM && neighbor.getHypervisorType() != Hypervisor.HypervisorType.LXC)) {
                 continue;
             }
-            logger.debug("Investigating host:" + agent.getId() + " via neighbouring host:" + neighbor.getId());
+            logger.debug("Investigating host:{} via neighbouring host:{}", agent, neighbor);
             try {
                 Answer answer = _agentMgr.easySend(neighbor.getId(), cmd);
                 if (answer != null) {
                     neighbourStatus = answer.getResult() ? Status.Down : Status.Up;
-                    logger.debug("Neighbouring host:" + neighbor.getId() + " returned status:" + neighbourStatus + " for the investigated host:" + agent.getId());
+                    logger.debug("Neighbouring host:{} returned status:{} for the investigated host:{}", neighbor, neighbourStatus, agent);
                     if (neighbourStatus == Status.Up) {
                         break;
                     }
                 }
             } catch (Exception e) {
-                logger.debug("Failed to send command to host: " + neighbor.getId());
+                logger.debug("Failed to send command to host: {}", neighbor);
             }
         }
         if (neighbourStatus == Status.Up && (hostStatus == Status.Disconnected || hostStatus == Status.Down)) {
@@ -136,7 +136,7 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
         if (neighbourStatus == Status.Down && (hostStatus == Status.Disconnected || hostStatus == Status.Down)) {
             hostStatus = Status.Down;
         }
-        logger.debug("HA: HOST is ineligible legacy state " + hostStatus + " for host " + agent.getId());
+        logger.debug("HA: HOST is ineligible legacy state {} for host {}", hostStatus, agent);
         return hostStatus;
     }
 

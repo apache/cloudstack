@@ -112,7 +112,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { isAdmin } from '@/role'
 import { genericCompare } from '@/utils/sort.js'
 import moment from 'moment'
@@ -253,7 +253,7 @@ export default {
         params.eventtype = this.searchParams.eventtype
       }
       this.tabLoading = true
-      api('listWebhookDeliveries', params).then(json => {
+      getAPI('listWebhookDeliveries', params).then(json => {
         this.deliveries = []
         this.totalCount = json?.listwebhookdeliveriesresponse?.count || 0
         this.deliveries = json?.listwebhookdeliveriesresponse?.webhookdelivery || []
@@ -321,7 +321,7 @@ export default {
           id: id
         }
         promises.push(new Promise((resolve, reject) => {
-          api('deleteWebhookDelivery', params).then(json => {
+          postAPI('deleteWebhookDelivery', params).then(json => {
             return resolve(id)
           }).catch(error => {
             return reject(error)
@@ -344,7 +344,7 @@ export default {
         webhookid: this.resource.id
       }
       this.tabLoading = true
-      api('deleteWebhookDelivery', params).then(json => {
+      postAPI('deleteWebhookDelivery', params).then(json => {
         this.$message.success(this.$t('message.success.clear.webhook.deliveries'))
         this.fetchData()
       }).catch(error => {
@@ -370,7 +370,7 @@ export default {
         id: item.id
       }
       this.tabLoading = true
-      api('executeWebhookDelivery', params).then(json => {
+      postAPI('executeWebhookDelivery', params).then(json => {
         this.$message.success(this.$t('message.success.redeliver.webhook.delivery'))
         this.fetchData()
       }).catch(error => {
@@ -396,7 +396,7 @@ export default {
         id: item.id
       }
       this.tabLoading = true
-      api('deleteWebhookDelivery', params).then(json => {
+      postAPI('deleteWebhookDelivery', params).then(json => {
         const message = `${this.$t('message.success.delete')} ${this.$t('label.webhook.delivery')}`
         this.$message.success(message)
         this.fetchData()

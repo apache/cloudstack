@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.kubernetes.version;
 
 import javax.inject.Inject;
 
+import com.cloud.cpu.CPU;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -87,6 +88,11 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCm
             description = "If set to true the Kubernetes supported version ISO will bypass Secondary Storage and be downloaded to Primary Storage on deployment. Default is false")
     private Boolean directDownload;
 
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "the CPU arch of the Kubernetes ISO. Valid options are: x86_64, aarch64",
+            since = "4.20")
+    private String arch;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -128,6 +134,10 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCm
 
     public boolean isDirectDownload() {
         return (directDownload != null) ? directDownload : false;
+    }
+
+    public CPU.CPUArch getArch() {
+        return CPU.CPUArch.fromType(arch);
     }
 
     @Override

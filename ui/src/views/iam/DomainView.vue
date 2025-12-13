@@ -56,6 +56,7 @@
         :loading="loading"
         :tabs="$route.meta.tabs" />
       <tree-view
+        v-else
         :key="treeViewKey"
         :treeData="treeData"
         :treeSelected="treeSelected"
@@ -77,7 +78,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, callAPI } from '@/api'
 import store from '@/store'
 import { mixinDevice } from '@/utils/mixin.js'
 
@@ -140,6 +141,15 @@ export default {
       }
     })
   },
+  watch: {
+    '$route' (to, from) {
+      // When the route changes from /domain/:id to /domain or vice versa, the component is not destroyed and created again
+    // So, we need to watch the route params to fetch the data again to update the component
+      if (to.path.startsWith('/domain') && from.params.id !== to.params.id) {
+        this.fetchData()
+      }
+    }
+  },
   provide () {
     return {
       parentCloseAction: this.closeAction,
@@ -163,7 +173,7 @@ export default {
 
       this.loading = true
       params.showicon = true
-      api('listDomains', params).then(json => {
+      getAPI('listDomains', params).then(json => {
         const domains = json.listdomainsresponse.domain || []
         this.treeData = this.generateTreeData(domains)
         this.resource = domains[0] || {}
@@ -264,23 +274,20 @@ export default {
       }
       param.loading = true
       param.opts = []
-      api(possibleApi, params).then(json => {
-        param.loading = false
-        for (const obj in json) {
-          if (obj.includes('response')) {
-            for (const res in json[obj]) {
-              if (res === 'count') {
-                continue
-              }
-              param.opts = json[obj][res]
-              break
+      callAPI(possibleApi, params)
+        .then(json => {
+          param.loading = false
+          const responseObj = Object.values(json).find(obj => obj.includes('response'))
+          if (responseObj) {
+            const responseData = Object.entries(responseObj).find(([res, value]) => res !== 'count')
+            if (responseData) {
+              param.opts = responseData[1]
             }
-            break
           }
-        }
-      }).catch(() => {
-        param.loading = false
-      })
+        })
+        .catch(() => {
+          param.loading = false
+        })
     },
     generateTreeData (treeData) {
       const result = []

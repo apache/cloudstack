@@ -17,11 +17,14 @@
 package org.apache.cloudstack.service;
 
 import com.cloud.network.Network;
+import com.cloud.network.SDNProviderNetworkRule;
+import com.vmware.nsx.cluster.Status;
+import com.vmware.nsx.model.ClusterStatus;
+import com.vmware.nsx.model.ControllerClusterStatus;
 import com.vmware.nsx_policy.infra.domains.Groups;
 import com.vmware.nsx_policy.model.Group;
 import com.vmware.nsx_policy.model.PathExpression;
 import com.vmware.vapi.bindings.Service;
-import org.apache.cloudstack.resource.NsxNetworkRule;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -70,7 +73,7 @@ public class NsxApiClientTest {
 
     @Test
     public void testGetGroupsForTrafficIngress() {
-        NsxNetworkRule rule = Mockito.mock(NsxNetworkRule.class);
+        SDNProviderNetworkRule rule = Mockito.mock(SDNProviderNetworkRule.class);
         Mockito.when(rule.getSourceCidrList()).thenReturn(List.of("ANY"));
         Mockito.when(rule.getTrafficType()).thenReturn("Ingress");
         Mockito.when(rule.getService()).thenReturn(Network.Service.NetworkACL);
@@ -83,7 +86,7 @@ public class NsxApiClientTest {
 
     @Test
     public void testGetGroupsForTrafficEgress() {
-        NsxNetworkRule rule = Mockito.mock(NsxNetworkRule.class);
+        SDNProviderNetworkRule rule = Mockito.mock(SDNProviderNetworkRule.class);
         Mockito.when(rule.getSourceCidrList()).thenReturn(List.of("ANY"));
         Mockito.when(rule.getTrafficType()).thenReturn("Egress");
         Mockito.when(rule.getService()).thenReturn(Network.Service.NetworkACL);
@@ -92,5 +95,17 @@ public class NsxApiClientTest {
         List<String> destinationGroups = client.getGroupsForTraffic(rule, segmentName, false);
         Assert.assertEquals(List.of(String.format("%s/%s", NsxApiClient.GROUPS_PATH_PREFIX, segmentName)), sourceGroups);
         Assert.assertEquals(List.of("ANY"), destinationGroups);
+    }
+
+    @Test
+    public void testIsNsxControllerActive() {
+        Status statusService = Mockito.mock(Status.class);
+        Mockito.when(nsxService.apply(Status.class)).thenReturn(statusService);
+        ClusterStatus clusterStatus = Mockito.mock(ClusterStatus.class);
+        ControllerClusterStatus status = Mockito.mock(ControllerClusterStatus.class);
+        Mockito.when(status.getStatus()).thenReturn("stable");
+        Mockito.when(statusService.get()).thenReturn(clusterStatus);
+        Mockito.when(clusterStatus.getControlClusterStatus()).thenReturn(status);
+        Assert.assertTrue(client.isNsxControllerActive());
     }
 }

@@ -18,6 +18,7 @@
  */
 package org.apache.cloudstack.storage.object;
 
+import com.cloud.agent.api.to.BucketTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 
 import java.util.List;
@@ -30,19 +31,19 @@ public interface ObjectStoreEntity extends DataStore, ObjectStore {
 
     boolean createUser(long accountId);
 
-    boolean deleteBucket(String name);
+    boolean deleteBucket(BucketTO bucket);
 
-    boolean setBucketEncryption(String name);
+    boolean setBucketEncryption(BucketTO bucket);
 
-    boolean deleteBucketEncryption(String name);
+    boolean deleteBucketEncryption(BucketTO bucket);
 
-    boolean setBucketVersioning(String name);
+    boolean setBucketVersioning(BucketTO bucket);
 
-    boolean deleteBucketVersioning(String name);
+    boolean deleteBucketVersioning(BucketTO bucket);
 
-    void setBucketPolicy(String name, String policy);
+    void setBucketPolicy(BucketTO bucket, String policy);
 
-    void setQuota(String name, int quota);
+    void setQuota(BucketTO bucket, int quota);
 
     Map<String, Long> getAllBucketsUsage();
 }

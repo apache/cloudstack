@@ -133,7 +133,7 @@ public class ElastistorPrimaryDataStoreDriver extends CloudStackPrimaryDataStore
             capacityIops = capacityIops - Iops;
 
             if (capacityIops < 0) {
-                throw new CloudRuntimeException("IOPS not available. [pool:" + storagePool.getName() + "] [availiops:" + capacityIops + "] [requirediops:" + Iops + "]");
+                throw new CloudRuntimeException(String.format("IOPS not available. [pool:%s] [availiops:%d] [requirediops:%d]", storagePool, capacityIops, Iops));
             }
 
             String protocoltype = null;
@@ -174,9 +174,6 @@ public class ElastistorPrimaryDataStoreDriver extends CloudStackPrimaryDataStore
             volume.setPath(null);
 
             _volumeDao.update(volume.getId(), volume);
-
-            // create new volume details for the volume
-            //updateVolumeDetails(volume, esvolume);
 
             long capacityBytes = storagePool.getCapacityBytes();
             long usedBytes = storagePool.getUsedBytes();

@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.sql.DataSource;
@@ -38,29 +39,30 @@ import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
 import org.apache.commons.dbcp2.PoolableConnection;
 import org.apache.commons.dbcp2.PoolableConnectionFactory;
 import org.apache.commons.dbcp2.PoolingDataSource;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.pool2.ObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.mgmt.JmxUtil;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 /**
  * Transaction abstracts away the Connection object in JDBC.  It allows the
  * following things that the Connection object does not.
- *
  *   1. Transaction can be started at an entry point and whether the DB
  *      actions should be auto-commit or not determined at that point.
  *   2. DB Connection is allocated only when it is needed.
  *   3. Code does not need to know if a transaction has been started or not.
  *      It just starts/ends a transaction and we resolve it correctly with
  *      the previous actions.
- *
  * Note that this class is not synchronous but it doesn't need to be because
  * it is stored with TLS and is one per thread.  Use appropriately.
  */
@@ -70,7 +72,7 @@ public class TransactionLegacy implements Closeable {
     protected Logger lockLogger = LogManager.getLogger(Transaction.class.getName() + "." + "Lock");
     protected static Logger CONN_LOGGER = LogManager.getLogger(Transaction.class.getName() + "." + "Connection");
 
-    private static final ThreadLocal<TransactionLegacy> tls = new ThreadLocal<TransactionLegacy>();
+    private static final ThreadLocal<TransactionLegacy> tls = new ThreadLocal<>();
     private static final String START_TXN = "start_txn";
     private static final String CURRENT_TXN = "current_txn";
     private static final String CREATE_TXN = "create_txn";
@@ -95,10 +97,12 @@ public class TransactionLegacy implements Closeable {
         }
     }
 
+    private static final String CONNECTION_POOL_LIB_DBCP = "dbcp";
+
     private final LinkedList<StackElement> _stack;
     private long _id;
 
-    private final LinkedList<Pair<String, Long>> _lockTimes = new LinkedList<Pair<String, Long>>();
+    private final LinkedList<Pair<String, Long>> _lockTimes = new LinkedList<>();
 
     private String _name;
     private Connection _conn;
@@ -155,7 +159,7 @@ public class TransactionLegacy implements Closeable {
         TransactionLegacy txn = tls.get();
         if (txn == null) {
             if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("Creating the transaction: " + name);
+                LOGGER.trace("Creating the transaction: {}", name);
             }
             txn = new TransactionLegacy(name, false, databaseId);
             tls.set(txn);
@@ -201,7 +205,7 @@ public class TransactionLegacy implements Closeable {
 
     public void registerLock(String sql) {
         if (_txn && lockLogger.isDebugEnabled()) {
-            Pair<String, Long> time = new Pair<String, Long>(sql, System.currentTimeMillis());
+            Pair<String, Long> time = new Pair<>(sql, System.currentTimeMillis());
             _lockTimes.add(time);
         }
     }
@@ -213,7 +217,7 @@ public class TransactionLegacy implements Closeable {
     public static Connection getStandaloneConnectionWithException() throws SQLException {
         Connection conn = s_ds.getConnection();
         if (CONN_LOGGER.isTraceEnabled()) {
-            CONN_LOGGER.trace("Retrieving a standalone connection: dbconn" + System.identityHashCode(conn));
+            CONN_LOGGER.trace("Retrieving a standalone connection: dbconn{}", System.identityHashCode(conn));
         }
         return conn;
     }
@@ -231,7 +235,7 @@ public class TransactionLegacy implements Closeable {
         try {
             Connection conn = s_usageDS.getConnection();
             if (CONN_LOGGER.isTraceEnabled()) {
-                CONN_LOGGER.trace("Retrieving a standalone connection for usage: dbconn" + System.identityHashCode(conn));
+                CONN_LOGGER.trace("Retrieving a standalone connection for usage: dbconn{}", System.identityHashCode(conn));
             }
             return conn;
         } catch (SQLException e) {
@@ -244,7 +248,7 @@ public class TransactionLegacy implements Closeable {
         try {
             Connection conn = s_simulatorDS.getConnection();
             if (CONN_LOGGER.isTraceEnabled()) {
-                CONN_LOGGER.trace("Retrieving a standalone connection for simulator: dbconn" + System.identityHashCode(conn));
+                CONN_LOGGER.trace("Retrieving a standalone connection for simulator: dbconn{}", System.identityHashCode(conn));
             }
             return conn;
         } catch (SQLException e) {
@@ -261,7 +265,7 @@ public class TransactionLegacy implements Closeable {
         Iterator<StackElement> it = _stack.descendingIterator();
         while (it.hasNext()) {
             StackElement element = it.next();
-            if (element.type == ATTACHMENT) {
+            if (Objects.equals(element.type, ATTACHMENT)) {
                 TransactionAttachment att = (TransactionAttachment)element.ref;
                 if (name.equals(att.getName())) {
                     it.remove();
@@ -303,7 +307,7 @@ public class TransactionLegacy implements Closeable {
         }
 
         // relax stack structure for several places that @DB required injection is not in place
-        LOGGER.warn("Non-standard stack context that Transaction context is manaully placed into the calling chain. Stack chain: " + sb);
+        LOGGER.warn("Non-standard stack context that Transaction context is manaully placed into the calling chain. Stack chain: {}", sb);
         return true;
     }
 
@@ -339,7 +343,7 @@ public class TransactionLegacy implements Closeable {
     private TransactionLegacy(final String name, final boolean forLocking, final short databaseId) {
         _name = name;
         _conn = null;
-        _stack = new LinkedList<StackElement>();
+        _stack = new LinkedList<>();
         _txn = false;
         _dbId = databaseId;
         _id = s_id.incrementAndGet();
@@ -367,7 +371,7 @@ public class TransactionLegacy implements Closeable {
         final StringBuilder str = new StringBuilder((_name != null ? _name : ""));
         str.append(" : ");
         for (final StackElement se : _stack) {
-            if (se.type == CURRENT_TXN) {
+            if (Objects.equals(se.type, CURRENT_TXN)) {
                 str.append(se.ref).append(", ");
             }
         }
@@ -401,7 +405,7 @@ public class TransactionLegacy implements Closeable {
     @Deprecated
     public void start() {
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("txn: start requested by: " + buildName());
+            LOGGER.trace("txn: start requested by: {}", buildName());
         }
 
         _stack.push(new StackElement(START_TXN, null));
@@ -429,7 +433,7 @@ public class TransactionLegacy implements Closeable {
         if (_stmt != null) {
             try {
                 if (stmtLogger.isTraceEnabled()) {
-                    stmtLogger.trace("Closing: " + _stmt.toString());
+                    stmtLogger.trace("Closing: {}", _stmt.toString());
                 }
                 try {
                     ResultSet rs = _stmt.getResultSet();
@@ -441,7 +445,7 @@ public class TransactionLegacy implements Closeable {
                 }
                 _stmt.close();
             } catch (final SQLException e) {
-                stmtLogger.trace("Unable to close statement: " + _stmt.toString());
+                stmtLogger.trace("Unable to close statement: {}", _stmt.toString());
             } finally {
                 _stmt = null;
             }
@@ -469,7 +473,7 @@ public class TransactionLegacy implements Closeable {
         final Connection conn = getConnection();
         final PreparedStatement pstmt = conn.prepareStatement(sql);
         if (stmtLogger.isTraceEnabled()) {
-            stmtLogger.trace("Preparing: " + sql);
+            stmtLogger.trace("Preparing: {}", sql);
         }
         return pstmt;
     }
@@ -489,7 +493,7 @@ public class TransactionLegacy implements Closeable {
         final Connection conn = getConnection();
         final PreparedStatement pstmt = conn.prepareStatement(sql, autoGeneratedKeys);
         if (stmtLogger.isTraceEnabled()) {
-            stmtLogger.trace("Preparing: " + sql);
+            stmtLogger.trace("Preparing: {}", sql);
         }
         closePreviousStatement();
         _stmt = pstmt;
@@ -511,7 +515,7 @@ public class TransactionLegacy implements Closeable {
         final Connection conn = getConnection();
         final PreparedStatement pstmt = conn.prepareStatement(sql, columnNames);
         if (stmtLogger.isTraceEnabled()) {
-            stmtLogger.trace("Preparing: " + sql);
+            stmtLogger.trace("Preparing: {}", sql);
         }
         closePreviousStatement();
         _stmt = pstmt;
@@ -532,7 +536,7 @@ public class TransactionLegacy implements Closeable {
         final Connection conn = getConnection();
         final PreparedStatement pstmt = conn.prepareStatement(sql, resultSetType, resultSetConcurrency, resultSetHoldability);
         if (stmtLogger.isTraceEnabled()) {
-            stmtLogger.trace("Preparing: " + sql);
+            stmtLogger.trace("Preparing: {}", sql);
         }
         closePreviousStatement();
         _stmt = pstmt;
@@ -541,7 +545,6 @@ public class TransactionLegacy implements Closeable {
 
     /**
      * Returns the db connection.
-     *
      * Note: that you can call getConnection() but beaware that
      * all prepare statements from the Connection are not garbage
      * collected!
@@ -590,8 +593,7 @@ public class TransactionLegacy implements Closeable {
             //
             _stack.push(new StackElement(CREATE_CONN, null));
             if (CONN_LOGGER.isTraceEnabled()) {
-                CONN_LOGGER.trace("Creating a DB connection with " + (_txn ? " txn: " : " no txn: ") + " for " + _dbId + ": dbconn" + System.identityHashCode(_conn) +
-                        ". Stack: " + buildName());
+                CONN_LOGGER.trace("Creating a DB connection with {} for {}: dbconn{}. Stack: {}", _txn ? " txn: " : " no txn: ", _dbId, System.identityHashCode(_conn), buildName());
             }
         } else {
             LOGGER.trace("conn: Using existing DB connection");
@@ -600,34 +602,43 @@ public class TransactionLegacy implements Closeable {
         return _conn;
     }
 
+    public static void refreshConnections(final short dbId) {
+        if (dbId != CLOUD_DB) {
+            return;
+        }
+        if (s_ds instanceof HikariDataSource) {
+            ((HikariDataSource)s_ds).getHikariPoolMXBean().softEvictConnections();
+        }
+    }
+
     protected boolean takeOver(final String name, final boolean create) {
-        if (_stack.size() != 0) {
+        if (!_stack.isEmpty()) {
             if (!create) {
                 // If it is not a create transaction, then let's just use the current one.
                 if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace("Using current transaction: " + toString());
+                    LOGGER.trace("Using current transaction: {}", this);
                 }
                 mark(name);
                 return false;
             }
 
             final StackElement se = _stack.getFirst();
-            if (se.type == CREATE_TXN) {
+            if (Objects.equals(se.type, CREATE_TXN)) {
                 // This create is called inside of another create.  Which is ok?
                 // We will let that create be responsible for cleaning up.
                 if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace("Create using current transaction: " + toString());
+                    LOGGER.trace("Create using current transaction: {}", this);
                 }
                 mark(name);
                 return false;
             }
 
-            LOGGER.warn("Encountered a transaction that has leaked.  Cleaning up. " + toString());
+            LOGGER.warn("Encountered a transaction that has leaked.  Cleaning up. {}", this);
             cleanup();
         }
 
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Took over the transaction: " + name);
+            LOGGER.trace("Took over the transaction: {}", name);
         }
         _stack.push(new StackElement(create ? CREATE_TXN : CURRENT_TXN, name));
         _name = name;
@@ -657,7 +668,7 @@ public class TransactionLegacy implements Closeable {
     public void close() {
         removeUpTo(CURRENT_TXN, null);
 
-        if (_stack.size() == 0) {
+        if (_stack.isEmpty()) {
             LOGGER.trace("Transaction is done");
             cleanup();
         }
@@ -673,7 +684,7 @@ public class TransactionLegacy implements Closeable {
     public boolean close(final String name) {
         if (_name == null) {    // Already cleaned up.
             if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("Already cleaned up." + buildName());
+                LOGGER.trace("Already cleaned up.{}", buildName());
             }
             return true;
         }
@@ -684,7 +695,7 @@ public class TransactionLegacy implements Closeable {
         }
 
         if (LOGGER.isDebugEnabled() && _stack.size() > 2) {
-            LOGGER.debug("Transaction is not closed properly: " + toString() + ".  Called by " + buildName());
+            LOGGER.debug("Transaction is not closed properly: {}.  Called by {}", this, buildName());
         }
 
         cleanup();
@@ -700,7 +711,7 @@ public class TransactionLegacy implements Closeable {
     protected void clearLockTimes() {
         if (lockLogger.isDebugEnabled()) {
             for (Pair<String, Long> time : _lockTimes) {
-                lockLogger.trace("SQL " + time.first() + " took " + (System.currentTimeMillis() - time.second()));
+                lockLogger.trace("SQL {} took {}", time.first(), System.currentTimeMillis() - time.second());
             }
             _lockTimes.clear();
         }
@@ -708,14 +719,14 @@ public class TransactionLegacy implements Closeable {
 
     public boolean commit() {
         if (!_txn) {
-            LOGGER.warn("txn: Commit called when it is not a transaction: " + buildName());
+            LOGGER.warn("txn: Commit called when it is not a transaction: {}", buildName());
             return false;
         }
 
         Iterator<StackElement> it = _stack.iterator();
         while (it.hasNext()) {
             StackElement st = it.next();
-            if (st.type == START_TXN) {
+            if (Objects.equals(st.type, START_TXN)) {
                 it.remove();
                 break;
             }
@@ -723,7 +734,7 @@ public class TransactionLegacy implements Closeable {
 
         if (hasTxnInStack()) {
             if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("txn: Not committing because transaction started elsewhere: " + buildName() + " / " + toString());
+                LOGGER.trace("txn: Not committing because transaction started elsewhere: {} / {}", buildName(), this);
             }
             return false;
         }
@@ -732,7 +743,7 @@ public class TransactionLegacy implements Closeable {
         try {
             if (_conn != null) {
                 _conn.commit();
-                LOGGER.trace("txn: DB Changes committed. Time = " + (System.currentTimeMillis() - _txnTime));
+                LOGGER.trace("txn: DB Changes committed. Time = {}", System.currentTimeMillis() - _txnTime);
                 clearLockTimes();
                 closeConnection();
             }
@@ -759,7 +770,7 @@ public class TransactionLegacy implements Closeable {
             // we should only close db connection when it is not user managed
             if (_dbId != CONNECTED_DB) {
                 if (CONN_LOGGER.isTraceEnabled()) {
-                    CONN_LOGGER.trace("Closing DB connection: dbconn" + System.identityHashCode(_conn));
+                    CONN_LOGGER.trace("Closing DB connection: dbconn{}", System.identityHashCode(_conn));
                 }
                 _conn.close();
                 _conn = null;
@@ -783,13 +794,13 @@ public class TransactionLegacy implements Closeable {
                     break;
                 }
 
-                if (item.type == CURRENT_TXN) {
+                if (Objects.equals(item.type, CURRENT_TXN)) {
                     if (LOGGER.isTraceEnabled()) {
-                        LOGGER.trace("Releasing the current txn: " + (item.ref != null ? item.ref : ""));
+                        LOGGER.trace("Releasing the current txn: {}", item.ref != null ? item.ref : "");
                     }
-                } else if (item.type == CREATE_CONN) {
+                } else if (Objects.equals(item.type, CREATE_CONN)) {
                     closeConnection();
-                } else if (item.type == START_TXN) {
+                } else if (Objects.equals(item.type, START_TXN)) {
                     if (item.ref == null) {
                         rollback = true;
                     } else {
@@ -800,10 +811,10 @@ public class TransactionLegacy implements Closeable {
                             LOGGER.warn("Unable to rollback Txn.", e);
                         }
                     }
-                } else if (item.type == STATEMENT) {
+                } else if (Objects.equals(item.type, STATEMENT)) {
                     try {
                         if (stmtLogger.isTraceEnabled()) {
-                            stmtLogger.trace("Closing: " + ref.toString());
+                            stmtLogger.trace("Closing: {}", ref.toString());
                         }
                         Statement stmt = (Statement)ref;
                         try {
@@ -816,17 +827,17 @@ public class TransactionLegacy implements Closeable {
                         }
                         stmt.close();
                     } catch (final SQLException e) {
-                        stmtLogger.trace("Unable to close statement: " + item);
+                        stmtLogger.trace("Unable to close statement: {}", item);
                     }
-                } else if (item.type == ATTACHMENT) {
+                } else if (Objects.equals(item.type, ATTACHMENT)) {
                     TransactionAttachment att = (TransactionAttachment)item.ref;
                     if (LOGGER.isTraceEnabled()) {
-                        LOGGER.trace("Cleaning up " + att.getName());
+                        LOGGER.trace("Cleaning up {}", att.getName());
                     }
                     att.cleanup();
                 }
             } catch (Exception e) {
-                LOGGER.error("Unable to clean up " + item, e);
+                LOGGER.error("Unable to clean up {}", item, e);
             }
         }
 
@@ -839,7 +850,7 @@ public class TransactionLegacy implements Closeable {
         closePreviousStatement();
         if (!_txn) {
             if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("Rollback called for " + _name + " when there's no transaction: " + buildName());
+                LOGGER.trace("Rollback called for {} when there's no transaction: {}", _name, buildName());
             }
             return;
         }
@@ -848,7 +859,7 @@ public class TransactionLegacy implements Closeable {
         try {
             if (_conn != null) {
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Rolling back the transaction: Time = " + (System.currentTimeMillis() - _txnTime) + " Name =  " + _name + "; called by " + buildName());
+                    LOGGER.debug("Rolling back the transaction: Time = {} Name =  {}; called by {}", System.currentTimeMillis() - _txnTime, _name, buildName());
                 }
                 _conn.rollback();
             }
@@ -865,7 +876,7 @@ public class TransactionLegacy implements Closeable {
                 _conn.rollback(sp);
             }
         } catch (SQLException e) {
-            LOGGER.warn("Unable to rollback to savepoint " + sp);
+            LOGGER.warn("Unable to rollback to savepoint {}", sp);
         }
 
         if (!hasTxnInStack()) {
@@ -878,7 +889,7 @@ public class TransactionLegacy implements Closeable {
         Iterator<StackElement> it = _stack.iterator();
         while (it.hasNext()) {
             StackElement st = it.next();
-            if (st.type == START_TXN) {
+            if (Objects.equals(st.type, START_TXN)) {
                 if (st.ref == null) {
                     it.remove();
                 } else {
@@ -929,7 +940,7 @@ public class TransactionLegacy implements Closeable {
         Iterator<StackElement> it = _stack.iterator();
         while (it.hasNext()) {
             StackElement se = it.next();
-            if (se.type == START_TXN && se.ref == sp) {
+            if (Objects.equals(se.type, START_TXN) && se.ref == sp) {
                 return true;
             }
         }
@@ -946,7 +957,7 @@ public class TransactionLegacy implements Closeable {
         Iterator<StackElement> it = _stack.iterator();
         while (it.hasNext()) {
             StackElement se = it.next();
-            if (se.type == START_TXN) {
+            if (Objects.equals(se.type, START_TXN)) {
                 it.remove();
                 if (se.ref == sp) {
                     return;
@@ -979,7 +990,7 @@ public class TransactionLegacy implements Closeable {
 
     @Override
     protected void finalize() throws Throwable {
-        if (!(_conn == null && (_stack == null || _stack.size() == 0))) {
+        if (!(_conn == null && (_stack == null || _stack.isEmpty()))) {
             assert (false) : "Oh Alex oh alex...something is wrong with how we're doing this";
             LOGGER.error("Something went wrong that a transaction is orphaned before db connection is closed");
             cleanup();
@@ -1020,19 +1031,37 @@ public class TransactionLegacy implements Closeable {
         }
     }
 
+    private static <T extends Number> T parseNumber(String value, Class<T> type) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            if (type.equals(Long.class)) {
+                return type.cast(Long.parseLong(value));
+            } else {
+                return type.cast(Integer.parseInt(value));
+            }
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+    }
+
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static void initDataSource(Properties dbProps) {
         try {
-            if (dbProps.size() == 0)
+            if (dbProps.isEmpty())
                 return;
 
-            s_dbHAEnabled = Boolean.valueOf(dbProps.getProperty("db.ha.enabled"));
-            LOGGER.info("Is Data Base High Availiability enabled? Ans : " + s_dbHAEnabled);
+            s_dbHAEnabled = Boolean.parseBoolean(dbProps.getProperty("db.ha.enabled"));
+            LOGGER.info("Is Data Base High Availiability enabled? Ans : {}", s_dbHAEnabled);
             String loadBalanceStrategy = dbProps.getProperty("db.ha.loadBalanceStrategy");
             // FIXME:  If params are missing...default them????
-            final int cloudMaxActive = Integer.parseInt(dbProps.getProperty("db.cloud.maxActive"));
-            final int cloudMaxIdle = Integer.parseInt(dbProps.getProperty("db.cloud.maxIdle"));
-            final long cloudMaxWait = Long.parseLong(dbProps.getProperty("db.cloud.maxWait"));
+            final Integer cloudMaxActive = parseNumber(dbProps.getProperty("db.cloud.maxActive"), Integer.class);
+            final Integer cloudMaxIdle = parseNumber(dbProps.getProperty("db.cloud.maxIdle"), Integer.class);
+            final Long cloudMaxWait = parseNumber(dbProps.getProperty("db.cloud.maxWait"), Long.class);
+            final Integer cloudMinIdleConnections = parseNumber(dbProps.getProperty("db.cloud.minIdleConnections"), Integer.class);
+            final Long cloudConnectionTimeout = parseNumber(dbProps.getProperty("db.cloud.connectionTimeout"), Long.class);
+            final Long cloudKeepAliveTimeout = parseNumber(dbProps.getProperty("db.cloud.keepAliveTime"), Long.class);
             final String cloudUsername = dbProps.getProperty("db.cloud.username");
             final String cloudPassword = dbProps.getProperty("db.cloud.password");
             final String cloudValidationQuery = dbProps.getProperty("db.cloud.validationQuery");
@@ -1050,7 +1079,7 @@ public class TransactionLegacy implements Closeable {
             } else if (cloudIsolationLevel.equalsIgnoreCase("readuncommitted")) {
                 isolationLevel = Connection.TRANSACTION_READ_UNCOMMITTED;
             } else {
-                LOGGER.warn("Unknown isolation level " + cloudIsolationLevel + ".  Using read uncommitted");
+                LOGGER.warn("Unknown isolation level {}.  Using read uncommitted", cloudIsolationLevel);
             }
 
             final boolean cloudTestOnBorrow = Boolean.parseBoolean(dbProps.getProperty("db.cloud.testOnBorrow"));
@@ -1071,14 +1100,19 @@ public class TransactionLegacy implements Closeable {
             DriverLoader.loadDriver(cloudUriAndDriver.second());
 
             // Default Data Source for CloudStack
-            s_ds = createDataSource(cloudUriAndDriver.first(), cloudUsername, cloudPassword, cloudMaxActive, cloudMaxIdle, cloudMaxWait,
-                    cloudTimeBtwEvictionRunsMillis, cloudMinEvcitableIdleTimeMillis, cloudTestWhileIdle, cloudTestOnBorrow,
-                    cloudValidationQuery, isolationLevel);
+            s_ds = createDataSource(dbProps.getProperty("db.cloud.connectionPoolLib"), cloudUriAndDriver.first(),
+                    cloudUsername, cloudPassword, cloudMaxActive, cloudMaxIdle, cloudMaxWait,
+                    cloudTimeBtwEvictionRunsMillis, cloudMinEvcitableIdleTimeMillis, cloudTestWhileIdle,
+                    cloudTestOnBorrow, cloudValidationQuery, cloudMinIdleConnections, cloudConnectionTimeout,
+                    cloudKeepAliveTimeout, isolationLevel, "cloud");
 
             // Configure the usage db
-            final int usageMaxActive = Integer.parseInt(dbProps.getProperty("db.usage.maxActive"));
-            final int usageMaxIdle = Integer.parseInt(dbProps.getProperty("db.usage.maxIdle"));
-            final long usageMaxWait = Long.parseLong(dbProps.getProperty("db.usage.maxWait"));
+            final Integer usageMaxActive = parseNumber(dbProps.getProperty("db.usage.maxActive"), Integer.class);
+            final Integer usageMaxIdle = parseNumber(dbProps.getProperty("db.usage.maxIdle"), Integer.class);
+            final Long usageMaxWait = parseNumber(dbProps.getProperty("db.usage.maxWait"), Long.class);
+            final Integer usageMinIdleConnections = parseNumber(dbProps.getProperty("db.usage.minIdleConnections"), Integer.class);
+            final Long usageConnectionTimeout = parseNumber(dbProps.getProperty("db.usage.connectionTimeout"), Long.class);
+            final Long usageKeepAliveTimeout = parseNumber(dbProps.getProperty("db.usage.keepAliveTime"), Long.class);
             final String usageUsername = dbProps.getProperty("db.usage.username");
             final String usagePassword = dbProps.getProperty("db.usage.password");
 
@@ -1087,15 +1121,19 @@ public class TransactionLegacy implements Closeable {
             DriverLoader.loadDriver(usageUriAndDriver.second());
 
             // Data Source for usage server
-            s_usageDS = createDataSource(usageUriAndDriver.first(), usageUsername, usagePassword,
-                    usageMaxActive, usageMaxIdle, usageMaxWait, null, null, null, null,
-                    null, isolationLevel);
+            s_usageDS = createDataSource(dbProps.getProperty("db.usage.connectionPoolLib"), usageUriAndDriver.first(),
+                    usageUsername, usagePassword, usageMaxActive, usageMaxIdle, usageMaxWait, null,
+                    null, null, null, null,
+                    usageMinIdleConnections, usageConnectionTimeout, usageKeepAliveTimeout, isolationLevel, "usage");
 
             try {
                 // Configure the simulator db
-                final int simulatorMaxActive = Integer.parseInt(dbProps.getProperty("db.simulator.maxActive"));
-                final int simulatorMaxIdle = Integer.parseInt(dbProps.getProperty("db.simulator.maxIdle"));
-                final long simulatorMaxWait = Long.parseLong(dbProps.getProperty("db.simulator.maxWait"));
+                final Integer simulatorMaxActive = parseNumber(dbProps.getProperty("db.simulator.maxActive"), Integer.class);
+                final Integer simulatorMaxIdle = parseNumber(dbProps.getProperty("db.simulator.maxIdle"), Integer.class);
+                final Long simulatorMaxWait = parseNumber(dbProps.getProperty("db.simulator.maxWait"), Long.class);
+                final Integer simulatorMinIdleConnections = parseNumber(dbProps.getProperty("db.simulator.minIdleConnections"), Integer.class);
+                final Long simulatorConnectionTimeout = parseNumber(dbProps.getProperty("db.simulator.connectionTimeout"), Long.class);
+                final Long simulatorKeepAliveTimeout = parseNumber(dbProps.getProperty("db.simulator.keepAliveTime"), Long.class);
                 final String simulatorUsername = dbProps.getProperty("db.simulator.username");
                 final String simulatorPassword = dbProps.getProperty("db.simulator.password");
 
@@ -1122,15 +1160,18 @@ public class TransactionLegacy implements Closeable {
 
                 DriverLoader.loadDriver(simulatorDriver);
 
-                s_simulatorDS = createDataSource(simulatorConnectionUri, simulatorUsername, simulatorPassword,
-                        simulatorMaxActive, simulatorMaxIdle, simulatorMaxWait, null, null, null, null, cloudValidationQuery, isolationLevel);
+                s_simulatorDS = createDataSource(dbProps.getProperty("db.simulator.connectionPoolLib"),
+                        simulatorConnectionUri, simulatorUsername, simulatorPassword, simulatorMaxActive,
+                        simulatorMaxIdle, simulatorMaxWait, null, null, null, null,
+                        cloudValidationQuery, simulatorMinIdleConnections, simulatorConnectionTimeout,
+                        simulatorKeepAliveTimeout, isolationLevel, "simulator");
             } catch (Exception e) {
                 LOGGER.debug("Simulator DB properties are not available. Not initializing simulator DS");
             }
         } catch (final Exception e) {
-            s_ds = getDefaultDataSource("cloud");
-            s_usageDS = getDefaultDataSource("cloud_usage");
-            s_simulatorDS = getDefaultDataSource("cloud_simulator");
+            s_ds = getDefaultDataSource(dbProps.getProperty("db.cloud.connectionPoolLib"), "cloud");
+            s_usageDS = getDefaultDataSource(dbProps.getProperty("db.usage.connectionPoolLib"), "cloud_usage");
+            s_simulatorDS = getDefaultDataSource(dbProps.getProperty("db.simulator.connectionPoolLib"), "simulator");
             LOGGER.warn(
                     "Unable to load db configuration, using defaults with 5 connections. Falling back on assumed datasource on localhost:3306 using username:password=cloud:cloud. Please check your configuration",
                     e);
@@ -1146,16 +1187,16 @@ public class TransactionLegacy implements Closeable {
             driver = dbProps.getProperty(String.format("db.%s.driver", schema));
             connectionUri = getPropertiesAndBuildConnectionUri(dbProps, loadBalanceStrategy, driver, useSSL, schema);
         } else {
-            LOGGER.warn(String.format("db.%s.uri was set, ignoring the following properties for schema %s of db.properties: [host, port, name, driver, autoReconnect, url.params,"
+            LOGGER.warn("db.{}.uri was set, ignoring the following properties for schema {} of db.properties: [host, port, name, driver, autoReconnect, url.params,"
                     + " replicas, ha.loadBalanceStrategy, ha.enable, failOverReadOnly, reconnectAtTxEnd, autoReconnectForPools, secondsBeforeRetrySource, queriesBeforeRetrySource, "
-                    + "initialTimeout].", schema, schema));
+                    + "initialTimeout].", schema, schema);
 
             String[] splitUri = propertyUri.split(":");
             driver = String.format("%s:%s", splitUri[0], splitUri[1]);
 
             connectionUri = propertyUri;
         }
-        LOGGER.info(String.format("Using the following URI to connect to %s database [%s].", schema, connectionUri));
+        LOGGER.info("Using the following URI to connect to {} database [{}].", schema, connectionUri);
         return new Pair<>(connectionUri, driver);
     }
 
@@ -1171,7 +1212,7 @@ public class TransactionLegacy implements Closeable {
         if (s_dbHAEnabled) {
             dbHaParams = getDBHAParams(schema, dbProps);
             replicas = dbProps.getProperty(String.format("db.%s.replicas", schema));
-            LOGGER.info(String.format("The replicas configured for %s data base are %s.", schema, replicas));
+            LOGGER.info("The replicas configured for {} data base are {}.", schema, replicas);
         }
 
         return buildConnectionUri(loadBalanceStrategy, driver, useSSL, host, replicas, port, dbName, autoReconnect, urlParams, dbHaParams);
@@ -1222,11 +1263,70 @@ public class TransactionLegacy implements Closeable {
     /**
      * Creates a data source
      */
-    private static DataSource createDataSource(String uri, String username, String password,
+    private static DataSource createDataSource(String connectionPoolLib, String uri, String username, String password,
+               Integer maxActive, Integer maxIdle, Long maxWait, Long timeBtwnEvictionRuns, Long minEvictableIdleTime,
+               Boolean testWhileIdle, Boolean testOnBorrow, String validationQuery, Integer minIdleConnections,
+               Long connectionTimeout, Long keepAliveTime, Integer isolationLevel, String dsName) {
+        LOGGER.debug("Creating datasource for database: {} with connection pool lib: {}", dsName,
+                connectionPoolLib);
+        if (CONNECTION_POOL_LIB_DBCP.equals(connectionPoolLib)) {
+            return createDbcpDataSource(uri, username, password, maxActive, maxIdle, maxWait, timeBtwnEvictionRuns,
+                    minEvictableIdleTime, testWhileIdle, testOnBorrow, validationQuery, isolationLevel);
+        }
+        return createHikaricpDataSource(uri, username, password, maxActive, maxIdle, maxWait, minIdleConnections,
+                connectionTimeout, keepAliveTime, isolationLevel, dsName);
+    }
+
+    private static DataSource createHikaricpDataSource(String uri, String username, String password,
                                                Integer maxActive, Integer maxIdle, Long maxWait,
-                                               Long timeBtwnEvictionRuns, Long minEvictableIdleTime,
-                                               Boolean testWhileIdle, Boolean testOnBorrow,
-                                               String validationQuery, Integer isolationLevel) {
+                                               Integer minIdleConnections, Long connectionTimeout, Long keepAliveTime,
+                                               Integer isolationLevel, String dsName) {
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(uri);
+        config.setUsername(username);
+        config.setPassword(password);
+
+        config.setPoolName(dsName);
+
+        // Connection pool properties
+        config.setMaximumPoolSize(ObjectUtils.defaultIfNull(maxActive, 250));
+        config.setIdleTimeout(ObjectUtils.defaultIfNull(maxIdle, 30) * 1000);
+        config.setMaxLifetime(ObjectUtils.defaultIfNull(maxWait, 600000L));
+        config.setMinimumIdle(ObjectUtils.defaultIfNull(minIdleConnections, 5));
+        config.setConnectionTimeout(ObjectUtils.defaultIfNull(connectionTimeout, 30000L));
+        config.setKeepaliveTime(ObjectUtils.defaultIfNull(keepAliveTime, 600000L));
+
+        String isolationLevelString = "TRANSACTION_READ_COMMITTED";
+        if (isolationLevel == Connection.TRANSACTION_SERIALIZABLE) {
+            isolationLevelString = "TRANSACTION_SERIALIZABLE";
+        } else if (isolationLevel == Connection.TRANSACTION_READ_UNCOMMITTED) {
+            isolationLevelString = "TRANSACTION_READ_UNCOMMITTED";
+        } else if (isolationLevel == Connection.TRANSACTION_REPEATABLE_READ) {
+            isolationLevelString = "TRANSACTION_REPEATABLE_READ";
+        }
+        config.setTransactionIsolation(isolationLevelString);
+
+        // Standard datasource config for MySQL
+        config.addDataSourceProperty("cachePrepStmts", "true");
+        config.addDataSourceProperty("prepStmtCacheSize", "250");
+        config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+        // Additional config for MySQL
+        config.addDataSourceProperty("useServerPrepStmts", "true");
+        config.addDataSourceProperty("useLocalSessionState", "true");
+        config.addDataSourceProperty("rewriteBatchedStatements", "true");
+        config.addDataSourceProperty("cacheResultSetMetadata", "true");
+        config.addDataSourceProperty("cacheServerConfiguration", "true");
+        config.addDataSourceProperty("elideSetAutoCommits", "true");
+        config.addDataSourceProperty("maintainTimeStats", "false");
+
+        return new HikariDataSource(config);
+    }
+
+    private static DataSource createDbcpDataSource(String uri, String username, String password,
+                                                Integer maxActive, Integer maxIdle, Long maxWait,
+                                                Long timeBtwnEvictionRuns, Long minEvictableIdleTime,
+                                                Boolean testWhileIdle, Boolean testOnBorrow,
+                                                String validationQuery, Integer isolationLevel) {
         ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(uri, username, password);
         PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory, null);
         GenericObjectPoolConfig config = createPoolConfig(maxActive, maxIdle, maxWait, timeBtwnEvictionRuns, minEvictableIdleTime, testWhileIdle, testOnBorrow);
@@ -1267,29 +1367,59 @@ public class TransactionLegacy implements Closeable {
         return config;
     }
 
-    private static String getDBHAParams(String dbName, Properties dbProps) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("failOverReadOnly=" + dbProps.getProperty("db." + dbName + ".failOverReadOnly"));
-        sb.append("&").append("reconnectAtTxEnd=" + dbProps.getProperty("db." + dbName + ".reconnectAtTxEnd"));
-        sb.append("&").append("autoReconnectForPools=" + dbProps.getProperty("db." + dbName + ".autoReconnectForPools"));
-        sb.append("&").append("secondsBeforeRetrySource=" + dbProps.getProperty("db." + dbName + ".secondsBeforeRetrySource"));
-        sb.append("&").append("queriesBeforeRetrySource=" + dbProps.getProperty("db." + dbName + ".queriesBeforeRetrySource"));
-        sb.append("&").append("initialTimeout=" + dbProps.getProperty("db." + dbName + ".initialTimeout"));
-        return sb.toString();
+    private static DataSource getDefaultDataSource(final String connectionPoolLib, final String database) {
+        LOGGER.debug("Creating default datasource for database: {} with connection pool lib: {}",
+                database, connectionPoolLib);
+        if (CONNECTION_POOL_LIB_DBCP.equalsIgnoreCase(connectionPoolLib)) {
+            return getDefaultDbcpDataSource(database);
+        }
+        return getDefaultHikaricpDataSource(database);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private static DataSource getDefaultDataSource(final String database) {
+    private static DataSource getDefaultHikaricpDataSource(final String database) {
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl("jdbc:mysql://localhost:3306/" + database + "?" + CONNECTION_PARAMS);
+        config.setUsername("cloud");
+        config.setPassword("cloud");
+        config.setPoolName(database);
+        config.setDriverClassName("com.mysql.cj.jdbc.Driver");
+        config.setMaximumPoolSize(250);
+        config.setConnectionTimeout(1000);
+        config.setIdleTimeout(1000);
+        config.setKeepaliveTime(1000);
+        config.setMaxLifetime(1000);
+        config.setTransactionIsolation("TRANSACTION_READ_COMMITTED");
+        config.setInitializationFailTimeout(-1L);
+        config.addDataSourceProperty("cachePrepStmts", "true");
+        config.addDataSourceProperty("prepStmtCacheSize", "250");
+        config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+        return new HikariDataSource(config);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static DataSource getDefaultDbcpDataSource(final String database) {
         final ConnectionFactory connectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://localhost:3306/" + database  + "?" + CONNECTION_PARAMS, "cloud", "cloud");
         final PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory, null);
         final GenericObjectPool connectionPool = new GenericObjectPool(poolableConnectionFactory);
         return new PoolingDataSource(connectionPool);
     }
 
+    private static String getDBHAParams(String dbName, Properties dbProps) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("failOverReadOnly=").append(dbProps.getProperty("db." + dbName + ".failOverReadOnly"));
+        sb.append("&").append("reconnectAtTxEnd=").append(dbProps.getProperty("db." + dbName + ".reconnectAtTxEnd"));
+        sb.append("&").append("autoReconnectForPools=").append(dbProps.getProperty("db." + dbName + ".autoReconnectForPools"));
+        sb.append("&").append("secondsBeforeRetrySource=").append(dbProps.getProperty("db." + dbName + ".secondsBeforeRetrySource"));
+        sb.append("&").append("queriesBeforeRetrySource=").append(dbProps.getProperty("db." + dbName + ".queriesBeforeRetrySource"));
+        sb.append("&").append("initialTimeout=").append(dbProps.getProperty("db." + dbName + ".initialTimeout"));
+        return sb.toString();
+    }
+
     /**
      * Used for unit testing primarily
      *
-     * @param conn
+     * @param conn connection to use
      */
     protected void setConnection(Connection conn) {
         _conn = conn;
@@ -1299,7 +1429,7 @@ public class TransactionLegacy implements Closeable {
      * Receives a list of {@link PreparedStatement} and quietly closes all of them, which
      * triggers also closing their dependent objects, like a {@link ResultSet}
      *
-     * @param pstmt2Close
+     * @param pstmt2Close list of PreparedStatement to close
      */
     public static void closePstmts(List<PreparedStatement> pstmt2Close) {
         for (PreparedStatement pstmt : pstmt2Close) {

@@ -19,10 +19,11 @@ package com.cloud.consoleproxy;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.cloud.consoleproxy.util.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ConsoleProxyHttpHandlerHelper {
-    protected static Logger LOGGER = Logger.getLogger(ConsoleProxyHttpHandlerHelper.class);
+    protected static Logger LOGGER = LogManager.getLogger(ConsoleProxyHttpHandlerHelper.class);
 
     public static Map<String, String> getQueryMap(String query) {
         String[] params = query.split("&");
@@ -108,6 +109,9 @@ public class ConsoleProxyHttpHandlerHelper {
                 }
                 if (param.getExtraSecurityToken() != null) {
                     map.put("extraSecurityToken", param.getExtraSecurityToken());
+                }
+                if (param.isSessionRequiresNewViewer()) {
+                    map.put("sessionRequiresNewViewer", Boolean.TRUE.toString());
                 }
             } else {
                 LOGGER.error("Unable to decode token");

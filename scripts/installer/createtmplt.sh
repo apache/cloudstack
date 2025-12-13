@@ -87,6 +87,8 @@ uncompress() {
          ;;
   [zZ][iI][pP])  unzip -p $1 | cat > $tmpfile
         ;;
+  XZ)   xz -d -c $1 > $tmpfile
+        ;;
   *)	printf "$1"
         return 0
 	;;
@@ -269,10 +271,5 @@ echo "volume.size=$volsize" >> /$tmpltfs/template.properties
 
 zfs snapshot -r $tmpltfs@vmops_ss
 rollback_if_needed $tmpltfs $? "Failed to snapshot filesystem"
-
-#if [ "$cleanup" == "true" ]
-#then
-  #rm -f $tmpltimg
-#fi
 
 exit 0

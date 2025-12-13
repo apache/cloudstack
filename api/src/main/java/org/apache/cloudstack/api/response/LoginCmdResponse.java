@@ -86,6 +86,10 @@ public class LoginCmdResponse extends AuthenticationCmdResponse {
     @Param(description = "Two factor authentication issuer", since = "4.18.0.0")
     private String issuerFor2FA;
 
+    @SerializedName(value = ApiConstants.MANAGEMENT_SERVER_ID)
+    @Param(description = "Management Server ID that the user logged to", since = "4.21.0.0")
+    private String managementServerId;
+
     public String getUsername() {
         return username;
     }
@@ -210,5 +214,13 @@ public class LoginCmdResponse extends AuthenticationCmdResponse {
 
     public void setIssuerFor2FA(String issuerFor2FA) {
         this.issuerFor2FA = issuerFor2FA;
+    }
+
+    public String getManagementServerId() {
+        return managementServerId;
+    }
+
+    public void setManagementServerId(String managementServerId) {
+        this.managementServerId = managementServerId;
     }
 }

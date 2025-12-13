@@ -147,10 +147,10 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru implements Netwo
 
         final List<NiciraNvpDeviceVO> devices = niciraNvpDao.listByPhysicalNetwork(physnet.getId());
         if (devices.isEmpty()) {
-            logger.error("No NiciraNvp Controller on physical network " + physnet.getName());
+            logger.error("No NiciraNvp Controller on physical network {}", physnet);
             return null;
         }
-        logger.debug("Nicira Nvp " + devices.get(0).getUuid() + " found on physical network " + physnet.getId());
+        logger.debug("Nicira Nvp {} found on physical network {}", devices.get(0).getUuid(), physnet);
 
         logger.debug("Physical isolation type is supported, asking GuestNetworkGuru to design this network");
         final NetworkVO networkObject = (NetworkVO) super.design(offering, plan, userSpecified, name, vpcId, owner);
@@ -276,7 +276,7 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru implements Netwo
     public void shutdown(final NetworkProfile profile, final NetworkOffering offering) {
         final NetworkVO networkObject = networkDao.findById(profile.getId());
         if (networkObject.getBroadcastDomainType() != BroadcastDomainType.Lswitch || networkObject.getBroadcastUri() == null) {
-            logger.warn("BroadcastUri is empty or incorrect for guestnetwork " + networkObject.getDisplayText());
+            logger.warn(String.format("BroadcastUri is empty or incorrect for guest network %s", networkObject));
             return;
         }
 
@@ -308,7 +308,7 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru implements Netwo
         NiciraNvpRouterMappingVO routermapping = niciraNvpRouterMappingDao.findByNetworkId(networkObject.getId());
         if (routermapping == null) {
             // Case 1: Numerical Vlan Provided -> No lrouter used.
-            logger.info("Shared Network " + networkObject.getDisplayText() + " didn't use Logical Router");
+            logger.info(String.format("Shared Network %s didn't use Logical Router", networkObject));
         }
         else {
             //Case 2: Logical Router's UUID provided as Vlan id -> Remove lrouter port but not lrouter.

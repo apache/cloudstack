@@ -17,6 +17,7 @@
 package org.apache.cloudstack.storage.heuristics;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.storage.StorageManager;
@@ -74,6 +75,9 @@ public class HeuristicRuleHelper {
     @Inject
     private AccountDao accountDao;
 
+    @Inject
+    private DataCenterDao zoneDao;
+
     /**
      * Returns the {@link DataStore} object if the zone, specified by the ID, has an active heuristic rule for the given {@link HeuristicType}.
      * It returns null otherwise.
@@ -87,10 +91,10 @@ public class HeuristicRuleHelper {
         HeuristicVO heuristicsVO = secondaryStorageHeuristicDao.findByZoneIdAndType(zoneId, heuristicType);
 
         if (heuristicsVO == null) {
-            logger.debug(String.format("No heuristic rules found for zone with ID [%s] and heuristic type [%s]. Returning null.", zoneId, heuristicType));
+            logger.debug("No heuristic rules found for zone [{}] and heuristic type [{}]. Returning null.", () -> zoneDao.findById(zoneId), heuristicType::toString);
             return null;
         } else {
-            logger.debug(String.format("Found the heuristic rule %s to apply for zone with ID [%s].", heuristicsVO, zoneId));
+            logger.debug("Found the heuristic rule {} to apply for zone [{}].", heuristicsVO::toString, () -> zoneDao.findById(zoneId));
             return interpretHeuristicRule(heuristicsVO.getHeuristicRule(), heuristicType, obj, zoneId);
         }
     }

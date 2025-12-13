@@ -124,6 +124,12 @@ public class NetworkOfferingJoinDaoImpl extends GenericDaoBase<NetworkOfferingJo
             }
             networkOfferingResponse.setInternetProtocol(protocol);
         }
+        if (offering.getRoutingMode() != null) {
+            networkOfferingResponse.setRoutingMode(offering.getRoutingMode().toString());
+        }
+        if (offering.isSpecifyAsNumber() != null) {
+            networkOfferingResponse.setSpecifyAsNumber(offering.isSpecifyAsNumber());
+        }
         networkOfferingResponse.setObjectName("networkoffering");
 
         return networkOfferingResponse;

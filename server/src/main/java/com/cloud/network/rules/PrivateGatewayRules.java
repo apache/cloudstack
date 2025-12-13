@@ -60,7 +60,7 @@ public class PrivateGatewayRules extends RuleApplier {
 
             final NetworkHelper networkHelper = visitor.getVirtualNetworkApplianceFactory().getNetworkHelper();
             if (!networkHelper.checkRouterVersion(_router)) {
-                logger.warn("Router requires upgrade. Unable to send command to router: " + _router.getId());
+                logger.warn("Router requires upgrade. Unable to send command to router: {}", _router);
                 return false;
             }
             final VirtualMachineManager itMgr = visitor.getVirtualNetworkApplianceFactory().getItMgr();
@@ -69,7 +69,6 @@ public class PrivateGatewayRules extends RuleApplier {
             // setup source nat
             if (_nicProfile != null) {
                 _isAddOperation = true;
-                // result = setupVpcPrivateNetwork(router, true, guestNic);
                 result = visitor.visit(this);
             }
         } catch (final Exception ex) {

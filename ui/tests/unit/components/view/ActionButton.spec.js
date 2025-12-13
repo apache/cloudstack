@@ -23,6 +23,16 @@ import mockData from '../../../mockData/ActionButton.mock.json'
 import ActionButton from '@/components/view/ActionButton'
 
 jest.mock('axios', () => mockAxios)
+jest.mock('@/vue-app', () => ({
+  vueProps: {
+    $localStorage: {
+      set: jest.fn((key, value) => {}),
+      get: jest.fn((key) => {
+        return null
+      })
+    }
+  }
+}))
 
 let router, store, i18n
 const state = {
@@ -119,12 +129,13 @@ describe('Components > View > ActionButton.vue', () => {
   describe('Method', () => {
     describe('handleShowBadge()', () => {
       it('API should be called and return not empty', async (done) => {
-        const postData = new URLSearchParams()
         mockAxios.mockResolvedValue({ testapinameresponse: { count: 2 } })
         const wrapper = factory({
           props: {
             actions: [
               {
+                command: 'test-api-case-3',
+                response: 'json',
                 label: 'label.action',
                 api: 'test-api-case-3',
                 showBadge: true,
@@ -140,12 +151,11 @@ describe('Components > View > ActionButton.vue', () => {
         await flushPromises()
         expect(mockAxios).toHaveBeenCalledTimes(1)
         expect(mockAxios).toHaveBeenCalledWith({
-          data: postData,
-          method: 'GET',
-          params: {
+          data: common.createDataParams({
             command: 'test-api-case-3',
             response: 'json'
-          },
+          }),
+          method: 'POST',
           url: '/'
         })
         expect(wrapper.vm.actionBadge).toEqual(expected)
@@ -154,12 +164,13 @@ describe('Components > View > ActionButton.vue', () => {
       })
 
       it('API should be called and return empty', async (done) => {
-        const postData = new URLSearchParams()
         mockAxios.mockResolvedValue({ data: [] })
         const wrapper = factory({
           props: {
             actions: [
               {
+                command: 'test-api-case-4',
+                response: 'json',
                 label: 'label.action',
                 api: 'test-api-case-4',
                 showBadge: true,
@@ -175,12 +186,11 @@ describe('Components > View > ActionButton.vue', () => {
         await flushPromises()
         expect(mockAxios).toHaveBeenCalledTimes(1)
         expect(mockAxios).toHaveBeenCalledWith({
-          data: postData,
-          method: 'GET',
-          params: {
+          data: common.createDataParams({
             command: 'test-api-case-4',
             response: 'json'
-          },
+          }),
+          method: 'POST',
           url: '/'
         })
         expect(wrapper.vm.actionBadge).toEqual(expected)
@@ -189,12 +199,13 @@ describe('Components > View > ActionButton.vue', () => {
       })
 
       it('API should be called and throw eror', async (done) => {
-        const postData = new URLSearchParams()
         mockAxios.mockRejectedValue('errMethodMessage')
         const wrapper = factory({
           props: {
             actions: [
               {
+                command: 'test-api-case-5',
+                response: 'json',
                 label: 'label.action',
                 api: 'test-api-case-5',
                 showBadge: true,
@@ -209,12 +220,11 @@ describe('Components > View > ActionButton.vue', () => {
         await flushPromises()
         expect(mockAxios).toHaveBeenCalledTimes(1)
         expect(mockAxios).toHaveBeenCalledWith({
-          data: postData,
-          method: 'GET',
-          params: {
+          data: common.createDataParams({
             command: 'test-api-case-5',
             response: 'json'
-          },
+          }),
+          method: 'POST',
           url: '/'
         })
         expect(wrapper.vm.actionBadge).toEqual({})

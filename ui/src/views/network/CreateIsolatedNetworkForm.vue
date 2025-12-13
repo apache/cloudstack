@@ -97,6 +97,25 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+          <a-form-item ref="asnumber" name="asnumber" v-if="isASNumberRequired()">
+            <template #label>
+              <tooltip-label :title="$t('label.asnumber')" :tooltip="apiParams.asnumber.description"/>
+            </template>
+            <a-select
+             v-model:value="form.asnumber"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="asNumberLoading"
+              :placeholder="apiParams.asnumber.description"
+              @change="val => { handleASNumberChange(val) }">
+              <a-select-option v-for="(opt, optIndex) in asNumbersZone" :key="optIndex" :label="opt.asnumber">
+                {{ opt.asnumber }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
           <a-row :gutter="12" v-if="setMTU">
             <a-col :md="12" :lg="12">
               <a-form-item
@@ -173,6 +192,7 @@
               :placeholder="apiParams.externalid.description"/>
           </a-form-item>
           <a-form-item
+            v-if="selectedNetworkOffering && (selectedNetworkOffering.networkmode !== 'ROUTED' || isAdmin())"
             ref="gateway"
             name="gateway">
             <template #label>
@@ -183,6 +203,7 @@
               :placeholder="apiParams.gateway.description"/>
           </a-form-item>
           <a-form-item
+            v-if="selectedNetworkOffering && (selectedNetworkOffering.networkmode !== 'ROUTED' || isAdmin())"
             ref="netmask"
             name="netmask">
             <template #label>
@@ -191,6 +212,17 @@
             <a-input
              v-model:value="form.netmask"
               :placeholder="apiParams.netmask.description"/>
+          </a-form-item>
+          <a-form-item
+            v-if="selectedNetworkOffering && selectedNetworkOffering.networkmode === 'ROUTED'"
+            ref="cidrsize"
+            name="cidrsize">
+            <template #label>
+              <tooltip-label :title="$t('label.cidrsize')" :tooltip="apiParams.cidrsize.description"/>
+            </template>
+            <a-input
+              v-model:value="form.cidrsize"
+              :placeholder="apiParams.cidrsize.description"/>
           </a-form-item>
           <a-form-item v-if="selectedNetworkOffering && selectedNetworkOffering.specifyipranges" name="startip" ref="startip">
             <template #label>
@@ -285,7 +317,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { isAdmin, isAdminOrDomainAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
@@ -334,7 +366,10 @@ export default {
       minMTU: 68,
       errorPublicMtu: '',
       errorPrivateMtu: '',
-      setMTU: false
+      setMTU: false,
+      asNumberLoading: false,
+      selectedAsNumber: 0,
+      asNumbersZone: []
     }
   },
   watch: {
@@ -387,8 +422,14 @@ export default {
     },
     allowSettingMTU () {
     },
+    isAdmin () {
+      return isAdmin()
+    },
     isAdminOrDomainAdmin () {
       return isAdminOrDomainAdmin()
+    },
+    isASNumberRequired () {
+      return !this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyasnumber && this.selectedNetworkOffering?.routingmode.toLowerCase() === 'dynamic'
     },
     isObjectEmpty (obj) {
       return !(obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object)
@@ -402,12 +443,12 @@ export default {
     fetchZoneData () {
       this.zones = []
       const params = {}
-      if (this.resource.zoneid && this.$route.name === 'deployVirtualMachine') {
+      if (this.resource.zoneid && (this.$route.name === 'deployVirtualMachine' || this.$route.path.startsWith('/backup'))) {
         params.id = this.resource.zoneid
       }
       params.showicon = true
       this.zoneLoading = true
-      api('listZones', params).then(json => {
+      getAPI('listZones', params).then(json => {
         for (const i in json.listzonesresponse.zone) {
           const zone = json.listzonesresponse.zone[i]
           if (zone.networktype === 'Advanced' && zone.securitygroupsenabled !== true && zone.type !== 'Edge') {
@@ -427,6 +468,23 @@ export default {
       this.privateMtuMax = zone?.routerprivateinterfacemaxmtu || 1500
       this.publicMtuMax = zone?.routerpublicinterfacemaxmtu || 1500
       this.updateVPCCheckAndFetchNetworkOfferingData()
+      if (this.isASNumberRequired()) {
+        this.fetchZoneASNumbers()
+      }
+    },
+    fetchZoneASNumbers () {
+      const params = {}
+      this.asNumberLoading = true
+      params.zoneid = this.selectedZone.id
+      params.isallocated = false
+      getAPI('listASNumbers', params).then(json => {
+        this.asNumbersZone = json.listasnumbersresponse.asnumber
+        this.asNumberLoading = false
+      })
+    },
+    handleASNumberChange (selectedIndex) {
+      this.selectedAsNumber = this.asNumbersZone[selectedIndex].asnumber
+      this.form.asnumber = this.selectedAsNumber
     },
     fetchOwnerOptions (OwnerOptions) {
       this.owner = {
@@ -434,14 +492,14 @@ export default {
         domainid: this.$store.getters.userInfo.domainid,
         account: this.$store.getters.userInfo.account
       }
-      if (OwnerOptions.selectedAccountType === this.$t('label.account')) {
+      if (OwnerOptions.selectedAccountType === 'Account') {
         if (!OwnerOptions.selectedAccount) {
           return
         }
         this.owner.account = OwnerOptions.selectedAccount
         this.owner.domainid = OwnerOptions.selectedDomain
         this.owner.projectid = null
-      } else if (OwnerOptions.selectedAccountType === this.$t('label.project')) {
+      } else if (OwnerOptions.selectedAccountType === 'Project') {
         if (!OwnerOptions.selectedProject) {
           return
         }
@@ -460,7 +518,7 @@ export default {
         var params = {}
         this.networkOfferingLoading = true
         if ('listVPCs' in this.$store.getters.apis) {
-          api('listVPCs', params).then(json => {
+          getAPI('listVPCs', params).then(json => {
             const listVPCs = json.listvpcsresponse.vpc
             var vpcAvailable = this.arrayHasItems(listVPCs)
             if (vpcAvailable === false) {
@@ -492,10 +550,11 @@ export default {
       }
       this.networkOfferings = []
       this.selectedNetworkOffering = {}
-      api('listNetworkOfferings', params).then(json => {
+      getAPI('listNetworkOfferings', params).then(json => {
         this.networkOfferings = json.listnetworkofferingsresponse.networkoffering
-        if (this.selectedZone.isnsxenabled) {
-          this.networkOfferings = this.networkOfferings.filter(offering => offering.fornsx)
+        this.networkOfferings = this.networkOfferings.filter(offering => offering.fornsx === this.selectedZone.isnsxenabled)
+        if (!this.selectedZone.routedmodeenabled) {
+          this.networkOfferings = this.networkOfferings.filter(offering => offering.networkmode !== 'ROUTED')
         }
       }).catch(error => {
         this.$notifyError(error)
@@ -512,6 +571,9 @@ export default {
       if (networkOffering.forvpc) {
         this.fetchVpcData()
       }
+      if (this.isASNumberRequired()) {
+        this.fetchZoneASNumbers()
+      }
     },
     fetchVpcData () {
       this.vpcLoading = true
@@ -522,7 +584,7 @@ export default {
       if (this.vpc !== null) {
         params.id = this.vpc.id
       }
-      api('listVPCs', params).then(json => {
+      getAPI('listVPCs', params).then(json => {
         this.vpcs = json.listvpcsresponse.vpc
       }).finally(() => {
         this.vpcLoading = false
@@ -537,7 +599,6 @@ export default {
       this.formRef.value.validate().then(() => {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
-        console.log(values)
         this.actionLoading = true
         var params = {
           zoneId: this.selectedZone.id,
@@ -545,7 +606,7 @@ export default {
           displayText: values.displaytext,
           networkOfferingId: this.selectedNetworkOffering.id
         }
-        var usefulFields = ['gateway', 'netmask', 'startip', 'startipv4', 'endip', 'endipv4', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'sourcenatipaddress', 'externalid', 'vpcid', 'vlan', 'networkdomain']
+        var usefulFields = ['gateway', 'netmask', 'cidrsize', 'startip', 'startipv4', 'endip', 'endipv4', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'sourcenatipaddress', 'externalid', 'vpcid', 'vlan', 'networkdomain']
         for (var field of usefulFields) {
           if (this.isValidTextValueForKey(values, field)) {
             params[field] = values[field]
@@ -569,7 +630,11 @@ export default {
           params.projectid = this.owner.projectid
         }
 
-        api('createNetwork', params).then(json => {
+        if ('asnumber' in values && this.isASNumberRequired()) {
+          params.asnumber = values.asnumber
+        }
+
+        postAPI('createNetwork', params).then(json => {
           this.$notification.success({
             message: 'Network',
             description: this.$t('message.success.create.isolated.network')

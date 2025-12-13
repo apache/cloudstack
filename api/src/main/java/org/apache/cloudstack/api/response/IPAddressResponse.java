@@ -75,6 +75,10 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
     @Param(description = "the domain the public IP address is associated with")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain to which the public IP address belongs", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.FOR_VIRTUAL_NETWORK)
     @Param(description = "the virtual network for the IP address")
     private Boolean forVirtualNetwork;
@@ -171,6 +175,10 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
     @Param(description="true if range is dedicated for System VMs")
     private boolean forSystemVms;
 
+    @SerializedName(ApiConstants.FOR_PROVIDER)
+    @Param(description="true if range is dedicated for external network providers", since = "4.21.0")
+    private boolean forProvider;
+
     public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
     }
@@ -211,6 +219,10 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
         this.domainName = domainName;
     }
 
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
+    }
     public void setForVirtualNetwork(Boolean forVirtualNetwork) {
         this.forVirtualNetwork = forVirtualNetwork;
     }
@@ -323,5 +335,9 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
 
     public void setForSystemVms(boolean forSystemVms) {
         this.forSystemVms = forSystemVms;
+    }
+
+    public void setForProvider(boolean forProvider) {
+        this.forProvider = forProvider;
     }
 }

@@ -76,4 +76,6 @@ public interface NetworkOfferingDao extends GenericDao<NetworkOfferingVO, Long> 
     NetUtils.InternetProtocol getNetworkOfferingInternetProtocol(long offeringId, NetUtils.InternetProtocol defaultProtocol);
 
     boolean isIpv6Supported(long offeringId);
+
+    boolean isRoutedNetwork(long offeringId);
 }

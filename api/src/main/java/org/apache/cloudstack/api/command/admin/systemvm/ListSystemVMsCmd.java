@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.admin.systemvm;
 import java.util.ArrayList;
 import java.util.List;
 
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -31,7 +30,9 @@ import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.cpu.CPU;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 
@@ -74,6 +75,11 @@ public class ListSystemVMsCmd extends BaseListCmd {
                since = "3.0.1")
     private Long storageId;
 
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "CPU arch of the system VM",
+            since = "4.20.1")
+    private String arch;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -108,6 +114,10 @@ public class ListSystemVMsCmd extends BaseListCmd {
 
     public Long getStorageId() {
         return storageId;
+    }
+
+    public CPU.CPUArch getArch() {
+        return StringUtils.isBlank(arch) ? null : CPU.CPUArch.fromType(arch);
     }
 
     /////////////////////////////////////////////////////

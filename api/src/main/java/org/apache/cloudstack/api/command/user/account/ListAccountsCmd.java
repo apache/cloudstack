@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -69,6 +70,9 @@ public class ListAccountsCmd extends BaseListDomainResourcesCmd implements UserC
                collectionType = CommandType.STRING,
                description = "comma separated list of account details requested, value can be a list of [ all, resource, min]")
     private List<String> viewDetails;
+
+    @Parameter(name = ApiConstants.API_KEY_ACCESS, type = CommandType.STRING, description = "List accounts by the Api key access value", since = "4.20.1.0", authorized = {RoleType.Admin})
+    private String apiKeyAccess;
 
     @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN,
             description = "flag to display the resource icon for accounts")
@@ -120,6 +124,10 @@ public class ListAccountsCmd extends BaseListDomainResourcesCmd implements UserC
         return dv;
     }
 
+    public String getApiKeyAccess() {
+        return apiKeyAccess;
+    }
+
     public boolean getShowIcon() {
         return showIcon != null ? showIcon : false;
     }
@@ -149,7 +157,10 @@ public class ListAccountsCmd extends BaseListDomainResourcesCmd implements UserC
         if (CollectionUtils.isEmpty(response)) {
             return;
         }
-        _resourceLimitService.updateTaggedResourceLimitsAndCountsForAccounts(response, getTag());
+        EnumSet<DomainDetails> details = getDetails();
+        if (details.contains(DomainDetails.all) || details.contains(DomainDetails.resource)) {
+            _resourceLimitService.updateTaggedResourceLimitsAndCountsForAccounts(response, getTag());
+        }
         if (!getShowIcon()) {
             return;
         }

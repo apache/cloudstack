@@ -116,6 +116,18 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
     @Param(description = "the total memory (in MB) available to be created for this project", since = "4.2.0")
     private String memoryAvailable;
 
+    @SerializedName("gpulimit")
+    @Param(description = "the total number of gpus the project can own", since = "4.21.0")
+    private String gpuLimit;
+
+    @SerializedName("gputotal")
+    @Param(description = "the total number of gpus owned by project", since = "4.21.0")
+    private Long gpuTotal;
+
+    @SerializedName("gpuavailable")
+    @Param(description = "the total number of gpus available to be created for this project", since = "4.21.0")
+    private String gpuAvailable;
+
     @SerializedName("primarystoragelimit")
     @Param(description = "the total primary storage space (in GiB) the project can own", since = "4.2.0")
     private String primaryStorageLimit;
@@ -139,6 +151,30 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
     @SerializedName("secondarystorageavailable")
     @Param(description = "the total secondary storage space (in GiB) available to be used for this project", since = "4.2.0")
     private String secondaryStorageAvailable;
+
+    @SerializedName(ApiConstants.BUCKET_LIMIT)
+    @Param(description = "the total number of buckets which can be stored by this project", since = "4.21.0")
+    private String bucketLimit;
+
+    @SerializedName(ApiConstants.BUCKET_TOTAL)
+    @Param(description = "the total number of buckets stored by this project", since = "4.21.0")
+    private Long bucketTotal;
+
+    @SerializedName(ApiConstants.BUCKET_AVAILABLE)
+    @Param(description = "the total number of buckets available to this project", since = "4.21.0")
+    private String bucketAvailable;
+
+    @SerializedName(ApiConstants.OBJECT_STORAGE_LIMIT)
+    @Param(description = "the total object storage space (in GiB) the project can own", since = "4.21.0")
+    private String objectStorageLimit;
+
+    @SerializedName(ApiConstants.OBJECT_STORAGE_TOTAL)
+    @Param(description = "the total object storage space (in GiB) owned by the project", since = "4.21.0")
+    private Long objectStorageTotal;
+
+    @SerializedName(ApiConstants.OBJECT_STORAGE_AVAILABLE)
+    @Param(description = "the total object storage space (in GiB) available to the project", since = "4.21.0")
+    private String objectStorageAvailable;
 
     @SerializedName(ApiConstants.VM_LIMIT)
     @Param(description = "the total number of virtual machines that can be deployed by this project", since = "4.2.0")
@@ -187,6 +223,30 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
     @SerializedName("snapshotavailable")
     @Param(description = "the total number of snapshots available for this project", since = "4.2.0")
     private String snapshotAvailable;
+
+    @SerializedName(ApiConstants.BACKUP_LIMIT)
+    @Param(description = "the total number of backups which can be stored by this project", since = "4.21.0")
+    private String backupLimit;
+
+    @SerializedName(ApiConstants.BACKUP_TOTAL)
+    @Param(description = "the total number of backups stored by this project", since = "4.21.0")
+    private Long backupTotal;
+
+    @SerializedName(ApiConstants.BACKUP_AVAILABLE)
+    @Param(description = "the total number of backups available to this project", since = "4.21.0")
+    private String backupAvailable;
+
+    @SerializedName(ApiConstants.BACKUP_STORAGE_LIMIT)
+    @Param(description = "the total backup storage space (in GiB) the project can own", since = "4.21.0")
+    private String backupStorageLimit;
+
+    @SerializedName(ApiConstants.BACKUP_STORAGE_TOTAL)
+    @Param(description = "the total backup storage space (in GiB) owned by the project", since = "4.21.0")
+    private Long backupStorageTotal;
+
+    @SerializedName(ApiConstants.BACKUP_STORAGE_AVAILABLE)
+    @Param(description = "the total backup storage space (in GiB) available to the project", since = "4.21.0")
+    private String backupStorageAvailable;
 
     @SerializedName("templatelimit")
     @Param(description = "the total number of templates which can be created by this project", since = "4.2.0")
@@ -321,6 +381,36 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
     }
 
     @Override
+    public void setBackupLimit(String backupLimit) {
+        this.backupLimit = backupLimit;
+    }
+
+    @Override
+    public void setBackupTotal(Long backupTotal) {
+        this.backupTotal = backupTotal;
+    }
+
+    @Override
+    public void setBackupAvailable(String backupAvailable) {
+        this.backupAvailable = backupAvailable;
+    }
+
+    @Override
+    public void setBackupStorageLimit(String backupStorageLimit) {
+        this.backupStorageLimit = backupStorageLimit;
+    }
+
+    @Override
+    public void setBackupStorageTotal(Long backupStorageTotal) {
+        this.backupStorageTotal = backupStorageTotal;
+    }
+
+    @Override
+    public void setBackupStorageAvailable(String backupStorageAvailable) {
+        this.backupStorageAvailable = backupStorageAvailable;
+    }
+
+    @Override
     public void setTemplateLimit(String templateLimit) {
         this.templateLimit = templateLimit;
     }
@@ -406,6 +496,21 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
     }
 
     @Override
+    public void setGpuLimit(String gpuLimit) {
+        this.gpuLimit = gpuLimit;
+    }
+
+    @Override
+    public void setGpuTotal(Long gpuTotal) {
+        this.gpuTotal = gpuTotal;
+    }
+
+    @Override
+    public void setGpuAvailable(String gpuAvailable) {
+        this.gpuAvailable = gpuAvailable;
+    }
+
+    @Override
     public void setPrimaryStorageLimit(String primaryStorageLimit) {
         this.primaryStorageLimit = primaryStorageLimit;
     }
@@ -433,6 +538,36 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
     @Override
     public void setSecondaryStorageAvailable(String secondaryStorageAvailable) {
         this.secondaryStorageAvailable = secondaryStorageAvailable;
+    }
+
+    @Override
+    public void setBucketLimit(String bucketLimit) {
+        this.bucketLimit = bucketLimit;
+    }
+
+    @Override
+    public void setBucketTotal(Long bucketTotal) {
+        this.bucketTotal = bucketTotal;
+    }
+
+    @Override
+    public void setBucketAvailable(String bucketAvailable) {
+        this.bucketAvailable = bucketAvailable;
+    }
+
+    @Override
+    public void setObjectStorageLimit(String objectStorageLimit) {
+        this.objectStorageLimit = objectStorageLimit;
+    }
+
+    @Override
+    public void setObjectStorageTotal(Long objectStorageTotal) {
+        this.objectStorageTotal = objectStorageTotal;
+    }
+
+    @Override
+    public void setObjectStorageAvailable(String objectStorageAvailable) {
+        this.objectStorageAvailable = objectStorageAvailable;
     }
 
     public void setOwners(List<Map<String, String>> owners) {

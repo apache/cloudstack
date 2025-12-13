@@ -22,8 +22,8 @@ This PR...
 - [ ] Bug fix (non-breaking change which fixes an issue)
 - [ ] Enhancement (improves an existing feature and functionality)
 - [ ] Cleanup (Code refactoring and cleanup, that may add test cases)
-- [ ] build/CI
-- [ ] test (unit or integration test code)
+- [ ] Build/CI
+- [ ] Test (unit or integration test code)
 
 ### Feature/Enhancement Scale or Bug Severity
 
@@ -40,9 +40,7 @@ This PR...
 - [ ] Minor
 - [ ] Trivial
 
-
 ### Screenshots (if appropriate):
-
 
 ### How Has This Been Tested?
 
@@ -52,6 +50,5 @@ This PR...
 #### How did you try to break this feature and the system with this change?
 
 <!-- see how your change affects other areas of the code, etc. -->
-
 
 <!-- Please read the [CONTRIBUTING](https://github.com/apache/cloudstack/blob/main/CONTRIBUTING.md) document -->

@@ -18,6 +18,7 @@ package org.apache.cloudstack.direct.download;
 
 import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.util.HypervisorTypeConverter;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -55,6 +56,13 @@ public class DirectDownloadCertificateVO implements DirectDownloadCertificate {
 
     public DirectDownloadCertificateVO() {
         this.uuid = UUID.randomUUID().toString();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("DirectDownloadCertificate %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "alias"));
     }
 
     public void setId(Long id) {

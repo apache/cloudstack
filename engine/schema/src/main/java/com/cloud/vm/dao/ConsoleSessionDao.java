@@ -19,6 +19,7 @@
 
 package com.cloud.vm.dao;
 
+import com.cloud.utils.Pair;
 import com.cloud.vm.ConsoleSessionVO;
 import com.cloud.utils.db.GenericDao;
 
@@ -33,7 +34,12 @@ public interface ConsoleSessionDao extends GenericDao<ConsoleSessionVO, Long> {
 
     int expungeSessionsOlderThanDate(Date date);
 
-    void acquireSession(String sessionUuid);
+    void acquireSession(String sessionUuid, String clientAddress);
 
     int expungeByVmList(List<Long> vmIds, Long batchSize);
+
+    Pair<List<ConsoleSessionVO>, Integer> listConsoleSessions(Long id, List<Long> domainIds, Long accountId, Long userId, Long hostId,
+                                                              Date startDate, Date endDate, Long instanceId,
+                                                              String consoleEndpointCreatorAddress, String clientAddress,
+                                                              boolean activeOnly, boolean acquired, Long pageSizeVal, Long startIndex);
 }

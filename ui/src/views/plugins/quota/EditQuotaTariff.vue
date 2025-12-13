@@ -42,6 +42,20 @@
           v-model:value="form.value"
           :placeholder="$t('placeholder.quota.tariff.value')" />
       </a-form-item>
+      <a-form-item ref="activationRule" name="activationRule">
+        <template #label>
+          <tooltip-label :title="$t('label.quota.tariff.activationrule')" :tooltip="apiParams.activationrule.description"/>
+        </template>
+        <a-textarea
+          v-model:value="form.activationRule"
+          :placeholder="$t('placeholder.quota.tariff.activationrule')"
+          :class="stateBorder"
+          :max-length="65535"
+          @keydown="isActivationRuleValid = undefined" />
+      </a-form-item>
+      <div class="action-button">
+        <a-button type="primary" @click="handleValidateActivationRule">{{ $t('label.quota.validate.activation.rule') }}</a-button>
+      </div>
       <a-form-item ref="position" name="position">
         <template #label>
          <tooltip-label :title="$t('label.quota.tariff.position')" :tooltip="apiParams.position.description"/>
@@ -72,7 +86,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import { dayjs, parseDateToDatePicker, parseDayJsObject } from '@/utils/date'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -93,8 +107,17 @@ export default {
   },
   data: () => ({
     loading: false,
-    dayjs
+    dayjs,
+    isActivationRuleValid: undefined
   }),
+  computed: {
+    stateBorder () {
+      return {
+        'border-success': this.isActivationRuleValid,
+        'border-fail': this.isActivationRuleValid === false
+      }
+    }
+  },
   inject: ['parentFetchData'],
   beforeCreate () {
     this.apiParams = this.$getApiParams('quotaTariffUpdate')
@@ -109,7 +132,8 @@ export default {
         description: this.resource.description,
         value: this.resource.tariffValue,
         position: this.resource.position,
-        endDate: parseDateToDatePicker(this.resource.endDate)
+        endDate: parseDateToDatePicker(this.resource.endDate),
+        activationRule: this.resource.activationRule
       })
     },
     closeModal () {
@@ -143,6 +167,10 @@ export default {
           params.enddate = parseDayJsObject({ value: values.endDate })
         }
 
+        if (values.activationRule && this.resource.activationRule !== values.activationRule) {
+          params.activationRule = values.activationRule
+        }
+
         if (Object.keys(params).length === 1) {
           this.closeModal()
           return
@@ -150,7 +178,7 @@ export default {
 
         this.loading = true
 
-        api('quotaTariffUpdate', {}, 'POST', params).then(json => {
+        postAPI('quotaTariffUpdate', params).then(json => {
           const tariffResponse = json.quotatariffupdateresponse.quotatariff || {}
           if (tariffResponse.id && this.$route.params.id) {
             this.$router.push(`/quotatariff/${tariffResponse.id}`)
@@ -178,6 +206,33 @@ export default {
         return current < startOfToday || current < lowerEndDateLimit.startOf('day')
       }
       return current < startOfToday || current < lowerEndDateLimit.utc(false).startOf('day')
+    },
+    handleValidateActivationRule (e) {
+      e.preventDefault()
+      if (this.loading) return
+
+      const formRaw = toRaw(this.form)
+      const values = this.handleRemoveFields(formRaw)
+
+      this.loading = true
+      postAPI('quotaValidateActivationRule', {
+        activationRule: values.activationRule || ' ',
+        usageType: this.resource.usageType
+      }).then(response => {
+        const shortResponse = response.quotavalidateactivationruleresponse.validactivationrule
+
+        if (shortResponse.isvalid) {
+          this.$message.success(shortResponse.message)
+        } else {
+          this.$message.error(shortResponse.message)
+        }
+
+        this.isActivationRuleValid = shortResponse.isvalid
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.loading = false
+      })
     }
   }
 }

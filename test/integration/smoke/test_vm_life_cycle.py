@@ -1035,6 +1035,34 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         return
 
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    def test_14_destroy_vm_delete_protection(self):
+        """Test destroy Virtual Machine with delete protection
+        """
+
+        # Validate the following
+        # 1. Should not be able to delete the VM when delete protection is enabled
+        # 2. Should be able to delete the VM after disabling delete protection
+
+        vm = VirtualMachine.create(
+            self.apiclient,
+            self.services["small"],
+            serviceofferingid=self.small_offering.id,
+            mode=self.services["mode"],
+            startvm=False
+        )
+
+        vm.update(self.apiclient, deleteprotection=True)
+        try:
+            vm.delete(self.apiclient)
+            self.fail("VM shouldn't get deleted with delete protection enabled")
+        except Exception as e:
+            self.debug("Expected exception: %s" % e)
+
+        vm.update(self.apiclient, deleteprotection=False)
+        vm.delete(self.apiclient)
+
+        return
 
 class TestSecuredVmMigration(cloudstackTestCase):
 
@@ -1682,8 +1710,8 @@ class TestKVMLiveMigration(cloudstackTestCase):
     def get_target_pool(self, volid):
         target_pools = StoragePool.listForMigration(self.apiclient, id=volid)
 
-        if len(target_pools) < 1:
-            self.skipTest("Not enough storage pools found")
+        if target_pools is None or len(target_pools) == 0:
+            self.skipTest("Not enough storage pools found for migration")
 
         return target_pools[0]
 

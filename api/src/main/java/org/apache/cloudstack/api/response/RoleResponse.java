@@ -36,6 +36,10 @@ public class RoleResponse extends BaseRoleResponse {
     @Param(description = "true if role is default, false otherwise")
     private Boolean isDefault;
 
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "the state of the role")
+    private String state;
+
     public void setRoleType(RoleType roleType) {
         if (roleType != null) {
             this.roleType = roleType.name();
@@ -44,5 +48,9 @@ public class RoleResponse extends BaseRoleResponse {
 
     public void setIsDefault(Boolean isDefault) {
         this.isDefault = isDefault;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 }

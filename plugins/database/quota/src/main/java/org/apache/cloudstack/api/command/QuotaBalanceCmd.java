@@ -21,6 +21,9 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.user.Account;
+
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -40,6 +43,7 @@ public class QuotaBalanceCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = true, description = "Account Id for which statement needs to be generated")
     private String accountName;
 
+    @ACL
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = true, entityType = DomainResponse.class, description = "If domain Id is given and the caller is domain admin then the statement is generated for domain.")
     private Long domainId;
 
@@ -51,6 +55,7 @@ public class QuotaBalanceCmd extends BaseCmd {
             ApiConstants.PARAMETER_DESCRIPTION_START_DATE_POSSIBLE_FORMATS)
     private Date startDate;
 
+    @ACL
     @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "List usage records for the specified account")
     private Long accountId;
 
@@ -104,7 +109,14 @@ public class QuotaBalanceCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-       return _accountService.getActiveAccountByName(accountName, domainId).getAccountId();
+        if (accountId != null) {
+            return accountId;
+        }
+        Account account = _accountService.getActiveAccountByName(accountName, domainId);
+        if (account != null) {
+            return account.getAccountId();
+        }
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 
     @Override

@@ -32,8 +32,8 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.user.Account;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.quota.activationrule.presetvariables.Configuration;
 import org.apache.cloudstack.quota.activationrule.presetvariables.GenericPresetVariable;
 import org.apache.cloudstack.quota.activationrule.presetvariables.PresetVariableHelper;
 import org.apache.cloudstack.quota.activationrule.presetvariables.PresetVariables;
@@ -62,6 +62,7 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.UsageDao;
+import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
@@ -157,7 +158,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
                 .map(quotaUsageVO -> new Pair<>(quotaUsageVO.getStartDate(), quotaUsageVO.getEndDate()))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
-        logger.info(String.format("Processing quota balance for account[{}] between [{}] and [{}].", accountToString, startDate, lastQuotaUsageEndDate));
+        logger.info("Processing quota balance for account [{}] between [{}] and [{}].", accountToString, startDate, lastQuotaUsageEndDate);
 
         long accountId = accountVo.getAccountId();
         long domainId = accountVo.getDomainId();
@@ -467,7 +468,12 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
 
         }
 
-        jsInterpreter.injectStringVariable("resourceType", presetVariables.getResourceType());
+        Configuration configuration = presetVariables.getConfiguration();
+        if (configuration != null) {
+            jsInterpreter.injectVariable("configuration", configuration.toString());
+        }
+
+        jsInterpreter.injectVariable("resourceType", presetVariables.getResourceType());
         jsInterpreter.injectVariable("value", presetVariables.getValue().toString());
         jsInterpreter.injectVariable("zone", presetVariables.getZone().toString());
     }

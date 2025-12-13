@@ -25,7 +25,7 @@
       <p class="form__label">{{ $t('label.operation') }}</p>
       <a-select
         v-model:value="selectedOperation"
-        :defaultValue="$t('label.add')"
+        :defaultValue="'add'"
         @change="fetchData"
         v-focus="true"
         showSearch
@@ -33,13 +33,13 @@
         :filterOption="(input, option) => {
           return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
         }" >
-        <a-select-option :value="$t('label.add')">{{ $t('label.add') }}</a-select-option>
-        <a-select-option :value="$t('label.remove')">{{ $t('label.remove') }}</a-select-option>
-        <a-select-option :value="$t('label.reset')">{{ $t('label.reset') }}</a-select-option>
+        <a-select-option :value="'add'">{{ $t('label.add') }}</a-select-option>
+        <a-select-option :value="'remove'">{{ $t('label.remove') }}</a-select-option>
+        <a-select-option :value="'reset'">{{ $t('label.reset') }}</a-select-option>
       </a-select>
     </div>
 
-    <template v-if="selectedOperation !== $t('label.reset')">
+    <template v-if="selectedOperation !== 'reset'">
       <div class="form__item">
         <p class="form__label">
           <span class="required">*</span>
@@ -126,7 +126,7 @@
   </div>
 </template>
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
@@ -150,7 +150,7 @@ export default {
       selectedAccounts: [],
       selectedProjects: [],
       selectedAccountsList: '',
-      selectedOperation: this.$t('label.add'),
+      selectedOperation: 'add',
       selectedShareWith: this.$t('label.account'),
       accountError: false,
       projectError: false,
@@ -163,7 +163,7 @@ export default {
     accountsList () {
       return this.accounts.length > 0 ? this.accounts
         .filter(a =>
-          this.selectedOperation === this.$t('label.add')
+          this.selectedOperation === 'add'
             ? !this.permittedAccounts.includes(a.name)
             : this.permittedAccounts.includes(a.name)
         ) : this.accounts
@@ -171,7 +171,7 @@ export default {
     projectsList () {
       return this.projects > 0 ? this.projects
         .filter(p =>
-          this.selectedOperation === this.$t('label.add')
+          this.selectedOperation === 'add'
             ? !this.permittedProjects.includes(p.id)
             : this.permittedProjects.includes(p.id)
         ) : this.projects
@@ -199,7 +199,7 @@ export default {
     },
     fetchAccounts () {
       this.loading = true
-      api('listAccounts', {
+      getAPI('listAccounts', {
         domainid: this.resource.domainid,
         showicon: true
       }).then(response => {
@@ -209,7 +209,7 @@ export default {
       })
     },
     fetchProjects () {
-      api('listProjects', {
+      getAPI('listProjects', {
         details: 'min',
         showicon: true,
         listall: true
@@ -221,7 +221,7 @@ export default {
     },
     fetchTemplatePermissions () {
       this.loading = true
-      api('listTemplatePermissions', {
+      getAPI('listTemplatePermissions', {
         id: this.resource.id
       }).then(response => {
         const permission = response.listtemplatepermissionsresponse.templatepermission
@@ -237,7 +237,7 @@ export default {
     },
     fetchIsoPermissions () {
       this.loading = true
-      api('listIsoPermissions', {
+      getAPI('listIsoPermissions', {
         id: this.resource.id
       }).then(response => {
         const permission = response.listtemplatepermissionsresponse.templatepermission
@@ -252,7 +252,7 @@ export default {
       })
     },
     handleChange (selectedItems) {
-      if (this.selectedOperation === this.$t('label.add') || this.selectedOperation === this.$t('label.remove')) {
+      if (this.selectedOperation === 'add' || this.selectedOperation === 'remove') {
         if (this.selectedShareWith === this.$t('label.account')) {
           this.selectedAccounts = selectedItems
         } else {
@@ -281,7 +281,7 @@ export default {
       this.loading = true
       const apiName = this.isImageTypeIso ? 'updateIsoPermissions' : 'updateTemplatePermissions'
       const resourceType = this.isImageTypeIso ? 'ISO' : 'template'
-      api(apiName, {
+      postAPI(apiName, {
         [variableKey]: variableValue,
         id: this.resource.id,
         ispublic: this.resource.isPublic,

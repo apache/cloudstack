@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
@@ -42,6 +43,7 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 
@@ -180,7 +182,7 @@ public interface StorageManager extends StorageService {
     ConfigKey<Boolean> MountDisabledStoragePool = new ConfigKey<>(Boolean.class,
             "mount.disabled.storage.pool",
             "Storage",
-            "false",
+            Boolean.TRUE.toString(),
             "Mount all zone-wide or cluster-wide disabled storage pools after node reboot",
             true,
             ConfigKey.Scope.Cluster,
@@ -209,9 +211,26 @@ public interface StorageManager extends StorageService {
     ConfigKey<Long> HEURISTICS_SCRIPT_TIMEOUT = new ConfigKey<>("Advanced", Long.class, "heuristics.script.timeout", "3000",
             "The maximum runtime, in milliseconds, to execute the heuristic rule; if it is reached, a timeout will happen.", true);
 
+    ConfigKey<Boolean> AllowVolumeReSizeBeyondAllocation = new ConfigKey<Boolean>("Advanced", Boolean.class, "volume.resize.allowed.beyond.allocation", "false",
+            "Determines whether volume size can exceed the pool capacity allocation disable threshold (pool.storage.allocated.capacity.disablethreshold) " +
+                    "when resize a volume upto resize capacity disable threshold (pool.storage.allocated.resize.capacity.disablethreshold)",
+            true, List.of(ConfigKey.Scope.StoragePool, ConfigKey.Scope.Zone));
+
+    ConfigKey<Integer> StoragePoolHostConnectWorkers = new ConfigKey<>("Storage", Integer.class,
+            "storage.pool.host.connect.workers", "1",
+            "Number of worker threads to be used to connect hosts to a primary storage", true);
+
+    ConfigKey<Float> ObjectStorageCapacityThreshold = new ConfigKey<>("Alert", Float.class,
+            "objectStorage.capacity.notificationthreshold",
+            "0.75",
+            "Percentage (as a value between 0 and 1) of object storage utilization above which alerts will be sent about low storage available.",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+
     /**
      * should we execute in sequence not involving any storages?
-     * @return tru if commands should execute in sequence
+     * @return true if commands should execute in sequence
      */
     static boolean shouldExecuteInSequenceOnVmware() {
         return shouldExecuteInSequenceOnVmware(null, null);
@@ -283,6 +302,8 @@ public interface StorageManager extends StorageService {
 
     Answer sendToPool(StoragePool pool, long[] hostIdsToTryFirst, Command cmd) throws StorageUnavailableException;
 
+    void updateStoragePoolHostVOAndBytes(StoragePool pool, long hostId, ModifyStoragePoolAnswer mspAnswer);
+
     CapacityVO getSecondaryStorageUsedStats(Long hostId, Long zoneId);
 
     CapacityVO getStoragePoolUsedStats(Long poolId, Long clusterId, Long podId, Long zoneId);
@@ -302,6 +323,8 @@ public interface StorageManager extends StorageService {
     boolean canHostAccessStoragePool(Host host, StoragePool pool);
 
     boolean canHostPrepareStoragePoolAccess(Host host, StoragePool pool);
+
+    boolean canDisconnectHostFromStoragePool(Host host, StoragePool pool);
 
     Host getHost(long hostId);
 
@@ -360,9 +383,12 @@ public interface StorageManager extends StorageService {
 
     String getStoragePoolMountFailureReason(String error);
 
-    boolean connectHostToSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
+    void connectHostsToPool(DataStore primaryStore, List<Long> hostIds, Scope scope,
+            boolean handleStorageConflictException, boolean errorOnNoUpHost) throws CloudRuntimeException;
 
-    void disconnectHostFromSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
+    boolean connectHostToSharedPool(Host host, long poolId) throws StorageUnavailableException, StorageConflictException;
+
+    void disconnectHostFromSharedPool(Host host, StoragePool pool) throws StorageUnavailableException, StorageConflictException;
 
     void enableHost(long hostId) throws StorageUnavailableException, StorageConflictException;
 
@@ -394,4 +420,11 @@ public interface StorageManager extends StorageService {
 
     void validateChildDatastoresToBeAddedInUpState(StoragePoolVO datastoreClusterPool, List<ModifyStoragePoolAnswer> childDatastoreAnswerList);
 
+    boolean checkIfHostAndStoragePoolHasCommonStorageAccessGroups(Host host, StoragePool pool);
+
+    Pair<Boolean, String> checkIfReadyVolumeFitsInStoragePoolWithStorageAccessGroups(StoragePool destPool, Volume volume);
+
+    String[] getStorageAccessGroups(Long zoneId, Long podId, Long clusterId, Long hostId);
+
+    CapacityVO getObjectStorageUsedStats(Long zoneId);
 }

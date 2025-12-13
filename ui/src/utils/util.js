@@ -15,6 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import semver from 'semver'
+
 export function timeFix () {
   const time = new Date()
   const hour = time.getHours()
@@ -69,6 +71,14 @@ export function sanitizeReverse (value) {
     .replace(/&gt;/g, '>')
 }
 
+export function getParsedVersion (version) {
+  version = version.split('-')[0]
+  if (semver.valid(version) === null) {
+    version = version.split('.').slice(1).join('.')
+  }
+  return version
+}
+
 export function toCsv ({ keys = null, data = null, columnDelimiter = ',', lineDelimiter = '\n' }) {
   if (data === null || !data.length) {
     return null
@@ -91,4 +101,25 @@ export function toCsv ({ keys = null, data = null, columnDelimiter = ',', lineDe
   })
 
   return result
+}
+
+export function isValidIPv4Cidr (rule, value) {
+  return new Promise((resolve, reject) => {
+    if (!value) {
+      reject(new Error())
+      return
+    }
+    const cidrRegex = /^(\d{1,3}\.){3}\d{1,3}\/([0-9]|[1-2][0-9]|3[0-2])$/
+    if (!cidrRegex.test(value)) {
+      reject(new Error('Invalid CIDR format'))
+      return
+    }
+    const ip = value.split('/')[0]
+    const octets = ip.split('.').map(Number)
+    if (octets.some(octet => octet < 0 || octet > 255)) {
+      reject(new Error('Invalid CIDR format'))
+      return
+    }
+    resolve()
+  })
 }

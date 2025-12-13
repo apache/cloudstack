@@ -32,10 +32,11 @@ import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
-import com.cloud.consoleproxy.util.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ConsoleProxyThumbnailHandler implements HttpHandler {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public ConsoleProxyThumbnailHandler() {
     }
@@ -196,7 +197,7 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
                 startx = 0;
             g.drawString(text, startx, h / 2);
         } catch (Throwable e) {
-            logger.warn("Problem in generating text to thumnail image, return blank image");
+            logger.warn("Problem in generating text to thumbnail image, return blank image");
         }
         return img;
     }

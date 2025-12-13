@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.cpu.CPU;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
@@ -28,6 +29,7 @@ public class TemplateProfile {
     Long userId;
     String name;
     String displayText;
+    CPU.CPUArch arch;
     Integer bits;
     Boolean passwordEnabled;
     Boolean sshKeyEnbaled;
@@ -53,15 +55,18 @@ public class TemplateProfile {
     TemplateType templateType;
     Boolean directDownload;
     Boolean deployAsIs;
+    Boolean forCks;
     Long size;
+    Long extensionId;
 
-    public TemplateProfile(Long templateId, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHvm, String url,
+    public TemplateProfile(Long templateId, Long userId, String name, String displayText, CPU.CPUArch arch, Integer bits, Boolean passwordEnabled, Boolean requiresHvm, String url,
                            Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, List<Long> zoneIdList, HypervisorType hypervisorType,
                            String accountName, Long domainId, Long accountId, String chksum, Boolean bootable, Map details, Boolean sshKeyEnabled) {
         this.templateId = templateId;
         this.userId = userId;
         this.name = name;
         this.displayText = displayText;
+        this.arch = arch;
         this.bits = bits;
         this.passwordEnabled = passwordEnabled;
         this.requiresHvm = requiresHvm;
@@ -92,15 +97,16 @@ public class TemplateProfile {
         else this.zoneIdList = null;
     }
 
-    public TemplateProfile(Long templateId, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHvm, String url,
-            Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, List<Long> zoneId,
+    public TemplateProfile(Long templateId, Long userId, String name, String displayText, CPU.CPUArch arch, Integer bits, Boolean passwordEnabled, Boolean requiresHvm, String url,
+                           Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, List<Long> zoneId,
 
-            HypervisorType hypervisorType, String accountName, Long domainId, Long accountId, String chksum, Boolean bootable, String templateTag, Map details,
-            Boolean sshKeyEnabled, Long imageStoreId, Boolean isDynamicallyScalable, TemplateType templateType, Boolean directDownload, Boolean deployAsIs) {
+                           HypervisorType hypervisorType, String accountName, Long domainId, Long accountId, String chksum, Boolean bootable, String templateTag, Map details,
+                           Boolean sshKeyEnabled, Long imageStoreId, Boolean isDynamicallyScalable, TemplateType templateType, Boolean directDownload, Boolean deployAsIs, Long extensionId) {
         this(templateId,
             userId,
             name,
             displayText,
+            arch,
             bits,
             passwordEnabled,
             requiresHvm,
@@ -124,6 +130,7 @@ public class TemplateProfile {
         this.templateType = templateType;
         this.directDownload = directDownload;
         this.deployAsIs = deployAsIs;
+        this.extensionId = extensionId;
     }
 
     public Long getTemplateId() {
@@ -336,5 +343,24 @@ public class TemplateProfile {
 
     public boolean isDeployAsIs() {
         return this.deployAsIs;
+    }
+
+    public Boolean isForCks() {
+        return forCks;
+    }
+
+    public void setForCks(Boolean forCks) {
+        this.forCks = forCks;
+    }
+
+    public CPU.CPUArch getArch() {
+        return arch;
+    }
+    public Long getExtensionId() {
+        return extensionId;
+    }
+
+    public void setExtensionId(Long extensionId) {
+        this.extensionId = extensionId;
     }
 }

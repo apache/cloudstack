@@ -114,6 +114,7 @@
             :placeholder="apiParams.domainid.description"
             showSearch
             optionFilterProp="label"
+            @change="onDomainChange"
             :filterOption="(input, option) => {
               return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
@@ -191,7 +192,7 @@
 </template>
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
 import ResourceIcon from '@/components/view/ResourceIcon'
@@ -207,8 +208,9 @@ export default {
     this.fetchTimeZone = debounce(this.fetchTimeZone, 800)
     return {
       loading: false,
-      domain: { loading: false },
+      domain: { id: null, loading: false },
       domainsList: [],
+      dom: null,
       roleLoading: false,
       roles: [],
       timeZoneLoading: false,
@@ -227,14 +229,35 @@ export default {
   computed: {
     samlAllowed () {
       return 'authorizeSamlSso' in this.$store.getters.apis
+    },
+    selectedDomain () {
+      return this.domainsList.find(domain => domain.id === this.form.domainid)
+    },
+    isNonRootDomain () {
+      if (!this.selectedDomain) return false
+      return this.selectedDomain.level > 0 && this.selectedDomain.path !== 'ROOT'
+    }
+  },
+  watch: {
+    'form.domainid': {
+      handler (newDomainId, oldDomainId) {
+        if (newDomainId && this.roles.length > 0) {
+          this.$nextTick(() => {
+            this.setDefaultRole()
+          })
+        }
+      },
+      immediate: false
     }
   },
   methods: {
     initForm () {
+      var domId = this.$route.query.domainid || this.$store.getters.userInfo.domainid
       this.formRef = ref()
       this.form = reactive({
-        domainid: this.$store.getters.userInfo.domainid
+        domainid: domId
       })
+      this.domain.id = domId
       this.rules = reactive({
         roleid: [{ required: true, message: this.$t('message.error.select') }],
         username: [{ required: true, message: this.$t('message.error.required.input') }],
@@ -263,8 +286,35 @@ export default {
     isDomainAdmin () {
       return this.$store.getters.userInfo.roletype === 'DomainAdmin'
     },
+    isAdmin () {
+      return this.$store.getters.userInfo.roletype === 'Admin'
+    },
     isValidValueForKey (obj, key) {
       return key in obj && obj[key] != null
+    },
+    onDomainChange (newDomainId) {
+      if (newDomainId && this.roles.length > 0) {
+        this.$nextTick(() => {
+          this.setDefaultRole()
+        })
+      }
+    },
+    setDefaultRole () {
+      if (this.roles.length === 0) return
+
+      let targetRoleType = null
+
+      if (this.isAdmin()) {
+        targetRoleType = this.isNonRootDomain ? 'DomainAdmin' : 'Admin'
+      } else if (this.isDomainAdmin()) {
+        targetRoleType = 'User'
+      }
+
+      const targetRole = targetRoleType
+        ? this.roles.find(role => role.type === targetRoleType)
+        : this.roles[0]
+
+      this.form.roleid = (targetRole || this.roles[0]).id
     },
     async validateConfirmPassword (rule, value) {
       if (!value || value.length === 0) {
@@ -286,17 +336,22 @@ export default {
       this.loadMore('listDomains', 1, this.domain)
     },
     loadMore (apiToCall, page, sema) {
-      console.log('sema.loading ' + sema.loading)
-      const params = {}
-      params.listAll = true
-      params.details = 'min'
-      params.pagesize = 100
-      params.page = page
+      const params = {
+        listAll: true,
+        details: 'min',
+        pagesize: 100,
+        page: page
+      }
       var count
-      api(apiToCall, params).then(json => {
+      getAPI(apiToCall, params).then(json => {
         const listDomains = json.listdomainsresponse.domain
         count = json.listdomainsresponse.count
         this.domainsList = this.domainsList.concat(listDomains)
+        this.dom = this.domainsList.find(domain => domain.id === this.domain.id)
+
+        if (this.roles.length > 0) {
+          this.setDefaultRole()
+        }
       }).finally(() => {
         if (count <= this.domainsList.length) {
           sema.loading = false
@@ -307,15 +362,13 @@ export default {
     },
     fetchRoles () {
       this.roleLoading = true
-      api('listRoles').then(response => {
+      const params = {
+        state: 'enabled'
+      }
+
+      getAPI('listRoles', params).then(response => {
         this.roles = response.listrolesresponse.role || []
-        this.form.roleid = this.roles[0].id
-        if (this.isDomainAdmin()) {
-          const userRole = this.roles.filter(role => role.type === 'User')
-          if (userRole.length > 0) {
-            this.form.roleid = userRole[0].id
-          }
-        }
+        this.setDefaultRole()
       }).finally(() => {
         this.roleLoading = false
       })
@@ -331,7 +384,7 @@ export default {
     },
     fetchIdps () {
       this.idpLoading = true
-      api('listIdps').then(response => {
+      getAPI('listIdps').then(response => {
         this.idps = response.listidpsresponse.idp || []
         this.form.samlentity = this.idps[0].id || ''
       }).finally(() => {
@@ -364,7 +417,7 @@ export default {
           params.networkdomain = values.networkdomain
         }
 
-        api('createAccount', {}, 'POST', params).then(response => {
+        postAPI('createAccount', params).then(response => {
           this.$emit('refresh-data')
           this.$notification.success({
             message: this.$t('label.create.account'),
@@ -373,7 +426,7 @@ export default {
           const users = response.createaccountresponse.account.user
           if (values.samlenable && users) {
             for (var i = 0; i < users.length; i++) {
-              api('authorizeSamlSso', {
+              postAPI('authorizeSamlSso', {
                 enable: values.samlenable,
                 entityid: values.samlentity,
                 userid: users[i].id
