@@ -73,8 +73,11 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.logging.log4j.ThreadContext;
 
 public class StorageOrchestrator extends ManagerBase implements StorageOrchestrationService, Configurable {
+
+    private static final String LOGCONTEXTID = "logcontextid";
 
     @Inject
     SnapshotDataStoreDao snapshotDataStoreDao;
@@ -111,6 +114,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
     Integer numConcurrentCopyTasksPerSSVM = 2;
 
     private final Map<Long, ThreadPoolExecutor> zoneExecutorMap = new HashMap<>();
+    private final Map<Long, Integer> zonePendingWorkCountMap = new HashMap<>();
 
     @Override
     public String getConfigComponentName() {
@@ -356,13 +360,20 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         return storageCapacities;
     }
 
-    protected synchronized <T> Future<T> submit(Long zoneId, Callable<T> task) {
-        if (!zoneExecutorMap.containsKey(zoneId)) {
-            zoneExecutorMap.put(zoneId, new ThreadPoolExecutor(numConcurrentCopyTasksPerSSVM, numConcurrentCopyTasksPerSSVM,
-                    30, TimeUnit.MINUTES, new MigrateBlockingQueue<>(numConcurrentCopyTasksPerSSVM)));
+    protected <T> Future<T> submit(Long zoneId, Callable<T> task) {
+        ThreadPoolExecutor executor;
+        synchronized (this) {
+            if (!zoneExecutorMap.containsKey(zoneId)) {
+                zoneExecutorMap.put(zoneId, new ThreadPoolExecutor(numConcurrentCopyTasksPerSSVM, numConcurrentCopyTasksPerSSVM,
+                        30, TimeUnit.MINUTES, new MigrateBlockingQueue<>(numConcurrentCopyTasksPerSSVM)));
+                zonePendingWorkCountMap.put(zoneId, 0);
+            }
+            zonePendingWorkCountMap.merge(zoneId, 1, Integer::sum);
+            scaleExecutorIfNecessary(zoneId);
+            executor = zoneExecutorMap.get(zoneId);
         }
-        scaleExecutorIfNecessary(zoneId);
-        return zoneExecutorMap.get(zoneId).submit(task);
+        return executor.submit(task);
+
     }
 
     protected void scaleExecutorIfNecessary(Long zoneId) {
@@ -383,14 +394,15 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             return;
         }
 
-        ThreadPoolExecutor executor = zoneExecutorMap.get(zoneId);
-        int activeTasks = executor.getActiveCount();
-        if (activeTasks > 1) {
-            logger.debug("Not cleaning executor of zone [{}] yet, as there are [{}] active tasks.", zoneId, activeTasks);
+        zonePendingWorkCountMap.merge(zoneId, -1, Integer::sum);
+        Integer pendingWorkCount = zonePendingWorkCountMap.get(zoneId);
+        if (pendingWorkCount > 0) {
+            logger.debug("Not cleaning executor of zone [{}] yet, as there is [{}] pending work.", zoneId, pendingWorkCount);
             return;
         }
 
         logger.debug("Cleaning executor of zone [{}].", zoneId);
+        ThreadPoolExecutor executor = zoneExecutorMap.get(zoneId);
         zoneExecutorMap.remove(zoneId);
         executor.shutdown();
     }
@@ -568,10 +580,13 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         private DataStore destDataStore;
         private Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChain;
         private Map<DataObject, Pair<List<TemplateInfo>, Long>> templateChain;
+        private String logid;
+
         public MigrateDataTask(DataObject file, DataStore srcDataStore, DataStore destDataStore) {
             this.file = file;
             this.srcDataStore = srcDataStore;
             this.destDataStore = destDataStore;
+            this.logid = ThreadContext.get(LOGCONTEXTID);
         }
 
         public void setSnapshotChains(Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChain) {
@@ -593,6 +608,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
 
         @Override
         public DataObjectResult call() {
+            ThreadContext.put(LOGCONTEXTID, logid);
             DataObjectResult result;
             AsyncCallFuture<DataObjectResult> future = secStgSrv.migrateData(file, srcDataStore, destDataStore, snapshotChain, templateChain);
             try {
@@ -603,6 +619,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                 result.setResult(e.toString());
             }
             tryCleaningUpExecutor(srcDataStore.getScope().getScopeId());
+            ThreadContext.clearAll();
             return result;
         }
     }
@@ -610,14 +627,17 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
     private class CopyTemplateTask implements Callable<TemplateApiResult> {
         private TemplateInfo sourceTmpl;
         private DataStore destStore;
+        private String logid;
 
         public CopyTemplateTask(TemplateInfo sourceTmpl, DataStore destStore) {
             this.sourceTmpl = sourceTmpl;
             this.destStore = destStore;
+            this.logid = ThreadContext.get(LOGCONTEXTID);
         }
 
         @Override
         public TemplateApiResult call() {
+            ThreadContext.put(LOGCONTEXTID, logid);
             TemplateApiResult result;
             AsyncCallFuture<TemplateApiResult> future = templateService.copyTemplateToImageStore(sourceTmpl, destStore);
             try {
@@ -629,6 +649,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                 result.setResult(e.getMessage());
             }
             tryCleaningUpExecutor(destStore.getScope().getScopeId());
+            ThreadContext.clearAll();
             return result;
         }
     }

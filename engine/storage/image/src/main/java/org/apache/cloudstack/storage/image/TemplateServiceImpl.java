@@ -58,6 +58,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.DataObjectManager;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
@@ -648,6 +649,15 @@ public class TemplateServiceImpl implements TemplateService {
         TemplateOpContext<TemplateApiResult> context = new TemplateOpContext<>(null, destTmpl, future);
         AsyncCallbackDispatcher<TemplateServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().copyTemplateToImageStoreCallback(null, null)).setContext(context);
+
+        if (source.getDataStore().getId() == destStore.getId()) {
+            logger.debug("Destination image store [{}] is the same as the origin; returning success to normalize the metadata.");
+            CopyCmdAnswer answer = new CopyCmdAnswer(source.getTO());
+            CopyCommandResult result = new CopyCommandResult("", answer);
+            caller.complete(result);
+            return future;
+        }
+
         _motionSrv.copyAsync(sourceTmpl, destTmpl, caller);
         return future;
     }
