@@ -5860,7 +5860,6 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         }
 
         if (!ApiConstants.BootMode.SECURE.name().equals(bootMode)) {
-            logger.warn("PEARL - bootMode=" + bootMode);
             logger.warn("vTPM requires UEFI Secure Boot to be enabled. Skipping vTPM configuration for VM: {}", vmSpec.getName());
             return;
         }

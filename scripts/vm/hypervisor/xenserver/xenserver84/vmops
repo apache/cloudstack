@@ -1603,7 +1603,7 @@ def create_vtpm(session, args):
 
         if existing_vtpms:
             util.SMlog("vTPM already exists for VM %s: %s" % (vm_uuid, existing_vtpms))
-            return existing_vtpms.split(',')[0]  # Return first vTPM UUID
+            return existing_vtpms.split(',')[0]
 
         cmd = ['xe', 'vtpm-create', 'vm-uuid=' + vm_uuid]
         result = util.pread2(cmd)
