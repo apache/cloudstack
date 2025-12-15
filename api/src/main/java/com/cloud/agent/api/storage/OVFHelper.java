@@ -501,7 +501,7 @@ public class OVFHelper {
             outfile.write(writer.toString());
             outfile.close();
         } catch (IOException | TransformerException e) {
-            logger.info("Unexpected exception caught while rewriting OVF:{}", e.getMessage(), e);
+            logger.info("Unexpected exception caught while rewriting OVF: {}", e.getMessage(), e);
             throw new CloudRuntimeException(e);
         }
     }
@@ -767,7 +767,7 @@ public class OVFHelper {
             try {
                 return Integer.parseInt(value);
             } catch (NumberFormatException e) {
-                logger.debug("Could not parse the value: {} ignoring it", value);
+                logger.debug("Could not parse the value: {}, ignoring it", value);
             }
         }
         return null;

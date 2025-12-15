@@ -128,7 +128,7 @@ public class CreateNetworkACLListCmd extends BaseAsyncCreateCmd {
         } else {
             account = CallContext.current().getCallingAccount();
             if (!Account.Type.ADMIN.equals(account.getType())) {
-                logger.warn("Only Root Admin can create global ACLs. Account [{}] cannot create any global ACL.", account);
+                logger.error("Only Root Admin can create global ACLs. {} cannot create any global ACL.", account);
                 throw new PermissionDeniedException("Only Root Admin can create global ACLs.");
             }
 

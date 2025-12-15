@@ -271,7 +271,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
                 setEntityUuid(result.getUuid());
             }
         } catch (NetworkRuleConflictException ex) {
-            logger.trace("Network Rule Conflict: ", ex);
+            logger.error("Network Rule Conflict: ", ex);
             throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage(), ex);
         }
     }

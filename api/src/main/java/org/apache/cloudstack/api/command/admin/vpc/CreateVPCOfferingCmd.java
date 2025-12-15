@@ -224,7 +224,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
             Iterator<? extends Map<String, String>> iter = servicesCollection.iterator();
             while (iter.hasNext()) {
                 Map<String, String> obj = iter.next();
-                logger.trace("service provider entry specified: ", () -> obj);
+                logger.trace("Service provider entry specified: ", obj);
                 HashMap<String, String> services = (HashMap<String, String>)obj;
                 String service = services.get("service");
                 String provider = services.get("provider");
