@@ -255,7 +255,7 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
             }
         } catch (NetworkRuleConflictException ex) {
             String message = "Network rule conflict: ";
-            logger.error( "Network rule conflict: {}", ex.getMessage());
+            logger.error("{}{}", message, ex.getMessage());
             logger.trace(message, ex);
             throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage());
         }

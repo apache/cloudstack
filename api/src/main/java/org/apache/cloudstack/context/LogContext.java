@@ -205,7 +205,7 @@ public class LogContext {
         LogContext context = s_currentContext.get();
         if (context != null) {
             s_currentContext.remove();
-            LOGGER.trace("Unregistered: {}", () -> context);
+            LOGGER.trace("Unregistered: {}", context);
         }
         ThreadContext.clearMap();
     }

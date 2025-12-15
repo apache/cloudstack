@@ -541,7 +541,7 @@ public class OVFHelper {
                 nicCount++;
                 String name = e.getTextContent(); // should be in our nets
                 if(nets.get(name) == null) {
-                    logger.info("Found a nic definition without a network definition byname {}, adding it to the list.", name);
+                    logger.info("Found a nic definition without a network definition by name {}, adding it to the list.", name);
                     nets.put(name, new OVFNetworkTO());
                 }
                 OVFNetworkTO thisNet = nets.get(name);
