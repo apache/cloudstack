@@ -39,6 +39,7 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.network.PublicIpQuarantine;
 import com.cloud.network.dao.PublicIpQuarantineDao;
 import com.cloud.network.vo.PublicIpQuarantineVO;
@@ -3302,6 +3303,23 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             scc.addOr("created", SearchCriteria.Op.GTEQ, lastDate);
             scc.addOr("removed", SearchCriteria.Op.GTEQ, lastDate);
             sc.addAnd("created", SearchCriteria.Op.SC, scc);
+        }
+
+        ApiCommandResourceType resourceType = cmd.getResourceType();
+        if (resourceType != null) {
+            sc.addAnd("instanceType", SearchCriteria.Op.EQ, resourceType);
+
+            if (cmd.getResourceId() != null) {
+                Long resourceId = ApiDBUtils.findResourceId(resourceType, cmd.getResourceId());
+                if (resourceId == null) {
+                    throw new InvalidParameterValueException("Invalid resource id for the resource type " + resourceType);
+                }
+
+                sc.addAnd("instanceUuid", SearchCriteria.Op.EQ, cmd.getResourceId());
+//                sc.addAnd("instanceId", SearchCriteria.Op.EQ, resourceId);
+            }
+        } else if (cmd.getResourceId() != null) {
+            throw new InvalidParameterValueException("Resource type must be specified for the resource id");
         }
 
         if (cmd.getManagementServerId() != null) {
