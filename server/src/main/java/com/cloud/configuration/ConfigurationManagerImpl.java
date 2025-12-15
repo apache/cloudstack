@@ -990,6 +990,19 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
     }
 
+    protected String getNormalizedEmptyValueForConfig(final String name, final String inputValue,
+                          final Long configStorageId) {
+        String value = inputValue.trim();
+        if (!value.isEmpty() && !value.equals("null")) {
+            return value;
+        }
+        if (configStorageId != null) {
+            return "";
+        }
+        ConfigKey<?> key = _configDepot.get(name);
+        return (key != null && key.type() == String.class) ? "" : null;
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, eventDescription = "updating configuration")
     public Configuration updateConfiguration(final UpdateCfgCmd cmd) throws InvalidParameterValueException {
@@ -1084,11 +1097,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("cannot handle multiple IDs, provide only one ID corresponding to the scope");
         }
 
-        value = value.trim();
-
-        if (value.isEmpty() || value.equals("null")) {
-            value = (id == null) ? null : "";
-        }
+        value = getNormalizedEmptyValueForConfig(name, value, id);
 
         String currentValueInScope = getConfigurationValueInScope(config, name, scope, id);
         final String updatedValue = updateConfiguration(userId, name, category, value, scope, id);
