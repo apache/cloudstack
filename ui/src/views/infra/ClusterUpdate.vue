@@ -170,7 +170,7 @@ export default {
       })
       typesList.push({
         id: 's390x',
-        description: 'S390X 64 bits (s390x)'
+        description: 'IBM Z 64 bits (s390x)'
       })
       this.architectureTypes.opts = typesList
     },

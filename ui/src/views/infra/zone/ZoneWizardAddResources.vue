@@ -867,7 +867,7 @@ export default {
         description: 'ARM 64 bits (aarch64)'
       }, {
         id: 's390x',
-        description: 'S390X 64 bits (s390x)'
+        description: 'IBM Z 64 bits (s390x)'
       }],
       storageProviders: [],
       currentStep: null,
