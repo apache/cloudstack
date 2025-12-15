@@ -90,6 +90,10 @@ public class LoginCmdResponse extends AuthenticationCmdResponse {
     @Param(description = "Management Server ID that the user logged to", since = "4.21.0.0")
     private String managementServerId;
 
+    @SerializedName(value = ApiConstants.PASSWORD_CHANGE_REQUIRED)
+    @Param(description = "Is User required to change password on next login.", since = "4.23.0")
+    private String passwordChangeRequired;
+
     public String getUsername() {
         return username;
     }
@@ -222,5 +226,13 @@ public class LoginCmdResponse extends AuthenticationCmdResponse {
 
     public void setManagementServerId(String managementServerId) {
         this.managementServerId = managementServerId;
+    }
+
+    public String getPasswordChangeRequired() {
+        return passwordChangeRequired;
+    }
+
+    public void setPasswordChangeRequired(String passwordChangeRequired) {
+        this.passwordChangeRequired = passwordChangeRequired;
     }
 }

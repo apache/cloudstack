@@ -1096,6 +1096,7 @@
 "label.forced": "Force",
 "label.force.convert.to.pool": "Force converting to storage pool directly (not using temporary storage for conversion)",
 "label.force.ms.to.import.vm.files": "Enable to force OVF Download via Management Server. Disable to use KVM Host ovftool (if installed)",
+"label.force.password.reset": "Force password change on next login",
 "label.force.update.os.type": "Force update OS type",
 "label.force.stop": "Force stop",
 "label.force.reboot": "Force reboot",

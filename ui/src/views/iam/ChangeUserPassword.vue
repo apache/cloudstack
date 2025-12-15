@@ -49,7 +49,10 @@
             v-model:value="form.confirmpassword"
             :placeholder="$t('label.confirmpassword.description')"/>
         </a-form-item>
-
+        <a-form-item v-if="isAdminOrDomainAdmin() && isNormalUserResource()" name="passwordChangeRequired" ref="passwordChangeRequired">
+          <a-switch v-model:checked="form.passwordChangeRequired" />
+          <span style="padding-left: 10px;">{{ $t('label.force.password.reset') }}</span>
+        </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
           <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -99,6 +102,9 @@ export default {
         ]
       })
     },
+    isNormalUserResource () {
+      return ['User'].includes(this.resource.roletype)
+    },
     isAdminOrDomainAdmin () {
       return ['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
     },
@@ -133,6 +139,10 @@ export default {
         }
         if (this.isValidValueForKey(values, 'currentpassword') && values.currentpassword.length > 0) {
           params.currentpassword = values.currentpassword
+        }
+
+        if (this.isAdminOrDomainAdmin && values.passwordChangeRequired) {
+          params.passwordchangerequired = values.passwordChangeRequired
         }
         postAPI('updateUser', params).then(json => {
           this.$notification.success({

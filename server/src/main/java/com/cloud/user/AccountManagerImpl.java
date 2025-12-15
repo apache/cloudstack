@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.user;
 
+import static org.apache.cloudstack.resourcedetail.UserDetailVO.PasswordChangeRequired;
+
 import java.net.InetAddress;
 import java.net.URLEncoder;
 import java.security.NoSuchAlgorithmException;
@@ -1580,7 +1582,28 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             user.setUser2faEnabled(true);
         }
         _userDao.update(user.getId(), user);
+        updatePasswordChangeRequired(caller, updateUserCmd, user);
         return _userAccountDao.findById(user.getId());
+    }
+
+    private void updatePasswordChangeRequired(User caller, UpdateUserCmd updateUserCmd, UserVO user) {
+        if (StringUtils.isNotBlank(updateUserCmd.getPassword()) && isNormalUser(user.getAccountId())) {
+            boolean isPasswordResetRequired = updateUserCmd.isPasswordChangeRequired();
+            // Admins only can enforce passwordChangeRequired for user
+            if ((isRootAdmin(caller.getId()) || isDomainAdmin(caller.getAccountId()))) {
+                if (isPasswordResetRequired) {
+                    _userDetailsDao.addDetail(user.getId(), PasswordChangeRequired, "true", false);
+                }
+            }
+
+            // Remove passwordChangeRequired if user updating own pwd or admin has not enforced it
+            if ((caller.getId() == user.getId()) || !isPasswordResetRequired) {
+                UserDetailVO userDetailVO = _userDetailsDao.findDetail(user.getId(), PasswordChangeRequired);
+                if (userDetailVO != null) {
+                    _userDetailsDao.removeDetail(user.getId(), PasswordChangeRequired);
+                }
+            }
+        }
     }
 
     @Override
@@ -2840,6 +2863,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             if (logger.isDebugEnabled()) {
                 logger.debug(String.format("User: %s in domain %d has successfully logged in, auth time duration - %d ms", username, domainId, validUserLastAuthTimeDurationInMs));
             }
+
+            user.setDetails(_userDetailsDao.listDetailsKeyPairs(user.getId()));
 
             return user;
         } else {

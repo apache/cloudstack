@@ -207,6 +207,9 @@ const user = {
       return new Promise((resolve, reject) => {
         login(userInfo).then(response => {
           const result = response.loginresponse || {}
+          if (result.passwordchangerequired) {
+            console.log('Password change required for user ', userInfo.username)
+          }
           Cookies.set('account', result.account, { expires: 1 })
           Cookies.set('domainid', result.domainid, { expires: 1 })
           Cookies.set('role', result.type, { expires: 1 })
