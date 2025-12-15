@@ -282,7 +282,7 @@ import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.admin.user.LockUserCmd;
 import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
-import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
+import org.apache.cloudstack.api.command.admin.user.RegisterUserKeyCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
@@ -3843,7 +3843,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListUsersCmd.class);
         cmdList.add(LockUserCmd.class);
         cmdList.add(MoveUserCmd.class);
-        cmdList.add(RegisterCmd.class);
+        cmdList.add(RegisterUserKeyCmd.class);
         cmdList.add(UpdateUserCmd.class);
         cmdList.add(CreateVlanIpRangeCmd.class);
         cmdList.add(UpdateVlanIpRangeCmd.class);

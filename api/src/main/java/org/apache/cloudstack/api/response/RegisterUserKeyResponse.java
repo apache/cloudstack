@@ -23,7 +23,7 @@ import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
 
-public class RegisterResponse extends BaseResponse {
+public class RegisterUserKeyResponse extends BaseResponse {
     @SerializedName(ApiConstants.API_KEY)
     @Param(description = "the api key of the registered user", isSensitive = true)
     private String apiKey;
