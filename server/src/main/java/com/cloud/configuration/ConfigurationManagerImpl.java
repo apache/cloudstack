@@ -52,6 +52,7 @@ import javax.naming.ConfigurationException;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
+import com.cloud.utils.DomainHelper;
 import com.cloud.vm.VirtualMachineManager;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -398,6 +399,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     ClusterDao _clusterDao;
     @Inject
     AlertManager _alertMgr;
+    @Inject
+    DomainHelper domainHelper;
     List<SecurityChecker> _secChecker;
     List<ExternalProvisioner> externalProvisioners;
 
@@ -3509,7 +3512,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                       final boolean isCustomized, final boolean encryptRoot, Long vgpuProfileId, Integer gpuCount, Boolean gpuDisplay, final boolean purgeResources, Integer leaseDuration, VMLeaseManager.ExpiryAction leaseExpiryAction) {
 
         // Filter child domains when both parent and child domains are present
-        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        List<Long> filteredDomainIds = domainHelper.filterChildSubDomains(domainIds);
 
         // Check if user exists in the system
         final User user = _userDao.findById(userId);
@@ -3898,7 +3901,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Account account = _accountDao.findById(user.getAccountId());
 
         // Filter child domains when both parent and child domains are present
-        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        List<Long> filteredDomainIds = domainHelper.filterChildSubDomains(domainIds);
         Collections.sort(filteredDomainIds);
 
         List<Long> filteredZoneIds = new ArrayList<>();
@@ -4102,7 +4105,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         // Filter child domains when both parent and child domains are present
-        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        List<Long> filteredDomainIds = domainHelper.filterChildSubDomains(domainIds);
 
         // Check if user exists in the system
         final User user = _userDao.findById(userId);
@@ -4378,7 +4381,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Account account = _accountDao.findById(user.getAccountId());
 
         // Filter child domains when both parent and child domains are present
-        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        List<Long> filteredDomainIds = domainHelper.filterChildSubDomains(domainIds);
         Collections.sort(filteredDomainIds);
 
         List<Long> filteredZoneIds = new ArrayList<>();
@@ -7385,7 +7388,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
                     if (offering != null) {
                         // Filter child domains when both parent and child domains are present
-                        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+                        List<Long> filteredDomainIds = domainHelper.filterChildSubDomains(domainIds);
                         List<NetworkOfferingDetailsVO> detailsVO = new ArrayList<>();
                         for (Long domainId : filteredDomainIds) {
                             detailsVO.add(new NetworkOfferingDetailsVO(offering.getId(), Detail.domainid, String.valueOf(domainId), false));
@@ -7851,7 +7854,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         // Filter child domains when both parent and child domains are present
-        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        List<Long> filteredDomainIds = domainHelper.filterChildSubDomains(domainIds);
         Collections.sort(filteredDomainIds);
 
         List<Long> filteredZoneIds = new ArrayList<>();
@@ -8416,28 +8419,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
         return false;
-    }
-
-    private List<Long> filterChildSubDomains(final List<Long> domainIds) {
-        List<Long> filteredDomainIds = new ArrayList<>();
-        if (domainIds != null) {
-            filteredDomainIds.addAll(domainIds);
-        }
-        if (filteredDomainIds.size() > 1) {
-            for (int i = filteredDomainIds.size() - 1; i >= 1; i--) {
-                for (int j = i - 1; j >= 0; j--) {
-                    if (_domainDao.isChildDomain(filteredDomainIds.get(i), filteredDomainIds.get(j))) {
-                        filteredDomainIds.remove(j);
-                        i--;
-                    }
-                    if (_domainDao.isChildDomain(filteredDomainIds.get(j), filteredDomainIds.get(i))) {
-                        filteredDomainIds.remove(i);
-                        break;
-                    }
-                }
-            }
-        }
-        return filteredDomainIds;
     }
 
     protected void validateCacheMode(String cacheMode){

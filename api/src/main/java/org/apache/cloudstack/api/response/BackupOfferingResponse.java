@@ -62,11 +62,13 @@ public class BackupOfferingResponse extends BaseResponse {
     private String zoneName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID(s) this disk offering belongs to. Ignore this information as it is not currently applicable.")
+    @Param(description = "the domain ID(s) this disk offering belongs to. Ignore this information as it is not currently applicable.",
+    since = "4.23.0")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name(s) this disk offering belongs to. Ignore this information as it is not currently applicable.")
+    @Param(description = "the domain name(s) this disk offering belongs to. Ignore this information as it is not currently applicable.",
+    since = "4.23.0")
     private String domain;
 
     @SerializedName(ApiConstants.CROSS_ZONE_INSTANCE_CREATION)

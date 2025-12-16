@@ -25,6 +25,4 @@ public class ManagerBase extends ComponentLifecycleBase implements ComponentMeth
         // set default run level for manager components
         setRunLevel(ComponentLifecycle.RUN_LEVEL_COMPONENT_BOOTSTRAP);
     }
-
-
 }

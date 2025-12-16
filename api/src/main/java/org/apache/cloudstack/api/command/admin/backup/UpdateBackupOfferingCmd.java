@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.response.BackupOfferingResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -93,7 +94,7 @@ public class UpdateBackupOfferingCmd extends BaseCmd implements DomainAndZoneIdR
     @Override
     public void execute() {
         try {
-            if (StringUtils.isAllEmpty(getName(), getDescription()) && getAllowUserDrivenBackups() == null) {
+            if (StringUtils.isAllEmpty(getName(), getDescription()) && getAllowUserDrivenBackups() == null && CollectionUtils.isEmpty(getDomainIds())) {
                 throw new InvalidParameterValueException(String.format("Can't update Backup Offering [id: %s] because there are no parameters to be updated, at least one of the",
                         "following should be informed: name, description or allowUserDrivenBackups.", id));
             }

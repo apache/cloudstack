@@ -38,6 +38,7 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.DomainHelper;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -82,12 +83,12 @@ import org.apache.cloudstack.poll.BackgroundPollTask;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import com.amazonaws.util.CollectionUtils;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDispatcher;
 import com.cloud.api.ApiGsonHelper;
@@ -240,6 +241,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     private AlertManager alertManager;
     @Inject
     private GuestOSDao _guestOSDao;
+    @Inject
+    private DomainHelper domainHelper;
 
     private AsyncJobDispatcher asyncJobDispatcher;
     private Timer backupTimer;
@@ -283,7 +286,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("A backup offering with the same name already exists in this zone");
         }
 
-        if (org.apache.commons.collections.CollectionUtils.isNotEmpty(cmd.getDomainIds())) {
+        if (CollectionUtils.isNotEmpty(cmd.getDomainIds())) {
             for (final Long domainId: cmd.getDomainIds()) {
                 if (domainDao.findById(domainId) == null) {
                     throw new InvalidParameterValueException("Please specify a valid domain id");
@@ -294,7 +297,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final Account caller = CallContext.current().getCallingAccount();
         List<Long> filteredDomainIds = cmd.getDomainIds() == null ? new ArrayList<>() : new ArrayList<>(cmd.getDomainIds());
         if (filteredDomainIds.size() > 1) {
-            filteredDomainIds = filterChildSubDomains(filteredDomainIds);
+            filteredDomainIds = domainHelper.filterChildSubDomains(filteredDomainIds);
         }
 
         final BackupProvider provider = getBackupProvider(cmd.getZoneId());
@@ -309,7 +312,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (savedOffering == null) {
             throw new CloudRuntimeException("Unable to create backup offering: " + cmd.getExternalId() + ", name: " + cmd.getName());
         }
-        if (org.apache.commons.collections.CollectionUtils.isNotEmpty(filteredDomainIds)) {
+        if (CollectionUtils.isNotEmpty(filteredDomainIds)) {
             List<BackupOfferingDetailsVO> detailsVOList = new ArrayList<>();
             for (Long domainId : filteredDomainIds) {
                 detailsVOList.add(new BackupOfferingDetailsVO(savedOffering.getId(), ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
@@ -322,32 +325,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return savedOffering;
     }
 
-    private List<Long> filterChildSubDomains(final List<Long> domainIds) {
-        if (domainIds == null || domainIds.size() <= 1) {
-            return domainIds == null ? new ArrayList<>() : new ArrayList<>(domainIds);
-        }
-        final List<Long> result = new ArrayList<>();
-        for (final Long candidate : domainIds) {
-            boolean isDescendant = false;
-            for (final Long other : domainIds) {
-                if (Objects.equals(candidate, other)) continue;
-                if (domainDao.isChildDomain(other, candidate)) {
-                    isDescendant = true;
-                    break;
-                }
-            }
-            if (!isDescendant) {
-                result.add(candidate);
-            }
-        }
-        return result;
-    }
-
     @Override
     public List<Long> getBackupOfferingDomains(Long offeringId) {
         final BackupOffering backupOffering = backupOfferingDao.findById(offeringId);
         if (backupOffering == null) {
-            throw new InvalidParameterValueException("Unable to find backup offering " + backupOffering);
+            throw new InvalidParameterValueException("Unable to find backup offering for id: " + offeringId);
         }
         return backupOfferingDetailsDao.findDomainIds(offeringId);
     }
@@ -1159,7 +1141,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
 
         // This is done to handle historic backups if any with Veeam / Networker plugins
-        List<Backup.VolumeInfo> backupVolumes = CollectionUtils.isNullOrEmpty(backup.getBackedUpVolumes()) ?
+        List<Backup.VolumeInfo> backupVolumes = CollectionUtils.isEmpty(backup.getBackedUpVolumes()) ?
                 vm.getBackupVolumeList() : backup.getBackedUpVolumes();
         List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
         if (vmVolumes.size() != backupVolumes.size()) {
@@ -2237,17 +2219,17 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             fields.add("allowUserDrivenBackups: " + allowUserDrivenBackups);
         }
 
-        if (org.apache.commons.collections.CollectionUtils.isNotEmpty(domainIds)) {
+        if (CollectionUtils.isNotEmpty(domainIds)) {
             for (final Long domainId: domainIds) {
                 if (domainDao.findById(domainId) == null) {
                     throw new InvalidParameterValueException("Please specify a valid domain id");
                 }
             }
         }
-        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        List<Long> filteredDomainIds = domainHelper.filterChildSubDomains(domainIds);
         Collections.sort(filteredDomainIds);
 
-        boolean success =backupOfferingDao.update(id, offering);
+        boolean success = backupOfferingDao.update(id, offering);
         if (!success) {
             logger.warn(String.format("Couldn't update Backup offering (%s) with [%s].", backupOfferingVO, String.join(", ", fields)));
         }
@@ -2265,27 +2247,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     private void updateBackupOfferingDomainDetails(Long id, List<Long> filteredDomainIds, List<Long> existingDomainIds) {
-            if (existingDomainIds == null) {
-                existingDomainIds = new ArrayList<>();
-            }
-        List<BackupOfferingDetailsVO> detailsVO = new ArrayList<>();
-        if(!filteredDomainIds.equals(existingDomainIds)) {
-            SearchBuilder<BackupOfferingDetailsVO> sb = backupOfferingDetailsDao.createSearchBuilder();
-            sb.and("offeringId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
-            sb.and("detailName", sb.entity().getName(), SearchCriteria.Op.EQ);
-            sb.done();
-            SearchCriteria<BackupOfferingDetailsVO> sc = sb.create();
-            sc.setParameters("offeringId", String.valueOf(id));
-            sc.setParameters("detailName", ApiConstants.DOMAIN_ID);
-            backupOfferingDetailsDao.remove(sc);
-            for (Long domainId : filteredDomainIds) {
-                detailsVO.add(new BackupOfferingDetailsVO(id, ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
-            }
+        if (existingDomainIds == null) {
+            existingDomainIds = new ArrayList<>();
         }
-        if (!detailsVO.isEmpty()) {
-            for (BackupOfferingDetailsVO detailVO : detailsVO) {
-                backupOfferingDetailsDao.persist(detailVO);
-            }
+
+        if(!filteredDomainIds.equals(existingDomainIds)) {
+            backupOfferingDetailsDao.updateBackupOfferingDetails(id, filteredDomainIds);
         }
     }
 
@@ -2410,7 +2377,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             return;
         }
         List<Backup> backupsForVm = backupDao.listByVmIdAndOffering(vm.getDataCenterId(), vm.getId(), vm.getBackupOfferingId());
-        if (org.apache.commons.collections.CollectionUtils.isEmpty(backupsForVm)) {
+        if (CollectionUtils.isEmpty(backupsForVm)) {
             removeVMFromBackupOffering(vm.getId(), true);
         } else {
             throw new CloudRuntimeException(String.format("This Instance [uuid: %s, name: %s] has a "

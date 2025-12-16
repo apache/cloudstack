@@ -21,6 +21,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.backup.BackupOfferingDetailsVO;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
@@ -72,5 +75,27 @@ public class BackupOfferingDetailsDaoImpl extends ResourceDetailsDaoBase<BackupO
     public List<Long> findOfferingIdsByDomainIds(List<Long> domainIds) {
         Object[] dIds = domainIds.stream().map(s -> String.valueOf(s)).collect(Collectors.toList()).toArray();
         return findResourceIdsByNameAndValueIn("domainid", dIds);
+    }
+
+    @DB
+    @Override
+    public void updateBackupOfferingDetails(long backupOfferingId, List<Long> filteredDomainIds) {
+    SearchBuilder<BackupOfferingDetailsVO> sb = createSearchBuilder();
+        List<BackupOfferingDetailsVO> detailsVO = new ArrayList<>();
+        sb.and("offeringId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
+        sb.and("detailName", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<BackupOfferingDetailsVO> sc = sb.create();
+        sc.setParameters("offeringId", String.valueOf(backupOfferingId));
+        sc.setParameters("detailName", ApiConstants.DOMAIN_ID);
+        remove(sc);
+        for (Long domainId : filteredDomainIds) {
+            detailsVO.add(new BackupOfferingDetailsVO(backupOfferingId, ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
+        }
+        if (!detailsVO.isEmpty()) {
+            for (BackupOfferingDetailsVO detailVO : detailsVO) {
+                persist(detailVO);
+            }
+        }
     }
 }

@@ -60,6 +60,7 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.DomainHelper;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -245,6 +246,9 @@ public class BackupManagerTest {
 
     @Mock
     private BackupOfferingDetailsDao backupOfferingDetailsDao;
+
+    @Mock
+    DomainHelper domainHelper;
 
     private Gson gson;
 
@@ -2174,7 +2178,7 @@ public class BackupManagerTest {
 
         InvalidParameterValueException exception = Assert.assertThrows(InvalidParameterValueException.class,
                 () -> backupManager.getBackupOfferingDomains(offeringId));
-        assertEquals("Unable to find backup offering null", exception.getMessage());
+        assertEquals("Unable to find backup offering for id: " + offeringId, exception.getMessage());
     }
 
     @Test
@@ -2216,15 +2220,8 @@ public class BackupManagerTest {
         DomainVO domain = Mockito.mock(DomainVO.class);
         when(domainDao.findById(domainId)).thenReturn(domain);
 
-        when(backupOfferingDetailsDao.findDomainIds(id)).thenReturn(Collections.emptyList());
-
-        SearchBuilder<BackupOfferingDetailsVO> sb = Mockito.mock(SearchBuilder.class);
-        SearchCriteria<BackupOfferingDetailsVO> sc = Mockito.mock(SearchCriteria.class);
-        BackupOfferingDetailsVO entity = Mockito.mock(BackupOfferingDetailsVO.class);
-        when(backupOfferingDetailsDao.createSearchBuilder()).thenReturn(sb);
-        when(sb.entity()).thenReturn(entity);
-        when(sb.and(Mockito.anyString(), (Object) any(), Mockito.any())).thenReturn(sb);
-        when(sb.create()).thenReturn(sc);
+        when(domainHelper.filterChildSubDomains(List.of(domainId))).thenReturn(new ArrayList<>(List.of(domainId)));
+        when(backupOfferingDetailsDao.findDomainIds(id)).thenReturn(new ArrayList<>());
 
         BackupOfferingVO offering = Mockito.mock(BackupOfferingVO.class);
         BackupOfferingVO offeringUpdate = Mockito.mock(BackupOfferingVO.class);
@@ -2234,7 +2231,7 @@ public class BackupManagerTest {
 
         BackupOffering updated = backupManager.updateBackupOffering(cmd);
 
-        verify(backupOfferingDetailsDao, times(1)).persist(Mockito.any(BackupOfferingDetailsVO.class));
+        verify(backupOfferingDetailsDao, times(1)).updateBackupOfferingDetails(id, List.of(domainId));
     }
 
     @Test

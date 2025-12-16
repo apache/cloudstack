@@ -64,7 +64,7 @@ public interface DomainAndZoneIdResolver {
 
             final Domain validDomain = base._entityMgr.findByUuid(Domain.class, trimmed);
             if (validDomain == null) {
-                logger.warn("Invalid domain specified for {}: {}", type, trimmed);
+                logger.warn("Invalid domain specified for {}", type);
                 throw new InvalidParameterValueException("Failed to create " + type + " because invalid domain has been specified.");
             }
             validDomainIds.add(validDomain.getId());
