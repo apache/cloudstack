@@ -136,6 +136,9 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, I
     @Column(name = "api_key_access")
     Boolean apiKeyAccess;
 
+    @Column(name = "password_change_required")
+    Boolean passwordChangeRequired;
+
     public UserAccountJoinVO() {
     }
 
@@ -287,5 +290,9 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, I
 
     public Boolean getApiKeyAccess() {
         return apiKeyAccess;
+    }
+
+    public Boolean isPasswordChangeRequired() {
+        return passwordChangeRequired;
     }
 }

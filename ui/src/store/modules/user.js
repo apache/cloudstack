@@ -332,13 +332,6 @@ const user = {
 
     GetInfo ({ commit }, switchDomain) {
       return new Promise((resolve, reject) => {
-        // A. Restore Lock State
-        const loginSource = vueProps.$localStorage.get(LOGIN_SOURCE)
-        const isPwdChangeRequired = vueProps.$localStorage.get(PASSWORD_CHANGE_REQUIRED) === 'true'
-        // Only lock if source was password
-        const isLocked = (loginSource === 'password' && isPwdChangeRequired)
-        commit('SET_PASSWORD_CHANGE_REQUIRED', isLocked)
-
         const cachedApis = switchDomain ? {} : vueProps.$localStorage.get(APIS, {})
         const cachedZones = vueProps.$localStorage.get(ZONES, [])
         const cachedTimezoneOffset = vueProps.$localStorage.get(TIMEZONE_OFFSET, 0.0)
@@ -355,28 +348,22 @@ const user = {
         commit('SET_DARK_MODE', darkMode)
         commit('SET_LATEST_VERSION', latestVersion)
 
-        if (isLocked) {
-          console.log('Password change required. Fetching user info only.')
-
-          // We MUST fetch listUsers so the UI Header (Avatar/Name) works
+        // This block is to enforce password change for first time login after admin resets password
+        const loginSource = vueProps.$localStorage.get(LOGIN_SOURCE)
+        const isPwdChangeRequired = vueProps.$localStorage.get(PASSWORD_CHANGE_REQUIRED) === 'true'
+        const isPwdChangeRequiredForLogin = (loginSource === 'password' && isPwdChangeRequired)
+        commit('SET_PASSWORD_CHANGE_REQUIRED', isPwdChangeRequiredForLogin)
+        if (isPwdChangeRequiredForLogin) {
           getAPI('listUsers', { id: Cookies.get('userid') }).then(response => {
             const result = response.listusersresponse.user[0]
-
-            // Populate State
             commit('SET_INFO', result)
             commit('SET_NAME', result.firstname + ' ' + result.lastname)
             if (result.icon?.base64image) commit('SET_AVATAR', result.icon.base64image)
-
-            // DO NOT fetch Apis
-            // DO NOT fetch Zones
-            // DO NOT call GenerateRoutes
-
-            resolve({}) // Resolve empty to signal permission.js to proceed
+            resolve({})
           }).catch(error => {
             reject(error)
           })
-
-          return // Stop execution
+          return
         }
 
         if (hasAuth) {

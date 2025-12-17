@@ -53,7 +53,8 @@ select
     async_job.uuid job_uuid,
     async_job.job_status job_status,
     async_job.account_id job_account_id,
-    user.is_user_2fa_enabled is_user_2fa_enabled
+    user.is_user_2fa_enabled is_user_2fa_enabled,
+   `user_details`.`value` AS `password_change_required`
 from
     `cloud`.`user`
         inner join
@@ -63,4 +64,7 @@ from
         left join
     `cloud`.`async_job` ON async_job.instance_id = user.id
         and async_job.instance_type = 'User'
-        and async_job.job_status = 0;
+        and async_job.job_status = 0
+        left join
+    `cloud`.`user_details` AS `user_details` ON `user_details`.`user_id` = `user`.`id`
+        and `user_details`.`name` = 'PasswordChangeRequired';

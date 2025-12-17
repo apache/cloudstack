@@ -24,17 +24,38 @@
             <div style="text-align: center; font-size: 18px; font-weight: bold;">
               {{ $t('label.action.change.password') }}
             </div>
-            <div style="text-align: center; font-size: 14px; color: #666; margin-top: 5px;">
-              {{ $t('message.change.password') }}
+            <div v-if="!isSubmitted" style="text-align: center; font-size: 14px; color: #666; margin-top: 5px;">
+              {{ $t('message.change.password.required') }}
             </div>
           </template>
+          <a-spin :spinning="loading">
+          <div v-if="isSubmitted" class="success-state">
+            <div class="success-icon">✓</div>
+            <div class="success-text">
+              {{ $t('message.success.change.password') }}
+            </div>
+            <div class="success-subtext">
+               {{ $t('message.please.login.new.password') }}
+            </div>
+            <a-button
+              type="primary"
+              size="large"
+              block
+              @click="handleLogout"
+              style="margin-top: 20px;"
+            >
+              {{ $t('label.login') }}
+            </a-button>
+          </div>
 
           <a-form
+            v-else
             :ref="formRef"
             :model="form"
             :rules="rules"
             layout="vertical"
             @finish="handleSubmit"
+            v-ctrl-enter="handleSubmit"
           >
             <a-form-item name="currentpassword" :label="$t('label.currentpassword')">
               <a-input-password
@@ -77,6 +98,7 @@
               <a @click="handleLogout">{{ $t('label.logout') }}</a>
             </div>
           </a-form>
+          </a-spin>
         </a-card>
       </div>
     </div>
@@ -87,33 +109,34 @@
 import { ref, reactive, toRaw } from 'vue'
 import { postAPI } from '@/api'
 import Cookies from 'js-cookie'
+import { PASSWORD_CHANGE_REQUIRED } from '@/store/mutation-types'
 
 export default {
   name: 'ForceChangePassword',
   data () {
     return {
-      loading: false
+      loading: false,
+      isSubmitted: false
     }
   },
-  beforeCreate () {
-    this.apiParams = this.$getApiParams('updateUser')
-  },
   created () {
-    this.initForm()
+    this.formRef = ref()
+    this.form = reactive({})
+    this.isPasswordChangeRequired()
+  },
+  computed: {
+    rules () {
+      return {
+        currentpassword: [{ required: true, message: this.$t('message.error.current.password') || 'Please enter current password' }],
+        password: [{ required: true, message: this.$t('message.error.new.password') || 'Please enter new password' }],
+        confirmpassword: [
+          { required: true, message: this.$t('message.error.confirm.password') || 'Please confirm new password' },
+          { validator: this.validateTwoPassword, trigger: 'change' }
+        ]
+      }
+    }
   },
   methods: {
-    initForm () {
-      this.formRef = ref()
-      this.form = reactive({})
-      this.rules = reactive({
-        currentpassword: [{ required: true, message: this.$t('message.error.current.password') }],
-        password: [{ required: true, message: this.$t('message.error.new.password') }],
-        confirmpassword: [
-          { required: true, message: this.$t('message.error.confirm.password') },
-          { validator: this.validateTwoPassword }
-        ]
-      })
-    },
     async validateTwoPassword (rule, value) {
       if (!value || value.length === 0) {
         return Promise.resolve()
@@ -130,9 +153,6 @@ export default {
         return Promise.resolve()
       }
     },
-    isValidValueForKey (obj, key) {
-      return key in obj && obj[key] != null
-    },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
@@ -147,9 +167,8 @@ export default {
           currentpassword: values.currentpassword
         }
         postAPI('updateUser', params).then(() => {
-          this.$message.success(this.$t('message.success.change.password'), 5)
-          console.log('Password changed successfully.')
-          this.handleLogout()
+          this.$message.success(this.$t('message.success.change.password'))
+          this.isSubmitted = true
         }).catch(error => {
           console.error(error)
           this.$notification.error({
@@ -164,17 +183,39 @@ export default {
         console.log('Validation failed:', error)
       })
     },
-    handleLogout () {
-      this.$store.dispatch('Logout').then(() => {
+    async handleLogout () {
+      try {
+        await this.$store.dispatch('Logout')
+      } catch (e) {
+        console.error('Logout failed:', e)
+      } finally {
         Cookies.remove('userid')
         Cookies.remove('token')
+        this.$localStorage.remove(PASSWORD_CHANGE_REQUIRED)
         this.$router.replace({ path: '/user/login' })
-      }).catch(err => {
-        this.$message.error({
-          title: 'Failed to Logout',
-          description: err.message
-        })
-      })
+      }
+    },
+    async isPasswordChangeRequired () {
+      try {
+        this.loading = true
+        const user = await this.getUserInfo()
+        if (user && !user.passwordchangerequired) {
+          this.isSubmitted = true
+          this.$router.replace({ path: '/user/login' })
+        }
+      } catch (e) {
+        console.error('Failed to resolve user info:', e)
+      } finally {
+        this.loading = false
+      }
+    },
+    async getUserInfo () {
+      const userInfo = this.$store.getters.userInfo
+      if (userInfo && userInfo.id) {
+        return userInfo
+      }
+      await this.$store.dispatch('GetInfo')
+      return this.$store.getters.userInfo
     }
   }
 }
@@ -215,6 +256,29 @@ export default {
     &:hover {
       color: #40a9ff;
     }
+  }
+}
+
+.success-state {
+  text-align: center;
+  padding: 20px 0;
+
+  .success-icon {
+    font-size: 48px;
+    color: #52c41a;
+    margin-bottom: 16px;
+  }
+
+  .success-text {
+    font-size: 20px;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 8px;
+  }
+
+  .success-subtext {
+    font-size: 14px;
+    color: #666;
   }
 }
 </style>
