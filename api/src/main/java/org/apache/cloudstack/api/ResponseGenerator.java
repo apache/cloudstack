@@ -76,6 +76,8 @@ import org.apache.cloudstack.api.response.HypervisorGuestOsNamesResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
+import org.apache.cloudstack.api.response.KMSKeyResponse;
+import org.apache.cloudstack.kms.KMSKey;
 import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
 import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
 import org.apache.cloudstack.api.response.IpQuarantineResponse;
@@ -591,4 +593,6 @@ public interface ResponseGenerator {
     ApiKeyPairResponse createKeyPairResponse(ApiKeyPair keyPair);
 
     ListResponse<BaseRolePermissionResponse> createKeypairPermissionsResponse(List<ApiKeyPairPermission> permissions);
+
+    KMSKeyResponse createKMSKeyResponse(KMSKey kmsKey);
 }
