@@ -126,7 +126,7 @@
         <cs.amqp-client.version>5.17.0</cs.amqp-client.version>
         <cs.apache-cloudstack-java-client.version>1.0.9</cs.apache-cloudstack-java-client.version>
         <cs.aspectjrt.version>1.9.19</cs.aspectjrt.version>
-        <cs.aws.sdk.version>1.12.439</cs.aws.sdk.version>
+        <cs.aws.sdk.version>1.12.795</cs.aws.sdk.version>
         <cs.axiom.version>1.2.8</cs.axiom.version>
         <cs.axis2.version>1.6.4</cs.axis2.version>
         <cs.batik.version>1.14</cs.batik.version>
