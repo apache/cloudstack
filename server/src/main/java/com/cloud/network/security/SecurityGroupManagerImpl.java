@@ -212,7 +212,6 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             try {
                 cleanupFinishedWork();
                 cleanupUnfinishedWork();
-                //processScheduledWork();
             } catch (Throwable th) {
                 logger.error("Problem with SG Cleanup", th);
             }

@@ -40,7 +40,7 @@
               v-if="taggedUsage[item]"
               class="list-item__collapse"
               @change="handleCollapseChange(item)">
-            <a-collapse-panel key="1" :header="collpaseActive[item] ? $t('label.tagged.limits') : $t('label.tagged.limits') + ' - ' + this.tagData[item].tagsasstring">
+            <a-collapse-panel key="1" :header="collapseActive[item] ? $t('label.tagged.limits') : $t('label.tagged.limits') + ' - ' + this.tagData[item].tagsasstring">
               <a-list
                 size="small"
                 :loading="loading"
@@ -96,7 +96,7 @@ export default {
       ],
       taggedUsage: {},
       tagData: {},
-      collpaseActive: {}
+      collapseActive: {}
     }
   },
   created () {
@@ -168,11 +168,11 @@ export default {
       }
     },
     handleCollapseChange (type) {
-      if (this.collpaseActive[type]) {
-        this.collpaseActive[type] = null
+      if (this.collapseActive[type]) {
+        this.collapseActive[type] = null
         return
       }
-      this.collpaseActive[type] = true
+      this.collapseActive[type] = true
     }
   }
 }

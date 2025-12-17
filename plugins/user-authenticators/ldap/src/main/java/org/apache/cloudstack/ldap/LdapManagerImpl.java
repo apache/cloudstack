@@ -43,6 +43,7 @@ import org.apache.cloudstack.api.command.LdapListUsersCmd;
 import org.apache.cloudstack.api.command.LdapUserSearchCmd;
 import org.apache.cloudstack.api.command.LinkAccountToLdapCmd;
 import org.apache.cloudstack.api.command.LinkDomainToLdapCmd;
+import org.apache.cloudstack.api.command.UnlinkDomainFromLdapCmd;
 import org.apache.cloudstack.api.response.LdapConfigurationResponse;
 import org.apache.cloudstack.api.response.LdapUserResponse;
 import org.apache.cloudstack.api.response.LinkAccountToLdapResponse;
@@ -296,6 +297,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
         cmdList.add(LDAPRemoveCmd.class);
         cmdList.add(LinkDomainToLdapCmd.class);
         cmdList.add(LinkAccountToLdapCmd.class);
+        cmdList.add(UnlinkDomainFromLdapCmd.class);
         return cmdList;
     }
 
@@ -415,6 +417,11 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
         return linkDomainToLdap(cmd.getDomainId(),cmd.getType(), ldapDomain,cmd.getAccountType());
     }
 
+    @Override
+    public boolean unlinkDomainFromLdap(UnlinkDomainFromLdapCmd cmd) {
+        return unlinkDomainFromLdap(cmd.getDomainId());
+    }
+
     private LinkDomainToLdapResponse linkDomainToLdap(Long domainId, String type, String name, Account.Type accountType) {
         Validate.notNull(type, "type cannot be null. It should either be GROUP or OU");
         Validate.notNull(domainId, "domainId cannot be null.");
@@ -458,6 +465,15 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
         clearOldAccountMapping(cmd);
         LdapTrustMapVO vo = _ldapTrustMapDao.persist(new LdapTrustMapVO(cmd.getDomainId(), linkType, cmd.getLdapDomain(), cmd.getAccountType(), accountId));
         return new LinkAccountToLdapResponse(domain.getUuid(), vo.getType().toString(), vo.getName(), vo.getAccountType().ordinal(), account.getUuid(), cmd.getAccountName());
+    }
+
+    private boolean unlinkDomainFromLdap(Long domainId) {
+        LdapTrustMapVO vo = _ldapTrustMapDao.findByDomainId(domainId);
+        if (vo != null) {
+            removeTrustmap(vo);
+            return true;
+        }
+        return false;
     }
 
     @Override
