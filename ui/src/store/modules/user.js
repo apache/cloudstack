@@ -44,7 +44,9 @@ import {
   MS_ID,
   OAUTH_DOMAIN,
   OAUTH_PROVIDER,
-  LATEST_CS_VERSION
+  LATEST_CS_VERSION,
+  PASSWORD_CHANGE_REQUIRED,
+  LOGIN_SOURCE
 } from '@/store/mutation-types'
 
 import {
@@ -80,7 +82,9 @@ const user = {
     twoFaProvider: '',
     twoFaIssuer: '',
     customHypervisorName: 'Custom',
-    readyForShutdownPollingJob: ''
+    readyForShutdownPollingJob: '',
+    passwordChangeRequired: false,
+    loginSource: ''
   },
 
   mutations: {
@@ -196,6 +200,17 @@ const user = {
         vueProps.$localStorage.set(LATEST_CS_VERSION, version)
         state.latestVersion = version
       }
+    },
+    SET_PASSWORD_CHANGE_REQUIRED: (state, required) => {
+      state.passwordChangeRequired = required
+      if (required) {
+        vueProps.$localStorage.set('PASSWORD_CHANGE_REQUIRED', 'true')
+      } else {
+        vueProps.$localStorage.remove('PASSWORD_CHANGE_REQUIRED')
+      }
+    },
+    SET_LOGIN_SOURCE: (state, source) => {
+      vueProps.$localStorage.set('LOGIN_SOURCE', source)
     }
   },
 
@@ -207,9 +222,6 @@ const user = {
       return new Promise((resolve, reject) => {
         login(userInfo).then(response => {
           const result = response.loginresponse || {}
-          if (result.passwordchangerequired) {
-            console.log('Password change required for user ', userInfo.username)
-          }
           Cookies.set('account', result.account, { expires: 1 })
           Cookies.set('domainid', result.domainid, { expires: 1 })
           Cookies.set('role', result.type, { expires: 1 })
@@ -246,6 +258,14 @@ const user = {
           commit('SET_LOGIN_FLAG', false)
           if (result && result.managementserverid) {
             commit('SET_MS_ID', result.managementserverid)
+          }
+          commit('SET_LOGIN_SOURCE', 'password')
+          if (result.passwordchangerequired && result.passwordchangerequired === 'true') {
+            commit('SET_PASSWORD_CHANGE_REQUIRED', true)
+            commit('SET_APIS', {})
+            vueProps.$localStorage.remove(APIS)
+          } else {
+            commit('SET_PASSWORD_CHANGE_REQUIRED', false)
           }
           const latestVersion = vueProps.$localStorage.get(LATEST_CS_VERSION, { version: '', fetchedTs: 0 })
           commit('SET_LATEST_VERSION', latestVersion)
@@ -301,7 +321,8 @@ const user = {
           const latestVersion = vueProps.$localStorage.get(LATEST_CS_VERSION, { version: '', fetchedTs: 0 })
           commit('SET_LATEST_VERSION', latestVersion)
           notification.destroy()
-
+          commit('SET_LOGIN_SOURCE', 'oauth')
+          commit('SET_PASSWORD_CHANGE_REQUIRED', false)
           resolve()
         }).catch(error => {
           reject(error)
@@ -311,6 +332,13 @@ const user = {
 
     GetInfo ({ commit }, switchDomain) {
       return new Promise((resolve, reject) => {
+        // A. Restore Lock State
+        const loginSource = vueProps.$localStorage.get(LOGIN_SOURCE)
+        const isPwdChangeRequired = vueProps.$localStorage.get(PASSWORD_CHANGE_REQUIRED) === 'true'
+        // Only lock if source was password
+        const isLocked = (loginSource === 'password' && isPwdChangeRequired)
+        commit('SET_PASSWORD_CHANGE_REQUIRED', isLocked)
+
         const cachedApis = switchDomain ? {} : vueProps.$localStorage.get(APIS, {})
         const cachedZones = vueProps.$localStorage.get(ZONES, [])
         const cachedTimezoneOffset = vueProps.$localStorage.get(TIMEZONE_OFFSET, 0.0)
@@ -326,6 +354,31 @@ const user = {
         commit('SET_DOMAIN_STORE', domainStore)
         commit('SET_DARK_MODE', darkMode)
         commit('SET_LATEST_VERSION', latestVersion)
+
+        if (isLocked) {
+          console.log('Password change required. Fetching user info only.')
+
+          // We MUST fetch listUsers so the UI Header (Avatar/Name) works
+          getAPI('listUsers', { id: Cookies.get('userid') }).then(response => {
+            const result = response.listusersresponse.user[0]
+
+            // Populate State
+            commit('SET_INFO', result)
+            commit('SET_NAME', result.firstname + ' ' + result.lastname)
+            if (result.icon?.base64image) commit('SET_AVATAR', result.icon.base64image)
+
+            // DO NOT fetch Apis
+            // DO NOT fetch Zones
+            // DO NOT call GenerateRoutes
+
+            resolve({}) // Resolve empty to signal permission.js to proceed
+          }).catch(error => {
+            reject(error)
+          })
+
+          return // Stop execution
+        }
+
         if (hasAuth) {
           console.log('Login detected, using cached APIs')
           commit('SET_ZONES', cachedZones)
@@ -487,6 +540,11 @@ const user = {
         vueProps.$localStorage.remove(CURRENT_PROJECT)
         vueProps.$localStorage.remove(ACCESS_TOKEN)
         vueProps.$localStorage.remove(HEADER_NOTICES)
+
+        vueProps.$localStorage.remove(PASSWORD_CHANGE_REQUIRED)
+        vueProps.$localStorage.remove(LOGIN_SOURCE)
+        commit('SET_PASSWORD_CHANGE_REQUIRED', false)
+        commit('SET_LOGIN_SOURCE', '')
 
         logout(state.token).then(() => {
           message.destroy()

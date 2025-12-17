@@ -316,12 +316,8 @@ export const constantRouterMap = [
       },
       {
         path: 'forceChangePassword',
-        name: 'ForceChangePassword',
-        component: () => import('@/views/iam/ChangeUserPassword'),
-        meta: {
-          title: 'label.change.password',
-          hidden: true
-        }
+        name: 'forceChangePassword',
+        component: () => import(/* webpackChunkName: "auth" */ '@/views/iam/ForceChangePassword')
       }
     ]
   },

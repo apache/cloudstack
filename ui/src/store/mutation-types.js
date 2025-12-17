@@ -43,6 +43,8 @@ export const RELOAD_ALL_PROJECTS = 'RELOAD_ALL_PROJECTS'
 export const MS_ID = 'MS_ID'
 export const OAUTH_DOMAIN = 'OAUTH_DOMAIN'
 export const OAUTH_PROVIDER = 'OAUTH_PROVIDER'
+export const PASSWORD_CHANGE_REQUIRED = 'PASSWORD_CHANGE_REQUIRED'
+export const LOGIN_SOURCE = 'LOGIN_SOURCE'
 
 export const CONTENT_WIDTH_TYPE = {
   Fluid: 'Fluid',

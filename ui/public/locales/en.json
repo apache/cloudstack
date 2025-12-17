@@ -3369,6 +3369,7 @@
 "message.error.apply.tungsten.tag": "Applying Tag failed",
 "message.error.binaries.iso.url": "Please enter binaries ISO URL.",
 "message.error.bucket": "Please enter bucket",
+"message.error.change.password": "Failed to change password.",
 "message.error.cidr": "CIDR is required",
 "message.error.cidr.or.cidrsize": "CIDR or cidr size is required",
 "message.error.cloudian.console": "Single-Sign-On failed for Cloudian management console. Please ask your administrator to fix integration issues.",
