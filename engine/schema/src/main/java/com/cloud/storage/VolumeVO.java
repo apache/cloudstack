@@ -182,6 +182,9 @@ public class VolumeVO implements Volume {
     @Column(name = "passphrase_id")
     private Long passphraseId;
 
+    @Column(name = "kms_wrapped_key_id")
+    private Long kmsWrappedKeyId;
+
     @Column(name = "encrypt_format")
     private String encryptFormat;
 
@@ -682,6 +685,10 @@ public class VolumeVO implements Volume {
     public Long getPassphraseId() { return passphraseId; }
 
     public void setPassphraseId(Long id) { this.passphraseId = id; }
+
+    public Long getKmsWrappedKeyId() { return kmsWrappedKeyId; }
+
+    public void setKmsWrappedKeyId(Long id) { this.kmsWrappedKeyId = id; }
 
     public String getEncryptFormat() { return encryptFormat; }
 

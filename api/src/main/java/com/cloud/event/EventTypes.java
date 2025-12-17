@@ -271,6 +271,14 @@ public class EventTypes {
     public static final String EVENT_CA_CERTIFICATE_REVOKE = "CA.CERTIFICATE.REVOKE";
     public static final String EVENT_CA_CERTIFICATE_PROVISION = "CA.CERTIFICATE.PROVISION";
 
+    // KMS (Key Management Service) events
+    public static final String EVENT_KMS_KEY_WRAP = "KMS.KEY.WRAP";
+    public static final String EVENT_KMS_KEY_UNWRAP = "KMS.KEY.UNWRAP";
+    public static final String EVENT_KMS_KEK_CREATE = "KMS.KEK.CREATE";
+    public static final String EVENT_KMS_KEK_ROTATE = "KMS.KEK.ROTATE";
+    public static final String EVENT_KMS_KEK_DELETE = "KMS.KEK.DELETE";
+    public static final String EVENT_KMS_HEALTH_CHECK = "KMS.HEALTH.CHECK";
+
     // Account events
     public static final String EVENT_ACCOUNT_ENABLE = "ACCOUNT.ENABLE";
     public static final String EVENT_ACCOUNT_DISABLE = "ACCOUNT.DISABLE";

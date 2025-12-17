@@ -862,6 +862,9 @@ public class ApiConstants {
     public static final String SORT_BY = "sortby";
     public static final String CHANGE_CIDR = "changecidr";
     public static final String PURPOSE = "purpose";
+    public static final String KMS_KEY_ID = "kmskeyid";
+    public static final String KEK_LABEL = "keklabel";
+    public static final String KEY_BITS = "keybits";
     public static final String IS_TAGGED = "istagged";
     public static final String INSTANCE_NAME = "instancename";
     public static final String CONSIDER_LAST_HOST = "considerlasthost";

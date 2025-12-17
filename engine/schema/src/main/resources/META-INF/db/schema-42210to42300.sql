@@ -49,3 +49,76 @@ CREATE TABLE IF NOT EXISTS `cloud`.`webhook_filter` (
     INDEX `i_webhook_filter__webhook_id`(`webhook_id`),
     CONSTRAINT `fk_webhook_filter__webhook_id` FOREIGN KEY(`webhook_id`) REFERENCES `webhook`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- KMS Keys (Key Encryption Key Metadata)
+-- Account-scoped KEKs for envelope encryption
+CREATE TABLE IF NOT EXISTS `cloud`.`kms_keys` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Unique ID',
+    `uuid` VARCHAR(40) NOT NULL COMMENT 'UUID - user-facing identifier',
+    `name` VARCHAR(255) NOT NULL COMMENT 'User-friendly name',
+    `description` VARCHAR(1024) COMMENT 'User description',
+    `kek_label` VARCHAR(255) NOT NULL COMMENT 'Provider-specific KEK label/ID',
+    `purpose` VARCHAR(32) NOT NULL COMMENT 'Key purpose (VOLUME_ENCRYPTION, TLS_CERT, CONFIG_SECRET)',
+    `account_id` BIGINT UNSIGNED NOT NULL COMMENT 'Owning account',
+    `domain_id` BIGINT UNSIGNED NOT NULL COMMENT 'Owning domain',
+    `zone_id` BIGINT UNSIGNED NOT NULL COMMENT 'Zone where key is valid',
+    `provider_name` VARCHAR(64) NOT NULL COMMENT 'KMS provider (database, pkcs11, etc.)',
+    `algorithm` VARCHAR(64) NOT NULL DEFAULT 'AES/GCM/NoPadding' COMMENT 'Encryption algorithm',
+    `key_bits` INT NOT NULL DEFAULT 256 COMMENT 'Key size in bits',
+    `state` VARCHAR(32) NOT NULL DEFAULT 'Enabled' COMMENT 'Enabled, Disabled, or Deleted',
+    `created` DATETIME NOT NULL COMMENT 'Creation timestamp',
+    `removed` DATETIME COMMENT 'Removal timestamp for soft delete',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_uuid` (`uuid`),
+    INDEX `idx_account_purpose` (`account_id`, `purpose`, `state`),
+    INDEX `idx_domain_purpose` (`domain_id`, `purpose`, `state`),
+    INDEX `idx_zone_state` (`zone_id`, `state`),
+    INDEX `idx_kek_label_provider` (`kek_label`, `provider_name`),
+    CONSTRAINT `fk_kms_keys__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_kms_keys__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_kms_keys__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='KMS Key (KEK) metadata - account-scoped keys for envelope encryption';
+
+-- KMS KEK Versions (multiple KEKs per KMS key for gradual rotation)
+-- Supports multiple KEK versions per logical KMS key during rotation
+CREATE TABLE IF NOT EXISTS `cloud`.`kms_kek_versions` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Unique ID',
+    `uuid` VARCHAR(40) NOT NULL COMMENT 'UUID',
+    `kms_key_id` BIGINT UNSIGNED NOT NULL COMMENT 'Reference to kms_keys table',
+    `version_number` INT NOT NULL COMMENT 'Version number (1, 2, 3, ...)',
+    `kek_label` VARCHAR(255) NOT NULL COMMENT 'Provider-specific KEK label/ID for this version',
+    `status` VARCHAR(32) NOT NULL DEFAULT 'Active' COMMENT 'Active, Previous, Archived',
+    `created` DATETIME NOT NULL COMMENT 'Creation timestamp',
+    `removed` DATETIME COMMENT 'Removal timestamp for soft delete',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_uuid` (`uuid`),
+    UNIQUE KEY `uk_kms_key_version` (`kms_key_id`, `version_number`, `removed`),
+    INDEX `idx_kms_key_status` (`kms_key_id`, `status`, `removed`),
+    INDEX `idx_kek_label` (`kek_label`),
+    CONSTRAINT `fk_kms_kek_versions__kms_key_id` FOREIGN KEY (`kms_key_id`) REFERENCES `kms_keys`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='KEK versions for a KMS key - supports gradual rotation';
+
+-- KMS Wrapped Keys (Data Encryption Keys)
+-- Generic table for wrapped DEKs - references kms_keys for metadata and kek_versions for specific KEK version
+CREATE TABLE IF NOT EXISTS `cloud`.`kms_wrapped_key` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Unique ID',
+    `uuid` VARCHAR(40) NOT NULL COMMENT 'UUID',
+    `kms_key_id` BIGINT UNSIGNED COMMENT 'Reference to kms_keys table',
+    `kek_version_id` BIGINT UNSIGNED COMMENT 'Reference to kms_kek_versions table',
+    `zone_id` BIGINT UNSIGNED NOT NULL COMMENT 'Zone ID for zone-scoped keys',
+    `wrapped_blob` VARBINARY(4096) NOT NULL COMMENT 'Encrypted DEK material',
+    `created` DATETIME NOT NULL COMMENT 'Creation timestamp',
+    `removed` DATETIME COMMENT 'Removal timestamp for soft delete',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_uuid` (`uuid`),
+    INDEX `idx_kms_key_id` (`kms_key_id`, `removed`),
+    INDEX `idx_kek_version_id` (`kek_version_id`, `removed`),
+    INDEX `idx_zone_id` (`zone_id`, `removed`),
+    CONSTRAINT `fk_kms_wrapped_key__kms_key_id` FOREIGN KEY (`kms_key_id`) REFERENCES `kms_keys`(`id`) ON DELETE RESTRICT,
+    CONSTRAINT `fk_kms_wrapped_key__kek_version_id` FOREIGN KEY (`kek_version_id`) REFERENCES `kms_kek_versions`(`id`) ON DELETE RESTRICT,
+    CONSTRAINT `fk_kms_wrapped_key__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='KMS wrapped encryption keys (DEKs) - references kms_keys for KEK metadata and kek_versions for specific version';
+
+-- Add KMS wrapped key reference to volumes table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes', 'kms_wrapped_key_id', 'BIGINT UNSIGNED COMMENT ''KMS wrapped key ID for volume encryption''');
+CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.volumes', 'fk_volumes__kms_wrapped_key_id', '(kms_wrapped_key_id)', '`kms_wrapped_key`(`id`)');
