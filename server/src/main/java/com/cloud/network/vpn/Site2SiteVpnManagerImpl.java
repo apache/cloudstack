@@ -1160,8 +1160,8 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
             _vpnCheckExecutor,
             new CheckVpnCustomerGatewayObsoleteParametersTask(),
             VpnCustomerGatewayObsoleteCheckInterval,
-            60,
-            TimeUnit.MINUTES);
+            3600,
+            TimeUnit.HOURS);
         runner.start();
         return true;
     }
