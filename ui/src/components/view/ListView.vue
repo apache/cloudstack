@@ -180,7 +180,9 @@
             </span>
             <span v-else-if="$route.path.startsWith('/vpncustomergateway')">
               &nbsp;
-              <a-tooltip v-if="record.excludedparameters || record.obsoleteparameters" :title="$t('message.vpn.customer.gateway.contains.obsolete.parameters')">
+              <a-tooltip
+                v-if="record.excludedparameters || record.obsoleteparameters"
+                :title="$t('message.vpn.customer.gateway.contains.excluded.obsolete.parameters')">
                 <warning-outlined :style="{ color: $config.theme['@warning-color'] }" />
               </a-tooltip>
             </span>

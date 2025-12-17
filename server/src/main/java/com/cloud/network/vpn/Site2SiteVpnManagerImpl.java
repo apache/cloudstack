@@ -21,8 +21,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -48,7 +49,10 @@ import org.apache.cloudstack.api.command.user.vpn.UpdateVpnCustomerGatewayCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
+import org.apache.cloudstack.framework.config.ConfigKeyScheduledExecutionWrapper;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+
+import com.cloud.utils.concurrency.NamedThreadFactory;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
@@ -179,7 +183,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
 
     int _connLimit;
     int _subnetsLimit;
-    private Timer _vpnCheckTimer;
+    private ScheduledExecutorService _vpnCheckExecutor;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -187,7 +191,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         _connLimit = NumbersUtil.parseInt(configs.get(Config.Site2SiteVpnConnectionPerVpnGatewayLimit.key()), 4);
         _subnetsLimit = NumbersUtil.parseInt(configs.get(Config.Site2SiteVpnSubnetsPerCustomerGatewayLimit.key()), 10);
         assert (_s2sProviders.iterator().hasNext()) : "Did not get injected with a list of S2S providers!";
-        _vpnCheckTimer = new Timer("VpnCustomerGateway-ObsoleteCheck", true);
+        _vpnCheckExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpnCustomerGateway-ExcludedAndObsoleteCheck"));
         return true;
     }
 
@@ -1152,21 +1156,20 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
 
     @Override
     public boolean start() {
-        final long checkInterval = VpnCustomerGatewayObsoleteCheckInterval.value();
-        if (checkInterval > 0) {
-            TimerTask task = new CheckVpnCustomerGatewayObsoleteParametersTask();
-            _vpnCheckTimer.schedule(task, checkInterval * 60 * 60 * 1000L, checkInterval * 60 * 60 * 1000L);
-            logger.info("Scheduled VPN customer gateway obsolete parameters check with interval: " + checkInterval + " hours");
-        } else {
-            logger.debug("VPN customer gateway obsolete check is disabled (interval = 0)");
-        }
+        ConfigKeyScheduledExecutionWrapper runner = new ConfigKeyScheduledExecutionWrapper(
+            _vpnCheckExecutor,
+            new CheckVpnCustomerGatewayObsoleteParametersTask(),
+            VpnCustomerGatewayObsoleteCheckInterval,
+            60,
+            TimeUnit.MINUTES);
+        runner.start();
         return true;
     }
 
     @Override
     public boolean stop() {
-        if (_vpnCheckTimer != null) {
-            _vpnCheckTimer.cancel();
+        if (_vpnCheckExecutor != null) {
+            _vpnCheckExecutor.shutdownNow();
         }
         return true;
     }
@@ -1184,7 +1187,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
                 VpnCustomerGatewayObsoleteCheckInterval};
     }
 
-    protected class CheckVpnCustomerGatewayObsoleteParametersTask extends ManagedContextTimerTask {
+    protected class CheckVpnCustomerGatewayObsoleteParametersTask extends ManagedContextRunnable {
 
         @Override
         protected void runInContext() {
@@ -1203,7 +1206,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
                 }
                 if (CollectionUtils.isNotEmpty(obsoleteParameters)) {
                     obsoleteCount++;
-                    message.add("obsolete parameter(s) " + excludedParameters.toString());
+                    message.add("obsolete parameter(s) " + obsoleteParameters.toString());
                 }
 
                 if (CollectionUtils.isNotEmpty(message)) {

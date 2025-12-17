@@ -4057,7 +4057,7 @@
 "message.volumes.managed": "Volumes controlled by CloudStack.",
 "message.volumes.unmanaged": "Volumes not controlled by CloudStack.",
 "message.vpc.restart.required": "Restart is required for VPC(s). Click here to view VPC(s) which require restart.",
-"message.vpn.customer.gateway.contains.obsolete.parameters": "The VPN Customer Gateway is configured with parameters marked as obsolete. Consider changing the parameters using Update VPN Customer Gateway.",
+"message.vpn.customer.gateway.contains.excluded.obsolete.parameters": "This VPN Customer Gateway contains cryptographic parameters that are marked as excluded or obsolete by the Administrator. Consider changing them using the Update VPN Customer Gateway form.",
 "message.vpn.customer.gateway.excluded.parameter": " is marked as excluded. Please choose another value.",
 "message.vpn.customer.gateway.obsolete.parameter": " is marked as obsolete/insecure. Please choose another value.",
 "message.vpn.customer.gateway.obsolete.parameter.tooltip": "This parameter value is marked as obsolete/insecure.",
