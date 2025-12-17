@@ -2252,7 +2252,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
 
         if(!filteredDomainIds.equals(existingDomainIds)) {
-            backupOfferingDetailsDao.updateBackupOfferingDetails(id, filteredDomainIds);
+            backupOfferingDetailsDao.updateBackupOfferingDomainIdsDetail(id, filteredDomainIds);
         }
     }
 

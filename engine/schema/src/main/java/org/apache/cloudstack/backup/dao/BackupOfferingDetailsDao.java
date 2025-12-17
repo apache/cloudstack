@@ -28,5 +28,5 @@ public interface BackupOfferingDetailsDao extends GenericDao<BackupOfferingDetai
     List<Long> findZoneIds(final long resourceId);
     String getDetail(Long backupOfferingId, String key);
     List<Long> findOfferingIdsByDomainIds(List<Long> domainIds);
-    void updateBackupOfferingDetails(long backupOfferingId, List<Long> filteredDomainIds);
+    void updateBackupOfferingDomainIdsDetail(long backupOfferingId, List<Long> filteredDomainIds);
 }

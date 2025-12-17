@@ -2231,7 +2231,7 @@ public class BackupManagerTest {
 
         BackupOffering updated = backupManager.updateBackupOffering(cmd);
 
-        verify(backupOfferingDetailsDao, times(1)).updateBackupOfferingDetails(id, List.of(domainId));
+        verify(backupOfferingDetailsDao, times(1)).updateBackupOfferingDomainIdsDetail(id, List.of(domainId));
     }
 
     @Test

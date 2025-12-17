@@ -79,7 +79,7 @@ public class BackupOfferingDetailsDaoImpl extends ResourceDetailsDaoBase<BackupO
 
     @DB
     @Override
-    public void updateBackupOfferingDetails(long backupOfferingId, List<Long> filteredDomainIds) {
+    public void updateBackupOfferingDomainIdsDetail(long backupOfferingId, List<Long> filteredDomainIds) {
     SearchBuilder<BackupOfferingDetailsVO> sb = createSearchBuilder();
         List<BackupOfferingDetailsVO> detailsVO = new ArrayList<>();
         sb.and("offeringId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
