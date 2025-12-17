@@ -38,4 +38,4 @@ jobs:
           stale-pr-label: 'no-pr-activity'
           days-before-stale: 120
           exempt-issue-labels: 'gsoc,good-first-issue,long-term-plan'
-          exempt-pr-labels: 'status:ready-for-merge,status:needs-testing'
+          exempt-pr-labels: 'status:ready-for-merge,status:needs-testing,status:on-hold'
