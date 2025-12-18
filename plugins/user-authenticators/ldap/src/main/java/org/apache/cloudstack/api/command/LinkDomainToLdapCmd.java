@@ -111,7 +111,7 @@ public class LinkDomainToLdapCmd extends BaseCmd {
                         logger.debug("an account with name {} already exists in the domain {} with id {}", admin, _domainService.getDomain(domainId), domainId);
                     }
                 } else {
-                    logger.debug("ldap user with username {} is disabled in the given group/ou", admin);
+                    logger.debug("ldap user with username {} is disabled in the given Group/OU", admin);
                 }
             }
             response.setObjectName("LinkDomainToLdap");
