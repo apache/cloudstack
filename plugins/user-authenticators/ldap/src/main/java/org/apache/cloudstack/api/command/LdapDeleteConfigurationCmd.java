@@ -46,10 +46,10 @@ public class LdapDeleteConfigurationCmd extends BaseCmd {
     @Parameter(name = ApiConstants.HOST_NAME, type = CommandType.STRING, description = "Hostname")
     private String hostname;
 
-    @Parameter(name = ApiConstants.PORT, type = CommandType.INTEGER, required = false, description = "port")
+    @Parameter(name = ApiConstants.PORT, type = CommandType.INTEGER, description = "port")
     private int port;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = false, entityType = DomainResponse.class, description = "linked domain")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "linked domain")
     private Long domainId;
 
     public LdapDeleteConfigurationCmd() {
