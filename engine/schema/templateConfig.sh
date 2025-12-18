@@ -62,7 +62,7 @@ function getChecksum() {
 }
 
 function createMetadataFile() {
-  local fileData=$(cat $SOURCEFILE)
+  local fileData=$(cat "$SOURCEFILE")
   echo -e "["default"]\nversion = $VERSION.${securityversion}\n" >> "$METADATAFILE"
   for template in "${templates[@]}"
   do
@@ -91,8 +91,8 @@ templates=( "kvm-x86_64:https://download.cloudstack.org/systemvm/${CS_VERSION}/s
             "ovm3:https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$VERSION-x86_64-ovm.raw.bz2" )
 
 PARENTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )/dist/systemvm-templates/"
-mkdir -p $PARENTPATH
+mkdir -p "$PARENTPATH"
 METADATAFILE="${PARENTPATH}metadata.ini"
 echo > "$METADATAFILE"
-SOURCEFILE=${PARENTPATH}'md5sum.txt'
+SOURCEFILE="${PARENTPATH}md5sum.txt"
 createMetadataFile
