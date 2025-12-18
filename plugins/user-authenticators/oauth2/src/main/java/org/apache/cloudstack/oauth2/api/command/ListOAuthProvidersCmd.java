@@ -22,7 +22,9 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.user.Account;
+import com.cloud.utils.component.ComponentContext;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -85,6 +87,8 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
 
     OAuth2AuthManager _oauth2mgr;
 
+    DomainDao _domainDao;
+
     @Override
     public long getEntityOwnerId() {
         return Account.Type.NORMAL.ordinal();
@@ -108,7 +112,15 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
         }
         final String[] domainIdArray = (String[])params.get(ApiConstants.DOMAIN_ID);
         if (ArrayUtils.isNotEmpty(domainIdArray)) {
-            domainId = Long.parseLong(domainIdArray[0]);
+            String domainUuid = domainIdArray[0];
+            if ("-1".equals(domainUuid)) {
+                domainId = -1L;  // Special case for global-only filter
+            } else {
+                com.cloud.domain.DomainVO domain = _domainDao.findByUuid(domainUuid);
+                if (domain != null) {
+                    domainId = domain.getId();
+                }
+            }
         }
 
         List<OauthProviderVO> resultList = _oauth2mgr.listOauthProviders(provider, id, domainId);
@@ -153,6 +165,10 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
         }
         if (_oauth2mgr == null) {
             logger.error("No suitable Pluggable Authentication Manager found for listing OAuth providers");
+        }
+        _domainDao = (DomainDao) ComponentContext.getComponent(DomainDao.class);
+        if (_domainDao == null) {
+            logger.error("Could not get DomainDao component");
         }
     }
 }
