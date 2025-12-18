@@ -19,8 +19,16 @@ package org.apache.cloudstack.oauth2.dao;
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
 
+import java.util.List;
+
 public interface OauthProviderDao extends GenericDao<OauthProviderVO, Long> {
 
     public OauthProviderVO findByProvider(String provider);
+
+    public OauthProviderVO findByProviderAndDomain(String provider, Long domainId);
+
+    public List<OauthProviderVO> listByDomain(Long domainId);
+
+    public List<OauthProviderVO> listByDomainIncludingGlobal(Long domainId);
 
 }

@@ -22,9 +22,13 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
 
+import java.util.List;
+
 public class OauthProviderDaoImpl extends GenericDaoBase<OauthProviderVO, Long> implements OauthProviderDao {
 
     private final SearchBuilder<OauthProviderVO> oauthProviderSearchByName;
+    private final SearchBuilder<OauthProviderVO> oauthProviderSearchByProviderAndDomain;
+    private final SearchBuilder<OauthProviderVO> oauthProviderSearchByDomain;
 
     public OauthProviderDaoImpl() {
         super();
@@ -32,6 +36,15 @@ public class OauthProviderDaoImpl extends GenericDaoBase<OauthProviderVO, Long> 
         oauthProviderSearchByName = createSearchBuilder();
         oauthProviderSearchByName.and("provider", oauthProviderSearchByName.entity().getProvider(), SearchCriteria.Op.EQ);
         oauthProviderSearchByName.done();
+
+        oauthProviderSearchByProviderAndDomain = createSearchBuilder();
+        oauthProviderSearchByProviderAndDomain.and("provider", oauthProviderSearchByProviderAndDomain.entity().getProvider(), SearchCriteria.Op.EQ);
+        oauthProviderSearchByProviderAndDomain.and("domainId", oauthProviderSearchByProviderAndDomain.entity().getDomainId(), SearchCriteria.Op.EQ);
+        oauthProviderSearchByProviderAndDomain.done();
+
+        oauthProviderSearchByDomain = createSearchBuilder();
+        oauthProviderSearchByDomain.and("domainId", oauthProviderSearchByDomain.entity().getDomainId(), SearchCriteria.Op.EQ);
+        oauthProviderSearchByDomain.done();
     }
 
     @Override
@@ -40,5 +53,28 @@ public class OauthProviderDaoImpl extends GenericDaoBase<OauthProviderVO, Long> 
         sc.setParameters("provider", provider);
 
         return findOneBy(sc);
+    }
+
+    @Override
+    public OauthProviderVO findByProviderAndDomain(String provider, Long domainId) {
+        SearchCriteria<OauthProviderVO> sc = oauthProviderSearchByProviderAndDomain.create();
+        sc.setParameters("provider", provider);
+        sc.setParameters("domainId", domainId);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public List<OauthProviderVO> listByDomain(Long domainId) {
+        SearchCriteria<OauthProviderVO> sc = oauthProviderSearchByDomain.create();
+        sc.setParameters("domainId", domainId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<OauthProviderVO> listByDomainIncludingGlobal(Long domainId) {
+        SearchCriteria<OauthProviderVO> sc = createSearchCriteria();
+        sc.addOr("domainId", SearchCriteria.Op.EQ, domainId);
+        sc.addOr("domainId", SearchCriteria.Op.NULL);
+        return listBy(sc);
     }
 }
