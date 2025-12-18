@@ -21,7 +21,6 @@ import java.util.List;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.response.VolumeMetricsStatsResponse;
 
