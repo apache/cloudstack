@@ -36,8 +36,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
-import org.powermock.reflect.Whitebox;
 
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.dao.PodVlanMapDao;
@@ -47,6 +45,8 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.DomainRouterDao;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LoadBalanceRuleHandlerTest {
@@ -68,10 +68,10 @@ public class LoadBalanceRuleHandlerTest {
 
     @Before
     public void setup() {
-        Whitebox.setInternalState(loadBalanceRuleHandler, "_itMgr", virtualMachineManagerMock);
-        Whitebox.setInternalState(loadBalanceRuleHandler, "_routerDao", domainRouterDaoMock);
-        Whitebox.setInternalState(loadBalanceRuleHandler, "_elbVmMapDao", elasticLbVmMapDao);
-        Whitebox.setInternalState(loadBalanceRuleHandler, "_podVlanMapDao", podVlanMapDao);
+        ReflectionTestUtils.setField(loadBalanceRuleHandler, "_itMgr", virtualMachineManagerMock);
+        ReflectionTestUtils.setField(loadBalanceRuleHandler, "_routerDao", domainRouterDaoMock);
+        ReflectionTestUtils.setField(loadBalanceRuleHandler, "_elbVmMapDao", elasticLbVmMapDao);
+        ReflectionTestUtils.setField(loadBalanceRuleHandler, "_podVlanMapDao", podVlanMapDao);
     }
 
     @Test

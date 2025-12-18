@@ -211,7 +211,7 @@ class TestMultipleVolumeAttach(cloudstackTestCase):
         clusterid = host.clusterid
         storage_pools = StoragePool.list(self.apiClient, clusterid=clusterid)
         if len(storage_pools) < 2:
-            self.skipTest("at least two accesible primary storage pools needed for the vm to perform this test")
+            self.skipTest("at least two accessible primary storage pools needed for the vm to perform this test")
         return storage_pools
 
 
@@ -285,6 +285,8 @@ class TestMultipleVolumeAttach(cloudstackTestCase):
         self.query_async_job(vol3_jobId.jobid)
         self.query_async_job(vol4_jobId.jobid)
 
+        time.sleep(60)
+
         # List all the volumes attached to the instance. Includes even the Root disk.
         list_volume_response = Volume.list(
                                             self.apiClient,
@@ -336,6 +338,8 @@ class TestMultipleVolumeAttach(cloudstackTestCase):
         self.query_async_job(vol4_jobId.jobid)
         self.query_async_job(vol5_jobId.jobid)
         self.query_async_job(vol6_jobId.jobid)
+
+        time.sleep(60)
 
         volumes = Volume.list(self.apiClient,
                               virtualmachineid=self.virtual_machine.id,

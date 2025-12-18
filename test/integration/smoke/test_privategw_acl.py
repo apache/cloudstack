@@ -850,7 +850,7 @@ class TestPrivateGwACL(cloudstackTestCase):
             self.assertTrue(check_state == 0, "Routers private gateway interface should not be on the same state!")
             self.assertTrue(check_mac == 0, "Routers private gateway interface should not have the same mac address!")
         else:
-            self.assertTrue(check_state == 1, "Routers private gateway interface should should have been removed!")
+            self.assertTrue(check_state == 1, "Routers private gateway interface should have been removed!")
 
     def check_routers_state(self, status_to_check="PRIMARY", expected_count=1):
         routers = self.query_routers()
@@ -920,6 +920,6 @@ class TestPrivateGwACL(cloudstackTestCase):
                     (select id from physical_network where uuid='%s');" % physical_network.id
                 )
                 for traffic_type in traffic_type_list:
-                    if "Guest" in  str(traffic_type[0]):
+                    if "Guest" in str(traffic_type[0]):
                         return physical_network
         return None

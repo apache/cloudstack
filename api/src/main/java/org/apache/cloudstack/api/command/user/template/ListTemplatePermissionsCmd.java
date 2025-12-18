@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
@@ -38,11 +37,6 @@ public class ListTemplatePermissionsCmd extends BaseListTemplateOrIsoPermissions
     @Override
     public String getMediaType() {
         return "template";
-    }
-
-    @Override
-    protected Logger getLogger() {
-        return Logger.getLogger(ListTemplatePermissionsCmd.class.getName());
     }
 
     @Override

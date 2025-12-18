@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.TimeZone;
 
 
-import org.apache.log4j.Logger;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.cluster.ClusterInvalidSessionException;
 import org.apache.cloudstack.management.ManagementServerHost;
@@ -35,18 +35,19 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServerHostVO, Long> implements ManagementServerHostDao {
-    private static final Logger s_logger = Logger.getLogger(ManagementServerHostDaoImpl.class);
 
     private final SearchBuilder<ManagementServerHostVO> MsIdSearch;
     private final SearchBuilder<ManagementServerHostVO> ActiveSearch;
     private final SearchBuilder<ManagementServerHostVO> InactiveSearch;
     private final SearchBuilder<ManagementServerHostVO> StateSearch;
+    protected GenericSearchBuilder<ManagementServerHostVO, String> NonUpStateMsSearch;
 
     @Override
     public void invalidateRunSession(long id, long runid) {
@@ -78,7 +79,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 
     @Override
     @DB
-    public void update(long id, long runid, String name, String version, String serviceIP, int servicePort, Date lastUpdate) {
+    public void update(long id, long runid, String name, String version, String serviceIP, int servicePort, Date lastUpdate, ManagementServerHost.State state) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         try {
@@ -92,13 +93,13 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
             pstmt.setInt(4, servicePort);
             pstmt.setString(5, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), lastUpdate));
             pstmt.setLong(6, runid);
-            pstmt.setString(7, ManagementServerHost.State.Up.toString());
+            pstmt.setString(7, state.toString());
             pstmt.setLong(8, id);
 
             pstmt.executeUpdate();
             txn.commit();
         } catch (Exception e) {
-            s_logger.warn("Unexpected exception, ", e);
+            logger.warn("Unexpected exception, ", e);
             throw new RuntimeException(e.getMessage(), e);
         }
     }
@@ -118,7 +119,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
             txn.commit();
             return true;
         } catch (Exception e) {
-            s_logger.warn("Unexpected exception, ", e);
+            logger.warn("Unexpected exception, ", e);
             throw new RuntimeException(e.getMessage(), e);
         }
     }
@@ -131,7 +132,17 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         try {
             txn.start();
 
-            pstmt = txn.prepareAutoCloseStatement("update mshost set last_update=?, removed=null, alert_count=0 where id=? and runid=?");
+            boolean updateStatetoUp = false;
+            ManagementServerHostVO msHost = findById(id);
+            if (msHost != null && State.Down.equals(msHost.getState())) {
+                updateStatetoUp = true;
+            }
+
+            if (updateStatetoUp) {
+                pstmt = txn.prepareAutoCloseStatement("update mshost set last_update=?, removed=null, alert_count=0, state='Up' where id=? and runid=?");
+            } else {
+                pstmt = txn.prepareAutoCloseStatement("update mshost set last_update=?, removed=null, alert_count=0 where id=? and runid=?");
+            }
             pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), lastUpdate));
             pstmt.setLong(2, id);
             pstmt.setLong(3, runid);
@@ -140,13 +151,25 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
             txn.commit();
 
             if (count < 1) {
-                s_logger.info("Invalid cluster session detected, runId " + runid + " is no longer valid");
+                logger.info("Invalid cluster session detected, runId " + runid + " is no longer valid");
                 throw new CloudRuntimeException("Invalid cluster session detected, runId " + runid + " is no longer valid", new ClusterInvalidSessionException("runId " + runid + " is no longer valid"));
             }
         } catch (Exception e) {
-            s_logger.warn("Unexpected exception, ", e);
+            logger.warn("Unexpected exception, ", e);
             throw new RuntimeException(e.getMessage(), e);
         }
+    }
+
+    @Override
+    public boolean updateState(long id, ManagementServerHost.State newState) {
+        ManagementServerHostVO msHost = findById(id);
+        if (msHost == null) {
+            return false;
+        }
+
+        msHost.setState(newState);
+        msHost.setLastUpdateTime(DateUtil.currentGMTTime());
+        return update(id, msHost);
     }
 
     @Override
@@ -180,7 +203,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
             changedRows = pstmt.executeUpdate();
             txn.commit();
         } catch (Exception e) {
-            s_logger.warn("Unexpected exception, ", e);
+            logger.warn("Unexpected exception, ", e);
             throw new RuntimeException(e.getMessage(), e);
         }
 
@@ -204,7 +227,13 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 
         StateSearch = createSearchBuilder();
         StateSearch.and("state", StateSearch.entity().getState(), SearchCriteria.Op.IN);
+        StateSearch.and("runid", StateSearch.entity().getRunid(), SearchCriteria.Op.GT);
         StateSearch.done();
+
+        NonUpStateMsSearch = createSearchBuilder(String.class);
+        NonUpStateMsSearch.selectFields(NonUpStateMsSearch.entity().getServiceIP());
+        NonUpStateMsSearch.and("state", NonUpStateMsSearch.entity().getState(), SearchCriteria.Op.NLIKE);
+        NonUpStateMsSearch.done();
     }
 
     @Override
@@ -221,7 +250,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
             int count = pstmt.executeUpdate();
 
             if (count < 1) {
-                s_logger.info("Invalid cluster session detected, runId " + runId + " is no longer valid");
+                logger.info("Invalid cluster session detected, runId " + runId + " is no longer valid");
                 throw new CloudRuntimeException("Invalid cluster session detected, runId " + runId + " is no longer valid", new ClusterInvalidSessionException("runId " + runId + " is no longer valid"));
             }
         } catch (SQLException e) {
@@ -236,6 +265,13 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         sc.setParameters("state", (Object[])states);
 
         return listBy(sc);
+    }
+
+    @Override
+    public List<String> listNonUpStateMsIPs() {
+        SearchCriteria<String> sc = NonUpStateMsSearch.create();
+        sc.addAnd("state", SearchCriteria.Op.NLIKE, State.Up);
+        return customSearch(sc, null);
     }
 
     @Override
@@ -270,6 +306,16 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
             return mshosts.get(0);
         }
         return null;
+    }
+
+    @Override
+    public ManagementServerHostVO findOneByLongestRuntime() {
+        SearchCriteria<ManagementServerHostVO> sc = StateSearch.create();
+        sc.setParameters("state", ManagementServerHost.State.Up);
+        sc.setParameters("runid", 0);
+        Filter filter = new Filter(ManagementServerHostVO.class, "runid", true, 0L, 1L);
+        List<ManagementServerHostVO> msHosts = listBy(sc, filter);
+        return CollectionUtils.isNotEmpty(msHosts) ? msHosts.get(0) : null;
     }
 
 }

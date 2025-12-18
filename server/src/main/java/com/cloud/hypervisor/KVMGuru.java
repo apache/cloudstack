@@ -21,6 +21,8 @@ import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.ConfigurationManagerImpl;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
@@ -46,7 +48,6 @@ import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
 import javax.inject.Inject;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -71,7 +72,6 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Inject
     HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
 
-    public static final Logger s_logger = Logger.getLogger(KVMGuru.class);
 
     @Override
     public HypervisorType getHypervisorType() {
@@ -130,27 +130,28 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
      * @param vmProfile vm profile
      */
     protected void setVmQuotaPercentage(VirtualMachineTO to, VirtualMachineProfile vmProfile) {
-        if (to.getLimitCpuUse()) {
+        if (to.isLimitCpuUse()) {
             VirtualMachine vm = vmProfile.getVirtualMachine();
             HostVO host = hostDao.findById(vm.getHostId());
             if (host == null) {
                 throw new CloudRuntimeException("Host with id: " + vm.getHostId() + " not found");
             }
-            s_logger.debug("Limiting CPU usage for VM: " + vm.getUuid() + " on host: " + host.getUuid());
+            logger.debug("Limiting CPU usage for VM: {} on host: {}", vm, host);
             double hostMaxSpeed = getHostCPUSpeed(host);
             double maxSpeed = getVmSpeed(to);
             try {
                 BigDecimal percent = new BigDecimal(maxSpeed / hostMaxSpeed);
                 percent = percent.setScale(2, RoundingMode.HALF_DOWN);
                 if (percent.compareTo(new BigDecimal(1)) == 1) {
-                    s_logger.debug("VM " + vm.getUuid() + " CPU MHz exceeded host " + host.getUuid() + " CPU MHz, limiting VM CPU to the host maximum");
+                    logger.debug("VM {} CPU MHz exceeded host {} CPU MHz, limiting VM CPU to the host maximum", vm, host);
                     percent = new BigDecimal(1);
                 }
                 to.setCpuQuotaPercentage(percent.doubleValue());
-                s_logger.debug("Host: " + host.getUuid() + " max CPU speed = " + hostMaxSpeed + "MHz, VM: " + vm.getUuid() +
-                        "max CPU speed = " + maxSpeed + "MHz. Setting CPU quota percentage as: " + percent.doubleValue());
+                logger.debug("Host: {} max CPU speed = {} MHz, VM: {} max CPU speed = {} MHz. " +
+                        "Setting CPU quota percentage as: {}",
+                        host, hostMaxSpeed, vm, maxSpeed, percent.doubleValue());
             } catch (NumberFormatException e) {
-                s_logger.error("Error calculating VM: " + vm.getUuid() + " quota percentage, it wll not be set. Error: " + e.getMessage(), e);
+                logger.error("Error calculating VM: {} quota percentage, it will not be set. Error: {}", vm, e.getMessage(), e);
             }
         }
     }
@@ -213,7 +214,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         Integer maxHostCpuCore = max.second();
 
         long minMemory = virtualMachineTo.getMinRam();
-        Long maxMemory = minMemory;
+        Long maxMemory = virtualMachineTo.getMaxRam();
         int minCpuCores = virtualMachineTo.getCpus();
         Integer maxCpuCores = minCpuCores;
 
@@ -243,15 +244,17 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         }
 
         Long lastHostId = virtualMachine.getLastHostId();
-        s_logger.info(String.format("%s is not running; therefore, we use the last host [%s] that the VM was running on to derive the unconstrained service offering max CPU and memory.", vmDescription, lastHostId));
 
         HostVO lastHost = lastHostId == null ? null : hostDao.findById(lastHostId);
+        logger.info("{} is not running; therefore, we use the last host [{}] with id {} that the " +
+                        "VM was running on to derive the unconstrained service offering max CPU " +
+                "and memory.", vmDescription, lastHost, lastHostId);
         if (lastHost != null) {
             maxHostMemory = lastHost.getTotalMemory();
             maxHostCpuCore = lastHost.getCpus();
-            s_logger.debug(String.format("Retrieved memory and cpu max values {\"memory\": %s, \"cpu\": %s} from %s last %s.", maxHostMemory, maxHostCpuCore, vmDescription, lastHost));
+            logger.debug(String.format("Retrieved memory and cpu max values {\"memory\": %s, \"cpu\": %s} from %s last %s.", maxHostMemory, maxHostCpuCore, vmDescription, lastHost));
         } else {
-            s_logger.warn(String.format("%s host [%s] and last host [%s] are null. Using 'Long.MAX_VALUE' [%s] and 'Integer.MAX_VALUE' [%s] as max memory and cpu cores.", vmDescription, virtualMachine.getHostId(), lastHostId, maxHostMemory, maxHostCpuCore));
+            logger.warn(String.format("%s host [%s] and last host [%s] are null. Using 'Long.MAX_VALUE' [%s] and 'Integer.MAX_VALUE' [%s] as max memory and cpu cores.", vmDescription, virtualMachine.getHostId(), lastHostId, maxHostMemory, maxHostCpuCore));
         }
 
         return new Pair<>(maxHostMemory, maxHostCpuCore);
@@ -264,18 +267,18 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         Integer customOfferingMaxMemory = NumberUtils.createInteger(serviceOfferingVO.getDetail(ApiConstants.MAX_MEMORY));
         Integer maxMemoryConfig = ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_RAM_SIZE.value();
         if (customOfferingMaxMemory != null) {
-            s_logger.debug(String.format("Using 'Custom unconstrained' %s max memory value [%sMb] as %s memory.", serviceOfferingDescription, customOfferingMaxMemory, vmDescription));
+            logger.debug(String.format("Using 'Custom unconstrained' %s max memory value [%sMb] as %s memory.", serviceOfferingDescription, customOfferingMaxMemory, vmDescription));
             maxMemory = ByteScaleUtils.mebibytesToBytes(customOfferingMaxMemory);
         } else {
             String maxMemoryConfigKey = ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_RAM_SIZE.key();
 
-            s_logger.info(String.format("%s is a 'Custom unconstrained' service offering. Using config [%s] value [%s] as max %s memory.",
+            logger.info(String.format("%s is a 'Custom unconstrained' service offering. Using config [%s] value [%s] as max %s memory.",
                     serviceOfferingDescription, maxMemoryConfigKey, maxMemoryConfig, vmDescription));
 
             if (maxMemoryConfig > 0) {
                 maxMemory = ByteScaleUtils.mebibytesToBytes(maxMemoryConfig);
             } else {
-                s_logger.info(String.format("Config [%s] has value less or equal '0'. Using %s host or last host max memory [%s] as VM max memory in the hypervisor.", maxMemoryConfigKey, vmDescription, maxHostMemory));
+                logger.info(String.format("Config [%s] has value less or equal '0'. Using %s host or last host max memory [%s] as VM max memory in the hypervisor.", maxMemoryConfigKey, vmDescription, maxHostMemory));
                 maxMemory = maxHostMemory;
             }
         }
@@ -290,18 +293,18 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         Integer maxCpuCoresConfig = ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_CPU_CORES.value();
 
         if (customOfferingMaxCpuCores != null) {
-            s_logger.debug(String.format("Using 'Custom unconstrained' %s max cpu cores [%s] as %s cpu cores.", serviceOfferingDescription, customOfferingMaxCpuCores, vmDescription));
+            logger.debug(String.format("Using 'Custom unconstrained' %s max cpu cores [%s] as %s cpu cores.", serviceOfferingDescription, customOfferingMaxCpuCores, vmDescription));
             maxCpuCores = customOfferingMaxCpuCores;
         } else {
             String maxCpuCoreConfigKey = ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_CPU_CORES.key();
 
-            s_logger.info(String.format("%s is a 'Custom unconstrained' service offering. Using config [%s] value [%s] as max %s cpu cores.",
+            logger.info(String.format("%s is a 'Custom unconstrained' service offering. Using config [%s] value [%s] as max %s cpu cores.",
                     serviceOfferingDescription, maxCpuCoreConfigKey, maxCpuCoresConfig, vmDescription));
 
             if (maxCpuCoresConfig > 0) {
                 maxCpuCores = maxCpuCoresConfig;
             } else {
-                s_logger.info(String.format("Config [%s] has value less or equal '0'. Using %s host or last host max cpu cores [%s] as VM cpu cores in the hypervisor.", maxCpuCoreConfigKey, vmDescription, maxHostCpuCore));
+                logger.info(String.format("Config [%s] has value less or equal '0'. Using %s host or last host max cpu cores [%s] as VM cpu cores in the hypervisor.", maxCpuCoreConfigKey, vmDescription, maxHostCpuCore));
                 maxCpuCores = maxHostCpuCore;
             }
         }
@@ -344,7 +347,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
 
     @Override
     public VirtualMachine importVirtualMachineFromBackup(long zoneId, long domainId, long accountId, long userId, String vmInternalName, Backup backup)  {
-        s_logger.debug(String.format("Trying to import VM [vmInternalName: %s] from Backup [%s].", vmInternalName,
+        logger.debug(String.format("Trying to import VM [vmInternalName: %s] from Backup [%s].", vmInternalName,
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "id", "uuid", "vmId", "externalId", "backupType")));
 
         VMInstanceVO vm = _instanceDao.findVMByInstanceNameIncludingRemoved(vmInternalName);
@@ -357,19 +360,20 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
                 vm.setPowerState(VirtualMachine.PowerState.PowerOff);
                 _instanceDao.update(vm.getId(), vm);
             }
-           for ( Backup.VolumeInfo VMVolToRestore : vm.getBackupVolumeList()) {
+           for (Backup.VolumeInfo VMVolToRestore : vm.getBackupVolumeList()) {
                VolumeVO volume = _volumeDao.findByUuidIncludingRemoved(VMVolToRestore.getUuid());
                volume.setState(Volume.State.Ready);
                _volumeDao.update(volume.getId(), volume);
                if (VMVolToRestore.getType() == Volume.Type.ROOT) {
                    _volumeDao.update(volume.getId(), volume);
                    _volumeDao.attachVolume(volume.getId(), vm.getId(), 0L);
-               }
-               else if ( VMVolToRestore.getType() == Volume.Type.DATADISK) {
+               } else if (VMVolToRestore.getType() == Volume.Type.DATADISK) {
                    List<VolumeVO> vmVolumes = _volumeDao.findByInstance(vm.getId());
                    _volumeDao.update(volume.getId(), volume);
                    _volumeDao.attachVolume(volume.getId(), vm.getId(), getNextAvailableDeviceId(vmVolumes));
                }
+               UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_ATTACH, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                       volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid(), vm.getId(), volume.isDisplay());
            }
         } catch (Exception e) {
             throw new RuntimeException("Could not restore VM " + vm.getName() + " due to : " + e.getMessage());
@@ -387,6 +391,8 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
                 _volumeDao.attachVolume(restoredVolume.getId(), vm.getId(), getNextAvailableDeviceId(vmVolumes));
                 restoredVolume.setState(Volume.State.Ready);
                 _volumeDao.update(restoredVolume.getId(), restoredVolume);
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_ATTACH, restoredVolume.getAccountId(), restoredVolume.getDataCenterId(), restoredVolume.getId(), restoredVolume.getName(),
+                        restoredVolume.getDiskOfferingId(), restoredVolume.getTemplateId(), restoredVolume.getSize(), Volume.class.getName(), restoredVolume.getUuid(), vm.getId(), restoredVolume.isDisplay());
                 return true;
             } catch (Exception e) {
                 restoredVolume.setDisplay(false);

@@ -112,7 +112,7 @@ class TestUsage(cloudstackTestCase):
             if cls.zone.localstorageenable:
                 cls.testdata["service_offering"]["storagetype"] = 'local'
 
-            # Create 2 service offerings with different values for
+            # Create 2 service offerings with different values
             # for cpunumber, cpuspeed, and memory
 
             cls.testdata["service_offering"]["cpunumber"] = "1"
@@ -215,7 +215,7 @@ class TestUsage(cloudstackTestCase):
     @classmethod
     def setUsageConfiguration(cls):
         """ Set the configuration parameters so that usage job runs
-            every 10 miuntes """
+            every 10 minutes """
 
         Configurations.update(
             cls.apiclient,
@@ -432,9 +432,9 @@ class TestUsage(cloudstackTestCase):
     def test_01_positive_tests_usage(self):
         """ Positive test for usage test path
 
-        # 1.  Register a template and verify that usage usage is generated
+        # 1.  Register a template and verify that usage is generated
               for correct size of template
-        # 2.  Register an ISO, verify usage is generate for the correct size
+        # 2.  Register an ISO, verify usage is generated for the correct size
               of ISO
         # 3.  Deploy a VM from the template and verify usage is generated
               for the VM with correct Service Offering and template id
@@ -442,8 +442,8 @@ class TestUsage(cloudstackTestCase):
         # 5.  Stop and start the VM
         # 6.  Verify that allocated VM usage should be greater than
               running VM usage
-        # 7.  Destroy the Vm and recover it
-        # 8.  Verify that the running VM usage stays the same after delete and
+        # 7.  Destroy the VM and recover it
+        # 8.  Verify that the running VM usage stays the same after delete
               and after recover operation
         # 9.  Verify that allocated VM usage should be greater after recover
               operation than after destroy operation
@@ -453,7 +453,7 @@ class TestUsage(cloudstackTestCase):
         # 12. Start the VM
         # 13. Verify that the running VM usage after start operation is less
               than the allocated VM usage
-        # 14. Verify that the running VM usage after start vm opearation
+        # 14. Verify that the running VM usage after start VM operation
               is greater running VM usage after recover VM operation
         """
 
@@ -551,7 +551,7 @@ class TestUsage(cloudstackTestCase):
             "Iso list validation failed"
         )
 
-        # Checking usage for Iso
+        # Checking usage for ISO
         response = self.listUsageRecords(usagetype=8)
         self.assertEqual(response[0], PASS, response[1])
         isoUsageRecords = [record for record in response[1]
@@ -824,7 +824,7 @@ class TestUsage(cloudstackTestCase):
         self.assertEqual(response[0], PASS, response[1])
         vmAllocatedUsageRecord = response[1][-1]
 
-        # Step 11: Veriying vm usage for new service offering
+        # Step 11: Verifying VM usage for new service offering
         self.assertEqual(vmAllocatedUsageRecord.offeringid,
                          self.service_offering_2.id,
                          "The service offering id in the usage record\
@@ -884,7 +884,7 @@ class TestUsage(cloudstackTestCase):
               generated for template with correct size
         # 7.  Delete the template and verify that usage is stopped for
               template
-        # 8.  Create volume from snaopshot and verify correct disk usage
+        # 8.  Create volume from snapshot and verify correct disk usage
               is generated
         # 9.  Delete the volume and verify that the usage is stopped
         # 10. Create template from snapshot and verify correct usage
@@ -1230,7 +1230,7 @@ class TestUsage(cloudstackTestCase):
         # Step 7
         templateFromVolume.delete(self.userapiclient)
 
-        # Verifying usage for Template is stoppd after deleting it - START
+        # Verifying usage for Template is stopped after deleting it - START
         response = self.listUsageRecords(usagetype=7)
         self.assertEqual(response[0], PASS, response[1])
         templateUsageRecords = response[1]
@@ -1256,7 +1256,7 @@ class TestUsage(cloudstackTestCase):
                         "usage for template after deletion should remain the same\
                         after specific intervals of time")
 
-        # Verifying usage for Template is stoppd after deleting it - END
+        # Verifying usage for Template is stopped after deleting it - END
 
         # Step 8
         self.testdata["volume_from_snapshot"]["zoneid"] = self.zone.id
@@ -1489,7 +1489,7 @@ class TestUsage(cloudstackTestCase):
              usage is generated for account
              Also verify that IP usage is generated for source NAT IP of
              network
-        # 2. Enabled VPN on source nat IP of default network of VM
+        # 2. Enabled VPN on source NAT IP of default network of VM
         # 3. Add two VPN users and check that usage is generated for VPN users
         # 4. Acquire public IP in the network and verify that IP usage
              is generated for the acquired IP
@@ -1532,7 +1532,7 @@ class TestUsage(cloudstackTestCase):
         # Usages for steps are checked together in batch after the operations are done
         # to avoid waiting for usage job to run for each operation separately
 
-        # Listing source nat ip of newly added network
+        # Listing source NAT IP of newly added network
         ipAddresses = PublicIPAddress.list(
             self.apiclient,
             associatednetworkid=isolated_network.id,
@@ -1548,7 +1548,7 @@ class TestUsage(cloudstackTestCase):
         sourceNatIPDefaultNetwork = ipAddressesDefaultNetwork[0]
 
         # Step 2
-        # Create VPN for source NAT ip
+        # Create VPN for source NAT IP
         Vpn.create(self.apiclient,
                    sourceNatIPDefaultNetwork.id,
                    account=self.account.name,
@@ -1625,7 +1625,7 @@ class TestUsage(cloudstackTestCase):
 
         # Usages for above operations are checked here together
 
-        # Checking usage for source nat IP of added network
+        # Checking usage for source NAT IP of added network
         response = self.listUsageRecords(usagetype=13)
         self.assertEqual(response[0], PASS, response[1])
         usageRecords = response[1]
@@ -1639,7 +1639,7 @@ class TestUsage(cloudstackTestCase):
         self.assertTrue(float(nwOfferingUsageRecords[0].rawusage) > 0,
                         "Raw usage not started for source NAT ip")
 
-        # Checking usage for source nat IP of default VM network
+        # Checking usage for source NAT IP of default VM network
         response = self.listUsageRecords(usagetype=3, sleep=False)
         self.assertEqual(response[0], PASS, response[1])
         usageRecords = response[1]
@@ -1775,7 +1775,7 @@ class TestUsage(cloudstackTestCase):
         )
 
         # Step 6
-        # Enabling static Nat for Ip Address associated
+        # Enabling static NAT for IP Address associated
         StaticNATRule.enable(
             self.userapiclient,
             ipaddressid=public_ip_2.ipaddress.id,
@@ -1933,7 +1933,7 @@ class TestUsage(cloudstackTestCase):
             natRule_1_Usage_t1 == natRule_1_Usage_t2,
             "NAT rule usage should be stopped once the rule is deleted")
 
-        # Also verify that usage for other nat rule is running
+        # Also verify that usage for other NAT rule is running
         natRule_2_Usage_t1 = sum(float(record.rawusage) for record
                                  in [record for record in usageRecords
                                      if nat_rule_2.id == record.usageid])
@@ -1962,7 +1962,6 @@ class TestUsage(cloudstackTestCase):
              is generated for the account
         # 4. Create another LB rule with different ports and verify
              separate usage is generated for new LB rule
-
         # 5. Create egress firewall rule for VM and SSH to VM
         # 6. Ping external network from the VM and verify that
              network byte usage is generated correctly
@@ -1972,12 +1971,11 @@ class TestUsage(cloudstackTestCase):
         #    Verify iptables counters are reset when domR stops
         #    Verify current_bytes in user_statistics table are moved to
              net_bytes
-        #    Verify currnt_bytes becomes zero
+        #    Verify current_bytes becomes zero
         # 9. Start the router and
         #    Verify iptables counters are reset when domR starts
         #    Verify a diff of total (current_bytes + net_bytes) in previous
              aggregation period and current period will give the network usage
-
         """
 
         # Step 1
@@ -2253,7 +2251,7 @@ class TestUsage(cloudstackTestCase):
         """ Positive test for usage test path T61 - T62
         Steps:
         # 1. Deploy a VM
-        # 2. Take Vm snapshot and verify usage is generated for VM snapshot
+        # 2. Take VM snapshot and verify usage is generated for VM snapshot
         # 3. Delete VM snapshot and verify that usage stops
         """
 
@@ -2315,14 +2313,14 @@ class TestUsage(cloudstackTestCase):
 
     @attr(tags=["advanced"], required_hardware="true")
     def test_06_positive_tests_usage(self):
-        """Migrate VM and verify usage"""
+        """Migrate VM and verify usage
 
         # Validate the following
         # 1. Create a VM, and verify that usage is generated for it
         #    with correct service offering and template id
         # 2. Migrate the VM to suitable host
         # 3. Verify that after migration, VM usage continues to be running
-
+        """
         if self.hypervisor.lower() in ['lxc']:
             self.skipTest(
                 "vm migrate feature is not supported on %s" %
@@ -2394,26 +2392,26 @@ class TestUsage(cloudstackTestCase):
         """
         Steps:
         # 1.  Add VM in VPC network, verify that
-        #     usage is generated for source nat ip pf network in vpc
-        # 2.  Acquire a public ip in VPC network and verify
-              usage is generated for the public ip
-        # 3.  Create multiple PF rule on this ip in VPC network,
-              and verify that usage is generated for both pf rules
-        # 4.  Enable vpn on source nat ip in vpc network
-        # 5.  Add 2 vpn user
-              And verify that usage is generated for both the vpn users
-        # 6.  Delete one VPn user, and verify that usage is stopped
+        #     usage is generated for source NAT IP pf network in VPC
+        # 2.  Acquire a public IP in VPC network and verify
+              usage is generated for the public IP
+        # 3.  Create multiple PF rule on this IP in VPC network,
+              and verify that usage is generated for both PF rules
+        # 4.  Enable VPN on source NAT IP in VPC network
+        # 5.  Add 2 VPN user
+              And verify that usage is generated for both the VPN users
+        # 6.  Delete one VPN user, and verify that usage is stopped
               for deleted user
         # 7.  Open Egress rules on this VPC network
         # 8.  Create network traffic on this network ping www.google.com,
               and verify that usage is generated for network traffic
-        # 9.  Delete onePF rule in VPC network
-              And verify that usage is stopped for the pf rule
-        # 10. Stop  router for VPC network
+        # 9.  Delete one PF rule in VPC network
+              And verify that usage is stopped for the PF rule
+        # 10. Stop router for VPC network
               Verify iptables counters are reset when domR stops
         #     Verify current_bytes in user_statistics table are moved to
               net_bytes
-        #     Verify currnt_bytes becomes zero
+        #     Verify current_bytes becomes zero
         # 11. Start router for VPC network
               Verify iptables counters are reset when domR starts
         #     Verify a diff of total (current_bytes + net_bytes) in previous
@@ -2534,7 +2532,7 @@ class TestUsage(cloudstackTestCase):
         sourceNatIP = ipAddresses[0]
 
         # Usage verification section
-        # Checking source nat IP usage
+        # Checking source NAT IP usage
         response = self.listUsageRecords(usagetype=3)
         self.assertEqual(response[0], PASS, response[1])
         usageRecords = response[1]
@@ -2582,7 +2580,7 @@ class TestUsage(cloudstackTestCase):
                         "Raw usage not started for nat rule")
 
         # Step 4:
-        # Create VPN for source NAT ip
+        # Create VPN for source NAT IP
         Vpn.create(self.apiclient,
                    sourceNatIP.id,
                    account=self.account.name,
@@ -2884,7 +2882,7 @@ class TestUsage(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_08_checkNewVolumein_listUsageRecords(self):
-        """ Test case to check if new volume crated after
+        """ Test case to check if new volume created after
         restore VM is listed in listUsageRecords
         # 1. Launch a VM
         # 2. Restore the VM
@@ -3063,7 +3061,7 @@ class TestUsageDirectMeteringBasicZone(cloudstackTestCase):
             if cls.zone.localstorageenable:
                 cls.testdata["service_offering"]["storagetype"] = 'local'
 
-            # Create 2 service offerings with different values for
+            # Create 2 service offerings with different values
             # for cpunumber, cpuspeed, and memory
 
             cls.testdata["service_offering"]["cpunumber"] = "1"
@@ -3110,7 +3108,7 @@ class TestUsageDirectMeteringBasicZone(cloudstackTestCase):
             domainid=self.domain.id
         )
         self.cleanup.append(self.account)
-        # Create user api client of the account
+        # Create user API client of the account
         self.userapiclient = self.testClient.getUserApiClient(
             UserName=self.account.name,
             DomainName=self.account.domain
@@ -3261,7 +3259,7 @@ class TestUsageDirectMeteringBasicZone(cloudstackTestCase):
         return
 
     def getLatestUsageJobExecutionTime(self):
-        """ Get the end time of latest usage job that has run successfully"""
+        """Get the end time of latest usage job that has run successfully"""
 
         try:
             qresultset = self.dbclient.execute(

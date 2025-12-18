@@ -17,7 +17,6 @@
 
 package org.apache.cloudstack.api.command.admin.zone;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -37,7 +36,6 @@ import com.cloud.user.Account;
 @APICommand(name = "markDefaultZoneForAccount", description = "Marks a default zone for this account", responseObject = AccountResponse.class, since = "4.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class MarkDefaultZoneForAccountCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(MarkDefaultZoneForAccountCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

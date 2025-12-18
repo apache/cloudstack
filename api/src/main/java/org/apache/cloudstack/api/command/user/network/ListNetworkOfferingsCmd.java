@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.Pair;
@@ -36,7 +35,6 @@ import com.cloud.utils.Pair;
 @APICommand(name = "listNetworkOfferings", description = "Lists all available network offerings.", responseObject = NetworkOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListNetworkOfferingsCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListNetworkOfferingsCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -111,6 +109,12 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.FOR_VPC, type = CommandType.BOOLEAN, description = "the network offering can be used" + " only for network creation inside the VPC")
     private Boolean forVpc;
+
+    @Parameter(name = ApiConstants.ROUTING_MODE,
+            type = CommandType.STRING,
+            description = "the routing mode for the network offering. Supported types are: Static or Dynamic.",
+            since = "4.20.0")
+    private String routingMode;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -187,6 +191,8 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     public Boolean getForVpc() {
         return forVpc;
     }
+
+    public String getRoutingMode() { return routingMode; }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

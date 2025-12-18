@@ -44,6 +44,10 @@ public class GuestVlanRangeResponse extends BaseResponse implements ControlledEn
     @Param(description = "the domain name of the guest VLAN range")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain to which the guest VLAN range belongs", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.GUEST_VLAN_RANGE)
     @Param(description = "the guest VLAN range")
     private String guestVlanRange;
@@ -83,6 +87,10 @@ public class GuestVlanRangeResponse extends BaseResponse implements ControlledEn
         this.domainName = domainName;
     }
 
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
+    }
     public void setGuestVlanRange(String guestVlanRange) {
         this.guestVlanRange = guestVlanRange;
     }

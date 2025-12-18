@@ -37,7 +37,7 @@ import com.cloud.resource.ServerResource;
  * AgentManager manages hosts. It directly coordinates between the DAOs and the connections it manages.
  */
 public interface AgentManager {
-    static final ConfigKey<Integer> Wait = new ConfigKey<Integer>("Advanced", Integer.class, "wait", "1800", "Time in seconds to wait for control commands to return",
+    ConfigKey<Integer> Wait = new ConfigKey<Integer>("Advanced", Integer.class, "wait", "1800", "Time in seconds to wait for control commands to return",
             true);
     ConfigKey<Boolean> EnableKVMAutoEnableDisable = new ConfigKey<>(Boolean.class,
                     "enable.kvm.host.auto.enable.disable",
@@ -47,7 +47,14 @@ public interface AgentManager {
                             "according to the hosts health check results",
                     true, ConfigKey.Scope.Cluster, null);
 
-    public enum TapAgentsAction {
+    ConfigKey<Integer> ReadyCommandWait = new ConfigKey<Integer>("Advanced", Integer.class, "ready.command.wait",
+            "60", "Time in seconds to wait for Ready command to return", true);
+
+    ConfigKey<String> GranularWaitTimeForCommands = new ConfigKey<>("Advanced", String.class, "commands.timeout", "",
+            "This timeout overrides the wait global config. This holds a comma separated key value pairs containing timeout (in seconds) for specific commands. " +
+                    "For example: DhcpEntryCommand=600, SavePasswordCommand=300, VmDataCommand=300", false);
+
+    enum TapAgentsAction {
         Add, Del, Contains,
     }
 
@@ -163,4 +170,6 @@ public interface AgentManager {
     void notifyMonitorsOfRemovedHost(long hostId, long clusterId);
 
     void propagateChangeToAgents(Map<String, String> params);
+
+    boolean transferDirectAgentsFromMS(String fromMsUuid, long fromMsId, long timeoutDurationInMs, boolean excludeHostsInMaintenance);
 }

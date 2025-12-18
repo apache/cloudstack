@@ -20,12 +20,11 @@ package org.apache.cloudstack.storage.datastore.lifecycle;
 
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.capacity.CapacityManager;
+import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.dao.ClusterDao;
-import com.cloud.host.Host;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -38,29 +37,28 @@ import com.cloud.storage.StoragePoolAutomation;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
+import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreParameters;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.DateraUtil;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class DateraPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
-    private static final Logger s_logger = Logger.getLogger(DateraPrimaryDataStoreLifeCycle.class);
-
+public class DateraPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     @Inject
     private CapacityManager _capacityMgr;
     @Inject
@@ -87,6 +85,8 @@ public class DateraPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycl
     private StoragePoolHostDao _storagePoolHostDao;
     @Inject
     private StoragePoolAutomation storagePoolAutomation;
+    @Inject
+    private StoragePoolAndAccessGroupMapDao storagePoolAndAccessGroupMapDao;
 
     @Override
     public DataStore initialize(Map<String, Object> dsInfos) {
@@ -100,6 +100,8 @@ public class DateraPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycl
         Long capacityBytes = (Long) dsInfos.get("capacityBytes");
         Long capacityIops = (Long) dsInfos.get("capacityIops");
         String tags = (String) dsInfos.get("tags");
+        String storageAccessGroups = (String)dsInfos.get(ApiConstants.STORAGE_ACCESS_GROUPS);
+        boolean isTagARule = (Boolean)dsInfos.get("isTagARule");
         @SuppressWarnings("unchecked")
         Map<String, String> details = (Map<String, String>) dsInfos.get("details");
         String domainName = details.get("domainname");
@@ -131,7 +133,7 @@ public class DateraPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycl
             // uuid = DateraUtil.PROVIDER_NAME + "_" + cluster.getUuid() + "_" + storageVip
             // + "_" + clusterAdminUsername + "_" + numReplicas + "_" + volPlacement;
             uuid = DateraUtil.PROVIDER_NAME + "_" + clusterUuid + "_" + randomString;
-            s_logger.debug("Datera - Setting Datera cluster-wide primary storage uuid to " + uuid);
+            logger.debug("Datera - Setting Datera cluster-wide primary storage uuid to " + uuid);
             parameters.setPodId(podId);
             parameters.setClusterId(clusterId);
 
@@ -151,7 +153,7 @@ public class DateraPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycl
             // "_" + clusterAdminUsername + "_" + numReplicas + "_" + volPlacement;
             uuid = DateraUtil.PROVIDER_NAME + "_" + zoneUuid + "_" + randomString;
 
-            s_logger.debug("Datera - Setting Datera zone-wide primary storage uuid to " + uuid);
+            logger.debug("Datera - Setting Datera zone-wide primary storage uuid to " + uuid);
         }
         if (capacityBytes == null || capacityBytes <= 0) {
             throw new IllegalArgumentException("'capacityBytes' must be present and greater than 0.");
@@ -163,9 +165,9 @@ public class DateraPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycl
 
         if (domainName == null) {
             domainName = "ROOT";
-            s_logger.debug("setting the domain to ROOT");
+            logger.debug("setting the domain to ROOT");
         }
-        s_logger.debug("Datera - domainName: " + domainName);
+        logger.debug("Datera - domainName: " + domainName);
 
         parameters.setHost(storageVip);
         parameters.setPort(storagePort);
@@ -181,6 +183,8 @@ public class DateraPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycl
         parameters.setCapacityIops(capacityIops);
         parameters.setHypervisorType(HypervisorType.Any);
         parameters.setTags(tags);
+        parameters.setStorageAccessGroups(storageAccessGroups);
+        parameters.setIsTagARule(isTagARule);
         parameters.setDetails(details);
 
         String managementVip = DateraUtil.getManagementVip(url);
@@ -201,7 +205,7 @@ public class DateraPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycl
                 lClusterDefaultMinIops = Long.parseLong(clusterDefaultMinIops);
             }
         } catch (NumberFormatException ex) {
-            s_logger.warn("Cannot parse the setting of " + DateraUtil.CLUSTER_DEFAULT_MIN_IOPS
+            logger.warn("Cannot parse the setting of " + DateraUtil.CLUSTER_DEFAULT_MIN_IOPS
                     + ", using default value: " + lClusterDefaultMinIops + ". Exception: " + ex);
         }
 
@@ -212,7 +216,7 @@ public class DateraPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycl
                 lClusterDefaultMaxIops = Long.parseLong(clusterDefaultMaxIops);
             }
         } catch (NumberFormatException ex) {
-            s_logger.warn("Cannot parse the setting of " + DateraUtil.CLUSTER_DEFAULT_MAX_IOPS
+            logger.warn("Cannot parse the setting of " + DateraUtil.CLUSTER_DEFAULT_MAX_IOPS
                     + ", using default value: " + lClusterDefaultMaxIops + ". Exception: " + ex);
         }
 
@@ -244,33 +248,24 @@ public class DateraPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycl
     @Override
     public boolean attachCluster(DataStore datastore, ClusterScope scope) {
         PrimaryDataStoreInfo primaryDataStoreInfo = (PrimaryDataStoreInfo) datastore;
+        List<HostVO> hostsToConnect = _resourceMgr.getEligibleUpHostsInClusterForStorageConnection(primaryDataStoreInfo);
 
-        // check if there is at least one host up in this cluster
-        List<HostVO> allHosts = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing,
-                primaryDataStoreInfo.getClusterId(), primaryDataStoreInfo.getPodId(),
-                primaryDataStoreInfo.getDataCenterId());
-
-        if (allHosts.isEmpty()) {
-            storagePoolDao.expunge(primaryDataStoreInfo.getId());
-
-            throw new CloudRuntimeException(
-                    "No host up to associate a storage pool with in cluster " + primaryDataStoreInfo.getClusterId());
-        }
+        logger.debug(String.format("Attaching the pool to each of the hosts %s in the cluster: %s", hostsToConnect, primaryDataStoreInfo.getClusterId()));
 
         List<HostVO> poolHosts = new ArrayList<HostVO>();
 
-        for (HostVO host : allHosts) {
+        for (HostVO host : hostsToConnect) {
             try {
-                _storageMgr.connectHostToSharedPool(host.getId(), primaryDataStoreInfo.getId());
+                _storageMgr.connectHostToSharedPool(host, primaryDataStoreInfo.getId());
 
                 poolHosts.add(host);
             } catch (Exception e) {
-                s_logger.warn("Unable to establish a connection between " + host + " and " + primaryDataStoreInfo, e);
+                logger.warn("Unable to establish a connection between " + host + " and " + primaryDataStoreInfo, e);
             }
         }
 
         if (poolHosts.isEmpty()) {
-            s_logger.warn("No host can access storage pool '" + primaryDataStoreInfo + "' on cluster '"
+            logger.warn("No host can access storage pool '" + primaryDataStoreInfo + "' on cluster '"
                     + primaryDataStoreInfo.getClusterId() + "'.");
 
             storagePoolDao.expunge(primaryDataStoreInfo.getId());
@@ -289,23 +284,19 @@ public class DateraPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycl
     public boolean attachZone(DataStore dataStore, ZoneScope scope, HypervisorType hypervisorType) {
         dataStoreHelper.attachZone(dataStore);
 
-        List<HostVO> xenServerHosts = _resourceMgr
-                .listAllUpAndEnabledHostsInOneZoneByHypervisor(HypervisorType.XenServer, scope.getScopeId());
-        List<HostVO> vmWareServerHosts = _resourceMgr
-                .listAllUpAndEnabledHostsInOneZoneByHypervisor(HypervisorType.VMware, scope.getScopeId());
-        List<HostVO> kvmHosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(HypervisorType.KVM,
-                scope.getScopeId());
-        List<HostVO> hosts = new ArrayList<HostVO>();
+        List<HostVO> hostsToConnect = new ArrayList<>();
+        HypervisorType[] hypervisorTypes = {HypervisorType.XenServer, HypervisorType.VMware, HypervisorType.KVM};
 
-        hosts.addAll(xenServerHosts);
-        hosts.addAll(vmWareServerHosts);
-        hosts.addAll(kvmHosts);
+        for (HypervisorType type : hypervisorTypes) {
+            hostsToConnect.addAll(_resourceMgr.getEligibleUpAndEnabledHostsInZoneForStorageConnection(dataStore, scope.getScopeId(), type));
+        }
 
-        for (HostVO host : hosts) {
+        logger.debug(String.format("In createPool. Attaching the pool to each of the hosts in %s.", hostsToConnect));
+        for (HostVO host : hostsToConnect) {
             try {
-                _storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId());
+                _storageMgr.connectHostToSharedPool(host, dataStore.getId());
             } catch (Exception e) {
-                s_logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
+                logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
             }
         }
 
@@ -391,6 +382,15 @@ public class DateraPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycl
     @Override
     public void disableStoragePool(DataStore dataStore) {
         dataStoreHelper.disable(dataStore);
+    }
+
+    @Override
+    public void changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
+        /*
+         * We need to attach all VMware, Xenserver and KVM hosts in the zone.
+         * So pass hypervisorType as null.
+         */
+        super.changeStoragePoolScopeToZone(store, clusterScope, null);
     }
 
     private HypervisorType getHypervisorTypeForCluster(long clusterId) {

@@ -16,23 +16,28 @@
 // under the License.
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+
 import com.cloud.storage.Snapshot;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 
 public interface SnapshotStrategy {
 
     enum SnapshotOperation {
-        TAKE, BACKUP, DELETE, REVERT
+        TAKE, BACKUP, DELETE, REVERT, COPY
     }
 
     SnapshotInfo takeSnapshot(SnapshotInfo snapshot);
 
     SnapshotInfo backupSnapshot(SnapshotInfo snapshot);
 
-    boolean deleteSnapshot(Long snapshotId);
+    boolean deleteSnapshot(Long snapshotId, Long zoneId);
 
     boolean revertSnapshot(SnapshotInfo snapshot);
 
-    StrategyPriority canHandle(Snapshot snapshot, SnapshotOperation op);
+    StrategyPriority canHandle(Snapshot snapshot, Long zoneId, SnapshotOperation op);
 
     void postSnapshotCreation(SnapshotInfo snapshot);
+
+    default void copySnapshot(DataObject snapshotSource, DataObject snapshotDest, AsyncCompletionCallback<CreateCmdResult> caller) {
+    }
 }

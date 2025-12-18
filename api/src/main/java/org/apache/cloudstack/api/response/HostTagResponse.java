@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.response;
 import com.google.gson.annotations.SerializedName;
 import com.cloud.serializer.Param;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 public class HostTagResponse extends BaseResponse {
@@ -33,6 +34,10 @@ public class HostTagResponse extends BaseResponse {
     @SerializedName("name")
     @Param(description = "the name of the host tag")
     private String name;
+
+    @SerializedName(ApiConstants.IS_IMPLICIT)
+    @Param(description = "true if the host tag is implicit", since = "4.20.0")
+    private boolean isImplicit;
 
     public String getId() {
         return id;
@@ -56,5 +61,13 @@ public class HostTagResponse extends BaseResponse {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public boolean isImplicit() {
+        return isImplicit;
+    }
+
+    public void setImplicit(boolean implicit) {
+        isImplicit = implicit;
     }
 }

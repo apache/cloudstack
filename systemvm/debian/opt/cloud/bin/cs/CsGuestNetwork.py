@@ -15,7 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 from merge import DataBag
-import CsHelper
 
 
 class CsGuestNetwork:
@@ -27,7 +26,7 @@ class CsGuestNetwork:
         db.load()
         dbag = db.getDataBag()
         self.config = config
-        if device in dbag.keys() and len(dbag[device]) != 0:
+        if device in list(dbag.keys()) and len(dbag[device]) != 0:
             self.data = dbag[device][0]
         else:
             self.guest = False
@@ -35,13 +34,22 @@ class CsGuestNetwork:
     def is_guestnetwork(self):
         return self.guest
 
+    def is_vr_guest_gateway(self):
+        return self.guest and ('is_vr_guest_gateway' not in self.data or self.data['is_vr_guest_gateway'])
+
     def get_dns(self):
         if not self.guest:
             return self.config.get_dns()
 
+        if self.config.use_router_ip_as_resolver():
+            return [self.data['router_guest_ip']]
+
         dns = []
-        if 'router_guest_gateway' in self.data and not self.config.use_extdns():
-            dns.append(self.data['router_guest_gateway'])
+        if not self.config.use_extdns():
+            if 'router_guest_gateway' in self.data and self.is_vr_guest_gateway():
+                dns.append(self.data['router_guest_gateway'])
+            elif 'router_guest_ip' in self.data and not self.is_vr_guest_gateway():
+                dns.append(self.data['router_guest_ip'])
 
         if 'dns' in self.data:
             dns.extend(self.data['dns'].split(','))

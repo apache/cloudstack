@@ -33,7 +33,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Storage.ImageFormat;
@@ -81,10 +81,10 @@ public class CephSnapshotStrategyTest {
         VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
         Mockito.when(volumeVO.getRemoved()).thenReturn(removed);
         Mockito.when(volumeDao.findByIdIncludingRemoved(Mockito.anyLong())).thenReturn(volumeVO);
-        Mockito.lenient().doReturn(isSnapshotStoredOnRbdStoragePool).when(cephSnapshotStrategy).isSnapshotStoredOnRbdStoragePool(Mockito.any());
+        Mockito.lenient().doReturn(isSnapshotStoredOnRbdStoragePool).when(cephSnapshotStrategy).isSnapshotStoredOnRbdStoragePoolAndOperationForSameZone(Mockito.any(), Mockito.any());
 
         for (int i = 0; i < snapshotOps.length - 1; i++) {
-            StrategyPriority strategyPriority = cephSnapshotStrategy.canHandle(snapshot, snapshotOps[i]);
+            StrategyPriority strategyPriority = cephSnapshotStrategy.canHandle(snapshot, null, snapshotOps[i]);
             if (snapshotOps[i] == SnapshotOperation.REVERT && isSnapshotStoredOnRbdStoragePool) {
                 Assert.assertEquals(StrategyPriority.HIGHEST, strategyPriority);
             } else {

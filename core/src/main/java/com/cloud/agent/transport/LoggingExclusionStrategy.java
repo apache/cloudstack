@@ -19,7 +19,8 @@
 
 package com.cloud.agent.transport;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;
@@ -29,7 +30,9 @@ import com.cloud.agent.api.LogLevel;
 import com.cloud.agent.api.LogLevel.Log4jLevel;
 
 public class LoggingExclusionStrategy implements ExclusionStrategy {
-    Logger _logger = null;
+    protected Logger exclusionLogger = null;
+
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Override
     public boolean shouldSkipClass(Class<?> clazz) {
@@ -40,20 +43,24 @@ public class LoggingExclusionStrategy implements ExclusionStrategy {
         LogLevel level = clazz.getAnnotation(LogLevel.class);
         if (level == null) {
             log4jLevel = LogLevel.Log4jLevel.Debug;
+            logger.trace("Class {} does not have any log level annotation, considering level as debug.", clazz);
         } else {
             log4jLevel = level.value();
         }
 
-        return !log4jLevel.enabled(_logger);
+        return !log4jLevel.enabled(exclusionLogger);
     }
 
     @Override
     public boolean shouldSkipField(FieldAttributes field) {
         LogLevel level = field.getAnnotation(LogLevel.class);
-        return level != null && !level.value().enabled(_logger);
+        return level != null && !level.value().enabled(exclusionLogger);
     }
 
     public LoggingExclusionStrategy(Logger logger) {
-        _logger = logger;
+        exclusionLogger = logger;
+    }
+
+    public LoggingExclusionStrategy() {
     }
 }

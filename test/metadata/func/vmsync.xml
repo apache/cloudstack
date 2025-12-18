@@ -23,12 +23,12 @@ under the License.
 <command>
 		    <name>deployVirtualMachine</name>  <!--deploy vm 1-->
             <testcase>deploy HA enabled VM test case</testcase>
-            
+
          <parameters>
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>serviceofferingid</name>
 				<param>globalserviceofferingid</param>
@@ -40,7 +40,7 @@ under the License.
 			<item getparam="true">
 			    <name>zoneid</name>
 				<param>globalzoneid</param>
-			</item>	
+			</item>
 			<item>
 				<name>displayname</name>
 				<value>HAenabledVM</value>
@@ -60,7 +60,7 @@ under the License.
 			<item getparam="true">
 				<name>networkids</name>
 				<param>globalnetworkid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -82,12 +82,12 @@ under the License.
 <command>
 		    <name>deployVirtualMachine</name>  <!--deploy vm 1-->
             <testcase>deploy HA disabled VM test case</testcase>
-            
+
          <parameters>
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>serviceofferingid</name>
 				<param>globalserviceofferingid</param>
@@ -99,7 +99,7 @@ under the License.
 			<item getparam="true">
 			    <name>zoneid</name>
 				<param>globalzoneid</param>
-			</item>	
+			</item>
 			<item>
 				<name>displayname</name>
 				<value>HAdisabledVM</value>
@@ -119,7 +119,7 @@ under the License.
 			<item getparam="true">
 				<name>networkids</name>
 				<param>globalnetworkid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -174,7 +174,7 @@ under the License.
 			<item>
 				<name>haenable</name>
 				<value>false</value>
-			</item>			
+			</item>
 		</parameters>
 </command>
 
@@ -196,7 +196,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 <!-- 3.2 Obtains the Host IP address of the HA disabled VM's Host machine -->
 
 <command>
@@ -233,8 +233,8 @@ under the License.
 				<param>instance_name_db</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>select instance_name from vm_instance</name>
 		<mysql>true</mysql>
@@ -251,7 +251,7 @@ under the License.
 				<param>instance_name_en</param>
 			</item>
 		</returnvalue>
-	</command>	
+	</command>
 
 <!-- 5. Kill the two VMs -->
 
@@ -259,13 +259,13 @@ under the License.
 	<name>killvm.sh</name>
 	<testcase>Kill the HA enabled VM</testcase>
 	<script>true</script>
-	
+
 	<parameters>
 		<item getparam="true">
 			<name>n</name>
 			<param>instance_name_en</param>
 		</item>
-		
+
 		<item getparam="true">
 			<name>h</name>
 			<param>ipaddress_en</param>
@@ -278,13 +278,13 @@ under the License.
 	<name>killvm.sh</name>
 	<testcase>Kill the HA disabled VM</testcase>
 	<script>true</script>
-	
+
 	<parameters>
 		<item getparam="true">
 			<name>n</name>
 			<param>instance_name_db</param>
 		</item>
-		
+
 		<item getparam="true">
 			<name>h</name>
 			<param>ipaddress_db</param>
@@ -303,7 +303,7 @@ under the License.
 				<value>300</value>
 			</item>
 		</parameters>
-	</command>	
+	</command>
 
 <!--  Check that States of the vms at the database and at the agents - verify both api and backend  -->
 <!-- 7. Check the Management Server Database for the states of the killed VMs -->
@@ -321,10 +321,10 @@ under the License.
 			<item>
 				<name>state</name>
 				<value>Stopped</value>
-			</item>			
+			</item>
 		</returnvalue>
-	</command>		
-	
+	</command>
+
 	<command>
 		<name>listVirtualMachines</name>
 		<testcase>List virtual machine with ha enabled</testcase>
@@ -393,7 +393,7 @@ under the License.
 			</item>
 		</parameters>
 </command>
-	
+
 <command>
 		<name>destroyVirtualMachine</name>
 		<testcase>Destroy ha enabled vm as a part of cleanup</testcase>

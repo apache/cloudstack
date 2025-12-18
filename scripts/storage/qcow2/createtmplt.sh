@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -65,17 +65,19 @@ uncompress() {
          ;;
   [zZ][iI][pP])  unzip -p $1 | cat > $tmpfile
         ;;
+  XZ)   xz -d -c $1 > $tmpfile
+        ;;
   *)	printf "$1"
         return 0
 	;;
   esac
 
-  if [ $? -gt 0 ] 
+  if [ $? -gt 0 ]
   then
     printf "Failed to uncompress file, exiting "
-    exit 1 
+    exit 1
   fi
- 
+
   mv $tmpfile $imgfile
   printf "$imgfile"
 
@@ -89,7 +91,7 @@ create_from_file() {
   if [ -b $tmpltimg ]; then
       $qemu_img convert -f raw -O qcow2 "$tmpltimg" /$tmpltfs/$tmpltname
   else
-    # if backing image exists, we need to combine them, otherwise 
+    # if backing image exists, we need to combine them, otherwise
     # copy the image to preserve snapshots/compression
     if $qemu_img info "$tmpltimg" | grep -q backing; then
       $qemu_img convert -f qcow2 -O qcow2 "$tmpltimg" /$tmpltfs/$tmpltname >& /dev/null
@@ -97,7 +99,7 @@ create_from_file() {
       cp -f $tmpltimg /$tmpltfs/$tmpltname
     fi
   fi
-  
+
   if [ "$cleanup" == "true" ]
   then
     rm -f "$tmpltimg"
@@ -161,17 +163,17 @@ do
 done
 
 
-if [ ! -d /$tmpltfs ] 
+if [ ! -d /$tmpltfs ]
 then
   mkdir -p /$tmpltfs
-  if [ $? -gt 0 ] 
+  if [ $? -gt 0 ]
   then
     printf "Failed to create user fs $tmpltfs\n" >&2
     exit 1
   fi
 fi
 
-if [ ! -f $tmpltimg -a ! -b $tmpltimg ] 
+if [ ! -f $tmpltimg -a ! -b $tmpltimg ]
 then
   printf "root disk file $tmpltimg doesn't exist\n"
   exit 3

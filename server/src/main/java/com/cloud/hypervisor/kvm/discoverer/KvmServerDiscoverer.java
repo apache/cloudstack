@@ -17,12 +17,10 @@
 package com.cloud.hypervisor.kvm.discoverer;
 
 
-import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.Hypervisor;
 
 public class KvmServerDiscoverer extends LibvirtServerDiscoverer {
-    private static final Logger s_logger = Logger.getLogger(KvmServerDiscoverer.class);
 
     @Override
     public Hypervisor.HypervisorType getHypervisorType() {

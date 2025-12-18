@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -64,8 +64,8 @@ echo "Using version: $version"
 echo "Using source directory: $sourcedir"
 echo "Using output directory: $outputdir"
 echo "Using branch: $branch"
-if [ "$tag" == "yes" ]; then
-    if [ "$certid" == "X" ]; then
+if [ "$tag" = "yes" ]; then
+    if [ "$certid" = "X" ]; then
         echo "Tagging the branch with the version number, and signing the branch with your default certificate."
     else
         echo "Tagging the branch with the version number, and signing the branch with certificate ID $certid."
@@ -104,7 +104,7 @@ perl -pi -e "s/-SNAPSHOT//" tools/docker/Dockerfile
 perl -pi -e "s/-SNAPSHOT//" tools/docker/Dockerfile.marvin
 perl -pi -e "s/-SNAPSHOT//" tools/docker/Dockerfile.centos6
 
-case "$currentversion" in 
+case "$currentversion" in
   *-SNAPSHOT*)
     perl -pi -e 's/-SNAPSHOT//' debian/rules
     ;;
@@ -112,7 +112,7 @@ esac
 
 # set debian changelog entry
 tmpfilenm=$$.tmp
-echo "cloudstack ($version) unstable; urgency=low" >>$tmpfilenm 
+echo "cloudstack ($version) unstable; urgency=low" >>$tmpfilenm
 echo >>$tmpfilenm
 echo "  * Update the version to $version" >>$tmpfilenm
 echo >>$tmpfilenm
@@ -143,7 +143,7 @@ bzip2 $outputdir/apache-cloudstack-$version-src.tar
 
 cd $outputdir
 echo 'armor'
-if [ "$certid" == "X" ]; then
+if [ "$certid" = "X" ]; then
   gpg -v --armor --output apache-cloudstack-$version-src.tar.bz2.asc --detach-sig apache-cloudstack-$version-src.tar.bz2
 else
   gpg -v --default-key $certid --armor --output apache-cloudstack-$version-src.tar.bz2.asc --detach-sig apache-cloudstack-$version-src.tar.bz2
@@ -155,7 +155,7 @@ sha512sum apache-cloudstack-$version-src.tar.bz2 > apache-cloudstack-$version-sr
 echo 'verify'
 gpg -v --verify apache-cloudstack-$version-src.tar.bz2.asc apache-cloudstack-$version-src.tar.bz2
 
-if [ "$tag" == "yes" ]; then
+if [ "$tag" = "yes" ]; then
   echo 'tag'
   cd $sourcedir
   if [ "$certid" == "X" ]; then
@@ -165,7 +165,7 @@ if [ "$tag" == "yes" ]; then
   fi
 fi
 
-if [ "$committosvn" == "yes" ]; then
+if [ "$committosvn" = "yes" ]; then
   echo 'committing artifacts to svn'
   rm -Rf /tmp/cloudstack-dev-dist
   cd /tmp

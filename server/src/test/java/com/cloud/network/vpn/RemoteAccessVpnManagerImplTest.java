@@ -17,18 +17,18 @@ package com.cloud.network.vpn;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import java.lang.reflect.InvocationTargetException;
-import javax.naming.ConfigurationException;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(NetUtils.class)
+import javax.naming.ConfigurationException;
+import java.lang.reflect.InvocationTargetException;
+
+@RunWith(MockitoJUnitRunner.class)
 public class RemoteAccessVpnManagerImplTest extends TestCase {
 
     Class<InvalidParameterValueException> expectedException = InvalidParameterValueException.class;
@@ -64,16 +64,16 @@ public class RemoteAccessVpnManagerImplTest extends TestCase {
         String[] range = ipRange.split("-");
         String expectedMessage = String.format("One or both IPs sets in the range [%s] are invalid IPs.", ipRange);
 
-        PowerMockito.mockStatic(NetUtils.class);
+        try (MockedStatic<NetUtils> ignored = Mockito.mockStatic(NetUtils.class)) {
+            Mockito.when(NetUtils.isValidIp4(range[0])).thenReturn(Boolean.FALSE);
+            Mockito.when(NetUtils.isValidIp4(range[1])).thenReturn(Boolean.TRUE);
 
-        PowerMockito.when(NetUtils.isValidIp4(range[0])).thenReturn(Boolean.FALSE);
-        PowerMockito.when(NetUtils.isValidIp4(range[1])).thenReturn(Boolean.TRUE);
+            InvalidParameterValueException assertThrows = Assert.assertThrows(expectedMessage, expectedException, () -> {
+                new RemoteAccessVpnManagerImpl().validateIpRange(ipRange, expectedException);
+            });
 
-        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedMessage, expectedException, () -> {
-            new RemoteAccessVpnManagerImpl().validateIpRange(ipRange, expectedException);
-        });
-
-        assertEquals(expectedMessage, assertThrows.getMessage());
+            assertEquals(expectedMessage, assertThrows.getMessage());
+        }
     }
 
     @Test
@@ -82,16 +82,17 @@ public class RemoteAccessVpnManagerImplTest extends TestCase {
         String[] range = ipRange.split("-");
         String expectedMessage = String.format("One or both IPs sets in the range [%s] are invalid IPs.", ipRange);
 
-        PowerMockito.mockStatic(NetUtils.class);
+        try (MockedStatic<NetUtils> ignored = Mockito.mockStatic(NetUtils.class)) {
 
-        PowerMockito.when(NetUtils.isValidIp4(range[0])).thenReturn(Boolean.TRUE);
-        PowerMockito.when(NetUtils.isValidIp4(range[1])).thenReturn(Boolean.FALSE);
+            Mockito.when(NetUtils.isValidIp4(range[0])).thenReturn(Boolean.TRUE);
+            Mockito.when(NetUtils.isValidIp4(range[1])).thenReturn(Boolean.FALSE);
 
-        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedMessage, expectedException, () -> {
-            new RemoteAccessVpnManagerImpl().validateIpRange(ipRange, expectedException);
-        });
+            InvalidParameterValueException assertThrows = Assert.assertThrows(expectedMessage, expectedException, () -> {
+                new RemoteAccessVpnManagerImpl().validateIpRange(ipRange, expectedException);
+            });
 
-        assertEquals(expectedMessage, assertThrows.getMessage());
+            assertEquals(expectedMessage, assertThrows.getMessage());
+        }
     }
 
     @Test
@@ -100,16 +101,17 @@ public class RemoteAccessVpnManagerImplTest extends TestCase {
         String[] range = ipRange.split("-");
         String expectedMessage = String.format("One or both IPs sets in the range [%s] are invalid IPs.", ipRange);
 
-        PowerMockito.mockStatic(NetUtils.class);
+        try (MockedStatic<NetUtils> ignored = Mockito.mockStatic(NetUtils.class)) {
 
-        PowerMockito.when(NetUtils.isValidIp4(range[0])).thenReturn(Boolean.FALSE);
-        PowerMockito.when(NetUtils.isValidIp4(range[1])).thenReturn(Boolean.FALSE);
+            Mockito.when(NetUtils.isValidIp4(range[0])).thenReturn(Boolean.FALSE);
+            Mockito.when(NetUtils.isValidIp4(range[1])).thenReturn(Boolean.FALSE);
 
-        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedMessage, expectedException, () -> {
-            new RemoteAccessVpnManagerImpl().validateIpRange(ipRange, expectedException);
-        });
+            InvalidParameterValueException assertThrows = Assert.assertThrows(expectedMessage, expectedException, () -> {
+                new RemoteAccessVpnManagerImpl().validateIpRange(ipRange, expectedException);
+            });
 
-        assertEquals(expectedMessage, assertThrows.getMessage());
+            assertEquals(expectedMessage, assertThrows.getMessage());
+        }
     }
 
     @Test
@@ -118,17 +120,18 @@ public class RemoteAccessVpnManagerImplTest extends TestCase {
         String[] range = ipRange.split("-");
         String expectedMessage = String.format("Range of IPs [%s] is invalid.", ipRange);
 
-        PowerMockito.mockStatic(NetUtils.class);
+        try (MockedStatic<NetUtils> ignored = Mockito.mockStatic(NetUtils.class)) {
 
-        PowerMockito.when(NetUtils.isValidIp4(range[0])).thenReturn(Boolean.TRUE);
-        PowerMockito.when(NetUtils.isValidIp4(range[1])).thenReturn(Boolean.TRUE);
-        PowerMockito.when(NetUtils.validIpRange(range[0], range[1])).thenReturn(Boolean.FALSE);
+            Mockito.when(NetUtils.isValidIp4(range[0])).thenReturn(Boolean.TRUE);
+            Mockito.when(NetUtils.isValidIp4(range[1])).thenReturn(Boolean.TRUE);
+            Mockito.when(NetUtils.validIpRange(range[0], range[1])).thenReturn(Boolean.FALSE);
 
-        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedMessage, expectedException, () -> {
-            new RemoteAccessVpnManagerImpl().validateIpRange(ipRange, expectedException);
-        });
+            InvalidParameterValueException assertThrows = Assert.assertThrows(expectedMessage, expectedException, () -> {
+                new RemoteAccessVpnManagerImpl().validateIpRange(ipRange, expectedException);
+            });
 
-        assertEquals(expectedMessage, assertThrows.getMessage());
+            assertEquals(expectedMessage, assertThrows.getMessage());
+        }
     }
 
     @Test
@@ -136,13 +139,13 @@ public class RemoteAccessVpnManagerImplTest extends TestCase {
         String ipRange = "192.168.0.1-192.168.0.255";
         String[] range = ipRange.split("-");
 
-        PowerMockito.mockStatic(NetUtils.class);
+        try (MockedStatic<NetUtils> ignored = Mockito.mockStatic(NetUtils.class)) {
+            Mockito.when(NetUtils.isValidIp4(range[0])).thenReturn(Boolean.TRUE);
+            Mockito.when(NetUtils.isValidIp4(range[1])).thenReturn(Boolean.TRUE);
+            Mockito.when(NetUtils.validIpRange(range[0], range[1])).thenReturn(Boolean.TRUE);
 
-        PowerMockito.when(NetUtils.isValidIp4(range[0])).thenReturn(Boolean.TRUE);
-        PowerMockito.when(NetUtils.isValidIp4(range[1])).thenReturn(Boolean.TRUE);
-        PowerMockito.when(NetUtils.validIpRange(range[0], range[1])).thenReturn(Boolean.TRUE);
-
-        new RemoteAccessVpnManagerImpl().validateIpRange(ipRange, expectedException);
+            new RemoteAccessVpnManagerImpl().validateIpRange(ipRange, expectedException);
+        }
     }
 
     private <T extends Throwable> void handleExceptionOnValidateIpRangeErrorMustThrowCloudRuntimeException(Class<T> exceptionToCatch){

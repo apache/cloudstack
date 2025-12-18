@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,14 +17,14 @@
 # under the License.
 
 #set -x
- 
+
 usage() {
-  printf "Usage: %s [vhd file in secondary storage] [uuid of the source sr] [name label]  \n" $(basename $0) 
+  printf "Usage: %s [vhd file in secondary storage] [uuid of the source sr] [name label]  \n" $(basename $0)
 }
 
 cleanup()
 {
-  if [ ! -z $localmp ]; then 
+  if [ ! -z $localmp ]; then
     umount -fl $localmp
     if [ $? -eq 0 ];  then
       rmdir $localmp
@@ -114,7 +114,7 @@ copyvhd()
       dd if=$srcvhd of=$desvhd bs=512 seek=$(($(($vsize/512))-1)) count=1
       $VHDUTIL modify -s $vsize -n $desvhd
       if [ $? -ne 0 ]; then
-        echo "32#failed to set new vhd physical size for vdi vdi $uuid"
+        echo "32#failed to set new vhd physical size for vdi $uuid"
         cleanup
         exit 0
       fi
@@ -158,7 +158,7 @@ elif [ $type == "lvmoiscsi" -o $type == "lvm" -o $type == "lvmohba" ]; then
     exit 0
   fi
   copyvhd $desvhd $vhdfile $lvsize $type
-else 
+else
   echo "15#doesn't support sr type $type"
   cleanup
   exit 0

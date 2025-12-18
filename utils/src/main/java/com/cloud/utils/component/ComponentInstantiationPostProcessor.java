@@ -31,7 +31,8 @@ import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 import net.sf.cglib.proxy.NoOp;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.PropertyValues;
 import org.springframework.beans.factory.config.InstantiationAwareBeanPostProcessor;
@@ -39,7 +40,7 @@ import org.springframework.beans.factory.config.InstantiationAwareBeanPostProces
 import com.cloud.utils.Pair;
 
 public class ComponentInstantiationPostProcessor implements InstantiationAwareBeanPostProcessor {
-    private static final Logger s_logger = Logger.getLogger(ComponentInstantiationPostProcessor.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private List<ComponentMethodInterceptor> _interceptors = new ArrayList<ComponentMethodInterceptor>();
     private Callback[] _callbacks;

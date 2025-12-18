@@ -45,7 +45,11 @@ public abstract class DirectDownloadCommand extends StorageSubSystemCommand {
     private Long templateSize;
     private Storage.ImageFormat format;
 
-    protected DirectDownloadCommand (final String url, final Long templateId, final PrimaryDataStoreTO destPool, final String checksum, final Map<String, String> headers, final Integer connectTimeout, final Integer soTimeout, final Integer connectionRequestTimeout) {
+    private boolean followRedirects;
+
+    protected DirectDownloadCommand (final String url, final Long templateId, final PrimaryDataStoreTO destPool,
+             final String checksum, final Map<String, String> headers, final Integer connectTimeout,
+             final Integer soTimeout, final Integer connectionRequestTimeout, final boolean followRedirects) {
         this.url = url;
         this.templateId = templateId;
         this.destData = destData;
@@ -55,6 +59,7 @@ public abstract class DirectDownloadCommand extends StorageSubSystemCommand {
         this.connectTimeout = connectTimeout;
         this.soTimeout = soTimeout;
         this.connectionRequestTimeout = connectionRequestTimeout;
+        this.followRedirects = followRedirects;
     }
 
     public String getUrl() {
@@ -136,5 +141,13 @@ public abstract class DirectDownloadCommand extends StorageSubSystemCommand {
 
     public int getWaitInMillSeconds() {
         return getWait() * 1000;
+    }
+
+    public boolean isFollowRedirects() {
+        return followRedirects;
+    }
+
+    public void setFollowRedirects(boolean followRedirects) {
+        this.followRedirects = followRedirects;
     }
 }

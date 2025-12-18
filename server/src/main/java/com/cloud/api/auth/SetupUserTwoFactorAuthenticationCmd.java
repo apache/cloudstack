@@ -27,7 +27,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
@@ -36,7 +35,6 @@ import javax.inject.Inject;
 public class SetupUserTwoFactorAuthenticationCmd extends BaseCmd {
 
     public static final String APINAME = "setupUserTwoFactorAuthentication";
-    public static final Logger s_logger = Logger.getLogger(SetupUserTwoFactorAuthenticationCmd.class.getName());
 
     @Inject
     private AccountManager accountManager;

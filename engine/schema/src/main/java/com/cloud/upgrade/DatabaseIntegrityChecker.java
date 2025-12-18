@@ -23,7 +23,6 @@ import java.sql.SQLException;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.utils.CloudStackVersion;
@@ -38,7 +37,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class DatabaseIntegrityChecker extends AdapterBase implements SystemIntegrityChecker {
-    private static final Logger s_logger = Logger.getLogger(DatabaseIntegrityChecker.class);
 
     @Inject
     VersionDao _dao;
@@ -86,7 +84,7 @@ public class DatabaseIntegrityChecker extends AdapterBase implements SystemInteg
                     boolean noDuplicate = true;
                     StringBuffer helpInfo = new StringBuffer();
                     String note =
-                        "DATABASE INTEGRITY ERROR\nManagement server detected there are some hosts connect to the same loacal storage, please contact CloudStack support team for solution. Below are detialed info, please attach all of them to CloudStack support. Thank you\n";
+                        "DATABASE INTEGRITY ERROR\nManagement server detected there are some hosts connect to the same local storage, please contact CloudStack support team for solution. Below are detailed info, please attach all of them to CloudStack support. Thank you\n";
                     helpInfo.append(note);
                     while (rs.next()) {
                         try ( PreparedStatement sel_pstmt =
@@ -102,32 +100,32 @@ public class DatabaseIntegrityChecker extends AdapterBase implements SystemInteg
                                 }
                                 catch (Exception e)
                                 {
-                                    s_logger.error("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage());
+                                    logger.error("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage());
                                     throw new CloudRuntimeException("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage(),e);
                                 }
                         }
                         catch (Exception e)
                         {
-                                s_logger.error("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage());
+                                logger.error("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage());
                                 throw new CloudRuntimeException("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage(),e);
                         }
                     }
                     if (noDuplicate) {
-                        s_logger.debug("No duplicate hosts with the same local storage found in database");
+                        logger.debug("No duplicate hosts with the same local storage found in database");
                     } else {
-                        s_logger.error(helpInfo.toString());
+                        logger.error(helpInfo.toString());
                     }
                     txn.commit();
                     return noDuplicate;
             }catch (Exception e)
             {
-                  s_logger.error("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage());
+                  logger.error("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage());
                   throw new CloudRuntimeException("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage(),e);
             }
         }
         catch (Exception e)
         {
-            s_logger.error("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage());
+            logger.error("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage());
             throw new CloudRuntimeException("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage(),e);
         }
         finally
@@ -138,7 +136,7 @@ public class DatabaseIntegrityChecker extends AdapterBase implements SystemInteg
                 }
             }catch(Exception e)
             {
-                s_logger.error("checkDuplicateHostWithTheSameLocalStorage: Exception:"+ e.getMessage());
+                logger.error("checkDuplicateHostWithTheSameLocalStorage: Exception:"+ e.getMessage());
             }
         }
     }
@@ -151,7 +149,7 @@ public class DatabaseIntegrityChecker extends AdapterBase implements SystemInteg
                 String tableName = rs.getString(1);
                 if (tableName.equalsIgnoreCase("usage_event") || tableName.equalsIgnoreCase("usage_port_forwarding") || tableName.equalsIgnoreCase("usage_network_offering")) {
                     num++;
-                    s_logger.debug("Checking 21to22PremiumUprage table " + tableName + " found");
+                    logger.debug("Checking 21to22PremiumUprage table " + tableName + " found");
                 }
                 if (num == 3) {
                     return true;
@@ -167,7 +165,7 @@ public class DatabaseIntegrityChecker extends AdapterBase implements SystemInteg
             boolean found = false;
             while (rs.next()) {
                 if (column.equalsIgnoreCase(rs.getString(1))) {
-                    s_logger.debug(String.format("Column %1$s.%2$s.%3$s found", dbName, tableName, column));
+                    logger.debug(String.format("Column %1$s.%2$s.%3$s found", dbName, tableName, column));
                     found = true;
                     break;
                 }
@@ -224,33 +222,33 @@ public class DatabaseIntegrityChecker extends AdapterBase implements SystemInteg
                     }
                 }
                 if (!hasUsage) {
-                    s_logger.debug("No cloud_usage found in database, no need to check missed premium upgrade");
+                    logger.debug("No cloud_usage found in database, no need to check missed premium upgrade");
                     txn.commit();
                     return true;
                 }
                 if (!check21to22PremiumUprage(conn)) {
-                    s_logger.error("21to22 premium upgrade missed");
+                    logger.error("21to22 premium upgrade missed");
                     txn.commit();
                     return false;
                 }
                 if (!check221to222PremiumUprage(conn)) {
-                    s_logger.error("221to222 premium upgrade missed");
+                    logger.error("221to222 premium upgrade missed");
                     txn.commit();
                     return false;
                 }
                 if (!check222to224PremiumUpgrade(conn)) {
-                    s_logger.error("222to224 premium upgrade missed");
+                    logger.error("222to224 premium upgrade missed");
                     txn.commit();
                     return false;
                 }
                 txn.commit();
                 return true;
             } catch (Exception e) {
-                s_logger.error("checkMissedPremiumUpgradeFor228: Exception:" + e.getMessage());
+                logger.error("checkMissedPremiumUpgradeFor228: Exception:" + e.getMessage());
                 throw new CloudRuntimeException("checkMissedPremiumUpgradeFor228: Exception:" + e.getMessage(), e);
             }
         }catch (Exception e) {
-            s_logger.error("checkMissedPremiumUpgradeFor228: Exception:"+ e.getMessage());
+            logger.error("checkMissedPremiumUpgradeFor228: Exception:"+ e.getMessage());
             throw new CloudRuntimeException("checkMissedPremiumUpgradeFor228: Exception:" + e.getMessage(),e);
         }
         finally
@@ -261,7 +259,7 @@ public class DatabaseIntegrityChecker extends AdapterBase implements SystemInteg
                 }
             }catch(Exception e)
             {
-                s_logger.error("checkMissedPremiumUpgradeFor228: Exception:"+ e.getMessage());
+                logger.error("checkMissedPremiumUpgradeFor228: Exception:"+ e.getMessage());
             }
         }
     }
@@ -270,19 +268,19 @@ public class DatabaseIntegrityChecker extends AdapterBase implements SystemInteg
     public void check() {
         GlobalLock lock = GlobalLock.getInternLock("DatabaseIntegrity");
         try {
-            s_logger.info("Grabbing lock to check for database integrity.");
+            logger.info("Grabbing lock to check for database integrity.");
             if (!lock.lock(20 * 60)) {
                 throw new CloudRuntimeException("Unable to acquire lock to check for database integrity.");
             }
 
             try {
-                s_logger.info("Performing database integrity check");
+                logger.info("Performing database integrity check");
                 if (!checkDuplicateHostWithTheSameLocalStorage()) {
                     throw new CloudRuntimeException("checkDuplicateHostWithTheSameLocalStorage detected error");
                 }
 
                 if (!checkMissedPremiumUpgradeFor228()) {
-                    s_logger.error("Your current database version is 2.2.8, management server detected some missed premium upgrade, please contact CloudStack support and attach log file. Thank you!");
+                    logger.error("Your current database version is 2.2.8, management server detected some missed premium upgrade, please contact CloudStack support and attach log file. Thank you!");
                     throw new CloudRuntimeException("Detected missed premium upgrade");
                 }
             } finally {
@@ -298,7 +296,7 @@ public class DatabaseIntegrityChecker extends AdapterBase implements SystemInteg
         try {
             check();
         } catch (Exception e) {
-            s_logger.error("System integrity check exception", e);
+            logger.error("System integrity check exception", e);
             System.exit(1);
         }
         return true;

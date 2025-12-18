@@ -30,7 +30,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.storage.object.ObjectStoreDriver;
+import org.apache.cloudstack.storage.object.datastore.ObjectStoreProviderManager;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.response.StorageProviderResponse;
@@ -48,7 +49,6 @@ import com.cloud.utils.component.Registry;
 
 @Component
 public class DataStoreProviderManagerImpl extends ManagerBase implements DataStoreProviderManager, Registry<DataStoreProvider> {
-    private static final Logger s_logger = Logger.getLogger(DataStoreProviderManagerImpl.class);
 
     List<DataStoreProvider> providers;
     protected Map<String, DataStoreProvider> providerMap = new ConcurrentHashMap<String, DataStoreProvider>();
@@ -56,6 +56,8 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
     PrimaryDataStoreProviderManager primaryDataStoreProviderMgr;
     @Inject
     ImageStoreProviderManager imageStoreProviderMgr;
+    @Inject
+    ObjectStoreProviderManager objectStoreProviderMgr;
 
     @Override
     public DataStoreProvider getDataStoreProvider(String name) {
@@ -123,18 +125,18 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
 
         String providerName = provider.getName();
         if (providerMap.get(providerName) != null) {
-            s_logger.debug("Did not register data store provider, provider name: " + providerName + " is not unique");
+            logger.debug("Did not register data store provider, provider name: " + providerName + " is not unique");
             return false;
         }
 
-        s_logger.debug("registering data store provider:" + provider.getName());
+        logger.debug("registering data store provider:" + provider.getName());
 
         providerMap.put(providerName, provider);
         try {
             boolean registrationResult = provider.configure(copyParams);
             if (!registrationResult) {
                 providerMap.remove(providerName);
-                s_logger.debug("Failed to register data store provider: " + providerName);
+                logger.debug("Failed to register data store provider: " + providerName);
                 return false;
             }
 
@@ -144,9 +146,11 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
                 primaryDataStoreProviderMgr.registerHostListener(provider.getName(), provider.getHostListener());
             } else if (types.contains(DataStoreProviderType.IMAGE)) {
                 imageStoreProviderMgr.registerDriver(provider.getName(), (ImageStoreDriver)provider.getDataStoreDriver());
+            } else if (types.contains(DataStoreProviderType.OBJECT)) {
+                objectStoreProviderMgr.registerDriver(provider.getName(), (ObjectStoreDriver)provider.getDataStoreDriver());
             }
         } catch (Exception e) {
-            s_logger.debug("configure provider failed", e);
+            logger.debug("configure provider failed", e);
             providerMap.remove(providerName);
             return false;
         }
@@ -170,6 +174,11 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
     }
 
     @Override
+    public DataStoreProvider getDefaultObjectStoreProvider() {
+        return this.getDataStoreProvider(DataStoreProvider.S3_IMAGE);
+    }
+
+    @Override
     public List<StorageProviderResponse> getDataStoreProviders(String type) {
         if (type == null) {
             throw new InvalidParameterValueException("Invalid parameter, need to specify type: either primary or image");
@@ -180,7 +189,9 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
             return this.getImageDataStoreProviders();
         } else if (type.equalsIgnoreCase(DataStoreProvider.DataStoreProviderType.ImageCache.toString())) {
             return this.getCacheDataStoreProviders();
-        } else {
+        } else if (type.equalsIgnoreCase(DataStoreProviderType.OBJECT.toString())) {
+            return this.getObjectStoreProviders();
+        }else {
             throw new InvalidParameterValueException("Invalid parameter: " + type);
         }
     }
@@ -223,4 +234,16 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
         return providers;
     }
 
+    public List<StorageProviderResponse> getObjectStoreProviders() {
+        List<StorageProviderResponse> providers = new ArrayList<StorageProviderResponse>();
+        for (DataStoreProvider provider : providerMap.values()) {
+            if (provider.getTypes().contains(DataStoreProviderType.OBJECT)) {
+                StorageProviderResponse response = new StorageProviderResponse();
+                response.setName(provider.getName());
+                response.setType(DataStoreProviderType.OBJECT.toString());
+                providers.add(response);
+            }
+        }
+        return providers;
+    }
 }

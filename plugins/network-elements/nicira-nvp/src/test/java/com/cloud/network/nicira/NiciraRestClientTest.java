@@ -26,13 +26,13 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.spy;
-import static org.powermock.api.mockito.PowerMockito.verifyPrivate;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.http.HttpHost;
@@ -47,18 +47,14 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.utils.rest.CloudstackRESTException;
 import com.cloud.utils.rest.HttpMethods;
 import com.cloud.utils.rest.HttpRequestMatcher;
 import com.cloud.utils.rest.HttpUriRequestBuilder;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(NiciraRestClient.class)
-@PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*", "org.apache.log4j.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class NiciraRestClientTest {
 
     private static final int HTTPS_PORT = 443;
@@ -74,7 +70,7 @@ public class NiciraRestClientTest {
     private static final StatusLine HTTP_200_STATUSLINE = new BasicStatusLine(new ProtocolVersion(HTTPS, 1, 1), 200, "OK");
     private static final StatusLine HTTP_401_STATUSLINE = new BasicStatusLine(new ProtocolVersion(HTTPS, 1, 1), 401, "Unauthorized");
 
-    private static final Map<String, String> loginParameters = new HashMap<String, String>();
+    private static final Map<String, String> loginParameters = new LinkedHashMap<String, String>();
     private static HttpUriRequest request;
     private static HttpUriRequest loginRequest;
     private final CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
@@ -120,7 +116,7 @@ public class NiciraRestClientTest {
 
         assertThat(response, notNullValue());
         assertThat(response, sameInstance(mockResponse));
-        verifyPrivate(client).invoke("execute", request, 0);
+        verify(client).execute(request, 0);
     }
 
     @Test
@@ -139,9 +135,9 @@ public class NiciraRestClientTest {
 
         assertThat(response, notNullValue());
         assertThat(response, sameInstance(mockResponse));
-        verifyPrivate(client).invoke("execute", HttpRequestMatcher.eq(request), eq(0));
-        verifyPrivate(client).invoke("execute", HttpRequestMatcher.eq(loginRequest), eq(401));
-        verifyPrivate(client).invoke("execute", HttpRequestMatcher.eq(request), eq(200));
+        verify(client).execute((HttpUriRequest)HttpRequestMatcher.eq(request), eq(0));
+        verify(client).execute((HttpUriRequest)HttpRequestMatcher.eq(request), eq(200));
+        verify(client).execute((HttpUriRequest)HttpRequestMatcher.eq(loginRequest), eq(401));
     }
 
     @Test
@@ -168,8 +164,8 @@ public class NiciraRestClientTest {
             fail("Expected CloudstackRESTException exception");
         } catch (final CloudstackRESTException e) {
             assertThat(e.getMessage(), not(isEmptyOrNullString()));
-            verifyPrivate(client).invoke("execute", HttpRequestMatcher.eq(request), eq(0));
-            verifyPrivate(client).invoke("execute", HttpRequestMatcher.eq(loginRequest), eq(401));
+            verify(client).execute((HttpUriRequest)HttpRequestMatcher.eq(request), eq(0));
+            verify(client).execute((HttpUriRequest)HttpRequestMatcher.eq(loginRequest), eq(401));
         }
     }
 

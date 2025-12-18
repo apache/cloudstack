@@ -58,7 +58,7 @@ class ConfigFileOps:
     def save(self):
         fp = open(self.fileName, "r")
         newLines = []
-        for line  in fp.readlines():
+        for line in fp.readlines():
             matched = False
             for entry in self.entries:
                 if entry.op == "add":

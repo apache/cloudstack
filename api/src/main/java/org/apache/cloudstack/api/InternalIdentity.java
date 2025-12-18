@@ -25,4 +25,18 @@ import java.io.Serializable;
 
 public interface InternalIdentity extends Serializable {
     long getId();
+
+    /*
+     Helper method to add conditions in joins where some column name is equal to a string value
+     */
+    default Object setString(String str) {
+        return null;
+    }
+
+    /*
+    Helper method to add conditions in joins where some column name is equal to a long value
+     */
+    default Object setLong(Long l) {
+        return null;
+    }
 }

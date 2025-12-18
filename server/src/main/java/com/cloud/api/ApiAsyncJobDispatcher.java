@@ -21,6 +21,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -31,7 +32,6 @@ import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.jobs.JobInfo;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
@@ -43,7 +43,6 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispatcher {
-    private static final Logger s_logger = Logger.getLogger(ApiAsyncJobDispatcher.class);
 
     @Inject
     private ApiDispatcher _dispatcher;
@@ -101,6 +100,11 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
                 ctx.putContextParameters((Map<Object, Object>) gson.fromJson(contextDetails, objectMapType));
             }
 
+            String httpmethod = params.get(ApiConstants.HTTPMETHOD);
+            if (httpmethod != null) {
+                cmdObj.setHttpMethod(httpmethod);
+            }
+
             try {
                 // dispatch could ultimately queue the job
                 _dispatcher.dispatch(cmdObj, params, true);
@@ -116,7 +120,7 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
             String errorMsg = null;
             int errorCode = ApiErrorCode.INTERNAL_ERROR.getHttpCode();
             if (!(e instanceof ServerApiException)) {
-                s_logger.error("Unexpected exception while executing " + job.getCmd(), e);
+                logger.error("Unexpected exception while executing " + job.getCmd(), e);
                 errorMsg = e.getMessage();
             } else {
                 ServerApiException sApiEx = (ServerApiException)e;
@@ -129,9 +133,7 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
             response.setErrorText(errorMsg);
             response.setResponseName((cmdObj == null) ? "unknowncommandresponse" : cmdObj.getCommandName());
 
-            // FIXME:  setting resultCode to ApiErrorCode.INTERNAL_ERROR is not right, usually executors have their exception handling
-            //         and we need to preserve that as much as possible here
-            _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), ApiSerializerHelper.toSerializedString(response));
+            _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, errorCode, ApiSerializerHelper.toSerializedString(response));
         }
     }
 }

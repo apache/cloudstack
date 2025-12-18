@@ -16,15 +16,14 @@
 // under the License.
 package com.cloud.vpc.dao;
 
-import java.util.List;
-
-
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkServiceMapVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
+
+import java.util.List;
 
 @DB()
 public class MockNetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO, Long> implements NetworkServiceMapDao {
@@ -37,6 +36,11 @@ public class MockNetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceM
         if (services.length > 0 && services[0] == Service.Lb) {
             return true;
         }
+        return false;
+    }
+
+    @Override
+    public boolean isAnyServiceSupportedInNetwork(long networkId, Provider provider, Service... services) {
         return false;
     }
 

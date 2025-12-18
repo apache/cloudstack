@@ -27,7 +27,6 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 
 import com.trilead.ssh2.SCPClient;
 
@@ -41,14 +40,13 @@ import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SSHCmdHelper;
 
 public class BaremetalDnsmasqResource extends BaremetalDhcpResourceBase {
-    private static final Logger s_logger = Logger.getLogger(BaremetalDnsmasqResource.class);
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         com.trilead.ssh2.Connection sshConnection = null;
         try {
             super.configure(name, params);
-            s_logger.debug(String.format("Trying to connect to DHCP server(IP=%1$s, username=%2$s, password=%3$s)", _ip, _username, _password));
+            logger.debug(String.format("Trying to connect to DHCP server(IP=%1$s, username=%2$s, password=%3$s)", _ip, _username, _password));
             sshConnection = SSHCmdHelper.acquireAuthorizedConnection(_ip, _username, _password);
             if (sshConnection == null) {
                 throw new ConfigurationException(String.format("Cannot connect to DHCP server(IP=%1$s, username=%2$s, password=%3$s", _ip, _username, _password));
@@ -81,10 +79,10 @@ public class BaremetalDnsmasqResource extends BaremetalDhcpResourceBase {
             }
             */
 
-            s_logger.debug("Dnsmasq resource configure successfully");
+            logger.debug("Dnsmasq resource configure successfully");
             return true;
         } catch (Exception e) {
-            s_logger.debug("Dnsmasq resorce configure failed", e);
+            logger.debug("Dnsmasq resorce configure failed", e);
             throw new ConfigurationException(e.getMessage());
         } finally {
             SSHCmdHelper.releaseSshConnection(sshConnection);

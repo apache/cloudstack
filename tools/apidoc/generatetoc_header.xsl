@@ -35,20 +35,20 @@ version="1.0">
 	<div class="uppermenu_panel">
             <div class="uppermenu_box"></div>
         </div>
-        
+
         <div id="main_controller">
             <div id="inside_header">
                 <div class="header_top">
                     <a class="cloud_logo" href="http://cloudstack.org"></a>
                     <div class="mainemenu_panel">
-                        
+
                     </div>
                 </div>
-                
-            
+
+
             </div>
             <div id="main_content">
-             	
+
                 <div class="inside_apileftpanel">
                 	<div class="inside_contentpanel" style="width:930px;">
                       <h1>Apache CloudStack API Documentation (%ACS_RELEASE%)</h1>
@@ -57,10 +57,10 @@ version="1.0">
                         	<div class="apiannouncement_contentarea">
                                 <h3>Using the CloudStack API</h3>
                                 <p>For information about how the APIs work, and tips on how to use them, see the
-                                    <a href="http://docs.cloudstack.apache.org/en/latest/dev.html">Developer's Guide</a>.</p>
+                                    <a href="http://docs.cloudstack.apache.org/en/latest/developersguide">Developer's Guide</a>.</p>
        					 	</div>
        					 </div>
-                         
+
                          <div class="api_leftsections">
                       			<h3>%API_HEADER%</h3>
                                 <span>Commands available through the developer API URL and the integration API URL.</span>

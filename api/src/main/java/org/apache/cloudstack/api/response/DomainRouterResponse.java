@@ -185,6 +185,10 @@ public class DomainRouterResponse extends BaseResponseWithAnnotations implements
     @Param(description = "the domain associated with the router")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the Domain the router belongs to", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.SERVICE_OFFERING_ID)
     @Param(description = "the ID of the service offering of the virtual machine")
     private String serviceOfferingId;
@@ -240,6 +244,10 @@ public class DomainRouterResponse extends BaseResponseWithAnnotations implements
     @SerializedName("softwareversion")
     @Param(description = "the version of the code / software in the router")
     private String softwareVersion;
+
+    @SerializedName(ApiConstants.ARCH)
+    @Param(description = "CPU arch of the router", since = "4.20.1")
+    private String arch;
 
     public DomainRouterResponse() {
         nics = new LinkedHashSet<NicResponse>();
@@ -381,6 +389,10 @@ public class DomainRouterResponse extends BaseResponseWithAnnotations implements
         this.domainName = domainName;
     }
 
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
+    }
     public void setPublicNetworkId(String publicNetworkId) {
         this.publicNetworkId = publicNetworkId;
     }
@@ -509,5 +521,9 @@ public class DomainRouterResponse extends BaseResponseWithAnnotations implements
 
     public void setSoftwareVersion(String softwareVersion) {
         this.softwareVersion = softwareVersion;
+    }
+
+    public void setArch(String arch) {
+        this.arch = arch;
     }
 }

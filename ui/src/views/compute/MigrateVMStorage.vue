@@ -24,7 +24,7 @@
     </a-alert>
     <a-radio-group
       v-if="migrateVmWithVolumeAllowed"
-      :defaultValue="migrateMode"
+      v-model:value="migrateMode"
       @change="e => { handleMigrateModeChange(e.target.value) }">
       <a-radio class="radio-style" :value="1">
         {{ $t('label.migrate.instance.single.storage') }}
@@ -54,7 +54,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import StoragePoolSelectView from '@/components/view/StoragePoolSelectView'
 import InstanceVolumesStoragePoolSelectListView from '@/components/view/InstanceVolumesStoragePoolSelectListView'
@@ -134,7 +134,7 @@ export default {
     },
     submitForm () {
       var isUserVm = true
-      if (this.$route.meta.name !== 'vm') {
+      if (this.$route.meta.resourceType !== 'UserVm') {
         isUserVm = false
       }
       var migrateApi = isUserVm ? 'migrateVirtualMachine' : 'migrateSystemVm'
@@ -158,7 +158,7 @@ export default {
       } else {
         params.storageid = storageId
       }
-      api(migrateApi, params).then(response => {
+      postAPI(migrateApi, params).then(response => {
         const jobId = response[migrateApi.toLowerCase() + 'response'].jobid
         this.$pollJob({
           title: `${this.$t('label.migrating')} ${this.resource.name}`,

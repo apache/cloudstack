@@ -41,14 +41,14 @@ public class MacAddressTest {
     public final void testMacAddressToLong() throws Exception {
         // TODO this test should fail this address is beyond the acceptable range for macaddresses
         MacAddress mac = new MacAddress(Long.MAX_VALUE);
-        assertEquals(Long.MAX_VALUE,mac.toLong());
+        assertEquals(Long.MAX_VALUE, mac.toLong());
         System.out.println(mac.toString());
     }
 
-    // TODO    public final void testToLong() throws Exception {
-    // TODO    public final void testToByteArray() throws Exception {
-    // TODO    public final void testToStringString() throws Exception {
-    // TODO    public final void testToString() throws Exception {
-    // TODO    public final void testGetMacAddress() throws Exception {
-    // TODO    public final void testParse() throws Exception {
+    @Test
+    public final void testSpecificMacAddress() throws Exception {
+        // Test specific mac address 76:3F:76:EB:02:81
+        MacAddress mac = new MacAddress(130014950130305L);
+        assertEquals("76:3f:76:eb:02:81", mac.toString());
+    }
 }

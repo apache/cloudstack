@@ -80,6 +80,13 @@
           </a-select>
         </a-form-item>
 
+        <a-form-item name="ispublic" ref="ispublic">
+          <template #label>
+            <tooltip-label :title="$t('label.ispublic')" :tooltip="apiParams.ispublic.description"/>
+          </template>
+          <a-switch v-model:checked="form.ispublic"/>
+        </a-form-item>
+
         <a-form-item name="forced" ref="forced">
           <template #label>
             <tooltip-label :title="$t('label.forced')" :tooltip="apiParams.forced.description"/>
@@ -98,7 +105,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -124,7 +131,7 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
-      this.form = reactive({})
+      this.form = reactive({ ispublic: true })
       this.rules = reactive({
         file: [
           { required: true, message: this.$t('message.error.required.input') },
@@ -200,7 +207,7 @@ export default {
     },
     importRole (params) {
       this.loading = true
-      api('importRole', {}, 'POST', params).then(json => {
+      postAPI('importRole', params).then(json => {
         const role = json.importroleresponse.role
         if (role) {
           this.$emit('refresh-data')

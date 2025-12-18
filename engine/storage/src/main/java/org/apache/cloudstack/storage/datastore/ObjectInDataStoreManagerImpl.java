@@ -18,7 +18,12 @@ package org.apache.cloudstack.storage.datastore;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.ImageStore;
+import com.cloud.storage.snapshot.SnapshotManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -58,7 +63,7 @@ import com.cloud.utils.fsm.StateMachine2;
 
 @Component
 public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
-    private static final Logger s_logger = Logger.getLogger(ObjectInDataStoreManagerImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     @Inject
     TemplateDataFactory imageFactory;
     @Inject
@@ -83,6 +88,10 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
     SnapshotDao snapshotDao;
     @Inject
     VolumeDao volumeDao;
+
+    @Inject
+    HostDao hostDao;
+
     protected StateMachine2<State, Event, DataObjectInStore> stateMachines;
 
     public ObjectInDataStoreManagerImpl() {
@@ -102,7 +111,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
         stateMachines.addTransition(State.Destroying, Event.OperationFailed, State.Destroying);
         stateMachines.addTransition(State.Failed, Event.DestroyRequested, State.Destroying);
         // TODO: further investigate why an extra event is sent when it is
-        // alreay Ready for DownloadListener
+        // already Ready for DownloadListener
         stateMachines.addTransition(State.Ready, Event.OperationSuccessed, State.Ready);
         // State transitions for data object migration
         stateMachines.addTransition(State.Ready, Event.MigrateDataRequested, State.Migrating);
@@ -112,6 +121,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
         stateMachines.addTransition(State.Migrating, Event.MigrationSucceeded, State.Destroyed);
         stateMachines.addTransition(State.Migrating, Event.OperationSuccessed, State.Ready);
         stateMachines.addTransition(State.Migrating, Event.OperationFailed, State.Ready);
+        stateMachines.addTransition(State.Hidden, Event.DestroyRequested, State.Destroying);
     }
 
     @Override
@@ -129,14 +139,17 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 ss.setVolumeId(snapshotInfo.getVolumeId());
                 ss.setSize(snapshotInfo.getSize()); // this is the virtual size of snapshot in primary storage.
                 ss.setPhysicalSize(snapshotInfo.getSize()); // this physical size will get updated with actual size once the snapshot backup is done.
-                SnapshotDataStoreVO snapshotDataStoreVO = snapshotDataStoreDao.findParent(dataStore.getRole(), dataStore.getId(), snapshotInfo.getVolumeId());
-                if (snapshotDataStoreVO != null) {
+                Long clusterId = hostDao.findClusterIdByVolumeInfo(snapshotInfo.getBaseVolume());
+                SnapshotDataStoreVO parentSnapshotDataStoreVO = findParent(dataStore, clusterId, snapshotInfo);
+                if (parentSnapshotDataStoreVO != null) {
                     //Double check the snapshot is removed or not
-                    SnapshotVO parentSnap = snapshotDao.findById(snapshotDataStoreVO.getSnapshotId());
-                    if (parentSnap != null) {
-                        ss.setParentSnapshotId(snapshotDataStoreVO.getSnapshotId());
+                    SnapshotVO parentSnap = snapshotDao.findById(parentSnapshotDataStoreVO.getSnapshotId());
+                    if (parentSnap != null && !parentSnapshotDataStoreVO.isEndOfChain()) {
+                        ss.setParentSnapshotId(parentSnapshotDataStoreVO.getSnapshotId());
+                    } else if (parentSnapshotDataStoreVO.isEndOfChain()) {
+                        logger.debug("Snapshot [{}] will begin a new chain, as the last one has finished.", ss.getSnapshotId());
                     } else {
-                        s_logger.debug("find inconsistent db for snapshot " + snapshotDataStoreVO.getSnapshotId());
+                        logger.debug("find inconsistent db for snapshot " + parentSnapshotDataStoreVO.getSnapshotId());
                     }
                 }
                 ss.setState(ObjectInDataStoreStateMachine.State.Allocated);
@@ -178,9 +191,12 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                     ss.setRole(dataStore.getRole());
                     ss.setSize(snapshot.getSize());
                     ss.setVolumeId(snapshot.getVolumeId());
-                    SnapshotDataStoreVO snapshotDataStoreVO = snapshotDataStoreDao.findParent(dataStore.getRole(), dataStore.getId(), snapshot.getVolumeId());
-                    if (snapshotDataStoreVO != null) {
+                    Long clusterId = hostDao.findClusterIdByVolumeInfo(snapshot.getBaseVolume());
+                    SnapshotDataStoreVO snapshotDataStoreVO = snapshotDataStoreDao.findParent(dataStore.getRole(), null, ((ImageStore)dataStore).getDataCenterId(), snapshot.getVolumeId(), SnapshotManager.kvmIncrementalSnapshot.valueIn(clusterId), snapshot.getHypervisorType());
+                    if (snapshotDataStoreVO != null && !snapshotDataStoreVO.isEndOfChain()) {
                         ss.setParentSnapshotId(snapshotDataStoreVO.getSnapshotId());
+                    } else {
+                        logger.debug("Snapshot [{}] will begin a new chain, as the last one has finished.", ss.getSnapshotId());
                     }
                     ss.setInstallPath(TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR + "/" + snapshotDao.findById(obj.getId()).getAccountId() + "/" + snapshot.getVolumeId());
                     ss.setState(ObjectInDataStoreStateMachine.State.Allocated);
@@ -200,6 +216,33 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
         return this.get(obj, dataStore, null);
     }
 
+    private SnapshotDataStoreVO findParent(DataStore dataStore, Long clusterId, SnapshotInfo snapshotInfo) {
+        boolean kvmIncrementalSnapshot = SnapshotManager.kvmIncrementalSnapshot.valueIn(clusterId);
+        SnapshotDataStoreVO snapshotDataStoreVO;
+        if (Hypervisor.HypervisorType.KVM.equals(snapshotInfo.getHypervisorType()) && kvmIncrementalSnapshot) {
+            snapshotDataStoreVO = snapshotDataStoreDao.findParent(null, null, null, snapshotInfo.getVolumeId(),
+                    kvmIncrementalSnapshot, snapshotInfo.getHypervisorType());
+            snapshotDataStoreVO = returnNullIfNotOnSameTypeOfStoreRole(snapshotInfo, snapshotDataStoreVO);
+        } else {
+            snapshotDataStoreVO = snapshotDataStoreDao.findParent(dataStore.getRole(), dataStore.getId(), null, snapshotInfo.getVolumeId(),
+                    kvmIncrementalSnapshot, snapshotInfo.getHypervisorType());
+        }
+        return snapshotDataStoreVO;
+    }
+
+    private SnapshotDataStoreVO returnNullIfNotOnSameTypeOfStoreRole(SnapshotInfo snapshotInfo, SnapshotDataStoreVO snapshotDataStoreVO) {
+        if (snapshotDataStoreVO == null) {
+            return snapshotDataStoreVO;
+        }
+        if ((snapshotInfo.getImageStore() != null && !snapshotDataStoreVO.getRole().isImageStore()) ||
+                (snapshotInfo.getImageStore() == null && snapshotDataStoreVO.getRole().isImageStore())) {
+            snapshotDataStoreVO.setEndOfChain(true);
+            snapshotDataStoreDao.update(snapshotDataStoreVO.getId(), snapshotDataStoreVO);
+            return null;
+        }
+        return snapshotDataStoreVO;
+    }
+
     @Override
     public boolean delete(DataObject dataObj) {
         long objId = dataObj.getId();
@@ -210,7 +253,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 if (destTmpltPool != null) {
                     return templatePoolDao.remove(destTmpltPool.getId());
                 } else {
-                    s_logger.warn("Template " + objId + " is not found on storage pool " + dataStore.getId() + ", so no need to delete");
+                    logger.warn("Template " + objId + " is not found on storage pool " + dataStore.getId() + ", so no need to delete");
                     return true;
                 }
             }
@@ -222,7 +265,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                     if (destTmpltStore != null) {
                         return templateDataStoreDao.remove(destTmpltStore.getId());
                     } else {
-                        s_logger.warn("Template " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
+                        logger.warn("Template " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
                         return true;
                     }
                 case SNAPSHOT:
@@ -230,7 +273,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                     if (destSnapshotStore != null) {
                         return snapshotDataStoreDao.remove(destSnapshotStore.getId());
                     } else {
-                        s_logger.warn("Snapshot " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
+                        logger.warn("Snapshot " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
                         return true;
                     }
                 case VOLUME:
@@ -238,13 +281,13 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                     if (destVolumeStore != null) {
                         return volumeDataStoreDao.remove(destVolumeStore.getId());
                     } else {
-                        s_logger.warn("Volume " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
+                        logger.warn("Volume " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
                         return true;
                     }
             }
         }
 
-        s_logger.warn("Unsupported data object (" + dataObj.getType() + ", " + dataObj.getDataStore() + ")");
+        logger.warn("Unsupported data object (" + dataObj.getType() + ", " + dataObj.getDataStore() + ")");
         return false;
     }
 
@@ -258,7 +301,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 if (destTmpltPool != null && destTmpltPool.getState() != ObjectInDataStoreStateMachine.State.Ready) {
                     return templatePoolDao.remove(destTmpltPool.getId());
                 } else {
-                    s_logger.warn("Template " + objId + " is not found on storage pool " + dataStore.getId() + ", so no need to delete");
+                    logger.warn("Template " + objId + " is not found on storage pool " + dataStore.getId() + ", so no need to delete");
                     return true;
                 }
             } else if (dataObj.getType() == DataObjectType.SNAPSHOT) {
@@ -278,7 +321,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                     if (destSnapshotStore != null && destSnapshotStore.getState() != ObjectInDataStoreStateMachine.State.Ready) {
                         return snapshotDataStoreDao.remove(destSnapshotStore.getId());
                     } else {
-                        s_logger.warn("Snapshot " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
+                        logger.warn("Snapshot " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
                         return true;
                     }
                 case VOLUME:
@@ -286,13 +329,13 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                     if (destVolumeStore != null && destVolumeStore.getState() != ObjectInDataStoreStateMachine.State.Ready) {
                         return volumeDataStoreDao.remove(destVolumeStore.getId());
                     } else {
-                        s_logger.warn("Volume " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
+                        logger.warn("Volume " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
                         return true;
                     }
             }
         }
 
-        s_logger.warn("Unsupported data object (" + dataObj.getType() + ", " + dataObj.getDataStore() + "), no need to delete from object in store ref table");
+        logger.warn("Unsupported data object (" + dataObj.getType() + ", " + dataObj.getDataStore() + "), no need to delete from object in store ref table");
         return false;
     }
 
@@ -374,35 +417,12 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
         } else if (type == DataObjectType.SNAPSHOT && role == DataStoreRole.Primary) {
             vo = snapshotDataStoreDao.findByStoreSnapshot(role, dataStoreId, objId);
         } else {
-            s_logger.debug("Invalid data or store type: " + type + " " + role);
+            logger.debug("Invalid data or store type: " + type + " " + role);
             throw new CloudRuntimeException("Invalid data or store type: " + type + " " + role);
         }
 
         return vo;
 
-    }
-
-    @Override
-    public DataStore findStore(long objId, DataObjectType type, DataStoreRole role) {
-        DataStore store = null;
-        if (role == DataStoreRole.Image) {
-            DataObjectInStore vo = null;
-            switch (type) {
-                case TEMPLATE:
-                    vo = templateDataStoreDao.findByTemplate(objId, role);
-                    break;
-                case SNAPSHOT:
-                    vo = snapshotDataStoreDao.findBySnapshot(objId, role);
-                    break;
-                case VOLUME:
-                    vo = volumeDataStoreDao.findByVolume(objId);
-                    break;
-            }
-            if (vo != null) {
-                store = this.storeMgr.getDataStore(vo.getDataStoreId(), role);
-            }
-        }
-        return store;
     }
 
 }

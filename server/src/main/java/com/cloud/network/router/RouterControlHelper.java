@@ -20,7 +20,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
@@ -32,7 +33,7 @@ import com.cloud.vm.dao.NicDao;
 
 public class RouterControlHelper {
 
-    private static final Logger logger = Logger.getLogger(RouterControlHelper.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     private DomainRouterDao routerDao;

@@ -24,4 +24,6 @@ import org.apache.cloudstack.storage.ImageStoreService.MigrationPolicy;
 
 public interface StorageOrchestrationService {
     MigrationResponse migrateData(Long srcDataStoreId, List<Long> destDatastores, MigrationPolicy migrationPolicy);
+
+    MigrationResponse migrateResources(Long srcImgStoreId, Long destImgStoreId, List<Long> templateIdList, List<Long> snapshotIdList);
 }

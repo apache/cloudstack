@@ -26,6 +26,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.cloudstack.storage.object.datastore.ObjectStoreProviderManager;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
@@ -40,6 +41,8 @@ public class DataStoreManagerImpl implements DataStoreManager {
     PrimaryDataStoreProviderManager primaryStoreMgr;
     @Inject
     ImageStoreProviderManager imageDataStoreMgr;
+    @Inject
+    ObjectStoreProviderManager objectStoreProviderMgr;
 
     @Override
     public DataStore getDataStore(long storeId, DataStoreRole role) {
@@ -50,6 +53,8 @@ public class DataStoreManagerImpl implements DataStoreManager {
                 return imageDataStoreMgr.getImageStore(storeId);
             } else if (role == DataStoreRole.ImageCache) {
                 return imageDataStoreMgr.getImageStore(storeId);
+            } else if (role == DataStoreRole.Object) {
+                return objectStoreProviderMgr.getObjectStore(storeId);
             }
         } catch (CloudRuntimeException e) {
             throw e;
@@ -63,6 +68,8 @@ public class DataStoreManagerImpl implements DataStoreManager {
             return primaryStoreMgr.getPrimaryDataStore(uuid);
         } else if (role == DataStoreRole.Image) {
             return imageDataStoreMgr.getImageStore(uuid);
+        } else if (role == DataStoreRole.Object) {
+            return objectStoreProviderMgr.getObjectStore(uuid);
         }
         throw new CloudRuntimeException("un recognized type" + role);
     }
@@ -75,6 +82,16 @@ public class DataStoreManagerImpl implements DataStoreManager {
     @Override
     public List<DataStore> getImageStoresByScopeExcludingReadOnly(ZoneScope scope) {
         return imageDataStoreMgr.listImageStoresByScopeExcludingReadOnly(scope);
+    }
+
+    @Override
+    public List<DataStore> getImageStoresByZoneIds(Long... zoneIds) {
+        return imageDataStoreMgr.listImageStoresFilteringByZoneIds(zoneIds);
+    }
+
+    @Override
+    public DataStore getImageStoreByUuid(String uuid) {
+        return imageDataStoreMgr.getImageStore(uuid);
     }
 
     @Override
@@ -169,5 +186,17 @@ public class DataStoreManagerImpl implements DataStoreManager {
 
     public void setImageDataStoreMgr(ImageStoreProviderManager imageDataStoreMgr) {
         this.imageDataStoreMgr = imageDataStoreMgr;
+    }
+
+    @Override
+    public Long getStoreZoneId(long storeId, DataStoreRole role) {
+        try {
+            if (role == DataStoreRole.Primary) {
+                return primaryStoreMgr.getPrimaryDataStoreZoneId(storeId);
+            } else  {
+                return imageDataStoreMgr.getImageStoreZoneId(storeId);
+            }
+        } catch (CloudRuntimeException ignored) {}
+        return null;
     }
 }

@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.admin.vm;
 import java.util.List;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -46,7 +45,6 @@ import com.cloud.vm.VirtualMachine;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
 public class AssignVMCmd extends BaseCmd  {
-    public static final Logger s_logger = Logger.getLogger(AssignVMCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -122,27 +120,16 @@ public class AssignVMCmd extends BaseCmd  {
     @Override
     public void execute() {
         try {
-            UserVm userVm = _userVmService.moveVMToUser(this);
-            if (userVm == null) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to move vm");
-            }
+            UserVm userVm = _userVmService.moveVmToUser(this);
             UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Full, "virtualmachine", userVm).get(0);
             response.setResponseName(getCommandName());
             setResponseObject(response);
-        } catch (InvalidParameterValueException e){
-            e.printStackTrace();
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         } catch (Exception e) {
-            s_logger.error("Failed to move vm due to: " + e.getStackTrace());
-            if (e.getMessage() != null) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to move vm due to " + e.getMessage());
-            } else if (e.getCause() != null) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to move vm due to " + e.getCause());
-            } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to move vm");
-            }
+            ApiErrorCode errorCode = e instanceof InvalidParameterValueException ? ApiErrorCode.PARAM_ERROR : ApiErrorCode.INTERNAL_ERROR;
+            String msg = String.format("Failed to move VM [%s].", getVmId());
+            logger.error(msg, e);
+            throw new ServerApiException(errorCode, msg);
         }
-
     }
 
     @Override

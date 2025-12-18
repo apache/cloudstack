@@ -78,9 +78,24 @@ class TestMigrateVolumeToAnotherPool(cloudstackTestCase):
 
     @classmethod
     def setUpCloudStack(cls):
-        cls.spapi = spapi.Api(host="10.2.23.248", port="81", auth="6549874687", multiCluster=True)
+        config = cls.getClsConfig()
+        StorPoolHelper.logger = cls
+
+        zone = config.zones[0]
+        assert zone is not None
+
+        td = TestData()
+        cls.testdata = td.testdata
+        cls.helper = StorPoolHelper()
+        sp_pools = cls.helper.get_pool(zone)
+        assert sp_pools is not None
+
+        cls.spapi = spapi.Api(host=zone.spEndpoint, port=zone.spEndpointPort, auth=zone.spAuthToken, multiCluster=True)
         testClient = super(TestMigrateVolumeToAnotherPool, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
+
+        cls.zone = list_zones(cls.apiclient, name=zone.name)[0]
+        assert cls.zone is not None
 
         cls._cleanup = []
 
@@ -93,20 +108,9 @@ class TestMigrateVolumeToAnotherPool(cloudstackTestCase):
         cls.services = testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
-        cls.zone = None
-        zones = list_zones(cls.apiclient)
 
-        for z in zones:
-            if z.name == cls.getClsConfig().mgtSvr[0].zone:
-                cls.zone = z
-
-        assert cls.zone is not None
-
-        td = TestData()
-        cls.testdata = td.testdata
-        cls.helper = StorPoolHelper()
-        storpool_primary_storage = cls.testdata[TestData.primaryStorage]
-        cls.template_name = storpool_primary_storage.get("name")
+        storpool_primary_storage = sp_pools[0]
+        cls.template_name = storpool_primary_storage["name"]
         storpool_service_offerings = cls.testdata[TestData.serviceOffering]
 
         nfs_service_offerings = cls.testdata[TestData.serviceOfferingsPrimary]
@@ -282,12 +286,6 @@ class TestMigrateVolumeToAnotherPool(cloudstackTestCase):
     @classmethod
     def cleanUpCloudStack(cls):
         try:
-            if cls.nfs_storage_pool.state is not "Maintenance":
-                cls.nfs_storage_pool = StoragePool.enableMaintenance(cls.apiclient, cls.nfs_storage_pool.id)
-
-            if cls.ceph_storage_pool.state is not "Maintenance":
-                cls.ceph_storage_pool = StoragePool.enableMaintenance(cls.apiclient, cls.ceph_storage_pool.id)
-
             cls.storage_pool = StoragePool.update(cls.apiclient,
                                               id=cls.storage_pool.id,
                                               tags = ["ssd"])

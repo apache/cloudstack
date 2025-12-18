@@ -214,27 +214,6 @@ CREATE VIEW `cloud`.`domain_router_view` AS
             and async_job.instance_type = 'DomainRouter'
             and async_job.job_status = 0;
 
--- Idempotent ADD COLUMN
-DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_COLUMN`;
-CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_COLUMN` (
-    IN in_table_name VARCHAR(200)
-, IN in_column_name VARCHAR(200)
-, IN in_column_definition VARCHAR(1000)
-)
-BEGIN
-    DECLARE CONTINUE HANDLER FOR 1060 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'ADD COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', in_column_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
-
-
--- Add foreign key procedure to link volumes to passphrase table
-DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`;
-CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY` (
-    IN in_table_name VARCHAR(200),
-    IN in_foreign_table_name VARCHAR(200),
-    IN in_foreign_column_name VARCHAR(200)
-)
-BEGIN
-    DECLARE CONTINUE HANDLER FOR 1005,1826 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', ' ADD CONSTRAINT '); SET @ddl = CONCAT(@ddl, 'fk_', in_foreign_table_name, '_', in_foreign_column_name); SET @ddl = CONCAT(@ddl, ' FOREIGN KEY (', in_foreign_table_name, '_', in_foreign_column_name, ')'); SET @ddl = CONCAT(@ddl, ' REFERENCES ', in_foreign_table_name, '(', in_foreign_column_name, ')'); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
-
 -- Add passphrase table
 CREATE TABLE IF NOT EXISTS `cloud`.`passphrase` (
     `id` bigint unsigned NOT NULL auto_increment,
@@ -244,7 +223,6 @@ CREATE TABLE IF NOT EXISTS `cloud`.`passphrase` (
 
 -- Add passphrase column to volumes table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes', 'passphrase_id', 'bigint unsigned DEFAULT NULL COMMENT "encryption passphrase id" ');
-CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.volumes', 'passphrase', 'id');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes', 'encrypt_format', 'varchar(64) DEFAULT NULL COMMENT "encryption format" ');
 
 -- Add encrypt column to disk_offering
@@ -414,7 +392,7 @@ GROUP BY
 ALTER TABLE `cloud`.`load_balancing_rules`
 ADD cidr_list VARCHAR(4096);
 
--- savely add resources in parallel
+-- safely add resources in parallel
 -- PR#5984 Create table to persist VM stats.
 DROP TABLE IF EXISTS `cloud`.`resource_reservation`;
 CREATE TABLE `cloud`.`resource_reservation` (
@@ -445,45 +423,6 @@ WHERE roles.role_type != 'Admin' AND roles.is_default = 1 AND role_perm.rule = '
 
 -- VM autoscaling
 
--- Idempotent ADD COLUMN
-DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_COLUMN`;
-CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_COLUMN` (
-    IN in_table_name VARCHAR(200)
-, IN in_column_name VARCHAR(200)
-, IN in_column_definition VARCHAR(1000)
-)
-BEGIN
-    DECLARE CONTINUE HANDLER FOR 1060 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'ADD COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', in_column_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
-
--- Idempotent RENAME COLUMN
-DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_CHANGE_COLUMN`;
-CREATE PROCEDURE `cloud`.`IDEMPOTENT_CHANGE_COLUMN` (
-    IN in_table_name VARCHAR(200)
-, IN in_column_name VARCHAR(200)
-, IN in_column_new_name VARCHAR(200)
-, IN in_column_new_definition VARCHAR(1000)
-)
-BEGIN
-    DECLARE CONTINUE HANDLER FOR 1054 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'CHANGE COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', in_column_new_name); SET @ddl = CONCAT(@ddl, ' ', in_column_new_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
-
--- Idempotent ADD UNIQUE KEY
-DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY`;
-CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY` (
-    IN in_table_name VARCHAR(200)
-, IN in_key_name VARCHAR(200)
-, IN in_key_definition VARCHAR(1000)
-)
-BEGIN
-    DECLARE CONTINUE HANDLER FOR 1061 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'ADD UNIQUE KEY ', in_key_name); SET @ddl = CONCAT(@ddl, ' ', in_key_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
-
--- Idempotent DROP FOREIGN KEY
-DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY`;
-CREATE PROCEDURE `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY` (
-    IN in_table_name VARCHAR(200)
-, IN in_foreign_key_name VARCHAR(200)
-)
-BEGIN
-    DECLARE CONTINUE HANDLER FOR 1091, 1025 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', ' DROP FOREIGN KEY '); SET @ddl = CONCAT(@ddl, ' ', in_foreign_key_name); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
 
 -- Add column 'supports_vm_autoscaling' to 'network_offerings' table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings', 'supports_vm_autoscaling', 'boolean default false');
@@ -653,11 +592,9 @@ CREATE TABLE IF NOT EXISTS `cloud`.`user_data` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.user_vm', 'user_data_id', 'bigint unsigned DEFAULT NULL COMMENT "id of the user data" AFTER `user_data`');
-CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.user_vm', 'user_data', 'id');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.user_vm', 'user_data_details', 'mediumtext DEFAULT NULL COMMENT "value of the comma-separated list of parameters" AFTER `user_data_id`');
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_template', 'user_data_id', 'bigint unsigned DEFAULT NULL COMMENT "id of the user data"');
-CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.vm_template', 'user_data', 'id');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_template', 'user_data_link_policy', 'varchar(255) DEFAULT NULL COMMENT "user data link policy with template"');
 
 -- Added userdata details to template
@@ -1200,16 +1137,6 @@ CREATE TABLE IF NOT EXISTS `cloud`.`tungsten_lb_health_monitor` (
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --- #6888 add index to speed up querying IPs in the network-tab
-DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_KEY`;
-
-CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_KEY` (
-		IN in_index_name VARCHAR(200)
-    , IN in_table_name VARCHAR(200)
-    , IN in_key_definition VARCHAR(1000)
-)
-BEGIN
-
-    DECLARE CONTINUE HANDLER FOR 1061 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', ' ADD KEY ') ; SET @ddl = CONCAT(@ddl, ' ', in_index_name); SET @ddl = CONCAT(@ddl, ' ', in_key_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
 
 CALL `cloud`.`IDEMPOTENT_ADD_KEY`('i_user_ip_address_state','user_ip_address', '(state)');
 
@@ -1583,3 +1510,5 @@ SET
   usage_type = 22
 WHERE
   usage_type = 24 AND usage_display like '% io write';
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.guest_os', 'display', 'tinyint(1) DEFAULT ''1'' COMMENT ''should this guest_os be shown to the end user'' ');

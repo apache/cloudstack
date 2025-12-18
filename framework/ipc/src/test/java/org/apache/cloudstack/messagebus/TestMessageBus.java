@@ -26,7 +26,6 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDetector;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
-import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,7 +36,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:/MessageBusTestContext.xml")
 public class TestMessageBus extends TestCase {
-    private static final Logger s_logger = Logger.getLogger(TestMessageBus.class);
 
     @Inject
     MessageBus _messageBus;
@@ -129,7 +127,6 @@ public class TestMessageBus extends TestCase {
                     try {
                         Thread.sleep(3000);
                     } catch (InterruptedException e) {
-                        s_logger.debug("[ignored] .");
                     }
                     _messageBus.publish(null, "Host", PublishScope.GLOBAL, null);
                 }
@@ -150,7 +147,6 @@ public class TestMessageBus extends TestCase {
         try {
             thread.join();
         } catch (InterruptedException e) {
-            s_logger.debug("[ignored] .");
         }
     }
 }

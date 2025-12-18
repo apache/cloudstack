@@ -29,10 +29,11 @@ import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestHandler;
 import org.apache.http.util.EntityUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class ClusterServiceServletHttpHandler implements HttpRequestHandler {
-    private static final Logger s_logger = Logger.getLogger(ClusterServiceServletHttpHandler.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private final ClusterManager manager;
 
@@ -44,27 +45,27 @@ public class ClusterServiceServletHttpHandler implements HttpRequestHandler {
     public void handle(HttpRequest request, HttpResponse response, HttpContext context) throws HttpException, IOException {
 
         try {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Start Handling cluster HTTP request");
+            if (logger.isTraceEnabled()) {
+                logger.trace("Start Handling cluster HTTP request");
             }
 
             parseRequest(request);
             handleRequest(request, response);
 
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Handle cluster HTTP request done");
+            if (logger.isTraceEnabled()) {
+                logger.trace("Handle cluster HTTP request done");
             }
 
         } catch (final Throwable e) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Exception " + e.toString());
+            if (logger.isDebugEnabled()) {
+                logger.debug("Exception " + e.toString());
             }
 
             try {
                 writeResponse(response, HttpStatus.SC_INTERNAL_SERVER_ERROR, null);
             } catch (final Throwable e2) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Exception " + e2.toString());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Exception " + e2.toString());
                 }
             }
         }
@@ -88,8 +89,8 @@ public class ClusterServiceServletHttpHandler implements HttpRequestHandler {
                         final String name = URLDecoder.decode(paramValue[0]);
                         final String value = URLDecoder.decode(paramValue[1]);
 
-                        if (s_logger.isTraceEnabled()) {
-                            s_logger.trace("Parsed request parameter " + name + "=" + value);
+                        if (logger.isTraceEnabled()) {
+                            logger.trace("Parsed request parameter " + name + "=" + value);
                         }
                         request.getParams().setParameter(name, value);
                     }
@@ -134,22 +135,22 @@ public class ClusterServiceServletHttpHandler implements HttpRequestHandler {
                 case RemoteMethodConstants.METHOD_UNKNOWN:
                 default:
                     assert false;
-                    s_logger.error("unrecognized method " + nMethod);
+                    logger.error("unrecognized method " + nMethod);
                     break;
             }
         } catch (final Throwable e) {
-            s_logger.error("Unexpected exception when processing cluster service request : ", e);
+            logger.error("Unexpected exception when processing cluster service request : ", e);
         }
 
         if (responseContent != null) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Write response with HTTP OK " + responseContent);
+            if (logger.isTraceEnabled()) {
+                logger.trace("Write response with HTTP OK " + responseContent);
             }
 
             writeResponse(response, HttpStatus.SC_OK, responseContent);
         } else {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Write response with HTTP Bad request");
+            if (logger.isTraceEnabled()) {
+                logger.trace("Write response with HTTP Bad request");
             }
 
             writeResponse(response, HttpStatus.SC_BAD_REQUEST, null);
@@ -184,8 +185,8 @@ public class ClusterServiceServletHttpHandler implements HttpRequestHandler {
     private String handlePingMethodCall(HttpRequest req) {
         final String callingPeer = (String)req.getParams().getParameter("callingPeer");
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Handle ping request from " + callingPeer);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Handle ping request from " + callingPeer);
         }
 
         return "true";

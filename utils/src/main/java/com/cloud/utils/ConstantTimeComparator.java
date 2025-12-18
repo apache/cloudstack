@@ -19,8 +19,6 @@
 
 package com.cloud.utils;
 
-import java.nio.charset.Charset;
-
 public class ConstantTimeComparator {
 
     public static boolean compareBytes(byte[] b1, byte[] b2) {
@@ -36,7 +34,6 @@ public class ConstantTimeComparator {
     }
 
     public static boolean compareStrings(String s1, String s2) {
-        final Charset encoding = Charset.forName("UTF-8");
-        return compareBytes(s1.getBytes(encoding), s2.getBytes(encoding));
+        return compareBytes(s1.getBytes(StringUtils.getPreferredCharset()), s2.getBytes(StringUtils.getPreferredCharset()));
     }
 }

@@ -53,7 +53,11 @@ public interface UserVmDao extends GenericDao<UserVmVO, Long> {
      * @param hostName        TODO
      * @param instanceName
      */
-    void updateVM(long id, String displayName, boolean enable, Long osTypeId, String userData, Long userDataId, String userDataDetails, boolean displayVm, boolean isDynamicallyScalable, String customId, String hostName, String instanceName);
+    void updateVM(long id, String displayName, boolean enable, Long osTypeId,
+                  String userData, Long userDataId, String userDataDetails,
+                  boolean displayVm, boolean isDynamicallyScalable,
+                  boolean deleteProtection, String customId, String hostName,
+                  String instanceName);
 
     List<UserVmVO> findDestroyedVms(Date date);
 
@@ -103,4 +107,5 @@ public interface UserVmDao extends GenericDao<UserVmVO, Long> {
 
     List<UserVmVO> findByUserDataId(long userdataId);
 
+    List<UserVmVO> listByIds(List<Long> ids);
 }

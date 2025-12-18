@@ -24,7 +24,6 @@ import java.util.Map;
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceTag;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -44,7 +43,6 @@ import com.cloud.exception.InvalidParameterValueException;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class ListProjectsCmd extends BaseListAccountResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListProjectsCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

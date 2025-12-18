@@ -19,7 +19,6 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
@@ -28,7 +27,6 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class RouterHealthCheckResultDaoImpl extends GenericDaoBase<RouterHealthCheckResultVO, Long> implements RouterHealthCheckResultDao {
-    private final static Logger s_logger = Logger.getLogger(RouterHealthCheckResultDaoImpl.class);
 
     private SearchBuilder<RouterHealthCheckResultVO> RouterChecksSearchBuilder;
     private SearchBuilder<RouterHealthCheckResultVO> IsRouterFailingSearchBuilder;
@@ -69,7 +67,7 @@ public class RouterHealthCheckResultDaoImpl extends GenericDaoBase<RouterHealthC
         sc.setParameters("checkType", checkType);
         List<RouterHealthCheckResultVO> checks = listBy(sc);
         if (checks.size() > 1) {
-            s_logger.error("Found multiple entries for router Id: " + routerId + ", check name: " + checkName);
+            logger.error("Found multiple entries for router Id: " + routerId + ", check name: " + checkName);
         }
         return checks.isEmpty() ? null : checks.get(0);
     }

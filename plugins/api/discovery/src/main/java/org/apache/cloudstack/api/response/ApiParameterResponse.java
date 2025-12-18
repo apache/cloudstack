@@ -16,12 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.google.gson.annotations.SerializedName;
+import java.util.List;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class ApiParameterResponse extends BaseResponse {
     @SerializedName(ApiConstants.NAME)
@@ -51,6 +53,8 @@ public class ApiParameterResponse extends BaseResponse {
     @SerializedName("related")
     @Param(description = "comma separated related apis to get the parameter")
     private String related;
+
+    private transient List<RoleType> authorizedRoleTypes = null;
 
     public ApiParameterResponse() {
     }
@@ -87,4 +91,11 @@ public class ApiParameterResponse extends BaseResponse {
         this.related = related;
     }
 
+    public void setAuthorizedRoleTypes(List<RoleType> authorizedRoleTypes) {
+        this.authorizedRoleTypes = authorizedRoleTypes;
+    }
+
+    public List<RoleType> getAuthorizedRoleTypes() {
+        return authorizedRoleTypes;
+    }
 }

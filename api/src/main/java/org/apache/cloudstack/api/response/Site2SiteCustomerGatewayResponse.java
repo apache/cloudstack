@@ -98,6 +98,10 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponseWithAnnotation
     @Param(description = "the domain name of the owner")
     private String domain;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "the domain path of the owner", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.REMOVED)
     @Param(description = "the date and time the host was removed")
     private Date removed;
@@ -191,6 +195,11 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponseWithAnnotation
     @Override
     public void setDomainName(String domainName) {
         this.domain = domainName;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
 }

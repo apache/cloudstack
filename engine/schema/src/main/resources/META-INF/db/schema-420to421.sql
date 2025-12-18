@@ -20,10 +20,10 @@
 --;
 
 
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 's3.singleupload.max.size', '5', 
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 's3.singleupload.max.size', '5',
     'The maximum size limit for S3 single part upload API(in GB). If it is set to 0, then it means always use multi-part upload to upload object to S3. If it is set to -1, then it means always use single-part upload to upload object to S3.');
 
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Storage", 'DEFAULT', 'management-server', "enable.ha.storage.migration", "true", "Enable/disable storage migration across primary storage during HA"); 
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Storage", 'DEFAULT', 'management-server', "enable.ha.storage.migration", "true", "Enable/disable storage migration across primary storage during HA");
 UPDATE `cloud`.`configuration` SET description="Specify whether or not to reserve CPU based on CPU overprovisioning factor" where name="vmware.reserve.cpu";
 UPDATE `cloud`.`configuration` SET description="Specify whether or not to reserve memory based on memory overprovisioning factor" where name="vmware.reserve.mem";
 -- Remove Windows Server 8 from guest_os_type dropdown to use Windows Server 2012
@@ -238,7 +238,7 @@ update  `cloud`.`volumes` v,  `cloud`.`volume_host_ref` vhr  set v.format=vhr.fo
 
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'baremetal.ipmi.lan.interface', 'default', 'option specified in -I option of impitool. candidates are: open/bmc/lipmi/lan/lanplus/free/imb, see ipmitool man page for details. default value "default" means using default option of ipmitool');
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'baremetal.ipmi.fail.retry', 'default', "ipmi interface will be temporary out of order after power opertions(e.g. cycle, on), it leads following commands fail immediately. The value specifies retry times before accounting it as real failure");
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'baremetal.ipmi.fail.retry', 'default', "ipmi interface will be temporary out of order after power operations(e.g. cycle, on), it leads following commands fail immediately. The value specifies retry times before accounting it as real failure");
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.hung.wokervm.timeout', '7200', 'Worker VM timeout in seconds');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Alert", 'DEFAULT', 'management-server', "alert.smtp.connectiontimeout", "30000", "Socket connection timeout value in milliseconds. -1 for infinite timeout.");
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Alert", 'DEFAULT', 'management-server', "alert.smtp.timeout", "30000", "Socket I/O timeout value in milliseconds. -1 for infinite timeout.");

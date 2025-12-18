@@ -26,7 +26,7 @@ import java.net.HttpURLConnection;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class VmwareContextTest {
@@ -42,6 +42,9 @@ public class VmwareContextTest {
         Mockito.doReturn(conn).when(vmwareContext).getHTTPConnection("http://example.com", "PUT");
         //This method should not throw any exception. Ref: CLOUDSTACK-8669
         vmwareContext.uploadResourceContent("http://example.com", "content".getBytes());
+        Mockito.verify(vmwareContext, Mockito.times(1)).getHTTPConnection("http://example.com", "PUT");
+        Mockito.verify(conn, Mockito.times(1)).getOutputStream();
+        Mockito.verify(conn, Mockito.times(1)).getInputStream();
     }
 
 }

@@ -38,15 +38,19 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenFabricProviderCmd;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Arrays;
 import java.util.List;
 
+@RunWith(MockitoJUnitRunner.class)
 public class TungstenProviderServiceTest {
 
     @Mock
@@ -70,9 +74,11 @@ public class TungstenProviderServiceTest {
 
     TungstenProviderServiceImpl tungstenProviderService;
 
+    AutoCloseable closeable;
+
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         tungstenProviderService = new TungstenProviderServiceImpl();
         tungstenProviderService.zoneDao = dcDao;
         tungstenProviderService.resourceMgr = resourceMgr;
@@ -86,8 +92,11 @@ public class TungstenProviderServiceTest {
         when(zone.getName()).thenReturn("ZoneName");
         when(resourceMgr.addHost(anyLong(), any(), any(), anyMap())).thenReturn(host);
         when(host.getId()).thenReturn(1L);
-        when(domainDao.listAll()).thenReturn(null);
-        when(projectDao.listAll()).thenReturn(null);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test

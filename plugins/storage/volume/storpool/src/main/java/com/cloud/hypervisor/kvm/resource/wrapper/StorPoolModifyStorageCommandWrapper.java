@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.StorPoolModifyStoragePoolAnswer;
@@ -33,25 +33,28 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.hypervisor.kvm.storage.StorPoolStorageAdaptor;
+import com.cloud.hypervisor.kvm.storage.StorPoolStoragePool;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 @ResourceWrapper(handles =  StorPoolModifyStoragePoolCommand.class)
 public final class StorPoolModifyStorageCommandWrapper extends CommandWrapper<StorPoolModifyStoragePoolCommand, Answer, LibvirtComputingResource> {
-    private static final Logger log = Logger.getLogger(StorPoolModifyStorageCommandWrapper.class);
 
     @Override
     public Answer execute(final StorPoolModifyStoragePoolCommand command, final LibvirtComputingResource libvirtComputingResource) {
-        String clusterId = getSpClusterId();
+        String clusterId = StorPoolStoragePool.getStorPoolConfigParam("SP_CLUSTER_ID");
         if (clusterId == null) {
-            log.debug(String.format("Could not get StorPool cluster id for a command [%s]", command.getClass()));
+            logger.debug(String.format("Could not get StorPool cluster id for a command [%s]", command.getClass()));
             return new Answer(command, false, "spNotFound");
         }
+        String clusterLocation = getStorPoolClusterLocation(clusterId);
         try {
             String result = attachOrDetachVolume("attach", "volume", command.getVolumeName());
             if (result != null) {
@@ -62,42 +65,16 @@ public final class StorPoolModifyStorageCommandWrapper extends CommandWrapper<St
                     storagePoolMgr.createStoragePool(command.getPool().getUuid(), command.getPool().getHost(), command.getPool().getPort(), command.getPool().getPath(), command.getPool()
                             .getUserInfo(), command.getPool().getType());
             if (storagepool == null) {
-                log.debug(String.format("Did not find a storage pool [%s]", command.getPool().getId()));
+                logger.debug(String.format("Did not find a storage pool [%s]", command.getPool().getId()));
                 return new Answer(command, false, String.format("Failed to create storage pool [%s]", command.getPool().getId()));
             }
 
-            final Map<String, TemplateProp> tInfo = new HashMap<String, TemplateProp>();
-            final StorPoolModifyStoragePoolAnswer answer = new StorPoolModifyStoragePoolAnswer(command, storagepool.getCapacity(), storagepool.getAvailable(), tInfo, clusterId);
-
-            return answer;
+            final Map<String, TemplateProp> tInfo = new HashMap<>();
+            return new StorPoolModifyStoragePoolAnswer(command, storagepool.getCapacity(), storagepool.getAvailable(), tInfo, clusterId, storagepool.getStorageNodeId(), clusterLocation);
         } catch (Exception e) {
-            log.debug(String.format("Could not modify storage due to %s", e.getMessage()));
+            logger.debug(String.format("Could not modify storage due to %s", e.getMessage()));
             return new Answer(command, e);
         }
-    }
-
-    private String getSpClusterId() {
-        Script sc = new Script("storpool_confget", 0, log);
-        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
-
-        String SP_CLUSTER_ID = null;
-        final String err = sc.execute(parser);
-        if (err != null) {
-            StorPoolStorageAdaptor.SP_LOG("Could not execute storpool_confget. Error: %s", err);
-            return SP_CLUSTER_ID;
-        }
-
-        for (String line: parser.getLines().split("\n")) {
-            String[] toks = line.split("=");
-            if( toks.length != 2 ) {
-                continue;
-            }
-            if (toks[0].equals("SP_CLUSTER_ID")) {
-                SP_CLUSTER_ID = toks[1];
-                return SP_CLUSTER_ID;
-            }
-        }
-        return SP_CLUSTER_ID;
     }
 
     public String attachOrDetachVolume(String command, String type, String volumeUuid) {
@@ -107,7 +84,7 @@ public final class StorPoolModifyStorageCommandWrapper extends CommandWrapper<St
         }
 
         String err = null;
-        Script sc = new Script("storpool", 300000, log);
+        Script sc = new Script("storpool", 300000, logger);
         sc.add("-M");
         sc.add("-j");
         sc.add(command);
@@ -126,7 +103,11 @@ public final class StorPoolModifyStorageCommandWrapper extends CommandWrapper<St
                     Set<Entry<String, JsonElement>> obj2 = new JsonParser().parse(res).getAsJsonObject().entrySet();
                     for (Entry<String, JsonElement> entry : obj2) {
                         if (entry.getKey().equals("error")) {
-                            res = entry.getValue().getAsJsonObject().get("name").getAsString();
+                            JsonElement errName = entry.getValue().getAsJsonObject().get("name");
+                            if (errName != null) {
+                                res = errName.getAsString();
+                                break;
+                            }
                         }
                     }
                 } catch (Exception e) {
@@ -137,8 +118,32 @@ public final class StorPoolModifyStorageCommandWrapper extends CommandWrapper<St
         }
 
         if (err != null) {
-            log.warn(err);
+            logger.warn(err);
         }
         return res;
+    }
+
+    private String getStorPoolClusterLocation(String clusterId) {
+        Script sc = new Script("storpool", 300000, logger);
+        sc.add("-j");
+        sc.add("location");
+        sc.add("list");
+
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+
+        String res = sc.execute(parser);
+        if (res == null) {
+            JsonObject jsonObj = new JsonParser().parse(parser.getLines()).getAsJsonObject();
+            if (jsonObj.getAsJsonObject("data") != null) {
+                JsonArray arr = jsonObj.getAsJsonObject("data").getAsJsonArray("locations");
+                for (JsonElement jsonElement : arr) {
+                    JsonObject obj = jsonElement.getAsJsonObject();
+                    if (StringUtils.contains(clusterId, obj.get("id").getAsString())) {
+                        return obj.get("name").getAsString();
+                    }
+                }
+            }
+        }
+        return null;
     }
 }

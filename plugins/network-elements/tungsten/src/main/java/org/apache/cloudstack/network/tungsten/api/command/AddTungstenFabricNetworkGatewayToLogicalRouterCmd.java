@@ -34,7 +34,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricLogicalRouterResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
-import org.apache.log4j.Logger;
 
 import java.util.List;
 
@@ -43,7 +42,6 @@ import javax.inject.Inject;
 @APICommand(name = AddTungstenFabricNetworkGatewayToLogicalRouterCmd.APINAME, description = "add Tungsten-Fabric network gateway to logical router",
     responseObject = TungstenFabricLogicalRouterResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddTungstenFabricNetworkGatewayToLogicalRouterCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(AddTungstenFabricNetworkGatewayToLogicalRouterCmd.class.getName());
     public static final String APINAME = "addTungstenFabricNetworkGatewayToLogicalRouter";
 
     @Inject

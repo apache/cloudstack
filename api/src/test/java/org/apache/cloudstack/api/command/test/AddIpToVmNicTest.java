@@ -21,7 +21,7 @@ import junit.framework.TestCase;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.command.user.vm.AddIpToVmNicCmd;
@@ -59,7 +59,7 @@ public class AddIpToVmNicTest extends TestCase {
         NicSecondaryIp secIp = Mockito.mock(NicSecondaryIp.class);
 
         Mockito.when(
-            networkService.allocateSecondaryGuestIP(Matchers.anyLong(), Matchers.any()))
+            networkService.allocateSecondaryGuestIP(ArgumentMatchers.anyLong(), ArgumentMatchers.any()))
             .thenReturn(secIp);
 
         ipTonicCmd._networkService = networkService;
@@ -79,7 +79,7 @@ public class AddIpToVmNicTest extends TestCase {
         AddIpToVmNicCmd ipTonicCmd = Mockito.mock(AddIpToVmNicCmd.class);
 
         Mockito.when(
-            networkService.allocateSecondaryGuestIP(Matchers.anyLong(), Matchers.any()))
+            networkService.allocateSecondaryGuestIP(ArgumentMatchers.anyLong(), ArgumentMatchers.any()))
             .thenReturn(null);
 
         ipTonicCmd._networkService = networkService;
@@ -98,7 +98,7 @@ public class AddIpToVmNicTest extends TestCase {
         NetworkService networkService = Mockito.mock(NetworkService.class);
         RemoveIpFromVmNicCmd removeIpFromNic = Mockito.mock(RemoveIpFromVmNicCmd.class);
 
-        Mockito.when(networkService.releaseSecondaryIpFromNic(Matchers.anyInt())).thenReturn(true);
+        Mockito.when(networkService.releaseSecondaryIpFromNic(ArgumentMatchers.anyInt())).thenReturn(true);
 
         removeIpFromNic._networkService = networkService;
         removeIpFromNic.execute();
@@ -109,7 +109,7 @@ public class AddIpToVmNicTest extends TestCase {
         NetworkService networkService = Mockito.mock(NetworkService.class);
         RemoveIpFromVmNicCmd removeIpFromNic = Mockito.mock(RemoveIpFromVmNicCmd.class);
 
-        Mockito.when(networkService.releaseSecondaryIpFromNic(Matchers.anyInt())).thenReturn(false);
+        Mockito.when(networkService.releaseSecondaryIpFromNic(ArgumentMatchers.anyInt())).thenReturn(false);
 
         removeIpFromNic._networkService = networkService;
         successResponseGenerator = Mockito.mock(SuccessResponse.class);

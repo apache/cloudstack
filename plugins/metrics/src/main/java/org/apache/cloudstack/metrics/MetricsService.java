@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.response.ClusterMetricsResponse;
 import org.apache.cloudstack.response.DbMetricsResponse;
 import org.apache.cloudstack.response.HostMetricsResponse;
@@ -47,6 +48,11 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.PluggableService;
 
 public interface MetricsService extends PluggableService {
+
+    ConfigKey<Boolean> AllowListMetricsComputation = new ConfigKey<>("Advanced", Boolean.class, "allow.list.metrics.computation", "true",
+            "Whether the list zones and cluster metrics APIs are allowed metrics computation. Large environments may disabled this.",
+            true, ConfigKey.Scope.Global);
+
     InfrastructureResponse listInfrastructure();
 
     ListResponse<VmMetricsStatsResponse> searchForVmMetricsStats(ListVMsUsageHistoryCmd cmd);
@@ -56,10 +62,10 @@ public interface MetricsService extends PluggableService {
     List<VmMetricsResponse> listVmMetrics(List<UserVmResponse> vmResponses);
     List<StoragePoolMetricsResponse> listStoragePoolMetrics(List<StoragePoolResponse> poolResponses);
     List<HostMetricsResponse> listHostMetrics(List<HostResponse> poolResponses);
-    List<ManagementServerMetricsResponse> listManagementServerMetrics(List<ManagementServerResponse> poolResponses);
     List<ClusterMetricsResponse> listClusterMetrics(Pair<List<ClusterResponse>, Integer> clusterResponses);
     List<ZoneMetricsResponse> listZoneMetrics(List<ZoneResponse> poolResponses);
 
+    List<ManagementServerMetricsResponse> listManagementServerMetrics(List<ManagementServerResponse> poolResponses);
     UsageServerMetricsResponse listUsageServerMetrics();
     DbMetricsResponse listDbMetrics();
 }

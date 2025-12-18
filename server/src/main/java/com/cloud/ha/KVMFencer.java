@@ -22,7 +22,6 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
@@ -40,7 +39,6 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 
 public class KVMFencer extends AdapterBase implements FenceBuilder {
-    private static final Logger s_logger = Logger.getLogger(KVMFencer.class);
 
     @Inject
     HostDao _hostDao;
@@ -76,12 +74,13 @@ public class KVMFencer extends AdapterBase implements FenceBuilder {
     @Override
     public Boolean fenceOff(VirtualMachine vm, Host host) {
         if (host.getHypervisorType() != HypervisorType.KVM && host.getHypervisorType() != HypervisorType.LXC) {
-            s_logger.warn("Don't know how to fence non kvm hosts " + host.getHypervisorType());
+            logger.warn("Don't know how to fence non kvm hosts " + host.getHypervisorType());
             return null;
         }
 
         List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(host.getClusterId());
         FenceCommand fence = new FenceCommand(vm, host);
+        fence.setReportCheckFailureIfOneStorageIsDown(HighAvailabilityManager.KvmHAFenceHostIfHeartbeatFailsOnStorage.value());
 
         int i = 0;
         for (HostVO h : hosts) {
@@ -99,10 +98,10 @@ public class KVMFencer extends AdapterBase implements FenceBuilder {
                 try {
                     answer = (FenceAnswer)_agentMgr.send(h.getId(), fence);
                 } catch (AgentUnavailableException e) {
-                    s_logger.info("Moving on to the next host because " + h.toString() + " is unavailable", e);
+                    logger.info("Moving on to the next host because " + h.toString() + " is unavailable", e);
                     continue;
                 } catch (OperationTimedoutException e) {
-                    s_logger.info("Moving on to the next host because " + h.toString() + " is unavailable", e);
+                    logger.info("Moving on to the next host because " + h.toString() + " is unavailable", e);
                     continue;
                 }
                 if (answer != null && answer.getResult()) {
@@ -116,7 +115,7 @@ public class KVMFencer extends AdapterBase implements FenceBuilder {
                             "Fencing off host " + host.getId() + " did not succeed after asking " + i + " hosts. " +
                             "Check Agent logs for more information.");
 
-        s_logger.error("Unable to fence off " + vm.toString() + " on " + host.toString());
+        logger.error("Unable to fence off " + vm.toString() + " on " + host.toString());
 
         return false;
     }

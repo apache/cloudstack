@@ -26,7 +26,7 @@ import javax.inject.Inject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -86,7 +86,7 @@ public class InternalLbElementServiceTest {
         Mockito.when(_pNtwkProviderDao.findById(validProviderId)).thenReturn(validProvider);
         Mockito.when(_pNtwkProviderDao.findById(invalidProviderId)).thenReturn(invalidProvider);
 
-        Mockito.when(_vrProviderDao.persist(Matchers.any(VirtualRouterProviderVO.class))).thenReturn(validElement);
+        Mockito.when(_vrProviderDao.persist(ArgumentMatchers.any(VirtualRouterProviderVO.class))).thenReturn(validElement);
     }
 
     //TESTS FOR getInternalLoadBalancerElement METHOD

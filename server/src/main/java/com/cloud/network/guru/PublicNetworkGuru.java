@@ -18,8 +18,11 @@ package com.cloud.network.guru;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.dao.VlanDetailsDao;
+import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
+import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan.VlanType;
@@ -61,7 +64,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
-    private static final Logger s_logger = Logger.getLogger(PublicNetworkGuru.class);
 
     @Inject
     DataCenterDao _dcDao;
@@ -70,13 +72,21 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     @Inject
     NetworkOrchestrationService _networkMgr;
     @Inject
-    IPAddressDao _ipAddressDao;
+    protected IPAddressDao _ipAddressDao;
     @Inject
     IpAddressManager _ipAddrMgr;
     @Inject
     Ipv6Service ipv6Service;
     @Inject
-    NetworkModel networkModel;
+    protected NetworkModel networkModel;
+    @Inject
+    protected VpcDao vpcDao;
+    @Inject
+    protected VlanDetailsDao vlanDetailsDao;
+    @Inject
+    protected VpcOfferingDao vpcOfferingDao;
+    @Inject
+    protected VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
 
     private static final TrafficType[] TrafficTypes = {TrafficType.Public};
 
@@ -100,7 +110,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public Network design(NetworkOffering offering, DeploymentPlan plan, Network network, Account owner) {
+    public Network design(NetworkOffering offering, DeploymentPlan plan, Network network, String name, Long vpcId, Account owner) {
         if (!canHandle(offering)) {
             return null;
         }
@@ -115,6 +125,11 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         }
     }
 
+    @Override
+    public void setup(Network network, long networkId) {
+        // do nothing
+    }
+
     protected PublicNetworkGuru() {
         super();
     }
@@ -126,7 +141,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
             if (vm.getType().equals(VirtualMachine.Type.ConsoleProxy) || vm.getType().equals(VirtualMachine.Type.SecondaryStorageVm)) {
                 forSystemVms = true;
             }
-            PublicIp ip = _ipAddrMgr.assignPublicIpAddress(dc.getId(), null, vm.getOwner(), VlanType.VirtualNetwork, null, null, false, forSystemVms);
+            PublicIp ip = _ipAddrMgr.assignPublicIpAddress(dc.getId(), null, vm.getOwner(), VlanType.VirtualNetwork, null, null, forSystemVms, forSystemVms);
             nic.setIPv4Address(ip.getAddress().toString());
             nic.setIPv4Gateway(ip.getGateway());
             nic.setIPv4Netmask(ip.getNetmask());
@@ -213,8 +228,8 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     @DB
     public void deallocate(Network network, NicProfile nic, VirtualMachineProfile vm) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("public network deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIPv4Address());
+        if (logger.isDebugEnabled()) {
+            logger.debug("public network deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIPv4Address());
         }
 
         final IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIPv4Address());
@@ -229,8 +244,8 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         }
         nic.deallocate();
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Deallocated nic: " + nic);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Deallocated nic: " + nic);
         }
     }
 

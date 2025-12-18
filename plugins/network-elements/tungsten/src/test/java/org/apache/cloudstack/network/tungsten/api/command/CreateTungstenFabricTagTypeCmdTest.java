@@ -24,15 +24,19 @@ import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricTagTypeResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
+@RunWith(MockitoJUnitRunner.class)
 public class CreateTungstenFabricTagTypeCmdTest {
 
     @Mock
@@ -40,13 +44,20 @@ public class CreateTungstenFabricTagTypeCmdTest {
 
     CreateTungstenFabricTagTypeCmd createTungstenFabricTagTypeCmd;
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         createTungstenFabricTagTypeCmd = new CreateTungstenFabricTagTypeCmd();
         createTungstenFabricTagTypeCmd.tungstenService = tungstenService;
-        Whitebox.setInternalState(createTungstenFabricTagTypeCmd, "zoneId", 1L);
-        Whitebox.setInternalState(createTungstenFabricTagTypeCmd, "name", "test");
+        ReflectionTestUtils.setField(createTungstenFabricTagTypeCmd, "zoneId", 1L);
+        ReflectionTestUtils.setField(createTungstenFabricTagTypeCmd, "name", "test");
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test

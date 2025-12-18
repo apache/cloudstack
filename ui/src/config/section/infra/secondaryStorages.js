@@ -24,6 +24,7 @@ export default {
   icon: 'picture-outlined',
   docHelp: 'adminguide/storage.html#secondary-storage',
   permission: ['listImageStores'],
+  searchFilters: ['name', 'zoneid', 'provider'],
   columns: () => {
     var fields = ['name', 'url', 'protocol', 'scope', 'zonename']
     if (store.getters.apis.listImageStores.params.filter(x => x.name === 'readonly').length > 0) {
@@ -42,12 +43,31 @@ export default {
     return fields
   },
   resourceType: 'SecondaryStorage',
+  related: [{
+    name: 'template',
+    title: 'label.templates',
+    param: 'imagestoreid'
+  },
+  {
+    name: 'iso',
+    title: 'label.isos',
+    param: 'imagestoreid'
+  },
+  {
+    name: 'snapshot',
+    title: 'label.snapshots',
+    param: 'imagestoreid'
+  }],
   tabs: [{
     name: 'details',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
   }, {
     name: 'settings',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/SettingsTab.vue')))
+  }, {
+    name: 'browser',
+    resourceType: 'ImageStore',
+    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/StorageBrowser.vue')))
   }, {
     name: 'events',
     resourceType: 'ImageStore',
@@ -77,21 +97,10 @@ export default {
     },
     {
       api: 'updateImageStore',
-      icon: 'stop-outlined',
-      label: 'label.action.image.store.read.only',
-      message: 'message.action.secondary.storage.read.only',
+      icon: 'edit-outlined',
+      label: 'label.edit',
       dataView: true,
-      defaultArgs: { readonly: true },
-      show: (record) => { return record.readonly === false }
-    },
-    {
-      api: 'updateImageStore',
-      icon: 'check-circle-outlined',
-      label: 'label.action.image.store.read.write',
-      message: 'message.action.secondary.storage.read.write',
-      dataView: true,
-      defaultArgs: { readonly: false },
-      show: (record) => { return record.readonly === true }
+      args: ['name', 'readonly', 'capacitybytes']
     },
     {
       api: 'deleteImageStore',

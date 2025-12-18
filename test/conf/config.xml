@@ -31,7 +31,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>addHost</name>
 		<parameters>
@@ -61,7 +61,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -72,8 +72,8 @@ under the License.
 				<value>180</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>createStoragePool</name>
 		<parameters>
@@ -99,5 +99,5 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 </config>

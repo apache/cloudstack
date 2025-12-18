@@ -124,7 +124,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import InstanceVolumesStoragePoolSelectListView from '@/components/view/InstanceVolumesStoragePoolSelectListView'
 
@@ -188,7 +188,8 @@ export default {
         }
       ],
       migrateWithStorage: false,
-      volumeToPoolSelection: []
+      volumeToPoolSelection: [],
+      volumes: []
     }
   },
   created () {
@@ -196,7 +197,7 @@ export default {
   },
   computed: {
     isUserVm () {
-      return this.$route.meta.name === 'vm'
+      return this.$route.meta.resourceType === 'UserVm'
     }
   },
   watch: {
@@ -212,7 +213,7 @@ export default {
     },
     fetchData () {
       this.loading = true
-      api('findHostsForMigration', {
+      getAPI('findHostsForMigration', {
         virtualmachineid: this.resource.id,
         keyword: this.searchQuery,
         page: this.page,
@@ -230,7 +231,8 @@ export default {
         }
         this.totalCount = response.findhostsformigrationresponse.count
       }).catch(error => {
-        this.$message.error(`${this.$t('message.load.host.failed')}: ${error}`)
+        this.$notifyError(error)
+        this.closeModal()
       }).finally(() => {
         this.loading = false
       })
@@ -248,6 +250,7 @@ export default {
     handleSelectedHostChange (host) {
       if (host.id === -1) {
         this.migrateWithStorage = false
+        this.fetchVolumes()
       }
       this.selectedHost = host
       this.selectedVolumeForStoragePoolSelection = {}
@@ -258,6 +261,31 @@ export default {
     },
     handleVolumeToPoolChange (volumeToPool) {
       this.volumeToPoolSelection = volumeToPool
+    },
+    fetchVolumes () {
+      this.loading = true
+      this.volumes = []
+      getAPI('listVolumes', {
+        listAll: true,
+        virtualmachineid: this.resource.id
+      }).then(response => {
+        this.volumes = response.listvolumesresponse.volume
+      }).finally(() => {
+        this.loading = false
+      })
+    },
+    requiresStorageMigration () {
+      if (this.selectedHost.requiresStorageMotion || this.volumeToPoolSelection.length > 0) {
+        return true
+      }
+      if (this.selectedHost.id === -1 && this.volumes && this.volumes.length > 0) {
+        for (var volume of this.volumes) {
+          if (volume.storagetype === 'local') {
+            return true
+          }
+        }
+      }
+      return false
     },
     handleKeyboardSubmit () {
       if (this.selectedHost.id) {
@@ -271,7 +299,7 @@ export default {
       if (this.loading) return
       this.loading = true
       const migrateApi = this.isUserVm
-        ? (this.selectedHost.requiresStorageMotion || this.volumeToPoolSelection.length > 0)
+        ? this.requiresStorageMigration()
           ? 'migrateVirtualMachineWithVolume'
           : 'migrateVirtualMachine'
         : 'migrateSystemVm'
@@ -285,7 +313,7 @@ export default {
           params['migrateto[' + i + '].pool'] = mapping.pool
         }
       }
-      api(migrateApi, params).then(response => {
+      postAPI(migrateApi, params).then(response => {
         const jobId = response[migrateApi.toLowerCase() + 'response'].jobid
         this.$pollJob({
           jobId: jobId,

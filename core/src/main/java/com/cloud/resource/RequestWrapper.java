@@ -23,7 +23,8 @@ import java.text.MessageFormat;
 import java.util.Hashtable;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -39,7 +40,7 @@ public abstract class RequestWrapper {
         }
     }
 
-    private static final Logger s_logger = Logger.getLogger(RequestWrapper.class);
+    protected Logger logger = LogManager.getLogger(RequestWrapper.class);
 
     @SuppressWarnings("rawtypes")
     protected Hashtable<Class<? extends ServerResource>, Hashtable<Class<? extends Command>, CommandWrapper>> resources = new Hashtable<Class<? extends ServerResource>, Hashtable<Class<? extends Command>, CommandWrapper>>();
@@ -141,9 +142,9 @@ public abstract class RequestWrapper {
             try {
                 commands.put(annotation.handles(), wrapper.newInstance());
             } catch (final InstantiationException e) {
-                s_logger.warn(MessageFormat.format(errorMessage, e.getLocalizedMessage(), wrapper.toString()));
+                logger.warn(MessageFormat.format(errorMessage, e.getLocalizedMessage(), wrapper.toString()));
             } catch (final IllegalAccessException e) {
-                s_logger.warn(MessageFormat.format(errorMessage, e.getLocalizedMessage(), wrapper.toString()));
+                logger.warn(MessageFormat.format(errorMessage, e.getLocalizedMessage(), wrapper.toString()));
             }
         }
 

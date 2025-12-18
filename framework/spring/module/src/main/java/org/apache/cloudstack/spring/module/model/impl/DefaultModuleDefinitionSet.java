@@ -33,7 +33,8 @@ import java.util.Set;
 import java.util.Stack;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -48,7 +49,7 @@ import org.apache.cloudstack.spring.module.model.ModuleDefinitionSet;
 
 public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
 
-    private static final Logger log = Logger.getLogger(DefaultModuleDefinitionSet.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public static final String DEFAULT_CONFIG_RESOURCES = "DefaultConfigResources";
     public static final String DEFAULT_CONFIG_PROPERTIES = "DefaultConfigProperties";
@@ -97,16 +98,30 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
             @Override
             public void with(ModuleDefinition def, Stack<ModuleDefinition> parents) {
                 try {
-                    ApplicationContext context = getApplicationContext(def.getName());
+                    String moduleDefinitionName = def.getName();
+                    logger.debug(String.format("Trying to obtain module [%s] context.", moduleDefinitionName));
+                    ApplicationContext context = getApplicationContext(moduleDefinitionName);
                     try {
-                        Runnable runnable = context.getBean("moduleStartup", Runnable.class);
-                        log.info("Starting module [" + def.getName() + "]");
-                        runnable.run();
+                        if (context == null) {
+                            logger.warn(String.format("Application context not found for module definition [%s]", moduleDefinitionName));
+                        } else if (context.containsBean("moduleStartup")) {
+                            Runnable runnable = context.getBean("moduleStartup", Runnable.class);
+                            logger.info(String.format("Starting module [%s].", moduleDefinitionName));
+                            runnable.run();
+                        } else {
+                            logger.debug(String.format("Could not get module [%s] context bean.", moduleDefinitionName));
+                        }
                     } catch (BeansException e) {
-                        // Ignore
+                        logger.warn(String.format("Failed to start module [%s] due to: [%s].", moduleDefinitionName, e.getMessage()));
+                        if (logger.isDebugEnabled()) {
+                            logger.debug(String.format("module start failure of module [%s] was due to: ", moduleDefinitionName), e);
+                        }
                     }
                 } catch (EmptyStackException e) {
-                    // The root context is already loaded, so ignore the exception
+                    logger.warn(String.format("Failed to obtain module context due to [%s]. Using root context instead.", e.getMessage()));
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Failed to obtain module context: ", e);
+                    }
                 }
             }
         });
@@ -117,10 +132,25 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
             @Override
             public void with(ModuleDefinition def, Stack<ModuleDefinition> parents) {
                 try {
+                    String moduleDefinitionName = def.getName();
+                    if (parents.isEmpty()) {
+                        logger.debug(String.format("Could not find module [%s] context as they have no parents.", moduleDefinitionName));
+                        return;
+                    }
+                    logger.debug(String.format("Trying to obtain module [%s] context.", moduleDefinitionName));
                     ApplicationContext parent = getApplicationContext(parents.peek().getName());
+                    logger.debug(String.format("Trying to load module [%s] context.", moduleDefinitionName));
                     loadContext(def, parent);
                 } catch (EmptyStackException e) {
-                    // The root context is already loaded, so ignore the exception
+                    logger.warn(String.format("Failed to obtain module context due to [%s]. Using root context instead.", e.getMessage()));
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Failed to obtain module context: ", e);
+                    }
+                } catch (BeansException e) {
+                    logger.warn(String.format("Failed to start module [%s] due to: [%s].", def.getName(), e.getMessage()));
+                    if (logger.isDebugEnabled()) {
+                        logger.debug(String.format("module start failure of module [%s] was due to: ", def.getName()), e);
+                    }
                 }
             }
         });
@@ -136,13 +166,13 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
         context.setClassLoader(def.getClassLoader());
 
         long start = System.currentTimeMillis();
-        if (log.isInfoEnabled()) {
+        if (logger.isInfoEnabled()) {
             for (Resource resource : resources) {
-                log.info("Loading module context [" + def.getName() + "] from " + resource);
+                logger.info("Loading module context [" + def.getName() + "] from " + resource);
             }
         }
         context.refresh();
-        log.info("Loaded module context [" + def.getName() + "] in " + (System.currentTimeMillis() - start) + " ms");
+        logger.info("Loaded module context [" + def.getName() + "] in " + (System.currentTimeMillis() - start) + " ms");
 
         contexts.put(def.getName(), context);
 
@@ -222,7 +252,7 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
         withModule(new WithModule() {
             @Override
             public void with(ModuleDefinition def, Stack<ModuleDefinition> parents) {
-                log.info(String.format("Module Hierarchy:%" + ((parents.size() * 2) + 1) + "s%s", "", def.getName()));
+                logger.info(String.format("Module Hierarchy:%" + ((parents.size() * 2) + 1) + "s%s", "", def.getName()));
             }
         });
     }
@@ -237,7 +267,7 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
             return;
 
         if (!shouldLoad(def)) {
-            log.info("Excluding context [" + def.getName() + "] based on configuration");
+            logger.info("Excluding context [" + def.getName() + "] based on configuration");
             return;
         }
 

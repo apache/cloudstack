@@ -47,6 +47,8 @@ public class StartupCommand extends Command {
     String resourceName;
     String gatewayIpAddress;
     String msHostList;
+    boolean connectionTransferred;
+    String arch;
 
     public StartupCommand(Host.Type type) {
         this.type = type;
@@ -288,6 +290,22 @@ public class StartupCommand extends Command {
 
     public void setMSHostList(String msHostList) {
         this.msHostList = msHostList;
+    }
+
+    public boolean isConnectionTransferred() {
+        return connectionTransferred;
+    }
+
+    public void setConnectionTransferred(boolean connectionTransferred) {
+        this.connectionTransferred = connectionTransferred;
+    }
+
+    public String getArch() {
+        return arch;
+    }
+
+    public void setArch(String arch) {
+        this.arch = arch;
     }
 
     @Override

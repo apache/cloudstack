@@ -29,4 +29,8 @@
 
     <bean id="linstorPrimaryDataStoreProviderImpl"
         class="org.apache.cloudstack.storage.datastore.provider.LinstorPrimaryDatastoreProviderImpl" />
+    <bean id="linstorSnapshotStrategy"
+          class="org.apache.cloudstack.storage.snapshot.LinstorVMSnapshotStrategy" />
+    <bean id="linstorConfigManager"
+          class="org.apache.cloudstack.storage.datastore.util.LinstorConfigurationManager" />
 </beans>

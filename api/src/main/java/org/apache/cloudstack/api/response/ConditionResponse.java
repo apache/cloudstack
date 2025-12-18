@@ -61,6 +61,10 @@ public class ConditionResponse extends BaseResponse implements ControlledEntityR
     @Param(description = "the domain name of the owner.")
     private String domain;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain to which the Condition owner belongs", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.ZONE_ID)
     @Param(description = "zone id of counter")
     private String zoneId;
@@ -137,5 +141,10 @@ public class ConditionResponse extends BaseResponse implements ControlledEntityR
     @Override
     public void setDomainName(String domainName) {
         this.domain = domainName;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 }

@@ -17,11 +17,15 @@
 
 <template>
   <div>
-    <a-affix v-if="this.$store.getters.shutdownTriggered" >
+    <announcement-banner />
+    <a-affix v-if="this.$store.getters.maintenanceInitiated" >
+      <a-alert :message="$t('message.maintenance.initiated')" type="error" banner :showIcon="false" class="maintenanceHeader" />
+    </a-affix>
+    <a-affix v-else-if="this.$store.getters.shutdownTriggered" >
       <a-alert :message="$t('message.shutdown.triggered')" type="error" banner :showIcon="false" class="shutdownHeader" />
     </a-affix>
     <a-layout class="layout" :class="[device]">
-      <a-affix style="z-index: 200" :offsetTop="this.$store.getters.shutdownTriggered ? 25 : 0">
+      <a-affix style="z-index: 200" :offsetTop="this.$store.getters.maintenanceInitiated || this.$store.getters.shutdownTriggered ? 25 : 0">
         <template v-if="isSideMenu()">
           <a-drawer
             v-if="isMobile()"
@@ -84,7 +88,7 @@
         <!-- layout header -->
         <a-affix style="z-index: 100">
           <global-header
-            :style="this.$store.getters.shutdownTriggered ? 'margin-top: 25px;' : null"
+            :style="this.$store.getters.maintenanceInitiated || this.$store.getters.shutdownTriggered ? 'margin-top: 25px;' : null"
             :mode="layoutMode"
             :menus="menus"
             :theme="navTheme"
@@ -125,9 +129,10 @@ import { triggerWindowResizeEvent } from '@/utils/util'
 import { mapState, mapActions } from 'vuex'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
 import { isAdmin } from '@/role'
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import Drawer from '@/components/widgets/Drawer'
 import Setting from '@/components/view/Setting.vue'
+import AnnouncementBanner from '@/components/header/AnnouncementBanner.vue'
 
 export default {
   name: 'GlobalLayout',
@@ -136,7 +141,8 @@ export default {
     GlobalHeader,
     GlobalFooter,
     Drawer,
-    Setting
+    Setting,
+    AnnouncementBanner
   },
   mixins: [mixin, mixinDevice],
   data () {
@@ -199,7 +205,10 @@ export default {
   created () {
     this.menus = this.mainMenu.find((item) => item.path === '/').children
     this.collapsed = !this.sidebarOpened
-    setInterval(this.checkShutdown, 5000)
+    if ('readyForShutdown' in this.$store.getters.apis) {
+      const readyForShutdownPollingJob = setInterval(this.checkShutdown, 5000)
+      this.$store.commit('SET_READY_FOR_SHUTDOWN_POLLING_JOB', readyForShutdownPollingJob)
+    }
   },
   mounted () {
     const layoutMode = this.$config.theme['@layout-mode'] || 'light'
@@ -254,8 +263,9 @@ export default {
       this.$store.commit('SET_COUNT_NOTIFY', 0)
     },
     checkShutdown () {
-      api('readyForShutdown', {}).then(json => {
+      getAPI('readyForShutdown', { managementserverid: this.$store.getters.msId }).then(json => {
         this.$store.dispatch('SetShutdownTriggered', json.readyforshutdownresponse.readyforshutdown.shutdowntriggered || false)
+        this.$store.dispatch('SetMaintenanceInitiated', json.readyforshutdownresponse.readyforshutdown.maintenanceinitiated || false)
       })
     }
   }
@@ -278,6 +288,11 @@ export default {
   &.dark {
     .ant-drawer-content {
       background-color: rgb(0, 21, 41);
+      max-width: 256px;
+    }
+
+    .ant-drawer-content-wrapper {
+      width: 256px !important;;
     }
   }
 
@@ -286,12 +301,27 @@ export default {
 
     .ant-drawer-content {
       background-color: #fff;
+      max-width: 256px;
+    }
+
+    .ant-drawer-content-wrapper {
+      width: 256px !important;
     }
   }
 
   .ant-drawer-body {
-    padding: 0
+    padding: 0;
   }
+}
+
+.maintenanceHeader {
+  font-weight: bold;
+  height: 25px;
+  text-align: center;
+  padding: 0px;
+  margin: 0px;
+  width: 100vw;
+  position: absolute;
 }
 
 .shutdownHeader {
@@ -302,6 +332,10 @@ export default {
   margin: 0px;
   width: 100vw;
   position: absolute;
+}
+
+.layout.ant-layout .sidemenu .ant-header-fixedHeader {
+  top: auto !important
 }
 
 </style>

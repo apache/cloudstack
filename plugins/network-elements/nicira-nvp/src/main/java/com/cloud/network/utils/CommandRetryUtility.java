@@ -23,7 +23,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -31,7 +32,7 @@ import com.cloud.resource.ServerResource;
 
 public class CommandRetryUtility {
 
-    private static final Logger s_logger = Logger.getLogger(CommandRetryUtility.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private static final int ZERO = 0;
     private static CommandRetryUtility instance;
@@ -72,7 +73,7 @@ public class CommandRetryUtility {
             if (numRetries > ZERO) {
                 commandsToRetry.put(command, --numRetries);
 
-                s_logger.warn("Retrying " + command.getClass().getSimpleName() + ". Number of retries remaining: " + numRetries);
+                logger.warn("Retrying " + command.getClass().getSimpleName() + ". Number of retries remaining: " + numRetries);
 
                 return serverResource.executeRequest(command);
             } else {

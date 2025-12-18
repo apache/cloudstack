@@ -67,9 +67,29 @@
         :pagination="false" >
         <template #bodyCell="{ column, text, record }">
           <template v-if="column.key === 'ipaddress'">
-            <router-link v-if="record.forvirtualnetwork === true" :to="{ path: '/publicip/' + record.id }" >{{ text }} </router-link>
+            <router-link v-if="record.forvirtualnetwork === true" :to="{ path: '/publicip/' + record.id }" >{{ text }}&nbsp;</router-link>
             <div v-else>{{ text }}</div>
-            <a-tag v-if="record.issourcenat === true">source-nat</a-tag>
+            <template v-if="record.issourcenat === true">
+              <a-tag>{{ $t('label.sourcenat') }}</a-tag>
+            </template>
+            <template v-else-if="record.isstaticnat === true">
+              <a-tag>{{ $t('label.staticnat') }}</a-tag>
+            </template>
+            <template v-else-if="record.hasrules === false">
+              <tooltip-button
+                v-if="record.forvirtualnetwork === true"
+                :tooltip="$t('label.action.set.as.source.nat.ip')"
+                type="primary"
+                :danger="false"
+                icon="aim-outlined"
+                :disabled="!('updateNetwork' in $store.getters.apis)"
+                @onClick="showChangeSourceNat(record)"></tooltip-button>
+            </template>
+            <template v-else><!-- -if="record.hasrules === true" -->
+              <Tooltip placement="topLeft" :title="$t('message.sourcenatip.change.inhibited')" >
+                <a-tag>{{ $t('label.hasrules') }}</a-tag>
+              </Tooltip>
+            </template>
           </template>
 
           <template v-if="column.key === 'state'">
@@ -78,7 +98,7 @@
 
           <template v-if="column.key === 'virtualmachineid'">
             <desktop-outlined v-if="record.virtualmachineid" />
-            <router-link :to="{ path: '/vm/' + record.virtualmachineid }" > {{ record.virtualmachinename || record.virtualmachineid }} </router-link>
+            <router-link :to="{ path: getVmRouteUsingType(record) + record.virtualmachineid }" > {{ record.virtualmachinename || record.virtualmachineid }} </router-link>
           </template>
 
           <template v-if="column.key === 'associatednetworkname'">
@@ -128,20 +148,17 @@
         <a-alert :message="$t('message.action.acquire.ip')" type="warning" />
         <a-form layout="vertical" style="margin-top: 10px">
           <a-form-item :label="$t('label.ipaddress')">
-            <a-select
+            <infinite-scroll-select
               v-focus="true"
-              style="width: 100%;"
               v-model:value="acquireIp"
-              showSearch
-              optionFilterProp="label"
-              :filterOption="(input, option) => {
-                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }" >
-              <a-select-option
-                v-for="ip in listPublicIpAddress"
-                :key="ip.ipaddress"
-                :label="ip.ipaddress + '(' + ip.state + ')'">{{ ip.ipaddress }} ({{ ip.state }})</a-select-option>
-            </a-select>
+              api="listPublicIpAddresses"
+              :apiParams="listApiParamsForAssociate"
+              resourceType="publicipaddress"
+              optionValueKey="ipaddress"
+              :optionLabelFn="ip => ip.ipaddress + ' (' + ip.state + ')'"
+              defaultIcon="environment-outlined"
+              :autoSelectFirstOption="true"
+              @change-option-value="(ip) => acquireIp = ip" />
           </a-form-item>
           <div :span="24" class="action-button">
             <a-button @click="onCloseModal">{{ $t('label.cancel') }}</a-button>
@@ -149,6 +166,24 @@
           </div>
         </a-form>
       </a-spin>
+    </a-modal>
+    <a-modal
+      v-if="changeSourceNat"
+      :title="$t('message.sourcenatip.change.warning')"
+      :visible="changeSourceNat"
+      :closable="true"
+      :footer="null"
+      @cancel="cancelChangeSourceNat"
+      centered
+      :disabled="!('updateNetwork' in $store.getters.apis)"
+      width="450px">
+      <template>
+        <a-alert :message="$t('message.sourcenatip.change.warning')" type="warning" />
+      </template>
+      <div :span="24" class="action-button">
+        <a-button @click="cancelChangeSourceNat">{{ $t('label.cancel') }}</a-button>
+        <a-button ref="submit" type="primary" @click="setSourceNatIp(record)">{{ $t('label.ok') }}</a-button>
+      </div>
     </a-modal>
     <bulk-action-view
       v-if="showConfirmationAction || showGroupActionModal"
@@ -167,19 +202,22 @@
       @close-modal="closeModal" />
   </div>
 </template>
+
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import BulkActionView from '@/components/view/BulkActionView'
 import eventBus from '@/config/eventBus'
+import InfiniteScrollSelect from '@/components/widgets/InfiniteScrollSelect'
 
 export default {
   name: 'IpAddressesTab',
   components: {
     Status,
     TooltipButton,
-    BulkActionView
+    BulkActionView,
+    InfiniteScrollSelect
   },
   props: {
     resource: {
@@ -242,10 +280,12 @@ export default {
       showAcquireIp: false,
       acquireLoading: false,
       acquireIp: null,
-      listPublicIpAddress: []
+      changeSourceNat: false,
+      zoneExtNetProvider: ''
     }
   },
-  created () {
+  async created () {
+    await this.fetchZones()
     this.fetchData()
   },
   watch: {
@@ -260,6 +300,26 @@ export default {
     }
   },
   inject: ['parentFetchData'],
+  computed: {
+    listApiParams () {
+      const params = {
+        zoneid: this.resource.zoneid,
+        domainid: this.resource.domainid,
+        account: this.resource.account,
+        forvirtualnetwork: true,
+        allocatedonly: false
+      }
+      if (['nsx', 'netris'].includes(this.zoneExtNetProvider?.toLowerCase())) {
+        params.forprovider = true
+      }
+      return params
+    },
+    listApiParamsForAssociate () {
+      const params = this.listApiParams
+      params.state = 'Free,Reserved'
+      return params
+    }
+  },
   methods: {
     fetchData () {
       const params = {
@@ -281,24 +341,30 @@ export default {
       } else {
         params.associatednetworkid = this.resource.id
       }
+      if (['nsx', 'netris'].includes(this.zoneExtNetProvider?.toLowerCase())) {
+        params.forprovider = true
+      }
       this.fetchLoading = true
-      api('listPublicIpAddresses', params).then(json => {
+      getAPI('listPublicIpAddresses', params).then(json => {
         this.totalIps = json.listpublicipaddressesresponse.count || 0
         this.ips = json.listpublicipaddressesresponse.publicipaddress || []
       }).finally(() => {
         this.fetchLoading = false
       })
     },
-    fetchListPublicIpAddress () {
+    fetchZones () {
       return new Promise((resolve, reject) => {
-        const params = {
-          zoneid: this.resource.zoneid,
-          domainid: this.resource.domainid,
-          account: this.resource.account,
-          forvirtualnetwork: true,
-          allocatedonly: false
-        }
-        api('listPublicIpAddresses', params).then(json => {
+        getAPI('listZones', {
+          id: this.resource.zoneid
+        }).then(json => {
+          this.zoneExtNetProvider = json?.listzonesresponse?.zone?.[0]?.provider || null
+          resolve(this.zoneExtNetProvider)
+        }).catch(reject)
+      })
+    },
+    fetchListPublicIpAddress (state) {
+      return new Promise((resolve, reject) => {
+        getAPI('listPublicIpAddresses', this.listApiParams).then(json => {
           const listPublicIps = json.listpublicipaddressesresponse.publicipaddress || []
           resolve(listPublicIps)
         }).catch(reject)
@@ -314,6 +380,50 @@ export default {
       this.selectedItems = (this.ips.filter(function (item) {
         return selection.indexOf(item.id) !== -1
       }))
+    },
+    setSourceNatIp (ipaddress) {
+      if (this.settingsourcenat) return
+      if (this.$route.path.startsWith('/vpc')) {
+        this.updateVpc(ipaddress)
+      } else {
+        this.updateNetwork(ipaddress)
+      }
+    },
+    updateNetwork (ipaddress) {
+      const params = {}
+      params.sourcenatipaddress = this.sourceNatIp.ipaddress
+      params.id = this.resource.id
+      this.settingsourcenat = true
+      postAPI('updateNetwork', params).then(response => {
+        this.fetchData()
+      }).catch(error => {
+        this.$notification.error({
+          message: `${this.$t('label.error')} ${error.response.status}`,
+          description: error.response.data.updatenetworkresponse.errortext || error.response.data.errorresponse.errortext,
+          duration: 0
+        })
+      }).finally(() => {
+        this.settingsourcenat = false
+        this.cancelChangeSourceNat()
+      })
+    },
+    updateVpc (ipaddress) {
+      const params = {}
+      params.sourcenatipaddress = this.sourceNatIp.ipaddress
+      params.id = this.resource.id
+      this.settingsourcenat = true
+      postAPI('updateVPC', params).then(response => {
+        this.fetchData()
+      }).catch(error => {
+        this.$notification.error({
+          message: `${this.$t('label.error')} ${error.response.status}`,
+          description: error.response.data.updatevpcresponse.errortext || error.response.data.errorresponse.errortext,
+          duration: 0
+        })
+      }).finally(() => {
+        this.settingsourcenat = false
+        this.cancelChangeSourceNat()
+      })
     },
     resetSelection () {
       this.setSelection([])
@@ -352,7 +462,7 @@ export default {
       params.ipaddress = this.acquireIp
       this.acquireLoading = true
 
-      api('associateIpAddress', params).then(response => {
+      postAPI('associateIpAddress', params).then(response => {
         this.$pollJob({
           jobId: response.associateipaddressresponse.jobid,
           successMessage: `${this.$t('message.success.acquire.ip')} ${this.$t('label.for')} ${this.resource.name}`,
@@ -369,8 +479,8 @@ export default {
         this.onCloseModal()
       }).catch(error => {
         this.$notification.error({
-          message: `${this.$t('label.error')} ${error.response.status}`,
-          description: error.response.data.associateipaddressresponse.errortext || error.response.data.errorresponse.errortext,
+          message: this.$t('message.request.failed'),
+          description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message,
           duration: 0
         })
       }).finally(() => {
@@ -406,7 +516,7 @@ export default {
     },
     releaseIpAddress (ip) {
       this.fetchLoading = true
-      api('disassociateIpAddress', {
+      postAPI('disassociateIpAddress', {
         id: ip.id
       }).then(response => {
         const jobId = response.disassociateipaddressresponse.jobid
@@ -442,38 +552,29 @@ export default {
         })
       })
     },
+    getVmRouteUsingType (record) {
+      switch (record.virtualmachinetype) {
+        case 'DomainRouter' : return '/router/'
+        case 'ConsoleProxy' :
+        case 'SecondaryStorageVm': return '/systemvm/'
+        default: return '/vm/'
+      }
+    },
     async onShowAcquireIp () {
       this.showAcquireIp = true
-      this.acquireLoading = true
-      this.listPublicIpAddress = []
-
-      try {
-        const listPublicIpAddress = await this.fetchListPublicIpAddress()
-        listPublicIpAddress.forEach(item => {
-          if (item.state === 'Free' || item.state === 'Reserved') {
-            this.listPublicIpAddress.push({
-              ipaddress: item.ipaddress,
-              state: item.state
-            })
-          }
-        })
-        this.listPublicIpAddress.sort(function (a, b) {
-          if (a.ipaddress < b.ipaddress) { return -1 }
-          if (a.ipaddress > b.ipaddress) { return 1 }
-          return 0
-        })
-        this.acquireIp = this.listPublicIpAddress && this.listPublicIpAddress.length > 0 ? this.listPublicIpAddress[0].ipaddress : null
-        this.acquireLoading = false
-      } catch (e) {
-        this.acquireLoading = false
-        this.$notifyError(e)
-      }
     },
     onCloseModal () {
       this.showAcquireIp = false
     },
     closeModal () {
       this.showConfirmationAction = false
+    },
+    showChangeSourceNat (ipaddress) {
+      this.changeSourceNat = true
+      this.sourceNatIp = ipaddress
+    },
+    cancelChangeSourceNat () {
+      this.changeSourceNat = false
     }
   }
 }

@@ -22,17 +22,18 @@ package com.cloud.network.dao;
 import com.cloud.network.Networks;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionLegacy;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
+
 
 import java.util.List;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class NetworkDaoImplTest {
 
     @Mock
@@ -46,21 +47,25 @@ public class NetworkDaoImplTest {
 
     @Test
     public void listByPhysicalNetworkTrafficTypeTestSetParametersValidation() throws Exception {
-        NetworkDaoImpl networkDaoImplSpy = PowerMockito.spy(new NetworkDaoImpl());
+        NetworkDaoImpl networkDaoImplSpy = Mockito.spy(NetworkDaoImpl.class);
+        TransactionLegacy txn = TransactionLegacy.open("runNetworkDaoImplTest");
+        try {
+            networkDaoImplSpy.AllFieldsSearch = searchBuilderNetworkVoMock;
+            Mockito.doReturn(searchCriteriaNetworkVoMock).when(searchBuilderNetworkVoMock).create();
+            Mockito.doNothing().when(searchCriteriaNetworkVoMock).setParameters(Mockito.anyString(), Mockito.any());
+            Mockito.doReturn(listNetworkVoMock).when(networkDaoImplSpy).listBy(Mockito.any(SearchCriteria.class));
 
-        networkDaoImplSpy.AllFieldsSearch = searchBuilderNetworkVoMock;
-        Mockito.doReturn(searchCriteriaNetworkVoMock).when(searchBuilderNetworkVoMock).create();
-        Mockito.doNothing().when(searchCriteriaNetworkVoMock).setParameters(Mockito.anyString(), Mockito.any());
-        PowerMockito.doReturn(listNetworkVoMock).when(networkDaoImplSpy, "listBy", Mockito.any(SearchCriteria.class));
+            long expectedPhysicalNetwork = 2513l;
 
-        long expectedPhysicalNetwork = 2513l;
+            for (Networks.TrafficType trafficType : Networks.TrafficType.values()) {
+                List<NetworkVO> result = networkDaoImplSpy.listByPhysicalNetworkTrafficType(expectedPhysicalNetwork, trafficType);
+                Assert.assertEquals(listNetworkVoMock, result);
+                Mockito.verify(searchCriteriaNetworkVoMock).setParameters("trafficType", trafficType);
+            }
 
-        for (Networks.TrafficType trafficType : Networks.TrafficType.values()) {
-            List<NetworkVO> result = networkDaoImplSpy.listByPhysicalNetworkTrafficType(expectedPhysicalNetwork, trafficType);
-            Assert.assertEquals(listNetworkVoMock, result);
-            Mockito.verify(searchCriteriaNetworkVoMock).setParameters("trafficType", trafficType);
+            Mockito.verify(searchCriteriaNetworkVoMock, Mockito.times(Networks.TrafficType.values().length)).setParameters("physicalNetwork", expectedPhysicalNetwork);
+        } finally {
+            txn.close();
         }
-
-        Mockito.verify(searchCriteriaNetworkVoMock, Mockito.times(Networks.TrafficType.values().length)).setParameters("physicalNetwork", expectedPhysicalNetwork);
     }
 }

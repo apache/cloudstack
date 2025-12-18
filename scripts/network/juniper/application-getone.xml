@@ -20,9 +20,9 @@ under the License.
 <get-configuration>
 <configuration>
 <applications>
-<application %delete%>           
-<name>%name%</name>        
-</application>   
+<application %delete%>
+<name>%name%</name>
+</application>
 </applications>
 </configuration>
 </get-configuration>

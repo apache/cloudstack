@@ -29,7 +29,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.db.TransactionLegacy;
 
@@ -39,7 +40,7 @@ import com.cloud.utils.db.TransactionLegacy;
  */
 public class UsageSanityChecker {
 
-    protected static final Logger s_logger = Logger.getLogger(UsageSanityChecker.class);
+    protected static Logger LOGGER = LogManager.getLogger(UsageSanityChecker.class);
     protected static final int DEFAULT_AGGREGATION_RANGE = 1440;
     protected StringBuilder errors;
     protected List<CheckCase> checkCases;
@@ -102,7 +103,7 @@ public class UsageSanityChecker {
 
     private static void throwPreparedStatementExcecutionException(String msgPrefix, String stmt, Exception e) {
         String msg = String.format("%s for prepared statement \"%s\" reason: %s", msgPrefix, stmt, e.getMessage());
-        s_logger.error(msg);
+        LOGGER.error(msg);
         throw new CloudRuntimeException(msg, e);
     }
 
@@ -117,9 +118,18 @@ public class UsageSanityChecker {
         }
         int aggregationHours = aggregationRange / 60;
 
-        addCheckCase("SELECT count(*) FROM `cloud_usage`.`cloud_usage` cu where usage_type not in (4,5) and raw_usage > "
-                + aggregationHours,
+        addCheckCase("SELECT count(*) FROM `cloud_usage`.`cloud_usage` cu where usage_type not in (4,5,13) and raw_usage > " + aggregationHours,
                 "usage records with raw_usage > " + aggregationHours,
+                lastCheckId);
+
+        addCheckCase("SELECT count(*) " +
+                        " FROM ( SELECT  cu.id, max(cu.raw_usage)/count(n.id) as avg_usage  " +
+                        "        FROM `cloud_usage`.`cloud_usage` AS cu " +
+                        "        INNER JOIN cloud.nics AS n ON (n.instance_id = cu.vm_instance_id) " +
+                        "        WHERE cu.usage_type = 13 AND ((n.created <= cu.end_date) AND (n.removed is null OR n.removed > cu.start_date)) " +
+                        "        GROUP BY cu.id) as cu " +
+                        " WHERE cu.avg_usage > " + aggregationHours,
+                "network offering usage records with raw_usage > " + aggregationHours,
                 lastCheckId);
     }
 
@@ -128,8 +138,8 @@ public class UsageSanityChecker {
            if (rs.next()) {
                 aggregationRange = rs.getInt(1);
             } else {
-               if (s_logger.isDebugEnabled()) {
-                   s_logger.debug("Failed to retrieve aggregation range. Using default : " + aggregationRange);
+               if (LOGGER.isDebugEnabled()) {
+                   LOGGER.debug("Failed to retrieve aggregation range. Using default : " + aggregationRange);
                }
             }
         } catch (SQLException e) {
@@ -174,8 +184,17 @@ public class UsageSanityChecker {
     }
 
     protected void checkTemplateISOUsage() {
-        addCheckCase("select count(*) from cloud_usage.cloud_usage cu inner join cloud.template_zone_ref tzr where "
-                + "cu.usage_id = tzr.template_id and cu.zone_id = tzr.zone_id and cu.usage_type in (7,8) and cu.start_date > tzr.removed ",
+        addCheckCase("SELECT  count(*) " +
+                        " FROM    cloud_usage.cloud_usage AS cu " +
+                        " INNER   JOIN cloud.template_zone_ref AS c_tzr ON  ( c_tzr.template_id = cu.usage_id " +
+                        "                                              AND   c_tzr.zone_id = cu.zone_id) " +
+                        " WHERE   cu.usage_type in (7,8) " +
+                        " AND     cu.start_date > c_tzr.removed " +
+                        " AND     NOT EXISTS  ( SELECT  1 " +
+                        "                       FROM    cloud.template_zone_ref c_tzr_internal " +
+                        "                       WHERE   c_tzr_internal.template_id = c_tzr.template_id " +
+                        "                       AND     c_tzr_internal.zone_id = c_tzr.zone_id " +
+                        "                       AND     c_tzr_internal.removed IS NULL) ",
                 "template/ISO usage records which are created after it is removed",
                 lastCheckId);
     }
@@ -188,21 +207,22 @@ public class UsageSanityChecker {
     }
 
     protected void readLastCheckId(){
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("reading last checked id for sanity check");
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("reading last checked id for sanity check");
         }
         try(BufferedReader reader = new BufferedReader(new FileReader(lastCheckFile));) {
             String lastIdText = null;
             lastId = -1;
             if ((lastIdText = reader.readLine()) != null) {
+                LOGGER.info("Read {} as lastId for Usage sanity checking.", lastIdText);
                 lastId = Integer.parseInt(lastIdText);
             }
         } catch (Exception e) {
             String msg = String.format("error reading the LastCheckId reason: %s", e.getMessage());
-            s_logger.error(msg);
-            s_logger.debug(msg, e);
+            LOGGER.error(msg);
+            LOGGER.debug(msg, e);
         } finally {
-            s_logger.info(String.format("using %d as last checked id to start from in sanity check", lastId));
+            LOGGER.info(String.format("using %d as last checked id to start from in sanity check", lastId));
         }
     }
 
@@ -213,23 +233,25 @@ public class UsageSanityChecker {
             maxId = -1;
             if (rs.next() && (rs.getInt(1) > 0)) {
                 maxId = rs.getInt(1);
+                LOGGER.info("Read {} as maxId for Usage sanity checking.", maxId);
                 if (maxId > lastId) {
+                    LOGGER.info("The max id {} is greater than the last id {}; adding id check to the query.", maxId, lastId);
                     lastCheckId += " and cu.id <= ?";
                 }
             }
         }catch (Exception e) {
-            s_logger.error("readMaxId:"+e.getMessage(),e);
+            LOGGER.error("readMaxId:"+e.getMessage(),e);
         }
     }
 
     protected void updateNewMaxId() {
-        s_logger.info(String.format("writing %d as the new last id checked", maxId));
+        LOGGER.info(String.format("writing %d as the new last id checked", maxId));
         try (FileWriter fstream = new FileWriter(lastCheckFile);
              BufferedWriter out = new BufferedWriter(fstream);
         ){
             out.write("" + maxId);
         } catch (IOException e) {
-            s_logger.error(String.format("Exception writing the last checked id: %d reason: %s", maxId, e.getMessage()));
+            LOGGER.error(String.format("Exception writing the last checked id: %d reason: %s", maxId, e.getMessage()));
             // Error while writing last check id
         }
     }
@@ -276,7 +298,7 @@ public class UsageSanityChecker {
         try {
             sanityErrors = usc.runSanityCheck();
             if (sanityErrors.length() > 0) {
-                s_logger.error(sanityErrors);
+                LOGGER.error(sanityErrors);
             }
         } catch (SQLException e) {
             e.printStackTrace();

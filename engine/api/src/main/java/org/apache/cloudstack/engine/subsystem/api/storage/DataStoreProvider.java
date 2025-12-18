@@ -31,7 +31,7 @@ public interface DataStoreProvider {
     String DEFAULT_PRIMARY = "DefaultPrimary";
 
     enum DataStoreProviderType {
-        PRIMARY, IMAGE, ImageCache
+        PRIMARY, IMAGE, ImageCache, OBJECT
     }
 
     DataStoreLifeCycle getDataStoreLifeCycle();

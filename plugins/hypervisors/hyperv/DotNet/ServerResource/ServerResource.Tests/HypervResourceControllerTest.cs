@@ -1,4 +1,4 @@
-﻿// Licensed to the Apache Software Foundation (ASF) under one
+// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -64,7 +64,7 @@ namespace ServerResource.Tests
 
         /// <summary>
         /// Test WmiCalls to which incoming HTTP POST requests are dispatched.
-        /// 
+        ///
         /// TODO: revise beyond first approximation
         /// First approximation is a quick port of the existing Java tests for Hyper-V server resource.
         /// A second approximation would use the AgentShell settings files directly.
@@ -232,7 +232,7 @@ namespace ServerResource.Tests
         {
             // Arrange
             String sampleVolume = getSampleVolumeObjectTO();
-            String destoryCmd = //"{\"volume\":" + getSampleVolumeObjectTO() + "}";
+            String destroyCmd = //"{\"volume\":" + getSampleVolumeObjectTO() + "}";
                             "{\"volume\":{\"name\":\"" + testSampleVolumeTempUUIDNoExt
                                     + "\",\"storagePoolType\":\"Filesystem\","
                                     + "\"mountPoint\":"
@@ -243,15 +243,15 @@ namespace ServerResource.Tests
                                     + "\"type\":\"ROOT\",\"id\":9,\"size\":0}}";
 
             HypervResourceController rsrcServer = new HypervResourceController();
-            dynamic jsonDestoryCmd = JsonConvert.DeserializeObject(destoryCmd);
+            dynamic jsonDestroyCmd = JsonConvert.DeserializeObject(destroyCmd);
 
             // Act
-            dynamic destoryAns = rsrcServer.DestroyCommand(jsonDestoryCmd);
+            dynamic destroyAns = rsrcServer.DestroyCommand(jsonDestroyCmd);
 
             // Assert
-            JObject ansAsProperty2 = destoryAns[0];
+            JObject ansAsProperty2 = destroyAns[0];
             dynamic ans = ansAsProperty2.GetValue(CloudStackTypes.Answer);
-            String path = jsonDestoryCmd.volume.path;
+            String path = jsonDestroyCmd.volume.path;
             Assert.True((bool)ans.result, "DestroyCommand did not succeed " + ans.details);
             Assert.True(!File.Exists(path), "Failed to delete file " + path);
         }
@@ -326,7 +326,7 @@ namespace ServerResource.Tests
                         "\"volumeId\":10," +
                 //                            "\"vmName\":\"i-3-5-VM\"," +  // TODO: do we have to fill in the vmName?
                         "\"accountId\":3,\"id\":10}" +
-                    "}";  // end of destTO 
+                    "}";  // end of destTO
             return sampleVolumeObjectTO;
         }
 
@@ -443,7 +443,7 @@ namespace ServerResource.Tests
                         "\"vmName\":\"i-3-5-VM\"," +
                         "\"accountId\":3," +
                         "\"id\":10 }" +
-                    "}," +  // end of destTO 
+                    "}," +  // end of destTO
                 "\"wait\":0}"; // end of Copy Command
             #endregion
             //"name":"ROOT-8","size":140616708,"volumeId":8,"vmName":"s-8-VM","accountId":1,"id":8}},"contextMap":{},"wait":0}
@@ -562,7 +562,7 @@ namespace ServerResource.Tests
                         "\"vmName\":\"i-3-5-VM\"," +
                         "\"accountId\":1," +
                         "\"id\":10}" +
-                    "}," +  // end of destTO 
+                    "}," +  // end of destTO
                 "\"wait\":0}"; // end of Copy Command
             #endregion
 
@@ -1117,7 +1117,7 @@ namespace ServerResource.Tests
             string strippedExpectedMac = expectedMac.Replace(":", string.Empty);
             Assert.Equal(nicSettingsViaVm[0].Address.ToLower(), strippedExpectedMac.ToLower());
 
-            // Assert switchport has correct VLAN 
+            // Assert switchport has correct VLAN
             var ethernetConnections = wmiCallsV2.GetEthernetConnections(vm);
             var vlanSettings = wmiCallsV2.GetVlanSettings(ethernetConnections[0]);
             string isolationUri = (string)jsonStartCmd.vm.nics[0].isolationUri;

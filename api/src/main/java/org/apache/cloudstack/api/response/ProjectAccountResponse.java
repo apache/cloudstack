@@ -73,6 +73,10 @@ public class ProjectAccountResponse extends BaseResponse implements ControlledVi
     @Param(description = "name of the Domain the account belongs too")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the Domain the account belongs to", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.USER)
     @Param(description = "the list of users associated with account", responseObject = UserResponse.class)
     private List<UserResponse> users;
@@ -108,6 +112,11 @@ public class ProjectAccountResponse extends BaseResponse implements ControlledVi
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     public void setUserId(String userId) { this.userId = userId; }

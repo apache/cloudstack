@@ -20,12 +20,18 @@ package com.cloud.hypervisor.kvm.resource;
 import groovy.util.ResourceException;
 import groovy.util.ScriptException;
 import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.UUID;
 
+@RunWith(MockitoJUnitRunner.class)
 public class LibvirtKvmAgentHookTest extends TestCase {
 
     private final String source = "<xml />";
@@ -47,20 +53,21 @@ public class LibvirtKvmAgentHookTest extends TestCase {
             "new BaseTransform()\n" +
             "\n";
 
-    @Override
-    protected void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         super.setUp();
         PrintWriter pw = new PrintWriter(new File(dir, script));
         pw.println(testImpl);
         pw.close();
     }
 
-    @Override
-    protected void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
         new File(dir, script).delete();
         super.tearDown();
     }
 
+    @Test
     public void testTransform() throws IOException, ResourceException, ScriptException {
         LibvirtKvmAgentHook t = new LibvirtKvmAgentHook(dir, script, method);
         assertEquals(t.isInitialized(), true);
@@ -68,27 +75,74 @@ public class LibvirtKvmAgentHookTest extends TestCase {
         assertEquals(result, source + source);
     }
 
+    @Test
     public void testWrongMethod() throws IOException, ResourceException, ScriptException {
         LibvirtKvmAgentHook t = new LibvirtKvmAgentHook(dir, script, "methodX");
         assertEquals(t.isInitialized(), true);
         assertEquals(t.handle(source), source);
     }
 
+    @Test
     public void testNullMethod() throws IOException, ResourceException, ScriptException {
         LibvirtKvmAgentHook t = new LibvirtKvmAgentHook(dir, script, methodNull);
         assertEquals(t.isInitialized(), true);
         assertEquals(t.handle(source), null);
     }
 
+    @Test
     public void testWrongScript() throws IOException, ResourceException, ScriptException {
         LibvirtKvmAgentHook t = new LibvirtKvmAgentHook(dir, "wrong-script.groovy", method);
         assertEquals(t.isInitialized(), false);
         assertEquals(t.handle(source), source);
     }
 
+    @Test
     public void testWrongDir() throws IOException, ResourceException, ScriptException {
         LibvirtKvmAgentHook t = new LibvirtKvmAgentHook("/" + UUID.randomUUID().toString() + "-dir", script, method);
         assertEquals(t.isInitialized(), false);
         assertEquals(t.handle(source), source);
+    }
+
+    @Test
+    public void testSanitizeBashCommandArgument() throws IOException {
+        LibvirtKvmAgentHook hook = new LibvirtKvmAgentHook(dir, script, method);
+
+        // Test case map: input -> expected output
+        java.util.Map<String, String> testCases = new java.util.LinkedHashMap<>();
+
+        // Edge cases
+        testCases.put("", ""); // Empty string
+        testCases.put("normalString123", "normalString123"); // Normal string without special chars
+
+        // Special character escaping
+        testCases.put("test\"string'with`special$chars", "test\\\"string\\'with\\`special\\$chars");
+        testCases.put("\\\"'`$|&;()<>*?![]{}~", "\\\\\\\"\\'\\`\\$\\|\\&\\;\\(\\)\\<\\>\\*\\?\\!\\[\\]\\{\\}\\~");
+
+        // XML content scenarios
+        testCases.put("<domain type='kvm'>\n  <name>test-vm</name>\n  <memory>1048576</memory>\n</domain>",
+                "\\<domain type=\\'kvm\\'\\>\n  \\<name\\>test-vm\\</name\\>\n  "
+                + "\\<memory\\>1048576\\</memory\\>\n\\</domain\\>");
+        testCases.put("<device path='/dev/disk' value=\"$HOME\" command=`ls -la`>&amp;</device>",
+                "\\<device path=\\'/dev/disk\\' value=\\\"\\$HOME\\\" command=\\`ls -la\\`\\>\\&amp\\;\\</device\\>");
+
+        // Multiline content (newlines should not be escaped)
+        testCases.put("line1\nline2\rline3\r\nline4", "line1\nline2\rline3\r\nline4");
+
+        // Security test cases
+        testCases.put("normal; rm -rf /; echo 'gotcha'", "normal\\; rm -rf /\\; echo \\'gotcha\\'");
+        testCases.put("data | grep pattern > output.txt", "data \\| grep pattern \\> output.txt");
+        testCases.put("$(whoami) and `date`", "\\$\\(whoami\\) and \\`date\\`");
+
+        // Test each case
+        for (java.util.Map.Entry<String, String> testCase : testCases.entrySet()) {
+            String input = testCase.getKey();
+            String expected = testCase.getValue();
+            String actual = hook.sanitizeBashCommandArgument(input);
+            assertEquals("Failed for input: " + input, expected, actual);
+        }
+
+        // Test null input separately since it can't be a map key
+        String nullResult = hook.sanitizeBashCommandArgument(null);
+        assertEquals("Null input should return empty string", "", nullResult);
     }
 }

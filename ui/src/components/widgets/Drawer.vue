@@ -134,7 +134,7 @@ export default {
   text-align: center;
   transition: all 0.5s;
   cursor: pointer;
-  top: calc(50% - 45px);
+  top: calc(100% - 45px);
   z-index: 100;
 
   &.left{

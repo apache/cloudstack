@@ -19,6 +19,7 @@ package com.cloud.network.security;
 import java.util.HashMap;
 import java.util.List;
 
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 
 /**
@@ -36,9 +37,9 @@ public interface SecurityGroupManager {
 
     public SecurityGroupVO createDefaultSecurityGroup(Long accountId);
 
-    public boolean addInstanceToGroups(Long userVmId, List<Long> groups);
+    public boolean addInstanceToGroups(UserVm userVm, List<Long> groups);
 
-    public void removeInstanceFromGroups(long userVmId);
+    public void removeInstanceFromGroups(UserVm userVm);
 
     public void fullSync(long agentId, HashMap<String, Pair<Long, Long>> newGroupStates);
 

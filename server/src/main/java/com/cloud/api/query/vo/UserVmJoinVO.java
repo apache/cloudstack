@@ -22,11 +22,14 @@ import java.util.Map;
 
 import javax.persistence.AttributeOverride;
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
 import com.cloud.host.Status;
@@ -34,12 +37,16 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.ResourceState;
+import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
+import com.cloud.util.StoragePoolTypeConverter;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 @Entity
 @Table(name = "user_vm_view")
@@ -125,7 +132,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     private String guestOsUuid;
 
     @Column(name = "hypervisor_type")
-    @Enumerated(value = EnumType.STRING)
+    @Convert(converter = HypervisorTypeConverter.class)
     private HypervisorType hypervisorType;
 
     @Column(name = "ha_enabled", updatable = true, nullable = true)
@@ -191,8 +198,14 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "template_name")
     private String templateName;
 
+    @Column(name = "template_type")
+    private TemplateType templateType;
+
     @Column(name = "template_display_text", length = 4096)
     private String templateDisplayText;
+
+    @Column(name = "template_format")
+    private Storage.ImageFormat templateFormat;
 
     @Column(name = "password_enabled")
     private boolean passwordEnabled;
@@ -227,6 +240,40 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "service_offering_name")
     private String serviceOfferingName;
 
+
+    @Column(name = "gpu_card_id")
+    private Long gpuCardId;
+
+    @Column(name = "gpu_card_uuid")
+    private String gpuCardUuid;
+
+    @Column(name = "gpu_card_name")
+    private String gpuCardName;
+
+    @Column(name = "vgpu_profile_id")
+    private Long vgpuProfileId;
+
+    @Column(name = "vgpu_profile_uuid")
+    private String vgpuProfileUuid;
+
+    @Column(name = "vgpu_profile_name")
+    private String vgpuProfileName;
+
+    @Column(name = "vgpu_profile_video_ram")
+    private Long videoRam;
+
+    @Column(name = "vgpu_profile_max_heads")
+    private Long maxHeads;
+
+    @Column(name = "vgpu_profile_max_resolution_x")
+    private Long maxResolutionX;
+
+    @Column(name = "vgpu_profile_max_resolution_y")
+    private Long maxResolutionY;
+
+    @Column(name = "gpu_count")
+    private Integer gpuCount;
+
     @Column(name = "backup_offering_id")
     private Long backupOfferingId;
 
@@ -252,7 +299,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     private String poolUuid;
 
     @Column(name = "pool_type", updatable = false, nullable = false, length = 32)
-    @Enumerated(value = EnumType.STRING)
+    @Convert(converter = StoragePoolTypeConverter.class)
     private StoragePoolType poolType;
 
     @Column(name = "volume_id")
@@ -354,6 +401,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "user_data", updatable = true, nullable = true, length = 2048)
     private String userData;
 
+    @Column(name = "user_vm_type")
+    private String userVmType;
+
     @Column(name = "project_id")
     private long projectId;
 
@@ -422,6 +472,21 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "dynamically_scalable")
     private boolean isDynamicallyScalable;
 
+    @Column(name = "delete_protection")
+    protected Boolean deleteProtection;
+
+    @Column(name = "arch")
+    protected String arch;
+
+    @Column(name = "lease_expiry_date")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date leaseExpiryDate;
+
+    @Column(name = "lease_expiry_action")
+    private String leaseExpiryAction;
+
+    @Column(name = "lease_action_execution")
+    private String leaseActionExecution;
 
     public UserVmJoinVO() {
         // Empty constructor
@@ -632,8 +697,16 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return templateName;
     }
 
+    public TemplateType getTemplateType() {
+        return templateType;
+    }
+
     public String getTemplateDisplayText() {
         return templateDisplayText;
+    }
+
+    public Storage.ImageFormat getTemplateFormat() {
+        return templateFormat;
     }
 
     public boolean isPasswordEnabled() {
@@ -662,6 +735,50 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public String getServiceOfferingName() {
         return serviceOfferingName;
+    }
+
+    public Long getGpuCardId() {
+        return gpuCardId;
+    }
+
+    public String getGpuCardUuid() {
+        return gpuCardUuid;
+    }
+
+    public String getGpuCardName() {
+        return gpuCardName;
+    }
+
+    public Long getVgpuProfileId() {
+        return vgpuProfileId;
+    }
+
+    public String getVgpuProfileUuid() {
+        return vgpuProfileUuid;
+    }
+
+    public String getVgpuProfileName() {
+        return vgpuProfileName;
+    }
+
+    public Long getVideoRam() {
+        return videoRam;
+    }
+
+    public Long getMaxHeads() {
+        return maxHeads;
+    }
+
+    public Long getMaxResolutionX() {
+        return maxResolutionX;
+    }
+
+    public Long getMaxResolutionY() {
+        return maxResolutionY;
+    }
+
+    public Integer getGpuCount() {
+        return gpuCount;
     }
 
     public String getBackupOfferingUuid() {
@@ -800,6 +917,10 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return userData;
     }
 
+    public String getUserVmType() {
+        return userVmType;
+    }
+
     public long getGuestOsId() {
         return guestOsId;
     }
@@ -920,6 +1041,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return isDynamicallyScalable;
     }
 
+    public Boolean isDeleteProtection() {
+        return deleteProtection;
+    }
 
     @Override
     public Class<?> getEntityType() {
@@ -946,4 +1070,23 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return userDataDetails;
     }
 
+    public String getArch() {
+        return arch;
+    }
+
+    public Date getLeaseExpiryDate() {
+        return leaseExpiryDate;
+    }
+
+    public String getLeaseExpiryAction() {
+        return leaseExpiryAction;
+    }
+
+    public void setLeaseExpiryAction(String leaseExpiryAction) {
+        this.leaseExpiryAction = leaseExpiryAction;
+    }
+
+    public String getLeaseActionExecution() {
+        return leaseActionExecution;
+    }
 }

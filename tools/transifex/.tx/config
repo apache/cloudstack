@@ -19,4 +19,3 @@ trans.pl = work-dir/pl.json
 trans.pt_BR = work-dir/pt_BR.json
 trans.ru_RU = work-dir/ru_RU.json
 trans.zh_CN = work-dir/zh_CN.json
-

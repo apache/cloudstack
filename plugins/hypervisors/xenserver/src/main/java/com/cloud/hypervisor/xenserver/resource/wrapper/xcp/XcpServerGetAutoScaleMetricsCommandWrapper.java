@@ -20,7 +20,6 @@
 package com.cloud.hypervisor.xenserver.resource.wrapper.xcp;
 
 import com.cloud.hypervisor.xenserver.resource.XcpServerResource;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.routing.GetAutoScaleMetricsAnswer;
@@ -36,7 +35,6 @@ import java.util.List;
 @ResourceWrapper(handles = GetAutoScaleMetricsCommand.class)
 public final class XcpServerGetAutoScaleMetricsCommandWrapper extends CommandWrapper<GetAutoScaleMetricsCommand, Answer, XcpServerResource> {
 
-    private static final Logger s_logger = Logger.getLogger(XcpServerGetAutoScaleMetricsCommandWrapper.class);
 
     @Override
     public Answer execute(final GetAutoScaleMetricsCommand command, final XcpServerResource xcpServer) {
@@ -77,7 +75,7 @@ public final class XcpServerGetAutoScaleMetricsCommandWrapper extends CommandWra
 
             return new GetAutoScaleMetricsAnswer(command, true, values);
         } catch (final Exception ex) {
-            s_logger.warn("Failed to get autoscale metrics due to ", ex);
+            logger.warn("Failed to get autoscale metrics due to ", ex);
             return new GetAutoScaleMetricsAnswer(command, false);
         }
     }

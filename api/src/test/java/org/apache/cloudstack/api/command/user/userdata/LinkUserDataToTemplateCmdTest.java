@@ -20,29 +20,25 @@ package org.apache.cloudstack.api.command.user.userdata;
 import com.cloud.storage.Storage;
 import com.cloud.template.TemplateApiService;
 import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.user.Account;
 import com.cloud.user.UserData;
 import com.cloud.utils.db.EntityManager;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(CallContext.class)
-@PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*", "org.xml.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class LinkUserDataToTemplateCmdTest {
 
     @Mock
@@ -60,9 +56,16 @@ public class LinkUserDataToTemplateCmdTest {
     @Mock
     VirtualMachineTemplate virtualMachineTemplate;
 
+    private AutoCloseable closeable;
+
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
@@ -84,21 +87,19 @@ public class LinkUserDataToTemplateCmdTest {
 
     @Test
     public void validateArgsCmd() {
-        PowerMockito.mockStatic(CallContext.class);
-        CallContext callContextMock = PowerMockito.mock(CallContext.class);
-        PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
-        Account accountMock = PowerMockito.mock(Account.class);
-        PowerMockito.when(callContextMock.getCallingAccount()).thenReturn(accountMock);
-        Mockito.when(accountMock.getId()).thenReturn(2L);
-        ReflectionTestUtils.setField(cmd, "templateId", 1L);
-        ReflectionTestUtils.setField(cmd, "userdataId", 3L);
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+            ReflectionTestUtils.setField(cmd, "templateId", 1L);
+            ReflectionTestUtils.setField(cmd, "userdataId", 3L);
 
-        Mockito.doReturn(virtualMachineTemplate).when(_entityMgr).findById(VirtualMachineTemplate.class, cmd.getTemplateId());
-        PowerMockito.when(virtualMachineTemplate.getAccountId()).thenReturn(1L);
+            Mockito.doReturn(virtualMachineTemplate).when(_entityMgr).findById(VirtualMachineTemplate.class, cmd.getTemplateId());
+            Mockito.when(virtualMachineTemplate.getAccountId()).thenReturn(1L);
 
-        Assert.assertEquals(1L, (long)cmd.getTemplateId());
-        Assert.assertEquals(3L, (long)cmd.getUserdataId());
-        Assert.assertEquals(1L, cmd.getEntityOwnerId());
+            Assert.assertEquals(1L, (long) cmd.getTemplateId());
+            Assert.assertEquals(3L, (long) cmd.getUserdataId());
+            Assert.assertEquals(1L, cmd.getEntityOwnerId());
+        }
     }
 
     @Test

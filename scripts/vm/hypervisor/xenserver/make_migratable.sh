@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -23,7 +23,7 @@ usage() {
   echo " -- fakes the presence of PV tools in <VM uuid>"
   echo " -- NB the VM must be either paused or running on localhost"
 }
- 
+
 fake(){
   local uuid=$1
   domid=$(xe vm-list uuid=${uuid} params=dom-id --minimal)
@@ -78,5 +78,3 @@ case "${power_state}" in
     exit 3
     ;;
 esac
-
-

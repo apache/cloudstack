@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.network;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -48,7 +47,6 @@ import com.cloud.user.User;
             since = "4.11.0",
             authorized = {RoleType.Admin})
 public class MigrateNetworkCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(MigrateNetworkCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

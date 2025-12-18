@@ -280,7 +280,7 @@ class UpdateConfigTestCase(SystemVMTestCase):
             unique["eth%s" % ips["nic_dev_id"]] = 1
 
         # If this is the first run, the drops will not be there yet
-        # this is so I can get get a true count of what is explicitly added
+        # this is so I can get a true count of what is explicitly added
         drops = len(unique)
         for dev in unique:
             drops -= ip.count_fw_rules('ACL_INBOUND_%s -j DROP' % dev)

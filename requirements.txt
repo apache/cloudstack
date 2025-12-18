@@ -15,9 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# Install the latest version of cloudmonkey
-cloudmonkey
-
 # Marvin dependencies are installed via its bundle
 
 # Install the SolidFire SDK for Python

@@ -335,7 +335,7 @@ def get_container(url, token, container, marker=None, limit=None,
     :param marker: marker query
     :param limit: limit query
     :param prefix: prefix query
-    :param delimeter: string to delimit the queries on
+    :param delimiter: string to delimit the queries on
     :param http_conn: HTTP connection object (If None, it will create the
                       conn object)
     :param full_listing: if True, return a full listing, else returns a max

@@ -18,7 +18,6 @@ package com.cloud.api.commands;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -44,7 +43,6 @@ import com.cloud.vm.VirtualMachine;
 @APICommand(name = "stopNetScalerVpx", description = "Stops a NetScalervm.", responseObject = DomainRouterResponse.class, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class StopNetScalerVMCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(StopNetScalerVMCmd.class.getName());
     private static final String s_name = "stopNetScalerVmresponse";
 
     @Inject
@@ -56,7 +54,7 @@ public class StopNetScalerVMCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainRouterResponse.class, required = true, description = "the ID of the NetScaler vm")
     private Long id;
 
-    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force stop the VM. The caller knows the VM is stopped.")
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force stop the VM (vm is marked as Stopped even when command fails to be send to the backend, otherwise a force poweroff is attempted). To be used if the caller knows the VM is stopped and should be marked as such.")
     private Boolean forced;
 
     // ///////////////////////////////////////////////////

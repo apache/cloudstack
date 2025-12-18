@@ -31,18 +31,12 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 
 import com.google.common.collect.ImmutableSet;
 
-@RunWith(PowerMockRunner.class)
-@PowerMockRunnerDelegate(Parameterized.class)
-@PowerMockIgnore({"javax.xml.*", "org.apache.xerces.*", "org.xml.*", "org.w3c.*"})
+@RunWith(Parameterized.class)
 public class UriUtilsParametrizedTest {
     @FunctionalInterface
     public interface ThrowingBlock<E extends Exception> {
@@ -50,7 +44,7 @@ public class UriUtilsParametrizedTest {
     }
 
     private static final Set<String> COMMPRESSION_FORMATS = ImmutableSet.of("",".zip", ".bz2", ".gz");
-    private static final Set<String> ILLEGAL_COMMPRESSION_FORMATS = ImmutableSet.of(".7z", ".xz");
+    private static final Set<String> ILLEGAL_COMMPRESSION_FORMATS = ImmutableSet.of(".7z");
     private final static Set<String> FORMATS = ImmutableSet.of(
             "vhd",
             "vhdx",
@@ -149,14 +143,11 @@ public class UriUtilsParametrizedTest {
     }
 
     @Test
-    @PrepareForTest({UriUtils.class})
-
     public void validateUrl() throws Exception {
 
+        MockedStatic<InetAddress> inetAddressMocked = Mockito.mockStatic(InetAddress.class);
         InetAddress inetAddressMock = Mockito.mock(InetAddress.class);
-
-        PowerMockito.mockStatic(InetAddress.class);
-        PowerMockito.when(InetAddress.getByName(Mockito.anyString())).thenReturn(inetAddressMock);
+        inetAddressMocked.when(() -> InetAddress.getByName(Mockito.anyString())).thenReturn(inetAddressMock);
 
         if (expectSuccess) {
             UriUtils.validateUrl(format, url);
@@ -164,14 +155,14 @@ public class UriUtilsParametrizedTest {
             assertThrows(() -> UriUtils.validateUrl(format, url), IllegalArgumentException.class);
         }
 
-        PowerMockito.verifyStatic(InetAddress.class);
-        InetAddress.getByName(Mockito.anyString());
+        inetAddressMocked.verify(() -> InetAddress.getByName(Mockito.anyString()));
 
         Mockito.verify(inetAddressMock).isAnyLocalAddress();
         Mockito.verify(inetAddressMock).isLinkLocalAddress();
         Mockito.verify(inetAddressMock).isLoopbackAddress();
         Mockito.verify(inetAddressMock).isMulticastAddress();
 
+        inetAddressMocked.close();
     }
 
     @Test

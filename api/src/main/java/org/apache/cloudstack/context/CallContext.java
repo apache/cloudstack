@@ -23,8 +23,8 @@ import java.util.UUID;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.managed.threadlocal.ManagedThreadLocal;
-import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.projects.Project;
@@ -33,6 +33,7 @@ import com.cloud.user.User;
 import com.cloud.utils.UuidUtils;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.logging.log4j.ThreadContext;
 
 /**
  * CallContext records information about the environment the call is made.  This
@@ -40,7 +41,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
  * entry point must set the context and remove it when the thread finishes.
  */
 public class CallContext {
-    private static final Logger s_logger = Logger.getLogger(CallContext.class);
+    protected static Logger LOGGER = LogManager.getLogger(CallContext.class);
     private static ManagedThreadLocal<CallContext> s_currentContext = new ManagedThreadLocal<CallContext>();
     private static ManagedThreadLocal<Stack<CallContext>> s_currentContextStack = new ManagedThreadLocal<Stack<CallContext>>() {
         @Override
@@ -90,6 +91,10 @@ public class CallContext {
 
     public void putContextParameter(Object key, Object value) {
         context.put(key, value);
+    }
+
+    public void removeContextParameter(Object key) {
+        context.remove(key);
     }
 
     /**
@@ -174,9 +179,9 @@ public class CallContext {
             callingContext = new CallContext(userId, accountId, contextId);
         }
         s_currentContext.set(callingContext);
-        NDC.push("ctx-" + UuidUtils.first(contextId));
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Registered: " + callingContext);
+        ThreadContext.push("ctx-" + UuidUtils.first(contextId));
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("Registered: " + callingContext);
         }
 
         s_currentContextStack.get().push(callingContext);
@@ -205,7 +210,7 @@ public class CallContext {
             assert context.getCallingUserId() == User.UID_SYSTEM : "You are calling a very specific method that registers a one time system context.  This method is meant for background threads that does processing.";
             return context;
         } catch (Exception e) {
-            s_logger.error("Failed to register the system call context.", e);
+            LOGGER.error("Failed to register the system call context.", e);
             throw new CloudRuntimeException("Failed to register system call context", e);
         }
     }
@@ -234,6 +239,7 @@ public class CallContext {
         CallContext callContext = register(parent.getCallingUserId(), parent.getCallingAccountId());
         callContext.setStartEventId(parent.getStartEventId());
         callContext.setEventResourceType(eventResourceType);
+        callContext.putContextParameters(parent.getContextParameters());
         return callContext;
     }
 
@@ -273,18 +279,18 @@ public class CallContext {
             return null;
         }
         s_currentContext.remove();
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Unregistered: " + context);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("Unregistered: " + context);
         }
         String contextId = context.getContextId();
         String sessionIdOnStack = null;
         String sessionIdPushedToNDC = "ctx-" + UuidUtils.first(contextId);
-        while ((sessionIdOnStack = NDC.pop()) != null) {
+        while ((sessionIdOnStack = ThreadContext.pop()) != null) {
             if (sessionIdOnStack.isEmpty() || sessionIdPushedToNDC.equals(sessionIdOnStack)) {
                 break;
             }
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Popping from NDC: " + contextId);
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Popping from NDC: " + contextId);
             }
         }
 

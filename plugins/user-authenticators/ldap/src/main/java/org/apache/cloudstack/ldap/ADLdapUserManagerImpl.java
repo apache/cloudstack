@@ -28,10 +28,8 @@ import javax.naming.directory.SearchResult;
 import javax.naming.ldap.LdapContext;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements LdapUserManager {
-    public static final Logger s_logger = Logger.getLogger(ADLdapUserManagerImpl.class.getName());
     private static final String MICROSOFT_AD_NESTED_MEMBERS_FILTER = "memberOf:1.2.840.113556.1.4.1941:";
     private static final String MICROSOFT_AD_MEMBERS_FILTER = "memberOf";
 
@@ -51,7 +49,7 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
         searchControls.setReturningAttributes(_ldapConfiguration.getReturnAttributes(domainId));
 
         NamingEnumeration<SearchResult> results = context.search(basedn, generateADGroupSearchFilter(groupName, domainId), searchControls);
-        final List<LdapUser> users = new ArrayList<LdapUser>();
+        final List<LdapUser> users = new ArrayList<>();
         while (results.hasMoreElements()) {
             final SearchResult result = results.nextElement();
             users.add(createUser(result, domainId));
@@ -60,10 +58,8 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
     }
 
     String generateADGroupSearchFilter(String groupName, Long domainId) {
-        final StringBuilder userObjectFilter = new StringBuilder();
-        userObjectFilter.append("(objectClass=");
-        userObjectFilter.append(_ldapConfiguration.getUserObject(domainId));
-        userObjectFilter.append(")");
+
+        final StringBuilder userObjectFilter = getUserObjectFilter(domainId);
 
         final StringBuilder memberOfFilter = new StringBuilder();
         String groupCnName =  _ldapConfiguration.getCommonNameAttribute() + "=" +groupName + "," +  _ldapConfiguration.getBaseDn(domainId);
@@ -77,8 +73,16 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
         result.append(memberOfFilter);
         result.append(")");
 
-        s_logger.debug("group search filter = " + result);
+        logger.debug("group search filter = {}", result);
         return result.toString();
+    }
+
+    StringBuilder getUserObjectFilter(Long domainId) {
+        final StringBuilder userObjectFilter = new StringBuilder();
+        userObjectFilter.append("(&(objectCategory=person)");
+        userObjectFilter.append(super.getUserObjectFilter(domainId));
+        userObjectFilter.append(")");
+        return userObjectFilter;
     }
 
     protected boolean isUserDisabled(SearchResult result) throws NamingException {
@@ -95,10 +99,14 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
     }
 
     protected String getMemberOfAttribute(final Long domainId) {
+        String rc;
         if(_ldapConfiguration.isNestedGroupsEnabled(domainId)) {
-            return MICROSOFT_AD_NESTED_MEMBERS_FILTER;
+            rc = MICROSOFT_AD_NESTED_MEMBERS_FILTER;
         } else {
-            return MICROSOFT_AD_MEMBERS_FILTER;
+            rc = MICROSOFT_AD_MEMBERS_FILTER;
         }
+        logger.trace("using memberOf filter = {} for domain with id {}", rc, domainId);
+
+        return rc;
     }
 }

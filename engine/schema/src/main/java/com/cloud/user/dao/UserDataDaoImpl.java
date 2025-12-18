@@ -63,4 +63,11 @@ public class UserDataDaoImpl extends GenericDaoBase<UserDataVO, Long> implements
 
         return findOneBy(sc);
     }
+
+    @Override
+    public int removeByAccountId(long accountId) {
+        SearchCriteria<UserDataVO> sc = userdataSearch.create();
+        sc.setParameters("accountId", accountId);
+        return remove(sc);
+    }
 }

@@ -23,13 +23,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public abstract class Upgrade30xBase extends LegacyDbUpgrade {
 
-    final static Logger s_logger = Logger.getLogger(Upgrade30xBase.class);
 
     protected String getNetworkLabelFromConfig(Connection conn, String name) {
         String sql = "SELECT value FROM `cloud`.`configuration` where name = ?";
@@ -72,7 +70,7 @@ public abstract class Upgrade30xBase extends LegacyDbUpgrade {
                 broadcastDomainRange = "ZONE";
             }
 
-            s_logger.debug("Adding PhysicalNetwork " + physicalNetworkId + " for Zone id " + zoneId);
+            logger.debug("Adding PhysicalNetwork " + physicalNetworkId + " for Zone id " + zoneId);
             String sql = "INSERT INTO `cloud`.`physical_network` (id, uuid, data_center_id, vnet, broadcast_domain_range, state, name) VALUES (?,?,?,?,?,?,?)";
 
             pstmtUpdate = conn.prepareStatement(sql);
@@ -84,12 +82,12 @@ public abstract class Upgrade30xBase extends LegacyDbUpgrade {
             pstmtUpdate.setString(6, "Enabled");
             zoneName = zoneName + "-pNtwk" + physicalNetworkId;
             pstmtUpdate.setString(7, zoneName);
-            s_logger.warn("Statement is " + pstmtUpdate.toString());
+            logger.warn("Statement is " + pstmtUpdate.toString());
             pstmtUpdate.executeUpdate();
             pstmtUpdate.close();
 
             if (domainId != null && domainId.longValue() != 0) {
-                s_logger.debug("Updating domain_id for physical network id=" + physicalNetworkId);
+                logger.debug("Updating domain_id for physical network id=" + physicalNetworkId);
                 sql = "UPDATE `cloud`.`physical_network` set domain_id=? where id=?";
                 pstmtUpdate = conn.prepareStatement(sql);
                 pstmtUpdate.setLong(1, domainId);
@@ -111,7 +109,7 @@ public abstract class Upgrade30xBase extends LegacyDbUpgrade {
         // add traffic types
         PreparedStatement pstmtUpdate = null;
         try {
-            s_logger.debug("Adding PhysicalNetwork traffic types");
+            logger.debug("Adding PhysicalNetwork traffic types");
             String insertTraficType =
                 "INSERT INTO `cloud`.`physical_network_traffic_types` (physical_network_id, traffic_type, xen_network_label, kvm_network_label, vmware_network_label, uuid) VALUES ( ?, ?, ?, ?, ?, ?)";
             pstmtUpdate = conn.prepareStatement(insertTraficType);
@@ -154,7 +152,7 @@ public abstract class Upgrade30xBase extends LegacyDbUpgrade {
             pstmt2.close();
 
             if (isSGServiceEnabled) {
-                s_logger.debug("Adding PhysicalNetworkServiceProvider SecurityGroupProvider to the physical network id=" + physicalNetworkId);
+                logger.debug("Adding PhysicalNetworkServiceProvider SecurityGroupProvider to the physical network id=" + physicalNetworkId);
                 String insertPNSP =
                     "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ,"
                         + "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`,"
@@ -182,7 +180,7 @@ public abstract class Upgrade30xBase extends LegacyDbUpgrade {
         PreparedStatement pstmtUpdate = null, pstmt2 = null;
         try {
             // add physical network service provider - VirtualRouter
-            s_logger.debug("Adding PhysicalNetworkServiceProvider VirtualRouter");
+            logger.debug("Adding PhysicalNetworkServiceProvider VirtualRouter");
             String insertPNSP =
                 "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ,"
                     + "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`,"

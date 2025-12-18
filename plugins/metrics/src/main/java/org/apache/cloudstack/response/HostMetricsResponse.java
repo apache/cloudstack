@@ -36,6 +36,10 @@ public class HostMetricsResponse extends HostResponse {
     @Param(description = "instances on the host")
     private String instances;
 
+    @SerializedName("systeminstances")
+    @Param(description = "system vm instances on the host")
+    private String systemInstances;
+
     @SerializedName("cputotalghz")
     @Param(description = "the total cpu capacity in Ghz")
     private String cpuTotal;
@@ -47,10 +51,6 @@ public class HostMetricsResponse extends HostResponse {
     @SerializedName("cpuallocatedghz")
     @Param(description = "the total cpu allocated in Ghz")
     private String cpuAllocated;
-
-    @SerializedName("cpuloadaverage")
-    @Param(description = "the average cpu load the last minute")
-    private Double loadAverage;
 
     @SerializedName("memorytotalgb")
     @Param(description = "the total memory capacity in GiB")
@@ -108,10 +108,12 @@ public class HostMetricsResponse extends HostResponse {
         this.powerState = powerState;
     }
 
-    public void setInstances(final Long running, final Long total) {
-        if (running != null && total != null) {
-            this.instances = String.format("%d / %d", running, total);
-        }
+    public void setSystemInstances(final long running, final long total) {
+        this.systemInstances = String.format("%d / %d", running, total);
+    }
+
+    public void setInstances(final long running, final long total) {
+        this.instances = String.format("%d / %d", running, total);
     }
 
     public void setCpuTotal(final Integer cpuNumber, final Long cpuSpeed) {
@@ -123,12 +125,6 @@ public class HostMetricsResponse extends HostResponse {
     public void setCpuUsed(final String cpuUsed, final Integer cpuNumber, final Long cpuSpeed) {
         if (cpuUsed != null && cpuNumber != null && cpuSpeed != null) {
             this.cpuUsed = String.format("%.2f Ghz", parseCPU(cpuUsed) * cpuNumber * cpuSpeed / (100.0 * 1000.0));
-        }
-    }
-
-    public void setLoadAverage(final Double loadAverage) {
-        if (loadAverage != null) {
-            this.loadAverage = loadAverage;
         }
     }
 

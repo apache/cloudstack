@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,7 +17,7 @@
 # under the License.
 
 #set -x
- 
+
 usage() {
   printf "Usage: %s \n" $(basename $0) >&2
 
@@ -33,7 +33,7 @@ moveConfigToBond() {
       if [ -n "$bondSlaveIp" ]; then
         mode=$(xe pif-param-get param-name=IP-configuration-mode uuid=$bondSlave)
         netmask=$(xe pif-param-get param-name=netmask uuid=$bondSlave)
-        gateway=$(xe pif-param-get param-name=gateway uuid=$bondSlave)       
+        gateway=$(xe pif-param-get param-name=gateway uuid=$bondSlave)
         DNS=$(xe pif-param-get param-name=DNS uuid=$bondSlave)
         management=$(xe pif-param-get param-name=management uuid=$bondSlave)
         slavedevice=$(xe pif-param-get param-name=device uuid=$bondSlave)
@@ -47,7 +47,7 @@ moveConfigToBond() {
         echo "  --Succeeded"
         if [ "$management" = "true" ]; then
           echo "  --move management interface from $slavedevice($bondSlave) to $masterdevice($bondMaster)"
-          xe host-management-reconfigure pif-uuid=$bondMaster 
+          xe host-management-reconfigure pif-uuid=$bondMaster
           if [ $? -ne 0 ]; then
             echo "  --Failed to move management interface from $bondSlave to $bondMaster, please run xe host-management-reconfigure pif-uuid=$bondMaster manually"
             exit 1
@@ -62,7 +62,7 @@ moveConfigToBond() {
       xe pif-plug uuid=$bondMaster
     done
   fi
-} 
+}
 
 poolUuid=$(xe pool-list | grep ^uuid | awk '{print $NF}')
 hostMaster=$(xe pool-param-get uuid=$poolUuid param-name=master)
@@ -107,4 +107,3 @@ for hostSlave in $hostSlaves; do
   fi
 done
 echo "#check is successful, you can add these hosts to CloudStack."
-

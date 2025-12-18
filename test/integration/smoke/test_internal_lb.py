@@ -485,7 +485,7 @@ class TestInternalLb(cloudstackTestCase):
 
         try:
             for x in range(0, max_requests):
-                cmd_test_http = "/usr/bin/wget -T2 -qO- http://" + \
+                cmd_test_http = "curl --connect-timeout 3 -L http://" + \
                                 lb_address + "/ 2>/dev/null"
                 # self.debug( "SSH into VM public address: %s and port: %s"
                 # %(.public_ip, vm.public_port))
@@ -677,9 +677,8 @@ class TestInternalLb(cloudstackTestCase):
 
         url = "http://" + stats_ip + ":" + \
               settings["stats_port"] + settings["stats_uri"]
-        get_contents = "/usr/bin/wget -T3 -qO- --user=" + \
-                       settings["username"] + " --password=" + \
-                       settings["password"] + " " + url
+        get_contents = "curl --connect-timeout 3 -L --user %s:%s %s" \
+                       % (settings["username"], settings["password"], url)
         try:
             self.logger.debug(
                 "Trying to connect to the haproxy stats url %s" % url)

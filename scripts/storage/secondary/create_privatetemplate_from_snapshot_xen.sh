@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,9 +17,9 @@
 # under the License.
 
 #set -x
- 
+
 usage() {
-  printf "Usage: %s -t [template path] -n [template name] -s [snapshot name] -p [snapshot path] \n" $(basename $0) 
+  printf "Usage: %s -t [template path] -n [template name] -s [snapshot name] -p [snapshot path] \n" $(basename $0)
 }
 
 snapshotPath=
@@ -68,7 +68,7 @@ copyvhd()
     exit 2
   fi
   if [[ "${parent}"  =~ " no parent" ]]; then
-    dd if=$srcvhd of=$desvhd bs=2M     
+    dd if=$srcvhd of=$desvhd bs=2M
     if [ $? -ne 0 ]; then
       echo "31#failed to dd $srcvhd to $desvhd"
       rm -rf $desvhd > /dev/null

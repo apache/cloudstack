@@ -27,12 +27,13 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -43,17 +44,26 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({HttpClients.class, DocumentBuilderFactory.class})
+@RunWith(MockitoJUnitRunner.class)
 public class IntrospectApiConnectorImplTest {
     IntrospectApiConnector introspectApiConnector;
+
+    MockedStatic<HttpClients> httpClientsMocked;
+
+    MockedStatic<DocumentBuilderFactory> documentBuilderFactoryMocked;
 
     @Before
     public void setup() {
         VRouter vRouter = mock(VRouter.class);
         introspectApiConnector = new IntrospectApiConnectorImpl(vRouter);
-        PowerMockito.mockStatic(HttpClients.class);
-        PowerMockito.mockStatic(DocumentBuilderFactory.class);
+        httpClientsMocked =  Mockito.mockStatic(HttpClients.class);
+        documentBuilderFactoryMocked = Mockito.mockStatic(DocumentBuilderFactory.class);
+    }
+
+    @After
+    public void tearDown() {
+        httpClientsMocked.close();
+        documentBuilderFactoryMocked.close();
     }
 
     @Test
@@ -66,11 +76,11 @@ public class IntrospectApiConnectorImplTest {
         DocumentBuilderFactory documentBuilderFactory = mock(DocumentBuilderFactory.class);
         DocumentBuilder documentBuilder = mock(DocumentBuilder.class);
 
-        when(HttpClients.createDefault()).thenReturn(httpClient);
+        httpClientsMocked.when(HttpClients::createDefault).thenReturn(httpClient);
         when(httpClient.execute(any(HttpUriRequest.class))).thenReturn(closeableHttpResponse);
         when(closeableHttpResponse.getEntity()).thenReturn(httpEntity);
         when(httpEntity.getContent()).thenReturn(inputStream);
-        when(DocumentBuilderFactory.newInstance()).thenReturn(documentBuilderFactory);
+        documentBuilderFactoryMocked.when(DocumentBuilderFactory::newInstance).thenReturn(documentBuilderFactory);
         when(documentBuilderFactory.newDocumentBuilder()).thenReturn(documentBuilder);
         when(documentBuilder.parse(any(InputStream.class))).thenReturn(document);
 
@@ -81,7 +91,7 @@ public class IntrospectApiConnectorImplTest {
     public void getSnhItfReqWithIOExceptionTest() throws Exception {
         CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
 
-        when(HttpClients.createDefault()).thenReturn(httpClient);
+        httpClientsMocked.when(HttpClients::createDefault).thenReturn(httpClient);
         when(httpClient.execute(any(HttpUriRequest.class))).thenThrow(IOException.class);
 
         assertNull(introspectApiConnector.getSnhItfReq("948f421c-edde-4518-a391-09299cc25dc2"));
@@ -95,11 +105,9 @@ public class IntrospectApiConnectorImplTest {
         InputStream inputStream = mock(InputStream.class);
         DocumentBuilderFactory documentBuilderFactory = mock(DocumentBuilderFactory.class);
 
-        when(HttpClients.createDefault()).thenReturn(httpClient);
+        httpClientsMocked.when(HttpClients::createDefault).thenReturn(httpClient);
         when(httpClient.execute(any(HttpUriRequest.class))).thenReturn(closeableHttpResponse);
-        when(closeableHttpResponse.getEntity()).thenReturn(httpEntity);
-        when(httpEntity.getContent()).thenReturn(inputStream);
-        when(DocumentBuilderFactory.newInstance()).thenReturn(documentBuilderFactory);
+        documentBuilderFactoryMocked.when(DocumentBuilderFactory::newInstance).thenReturn(documentBuilderFactory);
         when(documentBuilderFactory.newDocumentBuilder()).thenThrow(ParserConfigurationException.class);
 
         assertNull(introspectApiConnector.getSnhItfReq("948f421c-edde-4518-a391-09299cc25dc2"));
@@ -114,11 +122,11 @@ public class IntrospectApiConnectorImplTest {
         DocumentBuilderFactory documentBuilderFactory = mock(DocumentBuilderFactory.class);
         DocumentBuilder documentBuilder = mock(DocumentBuilder.class);
 
-        when(HttpClients.createDefault()).thenReturn(httpClient);
+        httpClientsMocked.when(HttpClients::createDefault).thenReturn(httpClient);
         when(httpClient.execute(any(HttpUriRequest.class))).thenReturn(closeableHttpResponse);
         when(closeableHttpResponse.getEntity()).thenReturn(httpEntity);
         when(httpEntity.getContent()).thenReturn(inputStream);
-        when(DocumentBuilderFactory.newInstance()).thenReturn(documentBuilderFactory);
+        documentBuilderFactoryMocked.when(DocumentBuilderFactory::newInstance).thenReturn(documentBuilderFactory);
         when(documentBuilderFactory.newDocumentBuilder()).thenReturn(documentBuilder);
         when(documentBuilder.parse(any(InputStream.class))).thenThrow(SAXException.class);
 

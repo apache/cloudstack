@@ -26,7 +26,6 @@ import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.UserData;
 import com.cloud.utils.Pair;
@@ -35,7 +34,6 @@ import com.cloud.utils.Pair;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.18",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListUserDataCmd extends BaseListProjectAndAccountResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListUserDataCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -63,7 +61,7 @@ public class ListUserDataCmd extends BaseListProjectAndAccountResourcesCmd {
 
     @Override
     public void execute() {
-        Pair<List<? extends UserData>, Integer> resultList = _mgr.listUserDatas(this);
+        Pair<List<? extends UserData>, Integer> resultList = _mgr.listUserDatas(this, false);
         List<UserDataResponse> responses = new ArrayList<>();
         for (UserData result : resultList.first()) {
             UserDataResponse r = _responseGenerator.createUserDataResponse(result);
@@ -76,5 +74,4 @@ public class ListUserDataCmd extends BaseListProjectAndAccountResourcesCmd {
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
-
-    }
+}

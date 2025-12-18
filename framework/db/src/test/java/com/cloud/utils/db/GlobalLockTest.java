@@ -16,7 +16,8 @@
 // under the License.
 package com.cloud.utils.db;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
@@ -27,10 +28,10 @@ import com.cloud.utils.Profiler;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:/testContext.xml")
 public class GlobalLockTest {
-    public static final Logger s_logger = Logger.getLogger(GlobalLockTest.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private final static GlobalLock WorkLock = GlobalLock.getInternLock("SecurityGroupWork");
 
-    public static class Worker implements Runnable {
+    public class Worker implements Runnable {
         int id = 0;
         int timeoutSeconds = 10;
         int jobDuration = 2;
@@ -54,7 +55,7 @@ public class GlobalLockTest {
                     Thread.sleep(jobDuration * 1000);
                 }
             } catch (InterruptedException e) {
-                s_logger.debug("[ignored] interrupted while testing global lock.");
+                logger.debug("[ignored] interrupted while testing global lock.");
             } finally {
                 if (locked) {
                     boolean unlocked = WorkLock.unlock();

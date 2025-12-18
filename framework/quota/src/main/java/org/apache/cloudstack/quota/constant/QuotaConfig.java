@@ -30,6 +30,9 @@ public interface QuotaConfig {
     public static final ConfigKey<String> QuotaCurrencySymbol = new ConfigKey<String>("Advanced", String.class, "quota.currency.symbol", "$",
             "The symbol for the currency in use to measure usage.", true);
 
+    public static final ConfigKey<String> QuotaCurrencyLocale = new ConfigKey<String>("Advanced", String.class, "quota.currency.locale", null,
+            "The location used for formatting the value (e.g. \"en-US\" for English or \"pt-BR\" for Brazilian Portuguese)", true);
+
     public static final ConfigKey<Integer> QuotaStatementPeriod = new ConfigKey<Integer>("Advanced", Integer.class, "quota.statement.period", "1",
             "This variables define the statement generation interval. Values correspond to bimonthly=0, monthly=1, quarterly=2, half-yearly=3 and yearly=4.", true);
 
@@ -45,16 +48,16 @@ public interface QuotaConfig {
 
     public static final ConfigKey<String> QuotaSmtpPort = new ConfigKey<String>("Advanced", String.class, "quota.usage.smtp.port", "", "Quota SMTP port.", true);
 
-    public static final ConfigKey<String> QuotaSmtpAuthType = new ConfigKey<String>("Advanced", String.class, "quota.usage.smtp.useAuth", "",
+    public static final ConfigKey<Boolean> QuotaSmtpAuthType = new ConfigKey<Boolean>("Advanced", Boolean.class, "quota.usage.smtp.useAuth", "false",
             "If true, use secure SMTP authentication when sending emails.", true);
 
     public static final ConfigKey<String> QuotaSmtpSender = new ConfigKey<String>("Advanced", String.class, "quota.usage.smtp.sender", "",
             "Sender of quota alert email (will be in the From header of the email).", true);
 
     public static final ConfigKey<String> QuotaSmtpEnabledSecurityProtocols = new ConfigKey<String>("Advanced", String.class, "quota.usage.smtp.enabledSecurityProtocols", "",
-            "White-space separated security protocols; ex: \"TLSv1 TLSv1.1\". Supported protocols: SSLv2Hello, SSLv3, TLSv1, TLSv1.1 and TLSv1.2.", true);
+            "White-space separated security protocols; ex: \"TLSv1 TLSv1.1\". Supported protocols: SSLv2Hello, SSLv3, TLSv1, TLSv1.1 and TLSv1.2.", true, ConfigKey.Kind.WhitespaceSeparatedListWithOptions, "SSLv2Hello,SSLv3,TLSv1,TLSv1.1,TLSv1.2");
 
-    public static final ConfigKey<String> QuotaSmtpUseStartTLS = new ConfigKey<String>("Advanced", String.class, "quota.usage.smtp.useStartTLS", "false",
+    public static final ConfigKey<Boolean> QuotaSmtpUseStartTLS = new ConfigKey<Boolean>("Advanced", Boolean.class, "quota.usage.smtp.useStartTLS", "false",
             "If set to true and if we enable security via quota.usage.smtp.useAuth, this will enable StartTLS to secure the connection.", true);
 
     public static final ConfigKey<Long> QuotaActivationRuleTimeout = new ConfigKey<>("Advanced", Long.class, "quota.activationrule.timeout", "2000", "The maximum runtime,"
@@ -62,6 +65,15 @@ public interface QuotaConfig {
 
     ConfigKey<Boolean> QuotaAccountEnabled = new ConfigKey<>("Advanced", Boolean.class, "quota.account.enabled", "true", "Indicates whether Quota plugin is enabled or not for " +
             "the account.", true, ConfigKey.Scope.Account);
+
+    ConfigKey<String> QuotaEmailHeader = new ConfigKey<>("Advanced", String.class, "quota.email.header", "",
+            "Text to be added as a header for quota emails. Line breaks are not automatically inserted between this section and the body.", true, ConfigKey.Scope.Domain);
+
+    ConfigKey<String> QuotaEmailFooter = new ConfigKey<>("Advanced", String.class, "quota.email.footer", "",
+            "Text to be added as a footer for quota emails. Line breaks are not automatically inserted between this section and the body.", true, ConfigKey.Scope.Domain);
+
+    ConfigKey<Boolean> QuotaEnableEmails = new ConfigKey<>("Advanced", Boolean.class, "quota.enable.emails", "true",
+            "Indicates whether Quota emails should be sent or not to accounts. When enabled, the behavior for each account can be overridden through the API quotaConfigureEmail.", true, ConfigKey.Scope.Account);
 
     enum QuotaEmailTemplateTypes {
         QUOTA_LOW, QUOTA_EMPTY, QUOTA_UNLOCK_ACCOUNT, QUOTA_STATEMENT

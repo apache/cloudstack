@@ -29,6 +29,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "kubernetes_cluster")
@@ -52,16 +53,16 @@ public class KubernetesClusterVO implements KubernetesCluster {
     private long zoneId;
 
     @Column(name = "kubernetes_version_id")
-    private long kubernetesVersionId;
+    private Long kubernetesVersionId;
 
     @Column(name = "service_offering_id")
-    private long serviceOfferingId;
+    private Long serviceOfferingId;
 
     @Column(name = "template_id")
-    private long templateId;
+    private Long templateId;
 
     @Column(name = "network_id")
-    private long networkId;
+    private Long networkId;
 
     @Column(name = "domain_id")
     private long domainId;
@@ -114,6 +115,39 @@ public class KubernetesClusterVO implements KubernetesCluster {
     @Column(name = "security_group_id")
     private Long securityGroupId;
 
+    @Column(name = "cluster_type")
+    private ClusterType clusterType;
+
+    @Column(name = "control_node_service_offering_id")
+    private Long controlNodeServiceOfferingId;
+
+    @Column(name = "worker_node_service_offering_id")
+    private Long workerNodeServiceOfferingId;
+
+    @Column(name = "etcd_node_service_offering_id")
+    private Long etcdNodeServiceOfferingId;
+
+    @Column(name = "etcd_node_count")
+    private Long etcdNodeCount;
+
+    @Column(name = "control_node_template_id")
+    private Long controlNodeTemplateId;
+
+    @Column(name = "worker_node_template_id")
+    private Long workerNodeTemplateId;
+
+    @Column(name = "etcd_node_template_id")
+    private Long etcdNodeTemplateId;
+
+    @Column(name = "cni_config_id", nullable = true)
+    private Long cniConfigId = null;
+
+    @Column(name = "cni_config_details", updatable = true, length = 4096)
+    private String cniConfigDetails;
+
+    @Column(name = "csi_enabled")
+    private boolean csiEnabled;
+
     @Override
     public long getId() {
         return id;
@@ -160,7 +194,7 @@ public class KubernetesClusterVO implements KubernetesCluster {
     }
 
     @Override
-    public long getKubernetesVersionId() {
+    public Long getKubernetesVersionId() {
         return kubernetesVersionId;
     }
 
@@ -169,7 +203,7 @@ public class KubernetesClusterVO implements KubernetesCluster {
     }
 
     @Override
-    public long getServiceOfferingId() {
+    public Long getServiceOfferingId() {
         return serviceOfferingId;
     }
 
@@ -178,7 +212,7 @@ public class KubernetesClusterVO implements KubernetesCluster {
     }
 
     @Override
-    public long getTemplateId() {
+    public Long getTemplateId() {
         return templateId;
     }
 
@@ -187,7 +221,7 @@ public class KubernetesClusterVO implements KubernetesCluster {
     }
 
     @Override
-    public long getNetworkId() {
+    public Long getNetworkId() {
         return networkId;
     }
 
@@ -233,7 +267,7 @@ public class KubernetesClusterVO implements KubernetesCluster {
 
     @Override
     public long getTotalNodeCount() {
-        return this.controlNodeCount + this.nodeCount;
+        return this.controlNodeCount + this.nodeCount + this.getEtcdNodeCount();
     }
 
     @Override
@@ -350,13 +384,29 @@ public class KubernetesClusterVO implements KubernetesCluster {
         return securityGroupId;
     }
 
+    public ClusterType getClusterType() {
+        return clusterType;
+    }
+
+    public void setClusterType(ClusterType clusterType) {
+        this.clusterType = clusterType;
+    }
+
+    public boolean isCsiEnabled() {
+        return csiEnabled;
+    }
+
+    public void setCsiEnabled(boolean csiEnabled) {
+        this.csiEnabled = csiEnabled;
+    }
+
     public KubernetesClusterVO() {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public KubernetesClusterVO(String name, String description, long zoneId, long kubernetesVersionId, long serviceOfferingId, long templateId,
-                               long networkId, long domainId, long accountId, long controlNodeCount, long nodeCount, State state,
-                               String keyPair, long cores, long memory, Long nodeRootDiskSize, String endpoint) {
+    public KubernetesClusterVO(String name, String description, long zoneId, Long kubernetesVersionId, Long serviceOfferingId, Long templateId,
+                               Long networkId, long domainId, long accountId, long controlNodeCount, long nodeCount, State state,
+                               String keyPair, long cores, long memory, Long nodeRootDiskSize, String endpoint, ClusterType clusterType) {
         this.uuid = UUID.randomUUID().toString();
         this.name = name;
         this.description = description;
@@ -377,21 +427,102 @@ public class KubernetesClusterVO implements KubernetesCluster {
             this.nodeRootDiskSize = nodeRootDiskSize;
         }
         this.endpoint = endpoint;
+        this.clusterType = clusterType;
         this.checkForGc = false;
     }
 
     public KubernetesClusterVO(String name, String description, long zoneId, long kubernetesVersionId, long serviceOfferingId, long templateId,
         long networkId, long domainId, long accountId, long controlNodeCount, long nodeCount, State state, String keyPair, long cores,
-        long memory, Long nodeRootDiskSize, String endpoint, boolean autoscalingEnabled, Long minSize, Long maxSize) {
+        long memory, Long nodeRootDiskSize, String endpoint, ClusterType clusterType, boolean autoscalingEnabled, Long minSize, Long maxSize) {
         this(name, description, zoneId, kubernetesVersionId, serviceOfferingId, templateId, networkId, domainId, accountId, controlNodeCount,
-            nodeCount, state, keyPair, cores, memory, nodeRootDiskSize, endpoint);
+            nodeCount, state, keyPair, cores, memory, nodeRootDiskSize, endpoint, clusterType);
         this.autoscalingEnabled = autoscalingEnabled;
         this.minSize = minSize;
         this.maxSize = maxSize;
     }
 
     @Override
+    public String toString() {
+        return String.format("KubernetesCluster %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name"));
+    }
+
+    @Override
     public Class<?> getEntityType() {
         return KubernetesCluster.class;
     }
+
+    public Long getControlNodeServiceOfferingId() {
+        return controlNodeServiceOfferingId;
+    }
+
+    public void setControlNodeServiceOfferingId(Long controlNodeServiceOfferingId) {
+        this.controlNodeServiceOfferingId = controlNodeServiceOfferingId;
+    }
+
+    public Long getWorkerNodeServiceOfferingId() {
+        return workerNodeServiceOfferingId;
+    }
+
+    public void setWorkerNodeServiceOfferingId(Long workerNodeServiceOfferingId) {
+        this.workerNodeServiceOfferingId = workerNodeServiceOfferingId;
+    }
+
+    public Long getEtcdNodeServiceOfferingId() {
+        return etcdNodeServiceOfferingId;
+    }
+
+    public void setEtcdNodeServiceOfferingId(Long etcdNodeServiceOfferingId) {
+        this.etcdNodeServiceOfferingId = etcdNodeServiceOfferingId;
+    }
+
+    public Long getEtcdNodeCount() {
+        return etcdNodeCount != null ? etcdNodeCount : 0L;
+    }
+
+    public void setEtcdNodeCount(Long etcdNodeCount) {
+        this.etcdNodeCount = etcdNodeCount;
+    }
+
+    public Long getEtcdNodeTemplateId() {
+        return etcdNodeTemplateId;
+    }
+
+    public void setEtcdNodeTemplateId(Long etcdNodeTemplateId) {
+        this.etcdNodeTemplateId = etcdNodeTemplateId;
+    }
+
+    public Long getWorkerNodeTemplateId() {
+        return workerNodeTemplateId;
+    }
+
+    public void setWorkerNodeTemplateId(Long workerNodeTemplateId) {
+        this.workerNodeTemplateId = workerNodeTemplateId;
+    }
+
+    public Long getControlNodeTemplateId() {
+        return controlNodeTemplateId;
+    }
+
+    public void setControlNodeTemplateId(Long controlNodeTemplateId) {
+        this.controlNodeTemplateId = controlNodeTemplateId;
+    }
+
+    public Long getCniConfigId() {
+        return cniConfigId;
+    }
+
+    public void setCniConfigId(Long cniConfigId) {
+        this.cniConfigId = cniConfigId;
+    }
+
+    public String getCniConfigDetails() {
+        return cniConfigDetails;
+    }
+
+    public void setCniConfigDetails(String cniConfigDetails) {
+        this.cniConfigDetails = cniConfigDetails;
+    }
+
 }

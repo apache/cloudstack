@@ -76,6 +76,10 @@ public class ApplicationLoadBalancerResponse extends BaseResponse implements Con
     @Param(description = "the domain of the Load Balancer")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain to which the Load Balancer belongs", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName("loadbalancerrule")
     @Param(description = "the list of rules associated with the Load Balancer", responseObject = ApplicationLoadBalancerRuleResponse.class)
     private List<ApplicationLoadBalancerRuleResponse> lbRules;
@@ -105,6 +109,11 @@ public class ApplicationLoadBalancerResponse extends BaseResponse implements Con
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     @Override

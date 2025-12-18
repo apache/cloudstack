@@ -26,6 +26,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.GetGPUStatsCommand;
 import org.apache.cloudstack.ca.SetupCertificateCommand;
 import org.apache.cloudstack.ca.SetupKeyStoreCommand;
 import org.apache.cloudstack.diagnostics.DiagnosticsCommand;
@@ -34,7 +35,6 @@ import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.command.UploadStatusCommand;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
@@ -115,6 +115,7 @@ import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.api.commands.CleanupSimulatorMockCmd;
 import com.cloud.api.commands.ConfigureSimulatorCmd;
 import com.cloud.api.commands.ConfigureSimulatorHAProviderState;
@@ -141,7 +142,6 @@ import com.google.gson.stream.JsonReader;
 
 @Component
 public class SimulatorManagerImpl extends ManagerBase implements SimulatorManager, PluggableService {
-    private static final Logger s_logger = Logger.getLogger(SimulatorManagerImpl.class);
     private static final Gson s_gson = GsonHelper.getGson();
     @Inject
     MockVmManager _mockVmMgr;
@@ -208,7 +208,7 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
     @DB
     @Override
     public Answer simulate(final Command cmd, final String hostGuid) {
-        s_logger.debug("Simulate command " + cmd);
+        logger.debug("Simulate command " + cmd);
         Answer answer = null;
         Exception exception = null;
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
@@ -233,7 +233,7 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                         try {
                             info.setTimeout(Integer.valueOf(entry.getValue()));
                         } catch (final NumberFormatException e) {
-                            s_logger.debug("invalid timeout parameter: " + e.toString());
+                            logger.debug("invalid timeout parameter: " + e.toString());
                         }
                     }
 
@@ -242,9 +242,9 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                             final int wait = Integer.valueOf(entry.getValue());
                             Thread.sleep(wait);
                         } catch (final NumberFormatException e) {
-                            s_logger.debug("invalid wait parameter: " + e.toString());
+                            logger.debug("invalid wait parameter: " + e.toString());
                         } catch (final InterruptedException e) {
-                            s_logger.debug("thread is interrupted: " + e.toString());
+                            logger.debug("thread is interrupted: " + e.toString());
                         }
                     }
 
@@ -288,8 +288,10 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
             if (answer == null) {
                 if (cmd instanceof GetHostStatsCommand) {
                     answer = _mockAgentMgr.getHostStatistic((GetHostStatsCommand)cmd);
+                } else if (cmd instanceof GetGPUStatsCommand) {
+                    answer = _mockAgentMgr.getGpuStats((GetGPUStatsCommand) cmd, host.getId());
                 } else if (cmd instanceof CheckHealthCommand) {
-                    answer = _mockAgentMgr.checkHealth((CheckHealthCommand)cmd);
+                    answer = _mockAgentMgr.checkHealth((CheckHealthCommand) cmd);
                 } else if (cmd instanceof PingTestCommand) {
                     answer = _mockAgentMgr.pingTest((PingTestCommand)cmd);
                 } else if (cmd instanceof SetupKeyStoreCommand) {
@@ -442,6 +444,8 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                     answer = _mockVmMgr.fence((FenceCommand)cmd);
                 } else if (cmd instanceof HandleConfigDriveIsoCommand) {
                     answer = _mockStorageMgr.handleConfigDriveIso((HandleConfigDriveIsoCommand)cmd);
+                } else if (cmd instanceof ResizeVolumeCommand) {
+                    answer = _mockStorageMgr.handleResizeVolume((ResizeVolumeCommand)cmd);
                 } else if (cmd instanceof GetRouterAlertsCommand
                         || cmd instanceof VpnUsersCfgCommand
                         || cmd instanceof RemoteAccessVpnCfgCommand
@@ -450,7 +454,7 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                         || cmd instanceof SecStorageFirewallCfgCommand) {
                     answer = new Answer(cmd);
                 } else {
-                    s_logger.error("Simulator does not implement command of type " + cmd.toString());
+                    logger.error("Simulator does not implement command of type " + cmd.toString());
                     answer = Answer.createUnsupportedCommandAnswer(cmd);
                 }
             }
@@ -462,11 +466,11 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                 }
             }
 
-            s_logger.debug("Finished simulate command " + cmd);
+            logger.debug("Finished simulate command " + cmd);
 
             return answer;
         } catch (final Exception e) {
-            s_logger.error("Failed execute cmd: ", e);
+            logger.error("Failed execute cmd: ", e);
             txn.rollback();
             return new Answer(cmd, false, e.toString());
         } finally {

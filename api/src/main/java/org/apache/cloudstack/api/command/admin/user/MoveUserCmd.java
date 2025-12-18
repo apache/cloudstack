@@ -32,21 +32,19 @@ import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.RegionService;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.google.common.base.Preconditions;
 
 @APICommand(name = "moveUser",
-        description = "Moves a user to another account",
+        description = "Moves a user to another account in the same domain.",
         responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         since = "4.11",
         authorized = {RoleType.Admin})
 public class MoveUserCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(MoveUserCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -56,18 +54,18 @@ public class MoveUserCmd extends BaseCmd {
             type = CommandType.UUID,
             entityType = UserResponse.class,
             required = true,
-            description = "id of the user to be deleted")
+            description = "id of the user to be moved.")
     private Long id;
 
     @Parameter(name = ApiConstants.ACCOUNT,
             type = CommandType.STRING,
-            description = "Creates the user under the specified account. If no account is specified, the username will be used as the account name.")
+            description = "Moves the user under the specified account. If no account name is specified, it is necessary to provide an account id.")
     private String accountName;
 
     @Parameter(name = ApiConstants.ACCOUNT_ID,
             type = CommandType.UUID,
             entityType = AccountResponse.class,
-            description = "Creates the user under the specified domain. Has to be accompanied with the account parameter")
+            description = "Moves the user under the specified account. If no account id is specified, it is necessary to provide an account name.")
     private Long accountId;
 
     @Inject

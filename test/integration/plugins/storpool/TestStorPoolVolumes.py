@@ -32,6 +32,7 @@ from marvin.lib.base import (Account,
                              Volume,
                              SecurityGroup,
                              Role,
+                             DiskOffering,
                              )
 from marvin.lib.common import (get_zone,
                                get_domain,
@@ -77,12 +78,26 @@ class TestStoragePool(cloudstackTestCase):
 
     @classmethod
     def setUpCloudStack(cls):
+        config = cls.getClsConfig()
+        StorPoolHelper.logger = cls
+        cls.logger = StorPoolHelper.logger
+
+        zone = config.zones[0]
+        assert zone is not None
+
+        td = TestData()
+        cls.testdata = td.testdata
+        cls.helper = StorPoolHelper()
+
+        sp_pools = cls.helper.get_pool(zone)
+        assert sp_pools is not None
+
+        cls.spapi = spapi.Api(host=zone.spEndpoint, port=zone.spEndpointPort, auth=zone.spAuthToken, multiCluster=True)
         testClient = super(TestStoragePool, cls).getClsTestClient()
 
         cls._cleanup = []
 
         cls.apiclient = testClient.getApiClient()
-        cls.helper = StorPoolHelper()
 
         cls.unsupportedHypervisor = False
         cls.hypervisor = testClient.getHypervisorInfo()
@@ -94,45 +109,16 @@ class TestStoragePool(cloudstackTestCase):
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
-        cls.zone = None
-        zones = list_zones(cls.apiclient)
-
-        for z in zones:
-            if z.name == cls.getClsConfig().mgtSvr[0].zone:
-                cls.zone = z
-
+        cls.zone = list_zones(cls.apiclient, name=zone.name)[0]
+        cls.debug(cls.zone)
+        cls.debug(list_zones(cls.apiclient, name=zone.name))
         assert cls.zone is not None
 
-        cls.sp_template_1 = "ssd"
-        storpool_primary_storage = {
-            "name" : cls.sp_template_1,
-            "zoneid": cls.zone.id,
-            "url": "SP_API_HTTP=10.2.23.248:81;SP_AUTH_TOKEN=6549874687;SP_TEMPLATE=%s" % cls.sp_template_1,
-            "scope": "zone",
-            "capacitybytes": 564325555333,
-            "capacityiops": 155466,
-            "hypervisor": "kvm",
-            "provider": "StorPool",
-            "tags": cls.sp_template_1
-            }
+        cls.sp_template_1 = cls.testdata[TestData.sp_template_1]["tags"]
+        storpool_primary_storage = sp_pools[0]
 
-        cls.storpool_primary_storage = storpool_primary_storage
-        host, port, auth = cls.getCfgFromUrl(url = storpool_primary_storage["url"])
-        cls.spapi = spapi.Api(host=host, port=port, auth=auth, multiCluster=True)
-
-        storage_pool = list_storage_pools(
-            cls.apiclient,
-            name=storpool_primary_storage["name"]
-            )
-
-        if storage_pool is None:
-            newTemplate = sptypes.VolumeTemplateCreateDesc(name = storpool_primary_storage["name"],placeAll = "virtual", placeTail = "virtual", placeHead = "virtual", replication=1)
-            template_on_local = cls.spapi.volumeTemplateCreate(newTemplate)
-
-            storage_pool = StoragePool.create(cls.apiclient, storpool_primary_storage)
-        else:
-            storage_pool = storage_pool[0]
-        cls.primary_storage = storage_pool
+        cls.primary_storage = cls.create_pool_if_not_exists(storpool_primary_storage)
+        cls.helper.updateStoragePoolTags(cls.apiclient, cls.primary_storage.id, cls.sp_template_1)
 
 
         storpool_service_offerings_ssd = {
@@ -149,7 +135,7 @@ class TestStoragePool(cloudstackTestCase):
 
         service_offerings_ssd = list_service_offering(
             cls.apiclient,
-            name=storpool_service_offerings_ssd["name"]
+            name=cls.sp_template_1
             )
 
         if service_offerings_ssd is None:
@@ -161,36 +147,12 @@ class TestStoragePool(cloudstackTestCase):
         cls.debug(pprint.pformat(cls.service_offering))
 
 
-        cls.sp_template_2 = "ssd2"
+        cls.sp_template_2 = cls.testdata[TestData.sp_template_2]["tags"]
 
-        storpool_primary_storage2 = {
-            "name" : cls.sp_template_2,
-            "zoneid": cls.zone.id,
-            "url": "SP_API_HTTP=10.2.23.248:81;SP_AUTH_TOKEN=6549874687;SP_TEMPLATE=%s" % cls.sp_template_2,
-            "scope": "zone",
-            "capacitybytes": 564325555333,
-            "capacityiops": 1554,
-            "hypervisor": "kvm",
-            "provider": "StorPool",
-            "tags": cls.sp_template_2
-            }
+        storpool_primary_storage2 = sp_pools[1]
 
-        cls.storpool_primary_storage2 = storpool_primary_storage2
-        storage_pool = list_storage_pools(
-            cls.apiclient,
-            name=storpool_primary_storage2["name"]
-            )
-
-        if storage_pool is None:
-            newTemplate = sptypes.VolumeTemplateCreateDesc(name = storpool_primary_storage2["name"],placeAll = "virtual", placeTail = "virtual", placeHead = "virtual", replication=1)
-
-            template_on_local = cls.spapi.volumeTemplateCreate(newTemplate)
-
-            storage_pool = StoragePool.create(cls.apiclient, storpool_primary_storage2)
-
-        else:
-            storage_pool = storage_pool[0]
-        cls.primary_storage2 = storage_pool
+        cls.primary_storage2 = cls.create_pool_if_not_exists(storpool_primary_storage2)
+        cls.helper.updateStoragePoolTags(cls.apiclient, cls.primary_storage2.id, cls.sp_template_2)
 
         storpool_service_offerings_ssd2 = {
             "name": cls.sp_template_2,
@@ -215,25 +177,11 @@ class TestStoragePool(cloudstackTestCase):
 
         cls.service_offering2 = service_offerings_ssd2
 
-        disk_offerings = list_disk_offering(
-            cls.apiclient,
-            name="Small"
-            )
+        cls.disk_offerings  = cls.create_do_if_not_exists(cls.testdata[TestData.diskOfferingSmall])
 
-        disk_offering_20 = list_disk_offering(
-            cls.apiclient,
-            name="Medium"
-            )
+        cls.disk_offering_20 = cls.create_do_if_not_exists(cls.testdata[TestData.diskOfferingMedium])
 
-        disk_offering_100 = list_disk_offering(
-            cls.apiclient,
-            name="Large"
-            )
-
-
-        cls.disk_offerings = disk_offerings[0]
-        cls.disk_offering_20 = disk_offering_20[0]
-        cls.disk_offering_100 = disk_offering_100[0]
+        cls.disk_offering_100 = cls.create_do_if_not_exists(cls.testdata[TestData.diskOfferingLarge])
 
         #The version of CentOS has to be supported
         template = get_template(
@@ -252,14 +200,14 @@ class TestStoragePool(cloudstackTestCase):
         cls.services["zoneid"] = cls.zone.id
         cls.services["diskofferingid"] = cls.disk_offerings.id
 
-        role = Role.list(cls.apiclient, name='Admin')
+        role = Role.list(cls.apiclient, name='Root Admin')
 
         # Create VMs, VMs etc
         cls.account = Account.create(
                             cls.apiclient,
                             cls.services["account"],
                             domainid=cls.domain.id,
-                            roleid = role[0].id
+                            roleid = 1
                             )
 
         securitygroup = SecurityGroup.list(cls.apiclient, account = cls.account.name, domainid= cls.account.domainid)[0]
@@ -270,7 +218,7 @@ class TestStoragePool(cloudstackTestCase):
             cls.apiclient,
             {"diskname":"StorPoolDisk-1" },
             zoneid=cls.zone.id,
-            diskofferingid=disk_offerings[0].id,
+            diskofferingid=cls.disk_offerings.id,
             account=cls.account.name,
             domainid=cls.account.domainid,
         )
@@ -279,7 +227,7 @@ class TestStoragePool(cloudstackTestCase):
             cls.apiclient,
             {"diskname":"StorPoolDisk-2" },
             zoneid=cls.zone.id,
-            diskofferingid=disk_offerings[0].id,
+            diskofferingid=cls.disk_offerings.id,
             account=cls.account.name,
             domainid=cls.account.domainid,
         )
@@ -288,7 +236,7 @@ class TestStoragePool(cloudstackTestCase):
             cls.apiclient,
             {"diskname":"StorPoolDisk-3" },
             zoneid=cls.zone.id,
-            diskofferingid=disk_offerings[0].id,
+            diskofferingid=cls.disk_offerings.id,
             account=cls.account.name,
             domainid=cls.account.domainid,
         )
@@ -335,6 +283,34 @@ class TestStoragePool(cloudstackTestCase):
         cls.test_dir = "/tmp"
         cls.random_data = "random.data"
         return
+
+    @classmethod
+    def create_do_if_not_exists(cls, data):
+        disk_offerings = list_disk_offering(
+            cls.apiclient,
+            name=data["name"]
+        )
+        if disk_offerings is None:
+            disk_offerings = DiskOffering.create(cls.apiclient, data)
+        else:
+            disk_offerings = disk_offerings[0]
+        return disk_offerings
+
+    @classmethod
+    def create_pool_if_not_exists(cls, storpool_primary_storage):
+        storage_pool = list_storage_pools(
+            cls.apiclient,
+            name=storpool_primary_storage["name"]
+        )
+        if storage_pool is None:
+            newTemplate = sptypes.VolumeTemplateCreateDesc(name=storpool_primary_storage["name"], placeAll="virtual",
+                                                           placeTail="virtual", placeHead="virtual", replication=1)
+            template_on_local = cls.spapi.volumeTemplateCreate(newTemplate)
+
+            storage_pool = StoragePool.create(cls.apiclient, storpool_primary_storage)
+        else:
+            storage_pool = storage_pool[0]
+        return storage_pool
 
     @classmethod
     def tearDownClass(cls):
@@ -405,6 +381,8 @@ class TestStoragePool(cloudstackTestCase):
         self.assertIsNotNone(template, "Template is None")
         self.assertIsInstance(template, Template, "Template is instance of template")
         self._cleanup.append(template)
+        virtual_machine.stop(self.apiclient, forced=True)
+        virtual_machine.delete(self.apiclient, expunge=True)
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_02_snapshot_to_template_bypass_secondary(self):
@@ -486,6 +464,8 @@ class TestStoragePool(cloudstackTestCase):
         self.assertIsNotNone(template, "Template is None")
         self.assertIsInstance(template, Template, "Template is instance of template")
         self._cleanup.append(template)
+        virtual_machine.stop(self.apiclient, forced=True)
+        virtual_machine.delete(self.apiclient, expunge=True)
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_03_snapshot_volume_with_secondary(self):
@@ -1015,6 +995,8 @@ class TestStoragePool(cloudstackTestCase):
             )
 
         ssh_client = vm.get_ssh_client(reconnect=True)
+        vm.stop(self.apiclient, forced=True)
+        vm.delete(self.apiclient, expunge=True)
 
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
@@ -1824,6 +1806,8 @@ class TestStoragePool(cloudstackTestCase):
         self.assertIsNotNone(snapshot, "Snapshot is None")
 
         self.assertEqual(list_volumes_of_vm[0].id, snapshot.volumeid, "Snapshot is not for the same volume")
+        vm.stop(self.apiclient, forced=True)
+        vm.delete(self.apiclient, expunge=True)
 
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
@@ -1859,6 +1843,8 @@ class TestStoragePool(cloudstackTestCase):
         self.assertIsNotNone(template, "Template is None")
         self.assertIsInstance(template, Template, "Template is instance of template")
         self._cleanup.append(template)
+        virtual_machine.stop(self.apiclient, forced=True)
+        virtual_machine.delete(self.apiclient, expunge=True)
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_24_migrate_vm_to_another_storage(self):
@@ -1891,6 +1877,8 @@ class TestStoragePool(cloudstackTestCase):
         self.assertFalse(hasattr(self.volume, 'virtualmachineid') , "Volume is not detached")
 
         self.assertFalse(hasattr(self.volume, 'storageid') , "Volume is not detached")
+
+        self.helper.updateStoragePoolTags(apiclient=self.apiclient, poolId=self.primary_storage2.id, tags=self.testdata[TestData.sp_template_1]["tags"])
         volume = Volume.migrate(
             self.apiclient,
             volumeid = self.volume.id,
@@ -1900,6 +1888,8 @@ class TestStoragePool(cloudstackTestCase):
         self.assertIsNotNone(volume, "Volume is None")
 
         self.assertEqual(volume.storageid, self.primary_storage2.id, "Storage is the same")
+        self.helper.updateStoragePoolTags(apiclient=self.apiclient, poolId=self.primary_storage2.id, tags=self.testdata[TestData.sp_template_2]["tags"])
+
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_26_create_vm_on_another_storpool_storage(self):
@@ -1915,6 +1905,8 @@ class TestStoragePool(cloudstackTestCase):
             rootdisksize=10
             )
         self.assertIsNotNone(virtual_machine, "Could not create virtual machine on another Storpool primary storage")
+        virtual_machine.stop(self.apiclient, forced=True)
+        virtual_machine.delete(self.apiclient, expunge=True)
 
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
@@ -1957,6 +1949,8 @@ class TestStoragePool(cloudstackTestCase):
 
         self.assertIsNotNone(volume, "Could not create volume from snapshot")
         self.assertIsInstance(volume, Volume, "Volume is not instance of Volume")
+        virtual_machine.stop(self.apiclient, forced=True)
+        virtual_machine.delete(self.apiclient, expunge=True)
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_28_download_volume(self):
@@ -2040,6 +2034,10 @@ class TestStoragePool(cloudstackTestCase):
         self.assertIsNotNone(template, "Template is None")
         self.assertIsInstance(template, Template, "Template is instance of template")
         self._cleanup.append(template)
+        virtual_machine.stop(self.apiclient, forced=True)
+        virtual_machine.delete(self.apiclient, expunge=True)
+        virtual_machine2.stop(self.apiclient, forced=True)
+        virtual_machine2.delete(self.apiclient, expunge=True)
 
     @classmethod
     def create_volume(self, apiclient, zoneid=None, snapshotid=None, account=None, domainid=None):
@@ -2072,7 +2070,7 @@ class TestStoragePool(cloudstackTestCase):
                clusterid = c.id
                )
            for conf in configuration:
-               if conf.name == 'sp.cluster.id'  and (conf.value in clusterid[1]):
+               if conf.name == 'sp.cluster.id' and (conf.value in clusterid[1]):
                    return c
 
     @classmethod
@@ -2087,7 +2085,7 @@ class TestStoragePool(cloudstackTestCase):
                clusterid = c.id
                )
            for conf in configuration:
-               if conf.name == 'sp.cluster.id'  and (conf.value not in clusterid[1]):
+               if conf.name == 'sp.cluster.id' and (conf.value not in clusterid[1]):
                    return c
 
     @classmethod

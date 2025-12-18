@@ -18,13 +18,16 @@ package org.apache.cloudstack.storage.allocator;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import com.cloud.utils.Pair;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -43,30 +46,29 @@ import com.cloud.vm.VirtualMachineProfile;
 
 @Component
 public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
-    private static final Logger LOGGER = Logger.getLogger(ZoneWideStoragePoolAllocator.class);
     @Inject
     private DataStoreManager dataStoreMgr;
     @Inject
-    private CapacityDao capacityDao;
+    protected CapacityDao capacityDao;
 
     @Override
-    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck) {
+    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck, String keyword) {
         logStartOfSearch(dskCh, vmProfile, plan, returnUpTo, bypassStorageTypeCheck);
 
         if (!bypassStorageTypeCheck && dskCh.useLocalStorage()) {
             return null;
         }
 
-        if (LOGGER.isTraceEnabled()) {
+        if (logger.isTraceEnabled()) {
             // Log the pools details that are ignored because they are in disabled state
             logDisabledStoragePools(plan.getDataCenterId(), null, null, ScopeType.ZONE);
         }
 
         List<StoragePool> suitablePools = new ArrayList<>();
-
-        List<StoragePoolVO> storagePools = storagePoolDao.findZoneWideStoragePoolsByTags(plan.getDataCenterId(), dskCh.getTags());
-        if (storagePools == null) {
-            LOGGER.debug(String.format("Could not find any zone wide storage pool that matched with any of the following tags [%s].", Arrays.toString(dskCh.getTags())));
+        List<StoragePoolVO> storagePools = storagePoolDao.findZoneWideStoragePoolsByTags(plan.getDataCenterId(), dskCh.getTags(), true);
+        storagePools.addAll(storagePoolJoinDao.findStoragePoolByScopeAndRuleTags(plan.getDataCenterId(), null, null, ScopeType.ZONE, List.of(dskCh.getTags())));
+        if (storagePools.isEmpty()) {
+            logger.debug(String.format("Could not find any zone wide storage pool that matched with any of the following tags [%s].", Arrays.toString(dskCh.getTags())));
             storagePools = new ArrayList<>();
         }
 
@@ -82,7 +84,7 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
         storagePools.addAll(anyHypervisorStoragePools);
 
         // add remaining pools in zone, that did not match tags, to avoid set
-        List<StoragePoolVO> allPools = storagePoolDao.findZoneWideStoragePoolsByTags(plan.getDataCenterId(), null);
+        List<StoragePoolVO> allPools = storagePoolDao.findZoneWideStoragePoolsByTags(plan.getDataCenterId(), null, false);
         allPools.removeAll(storagePools);
         for (StoragePoolVO pool : allPools) {
             avoid.addPool(pool.getId());
@@ -94,10 +96,11 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
             }
             StoragePool storagePool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(storage.getId());
             if (filter(avoid, storagePool, dskCh, plan)) {
-                LOGGER.trace(String.format("Found suitable local storage pool [%s], adding to list.", storage));
+                logger.debug("Found suitable zone wide storage pool [{}] to allocate disk [{}] to it, adding to list.", storagePool, dskCh);
                 suitablePools.add(storagePool);
             } else {
                 if (canAddStoragePoolToAvoidSet(storage)) {
+                    logger.debug(String.format("Adding storage pool [%s] to avoid set during allocation of disk [%s].", storagePool, dskCh));
                     avoid.addPool(storagePool.getId());
                 }
             }
@@ -123,9 +126,16 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
             return null;
         }
 
-        List<Long> poolIdsByCapacity = capacityDao.orderHostsByFreeCapacity(zoneId, null, capacityType);
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("List of zone-wide storage pools in descending order of free capacity: "+ poolIdsByCapacity);
+        Pair<List<Long>, Map<Long, Double>> result = capacityDao.orderHostsByFreeCapacity(zoneId, null, capacityType);
+        List<Long> poolIdsByCapacity = result.first();
+        Map<Long, String> sortedHostByCapacity = result.second().entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> decimalFormat.format(entry.getValue() * 100) + "%",
+                        (e1, e2) -> e1, LinkedHashMap::new));
+        if (logger.isDebugEnabled()) {
+            logger.debug("List of zone-wide storage pools: [{}] in descending order of free capacity (percentage): {}",
+                    poolIdsByCapacity, sortedHostByCapacity);
         }
 
       //now filter the given list of Pools by this ordered list
@@ -153,8 +163,8 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
         long dcId = plan.getDataCenterId();
 
         List<Long> poolIdsByVolCount = volumeDao.listZoneWidePoolIdsByVolumeCount(dcId, account.getAccountId());
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("List of pools in ascending order of number of volumes for account id: " + account.getAccountId() + " is: " + poolIdsByVolCount);
+        if (logger.isDebugEnabled()) {
+            logger.debug("List of pools in ascending order of number of volumes for account id: " + account.getAccountId() + " is: " + poolIdsByVolCount);
         }
 
         // now filter the given list of Pools by this ordered list

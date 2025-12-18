@@ -29,17 +29,20 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 
 public class MigrateCommand extends Command {
     private String vmName;
-    private String destIp;
+    private String destinationIp;
     private Map<String, MigrateDiskInfo> migrateStorage;
     private boolean migrateStorageManaged;
     private boolean migrateNonSharedInc;
     private boolean autoConvergence;
     private String hostGuid;
-    private boolean isWindows;
-    private VirtualMachineTO vmTO;
+    private boolean windows;
+    private VirtualMachineTO virtualMachine;
     private boolean executeInSequence = false;
     private List<MigrateDiskInfo> migrateDiskInfoList = new ArrayList<>();
     private Map<String, DpdkTO> dpdkInterfaceMapping = new HashMap<>();
+
+    private int newVmCpuShares;
+
     Map<String, Boolean> vlanToPersistenceMap = new HashMap<>();
 
     public Map<String, DpdkTO> getDpdkInterfaceMapping() {
@@ -61,11 +64,11 @@ public class MigrateCommand extends Command {
     protected MigrateCommand() {
     }
 
-    public MigrateCommand(String vmName, String destIp, boolean isWindows, VirtualMachineTO vmTO, boolean executeInSequence) {
+    public MigrateCommand(String vmName, String destinationIp, boolean windows, VirtualMachineTO virtualMachine, boolean executeInSequence) {
         this.vmName = vmName;
-        this.destIp = destIp;
-        this.isWindows = isWindows;
-        this.vmTO = vmTO;
+        this.destinationIp = destinationIp;
+        this.windows = windows;
+        this.virtualMachine = virtualMachine;
         this.executeInSequence = executeInSequence;
     }
 
@@ -102,15 +105,15 @@ public class MigrateCommand extends Command {
     }
 
     public boolean isWindows() {
-        return isWindows;
+        return windows;
     }
 
     public VirtualMachineTO getVirtualMachine() {
-        return vmTO;
+        return virtualMachine;
     }
 
     public String getDestinationIp() {
-        return destIp;
+        return destinationIp;
     }
 
     public String getVmName() {
@@ -136,6 +139,14 @@ public class MigrateCommand extends Command {
 
     public void setMigrateDiskInfoList(List<MigrateDiskInfo> migrateDiskInfoList) {
         this.migrateDiskInfoList = migrateDiskInfoList;
+    }
+
+    public int getNewVmCpuShares() {
+        return newVmCpuShares;
+    }
+
+    public void setNewVmCpuShares(int newVmCpuShares) {
+        this.newVmCpuShares = newVmCpuShares;
     }
 
     public static class MigrateDiskInfo {
@@ -221,5 +232,10 @@ public class MigrateCommand extends Command {
         public void setSourceDiskOnStorageFileSystem(boolean isDiskOnFileSystemStorage) {
             this.isSourceDiskOnStorageFileSystem = isDiskOnFileSystemStorage;
         }
+    }
+
+    @Override
+    public boolean isReconcile() {
+        return true;
     }
 }

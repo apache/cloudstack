@@ -24,11 +24,13 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
+import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -37,21 +39,23 @@ import javax.xml.transform.TransformerException;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import org.apache.cloudstack.utils.linux.MemStat;
+
+import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.libvirt.Connect;
 import org.libvirt.StorageVol;
 import org.mockito.InOrder;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import com.cloud.agent.api.MigrateCommand;
@@ -59,15 +63,17 @@ import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo.DiskType;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo.DriverType;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo.Source;
+import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.to.DpdkTO;
+import com.cloud.agent.api.to.GPUDeviceTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.gpu.GpuDevice;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(value = {LibvirtConnection.class, LibvirtMigrateCommandWrapper.class, MemStat.class})
-@PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*", "org.xml.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class LibvirtMigrateCommandWrapperTest {
     String fullfile =
 "<domain type='kvm' id='4'>\n" +
@@ -129,6 +135,7 @@ public class LibvirtMigrateCommandWrapperTest {
 "    </disk>\n" +
 "    <disk type='file' device='cdrom'>\n" +
 "      <driver name='qemu' type='raw' cache='none'/>\n" +
+"      <source file='/mnt/ec8dfdd8-f341-3b0a-988f-cfbc93e46fc4/251-2-2b2071a4-21c7-340e-a861-1bd30fb5cbed.iso'/>\n" +
 "      <backingStore/>\n" +
 "      <target dev='hdc' bus='ide'/>\n" +
 "      <readonly/>\n" +
@@ -246,6 +253,7 @@ public class LibvirtMigrateCommandWrapperTest {
 "    </disk>\n" +
 "    <disk type='file' device='cdrom'>\n" +
 "      <driver name='qemu' type='raw' cache='none'/>\n" +
+"      <source file='/mnt/ec8dfdd8-f341-3b0a-988f-cfbc93e46fc4/251-2-2b2071a4-21c7-340e-a861-1bd30fb5cbed.iso'/>\n" +
 "      <backingStore/>\n" +
 "      <target dev='hdc' bus='ide'/>\n" +
 "      <readonly/>\n" +
@@ -444,6 +452,16 @@ public class LibvirtMigrateCommandWrapperTest {
         "  </seclabel>\n" +
         "</domain>";
 
+    @Mock
+    MigrateCommand migrateCommandMock;
+
+    @Mock
+    LibvirtComputingResource libvirtComputingResourceMock;
+
+    @Mock
+    VirtualMachineTO virtualMachineTOMock;
+
+    @Spy
     LibvirtMigrateCommandWrapper libvirtMigrateCmdWrapper = new LibvirtMigrateCommandWrapper();
 
     final String memInfo = "MemTotal:        5830236 kB\n" +
@@ -454,11 +472,6 @@ public class LibvirtMigrateCommandWrapperTest {
             "Active:          4260808 kB\n" +
             "Inactive:         949392 kB\n";
 
-    @Before
-    public void setup() throws Exception {
-        Scanner scanner = new Scanner(memInfo);
-        PowerMockito.whenNew(Scanner.class).withAnyArguments().thenReturn(scanner);
-    }
 
     private static final String sourcePoolUuid = "07eb495b-5590-3877-9fb7-23c6e9a40d40";
     private static final String destPoolUuid = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
@@ -568,11 +581,85 @@ public class LibvirtMigrateCommandWrapperTest {
             "  </devices>\n" +
             "</domain>\n";
 
+    private String xmlWithGpuDevices =
+            "<domain type='kvm' id='3'>\n" +
+            "  <name>i-2-3-VM</name>\n" +
+            "  <uuid>91860126-7dda-4876-ac1e-48d06cd4b2eb</uuid>\n" +
+            "  <memory unit='KiB'>524288</memory>\n" +
+            "  <currentMemory unit='KiB'>524288</currentMemory>\n" +
+            "  <vcpu placement='static'>1</vcpu>\n" +
+            "  <devices>\n" +
+            "    <emulator>/usr/libexec/qemu-kvm</emulator>\n" +
+            "    <disk type='file' device='disk'>\n" +
+            "      <driver name='qemu' type='qcow2' cache='none'/>\n" +
+            "      <source file='/mnt/storage/disk.qcow2'/>\n" +
+            "      <target dev='vda' bus='virtio'/>\n" +
+            "    </disk>\n" +
+            "    <hostdev mode='subsystem' type='pci' managed='yes' display='off'>\n" +
+            "      <driver name='vfio'/>\n" +
+            "      <source>\n" +
+            "        <address domain='0x0000' bus='0x01' slot='0x00' function='0x0'/>\n" +
+            "      </source>\n" +
+            "    </hostdev>\n" +
+            "    <hostdev mode='subsystem' type='mdev' managed='no' display='on'>\n" +
+            "      <source>\n" +
+            "        <address uuid='4b20d080-1b54-4048-85b3-a6a62d165c01'/>\n" +
+            "      </source>\n" +
+            "    </hostdev>\n" +
+            "    <interface type='bridge'>\n" +
+            "      <mac address='02:00:4c:5f:00:01'/>\n" +
+            "      <source bridge='breth1-511'/>\n" +
+            "      <target dev='vnet6'/>\n" +
+            "      <model type='e1000'/>\n" +
+            "    </interface>\n" +
+            "  </devices>\n" +
+            "</domain>";
+
+    private String xmlWithoutGpuDevices =
+            "<domain type='kvm' id='3'>\n" +
+            "  <name>i-2-3-VM</name>\n" +
+            "  <uuid>91860126-7dda-4876-ac1e-48d06cd4b2eb</uuid>\n" +
+            "  <memory unit='KiB'>524288</memory>\n" +
+            "  <currentMemory unit='KiB'>524288</currentMemory>\n" +
+            "  <vcpu placement='static'>1</vcpu>\n" +
+            "  <devices>\n" +
+            "    <emulator>/usr/libexec/qemu-kvm</emulator>\n" +
+            "    <disk type='file' device='disk'>\n" +
+            "      <driver name='qemu' type='qcow2' cache='none'/>\n" +
+            "      <source file='/mnt/storage/disk.qcow2'/>\n" +
+            "      <target dev='vda' bus='virtio'/>\n" +
+            "    </disk>\n" +
+            "    <interface type='bridge'>\n" +
+            "      <mac address='02:00:4c:5f:00:01'/>\n" +
+            "      <source bridge='breth1-511'/>\n" +
+            "      <target dev='vnet6'/>\n" +
+            "      <model type='e1000'/>\n" +
+            "    </interface>\n" +
+            "  </devices>\n" +
+            "</domain>";
+
+    private String xmlNoDevicesSection =
+            "<domain type='kvm' id='3'>\n" +
+            "  <name>i-2-3-VM</name>\n" +
+            "  <uuid>91860126-7dda-4876-ac1e-48d06cd4b2eb</uuid>\n" +
+            "  <memory unit='KiB'>524288</memory>\n" +
+            "  <currentMemory unit='KiB'>524288</currentMemory>\n" +
+            "  <vcpu placement='static'>1</vcpu>\n" +
+            "</domain>";
+
+    private Map<String, MigrateDiskInfo> createMapMigrateStorage(String sourceText, String path) {
+        Map<String, MigrateDiskInfo> mapMigrateStorage = new HashMap<String, MigrateDiskInfo>();
+
+        MigrateDiskInfo diskInfo = new MigrateDiskInfo("123456", DiskType.BLOCK, DriverType.RAW, Source.FILE, sourceText);
+        mapMigrateStorage.put(path, diskInfo);
+        return mapMigrateStorage;
+    }
+
     @Test
     public void testReplaceIpForVNCInDescFile() {
         final String targetIp = "192.168.22.21";
         final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFileAndNormalizePassword(fullfile, targetIp, null, "");
-        assertTrue("transformation does not live up to expectation:\n" + result, targetfile.equals(result));
+        assertEquals("transformation does not live up to expectation:\n" + result, targetfile, result);
     }
 
     @Test
@@ -596,7 +683,7 @@ public class LibvirtMigrateCommandWrapperTest {
         final String targetIp = "10.10.10.10";
         final String password = "12345678";
         final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFileAndNormalizePassword(xmlDesc, targetIp, password, "");
-        assertTrue("transformation does not live up to expectation:\n" + result, expectedXmlDesc.equals(result));
+        assertEquals("transformation does not live up to expectation:\n" + result, expectedXmlDesc, result);
     }
 
     @Test
@@ -620,7 +707,7 @@ public class LibvirtMigrateCommandWrapperTest {
         final String targetIp = "localhost.localdomain";
         final String password = "12345678";
         final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFileAndNormalizePassword(xmlDesc, targetIp, password, "");
-        assertTrue("transformation does not live up to expectation:\n" + result, expectedXmlDesc.equals(result));
+        assertEquals("transformation does not live up to expectation:\n" + result, expectedXmlDesc, result);
     }
 
     @Test
@@ -641,21 +728,21 @@ public class LibvirtMigrateCommandWrapperTest {
 
     @Test
     public void deleteLocalVolumeTest() throws Exception {
-        PowerMockito.mockStatic(LibvirtConnection.class);
-        Connect conn = Mockito.mock(Connect.class);
-
-        PowerMockito.doReturn(conn).when(LibvirtConnection.class, "getConnection");
-
         StorageVol storageVolLookupByPath = Mockito.mock(StorageVol.class);
-        Mockito.when(conn.storageVolLookupByPath("localPath")).thenReturn(storageVolLookupByPath);
+        try (MockedStatic<LibvirtConnection> libvirtConnectionMockedStatic = Mockito.mockStatic(LibvirtConnection.class)) {
+            Connect conn = Mockito.mock(Connect.class);
 
-        libvirtMigrateCmdWrapper.deleteLocalVolume("localPath");
+            Mockito.when(LibvirtConnection.getConnection()).thenReturn(conn);
 
-        PowerMockito.verifyStatic(LibvirtConnection.class, Mockito.times(1));
-        LibvirtConnection.getConnection();
-        InOrder inOrder = Mockito.inOrder(conn, storageVolLookupByPath);
-        inOrder.verify(conn, Mockito.times(1)).storageVolLookupByPath("localPath");
-        inOrder.verify(storageVolLookupByPath, Mockito.times(1)).delete(0);
+            Mockito.when(conn.storageVolLookupByPath("localPath")).thenReturn(storageVolLookupByPath);
+
+            libvirtMigrateCmdWrapper.deleteLocalVolume("localPath");
+
+            libvirtConnectionMockedStatic.verify(LibvirtConnection::getConnection, Mockito.times(1));
+            InOrder inOrder = Mockito.inOrder(conn, storageVolLookupByPath);
+            inOrder.verify(conn, Mockito.times(1)).storageVolLookupByPath("localPath");
+            inOrder.verify(storageVolLookupByPath, Mockito.times(1)).delete(0);
+        }
     }
 
     @Test
@@ -679,14 +766,14 @@ public class LibvirtMigrateCommandWrapperTest {
         MigrateDiskInfo returnedMigrateDiskInfo = libvirtMigrateCmdWrapper.searchDiskDefOnMigrateDiskInfoList(migrateDiskInfoList, disk);
 
         if (isExpectedDiskInfoNull)
-            Assert.assertEquals(null, returnedMigrateDiskInfo);
+            Assert.assertNull(returnedMigrateDiskInfo);
         else
             Assert.assertEquals(migrateDiskInfo, returnedMigrateDiskInfo);
     }
 
     @Test
     public void deleteOrDisconnectDisksOnSourcePoolTest() {
-        LibvirtMigrateCommandWrapper spyLibvirtMigrateCmdWrapper = PowerMockito.spy(libvirtMigrateCmdWrapper);
+        LibvirtMigrateCommandWrapper spyLibvirtMigrateCmdWrapper = libvirtMigrateCmdWrapper;
         Mockito.doNothing().when(spyLibvirtMigrateCmdWrapper).deleteLocalVolume("volPath");
 
         List<MigrateDiskInfo> migrateDiskInfoList = new ArrayList<>();
@@ -744,13 +831,11 @@ public class LibvirtMigrateCommandWrapperTest {
 
     @Test
     public void testReplaceStorage() throws Exception {
-        Map<String, MigrateDiskInfo> mapMigrateStorage = new HashMap<String, MigrateDiskInfo>();
+        Map<String, MigrateDiskInfo> mapMigrateStorage = createMapMigrateStorage("sourceTest", "/mnt/812ea6a3-7ad0-30f4-9cab-01e3f2985b98/4650a2f7-fce5-48e2-beaa-bcdf063194e6");
 
-        MigrateDiskInfo diskInfo = new MigrateDiskInfo("123456", DiskType.BLOCK, DriverType.RAW, Source.FILE, "sourctest");
-        mapMigrateStorage.put("/mnt/812ea6a3-7ad0-30f4-9cab-01e3f2985b98/4650a2f7-fce5-48e2-beaa-bcdf063194e6", diskInfo);
         final String result = libvirtMigrateCmdWrapper.replaceStorage(fullfile, mapMigrateStorage, true);
 
-        InputStream in = IOUtils.toInputStream(result);
+        InputStream in = IOUtils.toInputStream(result, "UTF-8");
         DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
         Document doc = docBuilder.parse(in);
@@ -761,7 +846,6 @@ public class LibvirtMigrateCommandWrapperTest {
 
     @Test
     public void testReplaceStorageWithSecrets() throws Exception {
-        Map<String, MigrateDiskInfo> mapMigrateStorage = new HashMap<String, MigrateDiskInfo>();
 
         final String xmlDesc =
             "<domain type='kvm' id='3'>" +
@@ -782,12 +866,11 @@ public class LibvirtMigrateCommandWrapperTest {
 
         final String volumeFile = "3530f749-82fd-458e-9485-a357e6e541db";
         String newDiskPath = "/mnt/2d0435e1-99e0-4f1d-94c0-bee1f6f8b99e/" + volumeFile;
-        MigrateDiskInfo diskInfo = new MigrateDiskInfo("123456", DiskType.BLOCK, DriverType.RAW, Source.FILE, newDiskPath);
-        mapMigrateStorage.put("/mnt/07eb495b-5590-3877-9fb7-23c6e9a40d40/bf8621b3-027c-497d-963b-06319650f048", diskInfo);
+        Map<String, MigrateDiskInfo> mapMigrateStorage = createMapMigrateStorage(newDiskPath, "/mnt/07eb495b-5590-3877-9fb7-23c6e9a40d40/bf8621b3-027c-497d-963b-06319650f048");
         final String result = libvirtMigrateCmdWrapper.replaceStorage(xmlDesc, mapMigrateStorage, false);
         final String expectedSecretUuid = LibvirtComputingResource.generateSecretUUIDFromString(volumeFile);
 
-        InputStream in = IOUtils.toInputStream(result);
+        InputStream in = IOUtils.toInputStream(result, "UTF-8");
         DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
         Document doc = docBuilder.parse(in);
@@ -827,7 +910,7 @@ public class LibvirtMigrateCommandWrapperTest {
         mapMigrateStorage.put("/mnt/07eb495b-5590-3877-9fb7-23c6e9a40d40/bf8621b3-027c-497d-963b-06319650f048", diskInfo);
 
         final String result = libvirtMigrateCmdWrapper.replaceStorage(xmlDesc, mapMigrateStorage, false);
-        InputStream in = IOUtils.toInputStream(result);
+        InputStream in = IOUtils.toInputStream(result, "UTF-8");
         DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
         Document doc = docBuilder.parse(in);
@@ -839,6 +922,7 @@ public class LibvirtMigrateCommandWrapperTest {
         assertXpath(doc, "/domain/devices/disk/encryption/secret/@uuid", expectedSecretUuid);
     }
 
+    @Test
     public void testReplaceStorageXmlDiskNotManagedStorage() throws ParserConfigurationException, TransformerException, SAXException, IOException {
         final LibvirtMigrateCommandWrapper lw = new LibvirtMigrateCommandWrapper();
         String destDisk1FileName = "XXXXXXXXXXXXXX";
@@ -870,5 +954,288 @@ public class LibvirtMigrateCommandWrapperTest {
         String replaced = lw.replaceDpdkInterfaces(sourceDPDKVMToMigrate, dpdkPortMapping);
         Assert.assertTrue(replaced.contains("csdpdk-7"));
         Assert.assertFalse(replaced.contains("csdpdk-1"));
+    }
+
+    @Test
+    public void updateVmSharesIfNeededTestNewCpuSharesEqualCurrentSharesShouldNotUpdateVmShares() throws ParserConfigurationException, IOException, TransformerException,
+            SAXException {
+        int newVmCpuShares = 1000;
+        int currentVmCpuShares = 1000;
+
+        Mockito.doReturn(newVmCpuShares).when(migrateCommandMock).getNewVmCpuShares();
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(currentVmCpuShares).when(libvirtComputingResourceMock).calculateCpuShares(virtualMachineTOMock);
+
+        String finalXml = libvirtMigrateCmdWrapper.updateVmSharesIfNeeded(migrateCommandMock, fullfile, libvirtComputingResourceMock);
+
+        Assert.assertEquals(finalXml, fullfile);
+    }
+
+    @Test
+    public void updateVmSharesIfNeededTestNewCpuSharesHigherThanCurrentSharesShouldUpdateVmShares() throws ParserConfigurationException, IOException, TransformerException,
+            SAXException {
+        int newVmCpuShares = 2000;
+        int currentVmCpuShares = 1000;
+
+        Mockito.doReturn(newVmCpuShares).when(migrateCommandMock).getNewVmCpuShares();
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(currentVmCpuShares).when(libvirtComputingResourceMock).calculateCpuShares(virtualMachineTOMock);
+
+        String finalXml = libvirtMigrateCmdWrapper.updateVmSharesIfNeeded(migrateCommandMock, fullfile, libvirtComputingResourceMock);
+
+        InputStream inputStream = IOUtils.toInputStream(finalXml, StandardCharsets.UTF_8);
+        DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
+        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+        Document document = docBuilder.parse(inputStream);
+
+        Element root = document.getDocumentElement();
+        Node sharesNode = root.getElementsByTagName("shares").item(0);
+        int updateShares = Integer.parseInt(sharesNode.getTextContent());
+
+        Assert.assertEquals(updateShares, newVmCpuShares);
+    }
+
+    @Test
+    public void updateVmSharesIfNeededTestNewCpuSharesLowerThanCurrentSharesShouldUpdateVmShares() throws ParserConfigurationException, IOException, TransformerException,
+            SAXException {
+        int newVmCpuShares = 500;
+        int currentVmCpuShares = 1000;
+
+        Mockito.doReturn(newVmCpuShares).when(migrateCommandMock).getNewVmCpuShares();
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(currentVmCpuShares).when(libvirtComputingResourceMock).calculateCpuShares(virtualMachineTOMock);
+
+        String finalXml = libvirtMigrateCmdWrapper.updateVmSharesIfNeeded(migrateCommandMock, fullfile, libvirtComputingResourceMock);
+
+        InputStream inputStream = IOUtils.toInputStream(finalXml, StandardCharsets.UTF_8);
+        DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
+        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+        Document document = docBuilder.parse(inputStream);
+
+        Element root = document.getDocumentElement();
+        Node sharesNode = root.getElementsByTagName("shares").item(0);
+        int updateShares = Integer.parseInt(sharesNode.getTextContent());
+
+        Assert.assertEquals(updateShares, newVmCpuShares);
+    }
+
+    @Test
+    public void getMigrateStorageDeviceLabelsTestNoDiskDefinitions() {
+        Map<String, MigrateDiskInfo> mapMigrateStorage = createMapMigrateStorage("sourceTest", "/mnt/812ea6a3-7ad0-30f4-9cab-01e3f2985b98/4650a2f7-fce5-48e2-beaa-bcdf063194e6");
+
+        Set<String> result = libvirtMigrateCmdWrapper.getMigrateStorageDeviceLabels(new ArrayList<>(), mapMigrateStorage);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void getMigrateStorageDeviceLabelsTestNoMapMigrateStorage() {
+        List<DiskDef> disks = new ArrayList<>();
+        DiskDef diskDef0 = new DiskDef();
+
+        diskDef0.setDiskPath("volPath");
+        disks.add(diskDef0);
+
+        Set<String> result = libvirtMigrateCmdWrapper.getMigrateStorageDeviceLabels(disks, new HashMap<>());
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void getMigrateStorageDeviceLabelsTestPathIsNotFound() {
+        List<DiskDef> disks = new ArrayList<>();
+        DiskDef diskDef0 = new DiskDef();
+
+        diskDef0.setDiskPath("volPath");
+        disks.add(diskDef0);
+
+        Map<String, MigrateDiskInfo> mapMigrateStorage = createMapMigrateStorage("sourceTest", "/mnt/812ea6a3-7ad0-30f4-9cab-01e3f2985b98/4650a2f7-fce5-48e2-beaa-bcdf063194e6");
+
+        Set<String> result = libvirtMigrateCmdWrapper.getMigrateStorageDeviceLabels(disks, mapMigrateStorage);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void getMigrateStorageDeviceLabelsTestFindPathAndLabels() {
+        List<DiskDef> disks = new ArrayList<>();
+        DiskDef diskDef0 = new DiskDef();
+        DiskDef diskDef1 = new DiskDef();
+
+        diskDef0.setDiskPath("volPath1");
+        diskDef0.setDiskLabel("vda");
+        disks.add(diskDef0);
+
+        diskDef1.setDiskPath("volPath2");
+        diskDef1.setDiskLabel("vdb");
+        disks.add(diskDef1);
+
+        Map<String, MigrateDiskInfo> mapMigrateStorage = createMapMigrateStorage("sourceTest", "volPath1");
+        mapMigrateStorage.put("volPath2", new MigrateDiskInfo("123457", DiskType.BLOCK, DriverType.RAW, Source.FILE, "sourceText"));
+
+        Set<String> result = libvirtMigrateCmdWrapper.getMigrateStorageDeviceLabels(disks, mapMigrateStorage);
+
+        assertTrue(result.containsAll(Arrays.asList("vda", "vdb")));
+    }
+
+    @Test
+    public void replaceCdromIsoPathTest() throws ParserConfigurationException, IOException, TransformerException,
+            SAXException {
+        String oldIsoVolumePath = "/mnt/ec8dfdd8-f341-3b0a-988f-cfbc93e46fc4/251-2-2b2071a4-21c7-340e-a861-1bd30fb5cbed.iso";
+        String newIsoVolumePath = "/mnt/50bf9d15-1b0f-3cc1-9e8a-55df3e17e0c4/251-2-2b2071a4-21c7-340e-a861-1bd30fb5cbed.iso";
+
+        String finalXml = libvirtMigrateCmdWrapper.replaceCdromIsoPath(fullfile, null, oldIsoVolumePath, newIsoVolumePath);
+
+        Assert.assertTrue(finalXml.contains(newIsoVolumePath));
+    }
+
+    @Test
+    public void updateGpuDevicesIfNeededTestNoGpuDevice() throws Exception {
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(null).when(virtualMachineTOMock).getGpuDevice();
+
+        String result = libvirtMigrateCmdWrapper.updateGpuDevicesIfNeeded(migrateCommandMock, xmlWithoutGpuDevices, libvirtComputingResourceMock);
+
+        Assert.assertEquals("XML should remain unchanged when no GPU device is present", xmlWithoutGpuDevices, result);
+    }
+
+    @Test
+    public void updateGpuDevicesIfNeededTestNoDevicesSection() throws Exception {
+        List<VgpuTypesInfo> gpuDevices = createTestMixedGpuDevices();
+        GPUDeviceTO gpuDeviceTO = Mockito.mock(GPUDeviceTO.class);
+        Mockito.doReturn(gpuDevices).when(gpuDeviceTO).getGpuDevices();
+
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(gpuDeviceTO).when(virtualMachineTOMock).getGpuDevice();
+
+        String result = libvirtMigrateCmdWrapper.updateGpuDevicesIfNeeded(migrateCommandMock, xmlNoDevicesSection, libvirtComputingResourceMock);
+
+        Assert.assertEquals("XML should remain unchanged when no devices section is found", xmlNoDevicesSection, result);
+    }
+
+    @Test
+    public void updateGpuDevicesIfNeededTestWithPciDevice() throws Exception {
+        List<VgpuTypesInfo> gpuDevices = createTestPciGpuDevice();
+        GPUDeviceTO gpuDeviceTO = Mockito.mock(GPUDeviceTO.class);
+        Mockito.doReturn(gpuDevices).when(gpuDeviceTO).getGpuDevices();
+
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(gpuDeviceTO).when(virtualMachineTOMock).getGpuDevice();
+
+        String result = libvirtMigrateCmdWrapper.updateGpuDevicesIfNeeded(migrateCommandMock, xmlWithGpuDevices, libvirtComputingResourceMock);
+
+        // Verify that old GPU devices are removed and new ones are added
+        Assert.assertFalse("Old PCI device should be removed", result.contains("bus='0x01' slot='0x00'"));
+        Assert.assertFalse("Old MDEV device should be removed", result.contains("4b20d080-1b54-4048-85b3-a6a62d165c01"));
+        Assert.assertTrue("New PCI device should be added", result.contains("bus=\"0x02\""));
+        Assert.assertTrue("New PCI device should be added", result.contains("slot=\"0x00\""));
+        Assert.assertTrue("PCI device should have vfio driver", result.contains("name=\"vfio\""));
+    }
+
+    @Test
+    public void updateGpuDevicesIfNeededTestWithMdevDevice() throws Exception {
+        List<VgpuTypesInfo> gpuDevices = createTestMdevGpuDevice();
+        GPUDeviceTO gpuDeviceTO = Mockito.mock(GPUDeviceTO.class);
+        Mockito.doReturn(gpuDevices).when(gpuDeviceTO).getGpuDevices();
+
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(gpuDeviceTO).when(virtualMachineTOMock).getGpuDevice();
+
+        String result = libvirtMigrateCmdWrapper.updateGpuDevicesIfNeeded(migrateCommandMock, xmlWithGpuDevices, libvirtComputingResourceMock);
+
+        // Verify that old GPU devices are removed and new ones are added
+        Assert.assertFalse("Old PCI device should be removed", result.contains("bus='0x01' slot='0x00'"));
+        Assert.assertFalse("Old MDEV device should be removed", result.contains("4b20d080-1b54-4048-85b3-a6a62d165c01"));
+        Assert.assertTrue("New MDEV device should be added", result.contains("6f20d080-1b54-4048-85b3-a6a62d165c01"));
+        Assert.assertTrue("MDEV device should have display=off", result.contains("display=\"off\""));
+    }
+
+    @Test
+    public void updateGpuDevicesIfNeededTestWithMixedDevices() throws Exception {
+        List<VgpuTypesInfo> gpuDevices = createTestMixedGpuDevices();
+        GPUDeviceTO gpuDeviceTO = Mockito.mock(GPUDeviceTO.class);
+        Mockito.doReturn(gpuDevices).when(gpuDeviceTO).getGpuDevices();
+
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(gpuDeviceTO).when(virtualMachineTOMock).getGpuDevice();
+
+        String result = libvirtMigrateCmdWrapper.updateGpuDevicesIfNeeded(migrateCommandMock, xmlWithGpuDevices, libvirtComputingResourceMock);
+
+        // Verify both PCI and MDEV devices are added
+        Assert.assertTrue("PCI device should be added", result.contains("bus=\"0x02\""));
+        Assert.assertTrue("PCI device should be added", result.contains("slot=\"0x00\""));
+        Assert.assertTrue("MDEV device should be added", result.contains("6f20d080-1b54-4048-85b3-a6a62d165c01"));
+
+        // Count hostdev elements to ensure we have both
+        long hostdevCount = result.lines().filter(line -> line.contains("<hostdev")).count();
+        Assert.assertEquals("Should have 2 hostdev elements", 2, hostdevCount);
+    }
+
+    @Test
+    public void updateGpuDevicesIfNeededTestRemoveAllGpuDevices() throws Exception {
+        List<VgpuTypesInfo> gpuDevices = new ArrayList<>(); // Empty list
+        GPUDeviceTO gpuDeviceTO = Mockito.mock(GPUDeviceTO.class);
+        Mockito.doReturn(gpuDevices).when(gpuDeviceTO).getGpuDevices();
+
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(gpuDeviceTO).when(virtualMachineTOMock).getGpuDevice();
+
+        String result = libvirtMigrateCmdWrapper.updateGpuDevicesIfNeeded(migrateCommandMock, xmlWithoutGpuDevices, libvirtComputingResourceMock);
+
+        // Verify all GPU devices are removed
+        Assert.assertFalse("Old PCI device should be removed", result.contains("bus=\"0x01\""));
+        Assert.assertFalse("Old PCI device should be removed", result.contains("slot=\"0x00\""));
+        Assert.assertFalse("Old MDEV device should be removed", result.contains("4b20d080-1b54-4048-85b3-a6a62d165c01"));
+
+        // Verify no hostdev elements remain
+        long hostdevCount = result.lines().filter(line -> line.contains("<hostdev")).count();
+        Assert.assertEquals("Should have no hostdev elements", 0, hostdevCount);
+    }
+
+    // Helper methods for creating test GPU devices
+    private List<VgpuTypesInfo> createTestPciGpuDevice() {
+        List<VgpuTypesInfo> devices = new ArrayList<>();
+        VgpuTypesInfo pciDevice = new VgpuTypesInfo(
+                GpuDevice.DeviceType.PCI,
+                "NVIDIA Corporation Tesla T4",
+                "passthrough",
+                "02:00.0", // New bus address for destination host
+                "10de",
+                "NVIDIA Corporation",
+                "1eb8",
+                "Tesla T4"
+        );
+        pciDevice.setDisplay(false);
+        devices.add(pciDevice);
+        return devices;
+    }
+
+    private List<VgpuTypesInfo> createTestMdevGpuDevice() {
+        List<VgpuTypesInfo> devices = new ArrayList<>();
+        VgpuTypesInfo mdevDevice = new VgpuTypesInfo(
+                GpuDevice.DeviceType.MDEV,
+                "nvidia-63",
+                "GRID T4-2Q",
+                "6f20d080-1b54-4048-85b3-a6a62d165c01", // New UUID for destination host
+                "10de",
+                "NVIDIA Corporation",
+                "1eb8",
+                "Tesla T4"
+        );
+        mdevDevice.setDisplay(false);
+        devices.add(mdevDevice);
+        return devices;
+    }
+
+    private List<VgpuTypesInfo> createTestMixedGpuDevices() {
+        List<VgpuTypesInfo> devices = new ArrayList<>();
+
+        // Add PCI device
+        devices.addAll(createTestPciGpuDevice());
+
+        // Add MDEV device
+        devices.addAll(createTestMdevGpuDevice());
+
+        return devices;
     }
 }

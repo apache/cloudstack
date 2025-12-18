@@ -158,7 +158,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -209,7 +209,7 @@ export default {
     },
     fetchData () {
       this.loading = true
-      api('listZones', { showicon: true }).then(json => {
+      getAPI('listZones', { showicon: true }).then(json => {
         this.zones = json.listzonesresponse.zone || []
         this.zones = this.zones.filter(zone => zone.type !== 'Edge')
         this.form.zoneId = this.zones[0].id || ''
@@ -223,7 +223,7 @@ export default {
     },
     fetchDiskOfferings (zoneId) {
       this.loading = true
-      api('listDiskOfferings', {
+      getAPI('listDiskOfferings', {
         zoneid: zoneId,
         listall: true
       }).then(json => {
@@ -234,7 +234,7 @@ export default {
     },
     fetchDomains () {
       this.domainLoading = true
-      api('listDomains', {
+      getAPI('listDomains', {
         listAll: true,
         details: 'min'
       }).then(response => {
@@ -250,7 +250,7 @@ export default {
       })
     },
     fetchAccounts () {
-      api('listAccounts', {
+      getAPI('listAccounts', {
         domainid: this.domainId
       }).then(response => {
         this.accountList = response.listaccountsresponse.account || []
@@ -295,7 +295,7 @@ export default {
         }
         params.domainId = this.domainId
         this.loading = true
-        api('uploadVolume', params).then(json => {
+        postAPI('uploadVolume', params).then(json => {
           this.$notification.success({
             message: this.$t('message.success.upload'),
             description: this.$t('message.success.upload.volume.description')

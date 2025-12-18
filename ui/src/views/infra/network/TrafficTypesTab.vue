@@ -17,8 +17,22 @@
 
 <template>
   <a-spin :spinning="fetchLoading">
-    <a-tabs :tabPosition="device === 'mobile' ? 'top' : 'left'" :animated="false">
+    <a-tabs :tabPosition="device === 'mobile' ? 'top' : 'left'" :animated="false" @tabClick="onClick">
       <a-tab-pane v-for="(item, index) in traffictypes" :tab="item.traffictype" :key="index">
+        <a-popconfirm
+          :title="$t('message.confirm.delete.traffic.type')"
+          @confirm="deleteTrafficType(item)"
+          :okText="$t('label.yes')"
+          :cancelText="$t('label.no')" >
+          <a-button
+            type="primary"
+            danger
+            style="width: 100%; margin-bottom: 10px"
+            :loading="loading"
+            :disabled="!('deleteTrafficType' in $store.getters.apis)">
+            <template #icon><delete-outlined /></template> {{ $t('label.delete.traffic.type') }}
+          </a-button>
+        </a-popconfirm>
         <div
           v-for="(type, idx) in ['kvmnetworklabel', 'vmwarenetworklabel', 'xennetworklabel', 'hypervnetworklabel', 'ovm3networklabel']"
           :key="idx"
@@ -64,12 +78,13 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import IpRangesTabPublic from './IpRangesTabPublic'
 import IpRangesTabManagement from './IpRangesTabManagement'
 import IpRangesTabStorage from './IpRangesTabStorage'
 import IpRangesTabGuest from './IpRangesTabGuest'
+import { trafficTypeTab } from '@/config/section/infra/phynetworks.js'
 
 export default {
   name: 'TrafficTypesTab',
@@ -113,16 +128,9 @@ export default {
   },
   methods: {
     async fetchData () {
+      this.fetchTrafficTypes()
       this.fetchLoading = true
-      api('listTrafficTypes', { physicalnetworkid: this.resource.id }).then(json => {
-        this.traffictypes = json.listtraffictypesresponse.traffictype
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => {
-        this.fetchLoading = false
-      })
-      this.fetchLoading = true
-      api('listNetworks', {
+      getAPI('listNetworks', {
         listAll: true,
         trafficType: 'Public',
         isSystem: true,
@@ -143,10 +151,20 @@ export default {
         this.fetchGuestNetwork()
       }
     },
+    fetchTrafficTypes () {
+      this.fetchLoading = true
+      getAPI('listTrafficTypes', { physicalnetworkid: this.resource.id }).then(json => {
+        this.traffictypes = json.listtraffictypesresponse.traffictype
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.fetchLoading = false
+      })
+    },
     fetchZones () {
       return new Promise((resolve, reject) => {
         this.fetchLoading = true
-        api('listZones', { id: this.resource.zoneid }).then(json => {
+        getAPI('listZones', { id: this.resource.zoneid }).then(json => {
           const zone = json.listzonesresponse.zone || []
           this.networkType = zone[0].networktype
           resolve(this.networkType)
@@ -159,7 +177,7 @@ export default {
       })
     },
     fetchGuestNetwork () {
-      api('listNetworks', {
+      getAPI('listNetworks', {
         listAll: true,
         trafficType: 'Guest',
         zoneId: this.resource.zoneid
@@ -174,6 +192,39 @@ export default {
       }).finally(() => {
         this.fetchLoading = false
       })
+    },
+    deleteTrafficType (trafficType) {
+      postAPI('deleteTrafficType', { id: trafficType.id }).then(response => {
+        this.$pollJob({
+          jobId: response.deletetraffictyperesponse.jobid,
+          title: this.$t('label.delete.traffic.type'),
+          description: trafficType.traffictype,
+          successMessage: this.$t('message.traffic.type.deleted') + ' ' + trafficType.traffictype,
+          successMethod: () => {
+            this.fetchLoading = false
+            this.fetchTrafficTypes()
+          },
+          errorMessage: this.$t('message.delete.failed'),
+          errorMethod: () => {
+            this.fetchLoading = false
+            this.fetchTrafficTypes()
+          },
+          loadingMessage: this.$t('message.delete.traffic.type.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          catchMethod: () => {
+            this.fetchLoading = false
+            this.fetchTrafficTypes()
+          }
+        })
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.fetchLoading = false
+        this.fetchTrafficTypes()
+      })
+    },
+    onClick (trafficType) {
+      trafficTypeTab.index = trafficType
     }
   }
 }

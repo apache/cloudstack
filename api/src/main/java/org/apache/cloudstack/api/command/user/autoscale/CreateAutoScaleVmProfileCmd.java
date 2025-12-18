@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -35,6 +34,7 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -50,7 +50,6 @@ import com.cloud.network.as.AutoScaleVmProfile;
             responseHasSensitiveInfo = false)
 @SuppressWarnings("rawtypes")
 public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateAutoScaleVmProfileCmd.class.getName());
 
     private static final String s_name = "autoscalevmprofileresponse";
 
@@ -101,11 +100,17 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
             description = "an optional binary data that can be sent to the virtual machine upon a successful deployment. " +
                     "This binary data must be base64 encoded before adding it to the request. " +
                     "Using HTTP GET (via querystring), you can send up to 4KB of data after base64 encoding. " +
-                    "Using HTTP POST(via POST body), you can send up to 1MB of data after base64 encoding." +
+                    "Using HTTP POST (via POST body), you can send up to 1MB of data after base64 encoding. " +
                     "You also need to change vm.userdata.max.length value",
             length = 1048576,
             since = "4.18.0")
     private String userData;
+
+    @Parameter(name = ApiConstants.USER_DATA_ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "the ID of the Userdata", since = "4.18.1")
+    private Long userDataId;
+
+    @Parameter(name = ApiConstants.USER_DATA_DETAILS, type = CommandType.MAP, description = "used to specify the parameters values for the variables in userdata.", since = "4.18.1")
+    private Map userDataDetails;
 
     @Parameter(name = ApiConstants.AUTOSCALE_USER_ID,
                type = CommandType.UUID,
@@ -161,6 +166,14 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
 
     public String getUserData() {
         return userData;
+    }
+
+    public Long getUserDataId() {
+        return userDataId;
+    }
+
+    public Map<String, String> getUserDataDetails() {
+        return convertDetailsToMap(userDataDetails);
     }
 
     public Long getAutoscaleUserId() {

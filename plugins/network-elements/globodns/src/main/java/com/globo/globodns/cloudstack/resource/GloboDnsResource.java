@@ -21,7 +21,6 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -68,7 +67,6 @@ public class GloboDnsResource extends ManagerBase implements ServerResource {
     private static final String REVERSE_DOMAIN_SUFFIX = "in-addr.arpa";
     private static final String DEFAULT_AUTHORITY_TYPE = "M";
 
-    private static final Logger s_logger = Logger.getLogger(GloboDnsResource.class);
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -125,7 +123,7 @@ public class GloboDnsResource extends ManagerBase implements ServerResource {
 
     @Override
     public StartupCommand[] initialize() {
-        s_logger.trace("initialize called");
+        logger.trace("initialize called");
         StartupCommand cmd = new StartupCommand(getType());
         cmd.setName(_name);
         cmd.setGuid(_guid);
@@ -197,7 +195,7 @@ public class GloboDnsResource extends ManagerBase implements ServerResource {
                 if (!cmd.isOverride()) {
                     for (Record record : _globoDns.getRecordAPI().listAll(domain.getId())) {
                         if (record.getTypeNSRecordAttributes().getId() == null) {
-                            s_logger.warn("There are records in domain " + cmd.getNetworkDomain() + " and override is not enable. I will not delete this domain.");
+                            logger.warn("There are records in domain " + cmd.getNetworkDomain() + " and override is not enable. I will not delete this domain.");
                             return new Answer(cmd, true, "Domain keeped");
                         }
                     }
@@ -205,7 +203,7 @@ public class GloboDnsResource extends ManagerBase implements ServerResource {
                 _globoDns.getDomainAPI().removeDomain(domain.getId());
                 scheduleExportChangesToBind();
             } else {
-                s_logger.warn("Domain " + cmd.getNetworkDomain() + " already been deleted.");
+                logger.warn("Domain " + cmd.getNetworkDomain() + " already been deleted.");
             }
 
             return new Answer(cmd, true, "Domain removed");
@@ -246,7 +244,7 @@ public class GloboDnsResource extends ManagerBase implements ServerResource {
             Domain domain = searchDomain(cmd.getNetworkDomain(), false);
             if (domain == null) {
                 domain = _globoDns.getDomainAPI().createDomain(cmd.getNetworkDomain(), cmd.getReverseTemplateId(), DEFAULT_AUTHORITY_TYPE);
-                s_logger.warn("Domain " + cmd.getNetworkDomain() + " doesn't exist, maybe someone removed it. It was automatically created with template "
+                logger.warn("Domain " + cmd.getNetworkDomain() + " doesn't exist, maybe someone removed it. It was automatically created with template "
                         + cmd.getReverseTemplateId());
             }
 
@@ -287,7 +285,7 @@ public class GloboDnsResource extends ManagerBase implements ServerResource {
         Domain reverseDomain = searchDomain(reverseDomainName, true);
         if (reverseDomain == null) {
             reverseDomain = _globoDns.getDomainAPI().createReverseDomain(reverseDomainName, templateId, DEFAULT_AUTHORITY_TYPE);
-            s_logger.info("Created reverse domain " + reverseDomainName + " with template " + templateId);
+            logger.info("Created reverse domain " + reverseDomainName + " with template " + templateId);
         }
 
         // create reverse
@@ -303,14 +301,14 @@ public class GloboDnsResource extends ManagerBase implements ServerResource {
             if (domain == null) {
                 // create
                 domain = _globoDns.getDomainAPI().createDomain(cmd.getDomainName(), cmd.getTemplateId(), DEFAULT_AUTHORITY_TYPE);
-                s_logger.info("Created domain " + cmd.getDomainName() + " with template " + cmd.getTemplateId());
+                logger.info("Created domain " + cmd.getDomainName() + " with template " + cmd.getTemplateId());
                 if (domain == null) {
                     return new Answer(cmd, false, "Unable to create domain " + cmd.getDomainName());
                 } else {
                     needsExport = true;
                 }
             } else {
-                s_logger.warn("Domain " + cmd.getDomainName() + " already exist.");
+                logger.warn("Domain " + cmd.getDomainName() + " already exist.");
             }
             return new Answer(cmd);
         } catch (GloboDnsException e) {
@@ -331,16 +329,16 @@ public class GloboDnsResource extends ManagerBase implements ServerResource {
     protected boolean removeRecord(String recordName, String recordValue, String bindZoneName, boolean reverse, boolean override) {
         Domain domain = searchDomain(bindZoneName, reverse);
         if (domain == null) {
-            s_logger.warn("Domain " + bindZoneName + " doesn't exists in GloboDNS. Record " + recordName + " has already been removed.");
+            logger.warn("Domain " + bindZoneName + " doesn't exists in GloboDNS. Record " + recordName + " has already been removed.");
             return false;
         }
         Record record = searchRecord(recordName, domain.getId());
         if (record == null) {
-            s_logger.warn("Record " + recordName + " in domain " + bindZoneName + " has already been removed.");
+            logger.warn("Record " + recordName + " in domain " + bindZoneName + " has already been removed.");
             return false;
         } else {
             if (!override && !record.getContent().equals(recordValue)) {
-                s_logger.warn("Record " + recordName + " in domain " + bindZoneName + " have different value from " + recordValue
+                logger.warn("Record " + recordName + " in domain " + bindZoneName + " have different value from " + recordValue
                         + " and override is not enable. I will not delete it.");
                 return false;
             }
@@ -363,7 +361,7 @@ public class GloboDnsResource extends ManagerBase implements ServerResource {
         if (record == null) {
             // Create new record
             record = _globoDns.getRecordAPI().createRecord(domainId, name, ip, type);
-            s_logger.info("Created record " + record.getName() + " in domain " + domainId);
+            logger.info("Created record " + record.getName() + " in domain " + domainId);
         } else {
             if (!ip.equals(record.getContent())) {
                 if (Boolean.TRUE.equals(override)) {
@@ -384,10 +382,10 @@ public class GloboDnsResource extends ManagerBase implements ServerResource {
         try {
             Export export = _globoDns.getExportAPI().scheduleExport();
             if (export != null) {
-                s_logger.info("GloboDns Export: " + export.getResult());
+                logger.info("GloboDns Export: " + export.getResult());
             }
         } catch (GloboDnsException e) {
-            s_logger.warn("Error on scheduling export. Although everything was persist, someone need to manually force export in GloboDns", e);
+            logger.warn("Error on scheduling export. Although everything was persist, someone need to manually force export in GloboDns", e);
         }
     }
 
@@ -428,11 +426,11 @@ public class GloboDnsResource extends ManagerBase implements ServerResource {
         // GloboDns search name in name and content. We need to iterate to check if recordName exists only in name
         for (Record candidate : candidates) {
             if (recordName.equalsIgnoreCase(candidate.getName())) {
-                s_logger.debug("Record " + recordName + " in domain id " + domainId + " found in GloboDNS");
+                logger.debug("Record " + recordName + " in domain id " + domainId + " found in GloboDNS");
                 return candidate;
             }
         }
-        s_logger.debug("Record " + recordName + " in domain id " + domainId + " not found in GloboDNS");
+        logger.debug("Record " + recordName + " in domain id " + domainId + " not found in GloboDNS");
         return null;
     }
 

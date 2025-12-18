@@ -26,7 +26,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.exception.UnavailableCommandException;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 
@@ -43,7 +42,6 @@ import com.cloud.utils.component.PluggableService;
 @Deprecated
 public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIAclChecker {
 
-    protected static final Logger LOGGER = Logger.getLogger(StaticRoleBasedAPIAccessChecker.class);
 
     private Set<String> commandPropertyFiles = new HashSet<String>();
     private Set<String> commandNames = new HashSet<String>();
@@ -74,14 +72,14 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
     @Override
     public boolean isEnabled() {
         if (roleService.isEnabled()) {
-            LOGGER.debug("RoleService is enabled. We will use it instead of StaticRoleBasedAPIAccessChecker.");
+            logger.debug("RoleService is enabled. We will use it instead of StaticRoleBasedAPIAccessChecker.");
         }
-        return roleService.isEnabled();
+        return !roleService.isEnabled();
     }
 
     @Override
     public List<String> getApisAllowedToUser(Role role, User user, List<String> apiNames) throws PermissionDeniedException {
-        if (isEnabled()) {
+        if (!isEnabled()) {
             return apiNames;
         }
 
@@ -93,7 +91,7 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
 
     @Override
     public boolean checkAccess(User user, String commandName) throws PermissionDeniedException {
-        if (isEnabled()) {
+        if (!isEnabled()) {
             return true;
         }
 
@@ -107,6 +105,10 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
 
     @Override
     public boolean checkAccess(Account account, String commandName) {
+        if (!isEnabled()) {
+            return true;
+        }
+
         RoleType roleType = accountService.getRoleType(account);
         if (isApiAllowed(commandName, roleType)) {
             return true;
@@ -176,7 +178,7 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
                         commandsPropertiesRoleBasedApisMap.get(roleType).add(apiName);
                 }
             } catch (NumberFormatException nfe) {
-                LOGGER.error(String.format("Malformed key=value pair for entry: [%s].", entry));
+                logger.error(String.format("Malformed key=value pair for entry: [%s].", entry));
             }
         }
     }

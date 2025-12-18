@@ -16,11 +16,13 @@
 //under the License.
 package org.apache.cloudstack.quota.vo;
 
-import org.apache.cloudstack.api.InternalIdentity;
+import com.cloud.utils.DateUtil;
+import org.apache.cloudstack.quota.QuotaTariff;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -33,11 +35,12 @@ import javax.persistence.TemporalType;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.TimeZone;
 import java.util.UUID;
 
 @Entity
 @Table(name = "quota_tariff")
-public class QuotaTariffVO implements InternalIdentity {
+public class QuotaTariffVO implements QuotaTariff {
     private static final long serialVersionUID = -7117933766387653203L;
 
     @Id
@@ -90,6 +93,10 @@ public class QuotaTariffVO implements InternalIdentity {
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date endDate;
 
+    @Column(name = "position")
+    protected Integer position;
+
+
     public QuotaTariffVO() {
     }
 
@@ -117,6 +124,7 @@ public class QuotaTariffVO implements InternalIdentity {
         this.setDescription(that.getDescription());
         this.setActivationRule(that.getActivationRule());
         this.setEndDate(that.getEndDate());
+        this.setPosition(that.getPosition());
     }
 
     public void setId(Long id) {
@@ -240,6 +248,7 @@ public class QuotaTariffVO implements InternalIdentity {
         return description;
     }
 
+    @Override
     public String getUuid() {
         return uuid;
     }
@@ -259,8 +268,23 @@ public class QuotaTariffVO implements InternalIdentity {
         return true;
     }
 
+    public Integer getPosition() {
+        return position;
+    }
+
+    public void setPosition(Integer position) {
+        this.position = position;
+    }
+
+
     @Override
     public String toString() {
-        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "uuid", "name", "effectiveOn", "endDate");
-    };
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "uuid", "name", "usageName");
+    }
+
+    public String toString(TimeZone timeZone) {
+        String startDateString = DateUtil.displayDateInTimezone(timeZone, getEffectiveOn());
+        String endDateString = DateUtil.displayDateInTimezone(timeZone, getEndDate());
+        return String.format("%s,\"startDate\":\"%s\",\"endDate\":\"%s\"}", StringUtils.chop(this.toString()), startDateString, endDateString);
+    }
 }

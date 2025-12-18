@@ -36,6 +36,9 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,15 +46,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
-import org.junit.Assert;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KVMGuruTest {
@@ -114,7 +114,7 @@ public class KVMGuruTest {
 
     @Before
     public void setup() throws UnsupportedEncodingException {
-        Mockito.when(vmTO.getLimitCpuUse()).thenReturn(true);
+        Mockito.when(vmTO.isLimitCpuUse()).thenReturn(true);
         Mockito.when(vmProfile.getVirtualMachine()).thenReturn(vm);
         Mockito.when(vm.getHostId()).thenReturn(hostId);
         Mockito.when(hostDao.findById(hostId)).thenReturn(host);
@@ -156,7 +156,7 @@ public class KVMGuruTest {
 
     @Test
     public void testSetVmQuotaPercentageNotCPULimit() {
-        Mockito.when(vmTO.getLimitCpuUse()).thenReturn(false);
+        Mockito.when(vmTO.isLimitCpuUse()).thenReturn(false);
         guru.setVmQuotaPercentage(vmTO, vmProfile);
         Mockito.verify(vmProfile, Mockito.never()).getVirtualMachine();
         Mockito.verify(vmTO, Mockito.never()).setCpuQuotaPercentage(Mockito.anyDouble());

@@ -30,6 +30,7 @@ public class PrimaryDataStoreParameters {
     private String providerName;
     private Map<String, String> details;
     private String tags;
+    private String storageAccessGroups;
     private StoragePoolType type;
     private HypervisorType hypervisorType;
     private String host;
@@ -42,6 +43,8 @@ public class PrimaryDataStoreParameters {
     private long usedBytes;
     private boolean managed;
     private Long capacityIops;
+
+    private Boolean isTagARule;
 
     /**
      * @return the userInfo
@@ -164,6 +167,21 @@ public class PrimaryDataStoreParameters {
     }
 
     /**
+     * @return the storageAccessGroups
+     */
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
+    }
+
+    /**
+     * @param storageAccessGroups
+     *            the storageAccessGroups to set
+     */
+    public void setStorageAccessGroups(String storageAccessGroups) {
+        this.storageAccessGroups = storageAccessGroups;
+    }
+
+    /**
      * @return the details
      */
     public Map<String, String> getDetails() {
@@ -276,5 +294,13 @@ public class PrimaryDataStoreParameters {
 
     public void setUsedBytes(long usedBytes) {
         this.usedBytes = usedBytes;
+    }
+
+    public Boolean isTagARule() {
+        return isTagARule;
+    }
+
+    public void setIsTagARule(Boolean isTagARule) {
+        this.isTagARule = isTagARule;
     }
 }

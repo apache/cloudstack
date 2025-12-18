@@ -455,7 +455,7 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
             self.fail("Domain admin is allowed to delete network for users not in their domain ")
         except Exception as e:
             self.debug ("When Domain admin tries to delete network for user in a different domain %s" %e)
-            if not CloudstackAclException.verifyMsginException(e,CloudstackAclException.NO_PERMISSION_TO_OPERATE_DOMAIN):
+            if not CloudstackAclException.verifyMsginException(e,CloudstackAclException.NO_PERMISSION_TO_OPERATE_SOURCE):
                self.fail("Error message validation failed when Domain admin tries to delete network for users not in their domain ")
 
 ## Test cases relating deleting network as regular user
@@ -490,7 +490,7 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
             self.fail("Regular user is allowed to delete network for users in their domain ")
         except Exception as e:
                 self.debug ("When user tries to delete network for users in their domain %s" %e)
-                if not CloudstackAclException.verifyMsginException(e,CloudstackAclException.NO_PERMISSION_TO_OPERATE_ACCOUNT):
+                if not CloudstackAclException.verifyMsginException(e,CloudstackAclException.NO_PERMISSION_TO_OPERATE_SOURCE):
                     self.fail("Regular user is allowed to delete network for users in their domain ")
 
     @attr("simulator_only",tags=["advanced"],required_hardware="false")
@@ -508,7 +508,7 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
             self.fail("Regular user is allowed to delete network for users not in their domain ")
         except Exception as e:
             self.debug ("When user tries to delete network for users in other domain %s" %e)
-            if not CloudstackAclException.verifyMsginException(e,CloudstackAclException.NO_PERMISSION_TO_OPERATE_ACCOUNT):
+            if not CloudstackAclException.verifyMsginException(e,CloudstackAclException.NO_PERMISSION_TO_OPERATE_SOURCE):
                 self.fail("Error message validation failed when Regular user tries to delete network for users not in their domain ")
 
     @staticmethod

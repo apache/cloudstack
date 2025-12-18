@@ -23,7 +23,6 @@ import org.apache.cloudstack.ha.HAResource;
 import org.apache.cloudstack.ha.HAResourceCounter;
 import org.apache.cloudstack.ha.provider.HACheckerException;
 import org.apache.cloudstack.ha.provider.HAProvider;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.concurrent.ExecutorService;
@@ -33,7 +32,6 @@ public class HealthCheckTask extends BaseHATask {
     @Inject
     private HAManager haManager;
 
-    public static final Logger LOG = Logger.getLogger(HealthCheckTask.class);
 
     public HealthCheckTask(final HAResource resource, final HAProvider<HAResource> haProvider, final HAConfig haConfig,
                            final HAProvider.HAProviderConfig haProviderConfig, final ExecutorService executor) {

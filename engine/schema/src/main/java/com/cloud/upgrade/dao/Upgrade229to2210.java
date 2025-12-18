@@ -23,12 +23,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class Upgrade229to2210 implements DbUpgrade {
-    final static Logger s_logger = Logger.getLogger(Upgrade229to2210.class);
+public class Upgrade229to2210 extends DbUpgradeAbstractImpl {
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -128,7 +126,7 @@ public class Upgrade229to2210 implements DbUpgrade {
                 pstmt.setString(8, UUID.randomUUID().toString());
                 pstmt.setLong(9, id);
 
-                s_logger.debug("Updating firewall rule with the statement " + pstmt);
+                logger.debug("Updating firewall rule with the statement " + pstmt);
                 pstmt.executeUpdate();
 
                 //get new FirewallRule update
@@ -159,12 +157,12 @@ public class Upgrade229to2210 implements DbUpgrade {
                     pstmt = conn.prepareStatement("update firewall_rules_cidrs set firewall_rule_id=? where firewall_rule_id=?");
                     pstmt.setLong(1, firewallRuleId);
                     pstmt.setLong(2, id);
-                    s_logger.debug("Updating existing cidrs for the rule id=" + id + " with the new Firewall rule id=" + firewallRuleId + " with statement" + pstmt);
+                    logger.debug("Updating existing cidrs for the rule id=" + id + " with the new Firewall rule id=" + firewallRuleId + " with statement" + pstmt);
                     pstmt.executeUpdate();
                 } else {
                     pstmt = conn.prepareStatement("insert into firewall_rules_cidrs (firewall_rule_id,source_cidr) values (?, '0.0.0.0/0')");
                     pstmt.setLong(1, firewallRuleId);
-                    s_logger.debug("Inserting rule for cidr 0.0.0.0/0 for the new Firewall rule id=" + firewallRuleId + " with statement " + pstmt);
+                    logger.debug("Inserting rule for cidr 0.0.0.0/0 for the new Firewall rule id=" + firewallRuleId + " with statement " + pstmt);
                     pstmt.executeUpdate();
                 }
             }
@@ -180,7 +178,7 @@ public class Upgrade229to2210 implements DbUpgrade {
                     pstmt.close();
                 }
             } catch (SQLException e) {
-                s_logger.info("[ignored]",e);
+                logger.info("[ignored]",e);
             }
         }
     }

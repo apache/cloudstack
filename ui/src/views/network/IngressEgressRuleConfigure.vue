@@ -47,25 +47,56 @@
             <a-select-option value="protocolnumber" :label="$t('label.protocol.number')">{{ capitalise($t('label.protocol.number')) }}</a-select-option>
           </a-select>
         </div>
-        <div v-show="newRule.protocol === 'tcp' || newRule.protocol === 'udp'" class="form__item">
+        <div v-show="newRule.protocol === 'protocolnumber'" class="form__item">
+          <div class="form__label">{{ $t('label.protocol.number') }}</div>
+          <a-select
+            v-model:value="newRule.protocolnumber"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option v-for="(opt, optIndex) in protocolNumbers" :key="optIndex" :label="opt.name">
+              {{ opt.index + ' - ' + opt.name }}
+            </a-select-option>
+          </a-select>
+        </div>
+        <div v-show="['tcp', 'udp', 'protocolnumber'].includes(newRule.protocol) && !(newRule.protocol === 'protocolnumber' && newRule.protocolnumber === 1)" class="form__item">
           <div class="form__label">{{ $t('label.startport') }}</div>
           <a-input v-model:value="newRule.startport"></a-input>
         </div>
-        <div v-show="newRule.protocol === 'tcp' || newRule.protocol === 'udp'" class="form__item">
+        <div v-show="['tcp', 'udp', 'protocolnumber'].includes(newRule.protocol) && !(newRule.protocol === 'protocolnumber' && newRule.protocolnumber === 1)" class="form__item">
           <div class="form__label">{{ $t('label.endport') }}</div>
           <a-input v-model:value="newRule.endport"></a-input>
         </div>
-        <div v-show="newRule.protocol === 'protocolnumber'" class="form__item">
-          <div class="form__label">{{ $t('label.protocol.number') }}</div>
-          <a-input v-model:value="newRule.protocolnumber"></a-input>
-        </div>
-        <div v-show="newRule.protocol === 'icmp'" class="form__item">
+        <div v-show="newRule.protocol === 'icmp' || (newRule.protocol === 'protocolnumber' && newRule.protocolnumber === 1)" class="form__item">
           <div class="form__label">{{ $t('label.icmptype') }}</div>
-          <a-input v-model:value="newRule.icmptype"></a-input>
+          <a-select
+            v-model:value="newRule.icmptype"
+            @change="val => { updateIcmpCodes(val) }"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option v-for="(opt) in icmpTypes" :key="opt.index" :label="opt.description">
+              {{ opt.index + ' - ' + opt.description }}
+            </a-select-option>
+          </a-select>
         </div>
-        <div v-show="newRule.protocol === 'icmp'" class="form__item">
+        <div v-show="newRule.protocol === 'icmp' || (newRule.protocol === 'protocolnumber' && newRule.protocolnumber === 1)" class="form__item">
           <div class="form__label">{{ $t('label.icmpcode') }}</div>
-          <a-input v-model:value="newRule.icmpcode"></a-input>
+          <a-select
+            v-model:value="newRule.icmpcode"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option v-for="(opt) in icmpCodes" :key="opt.code" :label="opt.description">
+              {{ opt.code + ' - ' + opt.description }}
+            </a-select-option>
+          </a-select>
         </div>
         <div class="form__item" v-if="addType === 'cidr'">
           <div class="form__label">{{ $t('label.cidr') }}</div>
@@ -181,7 +212,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
@@ -211,6 +242,9 @@ export default {
           group: null
         }
       },
+      protocolNumbers: [],
+      icmpTypes: [],
+      icmpCodes: [],
       tagsModalVisible: false,
       tags: [],
       newTag: {
@@ -275,6 +309,7 @@ export default {
   },
   created () {
     this.initForm()
+    this.fetchNetworkProtocols()
     this.fetchData()
   },
   methods: {
@@ -285,6 +320,34 @@ export default {
         key: [{ required: true, message: this.$t('message.specify.tag.key') }],
         value: [{ required: true, message: this.$t('message.specify.tag.value') }]
       })
+    },
+    fetchNetworkProtocols () {
+      getAPI('listNetworkProtocols', {
+        option: 'protocolnumber'
+      }).then(json => {
+        this.protocolNumbers = json.listnetworkprotocolsresponse?.networkprotocol || []
+      })
+      getAPI('listNetworkProtocols', {
+        option: 'icmptype'
+      }).then(json => {
+        this.icmpTypes.push({ index: -1, description: this.$t('label.all') })
+        const results = json.listnetworkprotocolsresponse?.networkprotocol || []
+        for (const result of results) {
+          this.icmpTypes.push(result)
+        }
+      })
+    },
+    updateIcmpCodes (val) {
+      this.newRule.icmpcode = -1
+      this.icmpCodes = []
+      this.icmpCodes.push({ code: -1, description: this.$t('label.all') })
+      const icmpType = this.icmpTypes.find(icmpType => icmpType.index === val)
+      if (icmpType && icmpType.details) {
+        const icmpTypeDetails = icmpType.details
+        for (const k of Object.keys(icmpTypeDetails)) {
+          this.icmpCodes.push({ code: parseInt(k), description: icmpTypeDetails[k] })
+        }
+      }
     },
     fetchData () {
       this.tabType = this.$route.query.tab === 'ingress.rule' ? 'ingress' : 'egress'
@@ -301,7 +364,7 @@ export default {
       if (this.isSubmitted) return
       this.isSubmitted = true
       this.parentToggleLoading()
-      api(this.tabType === 'ingress' ? 'authorizeSecurityGroupIngress' : 'authorizeSecurityGroupEgress', {
+      postAPI(this.tabType === 'ingress' ? 'authorizeSecurityGroupIngress' : 'authorizeSecurityGroupEgress', {
         securitygroupid: this.resource.id,
         domainid: this.resource.domainid,
         account: this.resource.account,
@@ -343,7 +406,7 @@ export default {
     },
     handleDeleteRule (rule) {
       this.parentToggleLoading()
-      api(this.tabType === 'ingress' ? 'revokeSecurityGroupIngress' : 'revokeSecurityGroupEgress', {
+      postAPI(this.tabType === 'ingress' ? 'revokeSecurityGroupIngress' : 'revokeSecurityGroupEgress', {
         id: rule.ruleid,
         domainid: this.resource.domainid,
         account: this.resource.account
@@ -372,7 +435,7 @@ export default {
       })
     },
     fetchTags (rule) {
-      api('listTags', {
+      getAPI('listTags', {
         resourceId: rule.ruleid,
         resourceType: 'SecurityGroupRule',
         listAll: true
@@ -385,7 +448,7 @@ export default {
     handleDeleteTag (tag) {
       this.parentToggleLoading()
       this.tagsLoading = true
-      api('deleteTags', {
+      postAPI('deleteTags', {
         'tags[0].key': tag.key,
         'tags[0].value': tag.value,
         resourceIds: this.selectedRule.ruleid,
@@ -427,7 +490,7 @@ export default {
         const values = toRaw(this.form)
 
         this.parentToggleLoading()
-        api('createTags', {
+        postAPI('createTags', {
           'tags[0].key': values.key,
           'tags[0].value': values.value,
           resourceIds: this.selectedRule.ruleid,

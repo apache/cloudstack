@@ -17,6 +17,7 @@
 package com.cloud.vpc.dao;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -118,4 +119,8 @@ public class MockConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, St
     public void invalidateCache() {
     }
 
+    @Override
+    public List<ConfigurationVO> searchPartialConfigurations() {
+        return List.of();
+    }
 }

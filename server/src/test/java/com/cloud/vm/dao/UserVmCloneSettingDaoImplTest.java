@@ -16,19 +16,16 @@
 // under the License.
 package com.cloud.vm.dao;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.inject.Inject;
-
+import com.cloud.vm.UserVmCloneSettingVO;
 import junit.framework.TestCase;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import com.cloud.vm.UserVmCloneSettingVO;
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:/CloneSettingDaoTestContext.xml")

@@ -19,6 +19,7 @@
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import com.cloud.agent.api.to.DatadiskTO;
+import com.cloud.template.VirtualMachineTemplate;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
@@ -60,7 +61,7 @@ public interface TemplateService {
 
     AsyncCallFuture<TemplateApiResult> deleteTemplateOnPrimary(TemplateInfo template, StoragePool pool);
 
-    void syncTemplateToRegionStore(long templateId, DataStore store);
+    void syncTemplateToRegionStore(VirtualMachineTemplate templateId, DataStore store);
 
     void handleSysTemplateDownload(HypervisorType hostHyper, Long dcId);
 

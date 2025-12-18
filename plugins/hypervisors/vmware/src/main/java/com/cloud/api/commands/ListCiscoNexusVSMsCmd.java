@@ -22,7 +22,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -56,7 +55,6 @@ public class ListCiscoNexusVSMsCmd extends BaseListCmd {
      * up all the clusters of type vmware in that zone, and prepare a list of VSMs
      * associated with those clusters.
      */
-    public static final Logger s_logger = Logger.getLogger(ListCiscoNexusVSMsCmd.class.getName());
     private static final String s_name = "listcisconexusvsmscmdresponse";
     @Inject
     CiscoNexusVSMElementService _ciscoNexusVSMService;

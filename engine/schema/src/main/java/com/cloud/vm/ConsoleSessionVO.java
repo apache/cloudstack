@@ -19,6 +19,8 @@
 
 package com.cloud.vm;
 
+import org.apache.cloudstack.consoleproxy.ConsoleSession;
+
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -27,10 +29,12 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 @Entity
 @Table(name = "console_session")
-public class ConsoleSessionVO {
+public class ConsoleSessionVO implements ConsoleSession {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -42,6 +46,9 @@ public class ConsoleSessionVO {
 
     @Column(name = "created")
     private Date created;
+
+    @Column(name = "domain_id")
+    private long domainId;
 
     @Column(name = "account_id")
     private long accountId;
@@ -56,10 +63,17 @@ public class ConsoleSessionVO {
     private long hostId;
 
     @Column(name = "acquired")
+    @Temporal(value = TemporalType.TIMESTAMP)
     private Date acquired;
 
     @Column(name = "removed")
     private Date removed;
+
+    @Column(name = "console_endpoint_creator_address")
+    private String consoleEndpointCreatorAddress;
+
+    @Column(name = "client_address")
+    private String clientAddress;
 
     public long getId() {
         return id;
@@ -77,6 +91,7 @@ public class ConsoleSessionVO {
         this.uuid = uuid;
     }
 
+    @Override
     public Date getCreated() {
         return created;
     }
@@ -85,6 +100,16 @@ public class ConsoleSessionVO {
         this.created = created;
     }
 
+    @Override
+    public long getDomainId() {
+        return domainId;
+    }
+
+    public void setDomainId(long domainId) {
+        this.domainId = domainId;
+    }
+
+    @Override
     public long getAccountId() {
         return accountId;
     }
@@ -93,6 +118,7 @@ public class ConsoleSessionVO {
         this.accountId = accountId;
     }
 
+    @Override
     public long getUserId() {
         return userId;
     }
@@ -101,6 +127,7 @@ public class ConsoleSessionVO {
         this.userId = userId;
     }
 
+    @Override
     public long getInstanceId() {
         return instanceId;
     }
@@ -109,6 +136,7 @@ public class ConsoleSessionVO {
         this.instanceId = instanceId;
     }
 
+    @Override
     public long getHostId() {
         return hostId;
     }
@@ -117,6 +145,7 @@ public class ConsoleSessionVO {
         this.hostId = hostId;
     }
 
+    @Override
     public Date getRemoved() {
         return removed;
     }
@@ -125,11 +154,30 @@ public class ConsoleSessionVO {
         this.removed = removed;
     }
 
+    @Override
     public Date getAcquired() {
         return acquired;
     }
 
     public void setAcquired(Date acquired) {
         this.acquired = acquired;
+    }
+
+    @Override
+    public String getConsoleEndpointCreatorAddress() {
+        return consoleEndpointCreatorAddress;
+    }
+
+    public void setConsoleEndpointCreatorAddress(String consoleEndpointCreatorAddress) {
+        this.consoleEndpointCreatorAddress = consoleEndpointCreatorAddress;
+    }
+
+    @Override
+    public String getClientAddress() {
+        return clientAddress;
+    }
+
+    public void setClientAddress(String clientAddress) {
+        this.clientAddress = clientAddress;
     }
 }

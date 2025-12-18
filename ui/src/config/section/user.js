@@ -17,6 +17,7 @@
 
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
+import { i18n } from '@/locales'
 
 export default {
   name: 'accountuser',
@@ -25,7 +26,32 @@ export default {
   docHelp: 'adminguide/accounts.html#users',
   hidden: true,
   permission: ['listUsers'],
-  columns: ['username', 'state', 'firstname', 'lastname', 'email', 'account'],
+  searchFilters: () => {
+    const filters = ['usersource']
+    if (store.getters.userInfo.roletype === 'Admin') {
+      filters.push('apikeyaccess')
+    }
+    return filters
+  },
+  columns: [
+    'username', 'state', 'firstname', 'lastname',
+    'email', 'account', 'domain',
+    {
+      field: 'userSource',
+      customTitle: 'userSource',
+      userSource: (record) => {
+        let { usersource: source } = record
+
+        if (source === 'saml2') {
+          source = 'saml'
+        } else if (source === 'saml2disabled') {
+          source = 'saml.disabled'
+        }
+
+        return i18n.global.t(`label.${source}`)
+      }
+    }
+  ],
   details: ['username', 'id', 'firstname', 'lastname', 'email', 'usersource', 'timezone', 'rolename', 'roletype', 'is2faenabled', 'account', 'domain', 'created'],
   tabs: [
     {
@@ -81,7 +107,7 @@ export default {
       show: (record, store) => {
         return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
           !(record.domain === 'ROOT' && record.account === 'admin' && record.accounttype === 1) &&
-          record.state === 'disabled'
+          ['disabled', 'locked'].includes(record.state)
       }
     },
     {
@@ -90,6 +116,20 @@ export default {
       label: 'label.action.disable.user',
       message: 'message.disable.user',
       dataView: true,
+      show: (record, store) => {
+        return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
+          !(record.domain === 'ROOT' && record.account === 'admin' && record.accounttype === 1) &&
+          record.state === 'enabled'
+      }
+    },
+    {
+      api: 'lockUser',
+      icon: 'LockOutlined',
+      label: 'label.action.lock.user',
+      message: (record) => ['message.lock.user', { user: record.username }],
+      successMessage: (record) => ['message.lock.user.success', { user: record.username }],
+      dataView: true,
+      popup: true,
       show: (record, store) => {
         return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
           !(record.domain === 'ROOT' && record.account === 'admin' && record.accounttype === 1) &&

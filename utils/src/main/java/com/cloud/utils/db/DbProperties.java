@@ -26,13 +26,14 @@ import java.io.InputStream;
 import java.util.Properties;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.crypt.EncryptionSecretKeyChecker;
 
 public class DbProperties {
-    private static final Logger log = Logger.getLogger(DbProperties.class);
+    protected static Logger LOGGER = LogManager.getLogger(DbProperties.class);
 
     private static Properties properties = new Properties();
     private static boolean loaded = false;
@@ -43,11 +44,11 @@ public class DbProperties {
         checker.check(dbProps, dbEncryptionType);
 
         if (EncryptionSecretKeyChecker.useEncryption()) {
-            log.debug("encryptionsecretkeychecker using encryption");
+            LOGGER.debug("encryptionsecretkeychecker using encryption");
             EncryptionSecretKeyChecker.decryptAnyProperties(dbProps);
             return dbProps;
         } else {
-            log.debug("encryptionsecretkeychecker not using encryption");
+            LOGGER.debug("encryptionsecretkeychecker not using encryption");
             return dbProps;
         }
     }
@@ -68,7 +69,7 @@ public class DbProperties {
 
                 if (is == null) {
                     System.err.println("Failed to find db.properties");
-                    log.error("Failed to find db.properties");
+                    LOGGER.error("Failed to find db.properties");
                 }
 
                 if (is != null) {
@@ -82,7 +83,7 @@ public class DbProperties {
                     EncryptionSecretKeyChecker.decryptAnyProperties(dbProps);
                 }
             } catch (IOException e) {
-                log.error(String.format("Failed to load DB properties: %s", e.getMessage()), e);
+                LOGGER.error(String.format("Failed to load DB properties: %s", e.getMessage()), e);
                 throw new IllegalStateException("Failed to load db.properties", e);
             } finally {
                 IOUtils.closeQuietly(is);
@@ -91,7 +92,7 @@ public class DbProperties {
             properties = dbProps;
             loaded = true;
         } else {
-            log.debug("DB properties were already loaded");
+            LOGGER.debug("DB properties were already loaded");
         }
 
         return properties;

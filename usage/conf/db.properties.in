@@ -24,7 +24,11 @@ db.usage.port=3306
 db.usage.name=cloud_usage
 
 # usage database tuning parameters
+db.usage.connectionPoolLib=hikaricp
 db.usage.maxActive=100
 db.usage.maxIdle=30
 db.usage.maxWait=10000
+db.usage.minIdleConnections=5
+db.usage.connectionTimeout=30000
+db.usage.keepAliveTime=600000
 db.usage.autoReconnect=true

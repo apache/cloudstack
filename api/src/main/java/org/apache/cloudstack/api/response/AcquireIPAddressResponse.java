@@ -75,6 +75,10 @@ public class AcquireIPAddressResponse  extends BaseResponse implements Controlle
  @Param(description = "the domain the public IP address is associated with")
  private String domainName;
 
+ @SerializedName(ApiConstants.DOMAIN_PATH)
+ @Param(description = "path of the domain to which the public IP address belongs", since = "4.19.2.0")
+ private String domainPath;
+
  @SerializedName(ApiConstants.FOR_VIRTUAL_NETWORK)
  @Param(description = "the virtual network for the IP address")
  private Boolean forVirtualNetwork;
@@ -124,7 +128,7 @@ public class AcquireIPAddressResponse  extends BaseResponse implements Controlle
  private String networkId;
 
  @SerializedName(ApiConstants.STATE)
- @Param(description = "State of the ip address. Can be: Allocatin, Allocated and Releasing")
+ @Param(description = "State of the ip address. Can be: Allocating, Allocated and Releasing")
  private String state;
 
  @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
@@ -188,6 +192,11 @@ public class AcquireIPAddressResponse  extends BaseResponse implements Controlle
  @Override
  public void setDomainName(String domainName) {
      this.domainName = domainName;
+ }
+
+ @Override
+ public void setDomainPath(String domainPath) {
+  this.domainPath = domainPath;
  }
 
  public void setForVirtualNetwork(Boolean forVirtualNetwork) {

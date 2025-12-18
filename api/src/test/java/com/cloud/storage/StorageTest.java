@@ -52,7 +52,7 @@ public class StorageTest {
     }
 
     @Test
-    public void supportsOverprovisioningStoragePool() {
+    public void supportsOverProvisioningTestAllStoragePoolTypes() {
         Assert.assertTrue(StoragePoolType.Filesystem.supportsOverProvisioning());
         Assert.assertTrue(StoragePoolType.NetworkFilesystem.supportsOverProvisioning());
         Assert.assertFalse(StoragePoolType.IscsiLUN.supportsOverProvisioning());
@@ -63,7 +63,7 @@ public class StorageTest {
         Assert.assertFalse(StoragePoolType.CLVM.supportsOverProvisioning());
         Assert.assertTrue(StoragePoolType.RBD.supportsOverProvisioning());
         Assert.assertTrue(StoragePoolType.PowerFlex.supportsOverProvisioning());
-        Assert.assertFalse(StoragePoolType.SharedMountPoint.supportsOverProvisioning());
+        Assert.assertTrue(StoragePoolType.SharedMountPoint.supportsOverProvisioning());
         Assert.assertTrue(StoragePoolType.VMFS.supportsOverProvisioning());
         Assert.assertTrue(StoragePoolType.PreSetup.supportsOverProvisioning());
         Assert.assertTrue(StoragePoolType.EXT.supportsOverProvisioning());
@@ -73,5 +73,14 @@ public class StorageTest {
         Assert.assertFalse(StoragePoolType.ManagedNFS.supportsOverProvisioning());
         Assert.assertTrue(StoragePoolType.DatastoreCluster.supportsOverProvisioning());
         Assert.assertTrue(StoragePoolType.Linstor.supportsOverProvisioning());
+    }
+
+    @Test
+    public void equalityTest() {
+        StoragePoolType t1 = StoragePoolType.NetworkFilesystem;
+        StoragePoolType t2 = StoragePoolType.NetworkFilesystem;
+        Assert.assertTrue(t1 == StoragePoolType.NetworkFilesystem);
+        Assert.assertTrue(t1.equals(StoragePoolType.NetworkFilesystem));
+        Assert.assertFalse(t1.equals(StoragePoolType.EXT));
     }
 }

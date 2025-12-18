@@ -17,7 +17,7 @@
 
 <template>
   <div
-    class="form-layout"
+    :class="'form-layout'"
     @keyup.ctrl.enter="handleSubmit">
     <span v-if="uploadPercentage > 0">
       <loading-outlined />
@@ -32,14 +32,17 @@
         @finish="handleSubmit"
         layout="vertical">
         <div v-if="currentForm === 'Create'">
-          <a-form-item :label="$t('label.url')" name="url" ref="url">
+          <a-form-item name="url" ref="url">
+            <template #label>
+              <tooltip-label :title="$t('label.url')" :tooltip="apiParams.url.description"/>
+            </template>
             <a-input
               v-focus="currentForm === 'Create'"
               v-model:value="form.url"
               :placeholder="apiParams.url.description" />
           </a-form-item>
         </div>
-        <div v-if="currentForm === 'Upload'">
+        <div v-else-if="currentForm === 'Upload'">
           <a-form-item :label="$t('label.templatefileupload')" name="file" ref="file">
             <a-upload-dragger
               :multiple="false"
@@ -56,22 +59,30 @@
             </a-upload-dragger>
           </a-form-item>
         </div>
-        <a-form-item :label="$t('label.name')" ref="name" name="name">
+        <a-form-item ref="name" name="name">
+          <template #label>
+            <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          </template>
           <a-input
             v-model:value="form.name"
             :placeholder="apiParams.name.description"
-            v-focus="currentForm !== 'Create'"/>
+            v-focus="currentForm === 'Upload'"/>
         </a-form-item>
-        <a-form-item :label="$t('label.displaytext')" ref="displaytext" name="displaytext">
+        <a-form-item ref="displaytext" name="displaytext">
+          <template #label>
+            <tooltip-label :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
+          </template>
           <a-input
             v-model:value="form.displaytext"
             :placeholder="apiParams.displaytext.description" />
         </a-form-item>
         <div v-if="currentForm === 'Create'">
           <a-form-item
-            :label="$t('label.zone')"
             name="zoneids"
             ref="zoneids">
+            <template #label>
+              <tooltip-label :title="$t('label.zone')" :tooltip="apiParams.zoneids.description"/>
+            </template>
             <a-select
               v-model:value="form.zoneids"
               :loading="zones.loading"
@@ -94,9 +105,11 @@
         </div>
         <div v-else>
           <a-form-item
-            :label="$t('label.zoneid')"
             ref="zoneid"
             name="zoneid">
+            <template #label>
+              <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+            </template>
             <a-select
               v-model:value="form.zoneid"
               showSearch
@@ -117,9 +130,53 @@
             </a-select>
           </a-form-item>
         </div>
+        <a-form-item name="domainid" ref="domainid" v-if="'listDomains' in $store.getters.apis">
+          <template #label>
+            <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
+          </template>
+          <a-select
+            v-model:value="form.domainid"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="domainLoading"
+            :placeholder="apiParams.domainid.description"
+            @change="val => { handleDomainChange(val) }">
+            <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex" :label="opt.path || opt.name || opt.description" :value="opt.id">
+              <span>
+                <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <block-outlined v-else style="margin-right: 5px" />
+                {{ opt.path || opt.name || opt.description }}
+              </span>
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item name="account" ref="account" v-if="domainid">
+          <template #label>
+            <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
+          </template>
+          <a-select
+            v-model:value="form.account"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :placeholder="apiParams.account.description"
+            @change="val => { handleAccountChange(val) }">
+            <a-select-option v-for="(acc, index) in accounts" :value="acc.name" :key="index">
+              {{ acc.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
-            <a-form-item ref="hypervisor" name="hypervisor" :label="$t('label.hypervisor')">
+            <a-form-item ref="hypervisor" name="hypervisor">
+              <template #label>
+                <tooltip-label :title="$t('label.hypervisor')" :tooltip="apiParams.hypervisor.description"/>
+              </template>
               <a-select
                 v-model:value="form.hypervisor"
                 :loading="hyperVisor.loading"
@@ -137,7 +194,10 @@
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="12">
-            <a-form-item ref="format" name="format" :label="$t('label.format')">
+            <a-form-item ref="format" name="format" v-if="!hyperExternalShow">
+              <template #label>
+                <tooltip-label :title="$t('label.format')" :tooltip="apiParams.format.description"/>
+              </template>
               <a-select
                 v-model:value="form.format"
                 :placeholder="apiParams.format.description"
@@ -152,16 +212,50 @@
                 </a-select-option>
               </a-select>
             </a-form-item>
+            <a-form-item ref="extensionid" name="extensionid" v-if="hyperExternalShow">
+              <template #label>
+                <tooltip-label :title="$t('label.extensionid')" :tooltip="apiParams.extensionid.description"/>
+              </template>
+              <a-select
+                v-model:value="form.extensionid"
+                :placeholder="apiParams.extensionid.description"
+                showSearch
+                optionFilterProp="label"
+                :filterOption="(input, option) => {
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
+                <a-select-option v-for="extension in extensionsList" :key="extension.id" :label="extension.name || extension.description">
+                  {{ extension.name || extension.description }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
           </a-col>
         </a-row>
-        <a-row :gutter="12" v-if="allowed && hyperKVMShow && currentForm !== 'Upload'">
+        <a-form-item name="externaldetails" ref="externaldetails" v-if="hyperExternalShow">
+          <template #label>
+            <tooltip-label :title="$t('label.externaldetails')" :tooltip="apiParams.externaldetails.description"/>
+          </template>
+          <a-switch v-model:checked="externalDetailsEnabled" @change="onExternalDetailsEnabledChange"/>
+          <a-card v-if="externalDetailsEnabled" style="margin-top: 10px">
+            <div style="margin-bottom: 10px">{{ $t('message.add.orchestrator.resource.details') }}</div>
+            <details-input
+              v-model:value="form.externaldetails" />
+          </a-card>
+        </a-form-item>
+        <a-row :gutter="12" v-if="(hyperKVMShow || hyperCustomShow) && currentForm === 'Create'">
           <a-col :md="24" :lg="12">
-            <a-form-item ref="directdownload" name="directdownload" :label="$t('label.directdownload')">
+            <a-form-item ref="directdownload" name="directdownload">
+              <template #label>
+                <tooltip-label :title="$t('label.directdownload')" :tooltip="apiParams.directdownload.description"/>
+              </template>
               <a-switch v-model:checked="form.directdownload" @change="handleChangeDirect" />
             </a-form-item>
           </a-col>
-          <a-col :md="24" :lg="12" v-if="allowDirectDownload">
-            <a-form-item ref="checksum" name="checksum" :label="$t('label.checksum')">
+          <a-col :md="24" :lg="12">
+            <a-form-item ref="checksum" name="checksum">
+              <template #label>
+                <tooltip-label :title="$t('label.checksum')" :tooltip="apiParams.checksum.description"/>
+              </template>
               <a-input
                 v-model:value="form.checksum"
                 :placeholder="apiParams.checksum.description" />
@@ -174,7 +268,10 @@
           </a-form-item>
         </a-row>
 
-        <a-form-item ref="deployasis" name="deployasis" :label="$t('label.deployasis')" v-if="selectedFormat === 'OVA'">
+        <a-form-item ref="deployasis" name="deployasis" v-if="selectedFormat === 'OVA'">
+          <template #label>
+            <tooltip-label :title="$t('label.deployasis')" :tooltip="apiParams.deployasis.description"/>
+          </template>
           <a-switch
             v-model:checked="form.deployasis"
             :checked="deployasis"
@@ -200,7 +297,7 @@
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="12" v-if="hyperVMWShow && !deployasis">
-            <a-form-item :label="$t('label.nicadaptertype')" name="nicadaptertype" ref="nicadaptertype">
+            <a-form-item ref="nicAdapterType" name="nicAdapterType" :label="$t('label.nicadaptertype')">
               <a-select
                 v-model:value="form.nicAdapterType"
                 showSearch
@@ -237,8 +334,10 @@
         <a-form-item
           name="ostypeid"
           ref="ostypeid"
-          :label="$t('label.ostypeid')"
           v-if="!hyperVMWShow || (hyperVMWShow && !deployasis)">
+          <template #label>
+            <tooltip-label :title="$t('label.ostypeid')" :tooltip="apiParams.ostypeid.description"/>
+          </template>
           <a-select
             showSearch
             optionFilterProp="label"
@@ -253,12 +352,61 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item
+          name="templatetype"
+          ref="templatetype">
+          <template #label>
+            <tooltip-label :title="$t('label.templatetype')" :tooltip="apiParams.templatetype.description"/>
+          </template>
+          <a-select
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            v-model:value="form.templatetype"
+            :placeholder="apiParams.templatetype.description">
+            <a-select-option v-for="opt in templateTypes.opts" :key="opt.id">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item
+          name="arch"
+          ref="arch">
+          <template #label>
+            <tooltip-label :title="$t('label.arch')" :tooltip="apiParams.arch.description"/>
+          </template>
+          <a-select
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            v-model:value="form.arch"
+            :placeholder="apiParams.arch.description">
+            <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item ref="templatetag" name="templatetag" v-if="isAdminRole">
+          <template #label>
+            <tooltip-label :title="$t('label.templatetag')" :tooltip="apiParams.templatetag.description"/>
+          </template>
+          <a-input
+            v-model:value="form.templatetag"
+            :placeholder="apiParams.templatetag.description"
+            v-focus="currentForm !== 'Create'"/>
+        </a-form-item>
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
             <a-form-item
               name="userdataid"
-              ref="userdataid"
-              :label="$t('label.userdata')">
+              ref="userdataid">
+              <template #label>
+                <tooltip-label :title="$t('label.user.data')" :tooltip="linkUserDataParams.userdataid.description"/>
+              </template>
               <a-select
                 showSearch
                 optionFilterProp="label"
@@ -277,7 +425,7 @@
           <a-col :md="24" :lg="12">
             <a-form-item ref="userdatapolicy" name="userdatapolicy">
               <template #label>
-                <tooltip-label :title="$t('label.userdatapolicy')" :tooltip="$t('label.userdatapolicy.tooltip')"/>
+                <tooltip-label :title="$t('label.user.data.policy')" :tooltip="linkUserDataParams.userdatapolicy.description"/>
               </template>
               <a-select
                 showSearch
@@ -332,9 +480,9 @@
                       {{ $t('label.ispublic') }}
                     </a-checkbox>
                   </a-col>
-                  <a-col :span="12" v-if="isAdminRole">
-                    <a-checkbox value="isrouting">
-                      {{ $t('label.isrouting') }}
+                  <a-col :span="12">
+                    <a-checkbox value="forCks" v-if="currentForm === 'Create'">
+                      {{ $t('label.forcks') }}
                     </a-checkbox>
                   </a-col>
                 </a-row>
@@ -342,7 +490,6 @@
             </a-form-item>
           </a-col>
         </a-row>
-
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
           <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -354,12 +501,13 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import store from '@/store'
 import { axios } from '../../utils/request'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import DetailsInput from '@/components/widgets/DetailsInput'
 
 export default {
   name: 'RegisterOrUploadTemplate',
@@ -376,7 +524,8 @@ export default {
   },
   components: {
     ResourceIcon,
-    TooltipLabel
+    TooltipLabel,
+    DetailsInput
   },
   data () {
     return {
@@ -392,12 +541,15 @@ export default {
       format: {},
       osTypes: {},
       defaultOsType: '',
+      templateTypes: {},
       userdata: {},
       userdataid: null,
       userdatapolicy: null,
       userdatapolicylist: {},
       defaultOsId: null,
       hyperKVMShow: false,
+      hyperExternalShow: false,
+      hyperCustomShow: false,
       hyperXenServerShow: false,
       hyperVMWShow: false,
       selectedFormat: '',
@@ -408,7 +560,15 @@ export default {
       allowed: false,
       allowDirectDownload: false,
       uploadParams: null,
-      currentForm: ['plus-outlined', 'PlusOutlined'].includes(this.action.currentAction.icon) ? 'Create' : 'Upload'
+      currentForm: ['plus-outlined', 'PlusOutlined'].includes(this.action.currentAction.icon) ? 'Create' : 'Upload',
+      domains: [],
+      accounts: [],
+      domainLoading: false,
+      domainid: null,
+      account: null,
+      customHypervisorName: 'Custom',
+      architectureTypes: {},
+      externalDetailsEnabled: false
     }
   },
   beforeCreate () {
@@ -452,19 +612,27 @@ export default {
         hypervisor: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
         format: [{ required: true, message: this.$t('message.error.select') }],
         ostypeid: [{ required: true, message: this.$t('message.error.select') }],
-        groupenabled: [{ type: 'array' }]
+        groupenabled: [{ type: 'array' }],
+        extensionid: [{ required: true, message: this.$t('message.error.select') }]
       })
     },
     fetchData () {
+      this.fetchCustomHypervisorName()
       this.fetchZone()
       this.fetchOsTypes()
+      this.templateTypes.opts = this.$fetchTemplateTypes()
+      this.architectureTypes.opts = this.$fetchCpuArchitectureTypes()
       this.fetchUserData()
       this.fetchUserdataPolicy()
+      if ('listDomains' in this.$store.getters.apis) {
+        this.fetchDomains()
+      }
       if (Object.prototype.hasOwnProperty.call(store.getters.apis, 'listConfigurations')) {
         if (this.allowed && this.hyperXenServerShow) {
           this.fetchXenServerProvider()
         }
       }
+      this.fetchExtensionsList()
     },
     handleFormChange (e) {
       this.currentForm = e.target.value
@@ -516,6 +684,40 @@ export default {
         })
       })
     },
+    fetchCustomHypervisorName () {
+      if (!('listConfigurations' in store.getters.apis)) {
+        return
+      }
+      const params = {
+        name: 'hypervisor.custom.display.name'
+      }
+      this.loading = true
+      getAPI('listConfigurations', params).then(json => {
+        if (json.listconfigurationsresponse.configuration !== null) {
+          const config = json.listconfigurationsresponse.configuration[0]
+          if (config && config.name === params.name) {
+            this.customHypervisorName = config.value
+            store.dispatch('SetCustomHypervisorName', this.customHypervisorName)
+          }
+        }
+      }).finally(() => {
+        this.loading = false
+      })
+    },
+    fetchExtensionsList () {
+      if (!this.isAdminRole) {
+        return
+      }
+      this.loading = true
+      getAPI('listExtensions', {
+      }).then(response => {
+        this.extensionsList = response.listextensionsresponse.extension || []
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.loading = false
+      })
+    },
     fetchZone () {
       const params = {}
       let listZones = []
@@ -533,7 +735,7 @@ export default {
       this.zones.loading = true
       this.zones.opts = []
 
-      api('listZones', params).then(json => {
+      getAPI('listZones', params).then(json => {
         const listZonesResponse = json.listzonesresponse.zone
         listZones = listZones.concat(listZonesResponse)
         this.zones.opts = listZones
@@ -552,15 +754,18 @@ export default {
       this.hyperVisor.loading = true
       let listhyperVisors = this.hyperVisor.opts || []
 
-      api('listHypervisors', params).then(json => {
+      getAPI('listHypervisors', params).then(json => {
         const listResponse = json.listhypervisorsresponse.hypervisor || []
         if (listResponse) {
           listhyperVisors = listhyperVisors.concat(listResponse)
         }
-        if (this.currentForm !== 'Upload') {
+        if (this.currentForm === 'Create') {
           listhyperVisors.push({
             name: 'Simulator'
           })
+        }
+        if (!this.isAdminRole) {
+          listhyperVisors = listhyperVisors.filter(hv => hv.name !== 'External')
         }
         this.hyperVisor.opts = listhyperVisors
       }).finally(() => {
@@ -571,11 +776,11 @@ export default {
       this.osTypes.opts = []
       this.osTypes.loading = true
 
-      api('listOsTypes').then(json => {
+      getAPI('listOsTypes').then(json => {
         const listOsTypes = json.listostypesresponse.ostype
         this.osTypes.opts = listOsTypes
         this.defaultOsType = this.osTypes.opts[1].description
-        this.defaultOsId = this.osTypes.opts[1].id
+        this.defaultOsId = this.osTypes.opts[1].name
       }).finally(() => {
         this.osTypes.loading = false
       })
@@ -587,7 +792,7 @@ export default {
       this.userdata.opts = []
       this.userdata.loading = true
 
-      api('listUserData', params).then(json => {
+      getAPI('listUserData', params).then(json => {
         const listUserdata = json.listuserdataresponse.userdata
         this.userdata.opts = listUserdata
       }).finally(() => {
@@ -600,7 +805,7 @@ export default {
 
       this.form.xenserverToolsVersion61plus = true
 
-      api('listConfigurations', params).then(json => {
+      getAPI('listConfigurations', params).then(json => {
         if (json.listconfigurationsresponse.configuration !== null && json.listconfigurationsresponse.configuration[0].value !== 'xenserver61') {
           this.form.xenserverToolsVersion61plus = false
         }
@@ -668,30 +873,30 @@ export default {
 
       this.rootDisk.opts = controller
     },
-    fetchNicAdapterType () {
-      const nicAdapterType = []
-      nicAdapterType.push({
+    fetchNicAdapterTypes () {
+      const nicAdapterTypes = []
+      nicAdapterTypes.push({
         id: '',
         description: ''
       })
-      nicAdapterType.push({
+      nicAdapterTypes.push({
         id: 'E1000',
         description: 'E1000'
       })
-      nicAdapterType.push({
+      nicAdapterTypes.push({
         id: 'PCNet32',
         description: 'PCNet32'
       })
-      nicAdapterType.push({
+      nicAdapterTypes.push({
         id: 'Vmxnet2',
         description: 'Vmxnet2'
       })
-      nicAdapterType.push({
+      nicAdapterTypes.push({
         id: 'Vmxnet3',
         description: 'Vmxnet3'
       })
 
-      this.nicAdapterType.opts = nicAdapterType
+      this.nicAdapterType.opts = nicAdapterTypes
     },
     fetchKeyboardType () {
       const keyboardType = []
@@ -769,6 +974,10 @@ export default {
             description: 'BareMetal'
           })
           break
+        case 'External':
+          this.hyperExternalShow = true
+          this.selectedFormat = 'External'
+          break
         case 'Ovm':
           format.push({
             id: 'RAW',
@@ -779,6 +988,13 @@ export default {
           format.push({
             id: 'TAR',
             description: 'TAR'
+          })
+          break
+        case this.customHypervisorName:
+          this.hyperCustomShow = true
+          format.push({
+            id: 'RAW',
+            description: 'RAW'
           })
           break
         default:
@@ -839,6 +1055,8 @@ export default {
       this.hyperXenServerShow = false
       this.hyperVMWShow = false
       this.hyperKVMShow = false
+      this.hyperExternalShow = false
+      this.hyperCustomShow = false
       this.deployasis = false
       this.allowDirectDownload = false
       this.selectedFormat = null
@@ -849,10 +1067,20 @@ export default {
       this.resetSelect(arrSelectReset)
       this.fetchFormat(hyperVisor)
       this.fetchRootDisk(hyperVisor)
-      this.fetchNicAdapterType()
+      this.fetchNicAdapterTypes()
       this.fetchKeyboardType()
+      this.templateTypes.opts = this.$fetchTemplateTypes(hyperVisor)
+      if (this.form.templatetype && !this.templateTypes.opts.find(opt => opt.id === this.form.templatetype)) {
+        this.form.templatetype = undefined
+      }
 
       this.form.rootDiskControllerType = this.rootDisk.opts.length > 0 ? 'osdefault' : ''
+    },
+    onExternalDetailsEnabledChange (val) {
+      if (val || !this.form.externaldetails) {
+        return
+      }
+      this.form.externaldetails = undefined
     },
     handleSubmit (e) {
       e.preventDefault()
@@ -864,10 +1092,10 @@ export default {
           delete this.form.zoneids
         }
         const formRaw = toRaw(this.form)
-        const values = this.handleRemoveFields(formRaw)
+        const formvalues = this.handleRemoveFields(formRaw)
         let params = {}
-        for (const key in values) {
-          const input = values[key]
+        for (const key in formvalues) {
+          const input = formvalues[key]
 
           if (input === undefined) {
             continue
@@ -889,6 +1117,10 @@ export default {
               const name = input[index]
               params[name] = true
             }
+          } else if (key === 'externaldetails') {
+            Object.entries(input).forEach(([k, v]) => {
+              params['externaldetails[0].' + k] = v
+            })
           } else {
             const formattedDetailData = {}
             switch (key) {
@@ -918,9 +1150,12 @@ export default {
         if (!('requireshvm' in params)) { // handled as default true by API
           params.requireshvm = false
         }
+        if (this.selectedFormat === 'External') {
+          params.format = 'External'
+        }
         if (this.currentForm === 'Create') {
           this.loading = true
-          api('registerTemplate', params).then(json => {
+          postAPI('registerTemplate', params).then(json => {
             if (this.userdataid !== null) {
               this.linkUserdataToTemplate(this.userdataid, json.registertemplateresponse.template[0].id, this.userdatapolicy)
             }
@@ -935,7 +1170,7 @@ export default {
           }).finally(() => {
             this.loading = false
           })
-        } else {
+        } else if (this.currentForm === 'Upload') {
           this.loading = true
           if (this.fileList.length > 1) {
             this.$notification.error({
@@ -944,7 +1179,7 @@ export default {
               duration: 0
             })
           }
-          api('getUploadParamsForTemplate', params).then(json => {
+          getAPI('getUploadParamsForTemplate', params).then(json => {
             this.uploadParams = (json.postuploadtemplateresponse && json.postuploadtemplateresponse.getuploadparams) ? json.postuploadtemplateresponse.getuploadparams : ''
             this.handleUpload()
             if (this.userdataid !== null) {
@@ -986,7 +1221,7 @@ export default {
       if (userdatapolicy) {
         params.userdatapolicy = userdatapolicy
       }
-      api('linkUserDataToTemplate', params).then(json => {
+      postAPI('linkUserDataToTemplate', params).then(json => {
         this.closeAction()
       }).catch(error => {
         this.$notifyError(error)
@@ -998,6 +1233,43 @@ export default {
       arrSelectReset.forEach(name => {
         this.form[name] = undefined
       })
+    },
+    fetchDomains () {
+      const params = {}
+      params.listAll = true
+      params.showicon = true
+      params.details = 'min'
+      this.domainLoading = true
+      getAPI('listDomains', params).then(json => {
+        this.domains = json.listdomainsresponse.domain
+      }).finally(() => {
+        this.domainLoading = false
+        this.handleDomainChange(null)
+      })
+    },
+    handleDomainChange (domain) {
+      this.domainid = domain
+      this.form.account = null
+      this.account = null
+      if ('listAccounts' in this.$store.getters.apis) {
+        this.fetchAccounts()
+      }
+    },
+    fetchAccounts () {
+      getAPI('listAccounts', {
+        domainid: this.domainid
+      }).then(response => {
+        this.accounts = response.listaccountsresponse.account || []
+      }).catch(error => {
+        this.$notifyError(error)
+      })
+    },
+    handleAccountChange (acc) {
+      if (acc) {
+        this.account = acc.name
+      } else {
+        this.account = acc
+      }
     }
   }
 }

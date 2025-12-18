@@ -475,6 +475,8 @@ public class EncryptionSecretKeyChanger {
 
             // migrate resource details values
             migrateHostDetails(conn);
+            migrateEncryptedAccountDetails(conn);
+            migrateEncryptedDomainDetails(conn);
             migrateClusterDetails(conn);
             migrateImageStoreDetails(conn);
             migrateStoragePoolDetails(conn);
@@ -495,6 +497,30 @@ public class EncryptionSecretKeyChanger {
         }
         System.out.println("End Data migration");
         return true;
+    }
+
+    private void migrateEncryptedAccountDetails(Connection conn) {
+        System.out.println("Beginning migration of account_details encrypted values");
+
+        String tableName = "account_details";
+        String selectSql = "SELECT details.id, details.value from account_details details, cloud.configuration c " +
+                "WHERE details.name = c.name AND c.category IN ('Hidden', 'Secure') AND details.value <> \"\" ORDER BY details.id;";
+        String updateSql = "UPDATE cloud.account_details SET value = ? WHERE id = ?;";
+        migrateValueAndUpdateDatabaseById(conn, tableName, selectSql, updateSql, false);
+
+        System.out.println("End migration of account details values");
+    }
+
+    private void migrateEncryptedDomainDetails(Connection conn) {
+        System.out.println("Beginning migration of domain_details encrypted values");
+
+        String tableName = "domain_details";
+        String selectSql = "SELECT details.id, details.value from domain_details details, cloud.configuration c " +
+                "WHERE details.name = c.name AND c.category IN ('Hidden', 'Secure') AND details.value <> \"\" ORDER BY details.id;";
+        String updateSql = "UPDATE cloud.domain_details SET value = ? WHERE id = ?;";
+        migrateValueAndUpdateDatabaseById(conn, tableName, selectSql, updateSql, false);
+
+        System.out.println("End migration of domain details values");
     }
 
     protected String migrateValue(String value) {
@@ -606,7 +632,7 @@ public class EncryptionSecretKeyChanger {
 
     private void migrateUserVmDetails(Connection conn) {
         System.out.println("Begin migrate user vm details");
-        migrateDetails(conn, "user_vm_details", PASSWORD);
+        migrateDetails(conn, "vm_instance_details", PASSWORD);
         System.out.println("End migrate user vm details");
     }
 
@@ -630,7 +656,7 @@ public class EncryptionSecretKeyChanger {
         String sqlTemplateDeployAsIsDetails = "SELECT template_deploy_as_is_details.value " +
                 "FROM template_deploy_as_is_details JOIN vm_instance " +
                 "WHERE template_deploy_as_is_details.template_id = vm_instance.vm_template_id " +
-                "vm_instance.id = %s AND template_deploy_as_is_details.name = '%s' LIMIT 1";
+                "AND vm_instance.id = %s AND template_deploy_as_is_details.name = '%s' LIMIT 1";
         try (PreparedStatement selectPstmt = conn.prepareStatement("SELECT id, vm_id, name, value FROM user_vm_deploy_as_is_details");
              ResultSet rs = selectPstmt.executeQuery();
              PreparedStatement updatePstmt = conn.prepareStatement("UPDATE user_vm_deploy_as_is_details SET value=? WHERE id=?")

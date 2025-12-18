@@ -133,6 +133,7 @@ class TestLogin(cloudstackTestCase):
             args["command"] = 'listUsers'
             args["listall"] = 'true'
             args["response"] = "json"
+            args["sessionkey"] = response.json()['loginresponse']['sessionkey']
             response = session.get(self.server_url, params=args)
             self.assertEqual(
                 response.status_code,

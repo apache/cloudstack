@@ -24,8 +24,9 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.network.BgpPeer;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -96,6 +97,7 @@ import com.cloud.network.rules.LoadBalancerContainer;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -120,8 +122,7 @@ import com.cloud.vm.dao.UserVmDao;
 
 public class VirtualRouterElement extends AdapterBase implements VirtualRouterElementService, DhcpServiceProvider, UserDataServiceProvider, SourceNatServiceProvider,
 StaticNatServiceProvider, FirewallServiceProvider, LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer,
-NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServiceProvider{
-    private static final Logger s_logger = Logger.getLogger(VirtualRouterElement.class);
+NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServiceProvider, BgpServiceProvider {
     protected static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
     @Inject
@@ -198,12 +199,12 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
 
         if (service == null) {
             if (!_networkMdl.isProviderForNetwork(getProvider(), network.getId())) {
-                s_logger.trace("Element " + getProvider().getName() + " is not a provider for the network " + network);
+                logger.trace("Element " + getProvider().getName() + " is not a provider for the network " + network);
                 return false;
             }
         } else {
             if (!_networkMdl.isProviderSupportServiceInNetwork(network.getId(), service, getProvider())) {
-                s_logger.trace("Element " + getProvider().getName() + " doesn't support service " + service.getName() + " in the network " + network);
+                logger.trace("Element " + getProvider().getName() + " doesn't support service " + service.getName() + " in the network " + network);
                 return false;
             }
         }
@@ -219,7 +220,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             return false;
         }
 
-        final Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
+        final Map<VirtualMachineProfile.Param, Object> params = new HashMap<>(1);
         params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
 
         if (network.isRollingRestart()) {
@@ -264,27 +265,13 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             return false;
         }
 
-        final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        if (offering.isSystemOnly()) {
-            return false;
-        }
         if (!_networkMdl.isProviderEnabledInPhysicalNetwork(_networkMdl.getPhysicalNetworkId(network), getProvider().getName())) {
             return false;
         }
 
-        final RouterDeploymentDefinition routerDeploymentDefinition =
-                routerDeploymentDefinitionBuilder.create()
-                .setGuestNetwork(network)
-                .setDeployDestination(dest)
-                .setAccountOwner(_accountMgr.getAccount(network.getAccountId()))
-                .setParams(vm.getParameters())
-                .build();
+        final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        implement(network, offering, dest, context);
 
-        final List<DomainRouterVO> routers = routerDeploymentDefinition.deployVirtualRouter();
-
-        if (routers == null || routers.size() == 0) {
-            throw new ResourceUnavailableException("Can't find at least one running router!", DataCenter.class, network.getDataCenterId());
-        }
         return true;
     }
 
@@ -294,7 +281,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         if (canHandle(network, Service.Firewall)) {
             final List<DomainRouterVO> routers = getRouters(network);
             if (routers == null || routers.isEmpty()) {
-                s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual " + "router doesn't exist in the network " + network.getId());
+                logger.debug("Virtual router element doesn't need to apply firewall rules on the backend; virtual router doesn't exist in the network {}", network);
                 return true;
             }
 
@@ -341,7 +328,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
 
             final List<DomainRouterVO> routers = getRouters(network);
             if (routers == null || routers.isEmpty()) {
-                s_logger.debug("Virtual router elemnt doesn't need to apply lb rules on the backend; virtual " + "router doesn't exist in the network " + network.getId());
+                logger.debug("Virtual router element doesn't need to apply lb rules on the backend; virtual router doesn't exist in the network {}", network);
                 return true;
             }
 
@@ -365,7 +352,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         if (canHandle(network, Service.Vpn)) {
             final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
-                s_logger.debug("Virtual router elemnt doesn't need to apply vpn users on the backend; virtual router" + " doesn't exist in the network " + network.getId());
+                logger.debug("Virtual router element doesn't need to apply vpn users on the backend; virtual router doesn't exist in the network {}", network);
                 return null;
             }
 
@@ -374,7 +361,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
 
             return networkTopology.applyVpnUsers(network, users, routers);
         } else {
-            s_logger.debug("Element " + getName() + " doesn't handle applyVpnUsers command");
+            logger.debug("Element " + getName() + " doesn't handle applyVpnUsers command");
             return null;
         }
     }
@@ -389,12 +376,12 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         if (canHandle(network, Service.Vpn)) {
             final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
-                s_logger.debug("Virtual router elemnt doesn't need stop vpn on the backend; virtual router doesn't" + " exist in the network " + network.getId());
+                logger.debug("Virtual router element doesn't need stop vpn on the backend; virtual router doesn't exist in the network {}", network);
                 return true;
             }
             return _routerMgr.startRemoteAccessVpn(network, vpn, routers);
         } else {
-            s_logger.debug("Element " + getName() + " doesn't handle createVpn command");
+            logger.debug("Element " + getName() + " doesn't handle createVpn command");
             return false;
         }
     }
@@ -409,13 +396,12 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         if (canHandle(network, Service.Vpn)) {
             final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
-                s_logger.debug(String.format("There is no virtual router in network [uuid: %s, name: %s], it is not necessary to stop the VPN on backend.",
-                        network.getUuid(), network.getName()));
+                logger.debug("There is no virtual router in network {}, it is not necessary to stop the VPN on backend.", network);
                 return true;
             }
             return _routerMgr.deleteRemoteAccessVpn(network, vpn, routers);
         } else {
-            s_logger.debug(String.format("Element %s doesn't handle removeVpn command", getName()));
+            logger.debug(String.format("Element %s doesn't handle removeVpn command", getName()));
             return false;
         }
     }
@@ -433,7 +419,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         if (canHandle) {
             final List<DomainRouterVO> routers = getRouters(network);
             if (routers == null || routers.isEmpty()) {
-                s_logger.debug("Virtual router elemnt doesn't need to associate ip addresses on the backend; virtual " + "router doesn't exist in the network " + network.getId());
+                logger.debug("Virtual router element doesn't need to associate ip addresses on the backend; virtual router doesn't exist in the network {}", network);
                 return true;
             }
 
@@ -531,9 +517,11 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         final Map<Capability, String> lbCapabilities = new HashMap<Capability, String>();
         lbCapabilities.put(Capability.SupportedLBAlgorithms, "roundrobin,leastconn,source");
         lbCapabilities.put(Capability.SupportedLBIsolation, "dedicated");
-        lbCapabilities.put(Capability.SupportedProtocols, "tcp, udp, tcp-proxy");
+        lbCapabilities.put(Capability.SupportedProtocols, "tcp, udp, tcp-proxy, ssl");
         lbCapabilities.put(Capability.SupportedStickinessMethods, getHAProxyStickinessCapability());
         lbCapabilities.put(Capability.LbSchemes, LoadBalancerContainer.Scheme.Public.toString());
+        // Supports SSL offloading
+        lbCapabilities.put(Capability.SslTermination, "true");
 
         // specifies that LB rules can support autoscaling and the list of
         // counters it supports
@@ -556,7 +544,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         // Set capabilities for vpn
         final Map<Capability, String> vpnCapabilities = new HashMap<Capability, String>();
         vpnCapabilities.put(Capability.SupportedVpnProtocols, "pptp,l2tp,ipsec");
-        vpnCapabilities.put(Capability.VpnTypes, "removeaccessvpn");
+        vpnCapabilities.put(Capability.VpnTypes, "remoteaccessvpn");
         capabilities.put(Service.Vpn, vpnCapabilities);
 
         final Map<Capability, String> dnsCapabilities = new HashMap<Capability, String>();
@@ -569,7 +557,9 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         dhcpCapabilities.put(Capability.DhcpAccrossMultipleSubnets, "true");
         capabilities.put(Service.Dhcp, dhcpCapabilities);
 
-        capabilities.put(Service.Gateway, null);
+        final Map<Capability, String> gatewayCapabilities = new HashMap<Capability, String>();
+        gatewayCapabilities.put(Capability.RedundantRouter, "true");
+        capabilities.put(Service.Gateway, gatewayCapabilities);
 
         final Map<Capability, String> sourceNatCapabilities = new HashMap<Capability, String>();
         sourceNatCapabilities.put(Capability.SupportedSourceNatTypes, "peraccount");
@@ -603,7 +593,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         if (canHandle(network, Service.StaticNat)) {
             final List<DomainRouterVO> routers = getRouters(network);
             if (routers == null || routers.isEmpty()) {
-                s_logger.debug("Virtual router elemnt doesn't need to apply static nat on the backend; virtual " + "router doesn't exist in the network " + network.getId());
+                logger.debug("Virtual router element doesn't need to apply static nat on the backend; virtual router doesn't exist in the network {}", network);
                 return true;
             }
 
@@ -668,12 +658,12 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         for (final DomainRouterVO router : routers) {
             stopResult = stopResult && _routerMgr.stop(router, false, context.getCaller(), context.getAccount()) != null;
             if (!stopResult) {
-                s_logger.warn("Failed to stop virtual router element " + router + ", but would try to process clean up anyway.");
+                logger.warn("Failed to stop virtual router element " + router + ", but would try to process clean up anyway.");
             }
             if (cleanup) {
                 destroyResult = destroyResult && _routerMgr.destroyRouter(router.getId(), context.getAccount(), context.getCaller().getId()) != null;
                 if (!destroyResult) {
-                    s_logger.warn("Failed to clean up virtual router element " + router);
+                    logger.warn("Failed to clean up virtual router element " + router);
                 }
             }
         }
@@ -705,7 +695,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         }
         final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
         if (routers == null || routers.isEmpty()) {
-            s_logger.debug("Can't find virtual router element in network " + network.getId());
+            logger.debug("Can't find virtual router element in network {}", network);
             return true;
         }
 
@@ -722,7 +712,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             if (router.getState() == State.Running) {
                 final boolean result = networkTopology.savePasswordToRouter(network, nic, uservm, router);
                 if (!result) {
-                    s_logger.error("Unable to save password for VM " + vm.getInstanceName() +
+                    logger.error("Unable to save password for VM " + vm.getInstanceName() +
                             " on router " + router.getInstanceName());
                     return false;
                 }
@@ -763,7 +753,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         }
         final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
         if (routers == null || routers.isEmpty()) {
-            s_logger.debug("Can't find virtual router element in network " + network.getId());
+            logger.debug("Can't find virtual router element in network {}", network);
             return true;
         }
 
@@ -781,7 +771,12 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
 
     @Override
     public boolean saveHypervisorHostname(NicProfile nicProfile, Network network, VirtualMachineProfile vm, DeployDestination dest) throws ResourceUnavailableException {
-        if (_networkModel.getUserDataUpdateProvider(network).getProvider().equals(Provider.VirtualRouter) && vm.getVirtualMachine().getType() == VirtualMachine.Type.User) {
+        final UserDataServiceProvider userDataUpdateProvider = _networkModel.getUserDataUpdateProvider(network);
+        if (userDataUpdateProvider == null) {
+            logger.warn("Failed to update hypervisor host details, can't get user data provider");
+            return false;
+        }
+        if (Provider.VirtualRouter.equals(userDataUpdateProvider.getProvider()) && vm.getVirtualMachine().getType() == VirtualMachine.Type.User) {
             VirtualMachine uvm = vm.getVirtualMachine();
             UserVmVO destVm = _userVmDao.findById(uvm.getId());
             VirtualMachineProfile profile = null;
@@ -813,7 +808,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         }
         final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
         if (routers == null || routers.isEmpty()) {
-            s_logger.debug("Can't find virtual router element in network " + network.getId());
+            logger.debug("Can't find virtual router element in network {}", network);
             return true;
         }
 
@@ -842,7 +837,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
     public VirtualRouterProvider configure(final ConfigureVirtualRouterElementCmd cmd) {
         final VirtualRouterProviderVO element = _vrProviderDao.findById(cmd.getId());
         if (element == null || !(element.getType() == Type.VirtualRouter || element.getType() == Type.VPCVirtualRouter)) {
-            s_logger.debug("Can't find Virtual Router element with network service provider id " + cmd.getId());
+            logger.debug("Can't find Virtual Router element with network service provider id " + cmd.getId());
             return null;
         }
 
@@ -856,7 +851,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
     public OvsProvider configure(final ConfigureOvsElementCmd cmd) {
         final OvsProviderVO element = _ovsProviderDao.findById(cmd.getId());
         if (element == null) {
-            s_logger.debug("Can't find Ovs element with network service provider id " + cmd.getId());
+            logger.debug("Can't find Ovs element with network service provider id " + cmd.getId());
             return null;
         }
 
@@ -873,7 +868,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         }
         VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(nspId, providerType);
         if (element != null) {
-            s_logger.debug("There is already a virtual router element with service provider id " + nspId);
+            logger.debug("There is already a virtual router element with service provider id " + nspId);
             return null;
         }
         element = new VirtualRouterProviderVO(nspId, providerType);
@@ -887,7 +882,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         if (canHandle(network, Service.PortForwarding)) {
             final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
-                s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual " + "router doesn't exist in the network " + network.getId());
+                logger.debug("Virtual router element doesn't need to apply firewall rules on the backend; virtual router doesn't exist in the network {}", network);
                 return true;
             }
 
@@ -953,7 +948,6 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
     ResourceUnavailableException {
         return true;
     }
-
 
     @Override
     public boolean configDhcpSupportForSubnet(final Network network, final NicProfile nic, final VirtualMachineProfile vm, final DeployDestination dest,
@@ -1050,7 +1044,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             try {
                 return _routerMgr.removeDhcpSupportForSubnet(network, routers);
             } catch (final ResourceUnavailableException e) {
-                s_logger.info("Router resource unavailable ", e);
+                logger.info("Router resource unavailable ", e);
             }
         }
         return false;
@@ -1238,7 +1232,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             if (schemeCaps != null) {
                 for (final LoadBalancingRule rule : rules) {
                     if (!schemeCaps.contains(rule.getScheme().toString())) {
-                        s_logger.debug("Scheme " + rules.get(0).getScheme() + " is not supported by the provider " + getName());
+                        logger.debug("Scheme " + rules.get(0).getScheme() + " is not supported by the provider " + getName());
                         return false;
                     }
                 }
@@ -1251,12 +1245,12 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         if (_networkModel.areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.UserData)) {
             boolean result = saveUserData(network, nic, vm);
             if (!result) {
-                s_logger.warn("Failed to update userdata for vm " + vm + " and nic " + nic);
+                logger.warn("Failed to update userdata for vm " + vm + " and nic " + nic);
             } else {
-                s_logger.debug("Successfully saved user data to router");
+                logger.debug("Successfully saved user data to router");
             }
         } else {
-            s_logger.debug("Not applying userdata for nic id=" + nic.getId() + " in vm id=" + vm.getId() + " because it is not supported in network id=" + network.getId());
+            logger.debug("Not applying userdata for nic {} in vm {} because it is not supported in network {}", nic, vm, network);
         }
     }
 
@@ -1275,7 +1269,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             try {
                 networkTopology.setupDhcpForPvlan(false, router, router.getHostId(), nic);
             } catch (final ResourceUnavailableException e) {
-                s_logger.warn("Timed Out", e);
+                logger.warn("Timed Out", e);
             }
         } else if (vm.getType() == VirtualMachine.Type.User) {
             assert vm instanceof UserVmVO;
@@ -1299,7 +1293,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             try {
                 networkTopology.setupDhcpForPvlan(true, router, router.getHostId(), nic);
             } catch (final ResourceUnavailableException e) {
-                s_logger.warn("Timed Out", e);
+                logger.warn("Timed Out", e);
             }
         } else if (vm.getType() == VirtualMachine.Type.User) {
             assert vm instanceof UserVmVO;
@@ -1322,7 +1316,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             try {
                 networkTopology.setupDhcpForPvlan(true, router, router.getHostId(), nic);
             } catch (final ResourceUnavailableException e) {
-                s_logger.warn("Timed Out", e);
+                logger.warn("Timed Out", e);
             }
         } else if (vm.getType() == VirtualMachine.Type.User) {
             assert vm instanceof UserVmVO;
@@ -1406,5 +1400,37 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             router.setUpdateState(VirtualRouter.UpdateState.UPDATE_FAILED);
             _routerDao.persist(router);
         }
+    }
+
+    @Override
+    public boolean applyBgpPeers(Vpc vpc, Network network, List<? extends BgpPeer> bgpPeers) throws ResourceUnavailableException {
+        if (ObjectUtils.allNull(vpc, network)) {
+            throw new CloudRuntimeException("One of VPC and network must be passed, however both are null.");
+        }
+        final List<DomainRouterVO> routers;
+        if (vpc != null) {
+            routers = _routerDao.listByVpcId(vpc.getId());
+        } else {
+            routers = _routerDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER);
+        }
+
+        if (CollectionUtils.isEmpty(routers)) {
+            logger.warn(String.format("Can't find at least one router for vpc %s or network %s !", vpc, network));
+            return true;
+        }
+
+        boolean result = true;
+        long dataCenterId = vpc != null ? vpc.getZoneId() : network.getDataCenterId();
+        final DataCenterVO dcVO = _dcDao.findById(dataCenterId);
+        final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+        for (final DomainRouterVO domainRouterVO : routers) {
+            if (domainRouterVO.getState() != VirtualMachine.State.Running) {
+                continue;
+            }
+
+            result = result && networkTopology.applyBgpPeers(network, bgpPeers, domainRouterVO);
+        }
+        return result;
     }
 }

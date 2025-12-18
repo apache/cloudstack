@@ -35,6 +35,10 @@ public interface AutoScaleVmProfile extends ControlledEntity, InternalIdentity, 
 
     String getUserData();
 
+    Long getUserDataId();
+
+    String getUserDataDetails();
+
     public String getUuid();
 
     public Long getZoneId();

@@ -53,6 +53,10 @@ public class DiskOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "the name of the disk offering")
     private String name;
 
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "state of the disk offering")
+    private String state;
+
     @SerializedName(ApiConstants.DISPLAY_TEXT)
     @Param(description = "an alternate display text of the disk offering.")
     private String displayText;
@@ -169,6 +173,10 @@ public class DiskOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "additional key/value details tied with this disk offering", since = "4.17")
     private Map<String, String> details;
 
+    @SerializedName(ApiConstants.SUITABLE_FOR_VM)
+    @Param(description = "Returns true if the disk offering is suitable for the given virtual machine for disk creation otherwise false", since = "4.20.0")
+    private Boolean suitableForVm;
+
     public Boolean getDisplayOffering() {
         return displayOffering;
     }
@@ -224,6 +232,14 @@ public class DiskOfferingResponse extends BaseResponseWithAnnotations {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 
     public String getDisplayText() {
@@ -390,5 +406,9 @@ public class DiskOfferingResponse extends BaseResponseWithAnnotations {
 
     public void setDetails(Map<String, String> details) {
         this.details = details;
+    }
+
+    public void setSuitableForVm(Boolean suitableForVm) {
+        this.suitableForVm = suitableForVm;
     }
 }

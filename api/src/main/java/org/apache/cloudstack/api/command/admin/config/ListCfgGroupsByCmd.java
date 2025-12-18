@@ -27,14 +27,12 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ConfigurationGroupResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.config.ConfigurationGroup;
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.Pair;
 
 @APICommand(name = ListCfgGroupsByCmd.APINAME, description = "Lists all configuration groups (primarily used for UI).", responseObject = ConfigurationGroupResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.18.0")
 public class ListCfgGroupsByCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListCfgGroupsByCmd.class.getName());
 
     public static final String APINAME = "listConfigurationGroups";
 

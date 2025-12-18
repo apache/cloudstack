@@ -21,7 +21,11 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+
+import java.util.Collections;
+import java.util.List;
 
 public class AffinityProcessorBase extends AdapterBase implements AffinityGroupProcessor {
 
@@ -29,6 +33,11 @@ public class AffinityProcessorBase extends AdapterBase implements AffinityGroupP
 
     @Override
     public void process(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid) throws AffinityConflictException {
+        process(vm, plan, avoid, Collections.emptyList());
+    }
+
+    @Override
+    public void process(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid, List<VirtualMachine> vmList) throws AffinityConflictException {
 
     }
 

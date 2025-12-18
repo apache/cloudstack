@@ -24,10 +24,9 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-import javax.persistence.TableGenerator;
 
+import com.cloud.utils.db.GenericSearchBuilder;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;
@@ -45,9 +44,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SequenceFetcher;
 import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.utils.net.NetUtils;
 
 /**
  * @config
@@ -58,7 +55,6 @@ import com.cloud.utils.net.NetUtils;
  **/
 @Component
 public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implements DataCenterDao {
-    private static final Logger s_logger = Logger.getLogger(DataCenterDaoImpl.class);
 
     protected SearchBuilder<DataCenterVO> NameSearch;
     protected SearchBuilder<DataCenterVO> ListZonesByDomainIdSearch;
@@ -83,7 +79,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
 
     protected long _prefix;
     protected Random _rand = new Random(System.currentTimeMillis());
-    protected TableGenerator _tgMacAddress;
+
 
     @Override
     public DataCenterVO findByName(String name) {
@@ -169,8 +165,8 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
 
     @Override
-    public void releasePrivateIpAddress(String ipAddress, long dcId, Long instanceId) {
-        _ipAllocDao.releaseIpAddress(ipAddress, dcId, instanceId);
+    public void releasePrivateIpAddress(String ipAddress, long dcId, Long nicId) {
+        _ipAllocDao.releaseIpAddress(ipAddress, dcId, nicId);
     }
 
     @Override
@@ -184,8 +180,8 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
 
     @Override
-    public void releaseLinkLocalIpAddress(String ipAddress, long dcId, Long instanceId) {
-        _linkLocalIpAllocDao.releaseIpAddress(ipAddress, dcId, instanceId);
+    public void releaseLinkLocalIpAddress(String ipAddress, long dcId, Long nicId) {
+        _linkLocalIpAllocDao.releaseIpAddress(ipAddress, dcId, nicId);
     }
 
     @Override
@@ -231,28 +227,9 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
 
     @Override
-    public String[] getNextAvailableMacAddressPair(long id) {
-        return getNextAvailableMacAddressPair(id, 0);
-    }
-
-    @Override
-    public String[] getNextAvailableMacAddressPair(long id, long mask) {
-        SequenceFetcher fetch = SequenceFetcher.getInstance();
-
-        long seq = fetch.getNextSequence(Long.class, _tgMacAddress, id);
-        seq = seq | _prefix | ((id & 0x7f) << 32);
-        seq |= mask;
-        seq |= ((_rand.nextInt(Short.MAX_VALUE) << 16) & 0x00000000ffff0000l);
-        String[] pair = new String[2];
-        pair[0] = NetUtils.long2Mac(seq);
-        pair[1] = NetUtils.long2Mac(seq | 0x1l << 39);
-        return pair;
-    }
-
-    @Override
-    public PrivateAllocationData allocatePrivateIpAddress(long dcId, long podId, long instanceId, String reservationId, boolean forSystemVms) {
-        _ipAllocDao.releaseIpAddress(instanceId);
-        DataCenterIpAddressVO vo = _ipAllocDao.takeIpAddress(dcId, podId, instanceId, reservationId, forSystemVms);
+    public PrivateAllocationData allocatePrivateIpAddress(long dcId, long podId, long nicId, String reservationId, boolean forSystemVms) {
+        _ipAllocDao.releaseIpAddress(nicId);
+        DataCenterIpAddressVO vo = _ipAllocDao.takeIpAddress(dcId, podId, nicId, reservationId, forSystemVms);
         if (vo == null) {
             return null;
         }
@@ -266,8 +243,8 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
 
     @Override
-    public String allocateLinkLocalIpAddress(long dcId, long podId, long instanceId, String reservationId) {
-        DataCenterLinkLocalIpAddressVO vo = _linkLocalIpAllocDao.takeIpAddress(dcId, podId, instanceId, reservationId);
+    public String allocateLinkLocalIpAddress(long dcId, long podId, long nicId, String reservationId) {
+        DataCenterLinkLocalIpAddressVO vo = _linkLocalIpAllocDao.takeIpAddress(dcId, podId, nicId, reservationId);
         if (vo == null) {
             return null;
         }
@@ -348,9 +325,6 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         TokenSearch = createSearchBuilder();
         TokenSearch.and("zoneToken", TokenSearch.entity().getZoneToken(), SearchCriteria.Op.EQ);
         TokenSearch.done();
-
-        _tgMacAddress = _tgs.get("macAddress");
-        assert _tgMacAddress != null : "Couldn't get mac address table generator";
     }
 
     @Override
@@ -430,7 +404,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
                     Long dcId = Long.parseLong(tokenOrIdOrName);
                     return findById(dcId);
                 } catch (NumberFormatException nfe) {
-                    s_logger.debug("Cannot parse " + tokenOrIdOrName + " into long. " + nfe);
+                    logger.debug("Cannot parse " + tokenOrIdOrName + " into long. " + nfe);
                 }
             }
         }
@@ -457,5 +431,47 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         List<DataCenterVO> dcs = listBy(sc);
 
         return dcs;
+    }
+
+    @Override
+    public List<DataCenterVO> listByIds(List<Long> ids) {
+        SearchBuilder<DataCenterVO> idsSearch = createSearchBuilder();
+        idsSearch.and("ids", idsSearch.entity().getId(), SearchCriteria.Op.IN);
+        idsSearch.done();
+        SearchCriteria<DataCenterVO> sc = idsSearch.create();
+        sc.setParameters("ids", ids.toArray());
+        return listBy(sc);
+    }
+
+    @Override
+    public List<String> listDistinctStorageAccessGroups(String name, String keyword) {
+        GenericSearchBuilder<DataCenterVO, String> searchBuilder = createSearchBuilder(String.class);
+
+        searchBuilder.select(null, SearchCriteria.Func.DISTINCT, searchBuilder.entity().getStorageAccessGroups());
+        if (name != null) {
+            searchBuilder.and().op("storageAccessGroupExact", searchBuilder.entity().getStorageAccessGroups(), SearchCriteria.Op.EQ);
+            searchBuilder.or("storageAccessGroupPrefix", searchBuilder.entity().getStorageAccessGroups(), SearchCriteria.Op.LIKE);
+            searchBuilder.or("storageAccessGroupSuffix", searchBuilder.entity().getStorageAccessGroups(), SearchCriteria.Op.LIKE);
+            searchBuilder.or("storageAccessGroupMiddle", searchBuilder.entity().getStorageAccessGroups(), SearchCriteria.Op.LIKE);
+            searchBuilder.cp();
+        }
+        if (keyword != null) {
+            searchBuilder.and("keyword", searchBuilder.entity().getStorageAccessGroups(), SearchCriteria.Op.LIKE);
+        }
+        searchBuilder.done();
+
+        SearchCriteria<String> sc = searchBuilder.create();
+        if (name != null) {
+            sc.setParameters("storageAccessGroupExact", name);
+            sc.setParameters("storageAccessGroupPrefix", name + ",%");
+            sc.setParameters("storageAccessGroupSuffix", "%," + name);
+            sc.setParameters("storageAccessGroupMiddle", "%," + name + ",%");
+        }
+
+        if (keyword != null) {
+            sc.setParameters("keyword", "%" + keyword + "%");
+        }
+
+        return customSearch(sc, null);
     }
 }

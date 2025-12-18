@@ -21,32 +21,18 @@
       {{ name }}
     </template>
     <font-awesome-icon
-      :icon="['fab', logo]"
+      :icon="logo"
       :size="size"
       :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#666' }]"
-      v-if="logo !== 'debian'" />
-    <debian-icon
-      v-else-if="logo === 'debian'"
-      :width="size === '4x' ? 56 : 16"
-      :height="size === '4x' ? 56 : 16"
-      :style="{
-        height: size === '4x' ? '56px' : '16px',
-        width: size === '4x' ? '56px' : '16px',
-        marginBottom: '-4px',
-        background: $store.getters.darkMode ? 'rgba(255, 255, 255, 0.65)' : ''
-      }" />
+      />
   </a-tooltip>
 </template>
 
 <script>
-import { api } from '@/api'
-import DebianIcon from '@/assets/icons/debian.svg?inline'
+import { getAPI } from '@/api'
 
 export default {
   name: 'OsLogo',
-  components: {
-    DebianIcon
-  },
   props: {
     osId: {
       type: String,
@@ -64,7 +50,7 @@ export default {
   data () {
     return {
       name: '',
-      osLogo: 'linux'
+      osLogo: ['fas', 'image']
     }
   },
   computed: {
@@ -93,7 +79,7 @@ export default {
         return
       }
       this.name = 'linux'
-      api('listOsTypes', { id: osId }).then(json => {
+      getAPI('listOsTypes', { id: osId }).then(json => {
         if (json && json.listostypesresponse && json.listostypesresponse.ostype && json.listostypesresponse.ostype.length > 0) {
           this.discoverOsLogo(json.listostypesresponse.ostype[0].description)
         } else {
@@ -101,35 +87,34 @@ export default {
         }
       })
     },
+    getFontAwesomeIcon (name) {
+      return ['fab', name]
+    },
     discoverOsLogo (name) {
       this.name = name
-      const osname = name.toLowerCase()
-      if (osname.includes('centos')) {
-        this.osLogo = 'centos'
-      } else if (osname.includes('debian')) {
-        this.osLogo = 'debian'
-      } else if (osname.includes('ubuntu')) {
-        this.osLogo = 'ubuntu'
-      } else if (osname.includes('suse')) {
-        this.osLogo = 'suse'
-      } else if (osname.includes('redhat')) {
-        this.osLogo = 'redhat'
-      } else if (osname.includes('fedora')) {
-        this.osLogo = 'fedora'
-      } else if (osname.includes('linux')) {
-        this.osLogo = 'linux'
-      } else if (osname.includes('bsd')) {
-        this.osLogo = 'freebsd'
-      } else if (osname.includes('apple')) {
-        this.osLogo = 'apple'
-      } else if (osname.includes('window') || osname.includes('dos')) {
-        this.osLogo = 'windows'
-      } else if (osname.includes('oracle')) {
-        this.osLogo = 'java'
-      } else {
-        this.osLogo = 'linux'
-      }
       this.$emit('update-osname', this.name)
+      const osname = name.toLowerCase()
+      const logos = [
+        { name: 'centos' },
+        { name: 'debian' },
+        { name: 'ubuntu' },
+        { name: 'suse' },
+        { name: 'redhat' },
+        { name: 'fedora' },
+        { name: 'linux' },
+        { name: 'bsd', alternate: 'freebsd' },
+        { name: 'apple' },
+        { name: 'macos', alternate: 'apple' },
+        { name: 'window', alternate: 'windows' },
+        { name: 'dos', alternate: 'windows' },
+        { name: 'oracle', alternate: 'java' }
+      ]
+      const match = logos.find(entry => osname.includes(entry.name))
+      if (match) {
+        this.osLogo = ['fab', match.alternate ? match.alternate : match.name]
+        return
+      }
+      this.osLogo = ['fas', 'image']
     }
   }
 }

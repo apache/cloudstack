@@ -69,8 +69,7 @@ class TestVMDeploymentPlanner(cloudstackTestCase):
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
         template = get_template(
             self.apiclient,
-            self.zone.id,
-            hypervisor=self.hypervisor
+            self.zone.id
         )
         cmd.zoneid = self.zone.id
         cmd.templateid = template.id

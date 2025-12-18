@@ -34,11 +34,12 @@
       :dataSource="dataSource"
       :pagination="false"
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
-      :rowKey="record => record.zoneid">
+      :rowKey="record => record.zoneid"
+      :rowExpandable="(record) => record.downloaddetails.length > 0">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'zonename'">
-          <span v-if="fetchZoneIcon(record.zoneid)">
-            <resource-icon :image="zoneIcon" size="1x" style="margin-right: 5px"/>
+          <span v-if="record.zoneicon && record.zoneicon.base64image">
+            <resource-icon :image="record.zoneicon.base64image" size="2x" style="margin-right: 5px"/>
           </span>
           <global-outlined v-else style="margin-right: 5px" />
           <span> {{ record.zonename }} </span>
@@ -47,33 +48,88 @@
           <span v-if="record.isready">{{ $t('label.yes') }}</span>
           <span v-else>{{ $t('label.no') }}</span>
         </template>
+        <template v-else-if="column.key === 'created'">
+          <span v-if="record.created">{{ $toLocaleDate(record.created) }}</span>
+        </template>
         <template v-if="column.key === 'actions'">
-          <tooltip-button
-            style="margin-right: 5px"
-            :disabled="!('copyTemplate' in $store.getters.apis && record.isready)"
-            :title="$t('label.action.copy.template')"
-            icon="copy-outlined"
-            :loading="copyLoading"
-            @onClick="showCopyTemplate(record)" />
-          <tooltip-button
-            style="margin-right: 5px"
-            :disabled="!('deleteTemplate' in $store.getters.apis)"
-            :title="$t('label.action.delete.template')"
-            type="primary"
-            :danger="true"
-            icon="delete-outlined"
-            @onClick="onShowDeleteModal(record)"/>
+          <span style="margin-right: 5px" v-if="'deployVirtualMachine' in $store.getters.apis">
+            <tooltip-button
+              :disabled="!record.isready"
+              :title="$t('label.vm.add')"
+              icon="rocket-outlined"
+              @onClick="onAddInstance(record)"/>
+          </span>
+          <span v-if="isActionsOnTemplatePermitted">
+            <span style="margin-right: 5px">
+              <tooltip-button
+                :disabled="!('copyTemplate' in $store.getters.apis && record.isready)"
+                :title="$t('label.action.copy.template')"
+                icon="copy-outlined"
+                :loading="copyLoading"
+                @onClick="showCopyTemplate(record)" />
+            </span>
+            <span style="margin-right: 5px">
+              <tooltip-button
+                :disabled="!('deleteTemplate' in $store.getters.apis)"
+                :title="$t('label.action.delete.template')"
+                type="primary"
+                :danger="true"
+                icon="delete-outlined"
+                @onClick="onShowDeleteModal(record)"/>
+            </span>
+          </span>
         </template>
       </template>
       <template #expandedRowRender="{ record }">
         <a-table
           style="margin: 10px 0;"
-          :columns="innerColumns"
-          :data-source="record.downloaddetails"
+          :columns="storagePoolInnerColumns"
+          :data-source="record.downloaddetails.filter((row) => row.datastoreRole === 'Primary')"
+          v-if="record.downloaddetails.filter((row) => row.datastoreRole === 'Primary').length > 0"
           :pagination="false"
           :bordered="true"
-          :rowKey="record => record.zoneid">
+          :rowKey="record => record.datastoreId">
+          <template #bodyCell="{ text, record, column }">
+            <template v-if="column.dataIndex === 'datastore' && record.datastoreId">
+                <router-link :to="{ path: '/storagepool/' + record.datastoreId }">
+                {{ text }}
+              </router-link>
+            </template>
+          </template>
         </a-table>
+        <a-table
+          style="margin: 10px 0;"
+          :columns="imageStoreInnerColumns"
+          :data-source="record.downloaddetails.filter((row) => row.datastoreRole !== 'Primary')"
+          v-if="record.downloaddetails.filter((row) => row.datastoreRole !== 'Primary').length > 0"
+          :pagination="false"
+          :bordered="true"
+          :rowKey="record => record.datastoreId">
+          <template #bodyCell="{ text, record, column }">
+            <template v-if="column.dataIndex === 'datastore' && record.datastoreId">
+                <router-link :to="{ path: '/imagestore/' + record.datastoreId }">
+                {{ text }}
+              </router-link>
+            </template>
+          </template>
+        </a-table>
+      </template>
+      <template #action="{ record }">
+        <tooltip-button
+          style="margin-right: 5px"
+          :disabled="!('copyTemplate' in $store.getters.apis && record.isready)"
+          :title="$t('label.action.copy.template')"
+          icon="copy-outlined"
+          :loading="copyLoading"
+          @onClick="showCopyTemplate(record)" />
+        <tooltip-button
+          style="margin-right: 5px"
+          :disabled="!('deleteTemplate' in $store.getters.apis) || record.status.startsWith('Installing')"
+          :title="$t('label.action.delete.template')"
+          type="primary"
+          :danger="true"
+          icon="delete-outlined"
+          @onClick="onShowDeleteModal(record)"/>
       </template>
     </a-table>
     <a-pagination
@@ -123,10 +179,10 @@
               }"
               :loading="zoneLoading"
               v-focus="true">
-              <a-select-option v-for="zone in zones" :key="zone.id" :label="zone.name">
+              <a-select-option v-for="zone in copyZones" :key="zone.id" :label="zone.name">
                 <div>
                   <span v-if="zone.icon && zone.icon.base64image">
-                    <resource-icon :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+                    <resource-icon :image="zone.icon.base64image" size="2x" style="margin-right: 5px"/>
                   </span>
                   <global-outlined v-else style="margin-right: 5px" />
                   {{ zone.name }}
@@ -183,7 +239,7 @@
           </a-form-item>
           <div :span="24" class="action-button">
             <a-button @click="onCloseModal">{{ $t('label.cancel') }}</a-button>
-            <a-button type="primary" ref="submit" @click="deleteTemplate">{{ $t('label.ok') }}</a-button>
+            <a-button type="primary" ref="submit" @click="selectedItems.length > 0 ? deleteTemplates() : deleteTemplate(currentRecord)">{{ $t('label.ok') }}</a-button>
           </div>
         </a-spin>
       </div>
@@ -199,7 +255,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import OsLogo from '@/components/widgets/OsLogo'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -237,6 +293,7 @@ export default {
       showCopyActionForm: false,
       currentRecord: {},
       zones: [],
+      copyZones: [],
       zoneLoading: false,
       copyLoading: false,
       deleteLoading: false,
@@ -253,7 +310,8 @@ export default {
         confirmMessage: this.$t('label.confirm.delete.templates')
       },
       modalWidth: '30vw',
-      showTable: false
+      showTable: false,
+      osCategoryId: null
     }
   },
   beforeCreate () {
@@ -267,6 +325,11 @@ export default {
         dataIndex: 'zonename'
       },
       {
+        key: 'created',
+        title: this.$t('label.created'),
+        dataIndex: 'created'
+      },
+      {
         title: this.$t('label.status'),
         dataIndex: 'status'
       },
@@ -274,9 +337,15 @@ export default {
         key: 'isready',
         title: this.$t('label.isready'),
         dataIndex: 'isready'
+      },
+      {
+        key: 'actions',
+        title: '',
+        dataIndex: 'actions',
+        width: 130
       }
     ]
-    this.innerColumns = [
+    this.imageStoreInnerColumns = [
       {
         title: this.$t('label.secondary.storage'),
         dataIndex: 'datastore'
@@ -290,14 +359,20 @@ export default {
         dataIndex: 'downloadState'
       }
     ]
-    if (this.isActionPermitted()) {
-      this.columns.push({
-        key: 'actions',
-        title: '',
-        dataIndex: 'actions',
-        width: 100
-      })
-    }
+    this.storagePoolInnerColumns = [
+      {
+        title: this.$t('label.primary.storage'),
+        dataIndex: 'datastore'
+      },
+      {
+        title: this.$t('label.download.percent'),
+        dataIndex: 'downloadPercent'
+      },
+      {
+        title: this.$t('label.download.state'),
+        dataIndex: 'downloadState'
+      }
+    ]
 
     const userInfo = this.$store.getters.userInfo
     if (!['Admin'].includes(userInfo.roletype) &&
@@ -314,6 +389,16 @@ export default {
       }
     }
   },
+  computed: {
+    isActionsOnTemplatePermitted () {
+      return (['Admin'].includes(this.$store.getters.userInfo.roletype) || // If admin or owner or belongs to current project
+        (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.account === this.$store.getters.userInfo.account) ||
+        (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.projectid && this.$store.getters.project && this.$store.getters.project.id && this.resource.projectid === this.$store.getters.project.id)) &&
+        (this.resource.isready || !this.resource.status || this.resource.status.indexOf('Downloaded') === -1) && // Template is ready or downloaded
+        this.resource.templatetype !== 'SYSTEM'
+    }
+  },
+  emits: ['update-zones'],
   methods: {
     initForm () {
       this.formRef = ref()
@@ -333,23 +418,17 @@ export default {
       this.dataSource = []
       this.itemCount = 0
       this.fetchLoading = true
-      api('listTemplates', params).then(json => {
+      getAPI('listTemplates', params).then(json => {
         this.dataSource = json.listtemplatesresponse.template || []
         this.itemCount = json.listtemplatesresponse.count || 0
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.fetchLoading = false
+        this.updateImageZones()
       })
       this.fetchZoneData()
-    },
-    fetchZoneIcon (zoneid) {
-      const zoneItem = this.zones.filter(zone => zone.id === zoneid)
-      if (zoneItem?.[0]?.icon?.base64image) {
-        this.zoneIcon = zoneItem[0].icon.base64image
-        return true
-      }
-      return false
+      this.fetchOsCategoryId()
     },
     handleChangePage (page, pageSize) {
       this.page = page
@@ -360,13 +439,6 @@ export default {
       this.page = currentPage
       this.pageSize = pageSize
       this.fetchData()
-    },
-    isActionPermitted () {
-      return (['Admin'].includes(this.$store.getters.userInfo.roletype) || // If admin or owner or belongs to current project
-        (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.account === this.$store.getters.userInfo.account) ||
-        (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.projectid && this.$store.getters.project && this.$store.getters.project.id && this.resource.projectid === this.$store.getters.project.id)) &&
-        (this.resource.isready || !this.resource.status || this.resource.status.indexOf('Downloaded') === -1) && // Template is ready or downloaded
-        this.resource.templatetype !== 'SYSTEM'
     },
     setSelection (selection) {
       this.selectedRowKeys = selection
@@ -450,7 +522,7 @@ export default {
         zoneid: template.zoneid
       }
       this.deleteLoading = true
-      api('deleteTemplate', params).then(json => {
+      postAPI('deleteTemplate', params).then(json => {
         const jobId = json.deletetemplateresponse.jobid
         eventBus.emit('update-job-details', { jobId, resourceId: null })
         const singleZone = (this.dataSource.length === 1)
@@ -500,11 +572,43 @@ export default {
     fetchZoneData () {
       this.zones = []
       this.zoneLoading = true
-      api('listZones', { showicon: true }).then(json => {
+      getAPI('listZones', { showicon: true }).then(json => {
         const zones = json.listzonesresponse.zone || []
-        this.zones = [...zones.filter((zone) => this.currentRecord.zoneid !== zone.id)]
+        this.zones = zones
+        this.copyZones = [...zones.filter((zone) => this.currentRecord.zoneid !== zone.id)]
       }).finally(() => {
         this.zoneLoading = false
+        this.updateImageZones()
+      })
+    },
+    updateImageZones () {
+      if (!Array.isArray(this.dataSource) || !Array.isArray(this.zones) ||
+        this.dataSource.length === 0 || this.zones.length === 0) {
+        return
+      }
+      const imageZones = []
+      this.dataSource.forEach(item => {
+        const zone = this.zones.find(zone => item.zoneid === zone.id)
+        if (zone && zone.icon) {
+          item.zoneicon = zone.icon
+        }
+        imageZones.push(zone)
+      })
+      if (imageZones.length !== 0) {
+        this.$emit('update-zones', imageZones)
+      }
+    },
+    fetchOsCategoryId () {
+      const needed = this.$route.meta.name === 'template' &&
+        'listOsTypes' in this.$store.getters.apis &&
+        this.resource && this.resource.ostypeid &&
+        (this.$config.imageSelectionInterface === undefined ||
+        this.$config.imageSelectionInterface === 'modern')
+      if (!needed) {
+        return
+      }
+      getAPI('listOsTypes', { id: this.resource.ostypeid }).then(json => {
+        this.osCategoryId = json?.listostypesresponse?.ostype?.[0]?.oscategoryid || null
       })
     },
     showCopyTemplate (record) {
@@ -542,7 +646,7 @@ export default {
           destzoneids: values.zoneid.join()
         }
         this.copyLoading = true
-        api('copyTemplate', params).then(json => {
+        postAPI('copyTemplate', params).then(json => {
           const jobId = json.copytemplateresponse.jobid
           eventBus.emit('update-job-details', { jobId, resourceId: null })
           this.$pollJob({
@@ -569,6 +673,19 @@ export default {
         })
       }).catch(error => {
         this.formRef.value.scrollToField(error.errorFields[0].name)
+      })
+    },
+    onAddInstance (record) {
+      const query = { templateid: this.resource.id, zoneid: record.zoneid }
+      if (this.resource.arch) {
+        query.arch = this.resource.arch
+      }
+      if (this.osCategoryId) {
+        query.oscategoryid = this.osCategoryId
+      }
+      this.$router.push({
+        path: '/action/deployVirtualMachine',
+        query: query
       })
     }
   }

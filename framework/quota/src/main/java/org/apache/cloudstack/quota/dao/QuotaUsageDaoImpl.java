@@ -22,7 +22,6 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.Filter;
@@ -36,7 +35,6 @@ import com.cloud.utils.db.TransactionStatus;
 
 @Component
 public class QuotaUsageDaoImpl extends GenericDaoBase<QuotaUsageVO, Long> implements QuotaUsageDao {
-    private static final Logger s_logger = Logger.getLogger(QuotaUsageDaoImpl.class);
 
     @Override
     public BigDecimal findTotalQuotaUsage(final Long accountId, final Long domainId, final Integer usageType, final Date startDate, final Date endDate) {

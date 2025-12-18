@@ -35,13 +35,11 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 @APICommand(name = "archiveSnapshot", description = "Archives (moves) a snapshot on primary storage to secondary storage",
         responseObject = SnapshotResponse.class, entityType = {Snapshot.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ArchiveSnapshotCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(ArchiveSnapshotCmd.class.getName());
     private static final String s_name = "createsnapshotresponse";
 
     @ACL(accessType = SecurityChecker.AccessType.OperateEntry)

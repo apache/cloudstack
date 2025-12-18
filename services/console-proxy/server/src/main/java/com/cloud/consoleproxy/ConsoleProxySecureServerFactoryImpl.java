@@ -21,7 +21,8 @@ import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
 import org.apache.cloudstack.utils.security.SSLUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -35,7 +36,7 @@ import java.net.InetSocketAddress;
 import java.security.KeyStore;
 
 public class ConsoleProxySecureServerFactoryImpl implements ConsoleProxyServerFactory {
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxySecureServerFactoryImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private SSLContext sslContext = null;
 
@@ -44,32 +45,32 @@ public class ConsoleProxySecureServerFactoryImpl implements ConsoleProxyServerFa
 
     @Override
     public void init(byte[] ksBits, String ksPassword) {
-        s_logger.info("Start initializing SSL");
+        logger.info("Start initializing SSL");
 
         if (ksBits == null) {
             // this should not be the case
-            s_logger.info("No certificates passed, recheck global configuration and certificates");
+            logger.info("No certificates passed, recheck global configuration and certificates");
         } else {
             char[] passphrase = ksPassword != null ? ksPassword.toCharArray() : null;
             try {
-                s_logger.info("Initializing SSL from passed-in certificate");
+                logger.info("Initializing SSL from passed-in certificate");
 
                 KeyStore ks = KeyStore.getInstance("JKS");
                 ks.load(new ByteArrayInputStream(ksBits), passphrase);
 
                 KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
                 kmf.init(ks, passphrase);
-                s_logger.info("Key manager factory is initialized");
+                logger.info("Key manager factory is initialized");
 
                 TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
                 tmf.init(ks);
-                s_logger.info("Trust manager factory is initialized");
+                logger.info("Trust manager factory is initialized");
 
                 sslContext = SSLUtils.getSSLContext();
                 sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-                s_logger.info("SSL context is initialized");
+                logger.info("SSL context is initialized");
             } catch (Exception e) {
-                s_logger.error("Unable to init factory due to exception ", e);
+                logger.error("Unable to init factory due to exception ", e);
             }
         }
 
@@ -98,10 +99,10 @@ public class ConsoleProxySecureServerFactoryImpl implements ConsoleProxyServerFa
                 }
             });
 
-            s_logger.info("create HTTPS server instance on port: " + port);
+            logger.info("create HTTPS server instance on port: " + port);
             return server;
         } catch (Exception ioe) {
-            s_logger.error(ioe.toString(), ioe);
+            logger.error(ioe.toString(), ioe);
         }
         return null;
     }
@@ -115,10 +116,10 @@ public class ConsoleProxySecureServerFactoryImpl implements ConsoleProxyServerFa
             srvSock.setEnabledProtocols(SSLUtils.getRecommendedProtocols());
             srvSock.setEnabledCipherSuites(SSLUtils.getRecommendedCiphers());
 
-            s_logger.info("create SSL server socket on port: " + port);
+            logger.info("create SSL server socket on port: " + port);
             return srvSock;
         } catch (Exception ioe) {
-            s_logger.error(ioe.toString(), ioe);
+            logger.error(ioe.toString(), ioe);
         }
         return null;
     }

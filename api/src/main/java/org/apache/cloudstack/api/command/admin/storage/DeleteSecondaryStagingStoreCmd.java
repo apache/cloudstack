@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.storage;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -32,7 +31,6 @@ import com.cloud.user.Account;
 @APICommand(name = "deleteSecondaryStagingStore", description = "Deletes a secondary staging store .", responseObject = SuccessResponse.class, since = "4.2.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteSecondaryStagingStoreCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteSecondaryStagingStoreCmd.class.getName());
 
 
     // ///////////////////////////////////////////////////

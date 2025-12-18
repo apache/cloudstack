@@ -27,12 +27,15 @@ import org.apache.cloudstack.network.tungsten.service.TungstenService;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
+@RunWith(MockitoJUnitRunner.class)
 public class CreateTungstenFabricFirewallRuleCmdTest {
 
     @Mock
@@ -40,25 +43,31 @@ public class CreateTungstenFabricFirewallRuleCmdTest {
 
     CreateTungstenFabricFirewallRuleCmd createTungstenFabricFirewallRuleCmd;
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         createTungstenFabricFirewallRuleCmd = new CreateTungstenFabricFirewallRuleCmd();
         createTungstenFabricFirewallRuleCmd.tungstenService = tungstenService;
-        Whitebox.setInternalState(createTungstenFabricFirewallRuleCmd, "zoneId", 1L);
-        Whitebox.setInternalState(createTungstenFabricFirewallRuleCmd, "firewallPolicyUuid", "test");
-        Whitebox.setInternalState(createTungstenFabricFirewallRuleCmd, "name", "test");
-        Whitebox.setInternalState(createTungstenFabricFirewallRuleCmd, "action", "test");
-        Whitebox.setInternalState(createTungstenFabricFirewallRuleCmd, "serviceGroupUuid", "test");
-        Whitebox.setInternalState(createTungstenFabricFirewallRuleCmd, "srcTagUuid", "test");
-        Whitebox.setInternalState(createTungstenFabricFirewallRuleCmd, "srcAddressGroupUuid", "test");
-        Whitebox.setInternalState(createTungstenFabricFirewallRuleCmd, "srcNetworkUuid", "test");
-        Whitebox.setInternalState(createTungstenFabricFirewallRuleCmd, "direction", "oneway");
-        Whitebox.setInternalState(createTungstenFabricFirewallRuleCmd, "destTagUuid", "test");
-        Whitebox.setInternalState(createTungstenFabricFirewallRuleCmd, "destAddressGroupUuid", "test");
-        Whitebox.setInternalState(createTungstenFabricFirewallRuleCmd, "destNetworkUuid", "test");
-        Whitebox.setInternalState(createTungstenFabricFirewallRuleCmd, "tagTypeUuid", "test");
-        Whitebox.setInternalState(createTungstenFabricFirewallRuleCmd, "sequence", 1);
+        ReflectionTestUtils.setField(createTungstenFabricFirewallRuleCmd, "zoneId", 1L);
+        ReflectionTestUtils.setField(createTungstenFabricFirewallRuleCmd, "firewallPolicyUuid", "test");
+        ReflectionTestUtils.setField(createTungstenFabricFirewallRuleCmd, "name", "test");
+        ReflectionTestUtils.setField(createTungstenFabricFirewallRuleCmd, "action", "test");
+        ReflectionTestUtils.setField(createTungstenFabricFirewallRuleCmd, "serviceGroupUuid", "test");
+        ReflectionTestUtils.setField(createTungstenFabricFirewallRuleCmd, "srcTagUuid", "test");
+        ReflectionTestUtils.setField(createTungstenFabricFirewallRuleCmd, "srcAddressGroupUuid", "test");
+        ReflectionTestUtils.setField(createTungstenFabricFirewallRuleCmd, "srcNetworkUuid", "test");
+        ReflectionTestUtils.setField(createTungstenFabricFirewallRuleCmd, "direction", "oneway");
+        ReflectionTestUtils.setField(createTungstenFabricFirewallRuleCmd, "destTagUuid", "test");
+        ReflectionTestUtils.setField(createTungstenFabricFirewallRuleCmd, "destAddressGroupUuid", "test");
+        ReflectionTestUtils.setField(createTungstenFabricFirewallRuleCmd, "destNetworkUuid", "test");
+        ReflectionTestUtils.setField(createTungstenFabricFirewallRuleCmd, "tagTypeUuid", "test");
+        ReflectionTestUtils.setField(createTungstenFabricFirewallRuleCmd, "sequence", 1);
+    }
+
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test

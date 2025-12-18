@@ -20,10 +20,14 @@
 package com.cloud.agent.api;
 
 import com.cloud.host.Host;
+import org.apache.cloudstack.command.CommandInfo;
 
 public class PingCommand extends Command {
     Host.Type hostType;
     long hostId;
+    boolean outOfBand;
+    @LogLevel(LogLevel.Log4jLevel.Trace)
+    private CommandInfo[] commandInfos = new CommandInfo[] {};
 
     protected PingCommand() {
     }
@@ -33,6 +37,12 @@ public class PingCommand extends Command {
         hostId = id;
     }
 
+    public PingCommand(Host.Type type, long id, boolean oob) {
+        hostType = type;
+        hostId = id;
+        outOfBand = oob;
+    }
+
     public Host.Type getHostType() {
         return hostType;
     }
@@ -40,6 +50,10 @@ public class PingCommand extends Command {
     public long getHostId() {
         return hostId;
     }
+
+    public boolean getOutOfBand() { return outOfBand; }
+
+    public void setOutOfBand(boolean oob) { this.outOfBand = oob; }
 
     @Override
     public boolean executeInSequence() {
@@ -66,5 +80,13 @@ public class PingCommand extends Command {
         result = 31 * result + (hostType != null ? hostType.hashCode() : 0);
         result = 31 * result + (int) (hostId ^ (hostId >>> 32));
         return result;
+    }
+
+    public CommandInfo[] getCommandInfos() {
+        return commandInfos;
+    }
+
+    public void setCommandInfos(CommandInfo[] commandInfos) {
+        this.commandInfos = commandInfos;
     }
 }

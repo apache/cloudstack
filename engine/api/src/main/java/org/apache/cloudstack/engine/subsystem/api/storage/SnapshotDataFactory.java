@@ -21,19 +21,28 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 import java.util.List;
 
 import com.cloud.storage.DataStoreRole;
+import com.cloud.utils.fsm.NoTransitionException;
 
 public interface SnapshotDataFactory {
     SnapshotInfo getSnapshot(long snapshotId, DataStore store);
 
     SnapshotInfo getSnapshot(DataObject obj, DataStore store);
 
-    SnapshotInfo getSnapshot(long snapshotId, DataStoreRole role);
+    SnapshotInfo getSnapshot(long snapshotId, long storeId, DataStoreRole role);
 
-    SnapshotInfo getSnapshot(long snapshotId, DataStoreRole role, boolean retrieveAnySnapshotFromVolume);
+    SnapshotInfo getSnapshotWithRoleAndZone(long snapshotId, DataStoreRole role, long zoneId);
 
-    List<SnapshotInfo> getSnapshots(long volumeId, DataStoreRole store);
+    SnapshotInfo getSnapshotOnPrimaryStore(long snapshotId);
+
+    SnapshotInfo getSnapshot(long snapshotId, DataStoreRole role, long zoneId, boolean retrieveAnySnapshotFromVolume);
+
+    List<SnapshotInfo> getSnapshotsForVolumeAndStoreRole(long volumeId, DataStoreRole store);
+
+    List<SnapshotInfo> getSnapshots(long snapshotId, Long zoneId);
 
     List<SnapshotInfo> listSnapshotOnCache(long snapshotId);
 
     SnapshotInfo getReadySnapshotOnCache(long snapshotId);
+
+    void updateOperationFailed(long snapshotId) throws NoTransitionException;
 }

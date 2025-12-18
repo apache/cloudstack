@@ -28,27 +28,37 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.IOException;
 import java.util.Arrays;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({HttpClients.class, EntityUtils.class})
+@RunWith(MockitoJUnitRunner.class)
 public class VRouterApiConnectorImplTest {
     VRouterApiConnector vRouterApiConnector;
+
+    MockedStatic<EntityUtils> entityUtilsMocked;
+
+    MockedStatic<HttpClients> httpClientsMocked;
 
     @Before
     public void setup() {
         VRouter vRouter = mock(VRouter.class);
         vRouterApiConnector = new VRouterApiConnectorImpl(vRouter);
-        PowerMockito.mockStatic(HttpClients.class);
-        PowerMockito.mockStatic(EntityUtils.class);
+        httpClientsMocked = Mockito.mockStatic(HttpClients.class);
+        entityUtilsMocked = Mockito.mockStatic(EntityUtils.class);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        httpClientsMocked.close();
+        entityUtilsMocked.close();
     }
 
     @Test
@@ -58,10 +68,10 @@ public class VRouterApiConnectorImplTest {
         CloseableHttpResponse closeableHttpResponse = mock(CloseableHttpResponse.class);
         HttpEntity httpEntity = mock(HttpEntity.class);
 
-        when(HttpClients.createDefault()).thenReturn(httpClient);
+        httpClientsMocked.when(HttpClients::createDefault).thenReturn(httpClient);
         when(httpClient.execute(any(HttpUriRequest.class))).thenReturn(closeableHttpResponse);
         when(closeableHttpResponse.getEntity()).thenReturn(httpEntity);
-        when(EntityUtils.toString(any(HttpEntity.class))).thenReturn("{}");
+        entityUtilsMocked.when(()-> EntityUtils.toString(any(HttpEntity.class))).thenReturn("{}");
 
         assertTrue(vRouterApiConnector.addPort(port));
     }
@@ -71,7 +81,7 @@ public class VRouterApiConnectorImplTest {
         Port port = mock(Port.class);
         CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
 
-        when(HttpClients.createDefault()).thenReturn(httpClient);
+        httpClientsMocked.when(HttpClients::createDefault).thenReturn(httpClient);
         when(httpClient.execute(any(HttpUriRequest.class))).thenThrow(IOException.class);
 
         assertFalse(vRouterApiConnector.addPort(port));
@@ -84,10 +94,10 @@ public class VRouterApiConnectorImplTest {
         CloseableHttpResponse closeableHttpResponse = mock(CloseableHttpResponse.class);
         HttpEntity httpEntity = mock(HttpEntity.class);
 
-        when(HttpClients.createDefault()).thenReturn(httpClient);
+        httpClientsMocked.when(HttpClients::createDefault).thenReturn(httpClient);
         when(httpClient.execute(any(HttpUriRequest.class))).thenReturn(closeableHttpResponse);
         when(closeableHttpResponse.getEntity()).thenReturn(httpEntity);
-        when(EntityUtils.toString(any(HttpEntity.class))).thenReturn("{error:404}");
+        entityUtilsMocked.when(()-> EntityUtils.toString(any(HttpEntity.class))).thenReturn("{error:404}");
 
         assertFalse(vRouterApiConnector.addPort(port));
     }
@@ -98,10 +108,10 @@ public class VRouterApiConnectorImplTest {
         CloseableHttpResponse closeableHttpResponse = mock(CloseableHttpResponse.class);
         HttpEntity httpEntity = mock(HttpEntity.class);
 
-        when(HttpClients.createDefault()).thenReturn(httpClient);
+        httpClientsMocked.when(HttpClients::createDefault).thenReturn(httpClient);
         when(httpClient.execute(any(HttpUriRequest.class))).thenReturn(closeableHttpResponse);
         when(closeableHttpResponse.getEntity()).thenReturn(httpEntity);
-        when(EntityUtils.toString(any(HttpEntity.class))).thenReturn("{}");
+        entityUtilsMocked.when(()-> EntityUtils.toString(any(HttpEntity.class))).thenReturn("{}");
 
         assertTrue(vRouterApiConnector.deletePort("948f421c-edde-4518-a391-09299cc25dc2"));
     }
@@ -110,7 +120,7 @@ public class VRouterApiConnectorImplTest {
     public void deletePortWithExceptionTest() throws Exception {
         CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
 
-        when(HttpClients.createDefault()).thenReturn(httpClient);
+        httpClientsMocked.when(HttpClients::createDefault).thenReturn(httpClient);
         when(httpClient.execute(any(HttpUriRequest.class))).thenThrow(IOException.class);
 
         assertFalse(vRouterApiConnector.deletePort("948f421c-edde-4518-a391-09299cc25dc2"));
@@ -122,10 +132,10 @@ public class VRouterApiConnectorImplTest {
         CloseableHttpResponse closeableHttpResponse = mock(CloseableHttpResponse.class);
         HttpEntity httpEntity = mock(HttpEntity.class);
 
-        when(HttpClients.createDefault()).thenReturn(httpClient);
+        httpClientsMocked.when(HttpClients::createDefault).thenReturn(httpClient);
         when(httpClient.execute(any(HttpUriRequest.class))).thenReturn(closeableHttpResponse);
         when(closeableHttpResponse.getEntity()).thenReturn(httpEntity);
-        when(EntityUtils.toString(any(HttpEntity.class))).thenReturn("{}");
+        entityUtilsMocked.when(()-> EntityUtils.toString(any(HttpEntity.class))).thenReturn("{}");
 
         assertTrue(vRouterApiConnector.enablePort("948f421c-edde-4518-a391-09299cc25dc2"));
     }
@@ -134,7 +144,7 @@ public class VRouterApiConnectorImplTest {
     public void enablePortWithExceptionTest() throws Exception {
         CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
 
-        when(HttpClients.createDefault()).thenReturn(httpClient);
+        httpClientsMocked.when(HttpClients::createDefault).thenReturn(httpClient);
         when(httpClient.execute(any(HttpUriRequest.class))).thenThrow(IOException.class);
 
         assertFalse(vRouterApiConnector.enablePort("948f421c-edde-4518-a391-09299cc25dc2"));
@@ -146,10 +156,10 @@ public class VRouterApiConnectorImplTest {
         CloseableHttpResponse closeableHttpResponse = mock(CloseableHttpResponse.class);
         HttpEntity httpEntity = mock(HttpEntity.class);
 
-        when(HttpClients.createDefault()).thenReturn(httpClient);
+        httpClientsMocked.when(HttpClients::createDefault).thenReturn(httpClient);
         when(httpClient.execute(any(HttpUriRequest.class))).thenReturn(closeableHttpResponse);
         when(closeableHttpResponse.getEntity()).thenReturn(httpEntity);
-        when(EntityUtils.toString(any(HttpEntity.class))).thenReturn("{}");
+        entityUtilsMocked.when(()-> EntityUtils.toString(any(HttpEntity.class))).thenReturn("{}");
 
         assertTrue(vRouterApiConnector.disablePort("948f421c-edde-4518-a391-09299cc25dc2"));
     }
@@ -158,7 +168,7 @@ public class VRouterApiConnectorImplTest {
     public void disablePortWithExceptionTest() throws Exception {
         CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
 
-        when(HttpClients.createDefault()).thenReturn(httpClient);
+        httpClientsMocked.when(HttpClients::createDefault).thenReturn(httpClient);
         when(httpClient.execute(any(HttpUriRequest.class))).thenThrow(IOException.class);
 
         assertFalse(vRouterApiConnector.disablePort("948f421c-edde-4518-a391-09299cc25dc2"));
@@ -172,10 +182,10 @@ public class VRouterApiConnectorImplTest {
         CloseableHttpResponse closeableHttpResponse = mock(CloseableHttpResponse.class);
         HttpEntity httpEntity = mock(HttpEntity.class);
 
-        when(HttpClients.createDefault()).thenReturn(httpClient);
+        httpClientsMocked.when(HttpClients::createDefault).thenReturn(httpClient);
         when(httpClient.execute(any(HttpUriRequest.class))).thenReturn(closeableHttpResponse);
         when(closeableHttpResponse.getEntity()).thenReturn(httpEntity);
-        when(EntityUtils.toString(any(HttpEntity.class))).thenReturn("{}");
+        entityUtilsMocked.when(()-> EntityUtils.toString(any(HttpEntity.class))).thenReturn("{}");
 
         assertTrue(vRouterApiConnector.addGateway(Arrays.asList(gateway1, gateway2)));
     }
@@ -186,7 +196,7 @@ public class VRouterApiConnectorImplTest {
         Gateway gateway2 = mock(Gateway.class);
         CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
 
-        when(HttpClients.createDefault()).thenReturn(httpClient);
+        httpClientsMocked.when(HttpClients::createDefault).thenReturn(httpClient);
         when(httpClient.execute(any(HttpUriRequest.class))).thenThrow(IOException.class);
 
         assertFalse(vRouterApiConnector.addGateway(Arrays.asList(gateway1, gateway2)));
@@ -200,10 +210,10 @@ public class VRouterApiConnectorImplTest {
         CloseableHttpResponse closeableHttpResponse = mock(CloseableHttpResponse.class);
         HttpEntity httpEntity = mock(HttpEntity.class);
 
-        when(HttpClients.createDefault()).thenReturn(httpClient);
+        httpClientsMocked.when(HttpClients::createDefault).thenReturn(httpClient);
         when(httpClient.execute(any(HttpUriRequest.class))).thenReturn(closeableHttpResponse);
         when(closeableHttpResponse.getEntity()).thenReturn(httpEntity);
-        when(EntityUtils.toString(any(HttpEntity.class))).thenReturn("{}");
+        entityUtilsMocked.when(()-> EntityUtils.toString(any(HttpEntity.class))).thenReturn("{}");
 
         assertTrue(vRouterApiConnector.deleteGateway(Arrays.asList(gateway1, gateway2)));
     }
@@ -214,7 +224,7 @@ public class VRouterApiConnectorImplTest {
         Gateway gateway2 = mock(Gateway.class);
         CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
 
-        when(HttpClients.createDefault()).thenReturn(httpClient);
+        httpClientsMocked.when(HttpClients::createDefault).thenReturn(httpClient);
         when(httpClient.execute(any(HttpUriRequest.class))).thenThrow(IOException.class);
 
         assertFalse(vRouterApiConnector.deleteGateway(Arrays.asList(gateway1, gateway2)));

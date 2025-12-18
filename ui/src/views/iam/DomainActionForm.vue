@@ -134,7 +134,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import { ref, reactive, toRaw } from 'vue'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -237,7 +237,12 @@ export default {
 
         const resourceName = params.displayname || params.displaytext || params.name || this.resource.name
         let hasJobId = false
-        api(this.action.api, params).then(json => {
+        Object.keys(params).forEach(key => {
+          if (params[key] === '') {
+            delete params[key]
+          }
+        })
+        postAPI(this.action.api, params).then(json => {
           for (const obj in json) {
             if (obj.includes('response')) {
               for (const res in json[obj]) {

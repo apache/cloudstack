@@ -30,9 +30,9 @@ REV="X.Y"
 CODENAME=""
 
 function get_from_redhat_release {
-	DIST=`cat /etc/redhat-release | awk '{print $1}'`
+	DIST=`cat /etc/redhat-release | awk -F 'release' '{print $1}'`
 	CODENAME=`cat /etc/redhat-release | sed s/.*\(// | sed s/\)//`
-	REV=`cat /etc/redhat-release | awk '{print $3,$4}' | grep -o "[0-9.]*"`
+	REV=`cat /etc/redhat-release | awk -F 'release' '{print $2}' | awk '{print $1}'`
 }
 
 function get_from_lsb_release {

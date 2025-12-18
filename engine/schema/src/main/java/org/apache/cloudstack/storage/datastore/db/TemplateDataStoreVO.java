@@ -29,7 +29,8 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -47,7 +48,7 @@ import com.cloud.utils.fsm.StateObject;
 @Entity
 @Table(name = "template_store_ref")
 public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMachine.State>, DataObjectInStore {
-    private static final Logger s_logger = Logger.getLogger(TemplateDataStoreVO.class);
+    protected transient Logger logger = LogManager.getLogger(getClass());
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -277,7 +278,7 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     }
 
     public long getSize() {
-        return size;
+        return size == null ? 0l : size.longValue();
     }
 
     public void setPhysicalSize(long physicalSize) {
@@ -382,7 +383,7 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
             refCnt--;
         }
         else{
-            s_logger.warn("We should not try to decrement a zero reference count even though our code has guarded");
+            logger.warn("We should not try to decrement a zero reference count even though our code has guarded");
         }
     }
 

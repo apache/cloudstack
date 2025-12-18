@@ -189,4 +189,3 @@ elif [ $1 == "xenserver" ]; then
 else
   echo "Conversion of template to $1's compatible format not supported "
 fi
-

@@ -20,7 +20,6 @@ package org.apache.cloudstack.storage.image.manager;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +41,8 @@ import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import com.cloud.server.StatsCollector;
@@ -51,7 +51,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 
 @Component
 public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager, Configurable {
-    private static final Logger s_logger = Logger.getLogger(ImageStoreProviderManagerImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     @Inject
     ImageStoreDao dataStoreDao;
     @Inject
@@ -94,7 +94,7 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager,
     @Override
     public ImageStoreEntity getImageStore(String uuid) {
         ImageStoreVO dataStore = dataStoreDao.findByUuid(uuid);
-        return getImageStore(dataStore.getId());
+        return dataStore == null ? null : getImageStore(dataStore.getId());
     }
 
     @Override
@@ -158,7 +158,7 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager,
     @Override
     public List<DataStore> listImageCacheStores(Scope scope) {
         if (scope.getScopeType() != ScopeType.ZONE) {
-            s_logger.debug("only support zone wide image cache stores");
+            logger.debug("only support zone wide image cache stores");
             return null;
         }
         List<ImageStoreVO> stores = dataStoreDao.findImageCacheByScope(new ZoneScope(scope.getScopeId()));
@@ -179,52 +179,26 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager,
 
     @Override
     public DataStore getImageStoreWithFreeCapacity(List<DataStore> imageStores) {
-        if (imageStores.size() > 1) {
-            imageStores.sort(new Comparator<DataStore>() { // Sort data stores based on free capacity
-                @Override
-                public int compare(DataStore store1, DataStore store2) {
-                    return Long.compare(_statsCollector.imageStoreCurrentFreeCapacity(store1),
-                            _statsCollector.imageStoreCurrentFreeCapacity(store2));
-                }
-            });
-            for (DataStore imageStore : imageStores) {
-                // Return image store if used percentage is less then threshold value i.e. 90%.
-                if (_statsCollector.imageStoreHasEnoughCapacity(imageStore)) {
-                    return imageStore;
-                }
-            }
-        } else if (imageStores.size() == 1) {
-            if (_statsCollector.imageStoreHasEnoughCapacity(imageStores.get(0))) {
-                return imageStores.get(0);
+        imageStores.sort((store1, store2) -> Long.compare(_statsCollector.imageStoreCurrentFreeCapacity(store2),
+                _statsCollector.imageStoreCurrentFreeCapacity(store1)));
+        for (DataStore imageStore : imageStores) {
+            if (_statsCollector.imageStoreHasEnoughCapacity(imageStore)) {
+                return imageStore;
             }
         }
-
-        // No store with space found
-        s_logger.error(String.format("Can't find an image storage in zone with less than %d usage",
-                Math.round(_statsCollector.getImageStoreCapacityThreshold()*100)));
+        logger.error(String.format("Could not find an image storage in zone with less than %d usage",
+                Math.round(_statsCollector.getImageStoreCapacityThreshold() * 100)));
         return null;
     }
 
     @Override
     public List<DataStore> orderImageStoresOnFreeCapacity(List<DataStore> imageStores) {
         List<DataStore> stores = new ArrayList<>();
-        if (imageStores.size() > 1) {
-            imageStores.sort(new Comparator<DataStore>() { // Sort data stores based on free capacity
-                @Override
-                public int compare(DataStore store1, DataStore store2) {
-                    return Long.compare(_statsCollector.imageStoreCurrentFreeCapacity(store1),
-                            _statsCollector.imageStoreCurrentFreeCapacity(store2));
-                }
-            });
-            for (DataStore imageStore : imageStores) {
-                // Return image store if used percentage is less then threshold value i.e. 90%.
-                if (_statsCollector.imageStoreHasEnoughCapacity(imageStore)) {
-                    stores.add(imageStore);
-                }
-            }
-        } else if (imageStores.size() == 1) {
-            if (_statsCollector.imageStoreHasEnoughCapacity(imageStores.get(0))) {
-                stores.add(imageStores.get(0));
+        imageStores.sort((store1, store2) -> Long.compare(_statsCollector.imageStoreCurrentFreeCapacity(store2),
+                _statsCollector.imageStoreCurrentFreeCapacity(store1)));
+        for (DataStore imageStore : imageStores) {
+            if (_statsCollector.imageStoreHasEnoughCapacity(imageStore)) {
+                stores.add(imageStore);
             }
         }
         return stores;
@@ -242,10 +216,20 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager,
 
         // No store with space found
         if (stores.isEmpty()) {
-            s_logger.error(String.format("Can't find image storage in zone with less than %d usage",
+            logger.error(String.format("Can't find image storage in zone with less than %d usage",
                     Math.round(_statsCollector.getImageStoreCapacityThreshold() * 100)));
         }
         return stores;
+    }
+
+    @Override
+    public List<DataStore> listImageStoresFilteringByZoneIds(Long... zoneIds) {
+        List<ImageStoreVO> stores = dataStoreDao.listImageStoresByZoneIds(zoneIds);
+        List<DataStore> imageStores = new ArrayList<>();
+        for (ImageStoreVO store : stores) {
+            imageStores.add(getImageStore(store.getId()));
+        }
+        return imageStores;
     }
 
     @Override
@@ -256,5 +240,11 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager,
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] { ImageStoreAllocationAlgorithm };
+    }
+
+    @Override
+    public long getImageStoreZoneId(long dataStoreId) {
+        ImageStoreVO dataStore = dataStoreDao.findById(dataStoreId);
+        return dataStore.getDataCenterId();
     }
 }

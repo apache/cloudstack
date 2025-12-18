@@ -16,12 +16,13 @@
 // under the License.
 package com.cloud.api.query.dao;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.ApiConstants.DomainDetails;
@@ -31,6 +32,7 @@ import org.apache.cloudstack.api.response.ResourceLimitAndCountResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.ViewResponseHelper;
 import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
@@ -44,13 +46,19 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> implements AccountJoinDao {
-    public static final Logger s_logger = Logger.getLogger(AccountJoinDaoImpl.class);
 
+    @Inject
+    private ConfigurationDao configDao;
     private final SearchBuilder<AccountJoinVO> acctIdSearch;
+    private final SearchBuilder<AccountJoinVO> domainSearch;
     @Inject
     AccountManager _acctMgr;
 
     protected AccountJoinDaoImpl() {
+
+        domainSearch = createSearchBuilder();
+        domainSearch.and("idIN", domainSearch.entity().getId(), SearchCriteria.Op.IN);
+        domainSearch.done();
 
         acctIdSearch = createSearchBuilder();
         acctIdSearch.and("id", acctIdSearch.entity().getId(), SearchCriteria.Op.EQ);
@@ -67,14 +75,15 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         accountResponse.setAccountType(account.getType().ordinal());
         accountResponse.setDomainId(account.getDomainUuid());
         accountResponse.setDomainName(account.getDomainName());
-        StringBuilder domainPath = new StringBuilder("ROOT");
-        (domainPath.append(account.getDomainPath())).deleteCharAt(domainPath.length() - 1);
-        accountResponse.setDomainPath(domainPath.toString());
+        accountResponse.setDomainPath(ApiResponseHelper.getPrettyDomainPath(account.getDomainPath()));
         accountResponse.setState(account.getState().toString());
         accountResponse.setCreated(account.getCreated());
         accountResponse.setNetworkDomain(account.getNetworkDomain());
         accountResponse.setDefaultZone(account.getDataCenterUuid());
         accountResponse.setIsDefault(account.isDefault());
+        if (view == ResponseView.Full) {
+            accountResponse.setApiKeyAccess(account.getApiKeyAccess());
+        }
 
         // get network stat
         accountResponse.setBytesReceived(account.getBytesReceived());
@@ -210,7 +219,10 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         response.setMemoryTotal(memoryTotal);
         response.setMemoryAvailable(memoryAvail);
 
-      //get resource limits for primary storage space and convert it from Bytes to GiB
+        //get resource limits for gpus
+        setGpuResourceLimits(account, fullView,response);
+
+        //get resource limits for primary storage space and convert it from Bytes to GiB
         long primaryStorageLimit = ApiDBUtils.findCorrectResourceLimit(account.getPrimaryStorageLimit(), account.getId(), ResourceType.primary_storage);
         String primaryStorageLimitDisplay = (fullView || primaryStorageLimit == -1) ? Resource.UNLIMITED : String.valueOf(primaryStorageLimit / ResourceType.bytesToGiB);
         long primaryStorageTotal = (account.getPrimaryStorageTotal() == null) ? 0 : (account.getPrimaryStorageTotal() / ResourceType.bytesToGiB);
@@ -230,6 +242,96 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         response.setSecondaryStorageLimit(secondaryStorageLimitDisplay);
         response.setSecondaryStorageTotal(secondaryStorageTotal);
         response.setSecondaryStorageAvailable(secondaryStorageAvail);
+
+        //get resource limits for backups
+        long backupLimit = ApiDBUtils.findCorrectResourceLimit(account.getBackupLimit(), account.getId(), ResourceType.backup);
+        String backupLimitDisplay = (fullView || backupLimit == -1) ? Resource.UNLIMITED : String.valueOf(backupLimit);
+        long backupTotal = (account.getBackupTotal() == null) ? 0 : account.getBackupTotal();
+        String backupAvail = (fullView || backupLimit == -1) ? Resource.UNLIMITED : String.valueOf(backupLimit - backupTotal);
+        response.setBackupLimit(backupLimitDisplay);
+        response.setBackupTotal(backupTotal);
+        response.setBackupAvailable(backupAvail);
+
+        //get resource limits for backup storage space and convert it from Bytes to GiB
+        long backupStorageLimit = ApiDBUtils.findCorrectResourceLimit(account.getBackupStorageLimit(), account.getId(), ResourceType.backup_storage);
+        String backupStorageLimitDisplay = (fullView || backupStorageLimit == -1) ? Resource.UNLIMITED : String.valueOf(backupStorageLimit / ResourceType.bytesToGiB);
+        long backupStorageTotal = (account.getBackupStorageTotal() == null) ? 0 : (account.getBackupStorageTotal() / ResourceType.bytesToGiB);
+        String backupStorageAvail = (fullView || backupStorageLimit == -1) ? Resource.UNLIMITED : String.valueOf((backupStorageLimit / ResourceType.bytesToGiB) - backupStorageTotal);
+        response.setBackupStorageLimit(backupStorageLimitDisplay);
+        response.setBackupStorageTotal(backupStorageTotal);
+        response.setBackupStorageAvailable(backupStorageAvail);
+
+        //get resource limits for buckets
+        long bucketLimit = ApiDBUtils.findCorrectResourceLimit(account.getBucketLimit(), account.getId(), ResourceType.bucket);
+        String bucketLimitDisplay = (fullView || bucketLimit == -1) ? Resource.UNLIMITED : String.valueOf(bucketLimit);
+        long bucketTotal = (account.getBucketTotal() == null) ? 0 : account.getBucketTotal();
+        String bucketAvail = (fullView || bucketLimit == -1) ? Resource.UNLIMITED : String.valueOf(bucketLimit - bucketTotal);
+        response.setBucketLimit(bucketLimitDisplay);
+        response.setBucketTotal(bucketTotal);
+        response.setBucketAvailable(bucketAvail);
+
+        //get resource limits for object storage space and convert it from Bytes to GiB
+        long objectStorageLimit = ApiDBUtils.findCorrectResourceLimit(account.getObjectStorageLimit(), account.getId(), ResourceType.object_storage);
+        String objectStorageLimitDisplay = (fullView || objectStorageLimit == -1) ? Resource.UNLIMITED : String.valueOf(objectStorageLimit / ResourceType.bytesToGiB);
+        long objectStorageTotal = (account.getObjectStorageTotal() == null) ? 0 : (account.getObjectStorageTotal() / ResourceType.bytesToGiB);
+        String objectStorageAvail = (fullView || objectStorageLimit == -1) ? Resource.UNLIMITED : String.valueOf((objectStorageLimit / ResourceType.bytesToGiB) - objectStorageTotal);
+        response.setObjectStorageLimit(objectStorageLimitDisplay);
+        response.setObjectStorageTotal(objectStorageTotal);
+        response.setObjectStorageAvailable(objectStorageAvail);
+    }
+
+    private void setGpuResourceLimits(AccountJoinVO account, boolean fullView, ResourceLimitAndCountResponse response) {
+        long gpuLimit = ApiDBUtils.findCorrectResourceLimit(account.getGpuLimit(), account.getId(), ResourceType.gpu);
+        String gpuLimitDisplay = (fullView || gpuLimit == -1) ? Resource.UNLIMITED : String.valueOf(gpuLimit);
+        long gpuTotal = (account.getGpuTotal() == null) ? 0 : account.getGpuTotal();
+        String gpuAvail = (fullView || gpuLimit == -1) ? Resource.UNLIMITED : String.valueOf(gpuLimit - gpuTotal);
+        response.setGpuLimit(gpuLimitDisplay);
+        response.setGpuTotal(gpuTotal);
+        response.setGpuAvailable(gpuAvail);
+    }
+
+    @Override
+    public List<AccountJoinVO> searchByIds(Long... accountIds) {
+        // set detail batch query size
+        int DETAILS_BATCH_SIZE = 2000;
+        String batchCfg = configDao.getValue("detail.batch.query.size");
+        if (batchCfg != null) {
+            DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
+        }
+
+        List<AccountJoinVO> uvList = new ArrayList<>();
+        // query details by batches
+        int curr_index = 0;
+        if (accountIds.length > DETAILS_BATCH_SIZE) {
+            while ((curr_index + DETAILS_BATCH_SIZE) <= accountIds.length) {
+                Long[] ids = new Long[DETAILS_BATCH_SIZE];
+                for (int k = 0, j = curr_index; j < curr_index + DETAILS_BATCH_SIZE; j++, k++) {
+                    ids[k] = accountIds[j];
+                }
+                SearchCriteria<AccountJoinVO> sc = domainSearch.create();
+                sc.setParameters("idIN", ids);
+                List<AccountJoinVO> accounts = searchIncludingRemoved(sc, null, null, false);
+                if (accounts != null) {
+                    uvList.addAll(accounts);
+                }
+                curr_index += DETAILS_BATCH_SIZE;
+            }
+        }
+        if (curr_index < accountIds.length) {
+            int batch_size = (accountIds.length - curr_index);
+            // set the ids value
+            Long[] ids = new Long[batch_size];
+            for (int k = 0, j = curr_index; j < curr_index + batch_size; j++, k++) {
+                ids[k] = accountIds[j];
+            }
+            SearchCriteria<AccountJoinVO> sc = domainSearch.create();
+            sc.setParameters("idIN", ids);
+            List<AccountJoinVO> accounts = searchIncludingRemoved(sc, null, null, false);
+            if (accounts != null) {
+                uvList.addAll(accounts);
+            }
+        }
+        return uvList;
     }
 
     @Override

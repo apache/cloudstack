@@ -24,6 +24,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
@@ -38,7 +39,6 @@ import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpApiResponse;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpConnectionDesc;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.host.HostVO;
@@ -60,9 +60,7 @@ import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class StorPoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
-    private static final Logger log = Logger.getLogger(StorPoolPrimaryDataStoreLifeCycle.class);
-
+public class StorPoolPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     @Inject
     protected PrimaryDataStoreHelper dataStoreHelper;
     @Inject
@@ -83,6 +81,8 @@ public class StorPoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
     private VMTemplateDetailsDao vmTemplateDetailsDao;
     @Inject
     private StoragePoolDetailsDao storagePoolDetailsDao;
+    @Inject
+    private StoragePoolAndAccessGroupMapDao storagePoolAndAccessGroupMapDao;
 
     @Override
     public DataStore initialize(Map<String, Object> dsInfos) {
@@ -92,7 +92,7 @@ public class StorPoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
         }
         StorPoolUtil.spLog("");
 
-        log.debug("initialize");
+        logger.debug("initialize");
 
         String name = (String)dsInfos.get("name");
         String providerName = (String)dsInfos.get("providerName");
@@ -186,18 +186,18 @@ public class StorPoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
         }
         StorPoolUtil.spLog("");
 
-        log.debug("updateStoragePool");
+        logger.debug("updateStoragePool");
         return;
     }
     @Override
     public boolean attachHost(DataStore store, HostScope scope, StoragePoolInfo existingInfo) {
-        log.debug("attachHost");
+        logger.debug("attachHost");
         return true;
     }
 
     @Override
     public boolean attachCluster(DataStore store, ClusterScope scope) {
-        log.debug("attachCluster");
+        logger.debug("attachCluster");
         if (!scope.getScopeType().equals(ScopeType.ZONE)) {
             throw new UnsupportedOperationException("Only Zone-Wide scope is supported!");
         }
@@ -206,17 +206,20 @@ public class StorPoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
 
     @Override
     public boolean attachZone(DataStore dataStore, ZoneScope scope, HypervisorType hypervisorType) {
-        log.debug("attachZone");
+        logger.debug("attachZone");
 
         if (hypervisorType != HypervisorType.KVM) {
             throw new UnsupportedOperationException("Only KVM hypervisors supported!");
         }
-        List<HostVO> kvmHosts = resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(HypervisorType.KVM, scope.getScopeId());
-        for (HostVO host : kvmHosts) {
+        List<HostVO> kvmHostsToConnect = resourceMgr.getEligibleUpAndEnabledHostsInZoneForStorageConnection(dataStore, scope.getScopeId(), HypervisorType.KVM);
+
+        logger.debug(String.format("In createPool. Attaching the pool to each of the hosts in %s.", kvmHostsToConnect));
+
+        for (HostVO host : kvmHostsToConnect) {
             try {
-                storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId());
+                storageMgr.connectHostToSharedPool(host, dataStore.getId());
             } catch (Exception e) {
-                log.warn(String.format("Unable to establish a connection between host %s and pool %s due to %s", host, dataStore, e));
+                logger.warn(String.format("Unable to establish a connection between host %s and pool %s due to %s", host, dataStore, e));
             }
         }
         dataStoreHelper.attachZone(dataStore, hypervisorType);
@@ -225,7 +228,7 @@ public class StorPoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
 
     @Override
     public boolean maintain(DataStore dataStore) {
-        log.debug("maintain");
+        logger.debug("maintain");
 
         storagePoolAutmation.maintain(dataStore);
         dataStoreHelper.maintain(dataStore);
@@ -234,7 +237,7 @@ public class StorPoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
 
     @Override
     public boolean cancelMaintain(DataStore store) {
-        log.debug("cancelMaintain");
+        logger.debug("cancelMaintain");
 
         dataStoreHelper.cancelMaintain(store);
         storagePoolAutmation.cancelMaintain(store);
@@ -243,7 +246,7 @@ public class StorPoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
 
     @Override
     public boolean deleteDataStore(DataStore store) {
-        log.debug("deleteDataStore");
+        logger.debug("deleteDataStore");
         long storagePoolId = store.getId();
 
         List<SnapshotVO> lstSnapshots = snapshotDao.listAll();
@@ -303,19 +306,19 @@ public class StorPoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
 
     @Override
     public boolean migrateToObjectStore(DataStore store) {
-        log.debug("migrateToObjectStore");
+        logger.debug("migrateToObjectStore");
         return false;
     }
 
     @Override
     public void enableStoragePool(DataStore dataStore) {
-        log.debug("enableStoragePool");
+        logger.debug("enableStoragePool");
         dataStoreHelper.enable(dataStore);
     }
 
     @Override
     public void disableStoragePool(DataStore dataStore) {
-        log.debug("disableStoragePool");
+        logger.debug("disableStoragePool");
         dataStoreHelper.disable(dataStore);
     }
 }

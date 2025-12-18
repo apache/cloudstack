@@ -28,27 +28,25 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Arrays;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({Transaction.class, ConfigTungstenFabricServiceCmd.class})
+@RunWith(MockitoJUnitRunner.class)
 public class ConfigTungstenFabricServiceCmdTest {
     @Mock
     EntityManager entityManager;
@@ -65,9 +63,10 @@ public class ConfigTungstenFabricServiceCmdTest {
 
     ConfigTungstenFabricServiceCmd configTungstenFabricServiceCmd;
 
+    AutoCloseable closeable;
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         configTungstenFabricServiceCmd = new ConfigTungstenFabricServiceCmd();
         configTungstenFabricServiceCmd._entityMgr = entityManager;
         configTungstenFabricServiceCmd.networkModel = networkModel;
@@ -75,8 +74,13 @@ public class ConfigTungstenFabricServiceCmdTest {
         configTungstenFabricServiceCmd.networkOfferingServiceMapDao = networkOfferingServiceMapDao;
         configTungstenFabricServiceCmd.networkServiceMapDao = networkServiceMapDao;
         configTungstenFabricServiceCmd.physicalNetworkServiceProviderDao = physicalNetworkServiceProviderDao;
-        Whitebox.setInternalState(configTungstenFabricServiceCmd, "zoneId", 1L);
-        Whitebox.setInternalState(configTungstenFabricServiceCmd, "physicalNetworkId", 1L);
+        ReflectionTestUtils.setField(configTungstenFabricServiceCmd, "zoneId", 1L);
+        ReflectionTestUtils.setField(configTungstenFabricServiceCmd, "physicalNetworkId", 1L);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
@@ -86,16 +90,14 @@ public class ConfigTungstenFabricServiceCmdTest {
         Network managementNetwork = Mockito.mock(Network.class);
         TransactionCallbackNoReturn transactionCallbackNoReturn = Mockito.mock(TransactionCallbackNoReturn.class);
         List<NetworkOfferingVO> systemNetworkOffering = Arrays.asList(Mockito.mock(NetworkOfferingVO.class));
-        mockStatic(Transaction.class);
         Mockito.when(entityManager.findById(ArgumentMatchers.any(), ArgumentMatchers.anyLong())).thenReturn(dataCenter);
         Mockito.when(dataCenter.isSecurityGroupEnabled()).thenReturn(true);
-        Mockito.when(networkModel.getSystemNetworkByZoneAndTrafficType(ArgumentMatchers.anyLong(),
-                ArgumentMatchers.any())).thenReturn(managementNetwork);
-        Mockito.when(networkOfferingDao.listSystemNetworkOfferings()).thenReturn(systemNetworkOffering);
-        PowerMockito.when(Transaction.execute(any(TransactionCallbackNoReturn.class))).thenReturn(transactionCallbackNoReturn);
-        PowerMockito.whenNew(SuccessResponse.class).withAnyArguments().thenReturn(successResponse);
-        configTungstenFabricServiceCmd.execute();
-        Assert.assertEquals(successResponse, configTungstenFabricServiceCmd.getResponseObject());
+        try (MockedStatic<Transaction> transactionMocked = Mockito.mockStatic(Transaction.class)) {
+            transactionMocked.when(() -> Transaction.execute(any(TransactionCallbackNoReturn.class))).thenReturn(transactionCallbackNoReturn);
+            configTungstenFabricServiceCmd.execute();
+            SuccessResponse response = (SuccessResponse) configTungstenFabricServiceCmd.getResponseObject();
+            Assert.assertTrue(response.getSuccess());
+        }
     }
 
 }

@@ -5,9 +5,9 @@
 -- to you under the Apache License, Version 2.0 (the
 -- "License"); you may not use this file except in compliance
 -- with the License.  You may obtain a copy of the License at
--- 
+--
 --   http://www.apache.org/licenses/LICENSE-2.0
--- 
+--
 -- Unless required by applicable law or agreed to in writing,
 -- software distributed under the License is distributed on an
 -- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -99,7 +99,7 @@ ALTER TABLE `cloud`.`op_host_capacity` MODIFY `used_capacity` bigint signed NOT 
 ALTER TABLE `cloud`.`op_host_capacity` MODIFY `reserved_capacity` bigint signed NOT NULL;
 ALTER TABLE `cloud`.`op_host_capacity` MODIFY `total_capacity` bigint signed NOT NULL;
 
-INSERT IGNORE INTO `cloud`.`configuration` VALUES 
+INSERT IGNORE INTO `cloud`.`configuration` VALUES
 ('Advanced','DEFAULT','management-server','control.cidr','169.254.0.0/16','Changes the cidr for the control network traffic.  Defaults to using link local.  Must be unique within pods'),
 ('Advanced','DEFAULT','management-server','control.gateway','169.254.0.1','gateway for the control network traffic'),
 ('Advanced','DEFAULT','AgentManager','cmd.wait','7200','Time (in seconds) to wait for some heavy time-consuming commands'),
@@ -110,7 +110,7 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES
 ('Console Proxy','DEFAULT','AgentManager','consoleproxy.url.domain','realhostip.com','Console proxy url domain'),
 ('Advanced','DEFAULT','management-server','extract.url.cleanup.interval','120','The interval (in seconds) to wait before cleaning up the extract URL\'s '),
 ('Network','DEFAULT','AgentManager','guest.ip.network','10.1.1.1','The network address of the guest virtual network. Virtual machines will be assigned an IP in this subnet.'),
-('Network','DEFAULT','AgentManager','guest.netmask','255.255.255.0','The netmask of the guest virtual network.'), 
+('Network','DEFAULT','AgentManager','guest.netmask','255.255.255.0','The netmask of the guest virtual network.'),
 ('Network','DEFAULT','management-server','guest.vlan.bits','12','The number of bits to reserve for the VLAN identifier in the guest subnet.'),
 ('Advanced','DEFAULT','management-server','host.capacity.checker.interval','3600','Time (in seconds) to wait before recalculating host\'s capacity'),
 ('Advanced','DEFAULT','management-server','host.capacity.checker.wait','3600','Time (in seconds) to wait before starting host capacity background checker'),
@@ -175,7 +175,7 @@ ALTER TABLE `cloud`.`snapshot_schedule` ADD UNIQUE KEY  `volume_id` (`volume_id`
 ALTER TABLE `cloud`.`storage_pool` MODIFY COLUMN `uuid` varchar(255) UNIQUE;
 
 ALTER TABLE `cloud`.`user_statistics` DROP KEY `account_id`;
-ALTER TABLE `cloud`.`user_statistics` ADD UNIQUE KEY `account_id` (`account_id`,`data_center_id`, `public_ip_address`, `device_id`,`device_type`); 
+ALTER TABLE `cloud`.`user_statistics` ADD UNIQUE KEY `account_id` (`account_id`,`data_center_id`, `public_ip_address`, `device_id`,`device_type`);
 
 ALTER TABLE `cloud`.`usage_event` ADD INDEX `i_usage_event__created`(`created`);
 
@@ -193,4 +193,3 @@ UPDATE `cloud`.`nics` SET strategy='Create' where reserver_name='DirectNetworkGu
 
 UPDATE storage_pool SET cluster_id=(SELECT cluster_id FROM host INNER JOIN storage_pool_host_ref WHERE host.id=storage_pool_host_ref.host_id AND storage_pool_host_ref.pool_id=storage_pool.id) WHERE pool_type='LVM';
 UPDATE `cloud`.`host` SET resource='com.cloud.hypervisor.xen.resource.XenServer56FP1Resource' WHERE resource='com.cloud.hypervisor.xen.resource.XenServer56FP1PremiumResource';
-

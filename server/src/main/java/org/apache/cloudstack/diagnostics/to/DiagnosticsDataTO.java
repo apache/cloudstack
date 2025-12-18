@@ -33,6 +33,10 @@ public class DiagnosticsDataTO implements DataTO {
         this.dataStoreTO = dataStoreTO;
     }
 
+    public DiagnosticsDataTO(DataStoreTO dataStoreTO) {
+        this.dataStoreTO = dataStoreTO;
+    }
+
     @Override
     public DataObjectType getObjectType() {
         return DataObjectType.ARCHIVE;

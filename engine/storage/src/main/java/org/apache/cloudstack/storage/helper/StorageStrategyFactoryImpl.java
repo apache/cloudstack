@@ -66,10 +66,15 @@ public class StorageStrategyFactoryImpl implements StorageStrategyFactory {
 
     @Override
     public SnapshotStrategy getSnapshotStrategy(final Snapshot snapshot, final SnapshotOperation op) {
+        return getSnapshotStrategy(snapshot, null, op);
+    }
+
+    @Override
+    public SnapshotStrategy getSnapshotStrategy(Snapshot snapshot, Long zoneId, SnapshotOperation op) {
         return bestMatch(snapshotStrategies, new CanHandle<SnapshotStrategy>() {
             @Override
             public StrategyPriority canHandle(SnapshotStrategy strategy) {
-                return strategy.canHandle(snapshot, op);
+                return strategy.canHandle(snapshot, zoneId, op);
             }
         });
     }

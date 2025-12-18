@@ -56,7 +56,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { genericCompare } from '@/utils/sort.js'
 
 export default {
@@ -76,17 +76,17 @@ export default {
         {
           dataIndex: 'name',
           title: this.$t('label.name'),
-          sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
+          sorter: (a, b) => genericCompare(a?.name || '', b?.name || '')
         },
         {
           dataIndex: 'type',
           title: this.$t('label.type'),
-          sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
+          sorter: (a, b) => genericCompare(a?.type || '', b?.type || '')
         },
         {
           dataIndex: 'description',
           title: this.$t('label.description'),
-          sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
+          sorter: (a, b) => genericCompare(a?.description || '', b?.description || '')
         }
       ],
       selectedRowKeys: [],
@@ -110,7 +110,7 @@ export default {
       this.loading = true
       this.items = []
       this.total = 0
-      api('listAffinityGroups', {
+      getAPI('listAffinityGroups', {
         keyword: this.options.keyword,
         domainid: this.resource.domainid,
         accountid: this.resource.accountid,
@@ -145,7 +145,7 @@ export default {
     handleSubmit () {
       if (this.loading) return
       this.loading = true
-      api('updateVMAffinityGroup', {
+      postAPI('updateVMAffinityGroup', {
         id: this.resource.id,
         affinitygroupids: this.selectedRowKeys.join(',')
       }).then(response => {

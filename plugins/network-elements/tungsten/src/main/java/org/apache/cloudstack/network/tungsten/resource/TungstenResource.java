@@ -161,7 +161,8 @@ import org.apache.cloudstack.network.tungsten.model.TungstenTag;
 import org.apache.cloudstack.network.tungsten.service.TungstenApi;
 import org.apache.cloudstack.network.tungsten.service.TungstenVRouterApi;
 import org.apache.cloudstack.network.tungsten.vrouter.Port;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.naming.ConfigurationException;
 import java.io.IOException;
@@ -172,7 +173,7 @@ import java.util.Map;
 
 public class TungstenResource implements ServerResource {
 
-    private static final Logger s_logger = Logger.getLogger(TungstenResource.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private String name;
     private String guid;
@@ -257,7 +258,7 @@ public class TungstenResource implements ServerResource {
         try {
             tungstenApi.checkTungstenProviderConnection();
         } catch (ServerApiException e) {
-            s_logger.error("Check Tungsten-Fabric provider connection failed", e);
+            logger.error("Check Tungsten-Fabric provider connection failed", e);
             return null;
         }
         return new PingCommand(Host.Type.L2Networking, id);
@@ -493,7 +494,7 @@ public class TungstenResource implements ServerResource {
             return executeRequest((CreateTungstenDefaultProjectCommand) cmd);
         }
 
-        s_logger.debug("Received unsupported command " + cmd.toString());
+        logger.debug("Received unsupported command " + cmd.toString());
         return Answer.createUnsupportedCommandAnswer(cmd);
     }
 
@@ -2302,7 +2303,7 @@ public class TungstenResource implements ServerResource {
     }
 
     private Answer retry(Command cmd, int numRetries) {
-        s_logger.warn("Retrying " + cmd.getClass().getSimpleName() + ". Number of retries remaining: " + numRetries);
+        logger.warn("Retrying " + cmd.getClass().getSimpleName() + ". Number of retries remaining: " + numRetries);
         return executeRequestGroup1(cmd, numRetries);
     }
 

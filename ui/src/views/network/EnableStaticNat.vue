@@ -113,7 +113,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import Status from '@/components/widgets/Status'
 
 export default {
@@ -186,13 +186,11 @@ export default {
       }
 
       this.loading = true
-      api('listVirtualMachines', {
+      getAPI('listVirtualMachines', {
         page: this.page,
         pageSize: this.pageSize,
         listAll: true,
         networkid: this.resource.associatednetworkid,
-        account: this.resource.account,
-        domainid: this.resource.domainid,
         keyword: this.searchQuery
       }).then(response => {
         this.vmCount = response.listvirtualmachinesresponse.count
@@ -205,13 +203,11 @@ export default {
     },
     fetchDataTiers (e) {
       this.loading = true
-      api('listVirtualMachines', {
+      getAPI('listVirtualMachines', {
         page: this.page,
         pageSize: this.pageSize,
         listAll: true,
         networkid: e,
-        account: this.resource.account,
-        domainid: this.resource.domainid,
         vpcid: this.resource.vpcid,
         keyword: this.searchQuery
       }).then(response => {
@@ -226,7 +222,7 @@ export default {
       this.selectedVm = e.target.value
       this.nicsList = []
       this.loading = true
-      api('listNics', {
+      getAPI('listNics', {
         virtualmachineid: this.selectedVm,
         networkid: this.resource.associatednetworkid || this.selectedVpcTier
       }).then(response => {
@@ -248,10 +244,9 @@ export default {
     },
     fetchNetworks () {
       this.loading = true
-      api('listNetworks', {
+      getAPI('listNetworks', {
         vpcid: this.resource.vpcid,
-        domainid: this.resource.domainid,
-        account: this.resource.account,
+        isrecursive: true,
         supportedservices: 'StaticNat'
       }).then(response => {
         this.networksList = response.listnetworksresponse.network
@@ -263,7 +258,7 @@ export default {
     },
     handleSubmit () {
       this.loading = true
-      api('enableStaticNat', {
+      postAPI('enableStaticNat', {
         ipaddressid: this.resource.id,
         virtualmachineid: this.selectedVm,
         vmguestip: this.selectedNic.ipaddress,

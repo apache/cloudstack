@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
-import org.apache.log4j.Logger;
 
 import com.vmware.vim25.LocalizableMessage;
 import com.vmware.vim25.LocalizedMethodFault;
@@ -25,9 +24,12 @@ import com.vmware.vim25.TaskInfo;
 import com.vmware.vim25.TaskInfoState;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class TaskMO extends BaseMO {
-    private static final Logger s_logger = Logger.getLogger(TaskMO.class);
+
+    protected static Logger LOGGER = LogManager.getLogger(TaskMO.class);
     public TaskMO(VmwareContext context, ManagedObjectReference morTask) {
         super(context, morTask);
     }
@@ -71,7 +73,7 @@ public class TaskMO extends BaseMO {
                 }
             }
         } catch (Exception e) {
-            s_logger.info("[ignored]"
+            LOGGER.info("[ignored]"
                     + "error retrieving failure info for task : " + e.getLocalizedMessage());
         }
 

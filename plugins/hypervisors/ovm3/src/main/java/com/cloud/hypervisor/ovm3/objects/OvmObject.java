@@ -35,7 +35,9 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import org.apache.log4j.Logger;
+import com.cloud.utils.UuidUtils;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.xmlrpc.XmlRpcException;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -45,8 +47,7 @@ import org.xml.sax.SAXException;
 public class OvmObject {
     private volatile Connection client;
     private static List<?> emptyParams = new ArrayList<Object>();
-    private static final Logger LOGGER = Logger
-            .getLogger(OvmObject.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private boolean success = false;
 
     public OvmObject() {
@@ -71,7 +72,7 @@ public class OvmObject {
 
     /* generate a uuid */
     public String newUuid(String str) {
-        return UUID.nameUUIDFromBytes(str.getBytes(Charset.defaultCharset())).toString();
+        return UuidUtils.nameUUIDFromBytes(str.getBytes(Charset.defaultCharset())).toString();
     }
 
     /* capture most of the calls here */
@@ -215,7 +216,7 @@ public class OvmObject {
                     XPathConstants.NODESET);
             return nodeList.item(0).getNodeValue();
         } catch (NullPointerException e) {
-            LOGGER.info("Got no items back from parsing, returning null: " + e);
+            logger.info("Got no items back from parsing, returning null: " + e);
             return null;
         } catch (XPathExpressionException e) {
             throw new Ovm3ResourceException("Problem parsing XML to String: ", e);
@@ -239,7 +240,7 @@ public class OvmObject {
             xmlDocument = builder.parse(new InputSource(new StringReader(
                     input)));
         } catch (SAXException | IOException e) {
-            LOGGER.info(e.getClass() + ": ", e);
+            logger.info(e.getClass() + ": ", e);
             throw new Ovm3ResourceException("Unable to parse XML: ", e);
         }
         return xmlDocument;

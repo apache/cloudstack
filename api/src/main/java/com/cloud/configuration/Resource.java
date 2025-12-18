@@ -21,54 +21,38 @@ public interface Resource {
     short RESOURCE_UNLIMITED = -1;
     String UNLIMITED = "Unlimited";
 
-    enum ResourceType { // Primary and Secondary storage are allocated_storage and not the physical storage.
-        user_vm("user_vm", 0, ResourceOwnerType.Account, ResourceOwnerType.Domain),
-        public_ip("public_ip", 1, ResourceOwnerType.Account, ResourceOwnerType.Domain),
-        volume("volume", 2, ResourceOwnerType.Account, ResourceOwnerType.Domain),
-        snapshot("snapshot", 3, ResourceOwnerType.Account, ResourceOwnerType.Domain),
-        template("template", 4, ResourceOwnerType.Account, ResourceOwnerType.Domain),
-        project("project", 5, ResourceOwnerType.Account, ResourceOwnerType.Domain),
-        network("network", 6, ResourceOwnerType.Account, ResourceOwnerType.Domain),
-        vpc("vpc", 7, ResourceOwnerType.Account, ResourceOwnerType.Domain),
-        cpu("cpu", 8, ResourceOwnerType.Account, ResourceOwnerType.Domain),
-        memory("memory", 9, ResourceOwnerType.Account, ResourceOwnerType.Domain),
-        primary_storage("primary_storage", 10, ResourceOwnerType.Account, ResourceOwnerType.Domain),
-        secondary_storage("secondary_storage", 11, ResourceOwnerType.Account, ResourceOwnerType.Domain);
+    enum ResourceType { // All storage type resources are allocated_storage and not the physical storage.
+        user_vm("user_vm", 0),
+        public_ip("public_ip", 1),
+        volume("volume", 2),
+        snapshot("snapshot", 3),
+        template("template", 4),
+        project("project", 5),
+        network("network", 6),
+        vpc("vpc", 7),
+        cpu("cpu", 8),
+        memory("memory", 9),
+        primary_storage("primary_storage", 10),
+        secondary_storage("secondary_storage", 11),
+        backup("backup", 12),
+        backup_storage("backup_storage", 13),
+        bucket("bucket", 14),
+        object_storage("object_storage", 15),
+        gpu("gpu", 16);
 
         private String name;
-        private ResourceOwnerType[] supportedOwners;
         private int ordinal;
         public static final long bytesToKiB = 1024;
         public static final long bytesToMiB = bytesToKiB * 1024;
         public static final long bytesToGiB = bytesToMiB * 1024;
 
-        ResourceType(String name, int ordinal, ResourceOwnerType... supportedOwners) {
+        ResourceType(String name, int ordinal) {
             this.name = name;
-            this.supportedOwners = supportedOwners;
             this.ordinal = ordinal;
         }
 
         public String getName() {
             return name;
-        }
-
-        public ResourceOwnerType[] getSupportedOwners() {
-            return supportedOwners;
-        }
-
-        public boolean supportsOwner(ResourceOwnerType ownerType) {
-            boolean success = false;
-            if (supportedOwners != null) {
-                int length = supportedOwners.length;
-                for (int i = 0; i < length; i++) {
-                    if (supportedOwners[i].getName().equalsIgnoreCase(ownerType.getName())) {
-                        success = true;
-                        break;
-                    }
-                }
-            }
-
-            return success;
         }
 
         public int getOrdinal() {
@@ -82,6 +66,10 @@ public interface Resource {
                 }
             }
             return null;
+        }
+
+        public static Boolean isStorageType(ResourceType type) {
+            return (type == primary_storage || type == secondary_storage || type == backup_storage || type == object_storage);
         }
     }
 
@@ -106,5 +94,6 @@ public interface Resource {
     long getOwnerId();
 
     ResourceOwnerType getResourceOwnerType();
+    String getTag();
 
 }

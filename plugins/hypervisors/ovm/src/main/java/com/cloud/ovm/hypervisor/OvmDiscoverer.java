@@ -27,7 +27,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.StartupCommand;
@@ -47,13 +46,13 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SSHCmdHelper;
 
 public class OvmDiscoverer extends DiscovererBase implements Discoverer, ResourceStateAdapter {
-    private static final Logger s_logger = Logger.getLogger(OvmDiscoverer.class);
     protected String _publicNetworkDevice;
     protected String _privateNetworkDevice;
     protected String _guestNetworkDevice;
@@ -97,25 +96,25 @@ public class OvmDiscoverer extends DiscovererBase implements Discoverer, Resourc
 
         if (!url.getScheme().equals("http")) {
             String msg = "urlString is not http so we're not taking care of the discovery for this: " + url;
-            s_logger.debug(msg);
+            logger.debug(msg);
             return null;
         }
         if (clusterId == null) {
             String msg = "must specify cluster Id when add host";
-            s_logger.debug(msg);
+            logger.debug(msg);
             throw new CloudRuntimeException(msg);
         }
 
         if (podId == null) {
             String msg = "must specify pod Id when add host";
-            s_logger.debug(msg);
+            logger.debug(msg);
             throw new CloudRuntimeException(msg);
         }
 
         ClusterVO cluster = _clusterDao.findById(clusterId);
         if (cluster == null || (cluster.getHypervisorType() != HypervisorType.Ovm)) {
-            if (s_logger.isInfoEnabled())
-                s_logger.info("invalid cluster id or cluster is not for Ovm hypervisors");
+            if (logger.isInfoEnabled())
+                logger.info("invalid cluster id or cluster is not for Ovm hypervisors");
             return null;
         }
 
@@ -133,13 +132,13 @@ public class OvmDiscoverer extends DiscovererBase implements Discoverer, Resourc
             String hostname = url.getHost();
             InetAddress ia = InetAddress.getByName(hostname);
             String hostIp = ia.getHostAddress();
-            String guid = UUID.nameUUIDFromBytes(hostIp.getBytes()).toString();
+            String guid = UuidUtils.nameUUIDFromBytes(hostIp.getBytes()).toString();
 
             if (checkIfExisted(guid)) {
                 throw new CloudRuntimeException("The host " + hostIp + " has been added before");
             }
 
-            s_logger.debug("Ovm discover is going to disover host having guid " + guid);
+            logger.debug("Ovm discover is going to disover host having guid " + guid);
 
             ClusterVO clu = _clusterDao.findById(clusterId);
             if (clu.getGuid() == null) {
@@ -196,16 +195,16 @@ public class OvmDiscoverer extends DiscovererBase implements Discoverer, Resourc
             resources.put(ovmResource, details);
             return resources;
         } catch (XmlRpcException e) {
-            s_logger.debug("XmlRpc exception, Unable to discover OVM: " + url, e);
+            logger.debug("XmlRpc exception, Unable to discover OVM: " + url, e);
             return null;
         } catch (UnknownHostException e) {
-            s_logger.debug("Host name resolve failed exception, Unable to discover OVM: " + url, e);
+            logger.debug("Host name resolve failed exception, Unable to discover OVM: " + url, e);
             return null;
         } catch (ConfigurationException e) {
-            s_logger.debug("Configure resource failed, Unable to discover OVM: " + url, e);
+            logger.debug("Configure resource failed, Unable to discover OVM: " + url, e);
             return null;
         } catch (Exception e) {
-            s_logger.debug("Unable to discover OVM: " + url, e);
+            logger.debug("Unable to discover OVM: " + url, e);
             return null;
         }
     }

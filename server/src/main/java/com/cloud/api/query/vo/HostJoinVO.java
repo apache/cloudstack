@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.Date;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -28,6 +29,7 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import com.cloud.cpu.CPU;
 import com.cloud.host.Host.Type;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -38,6 +40,8 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
+import org.apache.cloudstack.util.CPUArchConverter;
+import org.apache.cloudstack.util.HypervisorTypeConverter;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -76,7 +80,7 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
     private String version;
 
     @Column(name = "hypervisor_type")
-    @Enumerated(value = EnumType.STRING)
+    @Convert(converter = HypervisorTypeConverter.class)
     private HypervisorType hypervisorType;
 
     @Column(name = "hypervisor_version")
@@ -172,6 +176,27 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
     @Column(name = "tag")
     private String tag;
 
+    @Column(name = "explicit_tag")
+    private String explicitTag;
+
+    @Column(name = "implicit_tag")
+    private String implicitTag;
+
+    @Column(name = "is_tag_a_rule")
+    private Boolean isTagARule;
+
+    @Column(name = "storage_access_groups")
+    private String storageAccessGroups;
+
+    @Column(name = "cluster_storage_access_groups")
+    private String clusterStorageAccessGroups;
+
+    @Column(name = "pod_storage_access_groups")
+    private String podStorageAccessGroups;
+
+    @Column(name = "zone_storage_access_groups")
+    private String zoneStorageAccessGroups;
+
     @Column(name = "memory_used_capacity")
     private long memUsedCapacity;
 
@@ -201,6 +226,10 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
 
     @Column(name = "username")
     private String username;
+
+    @Column(name = "arch")
+    @Convert(converter = CPUArchConverter.class)
+    private CPU.CPUArch arch;
 
     @Override
     public long getId() {
@@ -388,6 +417,34 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
         return tag;
     }
 
+    public String getExplicitTag() {
+        return explicitTag;
+    }
+
+    public String getImplicitTag() {
+        return implicitTag;
+    }
+
+    public Boolean getIsTagARule() {
+        return isTagARule;
+    }
+
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
+    }
+
+    public String getClusterStorageAccessGroups() {
+        return clusterStorageAccessGroups;
+    }
+
+    public String getPodStorageAccessGroups() {
+        return podStorageAccessGroups;
+    }
+
+    public String getZoneStorageAccessGroups() {
+        return zoneStorageAccessGroups;
+    }
+
     public String getAnnotation() {
         return annotation;
     }
@@ -408,5 +465,9 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
         return Arrays.asList(
                     ResourceState.Maintenance, ResourceState.ErrorInMaintenance, ResourceState.PrepareForMaintenance)
                 .contains(getResourceState());
+    }
+
+    public CPU.CPUArch getArch() {
+        return arch;
     }
 }

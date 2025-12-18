@@ -93,7 +93,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<!-- Test case #950 - listAccounts -->
 	<command>
 		<name>listAccounts</name>
@@ -200,8 +200,8 @@ under the License.
 				<value>false</value>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<!-- Test case #6 - updateUser command -->
 	<command>
 		<name>updateUser</name>
@@ -216,8 +216,8 @@ under the License.
 			    <param>newuser</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<!-- Test case #5 - listUsers command -->
 	<command>
 		<name>listUsers</name>
@@ -271,10 +271,10 @@ under the License.
 			</item>
 			<item>
 				<name>created</name>
-			</item>	
+			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<!-- Test case lockUser command -->
 	<command>
 		<name>lockUser</name>
@@ -285,8 +285,8 @@ under the License.
 				<param>userid</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<!-- Test case #428 - disableUser command -->
 	<command>
 		<name>disableUser</name>
@@ -298,9 +298,9 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
 
-	
+
+
 	<!-- Test case #9 - enableUser command -->
 	<command>
 		<name>enableUser</name>
@@ -311,8 +311,8 @@ under the License.
 				<param>userid</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<!-- Test case #10 - createDomain command -->
 	<command>
 		<name>createDomain</name>
@@ -333,9 +333,9 @@ under the License.
 				<param>newdomainid</param>
 			</item>
 		</returnvalue>
-	</command>	
+	</command>
 
-	
+
 	<!-- Test case #11 - listDomains command -->
 	<command>
 		<name>listDomains</name>
@@ -356,8 +356,8 @@ under the License.
 				<param>domainname</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 <!-- Test case #952 - updateDomain command - edit domain name and verify that it was really updated-->
 	<command>
 		<name>updateDomain</name>
@@ -372,8 +372,8 @@ under the License.
 			    <param>newdomainname</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>listDomains</name>
 		<empty>false</empty>
@@ -383,8 +383,8 @@ under the License.
 				<param>newdomainname</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<!-- Test case #654 - deleteDomain command -->
 	<command>
 		<name>deleteDomain</name>
@@ -395,8 +395,8 @@ under the License.
 				<param>newdomainid</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<!-- Test case #27 - listTemplates command -->
 	<command>
 		<name>listTemplates</name>
@@ -440,7 +440,7 @@ under the License.
 		    </item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listTemplates</name>
 		<parameters>
@@ -484,7 +484,7 @@ under the License.
 		    </item>
 		</returnvalue>
 	</command>
-	
+
 	<!-- Test case #28 - listServiceOffering command -->
 	<command>
 		<name>listServiceOfferings</name>
@@ -508,7 +508,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listServiceOfferings</name>
 		<testcase>876</testcase>
@@ -552,13 +552,13 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 	<!-- Test case #39 - listZones command -->
 	<command>
 		<name>listZones</name>
 		<testcase>39</testcase>
-		<returnvalue list="true"> 
+		<returnvalue list="true">
 			<element>0</element>
 			<name>zone</name>
 			<item getparam="true">
@@ -571,7 +571,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<!-- Test case #13 - deployVirtualMachine command -->
 	<command>
 		<name>deployVirtualMachine</name>
@@ -588,7 +588,7 @@ under the License.
 			<item>
 			    <name>diskofferingid</name>
 				<value>5</value>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -676,8 +676,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 	<!-- Test case #957 - listVirtualMachines command -->
 	<command>
 		<name>listVirtualMachines</name>
@@ -758,8 +758,8 @@ under the License.
 				<value>group1</value>
 			</item>
 		</returnvalue>
-	</command>			
-	
+	</command>
+
 	<!-- Test case #35 - listRouters command -->
 	<command>
 		<name>listRouters</name>
@@ -851,9 +851,9 @@ under the License.
 				<value>Running</value>
 			</item>
 		</returnvalue>
-	</command>	
-	
-	<!-- Test case #546 - associateIpAddress command -->	
+	</command>
+
+	<!-- Test case #546 - associateIpAddress command -->
 <!-- <command>
 		<name>associateIpAddress</name>
 		<testcase>546</testcase>
@@ -871,7 +871,7 @@ under the License.
 			<value>1</value>
 		</item>
 		</parameters>
-		<returnvalue> 
+		<returnvalue>
 			<item setparam="true">
 				<name>ipaddress</name>
 				<param>nonsourcenatpublicip</param>
@@ -893,9 +893,9 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
--->	
+-->
 	<!--  LOAD BALANCING RULES SECTION -->
-	
+
 	<!-- Test case #986 - create a load balancer -->
 <!-- <command>
 		<name>createLoadBalancerRule</name>
@@ -960,9 +960,9 @@ under the License.
 				<param>accountname</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
--->	
+	</command>
+
+-->
 	<!-- Test case #988 - listLoadBalancerRules -->
 <!-- <command>
 		<name>listLoadBalancerRules</name>
@@ -975,12 +975,12 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
- -->		
+
+ -->
 	<!-- Test case #989 - assignToLoadBalancerRule -->
 <!-- <command>
 		<name>assignToLoadBalancerRule</name>
-		
+
 		<testcase>989</testcase>
 		<parameters>
 			<item getparam="true">
@@ -996,8 +996,8 @@ under the License.
 				<param>accountname</param>
 			</item>
 		</parameters>
-	</command>	
- -->		
+	</command>
+ -->
 	<!-- Test case #987 - deleteLoadBalancerRule; make sure to return the lb rule after the verification -->
 <!-- <command>
 		<name>deleteLoadBalancerRule</name>
@@ -1008,17 +1008,17 @@ under the License.
 				<param>lbid</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>listLoadBalancerRules</name>
 		<empty>true</empty>
 	</command>
-	
+
 	<command>
 		<name>createLoadBalancerRule</name>
 		<parameters>
-			<item random="true" setparam="true"> 
+			<item random="true" setparam="true">
 			    <name>name</name>
 			    <param>lbname</param>
 			</item>
@@ -1077,11 +1077,11 @@ under the License.
 				<param>accountname</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>assignToLoadBalancerRule</name>
-		
+
 		<parameters>
 			<item getparam="true">
 			    <name>id</name>
@@ -1096,9 +1096,9 @@ under the License.
 				<param>accountname</param>
 			</item>
 		</parameters>
-	</command>	
- -->		
-	
+	</command>
+ -->
+
 	<!-- Test case #991 - listLoadBalancerRuleInstances; make sure to return the lb rule after the verification -->
 <!-- <command>
 		<name>listLoadBalancerRuleInstances</name>
@@ -1110,8 +1110,8 @@ under the License.
 				<param>lbid</param>
 			</item>
 		</parameters>
-	</command>	
- -->		
+	</command>
+ -->
 	<!-- Test case #990 - removeFromLoadBalancerRule -->
 <!-- <command>
 		<name>removeFromLoadBalancerRule</name>
@@ -1130,8 +1130,8 @@ under the License.
 				<param>accountname</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>listLoadBalancerRuleInstances</name>
 		<empty>true</empty>
@@ -1141,10 +1141,10 @@ under the License.
 				<param>lbid</param>
 			</item>
 		</parameters>
-	</command>	
- -->		
+	</command>
+ -->
 	<!--  PORT FORWARDING RULES SECTION -->
-	
+
 	<!-- Test case #965 - create a security group -->
 <!-- <command>
 		<name>createPortForwardingService</name>
@@ -1181,8 +1181,8 @@ under the License.
 				<value>none</value>
 			</item>
 		</returnvalue>
-	</command>	
- -->		
+	</command>
+ -->
 	<!-- Test case #972 - listPortForwardingServices-->
 <!-- <command>
 		<name>listPortForwardingServices</name>
@@ -1211,9 +1211,9 @@ under the License.
 				<value>none</value>
 			</item>
 		</returnvalue>
-	</command>	
-	
- -->		
+	</command>
+
+ -->
 	<!-- Test case #967 - create a network rule -->
 <!-- <command>
 		<name>createPortForwardingServiceRule</name>
@@ -1250,8 +1250,8 @@ under the License.
 				<value>22</value>
 			</item>
 		</returnvalue>
-	</command>	
- -->		
+	</command>
+ -->
 	<!-- Test case #968 - listPortForwardingServiceRules -->
 <!-- <command>
 		<name>listPortForwardingServiceRules</name>
@@ -1263,9 +1263,9 @@ under the License.
 				<param>pfgroupid</param>
 			</item>
 		</parameters>
-	</command>	
- -->		
-	
+	</command>
+ -->
+
 	<!-- Test case #970 - assignPortForwardingService command -->
 <!-- <command>
 		<name>assignPortForwardingService</name>
@@ -1284,8 +1284,8 @@ under the License.
 				<param>sourcenatpublicip</param>
 			</item>
 		</parameters>
-	</command>	
- -->		
+	</command>
+ -->
 	<!-- Test case #973 - listPortForwardingServicesByVm command -->
 <!-- <command>
 		<name>listPortForwardingServicesByVm</name>
@@ -1301,9 +1301,9 @@ under the License.
 				<param>sourcenatpublicip</param>
 			</item>
 		</parameters>
-	</command>	
- -->		
-	
+	</command>
+ -->
+
 	<!-- Test case #969 - deletePortForwardingServiceRule -->
 <!-- <command>
 		<name>deletePortForwardingServiceRule</name>
@@ -1314,8 +1314,8 @@ under the License.
 				<param>pfruleid</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>listPortForwardingServiceRules</name>
 		<empty>true</empty>
@@ -1325,8 +1325,8 @@ under the License.
 				<param>pfgroupid</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>createPortForwardingServiceRule</name>
 		<parameters>
@@ -1361,8 +1361,8 @@ under the License.
 				<value>22</value>
 			</item>
 		</returnvalue>
-	</command>	
- -->		
+	</command>
+ -->
 	<!-- Test case #971 - removePortForwardingService command -->
 <!-- <command>
 		<name>removePortForwardingService</name>
@@ -1381,8 +1381,8 @@ under the License.
 				<param>sourcenatpublicip</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>listPortForwardingServicesByVm</name>
 		<empty>true</empty>
@@ -1396,8 +1396,8 @@ under the License.
 				<param>sourcenatpublicip</param>
 			</item>
 		</parameters>
-	</command>	
- -->		
+	</command>
+ -->
 
 	<!-- Test case #966 - deletePortForwardingService command -->
 <!-- <command>
@@ -1409,8 +1409,8 @@ under the License.
 				<param>pfgroupid</param>
 			</item>
 		</parameters>
-	</command>	
- -->		
+	</command>
+ -->
 	<!-- Test case #<add number> - listPortForwardingServices command -->
 <!-- <command>
 		<name>listPortForwardingServices</name>
@@ -1429,9 +1429,9 @@ under the License.
 				<param>pfgroupname</param>
 			</item>
 		</parameters>
-	</command>	
- -->		
-	
+	</command>
+ -->
+
 	<!-- Test case #15 - listVirtualMachines command -->
 	<command>
 		<name>listVirtualMachines</name>
@@ -1516,8 +1516,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 	<!-- Test case #16 - rebootVirtualMachine command; verify that machine is in Running state after it's rebooted -->
 	<command>
 		<name>rebootVirtualMachine</name>
@@ -1529,7 +1529,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listVirtualMachines</name>
 		<parameters>
@@ -1549,8 +1549,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 	<!-- Test case #17 - stopVirtualMachine command; verify that machine is in Stopped state after it's stopped -->
 	<command>
 		<name>stopVirtualMachine</name>
@@ -1562,7 +1562,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listVirtualMachines</name>
 		<parameters>
@@ -1582,9 +1582,9 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
-<!-- VOLUME COMMANDS -->	
+
+
+<!-- VOLUME COMMANDS -->
 
 <!--  listVolumes command -->
 	<command>
@@ -1606,7 +1606,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listVolumes</name>
 		<parameters>
@@ -1626,7 +1626,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<!--  Detach volume command - detach volume from the vm and make sure that you don't see it in the list of volumes for this vm -->
 	<command>
 		<name>detachVolume</name>
@@ -1637,7 +1637,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listVolumes</name>
 		<empty>true</empty>
@@ -1652,8 +1652,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 	<!--  Create volume command - create a volume and make sure that it appeared in the list -->
 	<command>
 		<name>createVolume</name>
@@ -1685,9 +1685,9 @@ under the License.
 				<param>datavolumeid</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
-	
+	</command>
+
+
 	<!--  Attach volume command - attach volume from to the vm and make sure that you see it in the list of volumes for this vm -->
 	<command>
 		<name>attachVolume</name>
@@ -1702,7 +1702,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listVolumes</name>
 		<empty>false</empty>
@@ -1717,8 +1717,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 	<!--  Delete volume command - delete volume and make sure that you don't see it in the list of volumes any more -->
 	<command>
 		<name>createVolume</name>
@@ -1749,8 +1749,8 @@ under the License.
 				<param>datavolumeid1</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>deleteVolume</name>
 		<parameters>
@@ -1759,8 +1759,8 @@ under the License.
 				<param>datavolumeid1</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>listVolumes</name>
 		<empty>true</empty>
@@ -1770,10 +1770,10 @@ under the License.
 				<param>datavolumeid1</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
 
-<!--  SNAPSHOT COMMANDS -->	
+
+<!--  SNAPSHOT COMMANDS -->
 	<!-- Test case #<> - createSnapshot command; verify that snapshot got created -->
 	<command>
 		<name>createSnapshot</name>
@@ -1804,7 +1804,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listSnapshots</name>
 		<empty>false</empty>
@@ -1815,7 +1815,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<!-- Test case #24 - deleteSnapshot command; verify that you got true, and listSnapshots doesn't display anything -->
 	<command>
 		<name>deleteSnapshot</name>
@@ -1827,7 +1827,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<!-- Test case #26 - listSnapshots command -->
 	<command>
 		<name>listSnapshots</name>
@@ -1840,7 +1840,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<!-- Test case #958 - createTemplate command -->
 	<command>
 		<name>createTemplate</name>
@@ -1889,7 +1889,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<!-- Test case #27 - listTemplates command -->
 	<command>
 		<name>listTemplates</name>
@@ -1930,7 +1930,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<!-- Test case - updateTemplate command -->
 	<command>
 		<name>updateTemplate</name>
@@ -1950,7 +1950,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listTemplates</name>
 		<testcase>List updated template</testcase>
@@ -1971,8 +1971,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 	<!-- Test case - listTemplatePermissions command -->
 	<command>
 		<name>listTemplatePermissions</name>
@@ -1994,8 +1994,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 	<!-- Test case - updateTemplate command -->
 	<command>
 		<name>updateTemplatePermissions</name>
@@ -2011,7 +2011,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listTemplates</name>
 		<testcase>List template with updated permission</testcase>
@@ -2032,8 +2032,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 	<!-- Test case #959 - deleteTemplate command -->
 	<command>
 		<name>deleteTemplate</name>
@@ -2045,7 +2045,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listTemplates</name>
 		<empty>true</empty>
@@ -2060,9 +2060,9 @@ under the License.
 		    </item>
 		</parameters>
 	</command>
-	
 
-	
+
+
 	<!-- Test case #20 - changeServiceOffering command; make sure that vm has correct service offering assigned -->
 	<command>
 		<name>changeServiceForVirtualMachine</name>
@@ -2078,7 +2078,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listVirtualMachines</name>
 		<parameters>
@@ -2102,8 +2102,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 	<!-- Test case #19 - resetpassword for virtual machine; make sure the machine is in Running state after it comes back -->
 <!-- <command>
 		<name>resetPasswordForVirtualMachine</name>
@@ -2124,7 +2124,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listVirtualMachines</name>
 		<parameters>
@@ -2144,7 +2144,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
--->	
+-->
 	<!-- Test case #18 - stop vm than start it; verify that VM status is Running -->
 	<command>
 		<name>listVirtualMachines</name>
@@ -2165,7 +2165,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>startVirtualMachine</name>
 		<testcase>18</testcase>
@@ -2221,7 +2221,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listVirtualMachines</name>
 		<parameters>
@@ -2241,7 +2241,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<!-- Test case #21- enable/disable HA for the VM; verify that HA is enabled -->
 	<command>
 		<name>updateVirtualMachine</name>
@@ -2256,7 +2256,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listVirtualMachines</name>
 		<testcase>21</testcase>
@@ -2277,7 +2277,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>updateVirtualMachine</name>
 		<parameters>
@@ -2291,7 +2291,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listVirtualMachines</name>
 		<testcase>21</testcase>
@@ -2312,9 +2312,9 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
-	
+
+
+
 	<!-- Test case #547- list IP addresses for the account -->
 <!-- <command>
 		<name>listPublicIpAddresses</name>
@@ -2328,8 +2328,8 @@ under the License.
 		<returnvalue>
 		</returnvalue>
 	</command>
- -->		
-	
+ -->
+
 	<!-- Test case #548- disassociate ip address -->
 <!-- <command>
 		<name>disassociateIpAddress</name>
@@ -2345,7 +2345,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
- -->		
+ -->
 	<!-- Test case #36- reboot router -->
 	<command>
 		<name>rebootRouter</name>
@@ -2357,7 +2357,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<!-- Test case #37- stop router -->
 	<command>
 		<name>stopRouter</name>
@@ -2369,7 +2369,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<!-- Test case #38- start router -->
 	<command>
 		<name>startRouter</name>
@@ -2445,7 +2445,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<!-- Test case #40- list events -->
 	<command>
 		<name>listEvents</name>
@@ -2457,7 +2457,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<!-- Test case #14- destroy virtualMachine and verify its state -->
 	<command>
 		<name>destroyVirtualMachine</name>
@@ -2469,7 +2469,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listVirtualMachines</name>
 		<parameters>
@@ -2485,7 +2485,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<!-- Test case #22- recover destroyed virtualMachine and verify that it's state is Stopped after that -->
 	<command>
 		<name>recoverVirtualMachine</name>
@@ -2497,7 +2497,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listVirtualMachines</name>
 		<parameters>
@@ -2517,14 +2517,14 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<!-- Test case #549- listConfigurations command -->
 	<command>
 		<name>listConfigurations</name>
 		<testcase>549</testcase>
 		<empty>false</empty>
-	</command>	
-	
+	</command>
+
 	<!-- Test case #878- listConfiguarations command with category parameter-->
 	<command>
 		<name>listConfigurations</name>
@@ -2537,8 +2537,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 	<!-- Test case #550- udpateConfiguration and make sure that the value got updated-->
 	<command>
 		<name>updateConfiguration</name>
@@ -2554,7 +2554,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listConfigurations</name>
 		<parameters>
@@ -2569,9 +2569,9 @@ under the License.
 				<value>35</value>
 			</item>
 		</returnvalue>
-	</command>	
-	
-	
+	</command>
+
+
 	<!-- Test case #552- list pods command-->
 	<command>
 		<name>listPods</name>
@@ -2580,9 +2580,9 @@ under the License.
 		</parameters>
 		<returnvalue>
 		</returnvalue>
-	</command>	
-	
-	
+	</command>
+
+
 <!-- Test case #951 - updateAccount command -->
 	<command>
 		<name>createUser</name>
@@ -2619,7 +2619,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listAccounts</name>
 		<parameters>
@@ -2634,8 +2634,8 @@ under the License.
 				<param>accountid1</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>updateAccount</name>
 		<testcase>951</testcase>
@@ -2654,7 +2654,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listAccounts</name>
 		<parameters>
@@ -2673,8 +2673,8 @@ under the License.
 				<param>updatedname</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<!-- Test case lockAccount -->
 	<command>
 		<name>lockAccount</name>
@@ -2689,8 +2689,8 @@ under the License.
 				<value>1</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 <!-- Test case #7 - disableAccount command -->
 	<command>
 		<name>disableAccount</name>
@@ -2705,8 +2705,8 @@ under the License.
 				<value>1</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 
 <!-- Test case #8 - enableAccount command -->
 	<command>
@@ -2722,10 +2722,10 @@ under the License.
 				<value>1</value>
 			</item>
 		</parameters>
-	</command>		
-	
-	
-<!-- Test case #953 - createLimit command -->	
+	</command>
+
+
+<!-- Test case #953 - createLimit command -->
 	<command>
 		<name>updateResourceLimit</name>
 		<testcase>953</testcase>
@@ -2761,9 +2761,9 @@ under the License.
 				<value>300</value>
 			</item>
 		</returnvalue>
-	</command>		
-	
-	<!-- Test case #956 - listLimits command -->	
+	</command>
+
+	<!-- Test case #956 - listLimits command -->
 	<command>
 		<name>listResourceLimits</name>
 		<usercommand>true</usercommand>
@@ -2784,9 +2784,9 @@ under the License.
 				<value>300</value>
 			</item>
 		</returnvalue>
-	</command>		
-	
-<!-- Test case #954 - updateResourceLimit command -->	
+	</command>
+
+<!-- Test case #954 - updateResourceLimit command -->
 	<command>
 		<name>updateResourceLimit</name>
 		<testcase>954</testcase>
@@ -2804,8 +2804,8 @@ under the License.
 				<value>65</value>
 			</item>
 		</parameters>
-	</command>		
-	
+	</command>
+
 	<command>
 		<name>listResourceLimits</name>
 		<parameters>
@@ -2824,9 +2824,9 @@ under the License.
 				<value>65</value>
 			</item>
 		</returnvalue>
-	</command>	
-	
-	
+	</command>
+
+
 	<!-- Test case #932 - createDiskOfferings command -->
 	<command>
 		<name>createDiskOffering</name>
@@ -2876,9 +2876,9 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-		
-		
+
+
+
 	<!-- Test case #934 - listDiskOfferings command -->
 	<command>
 		<name>listDiskOfferings</name>
@@ -2894,9 +2894,9 @@ under the License.
 				<value>newdisk</value>
 			</item>
 		</parameters>
-	</command>	
-	
-	
+	</command>
+
+
 	<!-- Test case # - updateDiskOffering command; verify that name, display name were set -->
 	<command>
 		<name>updateDiskOffering</name>
@@ -2910,8 +2910,8 @@ under the License.
 			    <param>newdiskname</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>listDiskOfferings</name>
 		<parameters>
@@ -2930,9 +2930,9 @@ under the License.
 				<param>newdiskname</param>
 			</item>
 		</returnvalue>
-	</command>	
+	</command>
 
-	
+
 	<!-- Test case #933 - deleteDiskOffering command; verify that disk was deleted -->
 	<command>
 		<name>deleteDiskOffering</name>
@@ -2943,8 +2943,8 @@ under the License.
 				<param>diskid</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>listDiskOfferings</name>
 		<empty>true</empty>
@@ -2958,9 +2958,9 @@ under the License.
 				<param>diskid</param>
 			</item>
 		</parameters>
-	</command>	
+	</command>
 
-	
+
 <!-- Test case #4 - deleteUser command -->
 	<command>
 		<name>deleteUser</name>
@@ -2971,37 +2971,37 @@ under the License.
 				<param>userid</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 <!-- Test case #750 - listAlerts command -->
 	<command>
 		<name>listAlerts</name>
 		<testcase>750</testcase>
 		<empty>false</empty>
 	</command>
-	
+
 <!-- Test case #974 - listCapacity command -->
 	<command>
 		<name>listCapacity</name>
 		<testcase>974</testcase>
 		<empty>false</empty>
 	</command>
-	
+
 	<!-- Test case #975 - listHosts command -->
 	<command>
 		<name>listHosts</name>
 		<empty>false</empty>
 		<testcase>975</testcase>
 	</command>
-	
-	
+
+
 	<!-- Test case #960 - listIsos command -->
 	<command>
 		<name>listIsos</name>
 		<testcase>960</testcase>
 		<empty>true</empty>
 	</command>
-	
+
 	<!-- Test case #962 - createServiceOffering command -->
 	<command>
 		<name>createServiceOffering</name>
@@ -3034,7 +3034,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listServiceOfferings</name>
 		<parameters>
@@ -3069,8 +3069,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 	<!-- Test case #964 - updateServiceOffering command -->
 	<command>
 		<name>updateServiceOffering</name>
@@ -3089,8 +3089,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 	<command>
 		<name>listServiceOfferings</name>
 		<parameters>
@@ -3125,8 +3125,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 	<!-- Test case #963 - deleteServiceOffering command -->
 	<command>
 		<name>deleteServiceOffering</name>
@@ -3138,7 +3138,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listServiceOfferings</name>
 		<testcase>963-2</testcase>
@@ -3150,9 +3150,9 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
-<!-- Test case # - register Iso command -->	
+
+
+<!-- Test case # - register Iso command -->
 		<command>
 		<name>registerIso</name>
 		<testcase>Register iso</testcase>
@@ -3220,8 +3220,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	<!-- Test case # - listIsos command -->	
+
+	<!-- Test case # - listIsos command -->
 		<command>
 		<name>listIsos</name>
 		<testcase>List isos</testcase>
@@ -3233,7 +3233,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<!-- Test case - register template command -->
 	<command>
 		<name>registerTemplate</name>
@@ -3310,8 +3310,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 <!--  Test case - listConsoleProxies -->
 	<command>
 		<name>listSystemVms</name>
@@ -3389,7 +3389,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<!-- Test case #- reboot console proxy -->
 	<command>
 		<name>rebootSystemVm</name>
@@ -3401,7 +3401,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<!-- Test case #- stop console proxy -->
 	<command>
 		<name>stopSystemVm</name>
@@ -3412,8 +3412,8 @@ under the License.
 				<param>consoleid</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<!-- Test case #- start console proxy -->
 	<command>
 		<name>startSystemVm</name>
@@ -3424,9 +3424,9 @@ under the License.
 				<param>consoleid</param>
 			</item>
 		</parameters>
-	</command>	
-	
-	
+	</command>
+
+
 <!--  Delete iso command -->
 	<command>
 		<name>deleteIso</name>
@@ -3450,7 +3450,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 <!--  Delete template command -->
 	<command>
 		<name>deleteTemplate</name>
@@ -3479,5 +3479,5 @@ under the License.
 		</parameters>
 	</command>
 
-	
+
 </sanity>

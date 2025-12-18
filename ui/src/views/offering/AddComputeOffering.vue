@@ -47,6 +47,7 @@
             <tooltip-label :title="$t('label.systemvmtype')" :tooltip="apiParams.systemvmtype.description"/>
           </template>
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.systemvmtype"
             showSearch
             optionFilterProp="label"
@@ -214,6 +215,7 @@
             <tooltip-label :title="$t('label.deploymentplanner')" :tooltip="apiParams.deploymentplanner.description"/>
           </template>
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.deploymentplanner"
             showSearch
             optionFilterProp="label"
@@ -243,30 +245,60 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item name="pcidevice" ref="pcidevice" :label="$t('label.gpu')" v-if="!isSystem">
-          <a-radio-group
-            v-model:value="form.pcidevice"
-            buttonStyle="solid"
-            @change="selected => { handleGpuChange(selected.target.value) }">
-            <a-radio-button v-for="(opt, optIndex) in gpuTypes" :key="optIndex" :value="opt.value">
-              {{ opt.title }}
-            </a-radio-button>
-          </a-radio-group>
-        </a-form-item>
-        <a-form-item name="vgputype" ref="vgputype" :label="$t('label.vgputype')" v-if="vGpuVisible">
+        <a-form-item name="gpucardid" ref="gpucardid" :label="$t('label.gpu.card')" v-if="!isSystem">
           <a-select
-            v-model:value="form.vgputype"
+            v-model:value="form.gpucardid"
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
               return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
-            :placeholder="$t('label.vgputype')">
-            <a-select-option v-for="(opt, optIndex) in vGpuTypes" :key="optIndex" :label="opt">
-              {{ opt }}
+            :loading="gpuCardLoading"
+            :placeholder="$t('label.gpu.card')"
+            @change="handleGpuCardChange">
+            <a-select-option v-for="(opt, optIndex) in gpuCards" :key="optIndex" :value="opt.id" :label="opt.name || opt.description || ''">
+              {{ opt.description || opt.name || '' }}
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item name="vgpuprofile" ref="vgpuprofile" :label="$t('label.vgpu.profile')" v-if="!isSystem && form.gpucardid && vgpuProfiles.length > 0">
+          <a-select
+            v-model:value="form.vgpuprofile"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="vgpuProfileLoading"
+            :placeholder="$t('label.vgpu.profile')">
+            <a-select-option v-for="(vgpu, vgpuIndex) in vgpuProfiles" :key="vgpuIndex" :value="vgpu.id" :label="vgpu.vgpuprofile || ''">
+              {{ vgpu.name }} {{ getVgpuProfileDetails(vgpu) }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-row :gutter="12" v-if="!isSystem && form.gpucardid">
+          <a-col :md="12" :lg="12">
+            <a-form-item name="gpucount" ref="gpucount">
+              <template #label>
+                <tooltip-label :title="$t('label.gpu.count')" :tooltip="apiParams.gpucount.description"/>
+              </template>
+              <a-input
+                v-model:value="form.gpucount"
+                type="number"
+                min="1"
+                max="16"
+                :placeholder="$t('label.gpu.count')"/>
+            </a-form-item>
+          </a-col>
+          <a-col :md="12" :lg="12">
+            <a-form-item name="gpudisplay" ref="gpudisplay">
+              <template #label>
+                <tooltip-label :title="$t('label.gpu.display')" :tooltip="apiParams.gpudisplay.description"/>
+              </template>
+              <a-switch v-model:checked="form.gpudisplay" />
+            </a-form-item>
+          </a-col>
+        </a-row>
         <a-form-item name="ispublic" ref="ispublic" :label="$t('label.ispublic')" v-show="isAdmin()">
           <a-switch v-model:checked="form.ispublic" />
         </a-form-item>
@@ -276,6 +308,7 @@
           </template>
           <a-select
             mode="multiple"
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.domainid"
             showSearch
             optionFilterProp="label"
@@ -300,6 +333,7 @@
           <a-select
             id="zone-selection"
             mode="multiple"
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.zoneid"
             showSearch
             optionFilterProp="label"
@@ -326,6 +360,7 @@
             <tooltip-label :title="$t('label.vmware.storage.policy')" :tooltip="apiParams.storagepolicy.description"/>
           </template>
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.storagepolicy"
             :placeholder="apiParams.storagepolicy.description"
             showSearch
@@ -338,13 +373,47 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item name="purgeresources" ref="purgeresources">
+          <template #label>
+            <tooltip-label :title="$t('label.purgeresources')" :tooltip="apiParams.purgeresources.description"/>
+          </template>
+          <a-switch v-model:checked="form.purgeresources"/>
+        </a-form-item>
+        <a-form-item name="showLeaseOptions" ref="showLeaseOptions" v-if="isLeaseFeatureEnabled">
+          <template #label>
+            <tooltip-label :title="$t('label.lease.enable')" :tooltip="$t('label.lease.enable.tooltip')" />
+          </template>
+          <a-switch v-model:checked="showLeaseOptions" @change="onToggleLeaseData"/>
+        </a-form-item>
+        <a-row :gutter="12" v-if="isLeaseFeatureEnabled && showLeaseOptions">
+          <a-col :md="12" :lg="12">
+            <a-form-item name="leaseduration" ref="leaseduration">
+              <template #label>
+                <tooltip-label :title="$t('label.leaseduration')"/>
+              </template>
+              <a-input
+                v-model:value="form.leaseduration"
+                :placeholder="$t('label.instance.lease.placeholder')"/>
+            </a-form-item>
+          </a-col>
+          <a-col :md="12" :lg="12">
+            <a-form-item name="leaseexpiryaction" ref="leaseexpiryaction"  v-if="form.leaseduration > 0">
+              <template #label>
+                <tooltip-label :title="$t('label.leaseexpiryaction')" />
+              </template>
+              <a-select v-model:value="form.leaseexpiryaction" :defaultValue="expiryActions">
+                <a-select-option v-for="action in expiryActions" :key="action" :label="action"/>
+              </a-select>
+            </a-form-item>
+          </a-col>
+        </a-row>
         <a-form-item name="computeonly" ref="computeonly">
           <template #label>
             <tooltip-label :title="$t('label.computeonly.offering')" :tooltip="$t('label.computeonly.offering.tooltip')"/>
           </template>
           <a-switch v-model:checked="form.computeonly" :checked="computeonly" @change="val => { computeonly = val }"/>
         </a-form-item>
-        <a-card>
+        <a-card style="margin-bottom: 10px;">
           <span v-if="computeonly">
             <a-form-item name="storagetype" ref="storagetype">
               <template #label>
@@ -397,6 +466,9 @@
                 </a-radio-button>
                 <a-radio-button value="writethrough">
                   {{ $t('label.writethrough') }}
+                </a-radio-button>
+                <a-radio-button value="hypervisor_default">
+                  {{ $t('label.hypervisor.default') }}
                 </a-radio-button>
               </a-radio-group>
             </a-form-item>
@@ -514,6 +586,7 @@
                   </template>
                   <a-select
                     mode="tags"
+                    :getPopupContainer="(trigger) => trigger.parentNode"
                     v-model:value="form.storagetags"
                     showSearch
                     optionFilterProp="value"
@@ -553,6 +626,7 @@
               <br /><br />
               <a-form-item :label="$t('label.disk.offerings')" name="diskofferingid" ref="diskofferingid">
                 <a-select
+                  :getPopupContainer="(trigger) => trigger.parentNode"
                   v-model:value="form.diskofferingid"
                   :loading="loading"
                   :placeholder="$t('label.diskoffering')">
@@ -573,7 +647,19 @@
             <a-switch v-model:checked="form.diskofferingstrictness" :checked="diskofferingstrictness" @change="val => { diskofferingstrictness = val }"/>
           </a-form-item>
         </a-card>
+        <a-form-item name="externaldetails" ref="externaldetails">
+          <template #label>
+            <tooltip-label :title="$t('label.externaldetails')" :tooltip="apiParams.externaldetails.description"/>
+          </template>
+          <a-switch v-model:checked="externalDetailsEnabled" @change="onExternalDetailsEnabledChange"/>
+          <a-card v-if="externalDetailsEnabled" style="margin-top: 10px">
+            <div style="margin-bottom: 10px">{{ $t('message.add.orchestrator.resource.details') }}</div>
+            <details-input
+              v-model:value="form.externaldetails" />
+          </a-card>
+        </a-form-item>
       </a-form>
+      <br/>
       <div :span="24" class="action-button">
         <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
         <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -584,12 +670,13 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import AddDiskOffering from '@/views/offering/AddDiskOffering'
 import { isAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import DetailsInput from '@/components/widgets/DetailsInput'
 import store from '@/store'
 
 export default {
@@ -598,7 +685,8 @@ export default {
   components: {
     AddDiskOffering,
     ResourceIcon,
-    TooltipLabel
+    TooltipLabel,
+    DetailsInput
   },
   data () {
     return {
@@ -634,27 +722,10 @@ export default {
       deploymentPlannerLoading: false,
       plannerModeVisible: false,
       plannerMode: '',
-      selectedGpu: '',
+      selectedGpuCard: '',
       showDiskOfferingModal: false,
-      gpuTypes: [
-        {
-          value: '',
-          title: this.$t('label.none'),
-          vgpu: []
-        },
-        {
-          value: 'Group of NVIDIA Corporation GK107GL [GRID K1] GPUs',
-          title: 'NVIDIA GRID K1',
-          vgpu: ['', 'passthrough', 'GRID K100', 'GRID K120Q', 'GRID K140Q', 'GRID K160Q', 'GRID K180Q']
-        },
-        {
-          value: 'Group of NVIDIA Corporation GK104GL [GRID K2] GPUs',
-          title: 'NVIDIA GRID K2',
-          vgpu: ['', 'passthrough', 'GRID K200', 'GRID K220Q', 'GRID K240Q', 'GRID K260Q', 'GRID K280Q']
-        }
-      ],
-      vGpuVisible: false,
-      vGpuTypes: [],
+      gpuCardLoading: false,
+      gpuCards: [],
       loading: false,
       dynamicscalingenabled: true,
       diskofferingstrictness: false,
@@ -664,7 +735,17 @@ export default {
       diskOfferings: [],
       selectedDiskOfferingId: '',
       qosType: '',
-      isDomainAdminAllowedToInformTags: false
+      isDomainAdminAllowedToInformTags: false,
+      isLeaseFeatureEnabled: this.$store.getters.features.instanceleaseenabled,
+      showLeaseOptions: false,
+      expiryActions: ['STOP', 'DESTROY'],
+      defaultLeaseDuration: 90,
+      defaultLeaseExpiryAction: 'STOP',
+      leaseduration: undefined,
+      leaseexpiryaction: undefined,
+      vgpuProfiles: [],
+      vgpuProfileLoading: false,
+      externalDetailsEnabled: false
     }
   },
   beforeCreate () {
@@ -694,7 +775,10 @@ export default {
         ispublic: this.isPublic,
         dynamicscalingenabled: true,
         plannermode: this.plannerMode,
-        pcidevice: this.selectedGpu,
+        gpucardid: this.selectedGpuCard,
+        vgpuprofile: '',
+        gpucount: '1',
+        gpudisplay: false,
         computeonly: this.computeonly,
         storagetype: this.storageType,
         provisioningtype: this.provisioningType,
@@ -703,7 +787,9 @@ export default {
         iscustomizeddiskiops: this.isCustomizedDiskIops,
         diskofferingid: this.selectedDiskOfferingId,
         diskofferingstrictness: this.diskofferingstrictness,
-        encryptdisk: this.encryptdisk
+        encryptdisk: this.encryptdisk,
+        leaseduration: this.leaseduration,
+        leaseexpiryaction: this.leaseexpiryaction
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
@@ -746,6 +832,15 @@ export default {
         hypervisorsnapshotreserve: [this.naturalNumberRule],
         domainid: [{ type: 'array', required: true, message: this.$t('message.error.select') }],
         diskofferingid: [{ required: true, message: this.$t('message.error.select') }],
+        gpucount: [{
+          type: 'number',
+          validator: async (rule, value) => {
+            if (value && (isNaN(value) || value < 1)) {
+              return Promise.reject(this.$t('message.error.number.minimum.one'))
+            }
+            return Promise.resolve()
+          }
+        }],
         zoneid: [{
           type: 'array',
           validator: async (rule, value) => {
@@ -754,12 +849,14 @@ export default {
             }
             return Promise.resolve()
           }
-        }]
+        }],
+        leaseduration: [this.naturalNumberRule]
       })
     },
     fetchData () {
       this.fetchDomainData()
       this.fetchZoneData()
+      this.fetchGPUCards()
       if (isAdmin()) {
         this.fetchStorageTagData()
         this.fetchDeploymentPlannerData()
@@ -771,12 +868,26 @@ export default {
       }
       this.fetchDiskOfferings()
     },
+    fetchGPUCards () {
+      this.gpuCardLoading = true
+      getAPI('listGpuCards', {
+      }).then(json => {
+        this.gpuCards = json.listgpucardsresponse.gpucard || []
+        // Add a "None" option at the beginning
+        this.gpuCards.unshift({
+          id: '',
+          name: this.$t('label.none')
+        })
+      }).finally(() => {
+        this.gpuCardLoading = false
+      })
+    },
     addDiskOffering () {
       this.showDiskOfferingModal = true
     },
     fetchDiskOfferings () {
       this.diskOfferingLoading = true
-      api('listDiskOfferings', {
+      getAPI('listDiskOfferings', {
         listall: true
       }).then(json => {
         this.diskOfferings = json.listdiskofferingsresponse.diskoffering || []
@@ -802,9 +913,26 @@ export default {
     isDomainAdmin () {
       return ['DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
     },
+    getVgpuProfileDetails (vgpuProfile) {
+      let output = '('
+      if (vgpuProfile?.videoram) {
+        output += `${vgpuProfile.videoram} MB`
+      }
+      if (vgpuProfile?.maxresolutionx && vgpuProfile?.maxresolutiony) {
+        if (output !== '(') {
+          output += ', '
+        }
+        output += `${vgpuProfile.maxresolutionx}x${vgpuProfile.maxresolutiony}`
+      }
+      output += ')'
+      if (output === '()') {
+        return ''
+      }
+      return output
+    },
     checkIfDomainAdminIsAllowedToInformTag () {
       const params = { id: store.getters.userInfo.accountid }
-      api('isAccountAllowedToCreateOfferingsWithTags', params).then(json => {
+      getAPI('isAccountAllowedToCreateOfferingsWithTags', params).then(json => {
         this.isDomainAdminAllowedToInformTags = json.isaccountallowedtocreateofferingswithtagsresponse.isallowed.isallowed
       })
     },
@@ -817,7 +945,7 @@ export default {
       params.showicon = true
       params.details = 'min'
       this.domainLoading = true
-      api('listDomains', params).then(json => {
+      getAPI('listDomains', params).then(json => {
         const listDomains = json.listdomainsresponse.domain
         this.domains = this.domains.concat(listDomains)
       }).finally(() => {
@@ -828,7 +956,7 @@ export default {
       const params = {}
       params.showicon = true
       this.zoneLoading = true
-      api('listZones', params).then(json => {
+      getAPI('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
         if (listZones) {
           this.zones = this.zones.concat(listZones)
@@ -840,7 +968,7 @@ export default {
     fetchStorageTagData () {
       this.storageTagLoading = true
       this.storageTags = []
-      api('listStorageTags').then(json => {
+      getAPI('listStorageTags').then(json => {
         const tags = json.liststoragetagsresponse.storagetag || []
         for (const tag of tags) {
           if (!this.storageTags.includes(tag.name)) {
@@ -853,7 +981,7 @@ export default {
     },
     fetchDeploymentPlannerData () {
       this.deploymentPlannerLoading = true
-      api('listDeploymentPlanners').then(json => {
+      getAPI('listDeploymentPlanners').then(json => {
         const planners = json.listdeploymentplannersresponse.deploymentPlanner
         this.deploymentPlanners = this.deploymentPlanners.concat(planners)
         this.deploymentPlanners.unshift({ name: '' })
@@ -870,7 +998,7 @@ export default {
       const zoneid = this.zones[zoneIndex].id
       if ('importVsphereStoragePolicies' in this.$store.getters.apis) {
         this.storagePolicies = []
-        api('listVsphereStoragePolicies', {
+        getAPI('listVsphereStoragePolicies', {
           zoneid: zoneid
         }).then(response => {
           this.storagePolicies = response.listvspherestoragepoliciesresponse.StoragePolicy || []
@@ -902,18 +1030,36 @@ export default {
     handlePlannerModeChange (val) {
       this.plannerMode = val
     },
-    handleGpuChange (val) {
-      this.vGpuTypes = []
-      for (var gpuType of this.gpuTypes) {
-        if (gpuType.value === val) {
-          this.vGpuTypes = gpuType.vgpu
-          break
-        }
+    handleGpuCardChange (cardId) {
+      this.selectedGpuCard = cardId
+      this.form.vgpuprofile = ''
+      if (cardId && cardId !== '') {
+        this.fetchVgpuProfiles(cardId)
+      } else {
+        this.vgpuProfiles = []
+        this.form.gpucount = '1'
       }
-      this.vGpuVisible = true
-      if (!this.arrayHasItems(this.vGpuTypes)) {
-        this.vGpuVisible = false
+    },
+    fetchVgpuProfiles (gpuCardId) {
+      this.vgpuProfileLoading = true
+      this.vgpuProfiles = []
+      getAPI('listVgpuProfiles', {
+        gpucardid: gpuCardId
+      }).then(json => {
+        this.vgpuProfiles = json.listvgpuprofilesresponse.vgpuprofile || []
+        this.form.vgpuprofile = this.vgpuProfiles.length > 0 ? this.vgpuProfiles[0].id : ''
+      }).catch(error => {
+        console.error('Error fetching vGPU profiles:', error)
+        this.vgpuProfiles = []
+      }).finally(() => {
+        this.vgpuProfileLoading = false
+      })
+    },
+    onExternalDetailsEnabledChange (val) {
+      if (val || !this.form.externaldetails) {
+        return
       }
+      this.form.externaldetails = undefined
     },
     handleSubmit (e) {
       e.preventDefault()
@@ -933,10 +1079,25 @@ export default {
           limitcpuuse: values.limitcpuuse === true,
           dynamicscalingenabled: values.dynamicscalingenabled,
           diskofferingstrictness: values.diskofferingstrictness,
-          encryptroot: values.encryptdisk
+          encryptroot: values.encryptdisk,
+          purgeresources: values.purgeresources,
+          leaseduration: values.leaseduration,
+          leaseexpiryaction: values.leaseexpiryaction
         }
+
         if (values.diskofferingid) {
           params.diskofferingid = values.diskofferingid
+        }
+
+        // Add GPU parameters
+        if (values.vgpuprofile) {
+          params.vgpuprofileid = values.vgpuprofile
+        }
+        if (values.gpucount && values.gpucount > 0) {
+          params.gpucount = values.gpucount
+        }
+        if (values.gpudisplay !== undefined) {
+          params.gpudisplay = values.gpudisplay
         }
 
         // custom fields (begin)
@@ -1014,21 +1175,21 @@ export default {
           params['serviceofferingdetails[0].key'] = 'ImplicitDedicationMode'
           params['serviceofferingdetails[0].value'] = values.plannermode
         }
-        if ('pcidevice' in values &&
-          values.pcidevice !== undefined && values.pcidevice !== '') {
-          params['serviceofferingdetails[1].key'] = 'pciDevice'
-          params['serviceofferingdetails[1].value'] = values.pcidevice
-        }
-        if ('vgputype' in values && this.arrayHasItems(this.vGpuTypes)) {
-          params['serviceofferingdetails[2].key'] = 'vgpuType'
-          params['serviceofferingdetails[2].value'] = this.vGpuTypes[values.vgputype]
-        }
         if ('isvolatile' in values && values.isvolatile !== undefined) {
           params.isvolatile = values.isvolatile === true
         }
         if ('systemvmtype' in values && values.systemvmtype !== undefined) {
           params.systemvmtype = values.systemvmtype
         }
+
+        if ('leaseduration' in values && values.leaseduration !== undefined) {
+          params.leaseduration = values.leaseduration
+        }
+
+        if ('leaseexpiryaction' in values && values.leaseexpiryaction !== undefined) {
+          params.leaseexpiryaction = values.leaseexpiryaction
+        }
+
         if (values.ispublic !== true) {
           var domainIndexes = values.domainid
           var domainId = null
@@ -1058,7 +1219,13 @@ export default {
         if (values.storagepolicy) {
           params.storagepolicy = values.storagepolicy
         }
-        api('createServiceOffering', params).then(json => {
+        if (values.externaldetails) {
+          Object.entries(values.externaldetails).forEach(([key, value]) => {
+            params['externaldetails[0].' + key] = value
+          })
+        }
+
+        postAPI('createServiceOffering', params).then(json => {
           const message = this.isSystem
             ? `${this.$t('message.create.service.offering')}: `
             : `${this.$t('message.create.compute.offering')}: `
@@ -1080,6 +1247,17 @@ export default {
         return Promise.reject(this.$t('message.error.number'))
       }
       return Promise.resolve()
+    },
+    onToggleLeaseData () {
+      if (this.showLeaseOptions === false) {
+        this.leaseduration = undefined
+        this.leaseexpiryaction = undefined
+      } else {
+        this.leaseduration = this.leaseduration !== undefined ? this.leaseduration : this.defaultLeaseDuration
+        this.leaseexpiryaction = this.leaseexpiryaction !== undefined ? this.leaseexpiryaction : this.defaultLeaseExpiryAction
+      }
+      this.form.leaseduration = this.leaseduration
+      this.form.leaseexpiryaction = this.leaseexpiryaction
     }
   }
 }

@@ -25,7 +25,6 @@ import static com.cloud.network.resource.NiciraNvpResource.NUM_RETRIES;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ConfigureSharedNetworkVlanIdAnswer;
@@ -44,7 +43,6 @@ import com.cloud.utils.rest.HttpStatusCodeHelper;
 @ResourceWrapper(handles =  ConfigureSharedNetworkVlanIdCommand.class)
 public class NiciraNvpConfigureSharedNetworkVlanIdCommandWrapper extends CommandWrapper<ConfigureSharedNetworkVlanIdCommand, Answer, NiciraNvpResource>{
 
-    private static final Logger s_logger = Logger.getLogger(NiciraNvpConfigureSharedNetworkVlanIdCommandWrapper.class);
 
     @Override
     public Answer execute(ConfigureSharedNetworkVlanIdCommand command, NiciraNvpResource niciraNvpResource) {
@@ -55,10 +53,10 @@ public class NiciraNvpConfigureSharedNetworkVlanIdCommandWrapper extends Command
         tags.add(new NiciraNvpTag("cs_account", command.getOwnerName()));
         final long networkId = command.getNetworkId();
 
-        s_logger.debug("Connecting Logical Switch " + logicalSwitchUuid + " to L2 Gateway Service " + l2GatewayServiceUuid + ", vlan id " + vlanId + " network " + networkId);
+        logger.debug("Connecting Logical Switch " + logicalSwitchUuid + " to L2 Gateway Service " + l2GatewayServiceUuid + ", vlan id " + vlanId + " network " + networkId);
         final NiciraNvpApi niciraNvpApi = niciraNvpResource.getNiciraNvpApi();
 
-        s_logger.debug("Creating Logical Switch Port in Logical Switch " + logicalSwitchUuid);
+        logger.debug("Creating Logical Switch Port in Logical Switch " + logicalSwitchUuid);
         LogicalSwitchPort lSwitchPort = null;
         try {
             lSwitchPort = new LogicalSwitchPort();
@@ -68,12 +66,12 @@ public class NiciraNvpConfigureSharedNetworkVlanIdCommandWrapper extends Command
             lSwitchPort = niciraNvpApi.createLogicalSwitchPort(logicalSwitchUuid, lSwitchPort);
         }
         catch (NiciraNvpApiException e){
-            s_logger.warn("Could not create Logical Switch Port on Logical Switch " + logicalSwitchUuid + " due to: " + e.getMessage() + ", retrying");
+            logger.warn("Could not create Logical Switch Port on Logical Switch " + logicalSwitchUuid + " due to: " + e.getMessage() + ", retrying");
             return handleException(e, command, niciraNvpResource);
         }
-        s_logger.debug("Logical Switch Port " + lSwitchPort.getUuid() + " (" + lSwitchPort.getDisplayName() + ") successfully created in Logical Switch " + logicalSwitchUuid);
+        logger.debug("Logical Switch Port " + lSwitchPort.getUuid() + " (" + lSwitchPort.getDisplayName() + ") successfully created in Logical Switch " + logicalSwitchUuid);
 
-        s_logger.debug("Attaching Logical Switch Port " + lSwitchPort.getUuid() + " (" + lSwitchPort.getDisplayName() + ") on VLAN " + command.getVlanId() + " using L2GatewayAttachment");
+        logger.debug("Attaching Logical Switch Port " + lSwitchPort.getUuid() + " (" + lSwitchPort.getDisplayName() + ") on VLAN " + command.getVlanId() + " using L2GatewayAttachment");
         try {
             final L2GatewayAttachment attachment = new L2GatewayAttachment(l2GatewayServiceUuid);
             if (command.getVlanId() != 0) {
@@ -82,33 +80,33 @@ public class NiciraNvpConfigureSharedNetworkVlanIdCommandWrapper extends Command
             niciraNvpApi.updateLogicalSwitchPortAttachment(logicalSwitchUuid, lSwitchPort.getUuid(), attachment);
         }
         catch (NiciraNvpApiException e){
-            s_logger.warn("Could not attach Logical Switch Port " + lSwitchPort.getUuid() + " (" + lSwitchPort.getDisplayName() + ") to Logical Switch Port " + lSwitchPort.getUuid() + " (" + lSwitchPort.getDisplayName() + ") due to: " + e.getMessage() + ", errorCode: " + e.getErrorCode());
+            logger.warn("Could not attach Logical Switch Port " + lSwitchPort.getUuid() + " (" + lSwitchPort.getDisplayName() + ") to Logical Switch Port " + lSwitchPort.getUuid() + " (" + lSwitchPort.getDisplayName() + ") due to: " + e.getMessage() + ", errorCode: " + e.getErrorCode());
             cleanup(logicalSwitchUuid, lSwitchPort, niciraNvpApi);
             return handleException(e, command, niciraNvpResource);
         }
-        s_logger.debug("Logical Switch Port " + lSwitchPort.getUuid() + " (" + lSwitchPort.getDisplayName() + ") successfully attached on VLAN " + command.getVlanId() + " using L2GatewayAttachment");
+        logger.debug("Logical Switch Port " + lSwitchPort.getUuid() + " (" + lSwitchPort.getDisplayName() + ") successfully attached on VLAN " + command.getVlanId() + " using L2GatewayAttachment");
 
-        s_logger.debug("Successfully connected Logical Switch " + logicalSwitchUuid + " to L2 Gateway Service " + l2GatewayServiceUuid + ", vlan id " + vlanId + ", network " + networkId + ", through Logical Switch Port " + lSwitchPort.getUuid() + " (" + lSwitchPort.getDisplayName() + ")");
+        logger.debug("Successfully connected Logical Switch " + logicalSwitchUuid + " to L2 Gateway Service " + l2GatewayServiceUuid + ", vlan id " + vlanId + ", network " + networkId + ", through Logical Switch Port " + lSwitchPort.getUuid() + " (" + lSwitchPort.getDisplayName() + ")");
         return new ConfigureSharedNetworkVlanIdAnswer(command, true, "OK");
     }
 
     private void cleanup(String logicalSwitchUuid, LogicalSwitchPort lSwitchPort, NiciraNvpApi niciraNvpApi) {
-        s_logger.warn("Deleting previously created Logical Switch Port " + lSwitchPort.getUuid() + " (" + lSwitchPort.getDisplayName() + ") from Logical Switch " + logicalSwitchUuid);
+        logger.warn("Deleting previously created Logical Switch Port " + lSwitchPort.getUuid() + " (" + lSwitchPort.getDisplayName() + ") from Logical Switch " + logicalSwitchUuid);
         try {
             niciraNvpApi.deleteLogicalSwitchPort(logicalSwitchUuid, lSwitchPort.getUuid());
         } catch (NiciraNvpApiException exceptionDeleteLSwitchPort) {
-            s_logger.error("Error while deleting Logical Switch Port " + lSwitchPort.getUuid() + " (" + lSwitchPort.getDisplayName() + ") from Logical Switch " + logicalSwitchUuid + " due to: " + exceptionDeleteLSwitchPort.getMessage());
+            logger.error("Error while deleting Logical Switch Port " + lSwitchPort.getUuid() + " (" + lSwitchPort.getDisplayName() + ") from Logical Switch " + logicalSwitchUuid + " due to: " + exceptionDeleteLSwitchPort.getMessage());
         }
-        s_logger.warn("Logical Switch Port " + lSwitchPort.getUuid() + " (" + lSwitchPort.getDisplayName() + ") successfully deteled");
+        logger.warn("Logical Switch Port " + lSwitchPort.getUuid() + " (" + lSwitchPort.getDisplayName() + ") successfully deteled");
     }
 
     private Answer handleException(NiciraNvpApiException e, ConfigureSharedNetworkVlanIdCommand command, NiciraNvpResource niciraNvpResource) {
         if (HttpStatusCodeHelper.isConflict(e.getErrorCode())){
-            s_logger.warn("There's been a conflict in NSX side, aborting implementation");
+            logger.warn("There's been a conflict in NSX side, aborting implementation");
             return new ConfigureSharedNetworkVlanIdAnswer(command, false, "FAILED: There's been a conflict in NSX side");
         }
         else {
-            s_logger.warn("Error code: " + e.getErrorCode() + ", retrying");
+            logger.warn("Error code: " + e.getErrorCode() + ", retrying");
             final CommandRetryUtility retryUtility = niciraNvpResource.getRetryUtility();
             retryUtility.addRetry(command, NUM_RETRIES);
             return retryUtility.retry(command, ConfigureSharedNetworkVlanIdAnswer.class, e);

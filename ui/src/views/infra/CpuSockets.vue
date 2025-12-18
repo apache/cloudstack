@@ -52,7 +52,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import { genericCompare } from '@/utils/sort.js'
 import Breadcrumb from '@/components/widgets/Breadcrumb'
 import ListView from '@/components/view/ListView.vue'
@@ -100,7 +100,7 @@ export default {
     callListHostsWithPage (hypervisor, currentPage) {
       this.loading = true
       const pageSize = 100
-      api('listHosts', {
+      getAPI('listHosts', {
         type: 'routing',
         details: 'min',
         hypervisor: hypervisor,
@@ -135,18 +135,18 @@ export default {
       this.columns.push({
         dataIndex: 'name',
         title: this.$t('label.hypervisor'),
-        sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
+        sorter: (a, b) => genericCompare(a?.name || '', b?.name || '')
       })
 
       this.columns.push({
         dataIndex: 'hosts',
         title: this.$t('label.hosts'),
-        sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
+        sorter: (a, b) => genericCompare(a?.hosts || '', b?.hosts || '')
       })
       this.columns.push({
         dataIndex: 'cpusockets',
         title: this.$t('label.cpu.sockets'),
-        sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
+        sorter: (a, b) => genericCompare(a?.cpusockets || '', b?.cpusockets || '')
       })
 
       this.items = []

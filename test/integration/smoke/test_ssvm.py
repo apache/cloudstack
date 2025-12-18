@@ -18,15 +18,14 @@
 """
 # Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.cloudstackAPI import (stopSystemVm,
+from marvin.cloudstackAPI import (getDiagnosticsData, stopSystemVm,
                                   rebootSystemVm,
                                   destroySystemVm, updateConfiguration)
 from marvin.lib.utils import (cleanup_resources,
                               get_process_status,
                               get_host_credentials,
                               wait_until)
-from marvin.lib.base import (PhysicalNetwork,
-                             NetScaler, ImageStore)
+from marvin.lib.base import (PhysicalNetwork, NetScaler, ImageStore, UserData)
 from marvin.lib.common import (get_zone,
                                list_hosts,
                                list_ssvms,
@@ -35,6 +34,10 @@ from marvin.lib.common import (get_zone,
 from nose.plugins.attrib import attr
 import telnetlib
 import logging
+import base64
+import os
+import urllib
+import zipfile
 
 # Import System modules
 import time
@@ -121,7 +124,7 @@ class TestSSVMs(cloudstackTestCase):
         #    should return only ONE SSVM per zone
         # 2. The returned SSVM should be in Running state
         # 3. listSystemVM for secondarystoragevm should list publicip,
-        #    privateip and link-localip
+        #    privateip, link-localip and service offering id/name
         # 4. The gateway programmed on the ssvm by listSystemVm should be
         #    the same as the gateway returned by listVlanIpRanges
         # 5. DNS entries must match those given for the zone
@@ -186,6 +189,18 @@ class TestSSVMs(cloudstackTestCase):
                 hasattr(ssvm, 'publicip'),
                 True,
                 "Check whether SSVM has public IP field"
+            )
+
+            self.assertEqual(
+                hasattr(ssvm, 'serviceofferingid'),
+                True,
+                "Check whether SSVM has service offering id field"
+            )
+
+            self.assertEqual(
+                hasattr(ssvm, 'serviceofferingname'),
+                True,
+                "Check whether SSVM has service offering name field"
             )
 
             # Fetch corresponding ip ranges information from listVlanIpRanges
@@ -261,8 +276,8 @@ class TestSSVMs(cloudstackTestCase):
         # 1. listSystemVM (systemvmtype=consoleproxy) should return
         #    at least ONE CPVM per zone
         # 2. The returned ConsoleProxyVM should be in Running state
-        # 3. listSystemVM for console proxy should list publicip, privateip
-        #    and link-localip
+        # 3. listSystemVM for console proxy should list publicip, privateip,
+        #    link-localip and service offering id/name
         # 4. The gateway programmed on the console proxy should be the same
         #    as the gateway returned by listZones
         # 5. DNS entries must match those given for the zone
@@ -326,6 +341,18 @@ class TestSSVMs(cloudstackTestCase):
                 hasattr(cpvm, 'publicip'),
                 True,
                 "Check whether CPVM has public IP field"
+            )
+
+            self.assertEqual(
+                hasattr(cpvm, 'serviceofferingid'),
+                True,
+                "Check whether CPVM has service offering id field"
+            )
+
+            self.assertEqual(
+                hasattr(cpvm, 'serviceofferingname'),
+                True,
+                "Check whether CPVM has service offering name field"
             )
             # Fetch corresponding ip ranges information from listVlanIpRanges
             ipranges_response = list_vlan_ipranges(
@@ -964,6 +991,9 @@ class TestSSVMs(cloudstackTestCase):
 
         # Private IP Address of System VMs are allowed to change after reboot - CLOUDSTACK-7745
 
+        # Agent in Up state for a while after reboot, wait for the agent to Disconnect and back Up.
+        time.sleep(60)
+
         # Wait for the agent to be up
         self.waitForSystemVMAgent(cpvm_response.name)
 
@@ -1078,6 +1108,9 @@ class TestSSVMs(cloudstackTestCase):
             str(cpvm_response.state),
             "Check whether CPVM is running or not"
         )
+
+        # Agent in Up state for a while after reboot, wait for the agent to Disconnect and back Up.
+        time.sleep(60)
 
         # Wait for the agent to be up
         self.waitForSystemVMAgent(cpvm_response.name)

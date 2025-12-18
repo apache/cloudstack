@@ -30,10 +30,17 @@
         :columns="columns"
         :pagination="false"
         style="margin-bottom: 24px; width: 100%" >
-        <template #bodyCell="{ column, record }">
+        <template #bodyCell="{ column, record, index }">
+          <template v-if="column.key === 'gateway'">
+            <div> {{  record.gateway }}</div>
+            <div v-if="record.fornsx"> <a-tag color="processing"> {{ $t('label.tag.nsx') }} </a-tag> </div>
+            <div v-else-if="record.fornetris"> <a-tag color="processing"> {{ $t('label.tag.netris') }} </a-tag> </div>
+            <div v-else-if="index === 0 && (isNsxZone || isNetrisZone)"> <a-tag color="processing"> {{ $t('label.tag.systemvm') }}  </a-tag> </div>
+          </template>
           <template v-if="column.key === 'actions'">
             <tooltip-button
               :tooltip="$t('label.delete')"
+              :disabled="((record.fornsx && !forNsx) || (!record.fornsx && forNsx)) || ((record.fornetris && !forNetris) || (!record.fornetris && forNetris)) "
               type="primary"
               :danger="true"
               icon="delete-outlined"
@@ -70,6 +77,7 @@
                 <a-form-item name="vlan" ref="vlan">
                   <a-input
                     v-model:value="form.vlan"
+                    :disabled="forNsx || forNetris"
                     :placeholder="$t('label.vlan')"
                   />
                 </a-form-item>
@@ -160,6 +168,22 @@ export default {
     isFixError: {
       type: Boolean,
       default: false
+    },
+    forNsx: {
+      type: Boolean,
+      default: false
+    },
+    isNsxZone: {
+      type: Boolean,
+      default: false
+    },
+    forNetris: {
+      type: Boolean,
+      default: false
+    },
+    isNetrisZone: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -170,6 +194,7 @@ export default {
       ipRanges: [],
       columns: [
         {
+          key: 'gateway',
           title: this.$t('label.gateway'),
           dataIndex: 'gateway',
           width: 140
@@ -245,13 +270,18 @@ export default {
     handleAddRange () {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
+        const len = this.isValidSetup() ? this.ipRanges.length - 1 : 0
+        const key = this.isValidSetup() ? this.ipRanges[len].key : 0
         this.ipRanges.push({
-          key: this.ipRanges.length.toString(),
+          key: key + 1,
           gateway: values.gateway,
           netmask: values.netmask,
           vlan: values.vlan,
           startIp: values.startIp,
-          endIp: values.endIp
+          endIp: values.endIp,
+          fornsx: this.forNsx,
+          fornetris: this.forNetris,
+          forsystemvms: (this.isNsxZone && !this.forNsx) || (this.isNetrisZone && !this.forNetris && key === 0) // Set only the first public IP range for system VMs on a Netris Zone creation
         })
         this.formRef.value.resetFields()
       }).catch(error => {

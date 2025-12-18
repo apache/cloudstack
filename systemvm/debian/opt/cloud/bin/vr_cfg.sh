@@ -74,7 +74,7 @@ cat $cfg | while read line; do
 
     fi
 
-done 
+done
 
 # archive the configuration file
 mv $cfg /var/cache/cloud/processed/

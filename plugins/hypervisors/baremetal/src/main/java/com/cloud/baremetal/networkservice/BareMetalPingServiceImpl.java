@@ -32,7 +32,6 @@ import javax.inject.Inject;
 import org.apache.cloudstack.api.AddBaremetalPxeCmd;
 import org.apache.cloudstack.api.AddBaremetalPxePingServerCmd;
 import org.apache.cloudstack.api.ListBaremetalPxeServersCmd;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.baremetal.IpmISetBootDevCommand;
@@ -68,7 +67,6 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
 
 public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements BaremetalPxeService {
-    private static final Logger s_logger = Logger.getLogger(BareMetalPingServiceImpl.class);
     @Inject
     ResourceManager _resourceMgr;
     @Inject
@@ -107,19 +105,19 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
                 new PreparePxeServerCommand(ip, mac, mask, gateway, dns, tpl, profile.getVirtualMachine().getInstanceName(), dest.getHost().getName());
             PreparePxeServerAnswer ans = (PreparePxeServerAnswer)_agentMgr.send(pxeServerId, cmd);
             if (!ans.getResult()) {
-                s_logger.warn("Unable tot program PXE server: " + pxeVo.getId() + " because " + ans.getDetails());
+                logger.warn("Unable tot program PXE server: " + pxeVo.getId() + " because " + ans.getDetails());
                 return false;
             }
 
             IpmISetBootDevCommand bootCmd = new IpmISetBootDevCommand(BootDev.pxe);
             Answer anw = _agentMgr.send(dest.getHost().getId(), bootCmd);
             if (!anw.getResult()) {
-                s_logger.warn("Unable to set host: " + dest.getHost().getId() + " to PXE boot because " + anw.getDetails());
+                logger.warn("Unable to set host: " + dest.getHost().getId() + " to PXE boot because " + anw.getDetails());
             }
 
             return anw.getResult();
         } catch (Exception e) {
-            s_logger.warn("Cannot prepare PXE server", e);
+            logger.warn("Cannot prepare PXE server", e);
             return false;
         }
     }
@@ -150,7 +148,7 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
             Answer ans = _agentMgr.send(pxeServerId, cmd);
             return ans.getResult();
         } catch (Exception e) {
-            s_logger.debug("Prepare for creating baremetal template failed", e);
+            logger.debug("Prepare for creating baremetal template failed", e);
             return false;
         }
     }
@@ -219,7 +217,7 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
         try {
             uri = new URI(cmd.getUrl());
         } catch (Exception e) {
-            s_logger.debug(e);
+            logger.debug(e);
             throw new IllegalArgumentException(e.getMessage());
         }
         String ipAddress = uri.getHost();
@@ -244,7 +242,7 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
         try {
             resource.configure("PING PXE resource", params);
         } catch (Exception e) {
-            s_logger.debug(e);
+            logger.debug(e);
             throw new CloudRuntimeException(e.getMessage());
         }
 

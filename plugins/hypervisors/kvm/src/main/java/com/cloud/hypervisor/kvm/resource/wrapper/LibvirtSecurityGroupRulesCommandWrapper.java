@@ -21,7 +21,6 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 
@@ -37,7 +36,6 @@ import com.cloud.resource.ResourceWrapper;
 @ResourceWrapper(handles =  SecurityGroupRulesCmd.class)
 public final class LibvirtSecurityGroupRulesCommandWrapper extends CommandWrapper<SecurityGroupRulesCmd, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtSecurityGroupRulesCommandWrapper.class);
 
     @Override
     public Answer execute(final SecurityGroupRulesCmd command, final LibvirtComputingResource libvirtComputingResource) {
@@ -54,7 +52,7 @@ public final class LibvirtSecurityGroupRulesCommandWrapper extends CommandWrappe
 
             final VirtualMachineTO vm = command.getVmTO();
             if (!libvirtComputingResource.applyDefaultNetworkRules(conn, vm, true)) {
-                s_logger.warn("Failed to program default network rules for vm " + command.getVmName());
+                logger.warn("Failed to program default network rules for vm " + command.getVmName());
                 return new SecurityGroupRuleAnswer(command, false, "programming default network rules failed");
             }
         } catch (final LibvirtException e) {
@@ -65,10 +63,10 @@ public final class LibvirtSecurityGroupRulesCommandWrapper extends CommandWrappe
                 Long.toString(command.getSeqNum()), command.getGuestMac(), command.stringifyRules(), vif, brname, command.getSecIpsString());
 
         if (!result) {
-            s_logger.warn("Failed to program network rules for vm " + command.getVmName());
+            logger.warn("Failed to program network rules for vm " + command.getVmName());
             return new SecurityGroupRuleAnswer(command, false, "programming network rules failed");
         } else {
-            s_logger.debug("Programmed network rules for vm " + command.getVmName() + " guestIp=" + command.getGuestIp() + ",ingress numrules="
+            logger.debug("Programmed network rules for vm " + command.getVmName() + " guestIp=" + command.getGuestIp() + ",ingress numrules="
                     + command.getIngressRuleSet().size() + ",egress numrules=" + command.getEgressRuleSet().size());
             return new SecurityGroupRuleAnswer(command);
         }

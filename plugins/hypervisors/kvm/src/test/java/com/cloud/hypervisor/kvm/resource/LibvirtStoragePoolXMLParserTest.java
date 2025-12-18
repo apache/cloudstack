@@ -21,11 +21,16 @@ package com.cloud.hypervisor.kvm.resource;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class LibvirtStoragePoolXMLParserTest extends TestCase {
 
+    @Test
     public void testParseNfsStoragePoolXML() {
-        String poolXML = "<pool type='netfs'>\n" +
+        String poolXML = "<pool type='netfs' xmlns:fs='http://libvirt.org/schemas/storagepool/fs/1.0'>\n" +
                 "  <name>feff06b5-84b2-3258-b5f9-1953217295de</name>\n" +
                 "  <uuid>feff06b5-84b2-3258-b5f9-1953217295de</uuid>\n" +
                 "  <capacity unit='bytes'>111111111</capacity>\n" +
@@ -44,14 +49,21 @@ public class LibvirtStoragePoolXMLParserTest extends TestCase {
                 "      <group>0</group>\n" +
                 "    </permissions>\n" +
                 "  </target>\n" +
+                "  <fs:mount_opts>\n" +
+                "    <fs:option name='nconnect=8'/>\n" +
+                "    <fs:option name='vers=4.1'/>\n" +
+                "    </fs:mount_opts>\n" +
                 "</pool>";
 
         LibvirtStoragePoolXMLParser parser = new LibvirtStoragePoolXMLParser();
         LibvirtStoragePoolDef pool = parser.parseStoragePoolXML(poolXML);
 
-        Assert.assertEquals("10.11.12.13", pool.getSourceHost());
+        assertEquals("10.11.12.13", pool.getSourceHost());
+        assertTrue(pool.getNfsMountOpts().contains("vers=4.1"));
+        assertTrue(pool.getNfsMountOpts().contains("nconnect=8"));
     }
 
+    @Test
     public void testParseRbdStoragePoolXMLWithMultipleHosts() {
         String poolXML = "<pool type='rbd'>\n" +
                 "  <name>feff06b5-84b2-3258-b5f9-1953217295de</name>\n" +
@@ -77,6 +89,7 @@ public class LibvirtStoragePoolXMLParserTest extends TestCase {
         Assert.assertEquals(6789, pool.getSourcePort());
     }
 
+    @Test
     public void testParseRbdStoragePoolXMLWithMultipleHostsIpv6() {
         String poolXML = "<pool type='rbd'>\n" +
                 "  <name>feff06b5-84b2-3258-b5f9-1953217295de</name>\n" +

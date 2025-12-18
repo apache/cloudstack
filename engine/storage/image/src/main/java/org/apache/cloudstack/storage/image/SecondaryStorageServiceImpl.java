@@ -24,6 +24,9 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.download.DownloadListener;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -44,7 +47,8 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.secstorage.CommandExecLogDao;
@@ -53,7 +57,7 @@ import com.cloud.utils.Pair;
 
 public class SecondaryStorageServiceImpl implements SecondaryStorageService {
 
-    private static final Logger s_logger = Logger.getLogger(SecondaryStorageServiceImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     DataMotionService motionSrv;
@@ -117,35 +121,30 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
                 }
             } else if (srcDataObject instanceof TemplateInfo && templateChain != null && templateChain.containsKey(srcDataObject)) {
                 for (TemplateInfo templateInfo : templateChain.get(srcDataObject).first()) {
+                    if (templateIsOnDestination(templateInfo, destDatastore)) {
+                        res.setResult("Template already exists on destination.");
+                        res.setSuccess(true);
+                        logger.debug("Deleting template {} from source data store [{}].", srcDataObject.getTO().toString(),
+                                srcDataObject.getDataStore().getTO().toString());
+                        srcDataObject.getDataStore().delete(srcDataObject);
+                        future.complete(res);
+                        continue;
+                    }
                     destDataObject = destDatastore.create(templateInfo);
                     templateInfo.processEvent(ObjectInDataStoreStateMachine.Event.MigrateDataRequested);
                     destDataObject.processEvent(ObjectInDataStoreStateMachine.Event.MigrateDataRequested);
                     migrateJob(future, templateInfo, destDataObject, destDatastore);
                 }
-            }
-            else {
-                // Check if template in destination store, if yes, do not proceed
-                if (srcDataObject instanceof TemplateInfo) {
-                    s_logger.debug("Checking if template present at destination");
-                    TemplateDataStoreVO templateStoreVO = templateStoreDao.findByStoreTemplate(destDatastore.getId(), srcDataObject.getId());
-                    if (templateStoreVO != null) {
-                        String msg = "Template already exists in destination store";
-                        s_logger.debug(msg);
-                        res.setResult(msg);
-                        res.setSuccess(true);
-                        future.complete(res);
-                        return future;
-                    }
-                }
+            } else {
                 destDataObject = destDatastore.create(srcDataObject);
                 srcDataObject.processEvent(ObjectInDataStoreStateMachine.Event.MigrateDataRequested);
                 destDataObject.processEvent(ObjectInDataStoreStateMachine.Event.MigrateDataRequested);
                 migrateJob(future, srcDataObject, destDataObject, destDatastore);
             }
         } catch (Exception e) {
-            s_logger.debug("Failed to copy Data", e);
+            logger.debug("Failed to copy Data", e);
             if (destDataObject != null) {
-                s_logger.info("Deleting data on destination store: " + destDataObject.getDataStore().getName());
+                logger.info("Deleting data on destination store: " + destDataObject.getDataStore().getName());
                 destDataObject.getDataStore().delete(destDataObject);
             }
             if (!(srcDataObject instanceof VolumeInfo)) {
@@ -157,6 +156,69 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
             future.complete(res);
         }
         return future;
+    }
+
+    /**
+     * Returns a boolean indicating whether a template is ready on the provided data store. If the template is being downloaded,
+     * waits until the download finishes.
+     * @param srcDataObject the template.
+     * @param destDatastore the data store.
+     */
+    protected boolean templateIsOnDestination(DataObject srcDataObject, DataStore destDatastore) {
+        if (!(srcDataObject instanceof TemplateInfo)) {
+            return false;
+        }
+
+        String templateAsString = srcDataObject.getTO().toString();
+        String destDatastoreAsString = destDatastore.getTO().toString();
+        TemplateDataStoreVO templateStoreVO;
+
+        long timer = getTemplateDownloadTimeout();
+        long msToSleep = 10000L;
+        int previousDownloadPercentage = -1;
+
+        while (true) {
+            templateStoreVO = templateStoreDao.findByStoreTemplate(destDatastore.getId(), srcDataObject.getId());
+            if (templateStoreVO == null) {
+                logger.debug("{} is not present at destination [{}].", templateAsString, destDatastoreAsString);
+                return false;
+            }
+            VMTemplateStorageResourceAssoc.Status downloadState = templateStoreVO.getDownloadState();
+            if (downloadState == null || !VMTemplateStorageResourceAssoc.PENDING_DOWNLOAD_STATES.contains(downloadState)) {
+                break;
+            }
+            if (previousDownloadPercentage == templateStoreVO.getDownloadPercent()) {
+                timer -= msToSleep;
+            } else {
+                timer = getTemplateDownloadTimeout();
+            }
+            if (timer <= 0) {
+                throw new CloudRuntimeException(String.format("Timeout while waiting for %s to be downloaded to image store [%s]. " +
+                        "The download percentage has not changed for %d milliseconds.", templateAsString, destDatastoreAsString, getTemplateDownloadTimeout()));
+            }
+            waitForTemplateDownload(msToSleep, templateAsString, destDatastoreAsString);
+        }
+
+        if (templateStoreVO.getState() == ObjectInDataStoreStateMachine.State.Ready) {
+            logger.debug("{} already exists on destination [{}].", templateAsString, destDatastoreAsString);
+            return true;
+        }
+        return false;
+    }
+
+    protected long getTemplateDownloadTimeout() {
+        return DownloadListener.DOWNLOAD_TIMEOUT;
+    }
+
+    protected void waitForTemplateDownload(long msToSleep, String templateAsString, String destDatastoreAsString) {
+        logger.debug("{} is being downloaded to destination [{}]; we will verify in {} milliseconds if the download has finished.",
+                templateAsString, destDatastoreAsString, msToSleep);
+        try {
+            Thread.sleep(msToSleep);
+        } catch (InterruptedException e) {
+            logger.warn("[ignored] interrupted while waiting for template {} download to finish before trying to migrate it to data store [{}].",
+                    templateAsString, destDatastoreAsString);
+        }
     }
 
     protected void migrateJob(AsyncCallFuture<DataObjectResult> future, DataObject srcDataObject, DataObject destDataObject, DataStore destDatastore) throws ExecutionException, InterruptedException {
@@ -178,7 +240,7 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
         Answer answer = result.getAnswer();
         try {
             if (!answer.getResult()) {
-                s_logger.warn("Migration failed for "+srcData.getUuid());
+                logger.warn("Migration failed for "+srcData.getUuid());
                 res.setResult(result.getResult());
                 if (!(srcData instanceof VolumeInfo) ) {
                     srcData.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
@@ -200,14 +262,14 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
                     destData.processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed, answer);
                 }
                 updateDataObject(srcData, destData);
-                s_logger.debug("Deleting source data");
+                logger.debug("Deleting source data");
                 srcData.getDataStore().delete(srcData);
-                s_logger.debug("Successfully migrated "+srcData.getUuid());
+                logger.debug("Successfully migrated "+srcData.getUuid());
             }
             _cmdExecLogDao.expunge(Long.parseLong(answer.getContextParam("cmd")));
             future.complete(res);
         } catch (Exception e) {
-            s_logger.error("Failed to process migrate data callback", e);
+            logger.error("Failed to process migrate data callback", e);
             res.setResult(e.toString());
             _cmdExecLogDao.expunge(Long.parseLong(answer.getContextParam("cmd")));
             future.complete(res);
@@ -218,7 +280,7 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
     private void updateDataObject(DataObject srcData, DataObject destData) {
         if (destData instanceof SnapshotInfo) {
             SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySourceSnapshot(srcData.getId(), DataStoreRole.Image);
-            SnapshotDataStoreVO destSnapshotStore = snapshotStoreDao.findBySnapshot(srcData.getId(), DataStoreRole.Image);
+            SnapshotDataStoreVO destSnapshotStore = snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Image, srcData.getDataStore().getId(), srcData.getId());
             if (snapshotStore != null && destSnapshotStore != null) {
                 destSnapshotStore.setPhysicalSize(snapshotStore.getPhysicalSize());
                 destSnapshotStore.setCreated(snapshotStore.getCreated());
@@ -243,7 +305,7 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
                 templateStoreDao.update(destTemplate.getId(), destTemplate);
             }
         } else {
-            s_logger.debug("Unsupported data object type");
+            logger.debug("Unsupported data object type");
         }
     }
 }

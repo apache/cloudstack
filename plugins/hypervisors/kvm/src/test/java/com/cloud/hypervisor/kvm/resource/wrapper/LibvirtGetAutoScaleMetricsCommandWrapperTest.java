@@ -32,13 +32,13 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
+
 
 import java.util.ArrayList;
 import java.util.List;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class LibvirtGetAutoScaleMetricsCommandWrapperTest {
 
     @Spy
@@ -68,8 +68,8 @@ public class LibvirtGetAutoScaleMetricsCommandWrapperTest {
     public void validateVpcStats() {
 
         Mockito.when(getAutoScaleMetricsCommandMock.isForVpc()).thenReturn(true);
-        PowerMockito.when(libvirtComputingResourceMock.getVPCNetworkStats(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(vpcStats);
-        PowerMockito.when(libvirtComputingResourceMock.getNetworkLbStats(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(lbStats);
+        Mockito.when(libvirtComputingResourceMock.getVPCNetworkStats(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(vpcStats);
+        Mockito.when(libvirtComputingResourceMock.getNetworkLbStats(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(lbStats);
 
         Answer answer = libvirtGetAutoScaleMetricsCommandWrapperSpy.execute(getAutoScaleMetricsCommandMock, libvirtComputingResourceMock);
         assertTrue(answer instanceof GetAutoScaleMetricsAnswer);
@@ -95,8 +95,8 @@ public class LibvirtGetAutoScaleMetricsCommandWrapperTest {
     public void validateNetworkStats() {
 
         Mockito.when(getAutoScaleMetricsCommandMock.isForVpc()).thenReturn(false);
-        PowerMockito.when(libvirtComputingResourceMock.getNetworkStats(Mockito.any(), Mockito.any())).thenReturn(networkStats);
-        PowerMockito.when(libvirtComputingResourceMock.getNetworkLbStats(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(lbStats);
+        Mockito.when(libvirtComputingResourceMock.getNetworkStats(Mockito.any(), Mockito.any())).thenReturn(networkStats);
+        Mockito.when(libvirtComputingResourceMock.getNetworkLbStats(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(lbStats);
 
         Answer answer = libvirtGetAutoScaleMetricsCommandWrapperSpy.execute(getAutoScaleMetricsCommandMock, libvirtComputingResourceMock);
         assertTrue(answer instanceof GetAutoScaleMetricsAnswer);

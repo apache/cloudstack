@@ -22,23 +22,18 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtDomainXMLParser;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
-import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
-import javax.naming.ConfigurationException;
-
 import com.cloud.utils.script.Script;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.qemu.QemuImageOptions;
+import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImgException;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.logging.log4j.Logger;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,25 +42,32 @@ import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@PrepareForTest({ Script.class })
-@PowerMockIgnore({"javax.xml.*", "org.xml.*", "org.w3c.dom.*"})
-@RunWith(PowerMockRunner.class)
+import javax.naming.ConfigurationException;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+@RunWith(MockitoJUnitRunner.class)
 public class KVMStorageProcessorTest {
 
     @Mock
     KVMStoragePoolManager storagePoolManager;
-    @Mock
-    LibvirtComputingResource resource;
+
+    LibvirtComputingResource resource = Mockito.mock(LibvirtComputingResource.class);
 
     @InjectMocks
     private KVMStorageProcessor storageProcessor;
@@ -92,66 +94,70 @@ public class KVMStorageProcessorTest {
     Connect connectMock;
 
     @Mock
+    QemuImg qemuImgMock;
+
+    @Mock
     LibvirtDomainXMLParser libvirtDomainXMLParserMock;
     @Mock
     LibvirtVMDef.DiskDef diskDefMock;
+
+    @Mock
+    Logger loggerMock;
 
 
     private static final String directDownloadTemporaryPath = "/var/lib/libvirt/images/dd";
     private static final long templateSize = 80000L;
 
+    private AutoCloseable closeable;
+
     @Before
     public void setUp() throws ConfigurationException {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         storageProcessor = new KVMStorageProcessor(storagePoolManager, resource);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
     public void testIsEnoughSpaceForDownloadTemplateOnTemporaryLocationAssumeEnoughSpaceWhenNotProvided() {
-        PowerMockito.mockStatic(Script.class);
-        Mockito.when(resource.getDirectDownloadTemporaryDownloadPath()).thenReturn(directDownloadTemporaryPath);
         boolean result = storageProcessor.isEnoughSpaceForDownloadTemplateOnTemporaryLocation(null);
         Assert.assertTrue(result);
     }
 
     @Test
     public void testIsEnoughSpaceForDownloadTemplateOnTemporaryLocationNotEnoughSpace() {
-        PowerMockito.mockStatic(Script.class);
-        Mockito.when(resource.getDirectDownloadTemporaryDownloadPath()).thenReturn(directDownloadTemporaryPath);
-        String output = String.valueOf(templateSize - 30000L);
-        Mockito.when(Script.runSimpleBashScript(Matchers.anyString())).thenReturn(output);
-        boolean result = storageProcessor.isEnoughSpaceForDownloadTemplateOnTemporaryLocation(templateSize);
-        Assert.assertFalse(result);
+        try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
+            Mockito.when(resource.getDirectDownloadTemporaryDownloadPath()).thenReturn(directDownloadTemporaryPath);
+            String output = String.valueOf(templateSize - 30000L);
+            Mockito.when(Script.runSimpleBashScript(Mockito.anyString())).thenReturn(output);
+            boolean result = storageProcessor.isEnoughSpaceForDownloadTemplateOnTemporaryLocation(templateSize);
+            Assert.assertFalse(result);
+        }
     }
 
     @Test
     public void testIsEnoughSpaceForDownloadTemplateOnTemporaryLocationEnoughSpace() {
-        PowerMockito.mockStatic(Script.class);
-        Mockito.when(resource.getDirectDownloadTemporaryDownloadPath()).thenReturn(directDownloadTemporaryPath);
-        String output = String.valueOf(templateSize + 30000L);
-        Mockito.when(Script.runSimpleBashScript(Matchers.anyString())).thenReturn(output);
-        boolean result = storageProcessor.isEnoughSpaceForDownloadTemplateOnTemporaryLocation(templateSize);
-        Assert.assertTrue(result);
+        try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
+            Mockito.when(resource.getDirectDownloadTemporaryDownloadPath()).thenReturn(directDownloadTemporaryPath);
+            String output = String.valueOf(templateSize + 30000L);
+            Mockito.when(Script.runSimpleBashScript(Mockito.anyString())).thenReturn(output);
+            boolean result = storageProcessor.isEnoughSpaceForDownloadTemplateOnTemporaryLocation(templateSize);
+            Assert.assertTrue(result);
+        }
     }
 
     @Test
     public void testIsEnoughSpaceForDownloadTemplateOnTemporaryLocationNotExistingLocation() {
-        PowerMockito.mockStatic(Script.class);
-        Mockito.when(resource.getDirectDownloadTemporaryDownloadPath()).thenReturn(directDownloadTemporaryPath);
-        String output = String.format("df: ‘%s’: No such file or directory", directDownloadTemporaryPath);
-        Mockito.when(Script.runSimpleBashScript(Matchers.anyString())).thenReturn(output);
-        boolean result = storageProcessor.isEnoughSpaceForDownloadTemplateOnTemporaryLocation(templateSize);
-        Assert.assertFalse(result);
-    }
-
-    @Test
-    public void validateGetSnapshotTemporaryPath(){
-        String path = "/path/to/disk";
-        String snapshotName = "snapshot";
-        String expectedResult = "/path/to/snapshot";
-
-        String result = storageProcessor.getSnapshotTemporaryPath(path, snapshotName);
-        Assert.assertEquals(expectedResult, result);
+        try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
+            Mockito.when(resource.getDirectDownloadTemporaryDownloadPath()).thenReturn(directDownloadTemporaryPath);
+            String output = String.format("df: ‘%s’: No such file or directory", directDownloadTemporaryPath);
+            Mockito.when(Script.runSimpleBashScript(Mockito.anyString())).thenReturn(output);
+            boolean result = storageProcessor.isEnoughSpaceForDownloadTemplateOnTemporaryLocation(templateSize);
+            Assert.assertFalse(result);
+        }
     }
 
     @Test
@@ -160,7 +166,7 @@ public class KVMStorageProcessorTest {
         String snapshotName = "snapshot";
         String expectedResult = String.format("%s%s%s%s%s", path, File.separator, TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR, File.separator, snapshotName);
 
-        String result = storageProcessor.getSnapshotPathInPrimaryStorage(path, snapshotName);
+        String result = storageProcessor.getSnapshotOrCheckpointPathInPrimaryStorage(path, snapshotName, false);
         Assert.assertEquals(expectedResult, result);
     }
 
@@ -227,8 +233,8 @@ public class KVMStorageProcessorTest {
     @Test (expected = LibvirtException.class)
     public void validateTakeVolumeSnapshotFailToCreateSnapshotThrowLibvirtException() throws LibvirtException{
         Mockito.doReturn(diskToSnapshotAndDisksToAvoidMock).when(storageProcessorSpy).getDiskToSnapshotAndDisksToAvoid(Mockito.any(), Mockito.anyString(), Mockito.any());
-        Mockito.doReturn("").when(domainMock).getName();
         Mockito.doReturn(new HashSet<>()).when(diskToSnapshotAndDisksToAvoidMock).second();
+        Mockito.doReturn("").when(resource).getSnapshotTemporaryPath(Mockito.anyString(), Mockito.anyString());
         Mockito.doThrow(LibvirtException.class).when(domainMock).snapshotCreateXML(Mockito.anyString(), Mockito.anyInt());
 
         storageProcessorSpy.takeVolumeSnapshot(new ArrayList<>(), "", "", domainMock);
@@ -239,9 +245,9 @@ public class KVMStorageProcessorTest {
         String expectedResult = "label";
 
         Mockito.doReturn(diskToSnapshotAndDisksToAvoidMock).when(storageProcessorSpy).getDiskToSnapshotAndDisksToAvoid(Mockito.any(), Mockito.anyString(), Mockito.any());
-        Mockito.doReturn("").when(domainMock).getName();
         Mockito.doReturn(expectedResult).when(diskToSnapshotAndDisksToAvoidMock).first();
         Mockito.doReturn(new HashSet<>()).when(diskToSnapshotAndDisksToAvoidMock).second();
+        Mockito.doReturn("").when(resource).getSnapshotTemporaryPath(Mockito.anyString(), Mockito.anyString());
         Mockito.doReturn(null).when(domainMock).snapshotCreateXML(Mockito.anyString(), Mockito.anyInt());
 
         String result = storageProcessorSpy.takeVolumeSnapshot(new ArrayList<>(), "", "", domainMock);
@@ -250,66 +256,52 @@ public class KVMStorageProcessorTest {
     }
 
     @Test
-    @PrepareForTest(KVMStorageProcessor.class)
-    public void validateCopySnapshotToPrimaryStorageDirFailToCopyReturnErrorMessage() throws Exception {
-        String baseFile = "baseFile";
-        String snapshotPath = "snapshotPath";
+    public void convertBaseFileToSnapshotFileInPrimaryStorageDirTestFailToConvertWithQemuImgExceptionReturnErrorMessage() {
         String errorMessage = "error";
-        String expectedResult = String.format("Unable to copy %s snapshot [%s] to [%s] due to [%s].", volumeObjectToMock, baseFile, snapshotPath, errorMessage);
+        KVMStoragePool primaryPoolMock = Mockito.mock(KVMStoragePool.class);
+        KVMPhysicalDisk baseFileMock = Mockito.mock(KVMPhysicalDisk.class);
+        VolumeObjectTO volumeMock = Mockito.mock(VolumeObjectTO.class);
 
-        Mockito.doReturn(true).when(kvmStoragePoolMock).createFolder(Mockito.anyString());
-        PowerMockito.mockStatic(Files.class);
-        PowerMockito.when(Files.copy(Mockito.any(Path.class), Mockito.any(Path.class), Mockito.any())).thenThrow(new IOException(errorMessage));
-
-        String result = storageProcessorSpy.copySnapshotToPrimaryStorageDir(kvmStoragePoolMock, baseFile, snapshotPath, volumeObjectToMock);
-
-        Assert.assertEquals(expectedResult, result);
+        Mockito.when(baseFileMock.getPath()).thenReturn("/path/to/baseFile");
+        Mockito.when(primaryPoolMock.createFolder(Mockito.anyString())).thenReturn(true);
+        try (MockedConstruction<Script> scr = Mockito.mockConstruction(Script.class, ((mock, context) -> {
+            Mockito.doReturn("").when(mock).execute();
+        }));
+             MockedConstruction<QemuImg> qemu = Mockito.mockConstruction(QemuImg.class, ((mock, context) -> {
+                     Mockito.lenient().doThrow(new QemuImgException(errorMessage)).when(mock).convert(Mockito.any(QemuImgFile.class), Mockito.any(QemuImgFile.class), Mockito.any(Map.class),
+                             Mockito.any(List.class), Mockito.any(QemuImageOptions.class),Mockito.nullable(String.class), Mockito.any(Boolean.class));
+             }))) {
+            String test = storageProcessor.convertBaseFileToSnapshotFileInStorageDir(primaryPoolMock, baseFileMock, "/path/to/snapshot", TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR, volumeMock, 0);
+            Assert.assertNotNull(test);
+        }
     }
 
     @Test
-    @PrepareForTest(KVMStorageProcessor.class)
-    public void validateCopySnapshotToPrimaryStorageDirCopySuccessReturnNull() throws Exception {
-        String baseFile = "baseFile";
+    public void convertBaseFileToSnapshotFileInPrimaryStorageDirTestFailToConvertWithLibvirtExceptionReturnErrorMessage() {
+        KVMPhysicalDisk baseFile = Mockito.mock(KVMPhysicalDisk.class);
         String snapshotPath = "snapshotPath";
 
         Mockito.doReturn(true).when(kvmStoragePoolMock).createFolder(Mockito.anyString());
-        PowerMockito.mockStatic(Files.class);
-        PowerMockito.when(Files.copy(Mockito.any(Path.class), Mockito.any(Path.class), Mockito.any())).thenReturn(null);
-
-        String result = storageProcessorSpy.copySnapshotToPrimaryStorageDir(kvmStoragePoolMock, baseFile, snapshotPath, volumeObjectToMock);
-
-        Assert.assertNull(result);
-    }
-
-    @Test (expected = CloudRuntimeException.class)
-    @PrepareForTest({Script.class, LibvirtUtilitiesHelper.class})
-    public void validateMergeSnapshotIntoBaseFileErrorOnMergeThrowCloudRuntimeException() throws Exception {
-        PowerMockito.mockStatic(Script.class, LibvirtUtilitiesHelper.class);
-        PowerMockito.when(Script.runSimpleBashScript(Mockito.anyString())).thenReturn("");
-        PowerMockito.when(LibvirtUtilitiesHelper.isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(Mockito.any())).thenReturn(true);
-
-        storageProcessorSpy.mergeSnapshotIntoBaseFile(domainMock, "", "", "", volumeObjectToMock, connectMock);
+        try (MockedConstruction<QemuImg> ignored = Mockito.mockConstructionWithAnswer(QemuImg.class, invocation -> {
+            throw Mockito.mock(LibvirtException.class);
+        })) {
+            String result = storageProcessorSpy.convertBaseFileToSnapshotFileInStorageDir(kvmStoragePoolMock, baseFile, snapshotPath, TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR, volumeObjectToMock, 1);
+            Assert.assertNotNull(result);
+        }
     }
 
     @Test
-    @PrepareForTest({Script.class, LibvirtUtilitiesHelper.class})
-    public void validateMergeSnapshotIntoBaseFileMergeSuccessDoNothing() throws Exception {
-        PowerMockito.mockStatic(Script.class, LibvirtUtilitiesHelper.class);
-        PowerMockito.when(Script.runSimpleBashScript(Mockito.anyString())).thenReturn(null);
-        PowerMockito.when(LibvirtUtilitiesHelper.isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(Mockito.any())).thenReturn(true);
-        Mockito.doNothing().when(storageProcessorSpy).manuallyDeleteUnusedSnapshotFile(Mockito.anyBoolean(), Mockito.any());
+    public void convertBaseFileToSnapshotFileInPrimaryStorageDirTestConvertSuccessReturnNull() throws Exception {
+        KVMPhysicalDisk baseFile = Mockito.mock(KVMPhysicalDisk.class);
+        String snapshotPath = "snapshotPath";
 
-        storageProcessorSpy.mergeSnapshotIntoBaseFile(domainMock, "", "", "", volumeObjectToMock, connectMock);
-    }
-
-    @Test (expected = CloudRuntimeException.class)
-    @PrepareForTest(KVMStorageProcessor.class)
-    public void validateManuallyDeleteUnusedSnapshotFileLibvirtDoesNotSupportsFlagDeleteExceptionOnFileDeletionThrowsException() throws IOException {
-        Mockito.doReturn("").when(snapshotObjectToMock).getPath();
-        PowerMockito.mockStatic(Files.class);
-        PowerMockito.when(Files.deleteIfExists(Mockito.any(Path.class))).thenThrow(IOException.class);
-
-        storageProcessorSpy.manuallyDeleteUnusedSnapshotFile(false, "");
+        Mockito.doReturn(true).when(kvmStoragePoolMock).createFolder(Mockito.anyString());
+        try (MockedConstruction<QemuImg> ignored = Mockito.mockConstruction(QemuImg.class, (mock, context) -> {
+            Mockito.doNothing().when(mock).convert(Mockito.any(QemuImgFile.class), Mockito.any(QemuImgFile.class));
+        })) {
+            String result = storageProcessorSpy.convertBaseFileToSnapshotFileInStorageDir(kvmStoragePoolMock, baseFile, snapshotPath, TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR, volumeObjectToMock, 1);
+            Assert.assertNull(result);
+        }
     }
 
     @Test
@@ -321,82 +313,89 @@ public class KVMStorageProcessorTest {
 
     @Test
     public void validateValidateCopyResultResultIsNullReturn() throws CloudRuntimeException, IOException{
-        storageProcessorSpy.validateCopyResult(null, "");
+        storageProcessorSpy.validateConvertResult(null, "");
     }
 
     @Test (expected = IOException.class)
     public void validateValidateCopyResultFailToDeleteThrowIOException() throws CloudRuntimeException, IOException{
-        PowerMockito.mockStatic(Files.class);
-        PowerMockito.when(Files.deleteIfExists(Mockito.any())).thenThrow(new IOException(""));
-        storageProcessorSpy.validateCopyResult("", "");
+        try (MockedStatic<Files> ignored = Mockito.mockStatic(Files.class)) {
+            Mockito.when(Files.deleteIfExists(Mockito.any())).thenThrow(new IOException(""));
+            storageProcessorSpy.validateConvertResult("", "");
+        }
     }
 
     @Test (expected = CloudRuntimeException.class)
-    @PrepareForTest(KVMStorageProcessor.class)
     public void validateValidateCopyResulResultNotNullThrowCloudRuntimeException() throws CloudRuntimeException, IOException{
-        PowerMockito.mockStatic(Files.class);
-        PowerMockito.when(Files.deleteIfExists(Mockito.any())).thenReturn(true);
-        storageProcessorSpy.validateCopyResult("", "");
+        try (MockedStatic<Files> ignored = Mockito.mockStatic(Files.class)) {
+            Mockito.when(Files.deleteIfExists(Mockito.any())).thenReturn(true);
+            storageProcessorSpy.validateConvertResult("", "");
+        }
     }
 
     @Test (expected = CloudRuntimeException.class)
-    @PrepareForTest(KVMStorageProcessor.class)
     public void validateDeleteSnapshotFileErrorOnDeleteThrowsCloudRuntimeException() throws Exception {
         Mockito.doReturn("").when(snapshotObjectToMock).getPath();
-        PowerMockito.mockStatic(Files.class);
-        PowerMockito.when(Files.deleteIfExists(Mockito.any(Path.class))).thenThrow(IOException.class);
+        try (MockedStatic<Files> ignored = Mockito.mockStatic(Files.class)) {
+            Mockito.when(Files.deleteIfExists(Mockito.any(Path.class))).thenThrow(IOException.class);
 
-        storageProcessorSpy.deleteSnapshotFile(snapshotObjectToMock);
+            storageProcessorSpy.deleteSnapshotFile(snapshotObjectToMock);
+        }
     }
 
     @Test
-    @PrepareForTest(KVMStorageProcessor.class)
     public void validateDeleteSnapshotFileSuccess () throws IOException {
         Mockito.doReturn("").when(snapshotObjectToMock).getPath();
-        PowerMockito.mockStatic(Files.class);
-        PowerMockito.when(Files.deleteIfExists(Mockito.any(Path.class))).thenReturn(true);
+        try (MockedStatic<Files> filesMockedStatic = Mockito.mockStatic(Files.class)) {
+            Mockito.when(Files.deleteIfExists(Mockito.any(Path.class))).thenReturn(true);
 
-        storageProcessorSpy.deleteSnapshotFile(snapshotObjectToMock);
-    }
+            storageProcessorSpy.deleteSnapshotFile(snapshotObjectToMock);
 
-    private void checkDetachSucessTest(boolean duplicate) throws Exception {
-        List<LibvirtVMDef.DiskDef> disks = createDiskDefs(2, duplicate);
-        PowerMockito.when(domainMock.getXMLDesc(Mockito.anyInt())).thenReturn("test");
-        PowerMockito.whenNew(LibvirtDomainXMLParser.class).withAnyArguments().thenReturn(libvirtDomainXMLParserMock);
-        PowerMockito.when(libvirtDomainXMLParserMock.parseDomainXML(Mockito.anyString())).thenReturn(true);
-        PowerMockito.when(libvirtDomainXMLParserMock.getDisks()).thenReturn(disks);
+            filesMockedStatic.verify(() -> Files.deleteIfExists(Mockito.any(Path.class)), Mockito.times(1));
+        }
     }
 
     @Test
-    @PrepareForTest(KVMStorageProcessor.class)
     public void checkDetachSucessTestDetachReturnTrue() throws Exception {
-        checkDetachSucessTest(false);
-        Assert.assertTrue(storageProcessorSpy.checkDetachSuccess("path", domainMock));
+
+        List<LibvirtVMDef.DiskDef> disks = createDiskDefs(2, false);
+        Mockito.when(domainMock.getXMLDesc(Mockito.anyInt())).thenReturn("test");
+        try (MockedConstruction<LibvirtDomainXMLParser> ignored = Mockito.mockConstruction(
+                LibvirtDomainXMLParser.class, (mock, context) -> {
+                    Mockito.when(mock.parseDomainXML(Mockito.anyString())).thenReturn(true);
+                    Mockito.when(mock.getDisks()).thenReturn(disks);
+                })) {
+            Assert.assertTrue(storageProcessorSpy.checkDetachSuccess("path", domainMock));
+        }
     }
 
     @Test
-    @PrepareForTest(KVMStorageProcessor.class)
     public void checkDetachSucessTestDetachReturnFalse() throws Exception {
-        checkDetachSucessTest(true);
-        Assert.assertFalse(storageProcessorSpy.checkDetachSuccess("path", domainMock));
+        List<LibvirtVMDef.DiskDef> disks = createDiskDefs(2, true);
+        Mockito.when(domainMock.getXMLDesc(Mockito.anyInt())).thenReturn("test");
+        try (MockedConstruction<LibvirtDomainXMLParser> ignored = Mockito.mockConstruction(
+                LibvirtDomainXMLParser.class, (mock, context) -> {
+                    Mockito.when(mock.parseDomainXML(Mockito.anyString())).thenReturn(true);
+                    Mockito.when(mock.getDisks()).thenReturn(disks);
+                })) {
+
+            Assert.assertFalse(storageProcessorSpy.checkDetachSuccess("path", domainMock));
+        }
     }
 
     private void attachOrDetachDeviceTest (boolean attach, String vmName, LibvirtVMDef.DiskDef xml) throws LibvirtException, InternalErrorException {
         storageProcessorSpy.attachOrDetachDevice(connectMock, attach, vmName, xml);
     }
-    @PrepareForTest(KVMStorageProcessor.class)
     private void attachOrDetachDeviceTest (boolean attach, String vmName, LibvirtVMDef.DiskDef xml, long waitDetachDevice) throws LibvirtException, InternalErrorException {
         storageProcessorSpy.attachOrDetachDevice(connectMock, attach, vmName, xml, waitDetachDevice);
     }
 
     @Test (expected = LibvirtException.class)
-    @PrepareForTest(KVMStorageProcessor.class)
     public void attachOrDetachDeviceTestThrowLibvirtException() throws LibvirtException, InternalErrorException {
         Mockito.when(connectMock.domainLookupByName(Mockito.anyString())).thenThrow(LibvirtException.class);
         attachOrDetachDeviceTest(true, "vmName", diskDefMock);
     }
 
-    @PrepareForTest(KVMStorageProcessor.class)
+    @Test
     public void attachOrDetachDeviceTestAttachSuccess() throws LibvirtException, InternalErrorException {
         Mockito.when(connectMock.domainLookupByName("vmName")).thenReturn(domainMock);
         attachOrDetachDeviceTest(true, "vmName", diskDefMock);
@@ -404,7 +403,6 @@ public class KVMStorageProcessorTest {
     }
 
     @Test (expected = LibvirtException.class)
-    @PrepareForTest(KVMStorageProcessor.class)
     public void attachOrDetachDeviceTestAttachThrowLibvirtException() throws LibvirtException, InternalErrorException {
         Mockito.when(connectMock.domainLookupByName("vmName")).thenReturn(domainMock);
         Mockito.when(diskDefMock.toString()).thenReturn("diskDef");
@@ -414,7 +412,6 @@ public class KVMStorageProcessorTest {
     }
 
     @Test (expected = LibvirtException.class)
-    @PrepareForTest(KVMStorageProcessor.class)
     public void attachOrDetachDeviceTestDetachThrowLibvirtException() throws LibvirtException, InternalErrorException {
         Mockito.when(connectMock.domainLookupByName("vmName")).thenReturn(domainMock);
         Mockito.doThrow(LibvirtException.class).when(domainMock).detachDevice(Mockito.anyString());
@@ -422,10 +419,9 @@ public class KVMStorageProcessorTest {
     }
 
     @Test
-    @PrepareForTest(KVMStorageProcessor.class)
     public void attachOrDetachDeviceTestDetachSuccess() throws LibvirtException, InternalErrorException {
         Mockito.when(connectMock.domainLookupByName("vmName")).thenReturn(domainMock);
-        PowerMockito.doReturn(true).when(storageProcessorSpy).checkDetachSuccess(Mockito.anyString(), Mockito.any(Domain.class));
+        Mockito.doReturn(true).when(storageProcessorSpy).checkDetachSuccess(Mockito.anyString(), Mockito.any(Domain.class));
         Mockito.when(diskDefMock.toString()).thenReturn("diskDef");
         Mockito.when(diskDefMock.getDiskPath()).thenReturn("diskDef");
         attachOrDetachDeviceTest( false, "vmName", diskDefMock, 10000);
@@ -433,13 +429,74 @@ public class KVMStorageProcessorTest {
     }
 
     @Test (expected = InternalErrorException.class)
-    @PrepareForTest(KVMStorageProcessor.class)
     public void attachOrDetachDeviceTestDetachThrowInternalErrorException() throws LibvirtException, InternalErrorException {
         Mockito.when(connectMock.domainLookupByName("vmName")).thenReturn(domainMock);
-        PowerMockito.doReturn(false).when(storageProcessorSpy).checkDetachSuccess(Mockito.anyString(), Mockito.any(Domain.class));
+        Mockito.doReturn(false).when(storageProcessorSpy).checkDetachSuccess(Mockito.anyString(), Mockito.any(Domain.class));
         Mockito.when(diskDefMock.toString()).thenReturn("diskDef");
         Mockito.when(diskDefMock.getDiskPath()).thenReturn("diskDef");
         attachOrDetachDeviceTest( false, "vmName", diskDefMock);
         Mockito.verify(domainMock, Mockito.times(1)).detachDevice(Mockito.anyString());
+    }
+
+    @Test
+    public void generateBackupXmlTestNoParents() {
+        String result = storageProcessorSpy.generateBackupXml(null, null, "vda", "path");
+
+        Assert.assertFalse(result.contains("<incremental>"));
+    }
+
+    @Test
+    public void generateBackupXmlTestWithParents() {
+        String result = storageProcessorSpy.generateBackupXml(null, new String[]{"checkpointname"}, "vda", "path");
+
+        Assert.assertTrue(result.contains("<incremental>checkpointname</incremental>"));
+    }
+
+    @Test
+    public void createFolderOnCorrectStorageTestSecondaryIsNull() {
+        storageProcessorSpy.createFolderOnCorrectStorage(kvmStoragePoolMock, null, new Pair<>("t", "u"));
+
+        Mockito.verify(kvmStoragePoolMock).createFolder("u");
+    }
+
+    @Test
+    public void createFolderOnCorrectStorageTestSecondaryIsNotNull() {
+        KVMStoragePool secondaryStoragePoolMock = Mockito.mock(KVMStoragePool.class);
+
+        storageProcessorSpy.createFolderOnCorrectStorage(kvmStoragePoolMock, secondaryStoragePoolMock, new Pair<>("t", "u"));
+
+        Mockito.verify(secondaryStoragePoolMock).createFolder("u");
+    }
+
+    @Test (expected = CloudRuntimeException.class)
+    public void getDiskLabelToSnapshotTestNoDisks() throws LibvirtException {
+        storageProcessorSpy.getDiskLabelToSnapshot(new ArrayList<>(), null, Mockito.mock(Domain.class));
+    }
+
+    @Test (expected = CloudRuntimeException.class)
+    public void getDiskLabelToSnapshotTestDiskHasNoPath() throws LibvirtException {
+        LibvirtVMDef.DiskDef diskDefMock1 = Mockito.mock(LibvirtVMDef.DiskDef.class);
+        Mockito.doReturn(null).when(diskDefMock1).getDiskPath();
+
+        storageProcessorSpy.getDiskLabelToSnapshot(List.of(diskDefMock1), "Path", Mockito.mock(Domain.class));
+    }
+
+    @Test (expected = CloudRuntimeException.class)
+    public void getDiskLabelToSnapshotTestDiskPathDoesNotMatch() throws LibvirtException {
+        LibvirtVMDef.DiskDef diskDefMock1 = Mockito.mock(LibvirtVMDef.DiskDef.class);
+        Mockito.doReturn("test").when(diskDefMock1).getDiskPath();
+
+        storageProcessorSpy.getDiskLabelToSnapshot(List.of(diskDefMock1), "Path", Mockito.mock(Domain.class));
+    }
+
+    @Test
+    public void getDiskLabelToSnapshotTestDiskMatches() throws LibvirtException {
+        LibvirtVMDef.DiskDef diskDefMock1 = Mockito.mock(LibvirtVMDef.DiskDef.class);
+        Mockito.doReturn("Path").when(diskDefMock1).getDiskPath();
+        Mockito.doReturn("vda").when(diskDefMock1).getDiskLabel();
+
+        String result = storageProcessorSpy.getDiskLabelToSnapshot(List.of(diskDefMock1), "Path", Mockito.mock(Domain.class));
+
+        Assert.assertEquals("vda", result);
     }
 }

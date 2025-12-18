@@ -31,17 +31,55 @@ public class JoinBuilder<T> {
             return _name;
         }
     }
+    public enum JoinCondition {
+        AND(" AND "), OR(" OR ");
+
+        private final String name;
+
+        JoinCondition(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
 
     private final T t;
+    private final String name;
     private JoinType type;
-    private Attribute firstAttribute;
-    private Attribute secondAttribute;
 
-    public JoinBuilder(T t, Attribute firstAttribute, Attribute secondAttribute, JoinType type) {
+    private JoinCondition condition;
+    private Attribute[] firstAttributes;
+    private Attribute[] secondAttribute;
+
+    public JoinBuilder(String name, T t, Attribute firstAttributes, Attribute secondAttribute, JoinType type) {
+        this.name = name;
         this.t = t;
-        this.firstAttribute = firstAttribute;
+        this.firstAttributes = new Attribute[]{firstAttributes};
+        this.secondAttribute = new Attribute[]{secondAttribute};
+        this.type = type;
+    }
+
+    public JoinBuilder(String name, T t, Attribute[] firstAttributes, Attribute[] secondAttribute, JoinType type) {
+        this.name = name;
+        this.t = t;
+        this.firstAttributes = firstAttributes;
         this.secondAttribute = secondAttribute;
         this.type = type;
+    }
+
+    public JoinBuilder(String name, T t, Attribute[] firstAttributes, Attribute[] secondAttribute, JoinType type, JoinCondition condition) {
+        this.name = name;
+        this.t = t;
+        this.firstAttributes = firstAttributes;
+        this.secondAttribute = secondAttribute;
+        this.type = type;
+        this.condition = condition;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public T getT() {
@@ -56,19 +94,23 @@ public class JoinBuilder<T> {
         this.type = type;
     }
 
-    public Attribute getFirstAttribute() {
-        return firstAttribute;
+    public JoinCondition getCondition() {
+        return condition;
     }
 
-    public void setFirstAttribute(Attribute firstAttribute) {
-        this.firstAttribute = firstAttribute;
+    public Attribute[] getFirstAttributes() {
+        return firstAttributes;
     }
 
-    public Attribute getSecondAttribute() {
+    public void setFirstAttributes(Attribute[] firstAttributes) {
+        this.firstAttributes = firstAttributes;
+    }
+
+    public Attribute[] getSecondAttribute() {
         return secondAttribute;
     }
 
-    public void setSecondAttribute(Attribute secondAttribute) {
+    public void setSecondAttribute(Attribute[] secondAttribute) {
         this.secondAttribute = secondAttribute;
     }
 

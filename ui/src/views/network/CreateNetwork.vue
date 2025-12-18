@@ -26,7 +26,7 @@
           @refresh-data="refreshParent"
           @refresh="handleRefresh"/>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.l2')" key="3" v-if="isAdvancedZoneWithoutSGAvailable">
+      <a-tab-pane :tab="$t('label.l2')" key="3">
         <CreateL2NetworkForm
           :loading="loading"
           :resource="resource"
@@ -47,7 +47,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import CreateIsolatedNetworkForm from '@/views/network/CreateIsolatedNetworkForm'
 import CreateL2NetworkForm from '@/views/network/CreateL2NetworkForm'
 import CreateSharedNetworkForm from '@/views/network/CreateSharedNetworkForm'
@@ -106,11 +106,11 @@ export default {
     fetchActionZoneData () {
       this.loading = true
       const params = {}
-      if (this.resource.zoneid && this.$route.name === 'deployVirtualMachine') {
+      if (this.resource.zoneid && (this.$route.name === 'deployVirtualMachine' || this.$route.path.startsWith('/backup'))) {
         params.id = this.resource.zoneid
       }
       this.actionZoneLoading = true
-      return api('listZones', params).then(json => {
+      return getAPI('listZones', params).then(json => {
         this.actionZones = json.listzonesresponse.zone
       }).finally(() => {
         this.actionZoneLoading = false

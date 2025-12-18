@@ -28,10 +28,13 @@ import org.apache.cloudstack.acl.RoleVO;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
 import java.util.List;
 
 @Component
 public class RoleDaoImpl extends GenericDaoBase<RoleVO, Long> implements RoleDao {
+
+    private final SearchBuilder<RoleVO> RoleByIdsSearch;
     private final SearchBuilder<RoleVO> RoleByNameSearch;
     private final SearchBuilder<RoleVO> RoleByTypeSearch;
     private final SearchBuilder<RoleVO> RoleByNameAndTypeSearch;
@@ -40,14 +43,20 @@ public class RoleDaoImpl extends GenericDaoBase<RoleVO, Long> implements RoleDao
     public RoleDaoImpl() {
         super();
 
+        RoleByIdsSearch = createSearchBuilder();
+        RoleByIdsSearch.and("idIN", RoleByIdsSearch.entity().getId(), SearchCriteria.Op.IN);
+        RoleByIdsSearch.done();
+
         RoleByNameSearch = createSearchBuilder();
         RoleByNameSearch.and("roleName", RoleByNameSearch.entity().getName(), SearchCriteria.Op.LIKE);
         RoleByNameSearch.and("isPublicRole", RoleByNameSearch.entity().isPublicRole(), SearchCriteria.Op.EQ);
+        RoleByNameSearch.and("state", RoleByNameSearch.entity().getState(), SearchCriteria.Op.EQ);
         RoleByNameSearch.done();
 
         RoleByTypeSearch = createSearchBuilder();
         RoleByTypeSearch.and("roleType", RoleByTypeSearch.entity().getRoleType(), SearchCriteria.Op.EQ);
         RoleByTypeSearch.and("isPublicRole", RoleByTypeSearch.entity().isPublicRole(), SearchCriteria.Op.EQ);
+        RoleByTypeSearch.and("state", RoleByTypeSearch.entity().getState(), SearchCriteria.Op.EQ);
         RoleByTypeSearch.done();
 
         RoleByNameAndTypeSearch = createSearchBuilder();
@@ -58,16 +67,17 @@ public class RoleDaoImpl extends GenericDaoBase<RoleVO, Long> implements RoleDao
 
         RoleByIsPublicSearch = createSearchBuilder();
         RoleByIsPublicSearch.and("isPublicRole", RoleByIsPublicSearch.entity().isPublicRole(), SearchCriteria.Op.EQ);
+        RoleByIsPublicSearch.and("state", RoleByIsPublicSearch.entity().getState(), SearchCriteria.Op.EQ);
         RoleByIsPublicSearch.done();
     }
 
     @Override
     public List<RoleVO> findAllByName(final String roleName, boolean showPrivateRole) {
-        return findAllByName(roleName, null, null, null, showPrivateRole).first();
+        return findAllByName(roleName, null, null, null, null, showPrivateRole).first();
     }
 
     @Override
-    public Pair<List<RoleVO>, Integer> findAllByName(final String roleName, String keyword, Long offset, Long limit, boolean showPrivateRole) {
+    public Pair<List<RoleVO>, Integer> findAllByName(final String roleName, String keyword, String state, Long offset, Long limit, boolean showPrivateRole) {
         SearchCriteria<RoleVO> sc = RoleByNameSearch.create();
         filterPrivateRolesIfNeeded(sc, showPrivateRole);
         if (StringUtils.isNotEmpty(roleName)) {
@@ -76,19 +86,25 @@ public class RoleDaoImpl extends GenericDaoBase<RoleVO, Long> implements RoleDao
         if (StringUtils.isNotEmpty(keyword)) {
             sc.setParameters("roleName", "%" + keyword + "%");
         }
+        if (StringUtils.isNotEmpty(state)) {
+            sc.setParameters("state", state);
+        }
 
         return searchAndCount(sc, new Filter(RoleVO.class, "id", true, offset, limit));
     }
 
     @Override
     public List<RoleVO> findAllByRoleType(final RoleType type, boolean showPrivateRole) {
-        return findAllByRoleType(type, null, null, showPrivateRole).first();
+        return findAllByRoleType(type, null, null, null, showPrivateRole).first();
     }
 
-    public Pair<List<RoleVO>, Integer> findAllByRoleType(final RoleType type, Long offset, Long limit, boolean showPrivateRole) {
+    public Pair<List<RoleVO>, Integer> findAllByRoleType(final RoleType type, String state, Long offset, Long limit, boolean showPrivateRole) {
         SearchCriteria<RoleVO> sc = RoleByTypeSearch.create();
         filterPrivateRolesIfNeeded(sc, showPrivateRole);
         sc.setParameters("roleType", type);
+        if (StringUtils.isNotEmpty(state)) {
+            sc.setParameters("state", state);
+        }
         return searchAndCount(sc, new Filter(RoleVO.class, "id", true, offset, limit));
     }
 
@@ -110,10 +126,23 @@ public class RoleDaoImpl extends GenericDaoBase<RoleVO, Long> implements RoleDao
     }
 
     @Override
-    public Pair<List<RoleVO>, Integer> listAllRoles(Long startIndex, Long limit, boolean showPrivateRole) {
+    public Pair<List<RoleVO>, Integer> listAllRoles(String state, Long startIndex, Long limit, boolean showPrivateRole) {
         SearchCriteria<RoleVO> sc = RoleByIsPublicSearch.create();
+        if (StringUtils.isNotEmpty(state)) {
+            sc.setParameters("state", state);
+        }
         filterPrivateRolesIfNeeded(sc, showPrivateRole);
         return searchAndCount(sc, new Filter(RoleVO.class, "id", true, startIndex, limit));
+    }
+
+    @Override
+    public List<RoleVO> searchByIds(Long... ids) {
+        if (ids == null || ids.length == 0) {
+            return Collections.emptyList();
+        }
+        SearchCriteria<RoleVO> sc = RoleByIdsSearch.create();
+        sc.setParameters("idIN", ids);
+        return listBy(sc);
     }
 
     public void filterPrivateRolesIfNeeded(SearchCriteria<RoleVO> sc, boolean showPrivateRole) {

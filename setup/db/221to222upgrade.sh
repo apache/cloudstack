@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,7 +18,7 @@
 
 
 
- 
+
 
 
 # mysql phase 1
@@ -32,7 +32,7 @@ fi
 echo Running upgrade for database: cloud from 2.2.1 to 2.2.2
 mysql -u root -C cloud < 221to222.sql
 if [ $? -gt 0 ]
-then 
+then
 exit 1
 fi
 echo Finished upgrade for database: cloud from 2.2.1 to 2.2.2
@@ -42,9 +42,7 @@ echo Finished upgrade for database: cloud from 2.2.1 to 2.2.2
 echo Running upgrade for database: cloud_usage from 2.2.1 to 2.2.2
 mysql -u root -C cloud_usage < 221to222_usage.sql
 if [ $? -gt 0 ]
-then 
+then
 exit 1
 fi
 echo Finished upgrade for database: cloud_usage from 2.2.1 to 2.2.2
-
-

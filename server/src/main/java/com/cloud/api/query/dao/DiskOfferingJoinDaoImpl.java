@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.api.query.dao;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -26,7 +27,7 @@ import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
@@ -37,24 +38,27 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.server.ResourceTag;
 import com.cloud.user.AccountManager;
-import com.cloud.utils.db.Attribute;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
+import static org.apache.cloudstack.query.QueryService.SortKeyAscending;
+
 @Component
 public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, Long> implements DiskOfferingJoinDao {
-    public static final Logger s_logger = Logger.getLogger(DiskOfferingJoinDaoImpl.class);
 
     @Inject
     VsphereStoragePolicyDao _vsphereStoragePolicyDao;
     @Inject
     private AnnotationDao annotationDao;
     @Inject
+    private ConfigurationDao configDao;
+    @Inject
     private AccountManager accountManager;
 
     private final SearchBuilder<DiskOfferingJoinVO> dofIdSearch;
-    private final Attribute _typeAttr;
+    private SearchBuilder<DiskOfferingJoinVO> diskOfferingSearch;
 
     protected DiskOfferingJoinDaoImpl() {
 
@@ -62,7 +66,9 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
         dofIdSearch.and("id", dofIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         dofIdSearch.done();
 
-        _typeAttr = _allAttributes.get("type");
+        diskOfferingSearch = createSearchBuilder();
+        diskOfferingSearch.and("idIN", diskOfferingSearch.entity().getId(), SearchCriteria.Op.IN);
+        diskOfferingSearch.done();
 
         _count = "select count(distinct id) from disk_offering_view WHERE ";
     }
@@ -95,6 +101,7 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
         DiskOfferingResponse diskOfferingResponse = new DiskOfferingResponse();
         diskOfferingResponse.setId(offering.getUuid());
         diskOfferingResponse.setName(offering.getName());
+        diskOfferingResponse.setState(offering.getState().toString());
         diskOfferingResponse.setDisplayText(offering.getDisplayText());
         diskOfferingResponse.setProvisioningType(offering.getProvisioningType().toString());
         diskOfferingResponse.setCreated(offering.getCreated());
@@ -153,5 +160,51 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
         List<DiskOfferingJoinVO> offerings = searchIncludingRemoved(sc, null, null, false);
         assert offerings != null && offerings.size() == 1 : "No disk offering found for offering id " + offering.getId();
         return offerings.get(0);
+    }
+
+    @Override
+    public List<DiskOfferingJoinVO> searchByIds(Long... offeringIds) {
+        Filter searchFilter = new Filter(DiskOfferingJoinVO.class, "sortKey", SortKeyAscending.value());
+        searchFilter.addOrderBy(DiskOfferingJoinVO.class, "id", true);
+        // set detail batch query size
+        int DETAILS_BATCH_SIZE = 2000;
+        String batchCfg = configDao.getValue("detail.batch.query.size");
+        if (batchCfg != null) {
+            DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
+        }
+
+        List<DiskOfferingJoinVO> uvList = new ArrayList<>();
+        // query details by batches
+        int curr_index = 0;
+        if (offeringIds.length > DETAILS_BATCH_SIZE) {
+            while ((curr_index + DETAILS_BATCH_SIZE) <= offeringIds.length) {
+                Long[] ids = new Long[DETAILS_BATCH_SIZE];
+                for (int k = 0, j = curr_index; j < curr_index + DETAILS_BATCH_SIZE; j++, k++) {
+                    ids[k] = offeringIds[j];
+                }
+                SearchCriteria<DiskOfferingJoinVO> sc = diskOfferingSearch.create();
+                sc.setParameters("idIN", ids);
+                List<DiskOfferingJoinVO> accounts = searchIncludingRemoved(sc, searchFilter, null, false);
+                if (accounts != null) {
+                    uvList.addAll(accounts);
+                }
+                curr_index += DETAILS_BATCH_SIZE;
+            }
+        }
+        if (curr_index < offeringIds.length) {
+            int batch_size = (offeringIds.length - curr_index);
+            // set the ids value
+            Long[] ids = new Long[batch_size];
+            for (int k = 0, j = curr_index; j < curr_index + batch_size; j++, k++) {
+                ids[k] = offeringIds[j];
+            }
+            SearchCriteria<DiskOfferingJoinVO> sc = diskOfferingSearch.create();
+            sc.setParameters("idIN", ids);
+            List<DiskOfferingJoinVO> accounts = searchIncludingRemoved(sc, searchFilter, null, false);
+            if (accounts != null) {
+                uvList.addAll(accounts);
+            }
+        }
+        return uvList;
     }
 }

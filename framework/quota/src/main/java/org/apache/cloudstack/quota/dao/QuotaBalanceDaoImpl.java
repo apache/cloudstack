@@ -23,7 +23,6 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.Filter;
@@ -37,7 +36,6 @@ import com.cloud.utils.db.TransactionStatus;
 
 @Component
 public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> implements QuotaBalanceDao {
-    private static final Logger s_logger = Logger.getLogger(QuotaBalanceDaoImpl.class.getName());
 
     @Override
     public QuotaBalanceVO findLastBalanceEntry(final Long accountId, final Long domainId, final Date beforeThis) {
@@ -158,8 +156,8 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
 
                 // get records before startDate to find start balance
                 for (QuotaBalanceVO entry : quotaUsageRecords) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("FindQuotaBalance Entry=" + entry);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("FindQuotaBalance Entry=" + entry);
                     }
                     if (entry.getCreditsId() > 0) {
                         trimmedRecords.add(entry);
@@ -178,12 +176,12 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
         List<QuotaBalanceVO> quotaBalance = lastQuotaBalanceVO(accountId, domainId, startDate);
         BigDecimal finalBalance = new BigDecimal(0);
         if (quotaBalance.isEmpty()) {
-            s_logger.info("There are no balance entries on or before the requested date.");
+            logger.info("There are no balance entries on or before the requested date.");
             return finalBalance;
         }
         for (QuotaBalanceVO entry : quotaBalance) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("lastQuotaBalance Entry=" + entry);
+            if (logger.isDebugEnabled()) {
+                logger.debug("lastQuotaBalance Entry=" + entry);
             }
             finalBalance = finalBalance.add(entry.getCreditBalance());
         }

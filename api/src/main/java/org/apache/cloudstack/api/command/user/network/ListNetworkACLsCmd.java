@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.utils.Pair;
@@ -36,7 +35,6 @@ import com.cloud.utils.Pair;
 @APICommand(name = "listNetworkACLs", description = "Lists all network ACL items", responseObject = NetworkACLItemResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListNetworkACLsCmd extends BaseListTaggedResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListNetworkACLsCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

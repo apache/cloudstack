@@ -23,7 +23,6 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 
-import org.apache.log4j.Logger;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
 import com.cloud.utils.LogUtils;
@@ -32,7 +31,6 @@ import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.TransactionLegacy;
 
 public class CloudStartupServlet extends HttpServlet {
-    public static final Logger s_logger = Logger.getLogger(CloudStartupServlet.class.getName());
     static final long serialVersionUID = SerialVersionUID.CloudStartupServlet;
 
     Timer _timer = new Timer();

@@ -26,9 +26,11 @@ import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
 import org.springframework.stereotype.Component;
 
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.RemoteAccessVpn;
@@ -43,6 +45,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Component
@@ -143,6 +146,13 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
         return null;
     }
 
+    @Override
+    public void startRouterForHA(VirtualMachine vm, Map<VirtualMachineProfile.Param, Object> params,
+         DeploymentPlanner planner) throws InsufficientCapacityException, ResourceUnavailableException,
+            ConcurrentOperationException, OperationTimedoutException {
+
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.network.VirtualNetworkApplianceService#destroyRouter(long, com.cloud.user.Account, java.lang.Long)
      */
@@ -202,6 +212,20 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
      */
     @Override
     public boolean removeVpcRouterFromGuestNetwork(final VirtualRouter router, final Network network) throws ConcurrentOperationException {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean stopKeepAlivedOnRouter(VirtualRouter router,
+            Network network) throws ConcurrentOperationException, ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean startKeepAlivedOnRouter(VirtualRouter router,
+            Network network) throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }

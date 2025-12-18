@@ -25,7 +25,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.AgentUnavailableException;
@@ -36,7 +35,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "reconnectHost", description = "Reconnects a host.", responseObject = HostResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ReconnectHostCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(ReconnectHostCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

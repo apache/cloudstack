@@ -16,10 +16,12 @@
 // under the License.
 package com.cloud.api.query.dao;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
 
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.configuration.Resource;
 import com.cloud.user.AccountManager;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -29,7 +31,7 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ResourceLimitAndCountResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
@@ -44,12 +46,14 @@ import javax.inject.Inject;
 
 @Component
 public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implements DomainJoinDao {
-    public static final Logger s_logger = Logger.getLogger(DomainJoinDaoImpl.class);
 
     private SearchBuilder<DomainJoinVO> domainIdSearch;
+    private SearchBuilder<DomainJoinVO> domainSearch;
 
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    private ConfigurationDao configDao;
     @Inject
     private AccountManager accountManager;
 
@@ -58,6 +62,10 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
         domainIdSearch = createSearchBuilder();
         domainIdSearch.and("id", domainIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         domainIdSearch.done();
+
+        domainSearch = createSearchBuilder();
+        domainSearch.and("idIN", domainSearch.entity().getId(), SearchCriteria.Op.IN);
+        domainSearch.done();
 
         this._count = "select count(distinct id) from domain_view WHERE ";
     }
@@ -72,9 +80,7 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
         if (domain.getParentUuid() != null) {
             domainResponse.setParentDomainId(domain.getParentUuid());
         }
-        StringBuilder domainPath = new StringBuilder("ROOT");
-        (domainPath.append(domain.getPath())).deleteCharAt(domainPath.length() - 1);
-        domainResponse.setPath(domainPath.toString());
+        domainResponse.setPath(ApiResponseHelper.getPrettyDomainPath(domain.getPath()));
         if (domain.getParent() != null) {
             domainResponse.setParentDomainName(domain.getParentName());
         }
@@ -188,6 +194,9 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
         response.setMemoryTotal(memoryTotal);
         response.setMemoryAvailable(memoryAvail);
 
+        //get resource limits for gpus
+        setGpuResourceLimits(domain, fullView, response);
+
       //get resource limits for primary storage space and convert it from Bytes to GiB
         long primaryStorageLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getPrimaryStorageLimit(), ResourceType.primary_storage, domain.getId());
         String primaryStorageLimitDisplay = (fullView || primaryStorageLimit == -1) ? Resource.UNLIMITED : String.valueOf(primaryStorageLimit / ResourceType.bytesToGiB);
@@ -205,6 +214,96 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
         response.setSecondaryStorageLimit(secondaryStorageLimitDisplay);
         response.setSecondaryStorageTotal(secondaryStorageTotal);
         response.setSecondaryStorageAvailable(secondaryStorageAvail);
+
+        //get resource limits for backups
+        long backupLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getBackupLimit(), ResourceType.backup, domain.getId());
+        String backupLimitDisplay = (fullView || snapshotLimit == -1) ? Resource.UNLIMITED : String.valueOf(backupLimit);
+        long backupTotal = (domain.getBackupTotal() == null) ? 0 : domain.getBackupTotal();
+        String backupAvail = (fullView || snapshotLimit == -1) ? Resource.UNLIMITED : String.valueOf(backupLimit - backupTotal);
+        response.setBackupLimit(backupLimitDisplay);
+        response.setBackupTotal(backupTotal);
+        response.setBackupAvailable(backupAvail);
+
+        //get resource limits for backup storage space and convert it from Bytes to GiB
+        long backupStorageLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getBackupStorageLimit(), ResourceType.backup_storage, domain.getId());
+        String backupStorageLimitDisplay = (fullView || backupLimit == -1) ? Resource.UNLIMITED : String.valueOf(backupStorageLimit / ResourceType.bytesToGiB);
+        long backupStorageTotal = (domain.getBackupStorageTotal() == null) ? 0 : (domain.getBackupStorageTotal() / ResourceType.bytesToGiB);
+        String backupStorageAvail = (fullView || backupStorageLimit == -1) ? Resource.UNLIMITED : String.valueOf((backupStorageLimit / ResourceType.bytesToGiB) - backupStorageTotal);
+        response.setBackupStorageLimit(backupStorageLimitDisplay);
+        response.setBackupStorageTotal(backupStorageTotal);
+        response.setBackupStorageAvailable(backupStorageAvail);
+
+        //get resource limits for buckets
+        long bucketLimit = ApiDBUtils.findCorrectResourceLimit(domain.getBucketLimit(), domain.getId(), ResourceType.bucket);
+        String bucketLimitDisplay = (fullView || bucketLimit == -1) ? Resource.UNLIMITED : String.valueOf(bucketLimit);
+        long bucketTotal = (domain.getBucketTotal() == null) ? 0 : domain.getBucketTotal();
+        String bucketAvail = (fullView || bucketLimit == -1) ? Resource.UNLIMITED : String.valueOf(bucketLimit - bucketTotal);
+        response.setBucketLimit(bucketLimitDisplay);
+        response.setBucketTotal(bucketTotal);
+        response.setBucketAvailable(bucketAvail);
+
+        //get resource limits for object storage space and convert it from Bytes to GiB
+        long objectStorageLimit = ApiDBUtils.findCorrectResourceLimit(domain.getObjectStorageLimit(), domain.getId(), ResourceType.object_storage);
+        String objectStorageLimitDisplay = (fullView || objectStorageLimit == -1) ? Resource.UNLIMITED : String.valueOf(objectStorageLimit / ResourceType.bytesToGiB);
+        long objectStorageTotal = (domain.getObjectStorageTotal() == null) ? 0 : (domain.getObjectStorageTotal() / ResourceType.bytesToGiB);
+        String objectStorageAvail = (fullView || objectStorageLimit == -1) ? Resource.UNLIMITED : String.valueOf((objectStorageLimit / ResourceType.bytesToGiB) - objectStorageTotal);
+        response.setObjectStorageLimit(objectStorageLimitDisplay);
+        response.setObjectStorageTotal(objectStorageTotal);
+        response.setObjectStorageAvailable(objectStorageAvail);
+    }
+
+    private void setGpuResourceLimits(DomainJoinVO domain, boolean fullView, ResourceLimitAndCountResponse response) {
+        long gpuLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getGpuLimit(), ResourceType.gpu, domain.getId());
+        String gpuLimitDisplay = (fullView || gpuLimit == -1) ? Resource.UNLIMITED : String.valueOf(gpuLimit);
+        long gpuTotal = (domain.getGpuTotal() == null) ? 0 : domain.getGpuTotal();
+        String gpuAvail = (fullView || gpuLimit == -1) ? Resource.UNLIMITED : String.valueOf(gpuLimit - gpuTotal);
+        response.setGpuLimit(gpuLimitDisplay);
+        response.setGpuTotal(gpuTotal);
+        response.setGpuAvailable(gpuAvail);
+    }
+
+    @Override
+    public List<DomainJoinVO> searchByIds(Long... domainIds) {
+        // set detail batch query size
+        int DETAILS_BATCH_SIZE = 2000;
+        String batchCfg = configDao.getValue("detail.batch.query.size");
+        if (batchCfg != null) {
+            DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
+        }
+
+        List<DomainJoinVO> uvList = new ArrayList<>();
+        // query details by batches
+        int curr_index = 0;
+        if (domainIds.length > DETAILS_BATCH_SIZE) {
+            while ((curr_index + DETAILS_BATCH_SIZE) <= domainIds.length) {
+                Long[] ids = new Long[DETAILS_BATCH_SIZE];
+                for (int k = 0, j = curr_index; j < curr_index + DETAILS_BATCH_SIZE; j++, k++) {
+                    ids[k] = domainIds[j];
+                }
+                SearchCriteria<DomainJoinVO> sc = domainSearch.create();
+                sc.setParameters("idIN", ids);
+                List<DomainJoinVO> domains = searchIncludingRemoved(sc, null, null, false);
+                if (domains != null) {
+                    uvList.addAll(domains);
+                }
+                curr_index += DETAILS_BATCH_SIZE;
+            }
+        }
+        if (curr_index < domainIds.length) {
+            int batch_size = (domainIds.length - curr_index);
+            // set the ids value
+            Long[] ids = new Long[batch_size];
+            for (int k = 0, j = curr_index; j < curr_index + batch_size; j++, k++) {
+                ids[k] = domainIds[j];
+            }
+            SearchCriteria<DomainJoinVO> sc = domainSearch.create();
+            sc.setParameters("idIN", ids);
+            List<DomainJoinVO> domains = searchIncludingRemoved(sc, null, null, false);
+            if (domains != null) {
+                uvList.addAll(domains);
+            }
+        }
+        return uvList;
     }
 
     @Override

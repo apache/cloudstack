@@ -18,8 +18,10 @@
 from marvin.codes import FAILED
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.cloudstackException import CloudstackAPIException
 from marvin.lib.utils import (cleanup_resources,
                               is_snapshot_on_nfs,
+                              is_snapshot_on_powerflex,
                               validateList)
 from marvin.lib.base import (VirtualMachine,
                              Account,
@@ -146,10 +148,16 @@ class TestSnapshotRootDisk(cloudstackTestCase):
             type='ROOT',
             listall=True
         )
+        volume = volumes[0]
+        volume_pool_response = list_storage_pools(
+            self.apiclient,
+            id=volume.storageid
+        )
+        volume_pool = volume_pool_response[0]
 
         snapshot = Snapshot.create(
             self.apiclient,
-            volumes[0].id,
+            volume.id,
             account=self.account.name,
             domainid=self.account.domainid
         )
@@ -209,6 +217,11 @@ class TestSnapshotRootDisk(cloudstackTestCase):
             "Check if backup_snap_id is not null"
         )
 
+        if volume_pool.type.lower() == "powerflex":
+            self.assertTrue(is_snapshot_on_powerflex(
+                self.apiclient, self.dbclient, self.config, self.zone.id, snapshot.id))
+            return
+
         self.assertTrue(is_snapshot_on_nfs(
             self.apiclient, self.dbclient, self.config, self.zone.id, snapshot.id))
         return
@@ -246,6 +259,11 @@ class TestSnapshotRootDisk(cloudstackTestCase):
             PASS,
             "Invalid response returned for list volumes")
         vol_uuid = vol_res[0].id
+        volume_pool_response = list_storage_pools(self.apiclient,
+                                                    id=vol_res[0].storageid)
+        volume_pool = volume_pool_response[0]
+        if volume_pool.type.lower() != 'networkfilesystem':
+            self.skipTest("This test is not supported for volume created on storage pool type %s" % volume_pool.type)
         clusters = list_clusters(
             self.apiclient,
             zoneid=self.zone.id
@@ -371,6 +389,178 @@ class TestSnapshotRootDisk(cloudstackTestCase):
             snapshot_response_2,
             None,
             "Check list Snapshot response"
+        )
+
+        return
+
+
+class TestSnapshotStandaloneBackup(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        testClient = super(TestSnapshotStandaloneBackup, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+        cls.services['mode'] = cls.zone.networktype
+
+        cls.hypervisorNotSupported = False
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() in ['hyperv', 'lxc'] or 'kvm-centos6' in cls.testClient.getZoneForTests():
+            cls.hypervisorNotSupported = True
+
+        cls._cleanup = []
+        if not cls.hypervisorNotSupported:
+            cls.services["domainid"] = cls.domain.id
+            cls.services["small"]["zoneid"] = cls.zone.id
+            cls.services["zoneid"] = cls.zone.id
+
+            # Create VMs, NAT Rules etc
+            cls.account = Account.create(
+                cls.apiclient,
+                cls.services["account"],
+                domainid=cls.domain.id
+            )
+            cls._cleanup.append(cls.account)
+            cls.service_offering = ServiceOffering.create(
+                cls.apiclient,
+                cls.services["service_offerings"]["tiny"]
+            )
+            cls._cleanup.append(cls.service_offering)
+            cls.userapiclient = cls.testClient.getUserApiClient(
+                UserName=cls.account.name,
+                DomainName=cls.account.domain
+            )
+            cls.template = Template.register(
+                cls.userapiclient,
+                cls.services["test_templates"][cls.hypervisor.lower()],
+                zoneid=cls.zone.id,
+                hypervisor=cls.hypervisor
+            )
+            cls._cleanup.append(cls.template)
+            cls.template.download(cls.apiclient)
+            cls.ostypeid = cls.template.ostypeid
+            cls.virtual_machine = VirtualMachine.create(
+                cls.userapiclient,
+                cls.services["small"],
+                templateid=cls.template.id,
+                accountid=cls.account.name,
+                domainid=cls.account.domainid,
+                zoneid=cls.zone.id,
+                serviceofferingid=cls.service_offering.id,
+                mode=cls.services["mode"]
+            )
+            cls._cleanup.append(cls.virtual_machine)
+
+            volumes = Volume.list(
+                cls.userapiclient,
+                virtualmachineid=cls.virtual_machine.id,
+                type='ROOT',
+                listall=True
+            )
+            cls.volume = volumes[0]
+            cls.snapshot = Snapshot.create(
+                cls.userapiclient,
+                cls.volume.id,
+                account=cls.account.name,
+                domainid=cls.account.domainid
+            )
+            cls._cleanup.append(cls.snapshot)
+
+            cls.virtual_machine.delete(cls.apiclient, expunge=True)
+            cls._cleanup.remove(cls.virtual_machine)
+            cls.template.delete(cls.userapiclient)
+            cls._cleanup.remove(cls.template)
+
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestSnapshotStandaloneBackup, cls).tearDownClass()
+
+    def setUp(self):
+        self.cleanup = []
+        return
+
+    def tearDown(self):
+        super(TestSnapshotStandaloneBackup, self).tearDown()
+
+    @skipTestIf("hypervisorNotSupported")
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    def test_01_snapshot_to_volume(self):
+        """Test creating volume from snapshot
+        """
+        self.services['volume_from_snapshot']['zoneid'] = self.zone.id
+        snapshot_volume_pool_response = list_storage_pools(
+            self.apiclient,
+            id=self.volume.storageid
+        )
+        snapshot_volume_pool = snapshot_volume_pool_response[0]
+        try:
+            self.volume_from_snap = Volume.create_from_snapshot(
+                self.userapiclient,
+                snapshot_id=self.snapshot.id,
+                services=self.services["volume_from_snapshot"],
+                account=self.account.name,
+                domainid=self.account.domainid
+            )
+        except CloudstackAPIException as cs:
+           self.debug(cs.errorMsg)
+           if snapshot_volume_pool.type.lower() == "powerflex":
+                self.assertTrue(
+                    cs.errorMsg.find("Create volume from snapshot is not supported for PowerFlex volume snapshots") > 0,
+                    msg="Other than unsupported error while creating volume from snapshot for volume on PowerFlex pool")
+                return
+           self.fail("Failed to create volume from snapshot: %s" % cs)
+
+        self.cleanup.append(self.volume_from_snap)
+
+        self.assertEqual(
+            self.volume_from_snap.state,
+            'Ready',
+            "Check state of the volume created from snapshot"
+        )
+
+    @skipTestIf("hypervisorNotSupported")
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    def test_02_snapshot_to_template(self):
+        """Test creating volume from snapshot
+        """
+
+
+        services = {"displaytext": "Template-1", "name": "Template-1-name", "ostypeid": self.ostypeid, "ispublic": "true"}
+        self.template_from_snap = Template.create_from_snapshot(
+            self.userapiclient,
+            self.snapshot,
+            services
+        )
+        self.cleanup.append(self.template_from_snap)
+
+        self.assertEqual(
+            self.template_from_snap.isready,
+            True,
+            "Check state of the template created from snapshot"
+        )
+
+        self.virtual_machine1 = VirtualMachine.create(
+            self.userapiclient,
+            self.services["small"],
+            templateid=self.template_from_snap.id,
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            zoneid=self.zone.id,
+            serviceofferingid=self.service_offering.id,
+            mode=self.services["mode"]
+        )
+        self.cleanup.append(self.virtual_machine1)
+
+        self.assertEqual(
+            self.virtual_machine1.state,
+            'Running',
+            "Check state of the VM deployed using the template created from snapshot"
         )
 
         return

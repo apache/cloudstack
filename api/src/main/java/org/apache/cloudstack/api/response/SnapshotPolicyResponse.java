@@ -16,17 +16,16 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
-
+import com.cloud.serializer.Param;
+import com.cloud.storage.snapshot.SnapshotPolicy;
+import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponseWithTagInformation;
 import org.apache.cloudstack.api.EntityReference;
 
-import com.cloud.serializer.Param;
-import com.cloud.storage.snapshot.SnapshotPolicy;
-import com.google.gson.annotations.SerializedName;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @EntityReference(value = SnapshotPolicy.class)
 public class SnapshotPolicyResponse extends BaseResponseWithTagInformation {
@@ -37,6 +36,10 @@ public class SnapshotPolicyResponse extends BaseResponseWithTagInformation {
     @SerializedName("volumeid")
     @Param(description = "the ID of the disk volume")
     private String volumeId;
+
+    @SerializedName("volumename")
+    @Param(description = "the name of the disk volume")
+    private String volumeName;
 
     @SerializedName("schedule")
     @Param(description = "time the snapshot is scheduled to be taken.")
@@ -58,8 +61,18 @@ public class SnapshotPolicyResponse extends BaseResponseWithTagInformation {
     @Param(description = "is this policy for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
 
+    @SerializedName(ApiConstants.ZONE)
+    @Param(description = "The list of zones in which snapshot backup is scheduled", responseObject = ZoneResponse.class, since = "4.19.0")
+    protected Set<ZoneResponse> zones;
+
+    @SerializedName(ApiConstants.STORAGE)
+    @Param(description = "The list of pools in which snapshot backup is scheduled", responseObject = StoragePoolResponse.class, since = "4.21.0")
+    protected Set<StoragePoolResponse> storagePools;
+
     public SnapshotPolicyResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
+        zones = new LinkedHashSet<>();
+        storagePools = new LinkedHashSet<>();
     }
 
     public String getId() {
@@ -76,6 +89,10 @@ public class SnapshotPolicyResponse extends BaseResponseWithTagInformation {
 
     public void setVolumeId(String volumeId) {
         this.volumeId = volumeId;
+    }
+
+    public void setVolumeName(String volumeName) {
+        this.volumeName = volumeName;
     }
 
     public String getSchedule() {
@@ -121,4 +138,10 @@ public class SnapshotPolicyResponse extends BaseResponseWithTagInformation {
     public void setTags(Set<ResourceTagResponse> tags) {
         this.tags = tags;
     }
+
+    public void setZones(Set<ZoneResponse> zones) {
+        this.zones = zones;
+    }
+
+    public void  setStoragePools(Set<StoragePoolResponse> pools) { this.storagePools = pools; }
 }

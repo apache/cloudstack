@@ -17,23 +17,38 @@
 
 import { asyncRouterMap, constantRouterMap } from '@/config/router'
 
-function hasApi (apis, route) {
-  if (route.meta && route.meta.permission) {
-    for (const permission of route.meta.permission) {
-      if (!apis.includes(permission)) {
-        return false
-      }
-    }
+function hasAccessToRoute (apis, route) {
+  if (!route.meta || !route.meta.permission) {
     return true
+  }
+  for (const permission of route.meta.permission) {
+    if (!apis.includes(permission)) {
+      return false
+    }
+  }
+  return true
+}
+
+function hasAccessToSection (route) {
+  const visibleChildren = route.children.filter(child => !child.hidden)
+  if (visibleChildren.length === 0) {
+    return false
+  }
+  const redirect = '/' + visibleChildren[0].meta.name
+  if (redirect !== route.path) {
+    route.redirect = redirect
   }
   return true
 }
 
 function filterAsyncRouter (routerMap, apis) {
   const accessedRouters = routerMap.filter(route => {
-    if (hasApi(apis, route)) {
+    if (hasAccessToRoute(apis, route)) {
       if (route.children && route.children.length > 0) {
         route.children = filterAsyncRouter(route.children, apis)
+      }
+      if (route.meta && route.meta.section) {
+        return hasAccessToSection(route)
       }
       return true
     }

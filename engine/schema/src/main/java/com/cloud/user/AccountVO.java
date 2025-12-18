@@ -77,6 +77,9 @@ public class AccountVO implements Account {
     @Column(name = "default")
     boolean isDefault;
 
+    @Column(name = "api_key_access")
+    private Boolean apiKeyAccess;
+
     public AccountVO() {
         uuid = UUID.randomUUID().toString();
     }
@@ -228,5 +231,15 @@ public class AccountVO implements Account {
 
     public String reflectionToString() {
         return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "accountName", "domainId");
+    }
+
+    @Override
+    public void setApiKeyAccess(Boolean apiKeyAccess) {
+        this.apiKeyAccess = apiKeyAccess;
+    }
+
+    @Override
+    public Boolean getApiKeyAccess() {
+        return apiKeyAccess;
     }
 }

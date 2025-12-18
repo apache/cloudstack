@@ -24,9 +24,10 @@ export default {
   icon: 'cluster-outlined',
   docHelp: 'conceptsandterminology/concepts.html#about-clusters',
   permission: ['listClustersMetrics'],
+  searchFilters: ['name', 'zoneid', 'podid', 'arch', 'hypervisor'],
   columns: () => {
-    const fields = ['name', 'state', 'allocationstate', 'clustertype', 'hypervisortype', 'hosts']
-    const metricsFields = ['cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal']
+    const fields = ['name', 'allocationstate', 'clustertype', 'arch', 'hypervisortype']
+    const metricsFields = ['state', 'hosts', 'cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal', 'drsimbalance']
     if (store.getters.metrics) {
       fields.push(...metricsFields)
     }
@@ -34,7 +35,7 @@ export default {
     fields.push('zonename')
     return fields
   },
-  details: ['name', 'id', 'allocationstate', 'clustertype', 'managedstate', 'hypervisortype', 'podname', 'zonename'],
+  details: ['name', 'id', 'allocationstate', 'clustertype', 'managedstate', 'arch', 'hypervisortype', 'externalprovisioner', 'podname', 'zonename', 'drsimbalance', 'storageaccessgroups', 'podstorageaccessgroups', 'zonestorageaccessgroups', 'externaldetails'],
   related: [{
     name: 'host',
     title: 'label.hosts',
@@ -55,15 +56,25 @@ export default {
     name: 'settings',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/SettingsTab.vue')))
   }, {
+    name: 'drs',
+    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ClusterDRSTab.vue'))),
+    show: (resource) => { return resource.hypervisortype !== 'External' }
+  }, {
     name: 'comments',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
+  },
+  {
+    name: 'events',
+    resourceType: 'Cluster',
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+    show: () => { return 'listEvents' in store.getters.apis }
   }],
   actions: [
     {
       api: 'addCluster',
       icon: 'plus-outlined',
       label: 'label.add.cluster',
-      docHelp: 'adminguide/installguide/configuration.html#adding-a-cluster',
+      docHelp: 'installguide/configuration.html#adding-a-cluster',
       listView: true,
       popup: true,
       component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ClusterAdd.vue')))
@@ -73,14 +84,15 @@ export default {
       icon: 'edit-outlined',
       label: 'label.edit',
       dataView: true,
-      args: ['clustername']
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ClusterUpdate.vue')))
     },
     {
       api: 'updateCluster',
       icon: 'play-circle-outlined',
       label: 'label.action.enable.cluster',
       message: 'message.action.enable.cluster',
-      docHelp: 'adminguide/installguide/hosts.html#disabling-and-enabling-zones-pods-and-clusters',
+      docHelp: 'adminguide/hosts.html#disabling-and-enabling-zones-pods-and-clusters',
       dataView: true,
       defaultArgs: { allocationstate: 'Enabled' },
       show: (record) => { return record.allocationstate === 'Disabled' }
@@ -90,7 +102,7 @@ export default {
       icon: 'pause-circle-outlined',
       label: 'label.action.disable.cluster',
       message: 'message.action.disable.cluster',
-      docHelp: 'adminguide/installguide/hosts.html#disabling-and-enabling-zones-pods-and-clusters',
+      docHelp: 'adminguide/hosts.html#disabling-and-enabling-zones-pods-and-clusters',
       dataView: true,
       defaultArgs: { allocationstate: 'Disabled' },
       show: (record) => { return record.allocationstate === 'Enabled' }
@@ -114,13 +126,23 @@ export default {
       show: (record) => { return record.managedstate === 'Managed' }
     },
     {
+      api: 'executeDRS',
+      icon: 'gold-outlined',
+      label: 'label.action.drs.cluster',
+      message: 'message.action.drs.cluster',
+      dataView: true,
+      defaultArgs: { iterations: null },
+      args: ['iterations'],
+      show: (record) => { return record.hypervisortype !== 'External' && record.managedstate === 'Managed' }
+    },
+    {
       api: 'enableOutOfBandManagementForCluster',
       icon: 'plus-circle-outlined',
       label: 'label.outofbandmanagement.enable',
       message: 'label.outofbandmanagement.enable',
       dataView: true,
       show: (record) => {
-        return record?.resourcedetails?.outOfBandManagementEnabled === 'false'
+        return record.hypervisortype !== 'External' && record?.resourcedetails?.outOfBandManagementEnabled === 'false'
       },
       args: ['clusterid'],
       mapping: {
@@ -136,7 +158,7 @@ export default {
       message: 'label.outofbandmanagement.disable',
       dataView: true,
       show: (record) => {
-        return !(record?.resourcedetails?.outOfBandManagementEnabled === 'false')
+        return record.hypervisortype !== 'External' && !(record?.resourcedetails?.outOfBandManagementEnabled === 'false')
       },
       args: ['clusterid'],
       mapping: {
@@ -152,7 +174,7 @@ export default {
       message: 'label.ha.enable',
       dataView: true,
       show: (record) => {
-        return record?.resourcedetails?.resourceHAEnabled === 'false'
+        return record.hypervisortype !== 'External' && record?.resourcedetails?.resourceHAEnabled === 'false'
       },
       args: ['clusterid'],
       mapping: {
@@ -168,7 +190,7 @@ export default {
       message: 'label.ha.disable',
       dataView: true,
       show: (record) => {
-        return !(record?.resourcedetails?.resourceHAEnabled === 'false')
+        return record.hypervisortype !== 'External' && !(record?.resourcedetails?.resourceHAEnabled === 'false')
       },
       args: ['clusterid'],
       mapping: {
@@ -188,6 +210,9 @@ export default {
         clusterids: {
           value: (record) => { return record.id }
         }
+      },
+      show: (record) => {
+        return record.hypervisortype !== 'External'
       }
     },
     {

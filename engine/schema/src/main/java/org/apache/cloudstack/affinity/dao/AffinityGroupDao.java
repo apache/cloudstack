@@ -38,4 +38,7 @@ public interface AffinityGroupDao extends GenericDao<AffinityGroupVO, Long> {
     AffinityGroupVO findByAccountAndType(Long accountId, String string);
 
     AffinityGroupVO findDomainLevelGroupByType(Long domainId, String string);
+
+    List<AffinityGroupVO> listByIds(List<Long> ids, boolean exclusive);
+
 }

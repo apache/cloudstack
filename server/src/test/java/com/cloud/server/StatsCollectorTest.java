@@ -20,8 +20,10 @@ package com.cloud.server;
 
 import static org.mockito.Mockito.when;
 
+import java.lang.reflect.Field;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -29,47 +31,54 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import com.cloud.utils.DateUtil;
+import com.google.gson.JsonSyntaxException;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
 import org.influxdb.dto.BatchPoints;
 import org.influxdb.dto.BatchPoints.Builder;
 import org.influxdb.dto.Point;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.mockito.stubbing.Answer;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.modules.junit4.PowerMockRunnerDelegate;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import com.cloud.agent.api.GetStorageStatsAnswer;
+import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.server.StatsCollector.ExternalStatsProtocol;
+import com.cloud.storage.StorageStats;
 import com.cloud.storage.VolumeStatsVO;
 import com.cloud.storage.dao.VolumeStatsDao;
 import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.VmStatsVO;
-import com.cloud.vm.dao.VmStatsDao;
+import com.cloud.vm.dao.VmStatsDaoImpl;
 import com.google.gson.Gson;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 
-@RunWith(PowerMockRunner.class)
-@PowerMockRunnerDelegate(DataProviderRunner.class)
-@PrepareForTest({InfluxDBFactory.class, BatchPoints.class})
+@RunWith(DataProviderRunner.class)
 public class StatsCollectorTest {
 
     @InjectMocks
@@ -83,30 +92,57 @@ public class StatsCollectorTest {
     private static final String DEFAULT_DATABASE_NAME = "cloudstack";
 
     @Mock
-    VmStatsDao vmStatsDaoMock;
+    VmStatsDaoImpl vmStatsDaoMock;
 
     @Mock
     VmStatsEntry statsForCurrentIterationMock;
 
     @Captor
-    ArgumentCaptor<VmStatsVO> vmStatsVOCaptor;
+    ArgumentCaptor<VmStatsVO> vmStatsVOCaptor = ArgumentCaptor.forClass(VmStatsVO.class);
 
     @Captor
-    ArgumentCaptor<Boolean> booleanCaptor;
+    ArgumentCaptor<Boolean> booleanCaptor = ArgumentCaptor.forClass(Boolean.class);
 
     @Mock
-    Boolean accumulateMock;
+    VmStatsVO vmStatsVoMock1 = Mockito.mock(VmStatsVO.class);
 
     @Mock
-    VmStatsVO vmStatsVoMock1, vmStatsVoMock2;
+    VmStatsVO vmStatsVoMock2 = Mockito.mock(VmStatsVO.class);
 
     @Mock
-    VmStatsEntry vmStatsEntryMock;
+    VmStatsEntry vmStatsEntryMock = Mockito.mock(VmStatsEntry.class);
 
     @Mock
-    VolumeStatsDao volumeStatsDao;
+    VolumeStatsDao volumeStatsDao = Mockito.mock(VolumeStatsDao.class);
+
+    @Mock
+    private StoragePoolVO mockPool;
 
     private static Gson gson = new Gson();
+
+    private Gson msStatsGson;
+
+    private MockedStatic<InfluxDBFactory> influxDBFactoryMocked;
+
+    private AutoCloseable closeable;
+
+    @Before
+    public void setUp() throws Exception {
+        closeable = MockitoAnnotations.openMocks(this);
+        statsCollector.vmStatsDao = vmStatsDaoMock;
+        statsCollector.volumeStatsDao = volumeStatsDao;
+        Field msStatsGsonField = StatsCollector.class.getDeclaredField("msStatsGson");
+        msStatsGsonField.setAccessible(true);
+        msStatsGson = (Gson) msStatsGsonField.get(null);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        if (influxDBFactoryMocked != null) {
+            influxDBFactoryMocked.close();
+        }
+        closeable.close();
+    }
 
     @Test
     public void createInfluxDbConnectionTest() {
@@ -123,8 +159,8 @@ public class StatsCollectorTest {
         statsCollector.externalStatsPort = INFLUXDB_DEFAULT_PORT;
         InfluxDB influxDbConnection = Mockito.mock(InfluxDB.class);
         when(influxDbConnection.databaseExists(DEFAULT_DATABASE_NAME)).thenReturn(databaseExists);
-        PowerMockito.mockStatic(InfluxDBFactory.class);
-        PowerMockito.when(InfluxDBFactory.connect(URL)).thenReturn(influxDbConnection);
+        influxDBFactoryMocked = Mockito.mockStatic(InfluxDBFactory.class);
+        influxDBFactoryMocked.when(() -> InfluxDBFactory.connect(URL)).thenReturn(influxDbConnection);
 
         InfluxDB returnedConnection = statsCollector.createInfluxDbConnection();
 
@@ -137,21 +173,22 @@ public class StatsCollectorTest {
         Mockito.doNothing().when(influxDbConnection).write(Mockito.any(Point.class));
         Builder builder = Mockito.mock(Builder.class);
         BatchPoints batchPoints = Mockito.mock(BatchPoints.class);
-        PowerMockito.mockStatic(BatchPoints.class);
-        PowerMockito.when(BatchPoints.database(DEFAULT_DATABASE_NAME)).thenReturn(builder);
-        when(builder.build()).thenReturn(batchPoints);
-        Map<String, String> tagsToAdd = new HashMap<>();
-        tagsToAdd.put("hostId", "1");
-        Map<String, Object> fieldsToAdd = new HashMap<>();
-        fieldsToAdd.put("total_memory_kbs", 10000000);
-        Point point = Point.measurement("measure").tag(tagsToAdd).time(System.currentTimeMillis(), TimeUnit.MILLISECONDS).fields(fieldsToAdd).build();
-        List<Point> points = new ArrayList<>();
-        points.add(point);
-        when(batchPoints.point(point)).thenReturn(batchPoints);
+        try (MockedStatic<BatchPoints> ignored = Mockito.mockStatic(BatchPoints.class)) {
+            Mockito.when(BatchPoints.database(DEFAULT_DATABASE_NAME)).thenReturn(builder);
+            when(builder.build()).thenReturn(batchPoints);
+            Map<String, String> tagsToAdd = new HashMap<>();
+            tagsToAdd.put("hostId", "1");
+            Map<String, Object> fieldsToAdd = new HashMap<>();
+            fieldsToAdd.put("total_memory_kbs", 10000000);
+            Point point = Point.measurement("measure").tag(tagsToAdd).time(System.currentTimeMillis(), TimeUnit.MILLISECONDS).fields(fieldsToAdd).build();
+            List<Point> points = new ArrayList<>();
+            points.add(point);
+            when(batchPoints.point(point)).thenReturn(batchPoints);
 
-        statsCollector.writeBatches(influxDbConnection, DEFAULT_DATABASE_NAME, points);
+            statsCollector.writeBatches(influxDbConnection, DEFAULT_DATABASE_NAME, points);
 
-        Mockito.verify(influxDbConnection).write(batchPoints);
+            Mockito.verify(influxDbConnection).write(batchPoints);
+        }
     }
 
     @Test
@@ -232,7 +269,8 @@ public class StatsCollectorTest {
         configureAndTestisCurrentVmDiskStatsDifferentFromPrevious(123l, 123l, 123l, 123l, false);
     }
 
-    private void configureAndTestisCurrentVmDiskStatsDifferentFromPrevious(long bytesRead, long bytesWrite, long ioRead, long ioWrite, boolean expectedResult) {
+    private void configureAndTestisCurrentVmDiskStatsDifferentFromPrevious(long bytesRead, long bytesWrite, long ioRead,
+            long ioWrite, boolean expectedResult) {
         VmDiskStatisticsVO previousVmDiskStatisticsVO = new VmDiskStatisticsVO(1l, 1l, 1l, 1l);
         previousVmDiskStatisticsVO.setCurrentBytesRead(123l);
         previousVmDiskStatisticsVO.setCurrentBytesWrite(123l);
@@ -251,12 +289,13 @@ public class StatsCollectorTest {
 
     @Test
     @DataProvider({
-        "0,0,0,0,true", "1,0,0,0,false", "0,1,0,0,false", "0,0,1,0,false",
-        "0,0,0,1,false", "1,0,0,1,false", "1,0,1,0,false", "1,1,0,0,false",
-        "0,1,1,0,false", "0,1,0,1,false", "0,0,1,1,false", "0,1,1,1,false",
-        "1,1,0,1,false", "1,0,1,1,false", "1,1,1,0,false", "1,1,1,1,false",
+            "0,0,0,0,true", "1,0,0,0,false", "0,1,0,0,false", "0,0,1,0,false",
+            "0,0,0,1,false", "1,0,0,1,false", "1,0,1,0,false", "1,1,0,0,false",
+            "0,1,1,0,false", "0,1,0,1,false", "0,0,1,1,false", "0,1,1,1,false",
+            "1,1,0,1,false", "1,0,1,1,false", "1,1,1,0,false", "1,1,1,1,false",
     })
-    public void configureAndTestCheckIfDiskStatsAreZero(long bytesRead, long bytesWrite, long ioRead, long ioWrite, boolean expected) {
+    public void configureAndTestCheckIfDiskStatsAreZero(long bytesRead, long bytesWrite, long ioRead, long ioWrite,
+            boolean expected) {
         VmDiskStatsEntry vmDiskStatsEntry = new VmDiskStatsEntry();
         vmDiskStatsEntry.setBytesRead(bytesRead);
         vmDiskStatsEntry.setBytesWrite(bytesWrite);
@@ -284,7 +323,7 @@ public class StatsCollectorTest {
 
         statsCollector.cleanUpVirtualMachineStats();
 
-        Mockito.verify(vmStatsDaoMock, Mockito.never()).removeAllByTimestampLessThan(Mockito.any());
+        Mockito.verify(vmStatsDaoMock, Mockito.never()).removeAllByTimestampLessThan(Mockito.any(), Mockito.anyLong());
     }
 
     @Test
@@ -293,7 +332,7 @@ public class StatsCollectorTest {
 
         statsCollector.cleanUpVirtualMachineStats();
 
-        Mockito.verify(vmStatsDaoMock).removeAllByTimestampLessThan(Mockito.any());
+        Mockito.verify(vmStatsDaoMock).removeAllByTimestampLessThan(Mockito.any(), Mockito.anyLong());
     }
 
     @Test
@@ -311,17 +350,16 @@ public class StatsCollectorTest {
         VmStatsVO actual = vmStatsVOCaptor.getAllValues().get(0);
         Assert.assertEquals(Long.valueOf(2L), actual.getVmId());
         Assert.assertEquals(Long.valueOf(1L), actual.getMgmtServerId());
-        Assert.assertEquals(expectedVmStatsStr, actual.getVmStatsData());
+        Assert.assertEquals(convertJsonToOrderedMap(expectedVmStatsStr), convertJsonToOrderedMap(actual.getVmStatsData()));
         Assert.assertEquals(timestamp, actual.getTimestamp());
     }
 
     @Test
     public void getVmStatsTestWithAccumulateNotNull() {
         Mockito.doReturn(Arrays.asList(vmStatsVoMock1)).when(vmStatsDaoMock).findByVmIdOrderByTimestampDesc(Mockito.anyLong());
-        Mockito.doReturn(true).when(accumulateMock).booleanValue();
         Mockito.doReturn(vmStatsEntryMock).when(statsCollector).getLatestOrAccumulatedVmMetricsStats(Mockito.anyList(), Mockito.anyBoolean());
 
-        VmStats result = statsCollector.getVmStats(1L, accumulateMock);
+        VmStats result = statsCollector.getVmStats(1L, false);
 
         Mockito.verify(statsCollector).getLatestOrAccumulatedVmMetricsStats(Mockito.anyList(), booleanCaptor.capture());
         boolean actualArg = booleanCaptor.getValue().booleanValue();
@@ -369,8 +407,8 @@ public class StatsCollectorTest {
                 + "\"networkWriteKBs\":1.1,\"diskReadIOs\":3.0,\"diskWriteIOs\":3.1,\"diskReadKBs\":2.0,"
                 + "\"diskWriteKBs\":2.1,\"memoryKBs\":1.0,\"intFreeMemoryKBs\":1.0,"
                 + "\"targetMemoryKBs\":1.0,\"numCPUs\":1,\"entityType\":\"vm\"}";
-        Mockito.doReturn(fakeStatsData1).when(vmStatsVoMock1).getVmStatsData();
-        Mockito.doReturn(fakeStatsData2).when(vmStatsVoMock2).getVmStatsData();
+        Mockito.when(vmStatsVoMock1.getVmStatsData()).thenReturn(fakeStatsData1);
+        Mockito.when(vmStatsVoMock2.getVmStatsData()).thenReturn(fakeStatsData2);
 
         VmStatsEntry result = statsCollector.accumulateVmMetricsStats(new ArrayList<VmStatsVO>(
                 Arrays.asList(vmStatsVoMock1, vmStatsVoMock2)));
@@ -398,6 +436,7 @@ public class StatsCollectorTest {
 
         Assert.assertTrue(statsCollector.isDbLocal());
     }
+
     @Test
     public void testIsDbIpv4Local() {
         Properties p = new Properties();
@@ -406,6 +445,7 @@ public class StatsCollectorTest {
 
         Assert.assertTrue(statsCollector.isDbLocal());
     }
+
     @Test
     public void testIsDbSymbolicLocal() {
         Properties p = new Properties();
@@ -414,6 +454,7 @@ public class StatsCollectorTest {
 
         Assert.assertTrue(statsCollector.isDbLocal());
     }
+
     @Test
     public void testIsDbOnSameIp() {
         Properties p = new Properties();
@@ -423,6 +464,7 @@ public class StatsCollectorTest {
 
         Assert.assertTrue(statsCollector.isDbLocal());
     }
+
     @Test
     public void testIsDbNotLocal() {
         Properties p = new Properties();
@@ -435,7 +477,7 @@ public class StatsCollectorTest {
 
     private void performPersistVolumeStatsTest(Hypervisor.HypervisorType hypervisorType) {
         Date timestamp = new Date();
-        String vmName= "vm";
+        String vmName = "vm";
         String path = "path";
         long ioReadDiff = 100;
         long ioWriteDiff = 200;
@@ -462,7 +504,7 @@ public class StatsCollectorTest {
         }
         List<VolumeStatsVO> persistedStats = new ArrayList<>();
         Mockito.when(volumeStatsDao.persist(Mockito.any(VolumeStatsVO.class))).thenAnswer((Answer<VolumeStatsVO>) invocation -> {
-            VolumeStatsVO statsVO = (VolumeStatsVO)invocation.getArguments()[0];
+            VolumeStatsVO statsVO = (VolumeStatsVO) invocation.getArguments()[0];
             persistedStats.add(statsVO);
             return statsVO;
         });
@@ -488,5 +530,198 @@ public class StatsCollectorTest {
     @Test
     public void testPersistVolumeStatsVmware() {
         performPersistVolumeStatsTest(Hypervisor.HypervisorType.VMware);
+    }
+
+    private Map<String, String> convertJsonToOrderedMap(String json) {
+        Map<String, String> jsonMap = new TreeMap<String, String>();
+        String[] keyValuePairs = json.replace("{", "").replace("}", "").split(",");
+        for (String pair : keyValuePairs) {
+            String[] keyValue = pair.split(":");
+            jsonMap.put(keyValue[0], keyValue[1]);
+        }
+        return jsonMap;
+    }
+
+    private void setCollectorIopsStats(long poolId, Long capacityIops, Long usedIops) {
+        ConcurrentHashMap<Long, StorageStats> storagePoolStats = new ConcurrentHashMap<>();
+        storagePoolStats.put(poolId, new GetStorageStatsAnswer(Mockito.mock(GetStorageStatsCommand.class),
+                10L, 2L, capacityIops, usedIops));
+        ReflectionTestUtils.setField(statsCollector, "_storagePoolStats", storagePoolStats);
+    }
+
+    @Test
+    public void testPoolNeedsIopsStatsUpdating_NoChanges() {
+        long poolId = 1L;
+        long capacityIops = 100L;
+        long usedIops = 50L;
+        when(mockPool.getId()).thenReturn(poolId);
+        when(mockPool.getCapacityIops()).thenReturn(capacityIops);
+        when(mockPool.getUsedIops()).thenReturn(usedIops);
+
+        setCollectorIopsStats(poolId, capacityIops, usedIops);
+
+        boolean result = statsCollector.isPoolNeedsIopsStatsUpdate(mockPool, capacityIops, usedIops);
+        Assert.assertFalse(result);
+        Mockito.verify(mockPool, Mockito.never()).setCapacityIops(Mockito.anyLong());
+        Mockito.verify(mockPool, Mockito.never()).setUsedIops(Mockito.anyLong());
+    }
+
+    @Test
+    public void testPoolNeedsIopsStatsUpdating_CapacityIopsNeedsUpdating() {
+        long poolId = 1L;
+        when(mockPool.getId()).thenReturn(poolId);
+        when(mockPool.getCapacityIops()).thenReturn(100L);
+        when(mockPool.getUsedIops()).thenReturn(50L);
+
+        setCollectorIopsStats(poolId, 90L, 50L);
+
+        boolean result = statsCollector.isPoolNeedsIopsStatsUpdate(mockPool, 120L, 50L);
+        Assert.assertTrue(result);
+        Mockito.verify(mockPool).setCapacityIops(120L);
+        Mockito.verify(mockPool, Mockito.never()).setUsedIops(Mockito.anyLong());
+    }
+
+    @Test
+    public void testPoolNeedsIopsStatsUpdating_UsedIopsNeedsUpdating() {
+        long poolId = 1L;
+        when(mockPool.getId()).thenReturn(poolId);
+        when(mockPool.getCapacityIops()).thenReturn(100L);
+        when(mockPool.getUsedIops()).thenReturn(50L);
+
+        setCollectorIopsStats(poolId, 100L, 45L);
+
+        boolean result = statsCollector.isPoolNeedsIopsStatsUpdate(mockPool, 100L, 60L);
+        Assert.assertTrue(result);
+        Mockito.verify(mockPool).setUsedIops(60L);
+        Mockito.verify(mockPool, Mockito.never()).setCapacityIops(Mockito.anyLong());
+    }
+
+    @Test
+    public void testPoolNeedsIopsStatsUpdating_BothNeedUpdating() {
+        long poolId = 1L;
+        when(mockPool.getId()).thenReturn(poolId);
+        when(mockPool.getCapacityIops()).thenReturn(100L);
+        when(mockPool.getUsedIops()).thenReturn(50L);
+
+        setCollectorIopsStats(poolId, 90L, 45L);
+
+        boolean result = statsCollector.isPoolNeedsIopsStatsUpdate(mockPool, 120L, 60L);
+        Assert.assertTrue(result);
+        Mockito.verify(mockPool).setCapacityIops(120L);
+        Mockito.verify(mockPool).setUsedIops(60L);
+    }
+
+    @Test
+    public void testPoolNeedsIopsStatsUpdating_NullIops() {
+        long poolId = 1L;
+        when(mockPool.getId()).thenReturn(poolId);
+
+        boolean result = statsCollector.isPoolNeedsIopsStatsUpdate(mockPool, null, null);
+        Assert.assertFalse(result);
+        Mockito.verify(mockPool, Mockito.never()).setCapacityIops(Mockito.anyLong());
+        Mockito.verify(mockPool, Mockito.never()).setUsedIops(Mockito.anyLong());
+    }
+
+    @Test
+    public void testGsonDateFormatSerialization() {
+        Date now = new Date();
+        TestClass testObj = new TestClass("TestString", 999, now);
+        String json = msStatsGson.toJson(testObj);
+
+        Assert.assertTrue(json.contains("TestString"));
+        Assert.assertTrue(json.contains("999"));
+        String expectedDate = new SimpleDateFormat(DateUtil.ZONED_DATETIME_FORMAT).format(now);
+        Assert.assertTrue(json.contains(expectedDate));
+    }
+
+    @Test
+    public void testGsonDateFormatDeserializationWithSameDateFormat() throws Exception {
+        String json = "{\"str\":\"TestString\",\"num\":999,\"date\":\"2025-08-22T15:39:43+0000\"}";
+        TestClass testObj = msStatsGson.fromJson(json, TestClass.class);
+
+        Assert.assertEquals("TestString", testObj.getStr());
+        Assert.assertEquals(999, testObj.getNum());
+        Date expectedDate = new SimpleDateFormat(DateUtil.ZONED_DATETIME_FORMAT).parse("2025-08-22T15:39:43+0000");
+        Assert.assertEquals(expectedDate, testObj.getDate());
+    }
+
+    @Test (expected = JsonSyntaxException.class)
+    public void testGsonDateFormatDeserializationWithDifferentDateFormat() throws Exception {
+        String json = "{\"str\":\"TestString\",\"num\":999,\"date\":\"22/08/2025T15:39:43+0000\"}";
+        msStatsGson.fromJson(json, TestClass.class);
+        /* Deserialization throws the below exception:
+        com.google.gson.JsonSyntaxException: 22/08/2025T15:39:43+0000
+            at com.google.gson.DefaultTypeAdapters$DefaultDateTypeAdapter.deserializeToDate(DefaultTypeAdapters.java:376)
+            at com.google.gson.DefaultTypeAdapters$DefaultDateTypeAdapter.deserialize(DefaultTypeAdapters.java:351)
+            at com.google.gson.DefaultTypeAdapters$DefaultDateTypeAdapter.deserialize(DefaultTypeAdapters.java:307)
+            at com.google.gson.JsonDeserializationVisitor.invokeCustomDeserializer(JsonDeserializationVisitor.java:92)
+            at com.google.gson.JsonObjectDeserializationVisitor.visitFieldUsingCustomHandler(JsonObjectDeserializationVisitor.java:117)
+            at com.google.gson.ReflectingFieldNavigator.visitFieldsReflectively(ReflectingFieldNavigator.java:63)
+            at com.google.gson.ObjectNavigator.accept(ObjectNavigator.java:120)
+            at com.google.gson.JsonDeserializationContextDefault.fromJsonObject(JsonDeserializationContextDefault.java:76)
+            at com.google.gson.JsonDeserializationContextDefault.deserialize(JsonDeserializationContextDefault.java:54)
+            at com.google.gson.Gson.fromJson(Gson.java:551)
+            at com.google.gson.Gson.fromJson(Gson.java:498)
+            at com.google.gson.Gson.fromJson(Gson.java:467)
+            at com.google.gson.Gson.fromJson(Gson.java:417)
+            at com.google.gson.Gson.fromJson(Gson.java:389)
+            at com.cloud.serializer.GsonHelperTest.testGsonDateFormatDeserializationWithDifferentDateFormat(GsonHelperTest.java:113)
+            at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+            at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+            at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+            at java.base/java.lang.reflect.Method.invoke(Method.java:566)
+            at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+            at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+            at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+            at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+            at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+            at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+            at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+            at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+            at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+            at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+            at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+            at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+            at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+            at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+            at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+            at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+            at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+            at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+            at com.intellij.junit4.JUnit4IdeaTestRunner.startRunnerWithArgs(JUnit4IdeaTestRunner.java:69)
+            at com.intellij.rt.junit.IdeaTestRunner$Repeater$1.execute(IdeaTestRunner.java:38)
+            at com.intellij.rt.execution.junit.TestsRepeater.repeat(TestsRepeater.java:11)
+            at com.intellij.rt.junit.IdeaTestRunner$Repeater.startRunnerWithArgs(IdeaTestRunner.java:35)
+            at com.intellij.rt.junit.JUnitStarter.prepareStreamsAndStart(JUnitStarter.java:231)
+            at com.intellij.rt.junit.JUnitStarter.main(JUnitStarter.java:55)
+        Caused by: java.text.ParseException: Unparseable date: "22/08/2025T15:39:43+0000"
+            at java.base/java.text.DateFormat.parse(DateFormat.java:395)
+            at com.google.gson.DefaultTypeAdapters$DefaultDateTypeAdapter.deserializeToDate(DefaultTypeAdapters.java:374)
+            ... 42 more
+         */
+    }
+
+    private static class TestClass {
+        private String str;
+        private int num;
+        private Date date;
+
+        public TestClass(String str, int num, Date date) {
+            this.str = str;
+            this.num = num;
+            this.date = date;
+        }
+
+        public String getStr() {
+            return str;
+        }
+
+        public int getNum() {
+            return num;
+        }
+
+        public Date getDate() {
+            return date;
+        }
     }
 }

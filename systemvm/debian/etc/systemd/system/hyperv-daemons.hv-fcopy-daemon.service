@@ -1,4 +1,4 @@
-﻿[Unit]
+[Unit]
 Description=Hyper-V file copy service (FCOPY) daemon
 ConditionPathExists=/dev/vmbus/hv_fcopy
 

@@ -99,6 +99,13 @@
           </a-select>
         </a-form-item>
 
+        <a-form-item name="ispublic" ref="ispublic">
+          <template #label>
+            <tooltip-label :title="$t('label.ispublic')" :tooltip="apiParams.ispublic.description"/>
+          </template>
+          <a-switch v-model:checked="form.ispublic"/>
+        </a-form-item>
+
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
           <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -110,7 +117,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -136,7 +143,7 @@ export default {
   },
   watch: {
     '$route' (to, from) {
-      if (to.fullPath !== from.fullPath && !to.fullPath.includes('action/')) {
+      if (to.fullPath !== from.fullPath && !to.fullPath.includes('/action/')) {
         this.fetchRoles()
       }
     },
@@ -150,7 +157,8 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
-        using: 'type'
+        using: 'type',
+        ispublic: true
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
@@ -188,7 +196,7 @@ export default {
     },
     createRole (params) {
       this.loading = true
-      api('createRole', params).then(json => {
+      postAPI('createRole', params).then(json => {
         const role = json.createroleresponse.role
         if (role) {
           this.$emit('refresh-data')
@@ -206,7 +214,7 @@ export default {
     },
     fetchRoles () {
       const params = {}
-      api('listRoles', params).then(json => {
+      getAPI('listRoles', params).then(json => {
         if (json && json.listrolesresponse && json.listrolesresponse.role) {
           this.roles = json.listrolesresponse.role
         }

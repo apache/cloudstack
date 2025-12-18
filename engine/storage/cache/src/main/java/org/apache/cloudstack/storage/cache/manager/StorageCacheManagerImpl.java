@@ -32,7 +32,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
@@ -64,7 +65,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
-    private static final Logger s_logger = Logger.getLogger(StorageCacheManagerImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     @Inject
     List<StorageCacheAllocator> storageCacheAllocator;
     @Inject
@@ -195,7 +196,7 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
                     }
                 }
             } catch (Exception e) {
-                s_logger.debug("Failed to execute CacheReplacementRunner: " + e.toString());
+                logger.debug("Failed to execute CacheReplacementRunner: " + e.toString());
             } finally {
                 if (replacementLock != null) {
                     replacementLock.unlock();
@@ -245,7 +246,7 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
             String msg = "unsupported DataObject comes, then can't acquire correct lock object";
             throw new CloudRuntimeException(msg);
         }
-        s_logger.debug("check " + typeName + " cache entry(id: " + dataId + ") on store(id: " + storeId + ")");
+        logger.debug("check " + typeName + " cache entry(id: " + dataId + ") on store(id: " + storeId + ")");
 
         DataObject existingDataObj = null;
         synchronized (lock) {
@@ -271,13 +272,13 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
                      * Threads must release lock within waiting for cache copy and
                      * must be waken up at completion.
                      */
-                    s_logger.debug("waiting cache copy completion type: " + typeName + ", id: " + obj.getObjectId() + ", lock: " + lock.hashCode());
+                    logger.debug("waiting cache copy completion type: " + typeName + ", id: " + obj.getObjectId() + ", lock: " + lock.hashCode());
                     try {
                         lock.wait(milliSeconds);
                     } catch (InterruptedException e) {
-                        s_logger.debug("[ignored] interrupted while waiting for cache copy completion.");
+                        logger.debug("[ignored] interrupted while waiting for cache copy completion.");
                     }
-                    s_logger.debug("waken up");
+                    logger.debug("waken up");
 
                     now = new Date();
                     if (now.after(expiredDate)) {
@@ -290,7 +291,7 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
                 }
 
                 if (st == ObjectInDataStoreStateMachine.State.Ready) {
-                    s_logger.debug("there is already one in the cache store");
+                    logger.debug("there is already one in the cache store");
                     DataObject dataObj = objectInStoreMgr.get(data, store, null);
                     dataObj.incRefCount();
                     existingDataObj = dataObj;
@@ -298,7 +299,7 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
             }
 
             if(existingDataObj == null) {
-                s_logger.debug("create " + typeName + " cache entry(id: " + dataId + ") on store(id: " + storeId + ")");
+                logger.debug("create " + typeName + " cache entry(id: " + dataId + ") on store(id: " + storeId + ")");
                 objOnCacheStore = store.create(data);
             }
             lock.notifyAll();
@@ -307,7 +308,7 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
             return existingDataObj;
         }
         if (objOnCacheStore == null) {
-            s_logger.error("create " + typeName + " cache entry(id: " + dataId + ") on store(id: " + storeId + ") failed");
+            logger.error("create " + typeName + " cache entry(id: " + dataId + ") on store(id: " + storeId + ") failed");
             return null;
         }
 
@@ -327,10 +328,10 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
                 return objOnCacheStore;
             }
         } catch (InterruptedException e) {
-            s_logger.debug("create cache storage failed: " + e.toString());
+            logger.debug("create cache storage failed: " + e.toString());
             throw new CloudRuntimeException(e);
         } catch (ExecutionException e) {
-            s_logger.debug("create cache storage failed: " + e.toString());
+            logger.debug("create cache storage failed: " + e.toString());
             throw new CloudRuntimeException(e);
         } finally {
             if (result == null) {
@@ -340,7 +341,7 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
                 /*
                  * Wake up all threads waiting for cache copy.
                  */
-                s_logger.debug("wake up all waiting threads(lock: " + lock.hashCode() + ")");
+                logger.debug("wake up all waiting threads(lock: " + lock.hashCode() + ")");
                 lock.notifyAll();
             }
         }

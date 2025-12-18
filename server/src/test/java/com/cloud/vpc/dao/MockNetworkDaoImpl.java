@@ -16,11 +16,6 @@
 // under the License.
 package com.cloud.vpc.dao;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
@@ -30,6 +25,11 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @DB()
 public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements NetworkDao {
@@ -264,5 +264,20 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
     @Override
     public List<NetworkVO> getAllPersistentNetworksFromZone(long dataCenterId) {
         return null;
+    }
+
+    @Override
+    public List<NetworkVO> listByNetworkDomains(Set<String> uniqueNtwkDomains) {
+        return List.of();
+    }
+
+    @Override
+    public List<NetworkVO> listByNetworkDomainsAndAccountIds(Set<String> uniqueNtwkDomains, Set<Long> accountIds) {
+        return List.of();
+    }
+
+    @Override
+    public List<NetworkVO> listByNetworkDomainsAndDomainIds(Set<String> uniqueNtwkDomains, Set<Long> domainIds) {
+        return List.of();
     }
 }

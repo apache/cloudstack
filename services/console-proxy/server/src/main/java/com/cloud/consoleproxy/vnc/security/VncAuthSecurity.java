@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.consoleproxy.vnc.security;
 
-import com.cloud.consoleproxy.util.Logger;
 import com.cloud.consoleproxy.vnc.NoVncClient;
 import com.cloud.consoleproxy.vnc.network.NioSocketHandler;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -24,12 +23,15 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class VncAuthSecurity implements VncSecurity {
 
     private final String vmPass;
 
     private static final int VNC_AUTH_CHALLENGE_SIZE = 16;
-    private static final Logger s_logger = Logger.getLogger(VncAuthSecurity.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public VncAuthSecurity(String vmPass) {
         this.vmPass = vmPass;
@@ -37,7 +39,7 @@ public class VncAuthSecurity implements VncSecurity {
 
     @Override
     public void process(NioSocketHandler socketHandler) throws IOException {
-        s_logger.info("VNC server requires password authentication");
+        logger.info("VNC server requires password authentication");
 
         // Read the challenge & obtain the user's password
         ByteBuffer challenge = ByteBuffer.allocate(VNC_AUTH_CHALLENGE_SIZE);
@@ -47,13 +49,13 @@ public class VncAuthSecurity implements VncSecurity {
         try {
             encodedPassword = NoVncClient.encodePassword(challenge.array(), vmPass);
         } catch (Exception e) {
-            s_logger.error("Cannot encrypt client password to send to server: " + e.getMessage());
+            logger.error("Cannot encrypt client password to send to server: " + e.getMessage());
             throw new CloudRuntimeException("Cannot encrypt client password to send to server: " + e.getMessage());
         }
 
         // Return the response to the server
         socketHandler.writeBytes(ByteBuffer.wrap(encodedPassword), encodedPassword.length);
         socketHandler.flushWriteBuffer();
-        s_logger.info("Finished VNCAuth security");
+        logger.info("Finished VNCAuth security");
     }
 }

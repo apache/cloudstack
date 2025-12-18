@@ -17,6 +17,7 @@
 package com.cloud.dao;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -57,6 +58,13 @@ public class EntityManagerImpl extends ManagerBase implements EntityManager {
     }
 
     @Override
+    public <T> List<T> listByUuids(Class<T> entityType, Collection<String> uuids) {
+        // Finds and returns a unique VO using uuid, null if entity not found in db
+        GenericDao<? extends T, String> dao = (GenericDao<? extends T, String>)GenericDaoBase.getDao(entityType);
+        return (List<T>)dao.listByUuids(uuids);
+    }
+
+    @Override
     public <T> T findByUuidIncludingRemoved(Class<T> entityType, String uuid) {
         // Finds and returns a unique VO using uuid, null if entity not found in db
         GenericDao<? extends T, String> dao = (GenericDao<? extends T, String>)GenericDaoBase.getDao(entityType);
@@ -86,7 +94,7 @@ public class EntityManagerImpl extends ManagerBase implements EntityManager {
 
     public <T, K> GenericSearchBuilder<T, K> createGenericSearchBuilder(Class<T> entityType, Class<K> resultType) {
         GenericDao<T, ? extends Serializable> dao = (GenericDao<T, ? extends Serializable>)GenericDaoBase.getDao(entityType);
-        return dao.createSearchBuilder((Class<K>)resultType.getClass());
+        return dao.createSearchBuilder((Class<K>)resultType);
     }
 
     @Override

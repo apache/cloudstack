@@ -29,11 +29,11 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
-import javax.persistence.Transient;
 
 import com.cloud.network.IpAddress;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.Ip;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 /**
  * A bean representing a public IP Address
@@ -97,14 +97,6 @@ public class IPAddressVO implements IpAddress {
     @Column(name = "is_system")
     private boolean system;
 
-    @Column(name = "account_id")
-    @Transient
-    private Long accountId = null;
-
-    @Transient
-    @Column(name = "domain_id")
-    private Long domainId = null;
-
     @Column(name = "vpc_id")
     private Long vpcId;
 
@@ -124,6 +116,9 @@ public class IPAddressVO implements IpAddress {
 
     @Column(name = "forsystemvms")
     private boolean forSystemVms = false;
+
+    @Column(name = "for_router")
+    private boolean forRouter = false;
 
     @Column(name= GenericDao.REMOVED_COLUMN)
     private Date removed;
@@ -277,7 +272,9 @@ public class IPAddressVO implements IpAddress {
 
     @Override
     public String toString() {
-        return new StringBuilder("Ip[").append(address).append("-").append(dataCenterId).append("]").toString();
+        return String.format("IPAddress %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "dataCenterId", "address"));
     }
 
     @Override
@@ -393,5 +390,14 @@ public class IPAddressVO implements IpAddress {
 
     public boolean isForSystemVms() {
         return forSystemVms;
+    }
+
+    @Override
+    public boolean isForRouter() {
+        return forRouter;
+    }
+
+    public void setForRouter(boolean forRouter) {
+        this.forRouter = forRouter;
     }
 }

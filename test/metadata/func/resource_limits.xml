@@ -79,17 +79,17 @@ under the License.
 				<name>account</name>
 				<param>accountname</param>
 			</item>
-		</parameters>		
+		</parameters>
 		<returnvalue>
 			<item setparam="true">
 				<name>id</name>
 				<param>userid</param>
-			</item>			
+			</item>
 		</returnvalue>
 	</command>
 
 
-<!-- 
+<!--
 <command>
             <name>createUser</name>
             <testcase>Create User Test Case</testcase>
@@ -119,7 +119,7 @@ under the License.
                         <value>0</value>
                   </item>
             </parameters>
-            
+
             <returnvalue>
                   <item setparam="true">
                         <name>id</name>
@@ -135,7 +135,7 @@ under the License.
 
 
 <!--Step 2(a): Setup VMs limit for the account-->
-<command>     
+<command>
       		<name>updateResourceLimit</name>
             <testcase>Setup VMs Limit for Account Test Case</testcase>
             <parameters>
@@ -166,10 +166,10 @@ under the License.
                         <value>2</value>
                   </item>
             </returnvalue>
- </command>        
+ </command>
 
 <!--Step 2(b): Setup Public-IPs limit for the account-->
-<command>     
+<command>
       		<name>updateResourceLimit</name>
             <testcase>Setup Public-Ips Limit for Account Test Case</testcase>
             <parameters>
@@ -200,10 +200,10 @@ under the License.
                         <value>1</value>
                   </item>
             </returnvalue>
- </command>        
- 
+ </command>
+
  <!--Step 2(c): Setup Volumes limit for the account-->
-<command>     
+<command>
       		<name>updateResourceLimit</name>
             <testcase>Setup Volumes Limit for Account Test Case</testcase>
             <parameters>
@@ -234,10 +234,10 @@ under the License.
                         <value>6</value>
                   </item>
             </returnvalue>
- </command>        
+ </command>
 
 <!--Step 2(d): Setup Snapshots limit for the account -->
-<command>     
+<command>
       		<name>updateResourceLimit</name>
             <testcase>Setup Snapshots Limit for Account Test Case</testcase>
             <parameters>
@@ -268,7 +268,7 @@ under the License.
                         <value>2</value>
                   </item>
             </returnvalue>
- </command> 
+ </command>
 
 <!-- 2(e): Setup Templates limit for the account -->
 <command>
@@ -302,9 +302,9 @@ under the License.
                         <value>2</value>
                   </item>
             </returnvalue>
-		
-</command> 
- 
+
+</command>
+
 <!--Step 3:  Register user-->
       <command>
             <name>registerUserKeys</name>
@@ -325,8 +325,8 @@ under the License.
                         <param>secretkey</param>
                   </item>
             </returnvalue>
-   </command>  
-   
+   </command>
+
    <command>
 		<name>createNetwork</name>
 		<testcase>	[Creating default network]</testcase>
@@ -374,7 +374,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>serviceofferingid</name>
 				<param>globalserviceofferingid</param>
@@ -386,11 +386,11 @@ under the License.
 			<item getparam="true">
 			    <name>zoneid</name>
 				<param>globalzoneid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>account</name>
 				<param>accountname</param>
-			</item>	
+			</item>
 			<item>
 			    <name>domainid</name>
 				<value>1</value>
@@ -406,7 +406,7 @@ under the License.
 			<item getparam="true">
 				<name>networkids</name>
 				<param>networkid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -424,7 +424,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>serviceofferingid</name>
 				<param>globalserviceofferingid</param>
@@ -436,15 +436,15 @@ under the License.
 			<item getparam="true">
 			    <name>zoneid</name>
 				<param>globalzoneid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>account</name>
 				<param>accountname</param>
-			</item>	
+			</item>
 			<item>
 			    <name>domainid</name>
 				<value>1</value>
-			</item>	
+			</item>
 			<item>
 				<name>displayname</name>
 				<value>ResourceLimits-VM-2</value>
@@ -465,38 +465,38 @@ under the License.
 			</item>
 		</returnvalue>
 		</command>
-		
+
 <!--Step 4(b): Associate an IP other than the one assigned to the DOMR -->
 
 <command>
-		<name>associateIpAddress</name> 
+		<name>associateIpAddress</name>
 		<testcase>Associate second IP Test Case</testcase>
 		<usercommand>true</usercommand>
-		
+
 		<parameters>
 			<item getparam="true">
 			    <name>zoneid</name>
 				<param>globalzoneid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>account</name>
 				<param>accountname</param>
-			</item>	
+			</item>
 			<item>
 			    <name>domainid</name>
 				<value>1</value>
-			</item>	
+			</item>
 		</parameters>
-		
+
 		<returnvalue>
 			<item setparam="true">
 				<name>ipaddress</name>
 				<param>ipid</param>
 			</item>
 		</returnvalue>
-		
-		
-</command>		
+
+
+</command>
 
 
 <!--Step 4(c): Add fifth and Sixth volume to the existing volumes of one of the VMs -->
@@ -504,7 +504,7 @@ under the License.
 		<name>createVolume</name>
 		<testcase>Create Fifth Volume Test Case</testcase>
 		<usercommand>true</usercommand>
-		
+
 		<parameters>
 			<item>
 				<name>name</name>
@@ -513,29 +513,29 @@ under the License.
 			<item getparam="true">
 			    <name>zoneid</name>
 				<param>globalzoneid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>account</name>
 				<param>accountname</param>
-			</item>	
+			</item>
 			<item>
 			    <name>domainid</name>
 				<value>1</value>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 		</parameters>
-		
+
 		<returnvalue>
 			<item setparam="true">
 				<name>id</name>
 				<param>volid1</param>
 			</item>
 		</returnvalue>
-		
-</command>		
+
+</command>
 
 <command>
 		<name>attachVolume</name>
@@ -550,7 +550,7 @@ under the License.
 			</item>
 		</parameters>
 </command>
-		
+
 <command>
 		<name>createVolume</name>
 		<testcase>Create Sixth Volume Test Case</testcase>
@@ -563,19 +563,19 @@ under the License.
 			<item getparam="true">
 			    <name>zoneid</name>
 				<param>globalzoneid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>account</name>
 				<param>accountname</param>
-			</item>	
+			</item>
 			<item>
 			    <name>domainid</name>
 				<value>1</value>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -583,7 +583,7 @@ under the License.
 				<param>volid2</param>
 			</item>
 		</returnvalue>
-		
+
 </command>
 
 <command>
@@ -599,7 +599,7 @@ under the License.
 			</item>
 		</parameters>
 </command>
-		
+
 <!-- Step 4(d): Create two snapshots for one of the Volumes -->
 <command>
 		<name>createSnapshot</name>
@@ -635,7 +635,7 @@ under the License.
 				<param>snpid</param>
 			</item>
 		</returnvalue>
-</command> 
+</command>
 
 <!--Step 4(e) Register two templates -->
 <command>
@@ -666,7 +666,7 @@ under the License.
 			<item getparam="true">
 			    <name>zoneid</name>
 				<param>globalzoneid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>account</name>
 				<param>accountname</param>
@@ -678,7 +678,7 @@ under the License.
 			<item getparam="true">
 				<name>hypervisor</name>
 				<param>globalhypervisortype</param>
-			</item>							
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -716,7 +716,7 @@ under the License.
 			<item getparam="true">
 			    <name>zoneid</name>
 				<param>globalzoneid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>account</name>
 				<param>accountname</param>
@@ -728,7 +728,7 @@ under the License.
 			<item getparam="true">
 				<name>hypervisor</name>
 				<param>globalhypervisortype</param>
-			</item>						
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -749,7 +749,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>serviceofferingid</name>
 				<param>globalserviceofferingid</param>
@@ -761,11 +761,11 @@ under the License.
 			<item getparam="true">
 			    <name>zoneid</name>
 				<param>globalzoneid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>account</name>
 				<param>accountname</param>
-			</item>	
+			</item>
 			<item>
 			    <name>domainid</name>
 				<value>1</value>
@@ -773,7 +773,7 @@ under the License.
 			<item getparam="true">
 				<name>networkids</name>
 				<param>network</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -782,11 +782,11 @@ under the License.
 			</item>
 		</returnvalue>
          </command>
-         
+
 <!--Step 5(b): Associate Third IP other than the two assigned -->
 
 <command>
-		<name>associateIpAddress</name> 
+		<name>associateIpAddress</name>
 		<testcase>Associate Second IP Failure Test Case</testcase>
 		<usercommand>true</usercommand>
 		<error>true</error>
@@ -794,25 +794,25 @@ under the License.
 			<item getparam="true">
 			    <name>zoneid</name>
 				<param>globalzoneid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>account</name>
 				<param>accountname</param>
-			</item>	
+			</item>
 			<item>
 			    <name>domainid</name>
 				<value>1</value>
-			</item>	
+			</item>
 		</parameters>
-		
+
 		<returnvalue>
 			<item setparam="true">
 				<name>ipaddress</name>
 				<param>ipid</param>
 			</item>
 		</returnvalue>
-		
-		
+
+
 </command>
 
 <!--Step 5(c): Add Seventh volume to the existing volumes of one of the VMs -->
@@ -829,29 +829,29 @@ under the License.
 			<item getparam="true">
 			    <name>zoneid</name>
 				<param>globalzoneid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>account</name>
 				<param>accountname</param>
-			</item>	
+			</item>
 			<item>
 			    <name>domainid</name>
 				<value>1</value>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 		</parameters>
-		
+
 		<returnvalue>
 			<item setparam="true">
 				<name>id</name>
 				<param>volid3</param>
 			</item>
 		</returnvalue>
-		
-</command>			         
+
+</command>
 
 <command>
 		<name>listVolumes</name>
@@ -873,7 +873,7 @@ under the License.
 		</returnvalue>
 </command>
 
-<!-- Step 5(d): Create a third Snapshot of the volume--> 
+<!-- Step 5(d): Create a third Snapshot of the volume-->
 <command>
 		<name>createSnapshot</name>
 		<testcase>Create Third Snapshot Failure Test Case</testcase>
@@ -924,7 +924,7 @@ under the License.
 			<item getparam="true">
 			    <name>zoneid</name>
 				<param>globalzoneid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>account</name>
 				<param>accountname</param>
@@ -936,7 +936,7 @@ under the License.
 			<item getparam="true">
 				<name>hypervisor</name>
 				<param>globalhypervisortype</param>
-			</item>							
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -950,14 +950,14 @@ under the License.
 <command>
 		<name>deleteAccount</name>
 		<testcase>Clean up account test case</testcase>
-		
+
 		<parameters>
 				<item getparam="true">
 					<name>id</name>
 					<param>accountname</param>
 				</item>
 		</parameters>
-		
+
 </command>
 
 <!--  SECOND USER -->
@@ -1023,15 +1023,15 @@ under the License.
 				<name>account</name>
 				<param>accountname</param>
 			</item>
-		</parameters>		
+		</parameters>
 		<returnvalue>
 			<item setparam="true">
 				<name>id</name>
 				<param>userid</param>
-			</item>			
+			</item>
 		</returnvalue>
 	</command>
-<!-- 
+<!--
 <command>
             <name>createUser</name>
             <testcase>Create Admin Test Case</testcase>
@@ -1061,7 +1061,7 @@ under the License.
                         <value>1</value>
                   </item>
             </parameters>
-            
+
             <returnvalue>
                   <item setparam="true">
                         <name>id</name>
@@ -1076,7 +1076,7 @@ under the License.
 -->
 
 <!--Step 2(a): Setup VMs limit for the account-->
-<command>     
+<command>
       		<name>updateResourceLimit</name>
             <testcase>Failure in Setting Up VMs Limit for Admin Account Test Case</testcase>
             <error>true</error>
@@ -1108,10 +1108,10 @@ under the License.
                         <value>2</value>
                   </item>
             </returnvalue>
- </command>        
+ </command>
 
 <!--Step 2(b): Setup Public-IPs limit for the account-->
-<command>     
+<command>
       		<name>updateResourceLimit</name>
             <testcase>Failure in Setting Up Public-Ips Limit for Admin Account Test Case</testcase>
             <error>true</error>
@@ -1143,10 +1143,10 @@ under the License.
                         <value>1</value>
                   </item>
             </returnvalue>
- </command>        
- 
+ </command>
+
  <!--Step 2(c): Setup Volumes limit for the account-->
-<command>     
+<command>
       		<name>updateResourceLimit</name>
             <testcase>Failure in Setting Up Volumes Limit for Admin Account Test Case</testcase>
             <error>true</error>
@@ -1178,10 +1178,10 @@ under the License.
                         <value>6</value>
                   </item>
             </returnvalue>
- </command>        
+ </command>
 
 <!--Step 2(d): Setup Snapshots limit for the account-->
-<command>     
+<command>
       		<name>updateResourceLimit</name>
             <testcase>Failure in Setting up Snapshots Limit for Admin Account Test Case</testcase>
             <error>true</error>
@@ -1248,9 +1248,9 @@ under the License.
                         <value>2</value>
                   </item>
             </returnvalue>
-		
-</command> 
- 
+
+</command>
+
 <!--Step 3:  Register user-->
       <command>
             <name>registerUserKeys</name>
@@ -1271,7 +1271,7 @@ under the License.
                         <param>secretkey</param>
                   </item>
             </returnvalue>
-   </command>  
+   </command>
 
 	<command>
 		<name>createNetwork</name>
@@ -1309,7 +1309,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 <!--Step4(a): Execute command deploy vm as user – deploy 2 vms -->
 
 		<command>
@@ -1320,7 +1320,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>serviceofferingid</name>
 				<param>globalserviceofferingid</param>
@@ -1332,11 +1332,11 @@ under the License.
 			<item getparam="true">
 			    <name>zoneid</name>
 				<param>globalzoneid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>account</name>
 				<param>accountname</param>
-			</item>	
+			</item>
 			<item>
 			    <name>domainid</name>
 				<value>1</value>
@@ -1352,7 +1352,7 @@ under the License.
 			<item getparam="true">
 				<name>networkids</name>
 				<param>networkid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -1370,7 +1370,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>serviceofferingid</name>
 				<param>globalserviceofferingid</param>
@@ -1382,11 +1382,11 @@ under the License.
 			<item getparam="true">
 			    <name>zoneid</name>
 				<param>globalzoneid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>account</name>
 				<param>accountname</param>
-			</item>	
+			</item>
 			<item>
 			    <name>domainid</name>
 				<value>1</value>
@@ -1402,7 +1402,7 @@ under the License.
 			<item getparam="true">
 				<name>networkids</name>
 				<param>networkid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -1411,43 +1411,43 @@ under the License.
 			</item>
 		</returnvalue>
 		</command>
-		
+
 <!--Step 4(b): Associate an IP other than the one assigned to the DOMR -->
 
 <command>
-		<name>associateIpAddress</name> 
+		<name>associateIpAddress</name>
 		<testcase>Associate second IP Test Case</testcase>
 		<usercommand>true</usercommand>
-		
+
 		<parameters>
 			<item getparam="true">
 			    <name>zoneid</name>
 				<param>globalzoneid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>account</name>
 				<param>accountname</param>
-			</item>	
+			</item>
 			<item>
 			    <name>domainid</name>
 				<value>1</value>
-			</item>	
+			</item>
 		</parameters>
-		
+
 		<returnvalue>
 			<item setparam="true">
 				<name>ipaddress</name>
 				<param>ipid</param>
 			</item>
-		</returnvalue>				
-</command>		
+		</returnvalue>
+</command>
 
 <!--Step 4(c): Add fifth and Sixth volume to the existing volumes of one of the VMs -->
 <command>
 		<name>createVolume</name>
 		<testcase>Create Fifth Volume Test Case</testcase>
 		<usercommand>true</usercommand>
-		
+
 		<parameters>
 			<item>
 				<name>name</name>
@@ -1456,30 +1456,30 @@ under the License.
 			<item getparam="true">
 			    <name>zoneid</name>
 				<param>globalzoneid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>account</name>
 				<param>accountname</param>
-			</item>	
+			</item>
 			<item>
 			    <name>domainid</name>
 				<value>1</value>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 		</parameters>
-		
+
 		<returnvalue>
 			<item setparam="true">
 				<name>id</name>
 				<param>volid1</param>
 			</item>
 		</returnvalue>
-		
-</command>		
-		
+
+</command>
+
 <command>
 		<name>attachVolume</name>
 		<parameters>
@@ -1492,8 +1492,8 @@ under the License.
 				<param>vmid1</param>
 			</item>
 		</parameters>
-</command>		
-		
+</command>
+
 <command>
 		<name>createVolume</name>
 		<testcase>Create Sixth Volume Test Case</testcase>
@@ -1506,19 +1506,19 @@ under the License.
 			<item getparam="true">
 			    <name>zoneid</name>
 				<param>globalzoneid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>account</name>
 				<param>accountname</param>
-			</item>	
+			</item>
 			<item>
 			    <name>domainid</name>
 				<value>1</value>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -1526,7 +1526,7 @@ under the License.
 				<param>volid2</param>
 			</item>
 		</returnvalue>
-		
+
 </command>
 
 <command>
@@ -1542,7 +1542,7 @@ under the License.
 			</item>
 		</parameters>
 </command>
-		
+
 <!--Step 4(d): Create two snapshots for one of the Volumes-->
 <command>
 		<name>createSnapshot</name>
@@ -1609,7 +1609,7 @@ under the License.
 			<item getparam="true">
 			    <name>zoneid</name>
 				<param>globalzoneid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>account</name>
 				<param>accountname</param>
@@ -1621,7 +1621,7 @@ under the License.
 			<item getparam="true">
 				<name>hypervisor</name>
 				<param>globalhypervisortype</param>
-			</item>						
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -1659,7 +1659,7 @@ under the License.
 			<item getparam="true">
 			    <name>zoneid</name>
 				<param>globalzoneid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>account</name>
 				<param>accountname</param>
@@ -1671,7 +1671,7 @@ under the License.
 			<item getparam="true">
 				<name>hypervisor</name>
 				<param>globalhypervisortype</param>
-			</item>						
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -1687,12 +1687,12 @@ under the License.
 			<name>deployVirtualMachine</name>  <!--deploy vm 3 – should fail-->
             <testcase>Deploy VM3 Failure Avoidance test case</testcase>
             <usercommand>true</usercommand>
-			
+
         <parameters>
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>serviceofferingid</name>
 				<param>globalserviceofferingid</param>
@@ -1704,11 +1704,11 @@ under the License.
 			<item getparam="true">
 			    <name>zoneid</name>
 				<param>globalzoneid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>account</name>
 				<param>accountname</param>
-			</item>	
+			</item>
 			<item>
 			    <name>domainid</name>
 				<value>1</value>
@@ -1724,7 +1724,7 @@ under the License.
 			<item getparam="true">
 				<name>networkids</name>
 				<param>networkid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -1733,37 +1733,37 @@ under the License.
 			</item>
 		</returnvalue>
          </command>
-         
+
 <!--Step 5(b): Associate Third IP other than the two assigned -->
 
 <command>
-		<name>associateIpAddress</name> 
+		<name>associateIpAddress</name>
 		<testcase>Associate Second IP Failure Avoidance Test Case</testcase>
 		<usercommand>true</usercommand>
-	
+
 		<parameters>
 			<item getparam="true">
 			    <name>zoneid</name>
 				<param>globalzoneid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>account</name>
 				<param>accountname</param>
-			</item>	
+			</item>
 			<item>
 			    <name>domainid</name>
 				<value>1</value>
-			</item>	
+			</item>
 		</parameters>
-		
+
 		<returnvalue>
 			<item setparam="true">
 				<name>ipaddress</name>
 				<param>ipid</param>
 			</item>
 		</returnvalue>
-		
-		
+
+
 </command>
 
 <!--Step 5(c): Add Seventh volume to the existing volumes of one of the VMs -->
@@ -1771,7 +1771,7 @@ under the License.
 		<name>createVolume</name>
 		<testcase>Create Seventh Volume Failure Avoidance Test Case</testcase>
 		<usercommand>true</usercommand>
-	
+
 		<parameters>
 			<item>
 				<name>name</name>
@@ -1780,31 +1780,31 @@ under the License.
 			<item getparam="true">
 			    <name>zoneid</name>
 			    <param>globalzoneid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>account</name>
 				<param>accountname</param>
-			</item>	
+			</item>
 			<item>
 			    <name>domainid</name>
 				<value>1</value>
-			</item>	
+			</item>
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 		</parameters>
-		
+
 		<returnvalue>
 			<item setparam="true">
 				<name>id</name>
 				<param>volid3</param>
 			</item>
 		</returnvalue>
-		
-</command>			         
 
-<!-- Step 5(d): Create a third Snapshot of the volume--> 
+</command>
+
+<!-- Step 5(d): Create a third Snapshot of the volume-->
 <command>
 		<name>createSnapshot</name>
 		<testcase>Create Third Snapshot Failure Test Case</testcase>
@@ -1855,7 +1855,7 @@ under the License.
 			<item getparam="true">
 			    <name>zoneid</name>
 				<param>globalzoneid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>account</name>
 				<param>accountname</param>
@@ -1867,8 +1867,8 @@ under the License.
 			<item getparam="true">
 				<name>hypervisor</name>
 				<param>globalhypervisortype</param>
-			</item>	
-						
+			</item>
+
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -1882,13 +1882,13 @@ under the License.
 <command>
 		<name>deleteAccount</name>
 		<testcase>Clean up admin account test case</testcase>
-		
+
 		<parameters>
 				<item getparam="true">
 					<name>id</name>
 					<param>accountid</param>
 				</item>
 		</parameters>
-		
+
 </command>
 </thirdtest>

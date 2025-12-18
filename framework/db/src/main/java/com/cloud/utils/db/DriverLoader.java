@@ -16,18 +16,21 @@
 // under the License.
 package com.cloud.utils.db;
 
+import java.lang.reflect.InvocationTargetException;
+import java.sql.Driver;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class DriverLoader {
 
-    private static final Logger LOGGER = Logger.getLogger(DriverLoader.class.getName());
+    protected static Logger LOGGER = LogManager.getLogger(DriverLoader.class);
     private static final List<String> LOADED_DRIVERS;
     private static final Map<String, String> DRIVERS;
 
@@ -36,6 +39,7 @@ public class DriverLoader {
         DRIVERS.put("jdbc:mysql", "com.mysql.cj.jdbc.Driver");
         DRIVERS.put("jdbc:postgresql", "org.postgresql.Driver");
         DRIVERS.put("jdbc:h2", "org.h2.Driver");
+        DRIVERS.put("jdbc:mariadb", "org.mariadb.jdbc.Driver");
 
         LOADED_DRIVERS = new ArrayList<String>();
     }
@@ -56,12 +60,13 @@ public class DriverLoader {
         }
 
         try {
-            Class.forName(driverClass).newInstance();
+            Class<Driver> klazz = (Class<Driver>) Class.forName(driverClass);
+            klazz.getDeclaredConstructor().newInstance();
             LOADED_DRIVERS.add(dbDriver);
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Successfully loaded DB driver " + driverClass);
             }
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             LOGGER.error("Failed to load DB driver " + driverClass);
             throw new CloudRuntimeException("Failed to load DB driver " + driverClass, e);
         }

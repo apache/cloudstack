@@ -34,7 +34,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -58,7 +58,7 @@ under the License.
 			<item getparam="true">
 				<name>networkids</name>
 				<param>globalnetworkid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -67,7 +67,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>associateIpAddress</name>
 		<testcase>	[Acquire a non-Source NAT IP Address for the Admin Account]</testcase>
@@ -85,14 +85,14 @@ under the License.
 				<value>1</value>
 			</item>
 		</parameters>
-		<returnvalue> 
+		<returnvalue>
 			<item setparam="true">
 				<name>ipaddress</name>
 				<param>nonsourcenatpublicip</param>
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>createLoadBalancerRule</name>
 		<testcase>	[Create Load Balancing Rule -ve test (Private Port 0)]</testcase>
@@ -127,8 +127,8 @@ under the License.
 				<value>1</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>createLoadBalancerRule</name>
 		<testcase>	[Create Load Balancing Rule -ve test (Private Port 65536)]</testcase>
@@ -163,8 +163,8 @@ under the License.
 				<value>1</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>createLoadBalancerRule</name>
 		<testcase>	[Create Load Balancing Rule -ve test (Private Port 65536)]</testcase>
@@ -199,8 +199,8 @@ under the License.
 				<value>1</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>createLoadBalancerRule</name>
 		<testcase>	[Create Load Balancing Rule -ve test (Public Port 65536)]</testcase>
@@ -235,8 +235,8 @@ under the License.
 				<value>1</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 <!-- Test case #919 - algorithm validation when do create a load balancer -->
 	<command>
 		<name>createLoadBalancerRule</name>
@@ -270,8 +270,8 @@ under the License.
 				<value>1</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>createLoadBalancerRule</name>
 		<testcase>919-1 [Create Load Balancing Rule - 2]</testcase>
@@ -304,8 +304,8 @@ under the License.
 				<value>1</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>createLoadBalancerRule</name>
 		<testcase>919-2 [Create Load Balancing Rule - 3]</testcase>
@@ -338,8 +338,8 @@ under the License.
 				<value>1</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>createLoadBalancerRule</name>
 		<error>true</error>
@@ -373,7 +373,7 @@ under the License.
 				<value>1</value>
 			</item>
 		</parameters>
-	</command>	
+	</command>
 
 
 <!-- Test case #920 - verify that the same names are allowed for load balancers belonging to the same account-->
@@ -411,8 +411,8 @@ under the License.
 				<value>1</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>createLoadBalancerRule</name>
 		<testcase>920-2 [Create a Load Balancer Rule with the Same Name]</testcase>
@@ -446,7 +446,7 @@ under the License.
 				<value>1</value>
 			</item>
 		</parameters>
-	</command>	
+	</command>
 
 
 <!-- Test case #921 - verify that the same names for load balancers are allowed across accounts -->
@@ -483,7 +483,7 @@ under the License.
 				<value>1</value>
 			</item>
 		</parameters>
-	</command>	
+	</command>
 
 	<command>
 		<name>createAccount</name>
@@ -543,16 +543,16 @@ under the License.
 				<name>account</name>
 				<param>accountvar</param>
 			</item>
-		</parameters>		
+		</parameters>
 		<returnvalue>
 			<item setparam="true">
 				<name>id</name>
 				<param>userid</param>
-			</item>			
+			</item>
 		</returnvalue>
 	</command>
 
-<!-- 	
+<!--
 	<command>
 		<name>createUser</name>
 		<parameters>
@@ -595,7 +595,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
--->	
+-->
 	<command>
 		<name>registerUserKeys</name>
 		<testcase>	[Register User Keys]</testcase>
@@ -615,8 +615,8 @@ under the License.
 				<param>secretkey</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>createNetwork</name>
 		<testcase>	[Creating default network]</testcase>
@@ -653,7 +653,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<testcase>	[Deploy Virtual Machine in that Account]</testcase>
@@ -670,7 +670,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -686,7 +686,7 @@ under the License.
 			<item getparam="true">
 			    <name>account</name>
 				<param>accountvar</param>
-			</item>	
+			</item>
 			<item>
 			    <name>domainid</name>
 				<value>1</value>
@@ -694,7 +694,7 @@ under the License.
 			<item getparam="true">
 				<name>networkids</name>
 				<param>networkid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -703,7 +703,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>associateIpAddress</name>
 		<testcase>	[Acquire a Non-Source NAT IP Address]</testcase>
@@ -722,14 +722,14 @@ under the License.
 				<value>1</value>
 			</item>
 		</parameters>
-		<returnvalue> 
+		<returnvalue>
 			<item setparam="true">
 				<name>ipaddress</name>
 				<param>nonsourcenatpublicip1</param>
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>createLoadBalancerRule</name>
 		<testcase>	[Creating a LB Rule with the same name of a rule in another account]</testcase>
@@ -765,7 +765,7 @@ under the License.
 				<value>1</value>
 			</item>
 		</parameters>
-	</command>	
+	</command>
 
 
 <!-- Test case #922 - try to create a load balancer with non-existing ip address -->
@@ -803,8 +803,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 <!-- Test case #923 - try to create a load balancer rule with ip address belonging to different user -->
 	<command>
 		<name>createLoadBalancerRule</name>
@@ -840,8 +840,8 @@ under the License.
 				<value>admin</value>
 			</item>
 		</parameters>
-	</command>		
-	
+	</command>
+
 <!-- Test case #924 - create a load balancer with non-source nat ip address -->
 	<command>
 		<name>associateIpAddress</name>
@@ -860,14 +860,14 @@ under the License.
 				<value>1</value>
 			</item>
 		</parameters>
-		<returnvalue> 
+		<returnvalue>
 			<item setparam="true">
 				<name>ipaddress</name>
 				<param>nonsourcenatpublicip</param>
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>createLoadBalancerRule</name>
 		<testcase>924 [Create Load Balancer Rule from non-Source NAT IP Address]</testcase>
@@ -900,8 +900,8 @@ under the License.
 				<value>1</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 <!-- Test case #925 - try to delete load balancer with non-existing id - negative case-->
 	<command>
 		<name>deleteLoadBalancerRule</name>
@@ -914,7 +914,7 @@ under the License.
 				<value>10000</value>
 			</item>
 		</parameters>
-	</command>	
+	</command>
 
 <!-- Test case #926 - verify that admin can delete any rule via 8096 port-->
 	<command>
@@ -926,7 +926,7 @@ under the License.
 					<param>accountid</param>
 				</item>
 			</parameters>
-	</command>	
+	</command>
 
 	<command>
 		<name>createAccount</name>
@@ -987,16 +987,16 @@ under the License.
 				<name>account</name>
 				<param>accountvar</param>
 			</item>
-		</parameters>		
+		</parameters>
 		<returnvalue>
 			<item setparam="true">
 				<name>id</name>
 				<param>userid</param>
-			</item>			
+			</item>
 		</returnvalue>
 	</command>
 
-<!-- 
+<!--
 	<command>
 		<name>createUser</name>
 		<parameters>
@@ -1039,7 +1039,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
--->	
+-->
 	<command>
 		<name>registerUserKeys</name>
 		<testcase>	[Register User Keys]</testcase>
@@ -1059,8 +1059,8 @@ under the License.
 				<param>secretkey</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>createNetwork</name>
 		<testcase>	[Creating default network]</testcase>
@@ -1097,7 +1097,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<testcase> [Deploy Virtual Machine in the account created]</testcase>
@@ -1114,7 +1114,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -1137,7 +1137,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>associateIpAddress</name>
 		<testcase> [Acquire a non-Source NAT IP Address for that account]</testcase>
@@ -1156,14 +1156,14 @@ under the License.
 				<value>1</value>
 			</item>
 		</parameters>
-		<returnvalue> 
+		<returnvalue>
 			<item setparam="true">
 				<name>ipaddress</name>
 				<param>nonsourcenatpublicip1</param>
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>createLoadBalancerRule</name>
 		<testcase> [Create Load Balancer Rule with the acquired Ip address]</testcase>
@@ -1204,8 +1204,8 @@ under the License.
 				<param>lbid1</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>createLoadBalancerRule</name>
 		<testcase> [Create a Second Load Balancer Rule with the Acquired Ip Address]</testcase>
@@ -1238,7 +1238,7 @@ under the License.
 			<item>
 			    <name>domainid</name>
 				<value>1</value>
-			</item>			
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -1246,8 +1246,8 @@ under the License.
 				<param>lbid2</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>createLoadBalancerRule</name>
 		<testcase> [Create a Third Load Balancer Rule with the Acquired Ip Address]</testcase>
@@ -1288,8 +1288,8 @@ under the License.
 				<param>lbid3</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>deleteLoadBalancerRule</name>
 		<testcase>926 [Admin allowed to Delete Load Balancer Rule of another account via 8096 port]</testcase>
@@ -1312,7 +1312,7 @@ under the License.
 				<param>accountid</param>
 			</item>
 		</parameters>
-	</command>	
+	</command>
 
 	<command>
 		<name>createAccount</name>
@@ -1373,16 +1373,16 @@ under the License.
 				<name>account</name>
 				<param>accountvar</param>
 			</item>
-		</parameters>		
+		</parameters>
 		<returnvalue>
 			<item setparam="true">
 				<name>id</name>
 				<param>userid</param>
-			</item>			
+			</item>
 		</returnvalue>
 	</command>
 
-<!-- 
+<!--
 	<command>
 		<name>createUser</name>
 		<parameters>
@@ -1425,7 +1425,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
--->	
+-->
 	<command>
 		<name>registerUserKeys</name>
 		<testcase> [Register User Keys]</testcase>
@@ -1445,8 +1445,8 @@ under the License.
 				<param>secretkey</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>deleteLoadBalancerRule</name>
 		<testcase> [Admin allowed to Delete Load Balancer Rule of another account via 8080 port]</testcase>
@@ -1459,8 +1459,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 <!--  Test case 928 - verify that regular user can't delete lb rule belonging to another user -->
 	<command>
 		<name>deleteAccount</name>
@@ -1471,8 +1471,8 @@ under the License.
 				<param>accountid</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>createAccount</name>
 		<testcase>	[Create the Account and a User for the account]</testcase>
@@ -1486,7 +1486,7 @@ under the License.
 				<value>0</value>
 			</item>
 			<item>
-				<name>domainid</name>	
+				<name>domainid</name>
 				<value>1</value>
 			</item>
 			<item>
@@ -1532,16 +1532,16 @@ under the License.
 				<name>account</name>
 				<param>accountvar</param>
 			</item>
-		</parameters>		
+		</parameters>
 		<returnvalue>
 			<item setparam="true">
 				<name>id</name>
 				<param>userid</param>
-			</item>			
+			</item>
 		</returnvalue>
 	</command>
 
-<!-- 		
+<!--
 	<command>
 		<name>createUser</name>
 		<parameters>
@@ -1584,7 +1584,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
--->	
+-->
 	<command>
 		<name>registerUserKeys</name>
 		<testcase>	[Register User Keys]</testcase>
@@ -1609,7 +1609,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>createNetwork</name>
 		<testcase>	[Creating default network]</testcase>
@@ -1646,7 +1646,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>deleteLoadBalancerRule</name>
 		<usercommand>true</usercommand>
@@ -1659,8 +1659,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-<!--  Test case 939 - verify that you can assign a load balancer to multipe vms -->
+
+<!--  Test case 939 - verify that you can assign a load balancer to multiple vms -->
 	<command>
 		<name>deployVirtualMachine</name>
 		<testcase> [Deploy a Virtual Machine-1 to check multiple VMs - LB assignment]</testcase>
@@ -1676,7 +1676,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -1709,7 +1709,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<testcase> [Deploy a Virtual Machine-2 to check multiple VMs - LB assignment]</testcase>
@@ -1725,7 +1725,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -1758,7 +1758,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>associateIpAddress</name>
 		<testcase> [Acquire a non-Source NAT IP address]</testcase>
@@ -1776,14 +1776,14 @@ under the License.
 				<value>1</value>
 			</item>
 		</parameters>
-		<returnvalue> 
+		<returnvalue>
 			<item setparam="true">
 				<name>ipaddress</name>
 				<param>nonsourcenatpublicip</param>
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>createLoadBalancerRule</name>
 		<testcase>	[Create a Load Balancer Rule]</testcase>
@@ -1822,8 +1822,8 @@ under the License.
 				<param>lbid</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>assignToLoadBalancerRule</name>
 		<testcase>939 [Assign the First VM to the Load Balancing Rule]</testcase>
@@ -1837,8 +1837,8 @@ under the License.
 				<param>vmid1</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>assignToLoadBalancerRule</name>
 		<testcase>939 [Assign the Second VM to the Load Balancing Rule]</testcase>
@@ -1852,8 +1852,8 @@ under the License.
 				<param>vmid2</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 <!--  Test case 978 - try to create 2 load balancers with the same settings -->
 	<command>
 		<name>createLoadBalancerRule</name>
@@ -1887,8 +1887,8 @@ under the License.
 				<value>1</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>createLoadBalancerRule</name>
 		<testcase>978 [Creation of Second LoadBalancer Rule should Fail]</testcase>
@@ -1922,8 +1922,8 @@ under the License.
 				<value>1</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 <!--  Test case 1017 - verify that you can create a load balancer with source nat ip address -->
 	<command>
 		<name>listRouters</name>
@@ -1950,8 +1950,8 @@ under the License.
 				<param>sourcenatpublicip</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>createLoadBalancerRule</name>
 		<testcase>1017 [Create Load Balancer Rule with Source NAT IP Address]</testcase>
@@ -1984,9 +1984,9 @@ under the License.
 				<value>1</value>
 			</item>
 		</parameters>
-	</command>	
-	
-	
+	</command>
+
+
 <!--  Execute cleanup here -->
 	<command>
 		<name>destroyVirtualMachine</name>
@@ -1997,8 +1997,8 @@ under the License.
 				<param>vmid1</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>destroyVirtualMachine</name>
 		<testcase>	[Destroy vm as a part of cleanup]</testcase>
@@ -2009,7 +2009,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>destroyVirtualMachine</name>
 		<testcase>	[Destroy vm as a part of cleanup]</testcase>
@@ -2020,7 +2020,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>deleteAccount</name>
 		<testcase>	[Deleting Account as a part of cleanup]</testcase>
@@ -2030,7 +2030,7 @@ under the License.
 				<param>accountid</param>
 			</item>
 		</parameters>
-	</command>	
-	
-	
+	</command>
+
+
 </LoadBalancerRules>

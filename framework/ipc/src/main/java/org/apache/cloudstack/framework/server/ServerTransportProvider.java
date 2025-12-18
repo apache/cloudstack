@@ -27,7 +27,8 @@ import org.apache.cloudstack.framework.transport.TransportEndpointSite;
 import org.apache.cloudstack.framework.transport.TransportPdu;
 import org.apache.cloudstack.framework.transport.TransportProvider;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import java.security.SecureRandom;
@@ -38,7 +39,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class ServerTransportProvider implements TransportProvider {
-    private static final Logger s_logger = Logger.getLogger(ServerTransportProvider.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public static final int DEFAULT_WORKER_POOL_SIZE = 5;
 
@@ -150,7 +151,7 @@ public class ServerTransportProvider implements TransportProvider {
                     site.processOutput();
                     site.ackOutputProcessSignal();
                 } catch (Throwable e) {
-                    s_logger.error("Unhandled exception", e);
+                    logger.error("Unhandled exception", e);
                 }
             }
         });

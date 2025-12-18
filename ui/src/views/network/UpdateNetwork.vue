@@ -80,6 +80,24 @@
             </a-col>
           </a-row>
         </div>
+        <a-form-item name="sourcenatipaddress" ref="sourcenatipaddress">
+          <template #label>
+            <tooltip-label :title="$t('label.sourcenatipaddress')" :tooltip="apiParams.sourcenatipaddress.description"/>
+          </template>
+          <span v-if="sourcenatchange">
+            <a-alert type="warning">
+              <template #message>
+                <span v-html="$t('message.sourcenatip.change.warning')" />
+              </template>
+            </a-alert>
+            <br/>
+          </span>
+          <a-input
+            v-model:value="form.sourcenatipaddress"
+            :placeholder="apiParams.sourcenatipaddress.description"
+            v-focus="true"
+            @change="sourcenatchange = form.sourcenatipaddress.length > 0"/>
+        </a-form-item>
         <a-form-item name="networkofferingid" ref="networkofferingid" v-if="isUpdatingIsolatedNetwork">
           <template #label>
             <tooltip-label :title="$t('label.networkofferingid')" :tooltip="apiParams.networkofferingid.description"/>
@@ -123,7 +141,7 @@
           </template>
           <a-switch v-model:checked="form.changecidr" />
         </a-form-item>
-        <a-form-item name="networkdomain" ref="networkdomain" v-if="isUpdatingIsolatedNetwork">
+        <a-form-item name="networkdomain" ref="networkdomain" v-if="hasNetworkDomain">
           <template #label>
             <tooltip-label :title="$t('label.networkdomain')" :tooltip="apiParams.guestvmcidr.description"/>
           </template>
@@ -208,7 +226,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { isAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -238,7 +256,8 @@ export default {
       minMTU: 68,
       errorPrivateMtu: '',
       errorPublicMtu: '',
-      setMTU: false
+      setMTU: false,
+      sourcenatchange: false
     }
   },
   beforeCreate () {
@@ -255,7 +274,7 @@ export default {
       ip6dns1: this.resource.ip6dns1,
       ip6dns2: this.resource.ip6dns2
     }
-    if (this.isUpdatingIsolatedNetwork) {
+    if (this.hasNetworkDomain) {
       this.resourceValues.networkdomain = this.resource.networkdomain
     }
     for (var field in this.resourceValues) {
@@ -269,6 +288,12 @@ export default {
   computed: {
     isUpdatingIsolatedNetwork () {
       return this.resource && this.resource.type === 'Isolated'
+    },
+    isUpdatingSharedNetwork () {
+      return this.resource && this.resource.type === 'Shared'
+    },
+    hasNetworkDomain () {
+      return this.isUpdatingIsolatedNetwork || this.isUpdatingSharedNetwork
     },
     selectedNetworkOfferingSupportsDns () {
       if (this.networkOffering) {
@@ -303,7 +328,7 @@ export default {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
     },
     fetchMtuForZone () {
-      api('listZones', {
+      getAPI('listZones', {
         id: this.resource.zoneid
       }).then(json => {
         this.setMTU = json?.listzonesresponse?.zone?.[0]?.allowuserspecifyvrmtu || false
@@ -323,7 +348,7 @@ export default {
         params.id = this.resource.networkofferingid
       }
       this.networkOfferingLoading = true
-      api('listNetworkOfferings', params).then(json => {
+      getAPI('listNetworkOfferings', params).then(json => {
         this.networkOfferings = json.listnetworkofferingsresponse.networkoffering
       }).finally(() => {
         this.networkOfferingLoading = false
@@ -388,7 +413,7 @@ export default {
           this.networkOfferings[values.networkofferingid].id !== this.resource.networkofferingid) {
           params.networkofferingid = this.networkOfferings[values.networkofferingid].id
         }
-        api('updateNetwork', params).then(json => {
+        postAPI('updateNetwork', params).then(json => {
           const jobId = json.updatenetworkresponse.jobid
           this.$pollJob({
             jobId,

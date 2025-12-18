@@ -29,6 +29,7 @@ import javax.persistence.Table;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 
 @Entity
@@ -108,6 +109,13 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
         this.domainId = domainId;
         this.splitConnections = splitConnections;
         this.ikeVersion = ikeVersion;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Site2SiteCustomerGateway %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name"));
     }
 
     @Override

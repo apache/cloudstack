@@ -93,6 +93,18 @@
             v-model:value="form.domain"
           >
             <template #prefix>
+              <project-outlined />
+            </template>
+          </a-input>
+        </a-form-item>
+        <a-form-item ref="project" name="project" v-if="$config.displayProjectFieldOnLogin">
+          <a-input
+            size="large"
+            type="text"
+            :placeholder="$t('label.project')"
+            v-model:value="form.project"
+          >
+            <template #prefix>
               <block-outlined />
             </template>
           </a-input>
@@ -152,13 +164,51 @@
         @click="handleSubmit"
       >{{ $t('label.login') }}</a-button>
     </a-form-item>
-    <translation-menu/>
+    <a-row justify="space-between">
+      <a-col>
+      <translation-menu/>
+      </a-col>
+      <a-col v-if="forgotPasswordEnabled">
+        <router-link :to="{ name: 'forgotPassword' }">
+          {{ $t('label.forgot.password') }}
+        </router-link>
+      </a-col>
+    </a-row>
+    <div class="content" v-if="socialLogin">
+      <p class="or">or</p>
+    </div>
+    <div class="center">
+      <div class="social-auth" v-if="githubprovider">
+        <a-button
+          @click="handleGithubProviderAndDomain"
+          tag="a"
+          color="primary"
+          :href="getGitHubUrl(from)"
+          class="auth-btn github-auth"
+          style="height: 38px; width: 185px; padding: 0; margin-bottom: 5px;" >
+          <img src="/assets/github.svg" style="width: 32px; padding: 5px" />
+          <a-typography-text>Sign in with Github</a-typography-text>
+        </a-button>
+      </div>
+      <div class="social-auth" v-if="googleprovider">
+        <a-button
+          @click="handleGoogleProviderAndDomain"
+          tag="a"
+          color="primary"
+          :href="getGoogleUrl(from)"
+          class="auth-btn google-auth"
+          style="height: 38px; width: 185px; padding: 0" >
+          <img src="/assets/google.svg" style="width: 32px; padding: 5px" />
+          <a-typography-text>Sign in with Google</a-typography-text>
+        </a-button>
+      </div>
+    </div>
   </a-form>
 </template>
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import store from '@/store'
 import { mapActions } from 'vuex'
 import { sourceToken } from '@/utils/request'
@@ -173,14 +223,27 @@ export default {
     return {
       idps: [],
       customActiveKey: 'cs',
+      customActiveKeyOauth: false,
       loginBtn: false,
+      email: '',
+      secretcode: '',
+      oauthexclude: '',
+      socialLogin: false,
+      googleprovider: false,
+      githubprovider: false,
+      googleredirecturi: '',
+      githubredirecturi: '',
+      googleclientid: '',
+      githubclientid: '',
       loginType: 0,
       state: {
         time: 60,
         loginBtn: false,
         loginType: 0
       },
-      server: ''
+      server: '',
+      forgotPasswordEnabled: false,
+      project: null
     }
   },
   created () {
@@ -189,6 +252,9 @@ export default {
     }
     this.initForm()
     if (store.getters.logoutFlag) {
+      if (store.getters.readyForShutdownPollingJob !== '' || store.getters.readyForShutdownPollingJob !== undefined) {
+        clearInterval(store.getters.readyForShutdownPollingJob)
+      }
       sourceToken.init()
       this.fetchData()
     } else {
@@ -196,17 +262,20 @@ export default {
     }
   },
   methods: {
-    ...mapActions(['Login', 'Logout']),
+    ...mapActions(['Login', 'Logout', 'OauthLogin']),
     initForm () {
       this.formRef = ref()
       this.form = reactive({
-        server: (this.server.apiHost || '') + this.server.apiBase
+        server: (this.server.apiHost || '') + this.server.apiBase,
+        username: this.$route.query?.username || '',
+        domain: this.$route.query?.domain || '',
+        project: null
       })
       this.rules = reactive({})
       this.setRules()
     },
     setRules () {
-      if (this.customActiveKey === 'cs') {
+      if (this.customActiveKey === 'cs' && this.customActiveKeyOauth === false) {
         this.rules.username = [
           {
             required: true,
@@ -231,7 +300,7 @@ export default {
       }
     },
     fetchData () {
-      api('listIdps').then(response => {
+      getAPI('listIdps').then(response => {
         if (response) {
           this.idps = response.listidpsresponse.idp || []
           this.idps.sort(function (a, b) {
@@ -240,6 +309,33 @@ export default {
             return 0
           })
           this.form.idp = this.idps[0].id || ''
+        }
+      })
+      getAPI('listOauthProvider', {}).then(response => {
+        if (response) {
+          const oauthproviders = response.listoauthproviderresponse.oauthprovider || []
+          oauthproviders.forEach(item => {
+            if (item.provider === 'google') {
+              this.googleprovider = item.enabled
+              this.googleclientid = item.clientid
+              this.googleredirecturi = item.redirecturi
+            }
+            if (item.provider === 'github') {
+              this.githubprovider = item.enabled
+              this.githubclientid = item.clientid
+              this.githubredirecturi = item.redirecturi
+            }
+          })
+          this.socialLogin = this.googleprovider || this.githubprovider
+        }
+      })
+      postAPI('forgotPassword', {}).then(response => {
+        this.forgotPasswordEnabled = response.forgotpasswordresponse.enabled
+      }).catch((err) => {
+        if (err?.response?.data === null) {
+          this.forgotPasswordEnabled = true
+        } else {
+          this.forgotPasswordEnabled = false
         }
       })
     },
@@ -257,6 +353,53 @@ export default {
     handleTabClick (key) {
       this.customActiveKey = key
       this.setRules()
+    },
+    handleGithubProviderAndDomain () {
+      this.handleDomain()
+      this.$store.commit('SET_OAUTH_PROVIDER_USED_TO_LOGIN', 'github')
+    },
+    handleGoogleProviderAndDomain () {
+      this.handleDomain()
+      this.$store.commit('SET_OAUTH_PROVIDER_USED_TO_LOGIN', 'google')
+    },
+    handleDomain () {
+      const values = toRaw(this.form)
+      if (!values.domain) {
+        this.$store.commit('SET_DOMAIN_USED_TO_LOGIN', '/')
+      } else {
+        this.$store.commit('SET_DOMAIN_USED_TO_LOGIN', values.domain)
+      }
+    },
+    getGitHubUrl (from) {
+      const rootURl = 'https://github.com/login/oauth/authorize'
+      const options = {
+        client_id: this.githubclientid,
+        scope: 'user:email',
+        state: 'cloudstack'
+      }
+
+      const qs = new URLSearchParams(options)
+
+      return `${rootURl}?${qs.toString()}`
+    },
+    getGoogleUrl (from) {
+      const rootUrl = 'https://accounts.google.com/o/oauth2/v2/auth'
+      const options = {
+        redirect_uri: this.googleredirecturi,
+        client_id: this.googleclientid,
+        access_type: 'offline',
+        response_type: 'code',
+        prompt: 'consent',
+        scope: [
+          'https://www.googleapis.com/auth/userinfo.profile',
+          'https://www.googleapis.com/auth/userinfo.email'
+        ].join(' '),
+        state: from
+      }
+
+      const qs = new URLSearchParams(options)
+
+      return `${rootUrl}?${qs.toString()}`
     },
     handleSubmit (e) {
       e.preventDefault()
@@ -296,7 +439,29 @@ export default {
         this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
-    loginSuccess (res) {
+    handleSubmitOauth (provider) {
+      this.customActiveKeyOauth = true
+      this.setRules()
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
+        const loginParams = { ...values }
+        delete loginParams.username
+        loginParams.email = this.email
+        loginParams.provider = provider
+        loginParams.secretcode = this.secretcode
+        loginParams.domain = values.domain
+        if (!loginParams.domain) {
+          loginParams.domain = '/'
+        }
+        this.OauthLogin(loginParams)
+          .then((res) => this.loginSuccess(res))
+          .catch(err => {
+            this.requestFailed(err)
+            this.state.loginBtn = false
+          })
+      })
+    },
+    async loginSuccess (res) {
       this.$notification.destroy()
       this.$store.commit('SET_COUNT_NOTIFY', 0)
       if (store.getters.twoFaEnabled === true && store.getters.twoFaProvider !== '' && store.getters.twoFaProvider !== undefined) {
@@ -305,12 +470,39 @@ export default {
         this.$router.push({ path: '/setup2FA' }).catch(() => {})
       } else {
         this.$store.commit('SET_LOGIN_FLAG', true)
+        const values = toRaw(this.form)
+        if (values.project) {
+          await this.getProject(values.project)
+          this.$store.dispatch('ProjectView', this.project.id)
+          this.$store.dispatch('SetProject', this.project)
+          this.$store.dispatch('ToggleTheme', this.project.id === undefined ? 'light' : 'dark')
+        }
         this.$router.push({ path: '/dashboard' }).catch(() => {})
       }
+    },
+    getProject (projectName) {
+      return new Promise((resolve, reject) => {
+        getAPI('listProjects', {
+          response: 'json',
+          domainId: this.selectedDomain,
+          details: 'min'
+        }).then((response) => {
+          const projects = response.listprojectsresponse.project
+          this.project = projects.filter(project => project.name === projectName)?.[0] || null
+          resolve(this.project)
+        }).catch((error) => {
+          this.$notifyError(error)
+        }).finally(() => {
+          this.loading = false
+        })
+      })
     },
     requestFailed (err) {
       if (err && err.response && err.response.data && err.response.data.loginresponse) {
         const error = err.response.data.loginresponse.errorcode + ': ' + err.response.data.loginresponse.errortext
+        this.$message.error(`${this.$t('label.error')} ${error}`)
+      } else if (err && err.response && err.response.data && err.response.data.oauthloginresponse) {
+        const error = err.response.data.oauthloginresponse.errorcode + ': ' + err.response.data.oauthloginresponse.errortext
         this.$message.error(`${this.$t('label.error')} ${error}`)
       } else {
         this.$message.error(this.$t('message.login.failed'))
@@ -369,6 +561,34 @@ export default {
     .register {
       float: right;
     }
+
+    .g-btn-wrapper {
+      background-color: rgb(221, 75, 57);
+      height: 40px;
+      width: 80px;
+    }
   }
+    .center {
+     display: flex;
+     flex-direction: column;
+     justify-content: center;
+     align-items: center;
+     height: 100px;
+    }
+
+    .content {
+      margin: 10px auto;
+      width: 300px;
+    }
+
+    .or {
+      text-align: center;
+      font-size: 16px;
+      background:
+        linear-gradient(#CCC 0 0) left,
+        linear-gradient(#CCC 0 0) right;
+      background-size: 40% 1px;
+      background-repeat: no-repeat;
+    }
 }
 </style>

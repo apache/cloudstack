@@ -69,8 +69,20 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
     private Map<String, String> counterParams;
 
     @SerializedName(ApiConstants.USER_DATA)
-    @Param(description = "Base 64 encoded VM user data")
+    @Param(description = "Base64 encoded VM user data")
     private String userData;
+
+    @SerializedName(ApiConstants.USER_DATA_ID) @Param(description="the id of userdata used for the VM", since = "4.18.1")
+    private String userDataId;
+
+    @SerializedName(ApiConstants.USER_DATA_NAME) @Param(description="the name of userdata used for the VM", since = "4.18.1")
+    private String userDataName;
+
+    @SerializedName(ApiConstants.USER_DATA_POLICY) @Param(description="the userdata override policy with the userdata provided while deploying VM", since = "4.18.1")
+    private String userDataPolicy;
+
+    @SerializedName(ApiConstants.USER_DATA_DETAILS) @Param(description="list of variables and values for the variables declared in userdata", since = "4.18.1")
+    private String userDataDetails;
 
     @SerializedName(ApiConstants.AUTOSCALE_USER_ID)
     @Param(description = "the ID of the user used to launch and destroy the VMs")
@@ -101,6 +113,10 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the domain name of the vm profile")
     private String domainName;
+
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain to which the vm profile belongs", since = "4.19.2.0")
+    private String domainPath;
 
     @SerializedName(ApiConstants.FOR_DISPLAY)
     @Param(description = "is profile for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
@@ -153,6 +169,22 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
         this.userData = userData;
     }
 
+    public void setUserDataId(String userDataId) {
+        this.userDataId = userDataId;
+    }
+
+    public void setUserDataName(String userDataName) {
+        this.userDataName = userDataName;
+    }
+
+    public void setUserDataPolicy(String userDataPolicy) {
+        this.userDataPolicy = userDataPolicy;
+    }
+
+    public void setUserDataDetails(String userDataDetails) {
+        this.userDataDetails = userDataDetails;
+    }
+
     @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
@@ -168,6 +200,10 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
         this.domainName = domainName;
     }
 
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
+    }
     @Override
     public void setProjectId(String projectId) {
         this.projectId = projectId;
@@ -192,5 +228,25 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
 
     public void setForDisplay(Boolean forDisplay) {
         this.forDisplay = forDisplay;
+    }
+
+    public String getUserData() {
+        return userData;
+    }
+
+    public String getUserDataId() {
+        return userDataId;
+    }
+
+    public String getUserDataName() {
+        return userDataName;
+    }
+
+    public String getUserDataPolicy() {
+        return userDataPolicy;
+    }
+
+    public String getUserDataDetails() {
+        return userDataDetails;
     }
 }

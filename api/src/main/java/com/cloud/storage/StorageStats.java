@@ -26,4 +26,7 @@ public interface StorageStats {
      * @return bytes capacity of the storage server
      */
     public long getCapacityBytes();
+
+    Long getCapacityIops();
+    Long getUsedIops();
 }

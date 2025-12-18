@@ -23,6 +23,8 @@ import clusters from '@/config/section/infra/clusters'
 import hosts from '@/config/section/infra/hosts'
 import primaryStorages from '@/config/section/infra/primaryStorages'
 import secondaryStorages from '@/config/section/infra/secondaryStorages'
+import backupRepositories from '@/config/section/infra/backupRepositories'
+import objectStorages from '@/config/section/infra/objectStorages'
 import systemVms from '@/config/section/infra/systemVms'
 import routers from '@/config/section/infra/routers'
 import ilbvms from '@/config/section/infra/ilbvms'
@@ -49,6 +51,8 @@ export default {
     hosts,
     primaryStorages,
     secondaryStorages,
+    backupRepositories,
+    objectStorages,
     systemVms,
     routers,
     ilbvms,
@@ -60,6 +64,27 @@ export default {
       docHelp: 'adminguide/management.html#reporting-cpu-sockets',
       permission: ['listHosts'],
       component: () => import('@/views/infra/CpuSockets.vue')
+    },
+    {
+      name: 'gpudevices',
+      title: 'label.gpu.devices',
+      icon: 'BoxPlotOutlined',
+      hidden: true,
+      permission: ['listGpuDevices'],
+      columns: ['busaddress', 'gpucardname', 'vgpuprofilename', 'hostname', 'virtualmachinename'],
+      details: ['id', 'busaddress', 'gpucardname', 'vgpuprofilename', 'hostname', 'virtualmachinename'],
+      searchFilters: ['gpucardid', 'vgpuprofileid'],
+      actions: [
+        {
+          api: 'deleteGpuDevice',
+          icon: 'delete-outlined',
+          label: 'label.delete.gpu.device',
+          dataView: true,
+          popup: true,
+          groupAction: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x.id } }) }
+        }
+      ]
     },
     {
       name: 'metric',
@@ -77,6 +102,7 @@ export default {
       permission: ['listAlerts'],
       columns: ['name', 'description', 'type', 'sent'],
       details: ['name', 'id', 'type', 'sent', 'description'],
+      searchFilters: ['name', 'type'],
       actions: [
         {
           api: 'archiveAlerts',

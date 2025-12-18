@@ -39,4 +39,3 @@
     <bean id="OpenDaylightControllerMappingDao" class="org.apache.cloudstack.network.opendaylight.dao.OpenDaylightControllerMappingDaoImpl" />
 
 </beans>
-

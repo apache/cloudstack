@@ -308,7 +308,7 @@ class TestResizeVolume(cloudstackTestCase):
                 vmid = int(qresultvmuuid[0][0])
                 qresult = self.dbclient.execute(
                     "select rootDiskController from"
-                    " user_vm_details where id = '%s';" % vmid
+                    " vm_instance_details where id = '%s';" % vmid
                 )
                 self.debug("Query result: %s" % qresult)
                 diskcontroller = qresult[0][0]
@@ -647,7 +647,7 @@ class TestResizeVolume(cloudstackTestCase):
                     self.assertEqual(virtualmachine_snapshot.id,
                                      virtulmachine_snapshot_list[0].id,
                                      "Virtual Machine Snapshot id do not match")
-                except Exception as  e:
+                except Exception as e:
                     raise Exception("Issue CLOUDSTACK-10080: Exception while performing"
                                     " vmsnapshot: %s" % e)
             else:

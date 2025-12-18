@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.snapshot;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.Assert;
@@ -42,5 +43,15 @@ public class CreateSnapshotPolicyCmdTest {
         tagsParams.put("1", tag2);
         ReflectionTestUtils.setField(createSnapshotPolicyCmd, "tags", tagsParams);
         Assert.assertEquals(createSnapshotPolicyCmd.getTags(), expectedTags);
+    }
+
+    @Test
+    public void testGetZoneIds() {
+        final CreateSnapshotPolicyCmd cmd = new CreateSnapshotPolicyCmd();
+        List<Long> ids = List.of(400L, 500L);
+        ReflectionTestUtils.setField(cmd, "zoneIds", ids);
+        Assert.assertEquals(ids.size(), cmd.getZoneIds().size());
+        Assert.assertEquals(ids.get(0), cmd.getZoneIds().get(0));
+        Assert.assertEquals(ids.get(1), cmd.getZoneIds().get(1));
     }
 }

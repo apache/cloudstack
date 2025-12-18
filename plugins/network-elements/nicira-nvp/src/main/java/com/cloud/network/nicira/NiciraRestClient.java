@@ -20,7 +20,7 @@
 package com.cloud.network.nicira;
 
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.http.HttpEntity;
@@ -30,7 +30,6 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.rest.BasicRestClient;
 import com.cloud.utils.rest.CloudstackRESTException;
@@ -41,7 +40,6 @@ import com.cloud.utils.rest.HttpUriRequestBuilder;
 
 public class NiciraRestClient extends BasicRestClient {
 
-    private static final Logger s_logger = Logger.getLogger(NiciraRestClient.class);
 
     private static final String CONTENT_TYPE = HttpConstants.CONTENT_TYPE;
     private static final String TEXT_HTML_CONTENT_TYPE = HttpConstants.TEXT_HTML_CONTENT_TYPE;
@@ -76,17 +74,17 @@ public class NiciraRestClient extends BasicRestClient {
         return execute(request, 0);
     }
 
-    private CloseableHttpResponse execute(final HttpUriRequest request, final int previousStatusCode) throws CloudstackRESTException {
+    CloseableHttpResponse execute(final HttpUriRequest request, final int previousStatusCode) throws CloudstackRESTException {
         if (counter.hasReachedExecutionLimit()) {
             throw new CloudstackRESTException("Reached max executions limit of " + executionLimit);
         }
         counter.incrementExecutionCounter();
-        s_logger.debug("Executing " + request.getMethod() + " request [execution count = " + counter.getValue() + "]");
+        logger.debug("Executing " + request.getMethod() + " request [execution count = " + counter.getValue() + "]");
         final CloseableHttpResponse response = super.execute(request);
 
         final StatusLine statusLine = response.getStatusLine();
         final int statusCode = statusLine.getStatusCode();
-        s_logger.debug("Status of last request: " + statusLine.toString());
+        logger.debug("Status of last request: " + statusLine.toString());
         if (HttpStatusCodeHelper.isUnauthorized(statusCode)) {
             return handleUnauthorizedResponse(request, previousStatusCode, response, statusCode);
         } else if (HttpStatusCodeHelper.isSuccess(statusCode)) {
@@ -102,7 +100,7 @@ public class NiciraRestClient extends BasicRestClient {
                     throws CloudstackRESTException {
         super.closeResponse(response);
         if (HttpStatusCodeHelper.isUnauthorized(previousStatusCode)) {
-            s_logger.error(responseToErrorMessage(response));
+            logger.error(responseToErrorMessage(response));
             throw new CloudstackRESTException("Two consecutive failed attempts to authenticate against REST server");
         }
         final HttpUriRequest authenticateRequest = createAuthenticationRequest();
@@ -120,7 +118,7 @@ public class NiciraRestClient extends BasicRestClient {
     }
 
     private HttpUriRequest createAuthenticationRequest() {
-        final Map<String, String> parameters = new HashMap<>();
+        final Map<String, String> parameters = new LinkedHashMap<>();
         parameters.put("username", username);
         parameters.put("password", password);
         return HttpUriRequestBuilder.create()
@@ -138,7 +136,7 @@ public class NiciraRestClient extends BasicRestClient {
                 final String respobnseBody = EntityUtils.toString(entity);
                 errorMessage = respobnseBody.subSequence(0, maxResponseErrorMesageLength).toString();
             } catch (final IOException e) {
-                s_logger.debug("Could not read response body. Response: " + response, e);
+                logger.debug("Could not read response body. Response: " + response, e);
             }
         }
 

@@ -30,7 +30,6 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.RegionService;
-import org.apache.log4j.Logger;
 
 import com.cloud.domain.Domain;
 import com.cloud.event.EventTypes;
@@ -40,7 +39,6 @@ import com.cloud.user.Account;
 requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {
         RoleType.Admin, RoleType.DomainAdmin })
 public class DeleteDomainCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteDomainCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

@@ -35,13 +35,17 @@ public class StorPoolModifyStoragePoolAnswer extends Answer{
     private String poolType;
     private List<ModifyStoragePoolAnswer> datastoreClusterChildren = new ArrayList<>();
     private String clusterId;
+    private String clientNodeId;
+    private String clusterLocation;
 
-    public StorPoolModifyStoragePoolAnswer(StorPoolModifyStoragePoolCommand cmd, long capacityBytes, long availableBytes, Map<String, TemplateProp> tInfo, String clusterId) {
+    public StorPoolModifyStoragePoolAnswer(StorPoolModifyStoragePoolCommand cmd, long capacityBytes, long availableBytes, Map<String, TemplateProp> tInfo, String clusterId, String clientNodeId, String clusterLocation) {
         super(cmd);
         result = true;
         poolInfo = new StoragePoolInfo(null, cmd.getPool().getHost(), cmd.getPool().getPath(), cmd.getLocalPath(), cmd.getPool().getType(), capacityBytes, availableBytes);
         templateInfo = tInfo;
         this.clusterId = clusterId;
+        this.clientNodeId = clientNodeId;
+        this.clusterLocation = clusterLocation;
     }
 
     public StorPoolModifyStoragePoolAnswer(String errMsg) {
@@ -90,5 +94,21 @@ public class StorPoolModifyStoragePoolAnswer extends Answer{
 
     public String getClusterId() {
         return clusterId;
+    }
+
+    public String getClientNodeId() {
+        return clientNodeId;
+    }
+
+    public void setClientNodeId(String clientNodeId) {
+        this.clientNodeId = clientNodeId;
+    }
+
+    public String getClusterLocation() {
+        return clusterLocation;
+    }
+
+    public void setClusterLocation(String clusterLocation) {
+        this.clusterLocation = clusterLocation;
     }
 }

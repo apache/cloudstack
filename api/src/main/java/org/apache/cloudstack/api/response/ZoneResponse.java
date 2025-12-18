@@ -95,7 +95,15 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     @SerializedName("securitygroupsenabled")
     @Param(description = "true if security groups support is enabled, false otherwise")
-    private boolean securityGroupsEnabled;
+    private Boolean securityGroupsEnabled;
+
+    @SerializedName("gputotal")
+    @Param(description = "Total GPUs in the Zone", responseObject = Long.class, since = "4.21")
+    private Long gpuTotal;
+
+    @SerializedName("gpuused")
+    @Param(description = "Used GPUs in the Zone", responseObject = Long.class, since = "4.21")
+    private Long gpuUsed;
 
     @SerializedName("allocationstate")
     @Param(description = "the allocation state of the cluster")
@@ -111,11 +119,11 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     @SerializedName("capacity")
     @Param(description = "the capacity of the Zone", responseObject = CapacityResponse.class)
-    private List<CapacityResponse> capacitites;
+    private List<CapacityResponse> capacities;
 
     @SerializedName(ApiConstants.LOCAL_STORAGE_ENABLED)
     @Param(description = "true if local storage offering enabled, false otherwise")
-    private boolean localStorageEnabled;
+    private Boolean localStorageEnabled;
 
     @SerializedName(ApiConstants.TAGS)
     @Param(description = "the list of resource tags associated with zone.", responseObject = ResourceTagResponse.class, since = "4.3")
@@ -131,7 +139,7 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     @SerializedName(ApiConstants.ALLOW_USER_SPECIFY_VR_MTU)
     @Param(description = "Allow end users to specify VR MTU", since = "4.18.0")
-    private boolean allowUserSpecifyVRMtu;
+    private Boolean allowUserSpecifyVRMtu;
 
     @SerializedName(ApiConstants.ROUTER_PRIVATE_INTERFACE_MAX_MTU)
     @Param(description = "The maximum value the MTU can have on the VR's private interfaces", since = "4.18.0")
@@ -145,8 +153,38 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
     @Param(description = "the type of the zone - core or edge", since = "4.18.0")
     String type;
 
+    @Deprecated(since = "4.21.0")
+    @SerializedName(ApiConstants.NSX_ENABLED)
+    @Param(description = "true, if zone is NSX enabled", since = "4.20.0")
+    private boolean nsxEnabled = false;
+
+    @SerializedName(ApiConstants.PROVIDER)
+    @Param(description = "External network provider if any", since = "4.21.0")
+    private String provider = null;
+
+    @SerializedName(ApiConstants.MULTI_ARCH)
+    @Param(description = "true, if zone contains clusters and hosts from different CPU architectures", since = "4.20")
+    private boolean multiArch;
+
+    @SerializedName(ApiConstants.ASN_RANGE)
+    @Param(description = "AS Number Range")
+    private String asnRange;
+
+    @SerializedName(ApiConstants.ROUTED_MODE_ENABLED)
+    @Param(description = "true, if routed network/vpc is enabled", since = "4.20.1")
+    private boolean routedModeEnabled = false;
+
+    @SerializedName(ApiConstants.STORAGE_ACCESS_GROUPS)
+    @Param(description = "comma-separated list of storage access groups for the zone", since = "4.21.0")
+    private String storageAccessGroups;
+
+
     public ZoneResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
+    }
+
+    public ZoneResponse(Set<ResourceTagResponse> tags) {
+        this.tags = tags;
     }
 
     public void setId(String id) {
@@ -201,6 +239,14 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
 
+    public void setGpuTotal(Long gpuTotal) {
+        this.gpuTotal = gpuTotal;
+    }
+
+    public void setGpuUsed(Long gpuUsed) {
+        this.gpuUsed = gpuUsed;
+    }
+
     public void setAllocationState(String allocationState) {
         this.allocationState = allocationState;
     }
@@ -213,8 +259,8 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
         this.dhcpProvider = dhcpProvider;
     }
 
-    public void setCapacitites(List<CapacityResponse> capacitites) {
-        this.capacitites = capacitites;
+    public void setCapacities(List<CapacityResponse> capacities) {
+        this.capacities = capacities;
     }
 
     public void setDomainName(String domainName) {
@@ -239,6 +285,10 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     public void setIp6Dns2(String ip6Dns2) {
         this.ip6Dns2 = ip6Dns2;
+    }
+
+    public void setTags(Set<ResourceTagResponse> tags) {
+        this.tags = tags;
     }
 
     public void addTag(ResourceTagResponse tag) {
@@ -304,10 +354,6 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
         return networkType;
     }
 
-    public boolean isSecurityGroupsEnabled() {
-        return securityGroupsEnabled;
-    }
-
     public String getAllocationState() {
         return allocationState;
     }
@@ -320,12 +366,8 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
         return dhcpProvider;
     }
 
-    public List<CapacityResponse> getCapacitites() {
-        return capacitites;
-    }
-
-    public boolean isLocalStorageEnabled() {
-        return localStorageEnabled;
+    public List<CapacityResponse> getCapacities() {
+        return capacities;
     }
 
     public Set<ResourceTagResponse> getTags() {
@@ -334,6 +376,46 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     public Map<String, String> getResourceDetails() {
         return resourceDetails;
+    }
+
+    public boolean isSecurityGroupsEnabled() {
+        return securityGroupsEnabled;
+    }
+
+    public Long getGpuUsed() {
+        return gpuUsed;
+    }
+
+    public Long getGpuTotal() {
+        return gpuTotal;
+    }
+
+    public boolean isLocalStorageEnabled() {
+        return localStorageEnabled;
+    }
+
+    public Boolean getAllowUserSpecifyVRMtu() {
+        return allowUserSpecifyVRMtu;
+    }
+
+    public Integer getRouterPrivateInterfaceMaxMtu() {
+        return routerPrivateInterfaceMaxMtu;
+    }
+
+    public Integer getRouterPublicInterfaceMaxMtu() {
+        return routerPublicInterfaceMaxMtu;
+    }
+
+    public boolean isNsxEnabled() {
+        return nsxEnabled;
+    }
+
+    public String getProvider() {
+        return provider;
+    }
+
+    public void setProvider(String provider) {
+        this.provider = provider;
     }
 
     @Override
@@ -345,7 +427,7 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
         return resourceIconResponse;
     }
 
-    public void setAllowUserSpecifyVRMtu(boolean allowUserSpecifyVRMtu) {
+    public void setAllowUserSpecifyVRMtu(Boolean allowUserSpecifyVRMtu) {
         this.allowUserSpecifyVRMtu = allowUserSpecifyVRMtu;
     }
 
@@ -363,5 +445,37 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     public String getType() {
         return type;
+    }
+
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
+    }
+
+    public void setStorageAccessGroups(String storageAccessGroups) {
+        this.storageAccessGroups = storageAccessGroups;
+    }
+
+    public void setNsxEnabled(boolean nsxEnabled) {
+        this.nsxEnabled = nsxEnabled;
+    }
+
+    public void setMultiArch(boolean multiArch) {
+        this.multiArch = multiArch;
+    }
+
+    public void setAsnRange(String asnRange) {
+        this.asnRange = asnRange;
+    }
+
+    public String getAsnRange() {
+        return asnRange;
+    }
+
+    public boolean isRoutedModeEnabled() {
+        return routedModeEnabled;
+    }
+
+    public void setRoutedModeEnabled(boolean routedModeEnabled) {
+        this.routedModeEnabled = routedModeEnabled;
     }
 }

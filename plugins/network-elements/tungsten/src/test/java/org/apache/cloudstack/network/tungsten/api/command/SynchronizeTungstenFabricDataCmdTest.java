@@ -18,6 +18,7 @@ package org.apache.cloudstack.network.tungsten.api.command;
 
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,13 +27,10 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(SynchronizeTungstenFabricDataCmd.class)
+@RunWith(MockitoJUnitRunner.class)
 public class SynchronizeTungstenFabricDataCmdTest {
 
     @Mock
@@ -40,20 +38,25 @@ public class SynchronizeTungstenFabricDataCmdTest {
 
     SynchronizeTungstenFabricDataCmd synchronizeTungstenFabricDataCmd;
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         synchronizeTungstenFabricDataCmd = new SynchronizeTungstenFabricDataCmd();
         synchronizeTungstenFabricDataCmd.tungstenService = tungstenService;
-        Whitebox.setInternalState(synchronizeTungstenFabricDataCmd, "tungstenProviderId", 1L);
+        ReflectionTestUtils.setField(synchronizeTungstenFabricDataCmd, "tungstenProviderId", 1L);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
     public void executeTest() throws Exception {
-        SuccessResponse successResponse = Mockito.mock(SuccessResponse.class);
         Mockito.when(tungstenService.synchronizeTungstenData(ArgumentMatchers.anyLong())).thenReturn(true);
-        PowerMockito.whenNew(SuccessResponse.class).withAnyArguments().thenReturn(successResponse);
         synchronizeTungstenFabricDataCmd.execute();
-        Assert.assertEquals(successResponse, synchronizeTungstenFabricDataCmd.getResponseObject());
+        Assert.assertTrue(((SuccessResponse) synchronizeTungstenFabricDataCmd.getResponseObject()).getSuccess());
     }
 }

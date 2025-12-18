@@ -17,77 +17,52 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 -->
-<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<Configuration monitorInterval="60">
+   <Appenders>
 
-<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="false">
+      <!-- ================================= -->
+      <!-- Preserve messages in a local file -->
+      <!-- ================================= -->
 
-   <!-- ================================= -->
-   <!-- Preserve messages in a local file -->
-   <!-- ================================= -->
+      <!-- A time/date based rolling appender -->
+      <RollingFile name="FILE" append="true" fileName="@AGENTLOG@" filePattern="@AGENTLOG@.%d{yyyy-MM-dd}.gz">
+         <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+         <Policies>
+            <TimeBasedTriggeringPolicy/>
+         </Policies>
+         <PatternLayout pattern="%d{DEFAULT} %-5p [%c{3}] (%t:%x) %m%ex%n"/>
+      </RollingFile>
 
-   <!-- A time/date based rolling appender -->
-   <appender name="FILE" class="org.apache.log4j.rolling.RollingFileAppender">
-      <param name="Append" value="true"/>
-      <param name="Threshold" value="INFO"/>
-      <rollingPolicy class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
-        <param name="FileNamePattern" value="@AGENTLOG@.%d{yyyy-MM-dd}.gz"/>
-        <param name="ActiveFileName" value="@AGENTLOG@"/>
-      </rollingPolicy>
-      <layout class="org.apache.log4j.EnhancedPatternLayout">
-         <param name="ConversionPattern" value="%d{ISO8601} %-5p [%c{3}] (%t:%x) %m%n"/>
-      </layout>
-   </appender>
-   
-   <!-- ============================== -->
-   <!-- Append messages to the console -->
-   <!-- ============================== -->
+      <!-- ============================== -->
+      <!-- Append messages to the console -->
+      <!-- ============================== -->
 
-   <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
-      <param name="Target" value="System.out"/>
-      <param name="Threshold" value="INFO"/>
+      <Console name="CONSOLE" target="SYSTEM_OUT">
+         <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+         <PatternLayout pattern="%d{DEFAULT}{GMT} %-5p [%c{3}] (%t:%x) %m%ex%n"/>
+      </Console>
 
-      <layout class="org.apache.log4j.PatternLayout">
-         <param name="ConversionPattern" value="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%n"/>
-      </layout>
-   </appender>
+   </Appenders>
 
-   <!-- ================ -->
-   <!-- Limit categories -->
-   <!-- ================ -->
+   <Loggers>
+      <Logger name="com.cloud" level="INFO"/>
 
-   <category name="com.cloud">
-     <priority value="INFO"/>
-   </category>
-   
-   <category name="com.cloud.agent.metrics">
-     <priority value="INFO"/>
-   </category>
-   
-   <category name="com.cloud.agent.resource.computing.ComputingResource$StorageMonitorTask">
-     <priority value="INFO"/>
-   </category>
+      <Logger name="org.apache" level="INFO"/>
 
-   <!-- Limit the org.apache category to INFO as its DEBUG is verbose -->
-   <category name="org.apache">
-      <priority value="INFO"/>
-   </category>
+      <Logger name="org" level="INFO"/>
 
-   <category name="org">
-      <priority value="INFO"/>
-   </category>
-   
-   <category name="net">
-     <priority value="INFO"/>
-   </category>
+      <Logger name="net" level="INFO"/>
 
-   <!-- ======================= -->
-   <!-- Setup the Root category -->
-   <!-- ======================= -->
+   </Logger>
 
-   <root>
-      <level value="INFO"/>
-      <appender-ref ref="CONSOLE"/>
-      <appender-ref ref="FILE"/>
-   </root>
+      <!-- ======================= -->
+      <!-- Setup the Root category -->
+      <!-- ======================= -->
 
-</log4j:configuration>
+      <Root level="INFO">
+         <AppenderRef ref="CONSOLE"/>
+         <AppenderRef ref="FILE"/>
+      </Root>
+
+   </Loggers>
+</Configuration>

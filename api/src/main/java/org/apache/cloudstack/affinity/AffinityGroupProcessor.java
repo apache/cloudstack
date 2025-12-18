@@ -21,7 +21,10 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.utils.component.Adapter;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+
+import java.util.List;
 
 public interface AffinityGroupProcessor extends Adapter {
 
@@ -35,7 +38,12 @@ public interface AffinityGroupProcessor extends Adapter {
      *            deployment plan that tells you where it's being deployed to.
      * @param avoid
      *            avoid these data centers, pods, clusters, or hosts.
+     * @param vmList
+     *            list of virtual machines objects according to which the affinity group should be processed.
+     *            This can be used to process a theoretical state in some cases like generating DRS plans
      */
+    void process(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid, List<VirtualMachine> vmList) throws AffinityConflictException;
+
     void process(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid) throws AffinityConflictException;
 
     /**

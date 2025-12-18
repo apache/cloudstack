@@ -18,7 +18,6 @@ package com.cloud.projects.dao;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.projects.ProjectAccount;
@@ -39,7 +38,6 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
     final GenericSearchBuilder<ProjectAccountVO, Long> ProjectAccountsSearch;
     final GenericSearchBuilder<ProjectAccountVO, Long> CountByRoleSearch;
 
-    public static final Logger s_logger = Logger.getLogger(ProjectAccountDaoImpl.class.getName());
 
     protected ProjectAccountDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
@@ -190,7 +188,18 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
 
         int rowsRemoved = remove(sc);
         if (rowsRemoved > 0) {
-            s_logger.debug("Removed account id=" + accountId + " from " + rowsRemoved + " projects");
+            logger.debug("Removed account id=" + accountId + " from " + rowsRemoved + " projects");
+        }
+    }
+
+    @Override
+    public void removeUserFromProjects(long userId) {
+        SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
+        sc.setParameters("userId", userId);
+
+        int removedCount = remove(sc);
+        if (removedCount > 0) {
+            logger.debug(String.format("Removed user [%s] from %s project(s).", userId, removedCount));
         }
     }
 

@@ -19,7 +19,9 @@
 
 package com.cloud.utils;
 
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
+import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -146,6 +148,26 @@ public class NumbersUtil {
             }
         }
     }
+
+    /**
+     * Formats a BigDecimal with the number formatter.
+     * @return
+     * <li>null if value is null;</li>
+     * <li>value.toString() if the numberFormat is null;</li>
+     * <li>the value formatted if both parameters are not null;</li>
+     */
+    public static String formatBigDecimalAccordingToNumberFormat(BigDecimal value, NumberFormat numberFormat) {
+        if (value == null) {
+            return null;
+        }
+
+        if (numberFormat == null) {
+            return value.toString();
+        }
+
+        return numberFormat.format(value);
+    }
+
 
     public static int hash(long value) {
         return (int)(value ^ (value >>> 32));

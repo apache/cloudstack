@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinition;
 
 import com.cloud.agent.api.to.NicTO;
@@ -93,4 +94,6 @@ public interface NetworkHelper {
             throws ConcurrentOperationException, InsufficientAddressCapacityException;
 
     public boolean validateHAProxyLBRule(final LoadBalancingRule rule);
+
+    public Map<HypervisorType, ConfigKey<String>> getHypervisorRouterTemplateConfigMap();
 }

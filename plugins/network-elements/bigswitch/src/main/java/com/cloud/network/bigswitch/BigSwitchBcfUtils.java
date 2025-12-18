@@ -26,7 +26,8 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.net.util.SubnetUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.bouncycastle.util.IPAddress;
 
 import com.cloud.agent.AgentManager;
@@ -76,7 +77,7 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class BigSwitchBcfUtils {
-    private static final Logger s_logger = Logger.getLogger(BigSwitchBcfUtils.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private final NetworkDao _networkDao;
     private final NicDao _nicDao;
@@ -447,7 +448,7 @@ public class BigSwitchBcfUtils {
         }
         BcfAnswer syncAnswer = (BcfAnswer) _agentMgr.easySend(bigswitchBcfHost.getId(), syncCmd);
         if (syncAnswer == null || !syncAnswer.getResult()) {
-            s_logger.error("SyncBcfTopologyCommand failed");
+            logger.error("SyncBcfTopologyCommand failed");
             return null;
         }
         return syncAnswer.getHash();
@@ -462,7 +463,7 @@ public class BigSwitchBcfUtils {
         }
         BcfAnswer syncAnswer = (BcfAnswer) _agentMgr.easySend(bigswitchBcfHost.getId(), syncCmd);
         if (syncAnswer == null || !syncAnswer.getResult()) {
-            s_logger.error("SyncBcfTopologyCommand failed");
+            logger.error("SyncBcfTopologyCommand failed");
             return null;
         }
         return syncAnswer.getHash();
@@ -481,7 +482,7 @@ public class BigSwitchBcfUtils {
         BcfAnswer answer =  (BcfAnswer) _agentMgr.easySend(cluster.getPrimary().getId(), cmd);
 
         if (answer == null || !answer.getResult()) {
-            s_logger.error ("BCF API Command failed");
+            logger.error ("BCF API Command failed");
             throw new IllegalArgumentException("Failed API call to Big Switch Network plugin");
         }
 

@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.admin.solidfire;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.APICommand;
@@ -31,7 +30,6 @@ import org.apache.cloudstack.util.solidfire.SolidFireIntegrationTestUtil;
 @APICommand(name = "getSolidFireVolumeSize", responseObject = ApiSolidFireVolumeSizeResponse.class, description = "Get the SF volume size including Hypervisor Snapshot Reserve",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class GetSolidFireVolumeSizeCmd extends BaseCmd {
-    private static final Logger LOGGER = Logger.getLogger(GetSolidFireVolumeSizeCmd.class.getName());
 
     @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.STRING, description = "Volume UUID", required = true)
     private String volumeUuid;
@@ -50,7 +48,7 @@ public class GetSolidFireVolumeSizeCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        LOGGER.info("'GetSolidFireVolumeSizeCmd.execute' method invoked");
+        logger.info("'GetSolidFireVolumeSizeCmd.execute' method invoked");
 
         long sfVolumeSize = manager.getSolidFireVolumeSize(volumeUuid);
 

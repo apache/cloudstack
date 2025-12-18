@@ -25,7 +25,6 @@ import javax.annotation.PostConstruct;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.component.ComponentLifecycle;
@@ -39,12 +38,12 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String> implements ConfigurationDao {
-    private static final Logger s_logger = Logger.getLogger(ConfigurationDaoImpl.class);
     private Map<String, String> _configs = null;
     private boolean _premium;
 
     final SearchBuilder<ConfigurationVO> InstanceSearch;
     final SearchBuilder<ConfigurationVO> NameSearch;
+    final SearchBuilder<ConfigurationVO> PartialSearch;
 
     public static final String UPDATE_CONFIGURATION_SQL = "UPDATE configuration SET value = ? WHERE name = ?";
 
@@ -55,6 +54,11 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
         NameSearch = createSearchBuilder();
         NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
         setRunLevel(ComponentLifecycle.RUN_LEVEL_SYSTEM_BOOTSTRAP);
+
+        PartialSearch = createSearchBuilder();
+        PartialSearch.select("name", SearchCriteria.Func.NATIVE, PartialSearch.entity().getName());
+        PartialSearch.select("groupId", SearchCriteria.Func.NATIVE, PartialSearch.entity().getGroupId());
+        PartialSearch.select("subGroupId", SearchCriteria.Func.NATIVE, PartialSearch.entity().getSubGroupId());
     }
 
     @Override
@@ -145,7 +149,7 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
             stmt.executeUpdate();
             return true;
         } catch (Exception e) {
-            s_logger.warn("Unable to update Configuration Value", e);
+            logger.warn("Unable to update Configuration Value", e);
         }
         return false;
     }
@@ -162,7 +166,7 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
                 return true;
             }
         } catch (Exception e) {
-            s_logger.warn("Unable to update Configuration Value", e);
+            logger.warn("Unable to update Configuration Value", e);
         }
         return false;
     }
@@ -196,7 +200,7 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
             }
             return returnValue;
         } catch (Exception e) {
-            s_logger.warn("Unable to update Configuration Value", e);
+            logger.warn("Unable to update Configuration Value", e);
             throw new CloudRuntimeException("Unable to initialize configuration variable: " + name);
 
         }
@@ -209,4 +213,9 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
         return findOneIncludingRemovedBy(sc);
     }
 
+    @Override
+    public List<ConfigurationVO> searchPartialConfigurations() {
+        SearchCriteria<ConfigurationVO> sc = PartialSearch.create();
+        return searchIncludingRemoved(sc, null, null, false);
+    }
 }

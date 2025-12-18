@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.systemvm;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -39,7 +38,6 @@ import com.cloud.vm.VirtualMachine;
 @APICommand(name = "stopSystemVm", description = "Stops a system VM.", responseObject = SystemVmResponse.class, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class StopSystemVmCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(StopSystemVmCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -54,7 +52,7 @@ public class StopSystemVmCmd extends BaseAsyncCmd {
                description = "The ID of the system virtual machine")
     private Long id;
 
-    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force stop the VM.  The caller knows the VM is stopped.")
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force stop the VM (vm is marked as Stopped even when command fails to be send to the backend, otherwise a force poweroff is attempted). To be used if the caller knows the VM is stopped and should be marked as such.")
     private Boolean forced;
 
     /////////////////////////////////////////////////////

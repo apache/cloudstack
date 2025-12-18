@@ -19,7 +19,6 @@ package org.apache.cloudstack.storage.resource;
 import java.net.URI;
 import java.util.concurrent.Executors;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.storage.template.DownloadManagerImpl;
@@ -33,18 +32,12 @@ import com.cloud.utils.script.Script;
 @Component
 public class LocalNfsSecondaryStorageResource extends NfsSecondaryStorageResource {
 
-    private static final Logger s_logger = Logger.getLogger(LocalNfsSecondaryStorageResource.class);
 
     public LocalNfsSecondaryStorageResource() {
         this._dlMgr = new DownloadManagerImpl();
         ((DownloadManagerImpl)_dlMgr).setThreadPool(Executors.newFixedThreadPool(10));
         _storage = new JavaStorageLayer();
         this._inSystemVM = false;
-    }
-
-    @Override
-    public void setParentPath(String path) {
-        this._parent = path;
     }
 
     @Override
@@ -59,8 +52,8 @@ public class LocalNfsSecondaryStorageResource extends NfsSecondaryStorageResourc
             String dir = mountUri(uri, nfsVersion);
             return _parent + "/" + dir;
         } catch (Exception e) {
-            String msg = "GetRootDir for " + secUrl + " failed due to " + e.toString();
-            s_logger.error(msg, e);
+            String msg = "GetRootDir for " + secUrl + " failed due to " + e;
+            logger.error(msg, e);
             throw new CloudRuntimeException(msg);
         }
     }
@@ -76,15 +69,15 @@ public class LocalNfsSecondaryStorageResource extends NfsSecondaryStorageResourc
         attemptMount(localRootPath, remoteDevice, uri, nfsVersion);
 
         // Change permissions for the mountpoint - seems to bypass authentication
-        Script script = new Script(true, "chmod", _timeout, s_logger);
-        script.add("777", localRootPath);
+        Script script = new Script(true, "chmod", _timeout, logger);
+        script.add("1777", localRootPath);
         String result = script.execute();
         if (result != null) {
             String errMsg = "Unable to set permissions for " + localRootPath + " due to " + result;
-            s_logger.error(errMsg);
+            logger.error(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
-        s_logger.debug("Successfully set 777 permission for " + localRootPath);
+        logger.debug("Successfully set 1777 permission for " + localRootPath);
 
         // XXX: Adding the check for creation of snapshots dir here. Might have
         // to move it somewhere more logical later.

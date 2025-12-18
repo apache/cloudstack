@@ -29,7 +29,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.persistence.TableGenerator;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.concurrency.NamedThreadFactory;
 
@@ -42,7 +43,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
  *
  */
 public class SequenceFetcher {
-    private final static Logger s_logger = Logger.getLogger(SequenceFetcher.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     ExecutorService _executors;
     private final static Random random = new Random();
 
@@ -59,17 +60,17 @@ public class SequenceFetcher {
     }
 
     public <T> T getNextSequence(Class<T> clazz, TableGenerator tg, Object key, boolean isRandom) {
-        Future<T> future = _executors.submit(new Fetcher<T>(clazz, tg, key, isRandom));
+        Future<T> future = _executors.submit(new Fetcher<>(clazz, tg, key, isRandom));
         try {
             return future.get();
         } catch (Exception e) {
-            s_logger.warn("Unable to get sequeunce for " + tg.table() + ":" + tg.pkColumnValue(), e);
+            logger.warn("Unable to get sequeunce for " + tg.table() + ":" + tg.pkColumnValue(), e);
             return null;
         }
     }
 
     protected SequenceFetcher() {
-        _executors = new ThreadPoolExecutor(100, 100, 120l, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(250), new NamedThreadFactory("SequenceFetcher"));
+        _executors = new ThreadPoolExecutor(100, 100, 120l, TimeUnit.SECONDS, new LinkedBlockingQueue<>(250), new NamedThreadFactory("SequenceFetcher"));
     }
 
     protected static final SequenceFetcher s_instance = new SequenceFetcher();
@@ -138,11 +139,11 @@ public class SequenceFetcher {
                             }
                         }
                     } catch (SQLException e) {
-                        s_logger.warn("Caught this exception when running: " + (selectStmt != null ? selectStmt.toString() : ""), e);
+                        logger.warn("Caught this exception when running: " + (selectStmt != null ? selectStmt.toString() : ""), e);
                     }
 
                     if (obj == null) {
-                        s_logger.warn("Unable to get a sequence: " + updateStmt.toString());
+                        logger.warn("Unable to get a sequence: " + updateStmt.toString());
                         return null;
                     }
 
@@ -153,7 +154,7 @@ public class SequenceFetcher {
                         txn.commit();
                         return (T)obj;
                     } catch (SQLException e) {
-                        s_logger.warn("Caught this exception when running: " + (updateStmt != null ? updateStmt.toString() : ""), e);
+                        logger.warn("Caught this exception when running: " + (updateStmt != null ? updateStmt.toString() : ""), e);
                     }
                 }
             }

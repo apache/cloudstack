@@ -17,12 +17,19 @@
 
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+import org.apache.cloudstack.framework.async.AsyncCallFuture;
+
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.Snapshot.Event;
 
 public interface SnapshotService {
     SnapshotResult takeSnapshot(SnapshotInfo snapshot);
 
+    DataStore findSnapshotImageStore(SnapshotInfo snapshot);
+
     SnapshotInfo backupSnapshot(SnapshotInfo snapshot);
+
+    SnapshotInfo convertSnapshot(SnapshotInfo snapshotInfo);
 
     boolean deleteSnapshot(SnapshotInfo snapshot);
 
@@ -35,4 +42,10 @@ public interface SnapshotService {
     void processEventOnSnapshotObject(SnapshotInfo snapshot, Event event);
 
     void cleanupOnSnapshotBackupFailure(SnapshotInfo snapshot);
+
+    AsyncCallFuture<SnapshotResult> copySnapshot(SnapshotInfo snapshot, String copyUrl, DataStore dataStore) throws ResourceUnavailableException;
+
+    AsyncCallFuture<CreateCmdResult> queryCopySnapshot(SnapshotInfo snapshot) throws ResourceUnavailableException;
+
+    AsyncCallFuture<SnapshotResult> copySnapshot(SnapshotInfo sourceSnapshot, SnapshotInfo destSnapshot, SnapshotStrategy strategy);
 }

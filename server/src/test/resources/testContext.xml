@@ -17,13 +17,13 @@
   under the License.
 -->
 <beans xmlns="http://www.springframework.org/schema/beans"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xmlns:context="http://www.springframework.org/schema/context"
-  xmlns:tx="http://www.springframework.org/schema/tx" 
+  xmlns:tx="http://www.springframework.org/schema/tx"
   xmlns:aop="http://www.springframework.org/schema/aop"
   xsi:schemaLocation="http://www.springframework.org/schema/beans
                       http://www.springframework.org/schema/beans/spring-beans.xsd
-                      http://www.springframework.org/schema/tx 
+                      http://www.springframework.org/schema/tx
                       http://www.springframework.org/schema/tx/spring-tx.xsd
                       http://www.springframework.org/schema/aop
                       http://www.springframework.org/schema/aop/spring-aop.xsd
@@ -33,7 +33,7 @@
   <context:annotation-config />
 
   <context:component-scan base-package="org.apache.cloudstack, com.cloud" />
-  
+
   <!--
     @DB support
   -->
@@ -49,7 +49,7 @@
         </list>
     </property>
   </bean>
-  
+
   <bean class="com.cloud.network.security.SecurityGroupManagerTestConfiguration" />
 
   <!--
@@ -64,7 +64,7 @@
       </list>
     </property>
   </bean>
-  
+
   <bean id="messageSerializer" class="org.apache.cloudstack.framework.serializer.JsonMessageSerializer">
     <property name="onwireClassRegistry" ref="onwireRegistry" />
   </bean>
@@ -74,7 +74,7 @@
     <property name="nodeId" value="Node1" />
     <property name="messageSerializer" ref="messageSerializer" />
   </bean>
-  
+
   <bean id="rpcProvider" class="org.apache.cloudstack.framework.rpc.RpcProviderImpl" init-method="initialize">
     <constructor-arg ref="transportProvider" />
     <property name="messageSerializer" ref="messageSerializer" />

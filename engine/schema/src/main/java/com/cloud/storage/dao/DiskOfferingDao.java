@@ -32,4 +32,7 @@ public interface DiskOfferingDao extends GenericDao<DiskOfferingVO, Long> {
 
     List<DiskOfferingVO> findCustomDiskOfferings();
 
+    List<DiskOfferingVO> listByStorageTag(String tag);
+
+    List<DiskOfferingVO> listAllActiveAndNonComputeDiskOfferings();
 }

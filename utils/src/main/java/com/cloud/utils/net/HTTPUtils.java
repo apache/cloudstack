@@ -27,13 +27,14 @@ import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.NoHttpResponseException;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.io.IOException;
 
 public final class HTTPUtils {
 
-    private static final Logger LOGGER = Logger.getLogger(HTTPUtils.class);
+    protected static Logger LOGGER = LogManager.getLogger(HTTPUtils.class);
 
     // The connection manager.
     private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();

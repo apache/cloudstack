@@ -542,7 +542,7 @@ class TestCreateSnapshot(cloudstackTestCase):
 
     def verify_Snapshots(self):
         try:
-            self.debug("Listing snapshots for accout : %s" % self.account.name)
+            self.debug("Listing snapshots for account : %s" % self.account.name)
             snapshots = self.get_Snapshots_For_Account(
                                             self.account.name,
                                             self.account.domainid)

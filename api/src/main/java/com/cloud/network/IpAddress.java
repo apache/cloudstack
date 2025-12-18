@@ -97,4 +97,7 @@ public interface IpAddress extends ControlledEntity, Identity, InternalIdentity,
 
     void setRuleState(State ruleState);
 
+    boolean isForSystemVms();
+
+    boolean isForRouter();
 }
