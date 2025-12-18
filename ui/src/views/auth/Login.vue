@@ -311,6 +311,18 @@ export default {
           this.form.idp = this.idps[0].id || ''
         }
       })
+      this.fetchOauthProviders()
+      postAPI('forgotPassword', {}).then(response => {
+        this.forgotPasswordEnabled = response.forgotpasswordresponse.enabled
+      }).catch((err) => {
+        if (err?.response?.data === null) {
+          this.forgotPasswordEnabled = true
+        } else {
+          this.forgotPasswordEnabled = false
+        }
+      })
+    },
+    fetchOauthProviders () {
       getAPI('listOauthProvider', {}).then(response => {
         if (response) {
           const oauthproviders = response.listoauthproviderresponse.oauthprovider || []
@@ -327,15 +339,6 @@ export default {
             }
           })
           this.socialLogin = this.googleprovider || this.githubprovider
-        }
-      })
-      postAPI('forgotPassword', {}).then(response => {
-        this.forgotPasswordEnabled = response.forgotpasswordresponse.enabled
-      }).catch((err) => {
-        if (err?.response?.data === null) {
-          this.forgotPasswordEnabled = true
-        } else {
-          this.forgotPasswordEnabled = false
         }
       })
     },
