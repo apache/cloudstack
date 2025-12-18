@@ -17,7 +17,7 @@
 
 %define __os_install_post %{nil}
 %global debug_package %{nil}
-%global __requires_exclude libc\\.so\\..*
+%global __requires_exclude libc\\.so\\..*|libc\\.so\\.6\\(GLIBC_.*\\)
 %define _binaries_in_noarch_packages_terminate_build   0
 
 # DISABLE the post-percentinstall java repacking and line number stripping
@@ -39,7 +39,7 @@ Source0:   %{name}-%{_maventag}.tgz
 BuildRoot: %{_tmppath}/%{name}-%{_maventag}-%{release}-build
 BuildArch: noarch
 
-BuildRequires: (java-11-openjdk-devel or java-17-openjdk-devel)
+BuildRequires: (java-11-openjdk-devel or java-17-openjdk-devel or java-21-openjdk-devel)
 #BuildRequires: ws-commons-util
 BuildRequires: jpackage-utils
 BuildRequires: gcc
@@ -55,7 +55,7 @@ intelligent IaaS cloud implementation.
 
 %package management
 Summary:   CloudStack management server UI
-Requires: java-17-openjdk
+Requires: (java-17-openjdk or java-21-openjdk)
 Requires: (tzdata-java or timezone-java)
 Requires: python3
 Requires: bash
@@ -66,12 +66,12 @@ Requires: tar
 Requires: bzip2
 Requires: gzip
 Requires: unzip
-Requires: /sbin/mount.nfs
+Requires: (/sbin/mount.nfs or /usr/sbin/mount.nfs)
 Requires: (openssh-clients or openssh)
 Requires: (nfs-utils or nfs-client)
 Requires: iproute
 Requires: wget
-Requires: (mysql or mariadb)
+Requires: (mysql or mariadb or mysql8.4)
 Requires: sudo
 Requires: /sbin/service
 Requires: /sbin/chkconfig
@@ -96,12 +96,12 @@ Requires: python3
 Group:   System Environment/Libraries
 %description common
 The Apache CloudStack files shared between agent and management server
-%global __requires_exclude ^(libuuid\\.so\\.1|/usr/bin/python)$
+%global __requires_exclude libc\\.so\\..*|libc\\.so\\.6\\(GLIBC_.*\\)|^(libuuid\\.so\\.1|/usr/bin/python)$
 
 %package agent
 Summary: CloudStack Agent for KVM hypervisors
 Requires: (openssh-clients or openssh)
-Requires: java-17-openjdk
+Requires: (java-17-openjdk or java-21-openjdk)
 Requires: (tzdata-java or timezone-java)
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
@@ -115,6 +115,8 @@ Requires: ipset
 Requires: perl
 Requires: rsync
 Requires: cifs-utils
+Requires: edk2-ovmf
+Requires: swtpm
 Requires: (python3-libvirt or python3-libvirt-python)
 Requires: (qemu-img or qemu-tools)
 Requires: qemu-kvm
@@ -142,7 +144,7 @@ The CloudStack baremetal agent
 
 %package usage
 Summary: CloudStack Usage calculation server
-Requires: java-17-openjdk
+Requires: (java-17-openjdk or java-21-openjdk)
 Requires: (tzdata-java or timezone-java)
 Group: System Environment/Libraries
 %description usage
@@ -356,6 +358,7 @@ install -D packaging/systemd/cloudstack-agent.service ${RPM_BUILD_ROOT}%{_unitdi
 install -D packaging/systemd/cloudstack-rolling-maintenance@.service ${RPM_BUILD_ROOT}%{_unitdir}/%{name}-rolling-maintenance@.service
 install -D packaging/systemd/cloudstack-agent.default ${RPM_BUILD_ROOT}%{_sysconfdir}/default/%{name}-agent
 install -D agent/target/transformed/agent.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/agent.properties
+install -D agent/target/transformed/uefi.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/uefi.properties
 install -D agent/target/transformed/environment.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/environment.properties
 install -D agent/target/transformed/log4j-cloud.xml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/log4j-cloud.xml
 install -D agent/target/transformed/cloud-setup-agent ${RPM_BUILD_ROOT}%{_bindir}/%{name}-setup-agent
@@ -523,12 +526,20 @@ mkdir -m 0755 -p /usr/share/cloudstack-agent/tmp
 /usr/bin/systemctl enable cloudstack-rolling-maintenance@p > /dev/null 2>&1 || true
 /usr/bin/systemctl enable --now rngd > /dev/null 2>&1 || true
 
-# if saved configs from upgrade exist, copy them over
+# if saved agent.properties from upgrade exist, copy them over
 if [ -f "%{_sysconfdir}/cloud.rpmsave/agent/agent.properties" ]; then
     mv %{_sysconfdir}/%{name}/agent/agent.properties  %{_sysconfdir}/%{name}/agent/agent.properties.rpmnew
     cp -p %{_sysconfdir}/cloud.rpmsave/agent/agent.properties %{_sysconfdir}/%{name}/agent
     # make sure we only do this on the first install of this RPM, don't want to overwrite on a reinstall
     mv %{_sysconfdir}/cloud.rpmsave/agent/agent.properties %{_sysconfdir}/cloud.rpmsave/agent/agent.properties.rpmsave
+fi
+
+# if saved uefi.properties from upgrade exist, copy them over
+if [ -f "%{_sysconfdir}/cloud.rpmsave/agent/uefi.properties" ]; then
+    mv %{_sysconfdir}/%{name}/agent/uefi.properties  %{_sysconfdir}/%{name}/agent/uefi.properties.rpmnew
+    cp -p %{_sysconfdir}/cloud.rpmsave/agent/uefi.properties %{_sysconfdir}/%{name}/agent
+    # make sure we only do this on the first install of this RPM, don't want to overwrite on a reinstall
+    mv %{_sysconfdir}/cloud.rpmsave/agent/uefi.properties %{_sysconfdir}/cloud.rpmsave/agent/uefi.properties.rpmsave
 fi
 
 systemctl daemon-reload

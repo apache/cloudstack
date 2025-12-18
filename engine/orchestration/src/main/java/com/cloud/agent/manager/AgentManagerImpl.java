@@ -1652,7 +1652,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         final String reason = shutdown.getReason();
                         logger.info("Host {} has informed us that it is shutting down with reason {} and detail {}", attache, reason, shutdown.getDetail());
                         if (reason.equals(ShutdownCommand.Update)) {
-                            // disconnectWithoutInvestigation(attache, Event.UpdateNeeded);
                             throw new CloudRuntimeException("Agent update not implemented");
                         } else if (reason.equals(ShutdownCommand.Requested)) {
                             disconnectWithoutInvestigation(attache, Event.ShutdownRequested);
@@ -1710,7 +1709,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         }
                     }
                 } catch (final Throwable th) {
-                    logger.warn("Caught: ", th);
+                    logger.error("Caught: ", th);
                     answer = new Answer(cmd, false, th.getMessage());
                 }
                 answers[i] = answer;
@@ -1725,7 +1724,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             try {
                 link.send(response.toBytes());
             } catch (final ClosedChannelException e) {
-                logger.warn("Unable to send response because connection is closed: {}", response);
+                logger.error("Unable to send response because connection is closed: {}", response);
             }
         }
 
@@ -1753,7 +1752,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         }
                     } catch (final UnsupportedVersionException e) {
                         logger.warn(e.getMessage());
-                        // upgradeAgent(task.getLink(), data, e.getReason());
                     } catch (final ClassNotFoundException e) {
                         final String message = String.format("Exception occurred when executing tasks! Error '%s'", e.getMessage());
                         logger.error(message);

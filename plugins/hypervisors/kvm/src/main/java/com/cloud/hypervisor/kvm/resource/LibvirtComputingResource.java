@@ -69,6 +69,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import com.cloud.agent.api.to.VirtualMachineMetadataTO;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.command.CommandInfo;
 import org.apache.cloudstack.command.ReconcileCommandService;
@@ -199,6 +200,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VideoDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogAction;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogModel;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.MetadataDef;
 import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceAgentExecutor;
 import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceExecutor;
 import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceServiceExecutor;
@@ -882,6 +884,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected StorageSubsystemCommandHandler storageHandler;
 
     private boolean convertInstanceVerboseMode = false;
+    private String[] convertInstanceEnv = null;
     protected boolean dpdkSupport = false;
     protected String dpdkOvsPath;
     protected String directDownloadTemporaryDownloadPath;
@@ -944,6 +947,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public boolean isConvertInstanceVerboseModeEnabled() {
         return convertInstanceVerboseMode;
+    }
+
+    public String[] getConvertInstanceEnv() {
+        return convertInstanceEnv;
     }
 
     /**
@@ -1145,6 +1152,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         convertInstanceVerboseMode = BooleanUtils.isTrue(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VIRTV2V_VERBOSE_ENABLED));
+
+        String convertEnvTmpDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CONVERT_ENV_TMPDIR);
+        String convertEnvVirtv2vTmpDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CONVERT_ENV_VIRTV2V_TMPDIR);
+
+        setConvertInstanceEnv(convertEnvTmpDir, convertEnvVirtv2vTmpDir);
 
         pool = (String)params.get("pool");
         if (pool == null) {
@@ -1420,6 +1432,22 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         setupMemoryBalloonStatsPeriod(conn);
 
         return true;
+    }
+
+    private void setConvertInstanceEnv(String convertEnvTmpDir, String convertEnvVirtv2vTmpDir) {
+        if (StringUtils.isAllBlank(convertEnvTmpDir, convertEnvVirtv2vTmpDir)) {
+            return;
+        }
+        if (StringUtils.isNotBlank(convertEnvTmpDir) && StringUtils.isNotBlank(convertEnvVirtv2vTmpDir)) {
+            convertInstanceEnv = new String[2];
+            convertInstanceEnv[0] = String.format("%s=%s", "TMPDIR", convertEnvTmpDir);
+            convertInstanceEnv[1] = String.format("%s=%s", "VIRT_V2V_TMPDIR", convertEnvVirtv2vTmpDir);
+        } else {
+            convertInstanceEnv = new String[1];
+            String key = StringUtils.isNotBlank(convertEnvTmpDir) ? "TMPDIR" : "VIRT_V2V_TMPDIR";
+            String value = StringUtils.isNotBlank(convertEnvTmpDir) ? convertEnvTmpDir : convertEnvVirtv2vTmpDir;
+            convertInstanceEnv[0] = String.format("%s=%s", key, value);
+        }
     }
 
     /**
@@ -2985,7 +3013,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         vm.addComp(createClockDef(vmTO));
         vm.addComp(createDevicesDef(vmTO, guest, vcpus, isUefiEnabled));
 
+        MetadataDef metaDef;
+        if ((metaDef = createMetadataDef(vmTO)) != null) {
+            vm.addComp(metaDef);
+        }
+
         addExtraConfigsToVM(vmTO, vm, extraConfig);
+    }
+
+    protected MetadataDef createMetadataDef(VirtualMachineTO vmTO) {
+        VirtualMachineMetadataTO metadata = vmTO.getMetadata();
+        return (metadata != null) ? new MetadataDef(metadata) : null;
     }
 
     /**
@@ -3255,25 +3293,25 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         setGuestLoader(bootMode, SECURE, guest, GuestDef.GUEST_LOADER_SECURE);
         setGuestLoader(bootMode, LEGACY, guest, GuestDef.GUEST_LOADER_LEGACY);
 
-        if (isUefiPropertieNotNull(GuestDef.GUEST_NVRAM_PATH)) {
+        if (isUefiPropertyNotNull(GuestDef.GUEST_NVRAM_PATH)) {
             guest.setNvram(uefiProperties.getProperty(GuestDef.GUEST_NVRAM_PATH));
         }
 
-        if (isSecureBoot && isUefiPropertieNotNull(GuestDef.GUEST_NVRAM_TEMPLATE_SECURE) && SECURE.equalsIgnoreCase(bootMode)) {
+        if (isSecureBoot && isUefiPropertyNotNull(GuestDef.GUEST_NVRAM_TEMPLATE_SECURE) && SECURE.equalsIgnoreCase(bootMode)) {
             guest.setNvramTemplate(uefiProperties.getProperty(GuestDef.GUEST_NVRAM_TEMPLATE_SECURE));
-        } else if (isUefiPropertieNotNull(GuestDef.GUEST_NVRAM_TEMPLATE_LEGACY)) {
+        } else if (isUefiPropertyNotNull(GuestDef.GUEST_NVRAM_TEMPLATE_LEGACY)) {
             guest.setNvramTemplate(uefiProperties.getProperty(GuestDef.GUEST_NVRAM_TEMPLATE_LEGACY));
         }
     }
 
-    private void setGuestLoader(String bootMode, String mode, GuestDef guest, String propertie) {
-        if (isUefiPropertieNotNull(propertie) && mode.equalsIgnoreCase(bootMode)) {
-            guest.setLoader(uefiProperties.getProperty(propertie));
+    private void setGuestLoader(String bootMode, String mode, GuestDef guest, String property) {
+        if (isUefiPropertyNotNull(property) && mode.equalsIgnoreCase(bootMode)) {
+            guest.setLoader(uefiProperties.getProperty(property));
         }
     }
 
-    private boolean isUefiPropertieNotNull(String propertie) {
-        return uefiProperties.getProperty(propertie) != null;
+    private boolean isUefiPropertyNotNull(String property) {
+        return uefiProperties.getProperty(property) != null;
     }
 
     public boolean isGuestAarch64() {
@@ -3473,7 +3511,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         if (vmSpec.getOs().toLowerCase().contains("window")) {
-            isWindowsTemplate =true;
+            isWindowsTemplate = true;
         }
         for (final DiskTO volume : disks) {
             KVMPhysicalDisk physicalDisk = null;
@@ -3592,6 +3630,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.defNetworkBasedDisk(physicalDisk.getPath().replace("rbd:", ""), pool.getSourceHost(), pool.getSourcePort(), pool.getAuthUserName(),
                             pool.getUuid(), devId, diskBusType, DiskProtocol.RBD, DiskDef.DiskFmtType.RAW);
                 } else if (pool.getType() == StoragePoolType.PowerFlex) {
+                    if (isWindowsTemplate && isUefiEnabled) {
+                        diskBusTypeData = DiskDef.DiskBus.SATA;
+                    }
                     disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData);
                     if (physicalDisk.getFormat().equals(PhysicalDiskFormat.QCOW2)) {
                         disk.setDiskFormatType(DiskDef.DiskFmtType.QCOW2);
@@ -3622,7 +3663,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                             disk.defFileBasedDisk(physicalDisk.getPath(), devId, diskBusType, DiskDef.DiskFmtType.QCOW2);
                         }
                     }
-
                 }
                 pool.customizeLibvirtDiskDef(disk);
             }
@@ -4911,6 +4951,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     return token[1];
                 }
             } else if (token.length > 3) {
+                // for powerflex/scaleio, path = /dev/disk/by-id/emc-vol-2202eefc4692120f-540fd8fa00000003
+                if (token.length > 4 && StringUtils.isNotBlank(token[4]) && token[4].startsWith("emc-vol-")) {
+                    final String[] emcVolToken = token[4].split("-");
+                    if (emcVolToken.length == 4) {
+                        return emcVolToken[3];
+                    }
+                }
+
                 // for example, path = /mnt/pool_uuid/disk_path/
                 return token[3];
             }

@@ -21,6 +21,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
+import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -39,7 +40,6 @@ import org.apache.cloudstack.ldap.NoLdapUserMatchingQueryException;
 import org.bouncycastle.util.encoders.Base64;
 
 import javax.inject.Inject;
-import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Map;
@@ -107,7 +107,7 @@ public class LdapCreateAccountCmd extends BaseCmd {
         if (accountType == null) {
             return RoleType.getAccountTypeByRole(roleService.findRole(roleId), null);
         }
-        return RoleType.getAccountTypeByRole(roleService.findRole(roleId), Account.Type.getFromValue(accountType.intValue()));
+        return RoleType.getAccountTypeByRole(roleService.findRole(roleId), Account.Type.getFromValue(accountType));
     }
 
     public Long getRoleId() {
@@ -158,10 +158,10 @@ public class LdapCreateAccountCmd extends BaseCmd {
     private String generatePassword() throws ServerApiException {
         try {
             final SecureRandom randomGen = SecureRandom.getInstance("SHA1PRNG");
-            final byte bytes[] = new byte[20];
+            final byte[] bytes = new byte[20];
             randomGen.nextBytes(bytes);
-            return new String(Base64.encode(bytes), "UTF-8");
-        } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
+            return new String(Base64.encode(bytes), StringUtils.getPreferredCharset());
+        } catch (NoSuchAlgorithmException e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to generate random password");
         }
     }
@@ -180,7 +180,7 @@ public class LdapCreateAccountCmd extends BaseCmd {
         return Account.ACCOUNT_ID_SYSTEM;
     }
 
-    private boolean validateUser(final LdapUser user) throws ServerApiException {
+    private void validateUser(final LdapUser user) throws ServerApiException {
         if (user.getEmail() == null) {
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, username + " has no email address set within LDAP");
         }
@@ -190,6 +190,5 @@ public class LdapCreateAccountCmd extends BaseCmd {
         if (user.getLastname() == null) {
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, username + " has no lastname set within LDAP");
         }
-        return true;
     }
 }

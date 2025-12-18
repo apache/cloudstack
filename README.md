@@ -1,3 +1,22 @@
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+ -->
+
 # Apache CloudStack
 
 [![Build Status](https://github.com/apache/cloudstack/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/build.yml)
@@ -16,6 +35,24 @@
 )](https://cloudstack.apache.org/)
 
 [![Apache CloudStack](tools/logo/apache_cloudstack.png)](https://cloudstack.apache.org/)
+
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+- [Who Uses CloudStack?](#who-uses-cloudstack)
+- [Demo](#demo)
+- [Getting Started](#getting-started)
+- [Getting Source Repository](#getting-source-repository)
+- [Documentation](#documentation)
+- [News and Events](#news-and-events)
+- [Getting Involved and Contributing](#getting-involved-and-contributing)
+- [Reporting Security Vulnerabilities](#reporting-security-vulnerabilities)
+- [License](#license)
+- [Notice of Cryptographic Software](#notice-of-cryptographic-software)
+- [Star History](#star-history)
+- [Contributors](#contributors)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 Apache CloudStack is open source software designed to deploy and manage large
 networks of virtual machines, as a highly available, highly scalable
@@ -36,7 +73,7 @@ OVM and LXC containers.
 Users can manage their cloud with an easy to use Web interface, command line
 tools, and/or a full-featured query based API.
 
-For more information on Apache CloudStack, please visit the [website](http://cloudstack.apache.org)
+For more information on Apache CloudStack, please visit the [website](https://cloudstack.apache.org)
 
 ## Who Uses CloudStack?
 
@@ -93,10 +130,10 @@ via GitHub pull requests.
 ## Getting Involved and Contributing
 
 Interested in helping out with Apache CloudStack? Great! We welcome
-participation from anybody willing to work [The Apache Way](http://theapacheway.com) and make a
+participation from anybody willing to work [The Apache Way](https://theapacheway.com) and make a
 contribution. Note that you do not have to be a developer in order to contribute
 to Apache CloudStack. We need folks to help with documentation, translation,
-promotion etc. See our contribution [page](http://cloudstack.apache.org/contribute.html).
+promotion etc. See our contribution [page](https://cloudstack.apache.org/contribute.html).
 
 If you are a frequent contributors, you can request to be added as collaborators
 (see https://cwiki.apache.org/confluence/display/INFRA/Git+-+.asf.yaml+features#Git.asf.yamlfeatures-AssigningexternalcollaboratorswiththetriageroleonGitHub)
@@ -107,7 +144,7 @@ You may do so by sharing your GitHub users ID or raise a GitHub issue.
 
 If you're interested in learning more or participating in the Apache CloudStack
 project, the mailing lists are the best way to do that. While the project has
-several communications channels, the [mailing lists](http://cloudstack.apache.org/mailing-lists.html) are the most active and the
+several communications channels, the [mailing lists](https://cloudstack.apache.org/mailing-lists.html) are the most active and the
 official channels for making decisions about the project itself.
 
 Mailing lists:
@@ -127,7 +164,7 @@ released version of CloudStack, please report it to `security@apache.org` with
 details about the vulnerability, how it might be exploited, and any additional
 information that might be useful.
 
-For more details, please visit our security [page](http://cloudstack.apache.org/security.html).
+For more details, please visit our security [page](https://cloudstack.apache.org/security.html).
 
 ## License
 

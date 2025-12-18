@@ -685,6 +685,9 @@ export default {
       })
     },
     fetchCustomHypervisorName () {
+      if (!('listConfigurations' in store.getters.apis)) {
+        return
+      }
       const params = {
         name: 'hypervisor.custom.display.name'
       }
@@ -702,6 +705,9 @@ export default {
       })
     },
     fetchExtensionsList () {
+      if (!this.isAdminRole) {
+        return
+      }
       this.loading = true
       getAPI('listExtensions', {
       }).then(response => {
@@ -757,6 +763,9 @@ export default {
           listhyperVisors.push({
             name: 'Simulator'
           })
+        }
+        if (!this.isAdminRole) {
+          listhyperVisors = listhyperVisors.filter(hv => hv.name !== 'External')
         }
         this.hyperVisor.opts = listhyperVisors
       }).finally(() => {
