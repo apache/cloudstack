@@ -31,6 +31,7 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.StorageOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -634,26 +635,108 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     protected boolean tryCopyingTemplateToImageStore(VMTemplateVO tmplt, DataStore destStore) {
-        Long zoneId = destStore.getScope().getScopeId();
-        List<DataStore> storesInZone = _storeMgr.getImageStoresByZoneIds(zoneId);
-        for (DataStore sourceStore : storesInZone) {
+        Long destZoneId = destStore.getScope().getScopeId();
+
+        List<DataStore> storesInSameZone = _storeMgr.getImageStoresByZoneIds(destZoneId);
+        if (searchAndCopyWithinZone(tmplt, destStore, storesInSameZone)) {
+            return true;
+        }
+
+        logger.debug("Template [{}] not found in any image store of zone [{}]. Checking other zones",
+                tmplt.getUniqueName(), destZoneId);
+
+        return searchAndCopyAcrossZones(tmplt, destStore, destZoneId);
+    }
+
+    private boolean searchAndCopyAcrossZones(VMTemplateVO tmplt, DataStore destStore, Long destZoneId) {
+        List<Long> allZoneIds = _dcDao.listAllIds();
+        for (Long otherZoneId : allZoneIds) {
+            if (otherZoneId.equals(destZoneId)) {
+                continue;
+            }
+
+            List<DataStore> storesInOtherZone = _storeMgr.getImageStoresByZoneIds(otherZoneId);
+            logger.debug("Checking zone [{}] for template [{}]...", otherZoneId, tmplt.getUniqueName());
+
+            if (storesInOtherZone == null || storesInOtherZone.isEmpty()) {
+                logger.debug("Zone [{}] has no image stores. Skipping.", otherZoneId);
+                continue;
+            }
+
+            DataStore sourceStore = findTemplateInStores(tmplt, storesInOtherZone);
+            if (sourceStore == null) {
+                logger.debug("Template [{}] not found in any image store of zone [{}].",
+                        tmplt.getUniqueName(), otherZoneId);
+                continue;
+            }
+
+            logger.info("Template [{}] found in zone [{}]. Initiating cross-zone copy to zone [{}].",
+                    tmplt.getUniqueName(), otherZoneId, destZoneId);
+
+            return copyTemplateAcrossZones(sourceStore, destStore, tmplt);
+        }
+
+        logger.debug("Template [{}] was not found in any zone. Cannot perform zone-to-zone copy.",
+                tmplt.getUniqueName());
+        return false;
+    }
+
+    private boolean searchAndCopyWithinZone(VMTemplateVO tmplt, DataStore destStore, List<DataStore> stores) {
+        for (DataStore sourceStore : stores) {
             Map<String, TemplateProp> existingTemplatesInSourceStore = listTemplate(sourceStore);
-            if (existingTemplatesInSourceStore == null || !existingTemplatesInSourceStore.containsKey(tmplt.getUniqueName())) {
-                logger.debug("Template [{}] does not exist on image store [{}]; searching on another one.",
+            if (existingTemplatesInSourceStore == null ||
+                    !existingTemplatesInSourceStore.containsKey(tmplt.getUniqueName())) {
+                logger.debug("Template [{}] does not exist on image store [{}]; searching another.",
                         tmplt.getUniqueName(), sourceStore.getName());
                 continue;
             }
+
             TemplateObject sourceTmpl = (TemplateObject) _templateFactory.getTemplate(tmplt.getId(), sourceStore);
             if (sourceTmpl.getInstallPath() == null) {
-                logger.warn("Can not copy template [{}] from image store [{}], as it returned a null install path.", tmplt.getUniqueName(),
-                        sourceStore.getName());
+                logger.warn("Cannot copy template [{}] from image store [{}]; install path is null.",
+                        tmplt.getUniqueName(), sourceStore.getName());
                 continue;
             }
+
             storageOrchestrator.orchestrateTemplateCopyToImageStore(sourceTmpl, destStore);
             return true;
         }
-        logger.debug("Can't copy template [{}] from another image store.", tmplt.getUniqueName());
         return false;
+    }
+
+    private DataStore findTemplateInStores(VMTemplateVO tmplt, List<DataStore> stores) {
+        for (DataStore store : stores) {
+            Map<String, TemplateProp> templates = listTemplate(store);
+            if (templates != null && templates.containsKey(tmplt.getUniqueName())) {
+                return store;
+            }
+        }
+        return null;
+    }
+
+    private boolean copyTemplateAcrossZones(DataStore sourceStore,
+                                            DataStore destStore,
+                                            VMTemplateVO tmplt) {
+        Long dstZoneId = destStore.getScope().getScopeId();
+        DataCenterVO dstZone = _dcDao.findById(dstZoneId);
+
+        if (dstZone == null) {
+            logger.warn("Destination zone [{}] not found for template [{}]",
+                    dstZoneId, tmplt.getUniqueName());
+            return false;
+        }
+
+        try {
+            Long userId = CallContext.current().getCallingUserId();
+            return _tmpltMgr.copy(userId, tmplt, sourceStore, dstZone);
+        } catch (Exception e) {
+            logger.error("Failed to copy template [{}] from zone [{}] to zone [{}]",
+                    tmplt.getUniqueName(),
+                    sourceStore.getScope().getScopeId(),
+                    dstZoneId,
+                    e);
+            return false;
+        }
     }
 
     @Override
@@ -700,7 +783,7 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     protected boolean isCopyFromOtherStoragesEnabled(Long zoneId) {
-        return StorageManager.COPY_PUBLIC_TEMPLATES_FROM_OTHER_STORAGES.valueIn(zoneId);
+        return StorageManager.COPY_TEMPLATES_FROM_OTHER_SECONDARY_STORAGES.valueIn(zoneId);
     }
 
     protected void publishTemplateCreation(TemplateInfo tmplt) {
