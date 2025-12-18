@@ -240,7 +240,7 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             for (Map<String, String> entry : (Collection<Map<String, String>>)dataDiskToDiskOfferingList.values()) {
                 String disk = entry.get(VmDetailConstants.DISK);
                 String offeringUuid = entry.get(VmDetailConstants.DISK_OFFERING);
-                logger.trace("Checking if offering '{}' can be user on disk '{}'", offeringUuid, disk);
+                logger.trace("Checking if offering '{}' can be used on disk '{}'", offeringUuid, disk);
                 if (StringUtils.isAnyEmpty(disk, offeringUuid) || _entityMgr.findByUuid(DiskOffering.class, offeringUuid) == null) {
                     throw new InvalidParameterValueException(String.format("Disk offering ID: %s for disk ID: %s is invalid", offeringUuid, disk));
                 }
