@@ -5847,6 +5847,16 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         }
 
         String vtpmEnabled = vmSpec.getDetails().getOrDefault(VmDetailConstants.VIRTUAL_TPM_ENABLED, null);
+
+        final Map<String, String> platform = vm.getPlatform(conn);
+        if (platform != null) {
+            final String guestRequiresVtpm = platform.get("vtpm");
+            if (guestRequiresVtpm != null && Boolean.parseBoolean(guestRequiresVtpm) && !Boolean.parseBoolean(vtpmEnabled)) {
+                logger.warn("Guest OS requires vTPM by default, even if VM details doesn't have the setting: {}", vmSpec.getName());
+                return;
+            }
+        }
+
         if (!Boolean.parseBoolean(vtpmEnabled)) {
             return;
         }
@@ -5858,11 +5868,10 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
             logger.warn("vTPM requires UEFI boot mode. Skipping vTPM configuration for VM: {}", vmSpec.getName());
             return;
         }
-
-        if (!ApiConstants.BootMode.SECURE.name().equals(bootMode)) {
-            logger.warn("vTPM requires UEFI Secure Boot to be enabled. Skipping vTPM configuration for VM: {}", vmSpec.getName());
-            return;
-        }
+//        if (!ApiConstants.BootMode.SECURE.name().equals(bootMode)) {
+//            logger.warn("vTPM requires UEFI Secure Boot to be enabled. Skipping vTPM configuration for VM: {}", vmSpec.getName());
+//            return;
+//        }
 
         try {
             Set<VTPM> existingVtpms = vm.getVTPMs(conn);
