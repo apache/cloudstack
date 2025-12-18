@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.auth.UserOAuth2Authenticator;
 import org.apache.cloudstack.oauth2.OAuth2AuthManager;
@@ -59,6 +60,10 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
     @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "Name of the provider")
     private String provider;
 
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
+            description = "List OAuth providers for a specific domain. Use -1 for global providers only.")
+    private Long domainId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -68,6 +73,10 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
 
     public String getProvider() {
         return provider;
+    }
+
+    public Long getDomainId() {
+        return domainId;
     }
 
     /////////////////////////////////////////////////////
@@ -97,6 +106,10 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
         if (ArrayUtils.isNotEmpty(providerArray)) {
             provider = providerArray[0];
         }
+        final String[] domainIdArray = (String[])params.get(ApiConstants.DOMAIN_ID);
+        if (ArrayUtils.isNotEmpty(domainIdArray)) {
+            domainId = Long.parseLong(domainIdArray[0]);
+        }
 
         List<OauthProviderVO> resultList = _oauth2mgr.listOauthProviders(provider, id);
         List<UserOAuth2Authenticator> userOAuth2AuthenticatorPlugins = _oauth2mgr.listUserOAuth2AuthenticationProviders();
@@ -108,7 +121,7 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
         List<OauthProviderResponse> responses = new ArrayList<>();
         for (OauthProviderVO result : resultList) {
             OauthProviderResponse r = new OauthProviderResponse(result.getUuid(), result.getProvider(),
-                    result.getDescription(), result.getClientId(), result.getSecretKey(), result.getRedirectUri());
+                    result.getDescription(), result.getClientId(), result.getSecretKey(), result.getRedirectUri(), result.getDomainId());
             if (OAuth2AuthManager.OAuth2IsPluginEnabled.value() && authenticatorPluginNames.contains(result.getProvider()) && result.isEnabled()) {
                 r.setEnabled(true);
             } else {

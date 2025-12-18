@@ -115,7 +115,7 @@ public final class UpdateOAuthProviderCmd extends BaseCmd {
         OauthProviderVO result = _oauthMgr.updateOauthProvider(this);
         if (result != null) {
             OauthProviderResponse r = new OauthProviderResponse(result.getUuid(), result.getProvider(),
-                    result.getDescription(), result.getClientId(), result.getSecretKey(), result.getRedirectUri());
+                    result.getDescription(), result.getClientId(), result.getSecretKey(), result.getRedirectUri(), result.getDomainId());
 
             List<UserOAuth2Authenticator> userOAuth2AuthenticatorPlugins = _oauthMgr.listUserOAuth2AuthenticationProviders();
             List<String> authenticatorPluginNames = new ArrayList<>();

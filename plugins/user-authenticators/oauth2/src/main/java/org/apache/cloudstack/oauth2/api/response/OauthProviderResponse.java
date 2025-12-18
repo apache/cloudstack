@@ -54,18 +54,23 @@ public class OauthProviderResponse extends BaseResponse {
     @Param(description = "Redirect URI registered in the OAuth provider")
     private String redirectUri;
 
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "Domain ID of the provider (null for global)")
+    private Long domainId;
+
     @SerializedName(ApiConstants.ENABLED)
     @Param(description = "Whether the OAuth provider is enabled or not")
     private boolean enabled;
 
-    public OauthProviderResponse(String id, String provider, String description, String clientId, String secretKey, String redirectUri) {
+    public OauthProviderResponse(String id, String provider, String description, String clientId, String secretKey, String redirectUri, Long domainId) {
         this.id = id;
         this.provider = provider;
         this.name = provider;
         this.description = description;
         this.clientId = clientId;
         this.secretKey = secretKey;
-        this.redirectUri =  redirectUri;
+        this.redirectUri = redirectUri;
+        this.domainId = domainId;
     }
 
     public String getId() {
@@ -115,6 +120,14 @@ public class OauthProviderResponse extends BaseResponse {
 
     public void setRedirectUri(String redirectUri) {
         this.redirectUri = redirectUri;
+    }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public void setDomainId(Long domainId) {
+        this.domainId = domainId;
     }
 
     public String getSecretKey() {
