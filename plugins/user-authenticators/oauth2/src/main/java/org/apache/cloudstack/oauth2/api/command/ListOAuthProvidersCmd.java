@@ -111,7 +111,7 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
             domainId = Long.parseLong(domainIdArray[0]);
         }
 
-        List<OauthProviderVO> resultList = _oauth2mgr.listOauthProviders(provider, id);
+        List<OauthProviderVO> resultList = _oauth2mgr.listOauthProviders(provider, id, domainId);
         List<UserOAuth2Authenticator> userOAuth2AuthenticatorPlugins = _oauth2mgr.listUserOAuth2AuthenticationProviders();
         List<String> authenticatorPluginNames = new ArrayList<>();
         for (UserOAuth2Authenticator authenticator : userOAuth2AuthenticatorPlugins) {

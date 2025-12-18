@@ -139,25 +139,36 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         String clientId = StringUtils.trim(cmd.getClientId());
         String redirectUri = StringUtils.trim(cmd.getRedirectUri());
         String secretKey = StringUtils.trim(cmd.getSecretKey());
+        Long domainId = cmd.getDomainId();
 
         if (!isOAuthPluginEnabled()) {
             throw new CloudRuntimeException("OAuth is not enabled, please enable to register");
         }
-        OauthProviderVO providerVO = _oauthProviderDao.findByProvider(provider);
+
+        // Check for existing provider with same name and domain
+        OauthProviderVO providerVO = _oauthProviderDao.findByProviderAndDomain(provider, domainId);
         if (providerVO != null) {
-            throw new CloudRuntimeException(String.format("Provider with the name %s is already registered", provider));
+            if (domainId == null) {
+                throw new CloudRuntimeException(String.format("Global provider with the name %s is already registered", provider));
+            } else {
+                throw new CloudRuntimeException(String.format("Provider with the name %s is already registered for domain %d", provider, domainId));
+            }
         }
 
-        return saveOauthProvider(provider, description, clientId, secretKey, redirectUri);
+        return saveOauthProvider(provider, description, clientId, secretKey, redirectUri, domainId);
     }
 
     @Override
-    public List<OauthProviderVO> listOauthProviders(String provider, String uuid) {
+    public List<OauthProviderVO> listOauthProviders(String provider, String uuid, Long domainId) {
         List<OauthProviderVO> providers;
         if (uuid != null) {
             providers = Collections.singletonList(_oauthProviderDao.findByUuid(uuid));
+        } else if (StringUtils.isNotBlank(provider) && domainId != null) {
+            providers = Collections.singletonList(_oauthProviderDao.findByProviderAndDomain(provider, domainId));
         } else if (StringUtils.isNotBlank(provider)) {
             providers = Collections.singletonList(_oauthProviderDao.findByProvider(provider));
+        } else if (domainId != null) {
+            providers = _oauthProviderDao.listByDomainIncludingGlobal(domainId);
         } else {
             providers = _oauthProviderDao.listAll();
         }
@@ -199,7 +210,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         return _oauthProviderDao.findById(id);
     }
 
-    private OauthProviderVO saveOauthProvider(String provider, String description, String clientId, String secretKey, String redirectUri) {
+    private OauthProviderVO saveOauthProvider(String provider, String description, String clientId, String secretKey, String redirectUri, Long domainId) {
         final OauthProviderVO oauthProviderVO = new OauthProviderVO();
 
         oauthProviderVO.setProvider(provider);
@@ -207,6 +218,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         oauthProviderVO.setClientId(clientId);
         oauthProviderVO.setSecretKey(secretKey);
         oauthProviderVO.setRedirectUri(redirectUri);
+        oauthProviderVO.setDomainId(domainId);
         oauthProviderVO.setEnabled(true);
 
         _oauthProviderDao.persist(oauthProviderVO);
