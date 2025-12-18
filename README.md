@@ -29,7 +29,7 @@
 [![Simulator CI](https://github.com/apache/cloudstack/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/ci.yml)
 [![UI Build](https://github.com/apache/cloudstack/actions/workflows/ui.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/ui.yml)
 
-[![Apache CloudStack](tools/logo/apache_cloudstack.png)](https://cloudstack.apache.org/)
+[![Apache CloudStack](tools/logo/acsxmas.jpg)](https://cloudstack.apache.org/)
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
