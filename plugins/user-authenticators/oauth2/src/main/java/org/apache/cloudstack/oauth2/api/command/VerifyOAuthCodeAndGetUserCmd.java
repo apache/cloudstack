@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.oauth2.OAuth2AuthManager;
 import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
@@ -56,6 +57,10 @@ public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuth
     @Parameter(name = ApiConstants.SECRET_CODE, type = CommandType.STRING, description = "Code that is provided by OAuth provider (Eg. google, github) after successful login")
     private String secretCode;
 
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
+            description = "Domain ID for domain-specific OAuth provider lookup")
+    private Long domainId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -66,6 +71,10 @@ public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuth
 
     public String getSecretCode() {
         return secretCode;
+    }
+
+    public Long getDomainId() {
+        return domainId;
     }
 
     /////////////////////////////////////////////////////
@@ -95,8 +104,12 @@ public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuth
         if (ArrayUtils.isNotEmpty(providerArray)) {
             provider = providerArray[0];
         }
+        final String[] domainIdArray = (String[])params.get(ApiConstants.DOMAIN_ID);
+        if (ArrayUtils.isNotEmpty(domainIdArray)) {
+            domainId = Long.parseLong(domainIdArray[0]);
+        }
 
-        String email = _oauth2mgr.verifyCodeAndFetchEmail(secretCode, provider);
+        String email = _oauth2mgr.verifyCodeAndFetchEmail(secretCode, provider, domainId);
         if (email != null) {
             UserResponse response = new UserResponse();
             response.setEmail(email);

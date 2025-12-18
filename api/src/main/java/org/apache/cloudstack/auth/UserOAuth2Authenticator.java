@@ -44,6 +44,17 @@ public interface UserOAuth2Authenticator extends Adapter {
      */
     String verifyCodeAndFetchEmail(String secretCode);
 
+    /**
+     * Verifies if the logged in user is valid for a specific domain
+     * @return returns true if its valid user
+     */
+    boolean verifyUser(String email, String secretCode, Long domainId);
+
+    /**
+     * Verifies the code provided by provider and fetches email for a specific domain
+     * @return returns email
+     */
+    String verifyCodeAndFetchEmail(String secretCode, Long domainId);
 
     /**
      * Fetches email using the accessToken

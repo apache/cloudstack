@@ -136,4 +136,89 @@ public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authe
     public String getUserEmailAddress() throws CloudRuntimeException {
         return null;
     }
+
+    @Override
+    public boolean verifyUser(String email, String secretCode, Long domainId) {
+        if (StringUtils.isAnyEmpty(email, secretCode)) {
+            throw new CloudAuthenticationException("Either email or secret code should not be null/empty");
+        }
+
+        OauthProviderVO providerVO = getProviderForDomain(domainId);
+        if (providerVO == null) {
+            throw new CloudAuthenticationException("Google provider is not registered, so user cannot be verified");
+        }
+
+        String verifiedEmail = verifyCodeAndFetchEmail(secretCode, domainId);
+        if (verifiedEmail == null || !email.equals(verifiedEmail)) {
+            throw new CloudRuntimeException("Unable to verify the email address with the provided secret");
+        }
+        clearAccessAndRefreshTokens();
+
+        return true;
+    }
+
+    @Override
+    public String verifyCodeAndFetchEmail(String secretCode, Long domainId) {
+        OauthProviderVO provider = getProviderForDomain(domainId);
+        String clientId = provider.getClientId();
+        String secret = provider.getSecretKey();
+        String redirectURI = provider.getRedirectUri();
+        GoogleClientSecrets clientSecrets = new GoogleClientSecrets()
+                .setWeb(new GoogleClientSecrets.Details()
+                        .setClientId(clientId)
+                        .setClientSecret(secret));
+
+        NetHttpTransport httpTransport = new NetHttpTransport();
+        JsonFactory jsonFactory = new JacksonFactory();
+        List<String> scopes = Arrays.asList(
+                                "https://www.googleapis.com/auth/userinfo.profile",
+                                "https://www.googleapis.com/auth/userinfo.email");
+        GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
+                httpTransport, jsonFactory, clientSecrets, scopes)
+                .build();
+
+        if (StringUtils.isAnyEmpty(accessToken, refreshToken)) {
+            GoogleTokenResponse tokenResponse = null;
+            try {
+                tokenResponse = flow.newTokenRequest(secretCode)
+                        .setRedirectUri(redirectURI)
+                        .execute();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            accessToken = tokenResponse.getAccessToken();
+            refreshToken = tokenResponse.getRefreshToken();
+        }
+
+        GoogleCredential credential = new GoogleCredential.Builder()
+                .setTransport(httpTransport)
+                .setJsonFactory(jsonFactory)
+                .setClientSecrets(clientSecrets)
+                .build()
+                .setAccessToken(accessToken)
+                .setRefreshToken(refreshToken);
+
+        Oauth2 oauth2 = new Oauth2.Builder(httpTransport, jsonFactory, credential).build();
+        Userinfo userinfo = null;
+        try {
+            userinfo = oauth2.userinfo().get().execute();
+        } catch (IOException e) {
+            throw new CloudRuntimeException(String.format("Failed to fetch the email address with the provided secret: %s" + e.getMessage()));
+        }
+        return userinfo.getEmail();
+    }
+
+    /**
+     * Gets OAuth provider config, preferring domain-specific over global
+     */
+    private OauthProviderVO getProviderForDomain(Long domainId) {
+        OauthProviderVO provider = null;
+        if (domainId != null) {
+            provider = _oauthProviderDao.findByProviderAndDomain(getName(), domainId);
+        }
+        if (provider == null) {
+            provider = _oauthProviderDao.findByProviderAndDomain(getName(), null);
+        }
+        return provider;
+    }
 }
