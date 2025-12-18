@@ -94,12 +94,11 @@ router.beforeEach((to, from, next) => {
         }
         store.commit('SET_LOGIN_FLAG', true)
       }
+      // store already loaded
       if (store.getters.passwordChangeRequired) {
-        // Only allow the Change Password page
         if (to.path === '/user/forceChangePassword') {
           next()
         } else {
-          // Redirect everything else (including dashboard, wildcards) to Change Password
           next({ path: '/user/forceChangePassword' })
           NProgress.done()
         }
@@ -113,6 +112,7 @@ router.beforeEach((to, from, next) => {
         store
           .dispatch('GetInfo')
           .then(apis => {
+            // Essential for Page Refresh scenarios
             if (store.getters.passwordChangeRequired) {
               // Only allow the Change Password page
               if (to.path === '/user/forceChangePassword') {

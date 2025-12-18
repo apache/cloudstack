@@ -44,8 +44,10 @@ import org.apache.cloudstack.api.response.ApiDiscoveryResponse;
 import org.apache.cloudstack.api.response.ApiParameterResponse;
 import org.apache.cloudstack.api.response.ApiResponseResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.resourcedetail.UserDetailVO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.reflections.ReflectionUtils;
 import org.springframework.stereotype.Component;
@@ -55,6 +57,7 @@ import com.cloud.serializer.Param;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
+import com.cloud.user.UserAccount;
 import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.component.ComponentLifecycleBase;
 import com.cloud.utils.component.PluggableService;
@@ -280,12 +283,23 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
                         ReflectionToStringBuilderUtils.reflectOnlySelectedFields(account, "accountName", "uuid")));
             }
 
-            if (role.getRoleType() == RoleType.Admin && role.getId() == RoleType.Admin.getId()) {
-                logger.info(String.format("Account [%s] is Root Admin, all APIs are allowed.",
-                        ReflectionToStringBuilderUtils.reflectOnlySelectedFields(account, "accountName", "uuid")));
+            // Limit APIs on first login requiring password change
+            UserAccount userAccount = accountService.getUserAccountById(user.getId());
+            if (MapUtils.isNotEmpty(userAccount.getDetails()) &&
+                    userAccount.getDetails().containsKey(UserDetailVO.PasswordChangeRequired)) {
+
+                String needPasswordChange = userAccount.getDetails().get(UserDetailVO.PasswordChangeRequired);
+                if ("true".equalsIgnoreCase(needPasswordChange)) {
+                    apisAllowed = Arrays.asList("login", "logout", "updateUser", "listUsers", "listApis");
+                }
             } else {
-                for (APIChecker apiChecker : _apiAccessCheckers) {
-                    apisAllowed = apiChecker.getApisAllowedToUser(role, user, apisAllowed);
+                if (role.getRoleType() == RoleType.Admin && role.getId() == RoleType.Admin.getId()) {
+                    logger.info(String.format("Account [%s] is Root Admin, all APIs are allowed.",
+                            ReflectionToStringBuilderUtils.reflectOnlySelectedFields(account, "accountName", "uuid")));
+                } else {
+                    for (APIChecker apiChecker : _apiAccessCheckers) {
+                        apisAllowed = apiChecker.getApisAllowedToUser(role, user, apisAllowed);
+                    }
                 }
             }
 

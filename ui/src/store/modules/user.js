@@ -45,8 +45,7 @@ import {
   OAUTH_DOMAIN,
   OAUTH_PROVIDER,
   LATEST_CS_VERSION,
-  PASSWORD_CHANGE_REQUIRED,
-  LOGIN_SOURCE
+  PASSWORD_CHANGE_REQUIRED
 } from '@/store/mutation-types'
 
 import {
@@ -83,8 +82,7 @@ const user = {
     twoFaIssuer: '',
     customHypervisorName: 'Custom',
     readyForShutdownPollingJob: '',
-    passwordChangeRequired: false,
-    loginSource: ''
+    passwordChangeRequired: false
   },
 
   mutations: {
@@ -204,13 +202,10 @@ const user = {
     SET_PASSWORD_CHANGE_REQUIRED: (state, required) => {
       state.passwordChangeRequired = required
       if (required) {
-        vueProps.$localStorage.set('PASSWORD_CHANGE_REQUIRED', 'true')
+        vueProps.$localStorage.set(PASSWORD_CHANGE_REQUIRED, true)
       } else {
-        vueProps.$localStorage.remove('PASSWORD_CHANGE_REQUIRED')
+        vueProps.$localStorage.remove(PASSWORD_CHANGE_REQUIRED)
       }
-    },
-    SET_LOGIN_SOURCE: (state, source) => {
-      vueProps.$localStorage.set('LOGIN_SOURCE', source)
     }
   },
 
@@ -259,8 +254,7 @@ const user = {
           if (result && result.managementserverid) {
             commit('SET_MS_ID', result.managementserverid)
           }
-          commit('SET_LOGIN_SOURCE', 'password')
-          if (result.passwordchangerequired && result.passwordchangerequired === 'true') {
+          if (result.passwordchangerequired) {
             commit('SET_PASSWORD_CHANGE_REQUIRED', true)
             commit('SET_APIS', {})
             vueProps.$localStorage.remove(APIS)
@@ -321,8 +315,6 @@ const user = {
           const latestVersion = vueProps.$localStorage.get(LATEST_CS_VERSION, { version: '', fetchedTs: 0 })
           commit('SET_LATEST_VERSION', latestVersion)
           notification.destroy()
-          commit('SET_LOGIN_SOURCE', 'oauth')
-          commit('SET_PASSWORD_CHANGE_REQUIRED', false)
           resolve()
         }).catch(error => {
           reject(error)
@@ -349,11 +341,9 @@ const user = {
         commit('SET_LATEST_VERSION', latestVersion)
 
         // This block is to enforce password change for first time login after admin resets password
-        const loginSource = vueProps.$localStorage.get(LOGIN_SOURCE)
-        const isPwdChangeRequired = vueProps.$localStorage.get(PASSWORD_CHANGE_REQUIRED) === 'true'
-        const isPwdChangeRequiredForLogin = (loginSource === 'password' && isPwdChangeRequired)
-        commit('SET_PASSWORD_CHANGE_REQUIRED', isPwdChangeRequiredForLogin)
-        if (isPwdChangeRequiredForLogin) {
+        const isPwdChangeRequired = vueProps.$localStorage.get(PASSWORD_CHANGE_REQUIRED)
+        commit('SET_PASSWORD_CHANGE_REQUIRED', isPwdChangeRequired)
+        if (isPwdChangeRequired) {
           getAPI('listUsers', { id: Cookies.get('userid') }).then(response => {
             const result = response.listusersresponse.user[0]
             commit('SET_INFO', result)
@@ -529,9 +519,7 @@ const user = {
         vueProps.$localStorage.remove(HEADER_NOTICES)
 
         vueProps.$localStorage.remove(PASSWORD_CHANGE_REQUIRED)
-        vueProps.$localStorage.remove(LOGIN_SOURCE)
         commit('SET_PASSWORD_CHANGE_REQUIRED', false)
-        commit('SET_LOGIN_SOURCE', '')
 
         logout(state.token).then(() => {
           message.destroy()

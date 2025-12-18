@@ -21,6 +21,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
+import com.cloud.user.UserAccount;
 import com.cloud.user.UserVO;
 
 import org.apache.cloudstack.acl.APIChecker;
@@ -44,6 +45,7 @@ import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ApiDiscoveryTest {
@@ -66,12 +68,17 @@ public class ApiDiscoveryTest {
     @InjectMocks
     ApiDiscoveryServiceImpl discoveryServiceSpy;
 
+    @Mock
+    UserAccount mockUserAccount;
+
     @Before
     public void setup() {
         discoveryServiceSpy.s_apiNameDiscoveryResponseMap = apiNameDiscoveryResponseMapMock;
         discoveryServiceSpy._apiAccessCheckers = apiAccessCheckersMock;
 
         Mockito.when(discoveryServiceSpy._apiAccessCheckers.iterator()).thenReturn(Arrays.asList(apiCheckerMock).iterator());
+        Mockito.when(mockUserAccount.getDetails()).thenReturn(null);
+        Mockito.when(accountServiceMock.getUserAccountById(anyLong())).thenReturn(mockUserAccount);
     }
 
     private User getTestUser() {

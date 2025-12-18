@@ -50,9 +50,11 @@
             :placeholder="$t('label.confirmpassword.description')"/>
         </a-form-item>
         <a-form-item v-if="isAdminOrDomainAdmin() && isNormalUserResource()" name="passwordChangeRequired" ref="passwordChangeRequired">
-          <a-switch v-model:checked="form.passwordChangeRequired" />
-          <span style="padding-left: 10px;">{{ $t('label.force.password.reset') }}</span>
+            <a-checkbox v-model:checked="form.passwordChangeRequired">
+              {{ $t('label.change.password.onlogin') }}
+            </a-checkbox>
         </a-form-item>
+
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
           <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
