@@ -43,6 +43,7 @@ import org.apache.cloudstack.api.command.LdapListUsersCmd;
 import org.apache.cloudstack.api.command.LdapUserSearchCmd;
 import org.apache.cloudstack.api.command.LinkAccountToLdapCmd;
 import org.apache.cloudstack.api.command.LinkDomainToLdapCmd;
+import org.apache.cloudstack.api.command.UnlinkDomainFromLdapCmd;
 import org.apache.cloudstack.api.response.LdapConfigurationResponse;
 import org.apache.cloudstack.api.response.LdapUserResponse;
 import org.apache.cloudstack.api.response.LinkAccountToLdapResponse;
@@ -292,7 +293,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
 
     @Override
     public List<Class<?>> getCommands() {
-        final List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        final List<Class<?>> cmdList = new ArrayList<>();
         cmdList.add(LdapUserSearchCmd.class);
         cmdList.add(LdapListUsersCmd.class);
         cmdList.add(LdapAddConfigurationCmd.class);
@@ -304,6 +305,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
         cmdList.add(LDAPRemoveCmd.class);
         cmdList.add(LinkDomainToLdapCmd.class);
         cmdList.add(LinkAccountToLdapCmd.class);
+        cmdList.add(UnlinkDomainFromLdapCmd.class);
         return cmdList;
     }
 
@@ -393,7 +395,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
         final boolean listAll = cmd.listAll();
         final Long id = cmd.getId();
         final Pair<List<LdapConfigurationVO>, Integer> result = _ldapConfigurationDao.searchConfigurations(id, hostname, port, domainId, listAll);
-        return new Pair<List<? extends LdapConfigurationVO>, Integer>(result.first(), result.second());
+        return new Pair<>(result.first(), result.second());
     }
 
     @Override
@@ -423,6 +425,11 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
         return linkDomainToLdap(cmd.getDomainId(),cmd.getType(), ldapDomain,cmd.getAccountType());
     }
 
+    @Override
+    public boolean unlinkDomainFromLdap(UnlinkDomainFromLdapCmd cmd) {
+        return unlinkDomainFromLdap(cmd.getDomainId());
+    }
+
     private LinkDomainToLdapResponse linkDomainToLdap(Long domainId, String type, String name, Account.Type accountType) {
         Validate.notNull(type, "type cannot be null. It should either be GROUP or OU");
         Validate.notNull(domainId, "domainId cannot be null.");
@@ -440,6 +447,15 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
         }
         LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(domainUuid, vo.getType().toString(), vo.getName(), vo.getAccountType().ordinal());
         return response;
+    }
+
+    private boolean unlinkDomainFromLdap(Long domainId) {
+        LdapTrustMapVO vo = _ldapTrustMapDao.findByDomainId(domainId);
+        if (vo != null) {
+            removeTrustmap(vo);
+            return true;
+        }
+        return false;
     }
 
     @Override

@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.command.LdapDeleteConfigurationCmd;
 import org.apache.cloudstack.api.command.LdapListConfigurationCmd;
 import org.apache.cloudstack.api.command.LinkAccountToLdapCmd;
 import org.apache.cloudstack.api.command.LinkDomainToLdapCmd;
+import org.apache.cloudstack.api.command.UnlinkDomainFromLdapCmd;
 import org.apache.cloudstack.api.response.LdapConfigurationResponse;
 import org.apache.cloudstack.api.response.LdapUserResponse;
 
@@ -34,7 +35,7 @@ import org.apache.cloudstack.api.response.LinkDomainToLdapResponse;
 
 public interface LdapManager extends PluggableService {
 
-    enum LinkType { GROUP, OU;}
+    enum LinkType { GROUP, OU}
 
     LdapConfigurationResponse addConfiguration(final LdapAddConfigurationCmd cmd) throws InvalidParameterValueException;
 
@@ -68,6 +69,8 @@ public interface LdapManager extends PluggableService {
     List<LdapUser> searchUsers(String query) throws NoLdapUserMatchingQueryException;
 
     LinkDomainToLdapResponse linkDomainToLdap(LinkDomainToLdapCmd cmd);
+
+    boolean unlinkDomainFromLdap(UnlinkDomainFromLdapCmd cmd);
 
     LdapTrustMapVO getDomainLinkedToLdap(long domainId);
 
