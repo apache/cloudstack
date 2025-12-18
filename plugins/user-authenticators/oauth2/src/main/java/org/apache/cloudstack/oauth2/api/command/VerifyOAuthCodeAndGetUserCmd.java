@@ -21,7 +21,10 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.user.Account;
+import com.cloud.utils.component.ComponentContext;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -61,6 +64,10 @@ public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuth
             description = "Domain ID for domain-specific OAuth provider lookup")
     private Long domainId;
 
+    @Parameter(name = ApiConstants.DOMAIN, type = CommandType.STRING,
+            description = "Domain path for domain-specific OAuth provider lookup")
+    private String domainPath;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -82,6 +89,8 @@ public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuth
     /////////////////////////////////////////////////////
 
     protected OAuth2AuthManager _oauth2mgr;
+
+    DomainDao _domainDao;
 
     @Override
     public long getEntityOwnerId() {
@@ -107,6 +116,19 @@ public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuth
         final String[] domainIdArray = (String[])params.get(ApiConstants.DOMAIN_ID);
         if (ArrayUtils.isNotEmpty(domainIdArray)) {
             domainId = Long.parseLong(domainIdArray[0]);
+        }
+        final String[] domainArray = (String[])params.get(ApiConstants.DOMAIN);
+        if (ArrayUtils.isNotEmpty(domainArray) && domainId == null) {
+            String path = domainArray[0];
+            if (path != null && !"/".equals(path)) {
+                // Look up domain by path - ensure path starts with /
+                String fullPath = path.startsWith("/") ? path : "/" + path;
+                if (!fullPath.endsWith("/")) fullPath = fullPath + "/";
+                DomainVO domain = _domainDao.findDomainByPath(fullPath);
+                if (domain != null) {
+                    domainId = domain.getId();
+                }
+            }
         }
 
         String email = _oauth2mgr.verifyCodeAndFetchEmail(secretCode, provider, domainId);
@@ -136,6 +158,10 @@ public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuth
         }
         if (_oauth2mgr == null) {
             logger.error("No suitable Pluggable Authentication Manager found for listing OAuth providers");
+        }
+        _domainDao = (DomainDao) ComponentContext.getComponent(DomainDao.class);
+        if (_domainDao == null) {
+            logger.error("Could not get DomainDao component");
         }
     }
 }
