@@ -254,9 +254,15 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         final Long id = cmd.getId();
         Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<>();
-        boolean recursive = AccountTypesWithRecursiveUsageAccess.contains(caller.getType());
+        Account.Type callerType = caller.getType();
+        boolean recursive = AccountTypesWithRecursiveUsageAccess.contains(callerType);
         Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(null, recursive, null);
-        accountMgr.buildACLSearchParameters(caller, id, null, null, permittedAccounts, domainIdRecursiveListProject, true, false);
+
+        // Allow users to also list metrics of resources owned by projects they belong to (-1L), and admins to list all
+        // metrics belonging to their domains recursively (null)
+        Long projectId = callerType == Account.Type.NORMAL ? -1L : null;
+
+        accountMgr.buildACLSearchParameters(caller, id, null, projectId, permittedAccounts, domainIdRecursiveListProject, true, false);
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         Project.ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
@@ -360,9 +366,15 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         final Long id = cmd.getId();
         Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<>();
-        boolean recursive = AccountTypesWithRecursiveUsageAccess.contains(caller.getType());
+        Account.Type callerType = caller.getType();
+        boolean recursive = AccountTypesWithRecursiveUsageAccess.contains(callerType);
         Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(null, recursive, null);
-        accountMgr.buildACLSearchParameters(caller, id, null, null, permittedAccounts, domainIdRecursiveListProject, true, false);
+
+        // Allow users to also list metrics of resources owned by projects they belong to (-1L), and admins to list all
+        // metrics belonging to their domains recursively (null)
+        Long projectId = callerType == Account.Type.NORMAL ? -1L : null;
+
+        accountMgr.buildACLSearchParameters(caller, id, null, projectId, permittedAccounts, domainIdRecursiveListProject, true, false);
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         Project.ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
