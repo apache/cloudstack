@@ -350,7 +350,7 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
                         new AWSStaticCredentialsProvider(
                                 new BasicAWSCredentials(accessKey, secretKey)))
                 .withEndpointConfiguration(
-                        new AwsClientBuilder.EndpointConfiguration(url, null))
+                        new AwsClientBuilder.EndpointConfiguration(url, "us-east-1"))
                 .build();
 
         if (client == null) {
