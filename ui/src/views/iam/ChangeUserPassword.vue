@@ -143,7 +143,7 @@ export default {
           params.currentpassword = values.currentpassword
         }
 
-        if (this.isAdminOrDomainAdmin && values.passwordChangeRequired) {
+        if (this.isAdminOrDomainAdmin() && values.passwordChangeRequired) {
           params.passwordchangerequired = values.passwordChangeRequired
         }
         postAPI('updateUser', params).then(json => {

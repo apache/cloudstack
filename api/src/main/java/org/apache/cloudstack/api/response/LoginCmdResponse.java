@@ -91,7 +91,7 @@ public class LoginCmdResponse extends AuthenticationCmdResponse {
     private String managementServerId;
 
     @SerializedName(value = ApiConstants.PASSWORD_CHANGE_REQUIRED)
-    @Param(description = "Is User required to change password on next login.", since = "4.23.0")
+    @Param(description = "Indicates whether the User is required to change password on next login.", since = "4.23.0")
     private String passwordChangeRequired;
 
     public String getUsername() {

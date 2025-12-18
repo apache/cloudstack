@@ -285,11 +285,10 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
 
             // Limit APIs on first login requiring password change
             UserAccount userAccount = accountService.getUserAccountById(user.getId());
-            if (MapUtils.isNotEmpty(userAccount.getDetails()) &&
-                    userAccount.getDetails().containsKey(UserDetailVO.PasswordChangeRequired)) {
-
-                String needPasswordChange = userAccount.getDetails().get(UserDetailVO.PasswordChangeRequired);
-                if ("true".equalsIgnoreCase(needPasswordChange)) {
+            Map<String, String> userAccDetails = userAccount.getDetails();
+            if (MapUtils.isNotEmpty(userAccDetails)) {
+                String needPwdChangeStr = userAccDetails.get(UserDetailVO.PasswordChangeRequired);
+                if ("true".equalsIgnoreCase(needPwdChangeStr)) {
                     apisAllowed = Arrays.asList("login", "logout", "updateUser", "listUsers", "listApis");
                 }
             } else {

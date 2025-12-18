@@ -133,7 +133,7 @@ public class UserResponse extends BaseResponse implements SetResourceIconRespons
     ApiConstants.ApiKeyAccess apiKeyAccess;
 
     @SerializedName(value = ApiConstants.PASSWORD_CHANGE_REQUIRED)
-    @Param(description = "Is User required to change password on next login.", since = "4.23.0")
+    @Param(description = "Indicates whether the User is required to change password on next login.", since = "4.23.0")
     private Boolean passwordChangeRequired;
 
     @Override
@@ -323,7 +323,7 @@ public class UserResponse extends BaseResponse implements SetResourceIconRespons
     }
 
     public Boolean isPasswordChangeRequired() {
-        return passwordChangeRequired;
+        return Boolean.TRUE.equals(passwordChangeRequired);
     }
 
     public void setPasswordChangeRequired(Boolean passwordChangeRequired) {

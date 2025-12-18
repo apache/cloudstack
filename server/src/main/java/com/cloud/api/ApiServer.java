@@ -1230,7 +1230,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 if (ApiConstants.MANAGEMENT_SERVER_ID.equalsIgnoreCase(attrName)) {
                     response.setManagementServerId(attrObj.toString());
                 }
-                if (PASSWORD_CHANGE_REQUIRED.endsWith(attrName)) {
+                if (PASSWORD_CHANGE_REQUIRED.equalsIgnoreCase(attrName)) {
                     response.setPasswordChangeRequired(attrObj.toString());
                 }
             }
@@ -1333,11 +1333,11 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             final String sessionKey = Base64.encodeBase64URLSafeString(sessionKeyBytes);
             session.setAttribute(ApiConstants.SESSIONKEY, sessionKey);
 
-            if (!MapUtils.isEmpty(userAcct.getDetails())) {
-                String needPwdChangeStr = userAcct.getDetails().getOrDefault(UserDetailVO.PasswordChangeRequired, null);
-                if (needPwdChangeStr != null) {
-                    boolean needPwdChange = "true".equalsIgnoreCase(needPwdChangeStr);
-                    session.setAttribute(PASSWORD_CHANGE_REQUIRED, needPwdChange);
+            Map<String, String> userAccDetails = userAcct.getDetails();
+            if (MapUtils.isNotEmpty(userAccDetails)) {
+                String needPwdChangeStr = userAccDetails.get(UserDetailVO.PasswordChangeRequired);
+                if ("true".equalsIgnoreCase(needPwdChangeStr)) {
+                    session.setAttribute(PASSWORD_CHANGE_REQUIRED, true);
                 }
             }
             return createLoginResponse(session);

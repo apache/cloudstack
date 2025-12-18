@@ -127,10 +127,10 @@ export default {
   computed: {
     rules () {
       return {
-        currentpassword: [{ required: true, message: this.$t('message.error.current.password') || 'Please enter current password' }],
-        password: [{ required: true, message: this.$t('message.error.new.password') || 'Please enter new password' }],
+        currentpassword: [{ required: true, message: this.$t('message.error.current.password') }],
+        password: [{ required: true, message: this.$t('message.error.new.password') }],
         confirmpassword: [
-          { required: true, message: this.$t('message.error.confirm.password') || 'Please confirm new password' },
+          { required: true, message: this.$t('message.error.confirm.password') },
           { validator: this.validateTwoPassword, trigger: 'change' }
         ]
       }
@@ -250,7 +250,7 @@ export default {
   margin-top: 16px;
 
   a {
-    color: #1890ff; /* Ant Design Link Color */
+    color: #1890ff;
     transition: color 0.3s;
 
     &:hover {
