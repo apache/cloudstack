@@ -5868,10 +5868,6 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
             logger.warn("vTPM requires UEFI boot mode. Skipping vTPM configuration for VM: {}", vmSpec.getName());
             return;
         }
-//        if (!ApiConstants.BootMode.SECURE.name().equals(bootMode)) {
-//            logger.warn("vTPM requires UEFI Secure Boot to be enabled. Skipping vTPM configuration for VM: {}", vmSpec.getName());
-//            return;
-//        }
 
         try {
             Set<VTPM> existingVtpms = vm.getVTPMs(conn);
