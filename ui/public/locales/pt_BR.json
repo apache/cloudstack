@@ -1583,7 +1583,7 @@
 "label.storagepool": "Pool de armazenamento",
 "label.storagetags": "Tags de armazenamento",
 "label.storagetype": "Tipo de armazenamento",
-"label.storagenetworkip": "IP na rede de storage",
+"label.storageip": "Endere\u00e7o IP na rede de armazenamento",
 "label.strict": "Rigoroso",
 "label.subdomainaccess": "acesso ao subdom\u00ednio",
 "label.submit": "Enviar",

@@ -1881,7 +1881,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                             vmResponse.setGateway(singleNicProfile.getIPv4Gateway());
                         }
                     } else if (network.getTrafficType() == TrafficType.Storage) {
-                        vmResponse.setStorageNetworkIp(singleNicProfile.getIPv4Address());
+                        vmResponse.setStorageIp(singleNicProfile.getIPv4Address());
                     }
                 }
             }

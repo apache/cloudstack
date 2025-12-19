@@ -2426,7 +2426,7 @@
 "label.storagepool.tooltip": "Destination Storage Pool. Volume should be located in this Storage Pool",
 "label.storagetags": "Storage tags",
 "label.storagetype": "Storage type",
-"label.storagenetworkip": "Storage network IP",
+"label.storageip": "Storage IP address",
 "label.strict": "Strict",
 "label.subdomainaccess": "Subdomain access",
 "label.submit": "Submit",
