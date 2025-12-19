@@ -111,12 +111,12 @@ public class DeployVMCmd extends BaseDeployVMCmd {
                         message.append(", Please check the affinity groups provided, there may not be sufficient capacity to follow them");
                     }
                 }
-                logger.info(String.format("%s: %s", message.toString(), ex.getLocalizedMessage()));
+                logger.info("{}: {}", message.toString(), ex.getLocalizedMessage());
                 logger.debug(message.toString(), ex);
                 throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, message.toString());
             }
         } else {
-            logger.info("VM " + getEntityUuid() + " already created, load UserVm from DB");
+            logger.info("VM {} already created, load UserVm from DB", getEntityUuid());
             result = _userVmService.finalizeCreateVirtualMachine(getEntityId());
         }
 

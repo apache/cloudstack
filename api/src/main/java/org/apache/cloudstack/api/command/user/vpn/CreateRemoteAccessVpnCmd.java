@@ -146,7 +146,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create remote access vpn");
             }
         } catch (NetworkRuleConflictException e) {
-            logger.info("Network rule conflict: " + e.getMessage());
+            logger.info("Network rule conflict: {}", e.getMessage());
             logger.trace("Network Rule Conflict: ", e);
             throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
         }

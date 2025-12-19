@@ -238,7 +238,7 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
             logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         } catch (InsufficientCapacityException ex) {
-            logger.info(ex);
+            logger.error(ex);
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
         }
     }

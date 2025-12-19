@@ -94,7 +94,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());
         } catch (NetworkRuleConflictException ex) {
-            logger.info("Network rule conflict: " + ex.getMessage());
+            logger.info("Network rule conflict: {}", ex.getMessage());
             logger.trace("Network rule conflict: ", ex);
             throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage());
         }
