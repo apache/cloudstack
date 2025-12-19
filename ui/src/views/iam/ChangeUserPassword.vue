@@ -49,7 +49,7 @@
             v-model:value="form.confirmpassword"
             :placeholder="$t('label.confirmpassword.description')"/>
         </a-form-item>
-        <a-form-item v-if="isAdminOrDomainAdmin() && isNormalUserResource()" name="passwordChangeRequired" ref="passwordChangeRequired">
+        <a-form-item v-if="isAdminOrDomainAdmin() && isCallerNotSameAsUser()" name="passwordChangeRequired" ref="passwordChangeRequired">
             <a-checkbox v-model:checked="form.passwordChangeRequired">
               {{ $t('label.change.password.onlogin') }}
             </a-checkbox>
@@ -104,11 +104,12 @@ export default {
         ]
       })
     },
-    isNormalUserResource () {
-      return ['User'].includes(this.resource.roletype)
-    },
     isAdminOrDomainAdmin () {
       return ['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
+    },
+    isCallerNotSameAsUser () {
+      const userId = this.$store.getters.userInfo.id
+      return userId !== this.resource.id
     },
     isValidValueForKey (obj, key) {
       return key in obj && obj[key] != null

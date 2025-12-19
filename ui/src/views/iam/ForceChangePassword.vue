@@ -167,14 +167,10 @@ export default {
           currentpassword: values.currentpassword
         }
         postAPI('updateUser', params).then(() => {
-          this.$message.success(this.$t('message.success.change.password'))
+          this.$message.success(this.$t('message.please.login.new.password'))
           this.isSubmitted = true
         }).catch(error => {
           console.error(error)
-          this.$notification.error({
-            message: 'Error',
-            description: error.response?.data?.updateuserresponse?.errortext || 'Failed to update password'
-          })
           this.$message.error(this.$t('message.error.change.password'))
         }).finally(() => {
           this.loading = false

@@ -1587,8 +1587,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     private void updatePasswordChangeRequired(User caller, UpdateUserCmd updateUserCmd, UserVO user) {
-        if (StringUtils.isNotBlank(updateUserCmd.getPassword()) && isNormalUser(user.getAccountId())) {
-            boolean isPasswordResetRequired = updateUserCmd.isPasswordChangeRequired();
+        if (StringUtils.isNotBlank(updateUserCmd.getPassword())) {
+            boolean isCallerSameAsUser = user.getId() == caller.getId();
+            boolean isPasswordResetRequired = updateUserCmd.isPasswordChangeRequired() && !isCallerSameAsUser;
             // Admins only can enforce passwordChangeRequired for user
             if ((isRootAdmin(caller.getAccountId()) || isDomainAdmin(caller.getAccountId()))) {
                 if (isPasswordResetRequired) {
@@ -1597,11 +1598,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
 
             // Remove passwordChangeRequired if user updating own pwd or admin has not enforced it
-            if ((caller.getId() == user.getId()) || !isPasswordResetRequired) {
-                UserDetailVO userDetailVO = _userDetailsDao.findDetail(user.getId(), PasswordChangeRequired);
-                if (userDetailVO != null) {
-                    _userDetailsDao.removeDetail(user.getId(), PasswordChangeRequired);
-                }
+            if (isCallerSameAsUser || !isPasswordResetRequired) {
+                _userDetailsDao.removeDetail(user.getId(), PasswordChangeRequired);
             }
         }
     }
