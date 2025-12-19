@@ -441,22 +441,28 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         if (this.nodeIds != null) {
             vmList = getKubernetesClusterVMMapsForNodes(this.nodeIds).stream().filter(vm -> !vm.isExternalNode()).collect(Collectors.toList());
         } else {
-            List<KubernetesClusterVmMapVO> workerVMsMap  = getKubernetesClusterVMMaps().stream()
-                        .filter(vm -> !vm.isExternalNode() && !vm.isControlNode() && !vm.isEtcdNode())
-                        .collect(Collectors.toList());
-            int totalWorkerNodes = workerVMsMap.size();
-            int desiredWorkerNodes = clusterSize == null ? (int) kubernetesCluster.getNodeCount() : clusterSize.intValue();
-            int toRemoveCount = Math.max(0, totalWorkerNodes - desiredWorkerNodes);
-            if (toRemoveCount == 0) {
+            vmList = getWorkerNodesToRemove();
+            if (vmList.isEmpty()) {
                 logger.info("No nodes to remove from Kubernetes cluster: {}", kubernetesCluster);
                 return;
             }
-
-            int startIndex = Math.max(0, totalWorkerNodes - toRemoveCount);
-            vmList = new ArrayList<>(workerVMsMap.subList(startIndex, totalWorkerNodes));
         }
         Collections.reverse(vmList);
         removeNodesFromCluster(vmList);
+    }
+
+    public List<KubernetesClusterVmMapVO> getWorkerNodesToRemove() {
+        List<KubernetesClusterVmMapVO> workerVMsMap = getKubernetesClusterVMMaps().stream()
+                .filter(vm -> !vm.isExternalNode() && !vm.isControlNode() && !vm.isEtcdNode())
+                .collect(Collectors.toList());
+        int totalWorkerNodes = workerVMsMap.size();
+        int desiredWorkerNodes = clusterSize == null ? (int) kubernetesCluster.getNodeCount() : clusterSize.intValue();
+        int toRemoveCount = Math.max(0, totalWorkerNodes - desiredWorkerNodes);
+        if (toRemoveCount == 0) {
+            return new ArrayList<>();
+        }
+        int startIndex = Math.max(0, totalWorkerNodes - toRemoveCount);
+        return new ArrayList<>(workerVMsMap.subList(startIndex, totalWorkerNodes));
     }
 
     private void scaleUpKubernetesClusterSize(final long newVmCount) throws CloudRuntimeException {
