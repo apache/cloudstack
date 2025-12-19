@@ -315,6 +315,7 @@ const user = {
           const latestVersion = vueProps.$localStorage.get(LATEST_CS_VERSION, { version: '', fetchedTs: 0 })
           commit('SET_LATEST_VERSION', latestVersion)
           notification.destroy()
+
           resolve()
         }).catch(error => {
           reject(error)

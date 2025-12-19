@@ -109,7 +109,8 @@ export default {
     },
     isCallerNotSameAsUser () {
       const userId = this.$store.getters.userInfo.id
-      return userId !== this.resource.id
+      const resourceId = this.resource?.id ?? null
+      return userId !== resourceId
     },
     isValidValueForKey (obj, key) {
       return key in obj && obj[key] != null
@@ -144,7 +145,7 @@ export default {
           params.currentpassword = values.currentpassword
         }
 
-        if (this.isAdminOrDomainAdmin() && values.passwordChangeRequired) {
+        if (this.isAdminOrDomainAdmin() && values.passwordChangeRequired === true) {
           params.passwordchangerequired = values.passwordChangeRequired
         }
         postAPI('updateUser', params).then(json => {

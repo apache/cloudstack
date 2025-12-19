@@ -30,7 +30,7 @@
           </template>
           <a-spin :spinning="loading">
           <div v-if="isSubmitted" class="success-state">
-            <div class="success-icon">✓</div>
+            <check-outlined class="success-icon" />
             <div class="success-text">
               {{ $t('message.success.change.password') }}
             </div>
@@ -197,7 +197,6 @@ export default {
         const user = await this.getUserInfo()
         if (user && !user.passwordchangerequired) {
           this.isSubmitted = true
-          this.$router.replace({ path: '/user/login' })
         }
       } catch (e) {
         console.error('Failed to resolve user info:', e)

@@ -1591,7 +1591,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             boolean isCallerSameAsUser = user.getId() == caller.getId();
             boolean isPasswordResetRequired = updateUserCmd.isPasswordChangeRequired() && !isCallerSameAsUser;
             // Admins only can enforce passwordChangeRequired for user
-            if ((isRootAdmin(caller.getAccountId()) || isDomainAdmin(caller.getAccountId()))) {
+            if (isRootAdmin(caller.getAccountId()) || isDomainAdmin(caller.getAccountId())) {
                 if (isPasswordResetRequired) {
                     _userDetailsDao.addDetail(user.getId(), PasswordChangeRequired, "true", false);
                 }
