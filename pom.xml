@@ -82,7 +82,7 @@
         <cs.exec-maven-plugin.version>3.2.0</cs.exec-maven-plugin.version>
 
         <!-- Logging versions -->
-        <cs.log4j.version>2.19.0</cs.log4j.version>
+        <cs.log4j.version>2.25.3</cs.log4j.version>
         <cs.reload4j.version>1.2.25</cs.reload4j.version>
         <cs.log4j.extras.version>1.2.17</cs.log4j.extras.version>
 
