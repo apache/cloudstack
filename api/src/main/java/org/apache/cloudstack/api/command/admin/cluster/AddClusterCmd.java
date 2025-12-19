@@ -69,7 +69,7 @@ public class AddClusterCmd extends BaseCmd {
     private String hypervisor;
 
     @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
-            description = "the CPU arch of the cluster. Valid options are: x86_64, aarch64",
+            description = "the CPU arch of the cluster. Valid options are: x86_64, aarch64, s390x",
             since = "4.20")
     private String arch;
 
