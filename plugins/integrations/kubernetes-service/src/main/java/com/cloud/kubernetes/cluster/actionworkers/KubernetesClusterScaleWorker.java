@@ -441,11 +441,19 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         if (this.nodeIds != null) {
             vmList = getKubernetesClusterVMMapsForNodes(this.nodeIds).stream().filter(vm -> !vm.isExternalNode()).collect(Collectors.toList());
         } else {
-            vmList  = getKubernetesClusterVMMaps();
-            vmList  = vmList.stream()
+            List<KubernetesClusterVmMapVO> workerVMsMap  = getKubernetesClusterVMMaps().stream()
                         .filter(vm -> !vm.isExternalNode() && !vm.isControlNode() && !vm.isEtcdNode())
                         .collect(Collectors.toList());
-            vmList = vmList.subList((int) (kubernetesCluster.getControlNodeCount() + clusterSize - 1), vmList.size());
+            int totalWorkerNodes = workerVMsMap.size();
+            int desiredWorkerNodes = clusterSize == null ? (int) kubernetesCluster.getNodeCount() : clusterSize.intValue();
+            int toRemoveCount = Math.max(0, totalWorkerNodes - desiredWorkerNodes);
+            if (toRemoveCount == 0) {
+                logger.info("No nodes to remove from Kubernetes cluster: {}", kubernetesCluster);
+                return;
+            }
+
+            int startIndex = Math.max(0, totalWorkerNodes - toRemoveCount);
+            vmList = new ArrayList<>(workerVMsMap.subList(startIndex, totalWorkerNodes));
         }
         Collections.reverse(vmList);
         removeNodesFromCluster(vmList);
