@@ -80,7 +80,7 @@ public interface NetworkOrchestrationService {
             "What version should the Virtual Routers report", true, ConfigKey.Scope.Zone, null);
 
     ConfigKey<Integer> NetworkLockTimeout = new ConfigKey<>(Integer.class, NetworkLockTimeoutCK, "Network", "600",
-            "Lock wait timeout (seconds) while implementing network", true, Scope.Global, null);
+            "Lock wait timeout (seconds) while implementing Network", true, Scope.Global, null);
 
     ConfigKey<String> DeniedRoutes = new ConfigKey<>(String.class, "denied.routes", "Network", "",
             "Routes that are denied, can not be used for Static Routes creation for the VPC Private Gateway", true, ConfigKey.Scope.Zone, null);
@@ -92,13 +92,13 @@ public interface NetworkOrchestrationService {
             "Default data transfer rate in megabits per second allowed in network.", true, ConfigKey.Scope.Zone);
 
     ConfigKey<Boolean> PromiscuousMode = new ConfigKey<>("Advanced", Boolean.class, "network.promiscuous.mode", "false",
-            "Whether to allow or deny promiscuous mode on nics for applicable network elements such as for vswitch/dvswitch portgroups.", true);
+            "Whether to allow or deny promiscuous mode on NICs for applicable network elements such as for vswitch/dvswitch portgroups.", true);
 
     ConfigKey<Boolean> MacAddressChanges = new ConfigKey<>("Advanced", Boolean.class, "network.mac.address.changes", "true",
-            "Whether to allow or deny mac address changes on nics for applicable network elements such as for vswitch/dvswitch porgroups.", true);
+            "Whether to allow or deny mac address changes on NICs for applicable network elements such as for vswitch/dvswitch porgroups.", true);
 
     ConfigKey<Boolean> ForgedTransmits = new ConfigKey<>("Advanced", Boolean.class, "network.forged.transmits", "true",
-            "Whether to allow or deny forged transmits on nics for applicable network elements such as for vswitch/dvswitch portgroups.", true);
+            "Whether to allow or deny forged transmits on NICs for applicable network elements such as for vswitch/dvswitch portgroups.", true);
 
     ConfigKey<Boolean> MacLearning = new ConfigKey<>("Advanced", Boolean.class, "network.mac.learning", "false",
             "Whether to allow or deny MAC learning on nics for applicable network elements such as for dvswitch portgroups.", true);

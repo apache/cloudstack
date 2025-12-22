@@ -199,6 +199,10 @@ for full help
             self.info("No mysql root user specified, will not create Cloud DB schema\n", None)
             return
 
+        if self.areCloudDatabasesCreated() and not self.options.schemaonly and not self.options.forcerecreate:
+            self.errorAndExit("Aborting script as the databases (cloud, cloud_usage) already exist.\n" \
+                              "Please use the --force-recreate parameter if you want to recreate the databases and schemas, or use --schema-only if you only want to create the schemas only.")
+
         replacements = (
                 ("CREATE USER cloud identified by 'cloud';",
                     "CREATE USER %s@`localhost` identified by '%s'; CREATE USER %s@`%%` identified by '%s';"%(
@@ -238,10 +242,6 @@ for full help
             ("DROP USER 'cloud'@'localhost' ;", "DO NULL;"),
             ("DROP USER 'cloud'@'%' ;", "DO NULL;")
         )
-
-        if self.areCloudDatabasesCreated() and not self.options.forcerecreate:
-            self.errorAndExit("Aborting script as the databases (cloud, cloud_usage) already exist.\n" \
-                              "Please use the --force-recreate parameter if you want to recreate the schemas.")
 
         scriptsToRun = ["create-database","create-schema", "create-database-premium","create-schema-premium"]
         if self.options.schemaonly:
@@ -617,11 +617,11 @@ for example:
         self.parser.add_option("-d", "--deploy-as", action="store", type="string", dest="rootcreds", default="",
                           help="Colon-separated user name and password of a MySQL user with administrative privileges")
         self.parser.add_option("-s", "--schema-only", action="store_true", dest="schemaonly", default=False,
-                          help="Creates the db schema without having to pass root credentials - " \
+                          help="Creates the db schema only without having to pass root credentials - " \
                                "Please note: The databases (cloud, cloud_usage) and user (cloud) has to be configured " \
                                "manually prior to running this script when using this flag.")
         self.parser.add_option("--force-recreate", action="store_true", dest="forcerecreate", default=False,
-                               help="Force recreation of the existing DB schemas. This option is disabled by default." \
+                               help="Force recreation of the existing DB databases and schemas. This option is disabled by default." \
                                "Please note: The databases (cloud, cloud_usage) and its tables data will be lost and recreated.")
 
         self.parser.add_option("-a", "--auto", action="store", type="string", dest="serversetup", default="",

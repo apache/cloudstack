@@ -46,55 +46,55 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
     private String description;
 
     @SerializedName(ApiConstants.DNS1)
-    @Param(description = "the first DNS for the Zone")
+    @Param(description = "The first DNS for the Zone")
     private String dns1;
 
     @SerializedName(ApiConstants.DNS2)
-    @Param(description = "the second DNS for the Zone")
+    @Param(description = "The second DNS for the Zone")
     private String dns2;
 
     @SerializedName(ApiConstants.IP6_DNS1)
-    @Param(description = "the first IPv6 DNS for the Zone")
+    @Param(description = "The first IPv6 DNS for the Zone")
     private String ip6Dns1;
 
     @SerializedName(ApiConstants.IP6_DNS2)
-    @Param(description = "the second IPv6 DNS for the Zone")
+    @Param(description = "The second IPv6 DNS for the Zone")
     private String ip6Dns2;
 
     @SerializedName(ApiConstants.INTERNAL_DNS1)
-    @Param(description = "the first internal DNS for the Zone")
+    @Param(description = "The first internal DNS for the Zone")
     private String internalDns1;
 
     @SerializedName(ApiConstants.INTERNAL_DNS2)
-    @Param(description = "the second internal DNS for the Zone")
+    @Param(description = "The second internal DNS for the Zone")
     private String internalDns2;
 
     @SerializedName(ApiConstants.GUEST_CIDR_ADDRESS)
-    @Param(description = "the guest CIDR address for the Zone")
+    @Param(description = "The guest CIDR address for the Zone")
     private String guestCidrAddress;
 
     @SerializedName(ApiConstants.DISPLAY_TEXT)
-    @Param(description = "the display text of the zone")
+    @Param(description = "The display text of the zone")
     private String displayText;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "Network domain name for the networks in the zone")
+    @Param(description = "Network domain name for the Networks in the zone")
     private String domain;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the UUID of the containing domain, null for public zones")
+    @Param(description = "The UUID of the containing domain, null for public zones")
     private String domainId;
 
     @SerializedName("domainname")
-    @Param(description = "the name of the containing domain, null for public zones")
+    @Param(description = "The name of the containing domain, null for public zones")
     private String domainName;
 
     @SerializedName(ApiConstants.NETWORK_TYPE)
-    @Param(description = "the network type of the zone; can be Basic or Advanced")
+    @Param(description = "The Network type of the zone; can be Basic or Advanced")
     private String networkType;
 
     @SerializedName("securitygroupsenabled")
-    @Param(description = "true if security groups support is enabled, false otherwise")
+    @Param(description = "True if security groups support is enabled, false otherwise")
     private Boolean securityGroupsEnabled;
 
     @SerializedName("gputotal")
@@ -106,7 +106,7 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
     private Long gpuUsed;
 
     @SerializedName("allocationstate")
-    @Param(description = "the allocation state of the cluster")
+    @Param(description = "The allocation state of the cluster")
     private String allocationState;
 
     @SerializedName(ApiConstants.ZONE_TOKEN)
@@ -114,19 +114,19 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
     private String zoneToken;
 
     @SerializedName(ApiConstants.DHCP_PROVIDER)
-    @Param(description = "the dhcp Provider for the Zone")
+    @Param(description = "The DHCP Provider for the Zone")
     private String dhcpProvider;
 
     @SerializedName("capacity")
-    @Param(description = "the capacity of the Zone", responseObject = CapacityResponse.class)
+    @Param(description = "The capacity of the Zone", responseObject = CapacityResponse.class)
     private List<CapacityResponse> capacities;
 
     @SerializedName(ApiConstants.LOCAL_STORAGE_ENABLED)
-    @Param(description = "true if local storage offering enabled, false otherwise")
+    @Param(description = "True if local storage offering enabled, false otherwise")
     private Boolean localStorageEnabled;
 
     @SerializedName(ApiConstants.TAGS)
-    @Param(description = "the list of resource tags associated with zone.", responseObject = ResourceTagResponse.class, since = "4.3")
+    @Param(description = "The list of resource tags associated with zone.", responseObject = ResourceTagResponse.class, since = "4.3")
     private Set<ResourceTagResponse> tags;
 
     @SerializedName(ApiConstants.RESOURCE_DETAILS)
@@ -150,12 +150,12 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
     private Integer routerPublicInterfaceMaxMtu;
 
     @SerializedName(ApiConstants.TYPE)
-    @Param(description = "the type of the zone - core or edge", since = "4.18.0")
+    @Param(description = "The type of the zone - core or edge", since = "4.18.0")
     String type;
 
     @Deprecated(since = "4.21.0")
     @SerializedName(ApiConstants.NSX_ENABLED)
-    @Param(description = "true, if zone is NSX enabled", since = "4.20.0")
+    @Param(description = "True, if zone is NSX enabled", since = "4.20.0")
     private boolean nsxEnabled = false;
 
     @SerializedName(ApiConstants.PROVIDER)
@@ -163,7 +163,7 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
     private String provider = null;
 
     @SerializedName(ApiConstants.MULTI_ARCH)
-    @Param(description = "true, if zone contains clusters and hosts from different CPU architectures", since = "4.20")
+    @Param(description = "True, if zone contains clusters and hosts from different CPU architectures", since = "4.20")
     private boolean multiArch;
 
     @SerializedName(ApiConstants.ASN_RANGE)
@@ -171,7 +171,7 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
     private String asnRange;
 
     @SerializedName(ApiConstants.ROUTED_MODE_ENABLED)
-    @Param(description = "true, if routed network/vpc is enabled", since = "4.20.1")
+    @Param(description = "True, if routed Network/VPC is enabled", since = "4.20.1")
     private boolean routedModeEnabled = false;
 
     @SerializedName(ApiConstants.STORAGE_ACCESS_GROUPS)

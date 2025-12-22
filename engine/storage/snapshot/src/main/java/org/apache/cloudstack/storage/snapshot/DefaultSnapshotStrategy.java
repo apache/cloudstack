@@ -672,6 +672,12 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
             }
         }
 
+        if (CollectionUtils.isNotEmpty(vmSnapshotDao.findByVmAndByType(volumeVO.getInstanceId(), VMSnapshot.Type.DiskAndMemory))) {
+            logger.debug("DefaultSnapshotStrategy cannot handle snapshot [{}] for volume [{}] as the volume is attached to a VM with disk-and-memory VM snapshots." +
+                    "Restoring the volume snapshot will corrupt any newer disk-and-memory VM snapshots.", snapshot);
+            return StrategyPriority.CANT_HANDLE;
+        }
+
         return StrategyPriority.DEFAULT;
     }
 

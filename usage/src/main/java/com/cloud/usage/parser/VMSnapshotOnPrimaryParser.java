@@ -56,7 +56,7 @@ public class VMSnapshotOnPrimaryParser extends UsageParser {
         List<UsageSnapshotOnPrimaryVO> usageUsageVMSnapshots = usageSnapshotOnPrimaryDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate);
 
         if (usageUsageVMSnapshots.isEmpty()) {
-            logger.debug("No VM snapshot on primary usage events for this period");
+            logger.debug("No Instance Snapshot on primary usage events for this period");
             return true;
         }
 
@@ -81,7 +81,7 @@ public class VMSnapshotOnPrimaryParser extends UsageParser {
             Date endDateEffective = endDate;
             if (usageRec.getDeleted() != null && usageRec.getDeleted().before(endDate)){
                 endDateEffective = usageRec.getDeleted();
-                logger.debug("Removed vm snapshot found endDateEffective [{}] period end data [{}]", endDateEffective, endDate);
+                logger.debug("Removed Instance Snapshot found endDateEffective [{}] period end data [{}]", endDateEffective, endDate);
             }
             long duration = (endDateEffective.getTime() - created.getTime()) + 1;
             createUsageRecord(UsageTypes.VM_SNAPSHOT_ON_PRIMARY, duration, created, endDateEffective, account, usageRec.getVolumeId(), usageRec.getName(), usageRec.getZoneId(),

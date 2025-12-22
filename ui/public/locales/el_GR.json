@@ -2570,7 +2570,7 @@
 "message.success.create.internallb": "Η εσωτερική lb ολοκληρώθηκε με επιτυχία",
 "message.success.create.isolated.network": "Δημιουργήθηκε με επιτυχία απομονωμένο δίκτυο",
 "message.success.create.keypair": "Δημιουργήθηκε με επιτυχία ζεύγος κλειδιών SSH",
-"message.success.create.kubernetes.cluter": "Δημιουργήθηκε με επιτυχία την ομάδαΚυβερνητών",
+"message.success.create.kubernetes.cluster": "Δημιουργήθηκε με επιτυχία την ομάδαΚυβερνητών",
 "message.success.create.l2.network": "Δημιουργήθηκε με επιτυχία το δίκτυο L2",
 "message.success.create.snapshot.from.vmsnapshot": "Επιτυχής δημιουργία στιγμιότυπου από στιγμιότυπο εικονικής μηχανής",
 "message.success.create.user": "Ο χρήστης δημιουργήθηκε με επιτυχία",
