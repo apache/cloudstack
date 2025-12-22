@@ -139,7 +139,7 @@ public class UpdatePodManagementNetworkIpRangeCmd extends BaseAsyncCmd {
             logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         } catch (Exception e) {
-            logger.warn("Failed to update pod management IP range " + getNewStartIP() + "-" + getNewEndIP() + " of Pod: " + getPodId(), e);
+            logger.warn("Failed to update pod management IP range {}-{} of Pod: {}", getNewStartIP(), getNewEndIP(), getPodId(), e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }

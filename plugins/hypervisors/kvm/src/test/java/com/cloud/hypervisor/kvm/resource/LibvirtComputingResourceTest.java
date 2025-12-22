@@ -61,6 +61,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import com.cloud.cpu.CPU;
 import com.cloud.utils.net.NetUtils;
 
 import com.cloud.vm.VmDetailConstants;
@@ -865,7 +866,9 @@ public class LibvirtComputingResourceTest {
     private void verifyFeatures(Document domainDoc) {
         assertNodeExists(domainDoc, "/domain/features/pae");
         assertNodeExists(domainDoc, "/domain/features/apic");
-        assertNodeExists(domainDoc, "/domain/features/acpi");
+        if (!CPU.CPUArch.s390x.getType().equalsIgnoreCase(System.getProperty("os.arch"))) {
+            assertNodeExists(domainDoc, "/domain/features/acpi");
+        }
     }
 
     private void verifyHeader(Document domainDoc, String hvsType, String name, String uuid, String os) {

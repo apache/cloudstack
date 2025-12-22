@@ -48,14 +48,14 @@ public class AssignCertToLoadBalancerCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = FirewallRuleResponse.class,
                required = true,
-               description = "the ID of the load balancer rule")
+               description = "The ID of the load balancer rule")
     Long lbRuleId;
 
     @Parameter(name = ApiConstants.CERTIFICATE_ID,
                type = CommandType.UUID,
                entityType = SslCertResponse.class,
                required = true,
-               description = "the ID of the certificate")
+               description = "The ID of the certificate")
     Long certId;
 
     @Parameter(name = ApiConstants.FORCED,
