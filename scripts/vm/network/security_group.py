@@ -600,7 +600,7 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
     #add secodnary nic ips to ipset
     ip4s, ip6s = split_ips_by_family(sec_ips, vm_ip, vm_ip6, ipv6_link_local)
     if ip4s:
-        logging.debug("Adding ipset for all ipv4 addresses")
+        logging.debug("Adding IPset for all IPv4 addresses")
         add_to_ipset(vmipsetName, ip4s, action)
 
         if not write_secip_log_for_vm(vm_name, sec_ips, vm_id):

@@ -927,7 +927,7 @@ public class TemplateServiceImpl implements TemplateService {
             _resourceLimitMgr.incrementResourceCount(template.getAccountId(), ResourceType.secondary_storage, templateVO.getSize());
         } else {
             // Delete the Datadisk templates that were already created as they are now invalid
-            logger.debug("Since creation of Datadisk template: {} failed, delete other Datadisk templates that were created as part of parent template download", templateVO);
+            logger.debug("Since creation of Datadisk template: {} failed, delete other Datadisk Templates that were created as part of parent template download", templateVO);
             TemplateInfo parentTemplateInfo = imageFactory.getTemplate(templateVO.getParentTemplateId(), imageStore);
             cleanupDatadiskTemplates(parentTemplateInfo);
         }
@@ -941,7 +941,7 @@ public class TemplateServiceImpl implements TemplateService {
         TemplateApiResult result = null;
         result = templateFuture.get();
         if (!result.isSuccess()) {
-            logger.debug("Since creation of parent template: {} failed, delete Datadisk templates that were created as part of parent template download", templateInfo);
+            logger.debug("Since creation of parent template: {} failed, delete Datadisk Templates that were created as part of parent template download", templateInfo);
             cleanupDatadiskTemplates(templateInfo);
         }
         return result.isSuccess();

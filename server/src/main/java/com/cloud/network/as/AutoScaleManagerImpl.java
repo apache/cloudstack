@@ -1937,7 +1937,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 if (s != null) {
                     sshKeyPairs.add(s.getName());
                 } else {
-                    logger.warn("Cannot find ssh keypair by name in sshkeypairs from otherdeployparams in AutoScale Vm profile");
+                    logger.warn("Cannot find SSH keypair by name in sshkeypairs from otherdeployparams in AutoScale Instance profile");
                 }
             }
         }

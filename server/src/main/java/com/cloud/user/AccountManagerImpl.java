@@ -987,7 +987,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
 
             if (!allTemplatesDeleted) {
-                logger.warn("Failed to delete templates while removing account {}", account);
+                logger.warn("Failed to delete Templates while removing Account {}", account);
                 accountCleanupNeeded = true;
             }
 
@@ -997,7 +997,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 try {
                     _vmSnapshotMgr.deleteVMSnapshot(vmSnapshot.getId());
                 } catch (Exception e) {
-                    logger.debug("Failed to cleanup vm snapshot {} due to {}", vmSnapshot, e.toString());
+                    logger.debug("Failed to cleanup Instance Snapshot {} due to {}", vmSnapshot, e.toString());
                 }
             }
 
@@ -1006,7 +1006,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // Destroy the account's VMs
             List<UserVmVO> vms = _userVmDao.listByAccountId(accountId);
             if (logger.isDebugEnabled()) {
-                logger.debug("Expunging # of vms (account={}): {}", account, vms.size());
+                logger.debug("Expunging # of Instances (Account={}): {}", account, vms.size());
             }
 
             for (UserVmVO vm : vms) {

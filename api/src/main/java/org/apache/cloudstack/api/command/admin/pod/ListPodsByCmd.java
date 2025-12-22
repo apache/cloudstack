@@ -40,19 +40,19 @@ public class ListPodsByCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = PodResponse.class, description = "list Pods by ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = PodResponse.class, description = "List Pods by ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list Pods by name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "List Pods by name")
     private String podName;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "list Pods by Zone ID")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "List Pods by Zone ID")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.ALLOCATION_STATE, type = CommandType.STRING, description = "list pods by allocation state")
+    @Parameter(name = ApiConstants.ALLOCATION_STATE, type = CommandType.STRING, description = "List pods by allocation state")
     private String allocationState;
 
-    @Parameter(name = ApiConstants.SHOW_CAPACITIES, type = CommandType.BOOLEAN, description = "flag to display the capacity of the pods")
+    @Parameter(name = ApiConstants.SHOW_CAPACITIES, type = CommandType.BOOLEAN, description = "Flag to display the capacity of the pods")
     private Boolean showCapacities;
 
     @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUP, type = CommandType.STRING,
