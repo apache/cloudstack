@@ -39,7 +39,7 @@ public class DeleteApplicationLoadBalancerCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of the Load Balancer")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "The ID of the Load Balancer")
     private Long id;
 
     /////////////////////////////////////////////////////

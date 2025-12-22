@@ -49,16 +49,16 @@ public class ListVirtualRouterElementsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VirtualRouterProviderResponse.class, description = "list virtual router elements by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VirtualRouterProviderResponse.class, description = "List virtual router elements by id")
     private Long id;
 
     @Parameter(name = ApiConstants.NSP_ID,
                type = CommandType.UUID,
                entityType = ProviderResponse.class,
-               description = "list virtual router elements by network service provider id")
+               description = "List virtual router elements by network service provider id")
     private Long nspId;
 
-    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, description = "list network offerings by enabled state")
+    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, description = "List network offerings by enabled state")
     private Boolean enabled;
 
     /////////////////////////////////////////////////////
