@@ -30,35 +30,35 @@ import com.cloud.serializer.Param;
 public class PrivateGatewayResponse extends BaseResponseWithAssociatedNetwork implements ControlledEntityResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the id of the private gateway")
+    @Param(description = "The ID of the private gateway")
     private String id;
 
     @SerializedName(ApiConstants.GATEWAY)
-    @Param(description = "the gateway")
+    @Param(description = "The gateway")
     private String gateway;
 
     @SerializedName(ApiConstants.NETMASK)
-    @Param(description = "the private gateway's netmask")
+    @Param(description = "The private gateway's netmask")
     private String netmask;
 
     @SerializedName(ApiConstants.IP_ADDRESS)
-    @Param(description = "the private gateway's ip address")
+    @Param(description = "The private gateway's IP address")
     private String address;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "zone id of the private gateway")
+    @Param(description = "Zone ID of the private gateway")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "the name of the zone the private gateway belongs to")
+    @Param(description = "The name of the zone the private gateway belongs to")
     private String zoneName;
 
     @SerializedName(ApiConstants.VLAN)
-    @Param(description = "the network implementation uri for the private gateway")
+    @Param(description = "The Network implementation uri for the private gateway")
     private String broadcastUri;
 
     @SerializedName(ApiConstants.VPC_ID)
-    @Param(description = "VPC id the private gateway belongs to")
+    @Param(description = "VPC ID the private gateway belongs to")
     private String vpcId;
 
     @SerializedName(ApiConstants.VPC_NAME)
@@ -66,31 +66,31 @@ public class PrivateGatewayResponse extends BaseResponseWithAssociatedNetwork im
     private String vpcName;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
-    @Param(description = "the physical network id")
+    @Param(description = "The physical Network id")
     private String physicalNetworkId;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account associated with the private gateway")
+    @Param(description = "The Account associated with the private gateway")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the private gateway")
+    @Param(description = "The project ID of the private gateway")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the private gateway")
+    @Param(description = "The project name of the private gateway")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the ID of the domain associated with the private gateway")
+    @Param(description = "The ID of the domain associated with the private gateway")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain associated with the private gateway")
+    @Param(description = "The domain associated with the private gateway")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the domain to which the private gateway belongs", since = "4.19.2.0")
+    @Param(description = "Path of the domain to which the private gateway belongs", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.STATE)
@@ -102,7 +102,7 @@ public class PrivateGatewayResponse extends BaseResponseWithAssociatedNetwork im
     private Boolean sourceNat;
 
     @SerializedName(ApiConstants.ACL_ID)
-    @Param(description = "ACL Id set for private gateway")
+    @Param(description = "ACL ID set for private gateway")
     private String aclId;
 
     @SerializedName(ApiConstants.ACL_NAME)

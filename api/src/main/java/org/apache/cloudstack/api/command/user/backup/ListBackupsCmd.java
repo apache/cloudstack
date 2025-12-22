@@ -46,7 +46,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.Pair;
 
 @APICommand(name = "listBackups",
-        description = "Lists VM backups",
+        description = "Lists Instance backups",
         responseObject = BackupResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListBackupsCmd extends BaseListProjectAndAccountResourcesCmd {
@@ -61,19 +61,19 @@ public class ListBackupsCmd extends BaseListProjectAndAccountResourcesCmd {
     @Parameter(name = ApiConstants.ID,
             type = CommandType.UUID,
             entityType = BackupResponse.class,
-            description = "id of the backup")
+            description = "ID of the backup")
     private Long id;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
             type = CommandType.UUID,
             entityType = UserVmResponse.class,
-            description = "id of the VM")
+            description = "ID of the Instance")
     private Long vmId;
 
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.UUID,
             entityType = ZoneResponse.class,
-            description = "list backups by zone id")
+            description = "List backups by zone id")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.NAME,

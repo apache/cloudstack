@@ -563,7 +563,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     public ConsoleProxyVO startNew(long dataCenterId) throws ConcurrentOperationException, ConfigurationException {
 
         if (logger.isDebugEnabled()) {
-            logger.debug("Assign console proxy from a newly started instance for request from data center : " + dataCenterId);
+            logger.debug("Assign console proxy from a newly started Instance for request from data center : " + dataCenterId);
         }
 
         if (!allowToLaunchNew(dataCenterId)) {
@@ -577,7 +577,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         List<VMTemplateVO> templates = vmTemplateDao.findSystemVMReadyTemplates(dataCenterId, availableHypervisor,
                 ResourceManager.SystemVmPreferredArchitecture.valueIn(dataCenterId));
         if (CollectionUtils.isEmpty(templates)) {
-            throw new CloudRuntimeException("Not able to find the System templates or not downloaded in zone " + dataCenterId);
+            throw new CloudRuntimeException("Not able to find the System Templates or not downloaded in zone " + dataCenterId);
         }
 
         Map<String, Object> context = createProxyInstance(dataCenterId, templates);
@@ -585,7 +585,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         long proxyVmId = (Long)context.get("proxyVmId");
         if (proxyVmId == 0) {
             if (logger.isDebugEnabled()) {
-                logger.debug(String.format("Unable to create proxy instance in zone [%s].", dataCenterId));
+                logger.debug(String.format("Unable to create proxy Instance in zone [%s].", dataCenterId));
             }
             return null;
         }
