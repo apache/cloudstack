@@ -36,7 +36,7 @@ public class ListCapabilitiesCmd extends BaseCmd {
             type = CommandType.UUID,
             entityType = DomainResponse.class,
             description = "the domain for listing capabilities.",
-            since = "4.20.3")
+            since = "4.23.0")
     private Long domainId;
 
     @Override
