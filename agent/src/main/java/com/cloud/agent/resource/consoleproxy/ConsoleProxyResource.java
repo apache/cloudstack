@@ -175,12 +175,12 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
                 try {
                     is.close();
                 } catch (final IOException e) {
-                    logger.warn("Exception when closing , console proxy address : {}", proxyManagementIp);
+                    logger.warn("Exception when closing , console proxy address: {}", proxyManagementIp);
                     success = false;
                 }
             }
         } catch (final IOException e) {
-            logger.warn("Unable to open console proxy command port url, console proxy address : {}", proxyManagementIp);
+            logger.warn("Unable to open console proxy command port url, console proxy address: {}", proxyManagementIp);
             success = false;
         }
 

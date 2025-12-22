@@ -35,7 +35,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.storage.Snapshot;
 import com.cloud.user.Account;
 
-@APICommand(name = "revertSnapshot", description = "This is supposed to revert a volume snapshot. This command is only supported with KVM so far", responseObject = SnapshotResponse.class, entityType = {Snapshot.class},
+@APICommand(name = "revertSnapshot", description = "This is supposed to revert a volume Snapshot. This command is only supported with KVM so far", responseObject = SnapshotResponse.class, entityType = {Snapshot.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RevertSnapshotCmd extends BaseAsyncCmd {
 
@@ -44,7 +44,7 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name= ApiConstants.ID, type= BaseCmd.CommandType.UUID, entityType = SnapshotResponse.class,
-            required=true, description="The ID of the snapshot")
+            required=true, description = "The ID of the Snapshot")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -74,7 +74,7 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "revert snapshot: " + this._uuidMgr.getUuid(Snapshot.class, getId());
+        return  "revert Snapshot: " + this._uuidMgr.getUuid(Snapshot.class, getId());
     }
 
     @Override
@@ -96,7 +96,7 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to revert snapshot");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to revert Snapshot");
         }
     }
 }

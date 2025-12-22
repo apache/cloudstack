@@ -362,7 +362,7 @@ public class KVMStoragePoolManager {
                 boolean subResult = adaptor.disconnectPhysicalDisk(vol.getPath(), pool);
 
                 if (!subResult) {
-                    logger.error("Failed to disconnect disks via vm spec for vm: " + vmName + " volume:" + vol.toString());
+                    logger.error("Failed to disconnect disks via Instance spec for Instance: " + vmName + " volume:" + vol.toString());
 
                     result = false;
                 }

@@ -28,23 +28,23 @@ import com.cloud.serializer.Param;
 @EntityReference(value = Region.class)
 public class RegionResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the region")
+    @Param(description = "The ID of the region")
     private Integer id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the region")
+    @Param(description = "The name of the region")
     private String name;
 
     @SerializedName(ApiConstants.END_POINT)
-    @Param(description = "the end point of the region")
+    @Param(description = "The end point of the region")
     private String endPoint;
 
     @SerializedName("gslbserviceenabled")
-    @Param(description = "true if GSLB service is enabled in the region, false otherwise")
+    @Param(description = "True if GSLB service is enabled in the region, false otherwise")
     private boolean gslbServiceEnabled;
 
     @SerializedName("portableipserviceenabled")
-    @Param(description = "true if security groups support is enabled, false otherwise")
+    @Param(description = "True if security groups support is enabled, false otherwise")
     private boolean portableipServiceEnabled;
 
     public Integer getId() {
