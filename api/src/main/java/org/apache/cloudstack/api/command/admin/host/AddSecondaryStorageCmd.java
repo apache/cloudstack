@@ -26,7 +26,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
-import com.cloud.exception.DiscoveryException;
 import com.cloud.storage.ImageStore;
 import com.cloud.user.Account;
 
@@ -67,20 +66,15 @@ public class AddSecondaryStorageCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        try{
-            ImageStore result = _storageService.discoverImageStore(null, getUrl(), "NFS", getZoneId(), null);
-            ImageStoreResponse storeResponse = null;
-            if (result != null ) {
-                    storeResponse = _responseGenerator.createImageStoreResponse(result);
-                    storeResponse.setResponseName(getCommandName());
-                    storeResponse.setObjectName("secondarystorage");
-                    setResponseObject(storeResponse);
-            } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add secondary storage");
-            }
-        } catch (DiscoveryException ex) {
-            logger.warn("Exception: ", ex);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
+        ImageStore result = _storageService.discoverImageStore(null, getUrl(), "NFS", getZoneId(), null);
+        ImageStoreResponse storeResponse = null;
+        if (result != null ) {
+            storeResponse = _responseGenerator.createImageStoreResponse(result);
+            storeResponse.setResponseName(getCommandName());
+            storeResponse.setObjectName("secondarystorage");
+            setResponseObject(storeResponse);
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add secondary storage");
         }
     }
 }

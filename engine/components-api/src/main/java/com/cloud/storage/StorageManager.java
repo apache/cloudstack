@@ -232,6 +232,43 @@ public interface StorageManager extends StorageService {
             "Storage", "true", "Allow SSVMs to try copying public templates from one secondary storage to another instead of downloading them from the source.",
             true, ConfigKey.Scope.Zone, null);
 
+    ConfigKey<Integer> VmDiskThrottlingIopsReadRate = new ConfigKey<>(
+            Integer.class,
+            "vm.disk.throttling.iops_read_rate",
+            "Storage",
+            "0",
+            "Default disk I/O read rate in requests per second allowed in User vm's disk.",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+    ConfigKey<Integer> VmDiskThrottlingIopsWriteRate = new ConfigKey<>(
+            Integer.class,
+            "vm.disk.throttling.iops_write_rate",
+            "Storage",
+            "0",
+            "Default disk I/O writerate in requests per second allowed in User vm's disk.",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+    ConfigKey<Integer> VmDiskThrottlingBytesReadRate = new ConfigKey<>(
+            Integer.class,
+            "vm.disk.throttling.bytes_read_rate",
+            "Storage",
+            "0",
+            "Default disk I/O read rate in bytes per second allowed in User vm's disk.",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+    ConfigKey<Integer> VmDiskThrottlingBytesWriteRate = new ConfigKey<>(
+            Integer.class,
+            "vm.disk.throttling.bytes_write_rate",
+            "Advanced",
+            "0",
+            "Default disk I/O writerate in bytes per second allowed in User vm's disk.",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+
     /**
      * should we execute in sequence not involving any storages?
      * @return true if commands should execute in sequence
@@ -241,8 +278,8 @@ public interface StorageManager extends StorageService {
     }
 
     static boolean shouldExecuteInSequenceOnVmware(Long srcStoreId, Long dstStoreId) {
-        final Boolean fullClone = getFullCloneConfiguration(srcStoreId) || getFullCloneConfiguration(dstStoreId);
-        final Boolean allowParallel = getAllowParallelExecutionConfiguration();
+        final boolean fullClone = getFullCloneConfiguration(srcStoreId) || getFullCloneConfiguration(dstStoreId);
+        final boolean allowParallel = getAllowParallelExecutionConfiguration();
         return fullClone && !allowParallel;
     }
 
@@ -284,10 +321,6 @@ public interface StorageManager extends StorageService {
 
     boolean canPoolProvideStorageStats(StoragePool pool);
 
-    boolean poolProvidesCustomStorageStats(StoragePool pool);
-
-    Map<String, String> getCustomStorageStats(StoragePool pool);
-
     /**
      * Checks if a host has running VMs that are using its local storage pool.
      * @return true if local storage is active on the host
@@ -299,8 +332,6 @@ public interface StorageManager extends StorageService {
      * @param recurring - true if this cleanup is part of a recurring garbage collection thread
      */
     void cleanupStorage(boolean recurring);
-
-    String getPrimaryStorageNameLabel(VolumeVO volume);
 
     void createCapacityEntry(StoragePoolVO storagePool, short capacityType, long allocated);
 
@@ -314,8 +345,6 @@ public interface StorageManager extends StorageService {
 
     CapacityVO getStoragePoolUsedStats(Long zoneId, Long podId, Long clusterId, List<Long> poolIds);
 
-    List<StoragePoolVO> ListByDataCenterHypervisor(long datacenterId, HypervisorType type);
-
     List<VMInstanceVO> listByStoragePool(long storagePoolId);
 
     StoragePoolVO findLocalStorageOnHost(long hostId);
@@ -328,11 +357,9 @@ public interface StorageManager extends StorageService {
 
     boolean canHostPrepareStoragePoolAccess(Host host, StoragePool pool);
 
-    boolean canDisconnectHostFromStoragePool(Host host, StoragePool pool);
-
     Host getHost(long hostId);
 
-    Host updateSecondaryStorage(long secStorageId, String newUrl);
+    void updateSecondaryStorage(long secStorageId, String newUrl);
 
     void removeStoragePoolFromCluster(long hostId, String iScsiName, StoragePool storagePool);
 
@@ -351,24 +378,19 @@ public interface StorageManager extends StorageService {
 
     /**
      * This comment is relevant to managed storage only.
-     *
      *  Long clusterId = only used for managed storage
-     *
      *  Some managed storage can be more efficient handling VM templates (via cloning) if it knows the capabilities of the compute cluster it is dealing with.
      *  If the compute cluster supports UUID resigning and the storage system can clone a volume from a volume, then this determines how much more space a
      *  new root volume (that makes use of a template) will take up on the storage system.
-     *
      *  For example, if a storage system can clone a volume from a volume and the compute cluster supports UUID resigning (relevant for hypervisors like
      *  XenServer and ESXi that put virtual disks in clustered file systems), then the storage system will need to determine if it already has a copy of
      *  the template or if it will need to create one first before cloning the template to a new volume to be used for the new root disk (assuming the root
-     *  disk is being deployed from a template). If the template doesn't already exists on the storage system, then you need to take into consideration space
+     *  disk is being deployed from a template). If the template doesn't already exist on the storage system, then you need to take into consideration space
      *  required for that template (stored in one volume) and space required for a new volume created from that template volume (for your new root volume).
-     *
      *  If UUID resigning is not available in the compute cluster or the storage system doesn't support cloning a volume from a volume, then for each new
      *  root disk that uses a template, CloudStack will have the template be copied down to a newly created volume on the storage system (i.e. no need
      *  to take into consideration the possible need to first create a volume on the storage system for a template that will be used for the root disk
      *  via cloning).
-     *
      *  Cloning volumes on the back-end instead of copying down a new template for each new volume helps to alleviate load on the hypervisors.
      */
     boolean storagePoolHasEnoughSpace(List<Pair<Volume, DiskProfile>> volume, StoragePool pool, Long clusterId);
