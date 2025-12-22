@@ -64,11 +64,11 @@ public class ListDomainsCmd extends BaseListCmd implements UserCmd {
     @Parameter(name = ApiConstants.DETAILS,
                type = CommandType.LIST,
                collectionType = CommandType.STRING,
-               description = "comma separated list of domain details requested, value can be a list of [ all, resource, min]")
+               description = "Comma separated list of domain details requested, value can be a list of [ all, resource, min]")
     private List<String> viewDetails;
 
     @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN,
-            description = "flag to display the resource icon for domains")
+            description = "Flag to display the resource icon for domains")
     private Boolean showIcon;
 
     @Parameter(name = ApiConstants.TAG, type = CommandType.STRING, description = "Tag for resource type to return usage", since = "4.20.0")

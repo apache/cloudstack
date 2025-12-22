@@ -27,11 +27,11 @@ import org.apache.cloudstack.framework.ca.CAProvider;
 @EntityReference(value = CAProvider.class)
 public class CAProviderResponse extends BaseResponse {
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the CA service provider name")
+    @Param(description = "The CA service provider name")
     private String name;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "the description of the CA service provider")
+    @Param(description = "The description of the CA service provider")
     private String description;
 
     public String getName() {

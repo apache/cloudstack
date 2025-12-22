@@ -40,7 +40,7 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 
 @APICommand(name = "migrateVPC",
-            description = "moves a vpc to another physical network",
+            description = "Moves a VPC to another physical network",
             responseObject = VpcResponse.class,
             responseView = ResponseObject.ResponseView.Restricted,
             entityType = {Vpc.class},
@@ -56,16 +56,16 @@ public class MigrateVPCCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     @ACL(accessType = SecurityChecker.AccessType.OperateEntry)
     @Parameter(name= ApiConstants.VPC_ID, type=CommandType.UUID, entityType = VpcResponse.class,
-            required=true, description = "the ID of the vpc")
+            required=true, description = "The ID of the VPC ")
     protected Long id;
 
-    @Parameter(name = ApiConstants.VPC_OFF_ID, type = CommandType.UUID, entityType = VpcOfferingResponse.class, required=true, description = "vpc offering ID")
+    @Parameter(name = ApiConstants.VPC_OFF_ID, type = CommandType.UUID, entityType = VpcOfferingResponse.class, required=true, description = "VPC offering ID")
     private Long vpcOfferingId;
 
-    @Parameter(name = ApiConstants.TIER_NETWORK_OFFERINGS, type = CommandType.MAP, description = "network offering ids for each network in the vpc. Example: tierNetworkOfferings[0].networkId=networkId1&tierNetworkOfferings[0].networkOfferingId=newNetworkofferingId1&tierNetworkOfferings[1].networkId=networkId2&tierNetworkOfferings[1].networkOfferingId=newNetworkofferingId2")
+    @Parameter(name = ApiConstants.TIER_NETWORK_OFFERINGS, type = CommandType.MAP, description = "Network offering IDs for each network in the VPC. Example: tierNetworkOfferings[0].networkId=networkId1&tierNetworkOfferings[0].networkOfferingId=newNetworkofferingId1&tierNetworkOfferings[1].networkId=networkId2&tierNetworkOfferings[1].networkOfferingId=newNetworkofferingId2")
     private Map<Integer, HashMap<String, String>> tierNetworkOfferings;
 
-    @Parameter(name = ApiConstants.RESUME, type = CommandType.BOOLEAN, description = "true if previous network migration cmd failed")
+    @Parameter(name = ApiConstants.RESUME, type = CommandType.BOOLEAN, description = "True if previous network migration cmd failed")
     private Boolean resume;
 
     /////////////////////////////////////////////////////
@@ -115,12 +115,12 @@ public class MigrateVPCCmd extends BaseAsyncCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to migrate vpc");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to migrate VPC");
         }
     }
 
     @Override
-    public String getEventDescription() { return "Migrating vpc: " + getId() + " to new vpc offering (" + vpcOfferingId + ")";  }
+    public String getEventDescription() { return "Migrating VPC : " + getId() + " to new VPC offering (" + vpcOfferingId + ")";  }
 
     @Override
     public String getEventType() {
