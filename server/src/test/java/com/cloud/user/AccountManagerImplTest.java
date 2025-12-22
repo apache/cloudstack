@@ -432,6 +432,19 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         prepareMockAndExecuteUpdateUserTest(1);
     }
 
+    @Test
+    public void updateUserTestPwdChange() {
+        Mockito.doReturn(true).when(UpdateUserCmdMock).isPasswordChangeRequired();
+        Mockito.when(userVoMock.getAccountId()).thenReturn(10L);
+        Mockito.doReturn(accountMock).when(accountManagerImpl).getAccount(10L);
+        Mockito.when(accountMock.getAccountId()).thenReturn(10L);
+        Mockito.doReturn(false).when(accountManagerImpl).isRootAdmin(10L);
+        Mockito.lenient().when(accountManagerImpl.getRoleType(Mockito.eq(accountMock))).thenReturn(RoleType.User);
+        Mockito.when(callingUser.getAccountId()).thenReturn(1L);
+        Mockito.doReturn(true).when(accountManagerImpl).isRootAdmin(1L);
+        prepareMockAndExecuteUpdateUserTest(0);
+    }
+
     private void prepareMockAndExecuteUpdateUserTest(int numberOfExpectedCallsForSetEmailAndSetTimeZone) {
         Mockito.doReturn("password").when(UpdateUserCmdMock).getPassword();
         Mockito.doReturn("newpassword").when(UpdateUserCmdMock).getCurrentPassword();

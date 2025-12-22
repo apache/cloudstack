@@ -69,6 +69,7 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
     List<APIChecker> _apiAccessCheckers = null;
     List<PluggableService> _services = null;
     protected static Map<String, ApiDiscoveryResponse> s_apiNameDiscoveryResponseMap = null;
+    public static final List<String> APIS_ALLOWED_FOR_PASSWORD_CHANGE = Arrays.asList("login", "logout", "updateUser", "listUsers", "listApis");
 
     @Inject
     AccountService accountService;
@@ -287,7 +288,7 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
             UserAccount userAccount = accountService.getUserAccountById(user.getId());
             Map<String, String> userAccDetails = userAccount.getDetails();
             if (MapUtils.isNotEmpty(userAccDetails) && "true".equalsIgnoreCase(userAccDetails.get(UserDetailVO.PasswordChangeRequired))) {
-                apisAllowed = Arrays.asList("login", "logout", "updateUser", "listUsers", "listApis");
+                apisAllowed = APIS_ALLOWED_FOR_PASSWORD_CHANGE;
             } else {
                 if (role.getRoleType() == RoleType.Admin && role.getId() == RoleType.Admin.getId()) {
                     logger.info(String.format("Account [%s] is Root Admin, all APIs are allowed.",

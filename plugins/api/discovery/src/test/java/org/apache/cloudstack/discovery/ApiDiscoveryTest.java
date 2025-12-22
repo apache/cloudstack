@@ -22,6 +22,7 @@ import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
+import com.cloud.user.UserAccountVO;
 import com.cloud.user.UserVO;
 
 import org.apache.cloudstack.acl.APIChecker;
@@ -30,6 +31,8 @@ import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.RoleVO;
 import org.apache.cloudstack.api.response.ApiDiscoveryResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,9 +43,12 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.apache.cloudstack.resourcedetail.UserDetailVO.PasswordChangeRequired;
+import static org.apache.cloudstack.resourcedetail.UserDetailVO.Setup2FADetail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -137,5 +143,30 @@ public class ApiDiscoveryTest {
         discoveryServiceSpy.listApis(getTestUser(), null);
 
         Mockito.verify(apiCheckerMock, Mockito.times(1)).getApisAllowedToUser(any(Role.class), any(User.class), anyList());
+    }
+
+    @Test
+    public void listApisForUserWithoutEnforcedPwdChange() throws PermissionDeniedException {
+        RoleVO userRoleVO = new RoleVO(4L, "name", RoleType.User, "description");
+        Map<String, String> userDetails = new HashMap<>();
+        userDetails.put(Setup2FADetail, UserAccountVO.Setup2FAstatus.ENABLED.name());
+        Mockito.when(mockUserAccount.getDetails()).thenReturn(userDetails);
+        Mockito.when(accountServiceMock.getAccount(Mockito.anyLong())).thenReturn(getNormalAccount());
+        Mockito.when(roleServiceMock.findRole(Mockito.anyLong())).thenReturn(userRoleVO);
+        discoveryServiceSpy.listApis(getTestUser(), null);
+        Mockito.verify(apiCheckerMock, Mockito.times(1)).getApisAllowedToUser(any(Role.class), any(User.class), anyList());
+    }
+
+    @Test
+    public void listApisForUserEnforcedPwdChange() throws PermissionDeniedException {
+        RoleVO userRoleVO = new RoleVO(4L, "name", RoleType.User, "description");
+        Map<String, String> userDetails = new HashMap<>();
+        userDetails.put(PasswordChangeRequired, "true");
+        Mockito.when(mockUserAccount.getDetails()).thenReturn(userDetails);
+        Mockito.when(accountServiceMock.getAccount(Mockito.anyLong())).thenReturn(getNormalAccount());
+        Mockito.when(roleServiceMock.findRole(Mockito.anyLong())).thenReturn(userRoleVO);
+        Mockito.when(apiNameDiscoveryResponseMapMock.get(Mockito.anyString())).thenReturn(Mockito.mock(ApiDiscoveryResponse.class));
+        ListResponse<ApiDiscoveryResponse> response = (ListResponse<ApiDiscoveryResponse>) discoveryServiceSpy.listApis(getTestUser(), null);
+        Assert.assertEquals(5, response.getResponses().size());
     }
 }
