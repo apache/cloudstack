@@ -49,6 +49,7 @@ export default {
       return {
         id: this.resource.id,
         name: this.resource.name,
+        domainid: this.resource.domainid,
         gateway: this.resource.gateway,
         cidrlist: this.resource.cidrlist,
         ipsecpsk: this.resource.ipsecpsk,

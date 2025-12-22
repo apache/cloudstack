@@ -21,7 +21,9 @@ import java.util.Map;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.CapabilitiesResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 
 import com.cloud.user.Account;
@@ -30,10 +32,20 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListCapabilitiesCmd extends BaseCmd {
 
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+            type = CommandType.UUID,
+            entityType = DomainResponse.class,
+            description = "the domain for listing capabilities.",
+            since = "4.20.3")
+    private Long domainId;
 
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    public Long getDomainId() {
+        return domainId;
     }
 
     @Override

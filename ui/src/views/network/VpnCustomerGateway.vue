@@ -497,7 +497,7 @@ export default {
 
       this.loadingParameters = true
 
-      const response = await getAPI('listCapabilities')
+      const response = await getAPI('listCapabilities', { domainid: this.initialValues.domainid })
       const capability = response.listcapabilitiesresponse?.capability || {}
       const parameters = capability.vpncustomergatewayparameters || {}
 
