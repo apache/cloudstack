@@ -591,6 +591,7 @@
 "label.copy.consoleurl": "Copy console URL to clipboard",
 "label.copyid": "Copy ID",
 "label.copy.password": "Copy password",
+"label.copy.templates.from.other.secondary.storages": "Copy templates from other storages instead of fetching from URLs",
 "label.core": "Core",
 "label.core.zone.type": "Core Zone type",
 "label.counter": "Counter",

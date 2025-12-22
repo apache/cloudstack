@@ -568,7 +568,7 @@ public class TemplateServiceImpl implements TemplateService {
                             }
 
                             if (availHypers.contains(tmplt.getHypervisorType())) {
-                                boolean copied = isCopyFromOtherStoragesEnabled(zoneId) && tryCopyingTemplateToImageStore(tmplt, store);
+                                boolean copied = imageStoreDetailsUtil.isCopyTemplatesFromOtherStoragesEnabled(storeId, zoneId) && tryCopyingTemplateToImageStore(tmplt, store);
                                 if (!copied) {
                                     tryDownloadingTemplateToImageStore(tmplt, store);
                                 }
@@ -780,10 +780,6 @@ public class TemplateServiceImpl implements TemplateService {
         }
         future.complete(res);
         return null;
-    }
-
-    protected boolean isCopyFromOtherStoragesEnabled(Long zoneId) {
-        return StorageManager.COPY_TEMPLATES_FROM_OTHER_SECONDARY_STORAGES.valueIn(zoneId);
     }
 
     protected void publishTemplateCreation(TemplateInfo tmplt) {
