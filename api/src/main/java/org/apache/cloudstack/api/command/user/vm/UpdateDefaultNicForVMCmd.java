@@ -104,7 +104,7 @@ public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getVmId()) + " Nic Id: " + this._uuidMgr.getUuid(Nic.class, getNicId()));
+        CallContext.current().setEventDetails("VM Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getVmId()) + " Nic Id: " + this._uuidMgr.getUuid(Nic.class, getNicId()));
         UserVm result = _userVmService.updateDefaultNicForVirtualMachine(this);
         ArrayList<VMDetails> dc = new ArrayList<VMDetails>();
         dc.add(VMDetails.valueOf("nics"));

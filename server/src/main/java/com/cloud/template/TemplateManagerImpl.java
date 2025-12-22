@@ -1188,7 +1188,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (isoId == null) {
             throw new InvalidParameterValueException("The specified VM has no ISO attached to it.");
         }
-        CallContext.current().setEventDetails("Vm Id: " + virtualMachine.getUuid() + " ISO Id: " + isoId);
+        CallContext.current().setEventDetails("VM ID: " + virtualMachine.getUuid() + " ISO ID: " + isoId);
 
         State vmState = virtualMachine.getState();
         if (vmState != State.Running && vmState != State.Stopped) {

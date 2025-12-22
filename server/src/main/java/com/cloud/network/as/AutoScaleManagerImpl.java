@@ -2015,7 +2015,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
     private UserVmVO startNewVM(long vmId) {
         try {
-            CallContext.current().setEventDetails("Vm Id: " + vmId);
+            CallContext.current().setEventDetails("VM ID: " + vmId);
             return userVmMgr.startVirtualMachine(vmId, null, new HashMap<>(), null).first();
         } catch (final ResourceUnavailableException ex) {
             logger.warn("Exception: ", ex);
