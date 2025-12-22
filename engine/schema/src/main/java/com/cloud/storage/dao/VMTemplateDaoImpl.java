@@ -100,7 +100,6 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     private SearchBuilder<VMTemplateVO> PublicIsoSearch;
     private SearchBuilder<VMTemplateVO> UserIsoSearch;
     private GenericSearchBuilder<VMTemplateVO, Long> CountTemplatesByAccount;
-    // private SearchBuilder<VMTemplateVO> updateStateSearch;
     private SearchBuilder<VMTemplateVO> AllFieldsSearch;
     protected SearchBuilder<VMTemplateVO> ParentTemplateIdSearch;
     private SearchBuilder<VMTemplateVO> InactiveUnremovedTmpltSearch;
@@ -315,7 +314,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             consoleProxyTmpltName = "routing";
         }
         if (logger.isDebugEnabled()) {
-            logger.debug("Use console proxy template : " + consoleProxyTmpltName);
+            logger.debug("Use console proxy Template : " + consoleProxyTmpltName);
         }
 
         UniqueNameSearch = createSearchBuilder();
@@ -404,12 +403,6 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         CountTemplatesByAccount.and("state", CountTemplatesByAccount.entity().getState(), SearchCriteria.Op.EQ);
         CountTemplatesByAccount.done();
 
-        //        updateStateSearch = this.createSearchBuilder();
-        //        updateStateSearch.and("id", updateStateSearch.entity().getId(), Op.EQ);
-        //        updateStateSearch.and("state", updateStateSearch.entity().getState(), Op.EQ);
-        //        updateStateSearch.and("updatedCount", updateStateSearch.entity().getUpdatedCount(), Op.EQ);
-        //        updateStateSearch.done();
-
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
@@ -478,7 +471,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         VMTemplateVO tmplt2 = findById(tmplt.getId());
         if (tmplt2 == null) {
             if (persist(tmplt) == null) {
-                throw new CloudRuntimeException("Failed to persist the template " + tmplt);
+                throw new CloudRuntimeException("Failed to persist the Template " + tmplt);
             }
 
             if (tmplt.getDetails() != null) {
@@ -912,7 +905,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
                     .append("; updatedTime=")
                     .append(oldUpdatedTime);
             } else {
-                logger.debug("Unable to update template: id=" + vo.getId() + ", as no such template exists in the database anymore");
+                logger.debug("Unable to update Template: id=" + vo.getId() + ", as no such template exists in the database anymore");
             }
         }
         return rows > 0;

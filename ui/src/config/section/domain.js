@@ -144,7 +144,7 @@ export default {
       docHelp: 'adminguide/accounts.html#using-an-ldap-server-for-user-authentication',
       listView: true,
       dataView: true,
-      args: ['type', 'domainid', 'name', 'accounttype', 'admin'],
+      args: ['type', 'domainid', 'ldapdomain', 'accounttype', 'admin'],
       mapping: {
         type: {
           options: ['GROUP', 'OU']
@@ -152,6 +152,20 @@ export default {
         accounttype: {
           options: ['0', '2']
         },
+        domainid: {
+          value: (record) => { return record.id }
+        }
+      }
+    },
+    {
+      api: 'unlinkDomainFromLdap',
+      icon: 'ArrowsAltOutlined',
+      label: 'label.unlink.domain.from.ldap',
+      docHelp: 'adminguide/accounts.html#using-an-ldap-server-for-user-authentication',
+      listView: true,
+      dataView: true,
+      args: ['domainid'],
+      mapping: {
         domainid: {
           value: (record) => { return record.id }
         }

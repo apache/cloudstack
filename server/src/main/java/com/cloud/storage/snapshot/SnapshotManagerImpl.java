@@ -377,12 +377,12 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         if (instanceId != null) {
             UserVmVO vm = _vmDao.findById(instanceId);
             if (vm.getState() != State.Stopped && vm.getState() != State.Shutdown) {
-                throw new InvalidParameterValueException("The VM the specified disk is attached to is not in the shutdown state.");
+                throw new InvalidParameterValueException("The Instance the specified disk is attached to is not in the shutdown state.");
             }
             // If target VM has associated VM snapshots then don't allow to revert from snapshot
             List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(instanceId);
             if (vmSnapshots.size() > 0 && !Type.GROUP.name().equals(snapshot.getTypeDescription())) {
-                throw new InvalidParameterValueException("Unable to revert snapshot for VM, please remove VM snapshots before reverting VM from snapshot");
+                throw new InvalidParameterValueException("Unable to revert Snapshot for Instance, please remove Instance Snapshots before reverting Instance from Snapshot");
             }
         }
 
@@ -661,7 +661,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             //Double check the snapshot is removed or not
             SnapshotVO parentSnap = _snapshotDao.findById(parentSnapshotDataStoreVO.getSnapshotId());
             if (parentSnap != null && parentSnapshotDataStoreVO.getInstallPath() != null && parentSnapshotDataStoreVO.getInstallPath().equals(vmSnapshot.getName())) {
-                throw new InvalidParameterValueException("Creating snapshot failed due to snapshot : " + parentSnap.getUuid() + " is created from the same vm snapshot");
+                throw new InvalidParameterValueException("Creating Snapshot failed due to Snapshot : " + parentSnap.getUuid() + " is created from the same Instance Snapshot");
             }
         }
         SnapshotInfo snapshotInfo = this.snapshotFactory.getSnapshot(snapshotId, store);
@@ -680,15 +680,15 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         try {
             SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.BACKUP);
             if (snapshotStrategy == null) {
-                throw new CloudRuntimeException(String.format("Unable to find snapshot strategy to handle snapshot [%s]", snapshot));
+                throw new CloudRuntimeException(String.format("Unable to find Snapshot strategy to handle Snapshot [%s]", snapshot));
             }
             snapshotInfo = snapshotStrategy.backupSnapshot(snapshotInfo);
 
         } catch (Exception e) {
-            logger.debug("Failed to backup snapshot from vm snapshot", e);
+            logger.debug("Failed to backup Snapshot from Instance Snapshot", e);
             _resourceLimitMgr.decrementResourceCount(snapshotOwnerId, ResourceType.snapshot);
             _resourceLimitMgr.decrementResourceCount(snapshotOwnerId, ResourceType.secondary_storage, new Long(volume.getSize()));
-            throw new CloudRuntimeException("Failed to backup snapshot from vm snapshot", e);
+            throw new CloudRuntimeException("Failed to backup Snapshot from Instance Snapshot", e);
         } finally {
             if (snapshotOnPrimaryStore != null) {
                 _snapshotStoreDao.remove(snapshotOnPrimaryStore.getId());
@@ -1609,7 +1609,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 List<VMSnapshotVO> activeVMSnapshots = _vmSnapshotDao.listByInstanceId(userVm.getId(), VMSnapshot.State.Creating, VMSnapshot.State.Reverting,
                         VMSnapshot.State.Expunging);
                 if (activeVMSnapshots.size() > 0) {
-                    throw new CloudRuntimeException("There is other active vm snapshot tasks on the instance to which the volume is attached, please try again later");
+                    throw new CloudRuntimeException("There is other active Instance Snapshot tasks on the Instance to which the volume is attached, please try again later");
                 }
             }
         }
