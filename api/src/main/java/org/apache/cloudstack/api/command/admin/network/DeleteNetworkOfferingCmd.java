@@ -40,7 +40,7 @@ public class DeleteNetworkOfferingCmd extends BaseCmd {
                type = CommandType.UUID,
                entityType = NetworkOfferingResponse.class,
                required = true,
-               description = "the ID of the network offering")
+               description = "The ID of the network offering")
     private Long id;
 
     /////////////////////////////////////////////////////

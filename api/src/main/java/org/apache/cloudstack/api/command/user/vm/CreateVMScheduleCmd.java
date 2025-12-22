@@ -32,7 +32,7 @@ import org.apache.cloudstack.vm.schedule.VMScheduleManager;
 import javax.inject.Inject;
 import java.util.Date;
 
-@APICommand(name = "createVMSchedule", description = "Create VM Schedule", responseObject = VMScheduleResponse.class,
+@APICommand(name = "createVMSchedule", description = "Create Instance Schedule", responseObject = VMScheduleResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CreateVMScheduleCmd extends BaseCmd {
@@ -44,7 +44,7 @@ public class CreateVMScheduleCmd extends BaseCmd {
             type = CommandType.UUID,
             entityType = UserVmResponse.class,
             required = true,
-            description = "ID of the VM for which schedule is to be defined")
+            description = "ID of the Instance for which schedule is to be defined")
     private Long vmId;
 
     @Parameter(name = ApiConstants.DESCRIPTION,
@@ -56,7 +56,7 @@ public class CreateVMScheduleCmd extends BaseCmd {
     @Parameter(name = ApiConstants.SCHEDULE,
             type = CommandType.STRING,
             required = true,
-            description = "Schedule for action on VM in cron format. e.g. '0 15 10 * *' for 'at 15:00 on 10th day of every month'")
+            description = "Schedule for action on Instance in cron format. e.g. '0 15 10 * *' for 'at 15:00 on 10th day of every month'")
     private String schedule;
 
     @Parameter(name = ApiConstants.TIMEZONE,
@@ -68,27 +68,27 @@ public class CreateVMScheduleCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ACTION,
             type = CommandType.STRING,
             required = true,
-            description = "Action to take on the VM (start/stop/reboot/force_stop/force_reboot).")
+            description = "Action to take on the Instance (start/stop/reboot/force_stop/force_reboot).")
     private String action;
 
     @Parameter(name = ApiConstants.START_DATE,
             type = CommandType.DATE,
             required = false,
-            description = "start date from which the schedule becomes active. Defaults to current date plus 1 minute."
+            description = "Start date from which the schedule becomes active. Defaults to current date plus 1 minute."
                     + "Use format \"yyyy-MM-dd hh:mm:ss\")")
     private Date startDate;
 
     @Parameter(name = ApiConstants.END_DATE,
             type = CommandType.DATE,
             required = false,
-            description = "end date after which the schedule becomes inactive"
+            description = "End date after which the schedule becomes inactive"
                     + "Use format \"yyyy-MM-dd hh:mm:ss\")")
     private Date endDate;
 
     @Parameter(name = ApiConstants.ENABLED,
             type = CommandType.BOOLEAN,
             required = false,
-            description = "Enable VM schedule. Defaults to true")
+            description = "Enable Instance schedule. Defaults to true")
     private Boolean enabled;
 
     /////////////////////////////////////////////////////
@@ -145,7 +145,7 @@ public class CreateVMScheduleCmd extends BaseCmd {
     public long getEntityOwnerId() {
         VirtualMachine vm = _entityMgr.findById(VirtualMachine.class, getVmId());
         if (vm == null) {
-            throw new InvalidParameterValueException(String.format("Unable to find VM by id=%d", getVmId()));
+            throw new InvalidParameterValueException(String.format("Unable to find Instance by id=%d", getVmId()));
         }
         return vm.getAccountId();
     }

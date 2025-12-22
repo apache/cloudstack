@@ -1997,8 +1997,13 @@ export default {
     },
     onSearch (opts) {
       const query = Object.assign({}, this.$route.query)
-      const searchFilters = this.$route?.meta?.searchFilters || []
-      searchFilters.forEach(key => delete query[key])
+      let searchFilters = this.$route?.meta?.searchFilters || []
+      if (typeof searchFilters === 'function') {
+        searchFilters = searchFilters()
+      }
+      if (Array.isArray(searchFilters)) {
+        searchFilters.forEach(key => delete query[key])
+      }
       delete query.name
       delete query.templatetype
       delete query.keyword
