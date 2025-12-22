@@ -220,6 +220,10 @@ public interface StorageManager extends StorageService {
             "storage.pool.host.connect.workers", "1",
             "Number of worker threads to be used to connect hosts to a primary storage", true);
 
+    ConfigKey<Boolean> COPY_PUBLIC_TEMPLATES_FROM_OTHER_STORAGES = new ConfigKey<>(Boolean.class, "copy.public.templates.from.other.storages",
+            "Storage", "true", "Allow SSVMs to try copying public templates from one secondary storage to another instead of downloading them from the source.",
+            true, ConfigKey.Scope.Zone, null);
+
     /**
      * should we execute in sequence not involving any storages?
      * @return tru if commands should execute in sequence
