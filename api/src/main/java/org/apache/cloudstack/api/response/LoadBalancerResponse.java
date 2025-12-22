@@ -28,63 +28,63 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class LoadBalancerResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the load balancer rule ID")
+    @Param(description = "The Load balancer rule ID")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the load balancer")
+    @Param(description = "The name of the Load balancer")
     private String name;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "the description of the load balancer")
+    @Param(description = "The description of the Load balancer")
     private String description;
 
     @SerializedName(ApiConstants.PUBLIC_IP_ID)
-    @Param(description = "the public ip address id")
+    @Param(description = "The public IP address ID")
     private String publicIpId;
 
     @SerializedName(ApiConstants.PUBLIC_IP)
-    @Param(description = "the public ip address")
+    @Param(description = "The public IP address")
     private String publicIp;
 
     @SerializedName(ApiConstants.PUBLIC_PORT)
-    @Param(description = "the public port")
+    @Param(description = "The public port")
     private String publicPort;
 
     @SerializedName(ApiConstants.PRIVATE_PORT)
-    @Param(description = "the private port")
+    @Param(description = "The private port")
     private String privatePort;
 
     @SerializedName(ApiConstants.ALGORITHM)
-    @Param(description = "the load balancer algorithm (source, roundrobin, leastconn)")
+    @Param(description = "The Load balancer algorithm (source, roundrobin, leastconn)")
     private String algorithm;
 
     @SerializedName(ApiConstants.NETWORK_ID)
-    @Param(description = "the id of the guest network the lb rule belongs to")
+    @Param(description = "The ID of the guest Network the LB rule belongs to")
     private String networkId;
 
     @SerializedName(ApiConstants.CIDR_LIST)
-    @Param(description = "the CIDR list to allow traffic, all other CIDRs will be blocked. Multiple entries must be separated by a single comma character (,).")
+    @Param(description = "The CIDR list to allow traffic, all other CIDRs will be blocked. Multiple entries must be separated by a single comma character (,).")
     private String cidrList;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account of the load balancer rule")
+    @Param(description = "The Account of the Load balancer rule")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the load balancer")
+    @Param(description = "The project ID of the Load balancer")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the load balancer")
+    @Param(description = "The project name of the Load balancer")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID of the load balancer rule")
+    @Param(description = "The domain ID of the Load balancer rule")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain of the load balancer rule")
+    @Param(description = "The domain of the Load balancer rule")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
@@ -92,27 +92,27 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
     private String domainPath;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "the state of the rule")
+    @Param(description = "The state of the rule")
     private String state;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the id of the zone the rule belongs to")
+    @Param(description = "The ID of the zone the rule belongs to")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "the name of the zone the load balancer rule belongs to", since = "4.11")
+    @Param(description = "The name of the zone the Load balancer rule belongs to", since = "4.11")
     private String zoneName;
 
     @SerializedName(ApiConstants.PROTOCOL)
-    @Param(description = "the protocol of the loadbalanacer rule")
+    @Param(description = "The protocol of the Load Balancer rule")
     private String lbProtocol;
 
     @SerializedName(ApiConstants.TAGS)
-    @Param(description = "the list of resource tags associated with load balancer", responseObject = ResourceTagResponse.class)
+    @Param(description = "The list of resource tags associated with Load balancer", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
     @SerializedName(ApiConstants.FOR_DISPLAY)
-    @Param(description = "is rule for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    @Param(description = "Is rule for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
 
     public void setId(String id) {

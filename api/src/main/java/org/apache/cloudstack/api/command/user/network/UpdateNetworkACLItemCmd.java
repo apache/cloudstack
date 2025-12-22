@@ -41,37 +41,37 @@ public class UpdateNetworkACLItemCmd extends BaseAsyncCustomIdCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkACLItemResponse.class, required = true, description = "the ID of the network ACL item")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkACLItemResponse.class, required = true, description = "The ID of the network ACL item")
     private Long id;
 
-    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "the protocol for the ACL rule. Valid values are TCP/UDP/ICMP/ALL or valid protocol number")
+    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "The protocol for the ACL rule. Valid values are TCP/UDP/ICMP/ALL or valid protocol number")
     private String protocol;
 
-    @Parameter(name = ApiConstants.START_PORT, type = CommandType.INTEGER, description = "the starting port of ACL")
+    @Parameter(name = ApiConstants.START_PORT, type = CommandType.INTEGER, description = "The starting port of ACL")
     private Integer publicStartPort;
 
-    @Parameter(name = ApiConstants.END_PORT, type = CommandType.INTEGER, description = "the ending port of ACL")
+    @Parameter(name = ApiConstants.END_PORT, type = CommandType.INTEGER, description = "The ending port of ACL")
     private Integer publicEndPort;
 
-    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to allow traffic from/to. Multiple entries must be separated by a single comma character (,).")
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "The CIDR list to allow traffic from/to. Multiple entries must be separated by a single comma character (,).")
     private List<String> cidrlist;
 
-    @Parameter(name = ApiConstants.ICMP_TYPE, type = CommandType.INTEGER, description = "type of the ICMP message being sent")
+    @Parameter(name = ApiConstants.ICMP_TYPE, type = CommandType.INTEGER, description = "Type of the ICMP message being sent")
     private Integer icmpType;
 
-    @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "error code for this ICMP message")
+    @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "Error code for this ICMP message")
     private Integer icmpCode;
 
-    @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "the traffic type for the ACL, can be Ingress or Egress, defaulted to Ingress if not specified")
+    @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "The traffic type for the ACL, can be Ingress or Egress, defaulted to Ingress if not specified")
     private String trafficType;
 
-    @Parameter(name = ApiConstants.NUMBER, type = CommandType.INTEGER, description = "The network of the vm the ACL will be created for")
+    @Parameter(name = ApiConstants.NUMBER, type = CommandType.INTEGER, description = "The Network of the Instance the ACL will be created for")
     private Integer number;
 
-    @Parameter(name = ApiConstants.ACTION, type = CommandType.STRING, description = "scl entry action, allow or deny")
+    @Parameter(name = ApiConstants.ACTION, type = CommandType.STRING, description = "ACL entry action, allow or deny")
     private String action;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the rule to the end User or not", since = "4.4", authorized = {
             RoleType.Admin})
     private Boolean display;
 

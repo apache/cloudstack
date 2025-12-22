@@ -50,7 +50,7 @@ public class DestroyVolumeCmd extends BaseAsyncCmd {
 
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VolumeResponse.class,
-            required=true, description="The ID of the volume")
+            required=true, description = "The ID of the volume")
     private Long id;
 
     @Parameter(name = ApiConstants.EXPUNGE,

@@ -171,7 +171,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
 
     private void setupAgentSecurity(final Connection sshConnection, final String agentIp, final String agentHostname) {
         if (sshConnection == null) {
-            throw new CloudRuntimeException("Cannot secure agent communication because ssh connection is invalid for host ip=" + agentIp);
+            throw new CloudRuntimeException("Cannot secure agent communication because SSH connection is invalid for host IP=" + agentIp);
         }
 
         Integer validityPeriod = CAManager.CertValidityPeriod.value();
@@ -279,10 +279,10 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             final String privateKey = _configDao.getValue("ssh.privatekey");
             if (!SSHCmdHelper.acquireAuthorizedConnectionWithPublicKey(sshConnection, username, privateKey)) {
                 if (org.apache.commons.lang3.StringUtils.isEmpty(password)) {
-                    logger.error("Failed to authenticate with ssh key");
-                    throw new DiscoveredWithErrorException("Authentication error with ssh private key");
+                    logger.error("Failed to authenticate with SSH key");
+                    throw new DiscoveredWithErrorException("Authentication error with SSH private key");
                 }
-                logger.info("Failed to authenticate with ssh key, retrying with password");
+                logger.info("Failed to authenticate with SSH key, retrying with password");
                 if (!sshConnection.authenticateWithPassword(username, password)) {
                     logger.error("Failed to authenticate with password");
                     throw new DiscoveredWithErrorException("Authentication error with host password");
