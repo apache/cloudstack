@@ -736,7 +736,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                     logger.debug("Unable to allocate proxy {} with {} in {} due to [{}]. Retrying with another template", proxy, template, dc, e.getMessage(), e);
                     continue;
                 }
-                throw new CloudRuntimeException("Failed to allocate proxy [%s] in zone [%s] with available templates", e);
+                throw new CloudRuntimeException(String.format("Failed to allocate proxy [%s] in zone [%s] with available templates", proxy, dc), e);
             }
         }
 
