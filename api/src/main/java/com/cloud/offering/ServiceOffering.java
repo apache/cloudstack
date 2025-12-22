@@ -146,4 +146,6 @@ public interface ServiceOffering extends InfrastructureEntity, InternalIdentity,
     Long getVgpuProfileId();
 
     Integer getGpuCount();
+
+    long getCategoryId();
 }

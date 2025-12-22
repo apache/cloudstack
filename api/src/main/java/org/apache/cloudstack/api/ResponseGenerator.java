@@ -112,6 +112,7 @@ import org.apache.cloudstack.api.response.SSHKeyPairResponse;
 import org.apache.cloudstack.api.response.SecondaryStorageHeuristicsResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse;
 import org.apache.cloudstack.api.response.ServiceResponse;
 import org.apache.cloudstack.api.response.SharedFSResponse;
 import org.apache.cloudstack.api.response.Site2SiteCustomerGatewayResponse;
@@ -220,6 +221,7 @@ import com.cloud.network.vpc.VpcOffering;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offering.ServiceOfferingCategory;
 import com.cloud.org.Cluster;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
@@ -266,6 +268,8 @@ public interface ResponseGenerator {
     ResourceCountResponse createResourceCountResponse(ResourceCount resourceCount);
 
     ServiceOfferingResponse createServiceOfferingResponse(ServiceOffering offering);
+
+    ServiceOfferingCategoryResponse createServiceOfferingCategoryResponse(ServiceOfferingCategory category);
 
     ConfigurationResponse createConfigurationResponse(Configuration cfg);
 
