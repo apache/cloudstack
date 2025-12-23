@@ -277,8 +277,8 @@ public class OVFHelper {
         if (StringUtils.isNotBlank(path)) {
             File f = new File(path);
             if (!f.exists() || f.isDirectory()) {
-                logger.error("One of the attached disk or iso does not exists {}", path);
-                throw new InternalErrorException("One of the attached disk or iso as stated on OVF does not exists " + path);
+                logger.error("One of the attached disk or ISOs does not exists {}", path);
+                throw new InternalErrorException("One of the attached disk or ISOs as stated on OVF does not exists " + path);
             }
         }
         Long capacity = disk != null ? disk._capacity : file._size;
@@ -541,7 +541,7 @@ public class OVFHelper {
                 nicCount++;
                 String name = e.getTextContent(); // should be in our nets
                 if(nets.get(name) == null) {
-                    logger.info("Found a nic definition without a network definition by name {}, adding it to the list.", name);
+                    logger.info("Found a NIC definition without a Network definition by name {}, adding it to the list.", name);
                     nets.put(name, new OVFNetworkTO());
                 }
                 OVFNetworkTO thisNet = nets.get(name);
@@ -617,7 +617,7 @@ public class OVFHelper {
 
             nets.put(networkName,network);
         }
-        logger.trace("Found {} networks in template", nets.size());
+        logger.trace("Found {} Networks in Template", nets.size());
         return nets;
     }
 

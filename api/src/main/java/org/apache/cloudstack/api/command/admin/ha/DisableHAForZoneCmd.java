@@ -103,7 +103,7 @@ public final class DisableHAForZoneCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "disable HA for zone: " + getZoneId();
+        return "Disable HA for zone: " + getZoneId();
     }
 
 }

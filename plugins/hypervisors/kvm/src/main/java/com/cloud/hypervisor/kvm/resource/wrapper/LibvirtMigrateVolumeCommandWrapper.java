@@ -113,12 +113,12 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
             Connect conn = libvirtUtilitiesHelper.getConnection();
             dm = libvirtComputingResource.getDomain(conn, vmName);
             if (dm == null) {
-                return new MigrateVolumeAnswer(command, false, "Migrate volume failed due to can not find vm: " + vmName, null);
+                return new MigrateVolumeAnswer(command, false, "Migrate volume failed due to can not find Instance: " + vmName, null);
             }
 
             DomainInfo.DomainState domainState = dm.getInfo().state ;
             if (domainState != DomainInfo.DomainState.VIR_DOMAIN_RUNNING) {
-                return new MigrateVolumeAnswer(command, false, "Migrate volume failed due to VM is not running: " + vmName + " with domainState = " + domainState, null);
+                return new MigrateVolumeAnswer(command, false, "Migrate volume failed due to Instance is not running: " + vmName + " with domainState = " + domainState, null);
             }
 
             final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();

@@ -40,7 +40,7 @@ import com.cloud.user.Account;
 
 import java.util.UUID;
 
-@APICommand(name = "linkDomainToLdap", description = "link an existing cloudstack domain to group or OU in ldap", responseObject = LinkDomainToLdapResponse.class, since = "4.6.0",
+@APICommand(name = "linkDomainToLdap", description = "Link an existing Cloudstack domain to group or OU in ldap", responseObject = LinkDomainToLdapResponse.class, since = "4.6.0",
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class LinkDomainToLdapCmd extends BaseCmd {
 
@@ -48,13 +48,13 @@ public class LinkDomainToLdapCmd extends BaseCmd {
             + "linked to LDAP.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true, description = "type of the ldap name. GROUP or OU")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true, description = "Type of the ldap name. GROUP or OU")
     private String type;
 
-    @Parameter(name = ApiConstants.LDAP_DOMAIN, type = CommandType.STRING, required = true, description = "name of the group or OU in LDAP")
+    @Parameter(name = ApiConstants.LDAP_DOMAIN, type = CommandType.STRING, required = true, description = "Name of the GROUP or OU in LDAP")
     private String ldapDomain;
 
-    @Parameter(name = ApiConstants.ADMIN, type = CommandType.STRING, description = "domain admin username in LDAP ")
+    @Parameter(name = ApiConstants.ADMIN, type = CommandType.STRING, description = "Domain admin username in LDAP ")
     private String admin;
 
     @Parameter(name = ApiConstants.ACCOUNT_TYPE, type = CommandType.INTEGER, required = true, description = "Type of the account to auto import. Specify 0 for user and 2 for " +
