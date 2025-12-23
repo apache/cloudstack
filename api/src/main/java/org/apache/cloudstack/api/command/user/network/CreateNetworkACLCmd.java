@@ -58,7 +58,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     private Integer publicEndPort;
 
     @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "The CIDR list to allow traffic from/to. Multiple entries must be separated by a single comma character (,).")
-    private List<String> cidrlist;
+    private List<String> cidrList;
 
     @Parameter(name = ApiConstants.ICMP_TYPE, type = CommandType.INTEGER, description = "Type of the ICMP message being sent")
     private Integer icmpType;
