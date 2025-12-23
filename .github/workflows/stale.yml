@@ -44,4 +44,3 @@ jobs:
           stale-issue-label: 'archive'
           days-before-stale: 240
           exempt-issue-labels: 'gsoc,good-first-issue,long-term-plan'
-
