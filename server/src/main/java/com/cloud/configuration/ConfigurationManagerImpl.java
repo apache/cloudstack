@@ -3198,14 +3198,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final String offeringName = cmd.getServiceOfferingName();
 
         final String name = cmd.getServiceOfferingName();
-        if (name == null || name.length() == 0) {
-            throw new InvalidParameterValueException("Failed to create service offering: specify the name that has non-zero length");
-        }
-
         final String displayText = cmd.getDisplayText();
-        if (displayText == null || displayText.length() == 0) {
-            throw new InvalidParameterValueException("Failed to create service offering " + name + ": specify the display text that has non-zero length");
-        }
+        checkNameAndText(name, displayText);
 
         final Integer cpuNumber = cmd.getCpuNumber();
         final Integer cpuSpeed = cmd.getCpuSpeed();
@@ -3216,6 +3210,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Integer minCPU = cmd.getMinCPUs();
         Integer maxMemory = cmd.getMaxMemory();
         Integer minMemory = cmd.getMinMemory();
+
+        checkSpeedOnConstrainedOffering(cmd.isCustomized(), cpuSpeed, offeringName, maxCPU, minCPU, maxMemory, minMemory);
 
         // Check if service offering is Custom,
         // If Customized, the following conditions must hold
@@ -3380,6 +3376,28 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 cmd.getIopsWriteRate(), cmd.getIopsWriteRateMax(), cmd.getIopsWriteRateMaxLength(),
                 cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode(), storagePolicyId, cmd.getDynamicScalingEnabled(), diskOfferingId,
                 cmd.getDiskOfferingStrictness(), cmd.isCustomized(), cmd.getEncryptRoot(), cmd.isPurgeResources());
+    }
+
+    private static void checkNameAndText(String name, String displayText) {
+        if (name == null || name.length() == 0) {
+            throw new InvalidParameterValueException("Failed to create service offering: specify the name that has non-zero length");
+        }
+
+        if (displayText == null || displayText.length() == 0) {
+            throw new InvalidParameterValueException("Failed to create service offering " + name + ": specify the display text that has non-zero length");
+        }
+    }
+
+    private static void checkSpeedOnConstrainedOffering(boolean customised, Integer cpuSpeed, String offeringName, Integer maxCPU, Integer minCPU, Integer maxMemory, Integer minMemory) {
+        // Check for the combination of zero speed and custom or constrained offering
+        if (cpuSpeed != null && cpuSpeed.intValue() == 0) {
+            if (customised) {
+                throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": cpu speed cannot be zero for custom offerings");
+            }
+            if (maxCPU != null || minCPU != null || maxMemory != null || minMemory != null) {
+                throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": cpu speed cannot be zero for constrained offerings");
+            }
+        }
     }
 
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
