@@ -47,7 +47,6 @@ import javax.inject.Inject;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class CreateKMSKeyCmd extends BaseCmd implements UserCmd {
-    private static final String s_name = "createkmskeyresponse";
 
     @Inject
     private KMSManager kmsManager;
@@ -70,7 +69,7 @@ public class CreateKMSKeyCmd extends BaseCmd implements UserCmd {
     @Parameter(name = ApiConstants.PURPOSE,
                required = true,
                type = CommandType.STRING,
-               description = "Purpose of the key: VOLUME_ENCRYPTION, TLS_CERT, CONFIG_SECRET")
+               description = "Purpose of the key: volume, tls")
     private String purpose;
 
     @Parameter(name = ApiConstants.ZONE_ID,
@@ -145,11 +144,6 @@ public class CreateKMSKeyCmd extends BaseCmd implements UserCmd {
     }
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         Account caller = CallContext.current().getCallingAccount();
         if (accountName != null || domainId != null) {
@@ -163,4 +157,3 @@ public class CreateKMSKeyCmd extends BaseCmd implements UserCmd {
         return ApiCommandResourceType.KmsKey;
     }
 }
-

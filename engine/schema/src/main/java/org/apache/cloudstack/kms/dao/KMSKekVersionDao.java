@@ -22,16 +22,7 @@ import org.apache.cloudstack.kms.KMSKekVersionVO;
 
 import java.util.List;
 
-/**
- * DAO for KMSKekVersion entities
- */
 public interface KMSKekVersionDao extends GenericDao<KMSKekVersionVO, Long> {
-
-    /**
-     * Find a KEK version by UUID
-     */
-    KMSKekVersionVO findByUuid(String uuid);
-
     /**
      * Get the active version for a KMS key
      */
@@ -57,4 +48,3 @@ public interface KMSKekVersionDao extends GenericDao<KMSKekVersionVO, Long> {
      */
     KMSKekVersionVO findByKekLabel(String kekLabel);
 }
-

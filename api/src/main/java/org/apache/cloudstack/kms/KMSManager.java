@@ -18,6 +18,8 @@
 package org.apache.cloudstack.kms;
 
 import com.cloud.utils.component.Manager;
+import org.apache.cloudstack.api.command.admin.kms.MigrateVolumesToKMSCmd;
+import org.apache.cloudstack.api.command.admin.kms.RotateKMSKeyCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.api.command.user.kms.CreateKMSKeyCmd;
@@ -288,30 +290,8 @@ public interface KMSManager extends Manager, Configurable {
      * @param keyUuid         the key UUID
      * @return true if caller has permission
      */
-    boolean hasPermission(Long callerAccountId, String keyUuid);
+    boolean hasPermission(Long callerAccountId, KMSKey key);
 
-    /**
-     * Delete a KMS key (only if not in use)
-     *
-     * @param uuid           the key UUID
-     * @param callerAccountId the caller's account ID
-     * @throws KMSException if deletion fails (e.g., key in use)
-     */
-    void deleteUserKMSKey(String uuid, Long callerAccountId) throws KMSException;
-
-    /**
-     * Update a KMS key's metadata (name, description, state)
-     *
-     * @param uuid           the key UUID
-     * @param callerAccountId the caller's account ID
-     * @param name           optional new name
-     * @param description    optional new description
-     * @param state          optional new state
-     * @return the updated KMS key
-     * @throws KMSException if update fails
-     */
-    KMSKey updateUserKMSKey(String uuid, Long callerAccountId,
-                           String name, String description, KMSKey.State state) throws KMSException;
 
     /**
      * Unwrap a DEK by wrapped key ID, trying multiple KEK versions if needed
@@ -330,7 +310,7 @@ public interface KMSManager extends Manager, Configurable {
      * @return wrapped key ready for database storage
      * @throws KMSException if operation fails
      */
-    WrappedKey generateVolumeKeyWithKek(String kekUuid, Long callerAccountId) throws KMSException;
+    WrappedKey generateVolumeKeyWithKek(KMSKey kmsKey, Long callerAccountId) throws KMSException;
 
     // ==================== API Response Methods ====================
 
@@ -372,4 +352,35 @@ public interface KMSManager extends Manager, Configurable {
      * @throws KMSException if deletion fails
      */
     SuccessResponse deleteKMSKey(DeleteKMSKeyCmd cmd) throws KMSException;
+
+    // ==================== Admin Operations ====================
+
+    /**
+     * Rotate KEK by creating new version and scheduling gradual re-encryption
+     *
+     * @param cmd the rotate command with all parameters
+     * @return New KEK version UUID
+     * @throws KMSException if rotation fails
+     */
+    String rotateKMSKey(RotateKMSKeyCmd cmd) throws KMSException;
+
+    /**
+     * Gradually rewrap all wrapped keys for a KMS key to use new KEK version
+     *
+     * @param kmsKeyId KMS key ID
+     * @param newKekVersionId New active KEK version ID
+     * @param batchSize Number of keys to process per batch
+     * @return Number of keys successfully rewrapped
+     * @throws KMSException if rewrap fails
+     */
+    int rewrapWrappedKeysForKMSKey(Long kmsKeyId, Long newKekVersionId, int batchSize) throws KMSException;
+
+    /**
+     * Migrate passphrase-based volumes to KMS encryption
+     *
+     * @param cmd the migrate command with all parameters
+     * @return Number of volumes successfully migrated
+     * @throws KMSException if migration fails
+     */
+    int migrateVolumesToKMS(MigrateVolumesToKMSCmd cmd) throws KMSException;
 }

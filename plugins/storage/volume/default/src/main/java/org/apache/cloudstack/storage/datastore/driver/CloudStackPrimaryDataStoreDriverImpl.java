@@ -575,11 +575,25 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
      */
     private boolean anyVolumeRequiresEncryption(DataObject ... objects) {
         for (DataObject o : objects) {
-            // this fails code smell for returning true twice, but it is more readable than combining all tests into one statement
-            if (o instanceof VolumeInfo && ((VolumeInfo) o).getPassphraseId() != null) {
-                return true;
-            } else if (o instanceof SnapshotInfo && ((SnapshotInfo) o).getBaseVolume().getPassphraseId() != null) {
-                return true;
+            // Check for legacy passphrase-based encryption
+            if (o instanceof VolumeInfo) {
+                VolumeInfo vol = (VolumeInfo) o;
+                if (vol.getPassphraseId() != null) {
+                    return true;
+                }
+                // Check for KMS-based encryption
+                if (vol.getKmsWrappedKeyId() != null || vol.getKmsKeyId() != null) {
+                    return true;
+                }
+            } else if (o instanceof SnapshotInfo) {
+                VolumeInfo baseVol = ((SnapshotInfo) o).getBaseVolume();
+                if (baseVol.getPassphraseId() != null) {
+                    return true;
+                }
+                // Check for KMS-based encryption
+                if (baseVol.getKmsWrappedKeyId() != null || baseVol.getKmsKeyId() != null) {
+                    return true;
+                }
             }
         }
         return false;

@@ -275,6 +275,14 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
 
     void setPassphraseId(Long id);
 
+    Long getKmsKeyId();
+
+    void setKmsKeyId(Long id);
+
+    Long getKmsWrappedKeyId();
+
+    void setKmsWrappedKeyId(Long id);
+
     String getEncryptFormat();
 
     void setEncryptFormat(String encryptFormat);

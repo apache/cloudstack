@@ -32,7 +32,7 @@ import java.util.Objects;
  * - Wrapped Key: DEK encrypted by KEK, safe to store in database
  */
 public class WrappedKey {
-    private final String id;
+    private final String uuid;
     private final String kekId;
     private final KeyPurpose purpose;
     private final String algorithm;
@@ -55,29 +55,16 @@ public class WrappedKey {
     public WrappedKey(String kekId, KeyPurpose purpose, String algorithm,
             byte[] wrappedKeyMaterial, String providerName,
             Date created, Long zoneId) {
-        this.id = null; // Will be set when persisted to DB
-        this.kekId = Objects.requireNonNull(kekId, "kekId cannot be null");
-        this.purpose = Objects.requireNonNull(purpose, "purpose cannot be null");
-        this.algorithm = Objects.requireNonNull(algorithm, "algorithm cannot be null");
-        this.providerName = providerName;
-
-        // Defensive copy to prevent external modification
-        if (wrappedKeyMaterial == null || wrappedKeyMaterial.length == 0) {
-            throw new IllegalArgumentException("wrappedKeyMaterial cannot be null or empty");
-        }
-        this.wrappedKeyMaterial = Arrays.copyOf(wrappedKeyMaterial, wrappedKeyMaterial.length);
-
-        this.created = created != null ? new Date(created.getTime()) : new Date();
-        this.zoneId = zoneId;
+        this(null, kekId, purpose, algorithm, wrappedKeyMaterial, providerName, created, zoneId);
     }
 
     /**
      * Constructor for database-loaded keys with ID
      */
-    public WrappedKey(String id, String kekId, KeyPurpose purpose, String algorithm,
+    public WrappedKey(String uuid, String kekId, KeyPurpose purpose, String algorithm,
             byte[] wrappedKeyMaterial, String providerName,
             Date created, Long zoneId) {
-        this.id = id;
+        this.uuid = uuid;
         this.kekId = Objects.requireNonNull(kekId, "kekId cannot be null");
         this.purpose = Objects.requireNonNull(purpose, "purpose cannot be null");
         this.algorithm = Objects.requireNonNull(algorithm, "algorithm cannot be null");
@@ -92,8 +79,8 @@ public class WrappedKey {
         this.zoneId = zoneId;
     }
 
-    public String getId() {
-        return id;
+    public String getUuid() {
+        return uuid;
     }
 
     public String getKekId() {
@@ -129,29 +116,9 @@ public class WrappedKey {
     }
 
     @Override
-    public int hashCode() {
-        int result = Objects.hash(id, kekId, purpose, algorithm, providerName);
-        result = 31 * result + Arrays.hashCode(wrappedKeyMaterial);
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        WrappedKey that = (WrappedKey) o;
-        return Objects.equals(id, that.id) &&
-               Objects.equals(kekId, that.kekId) &&
-               purpose == that.purpose &&
-               Objects.equals(algorithm, that.algorithm) &&
-               Arrays.equals(wrappedKeyMaterial, that.wrappedKeyMaterial) &&
-               Objects.equals(providerName, that.providerName);
-    }
-
-    @Override
     public String toString() {
         return "WrappedKey{" +
-               "id='" + id + '\'' +
+               "uuid='" + uuid + '\'' +
                ", kekId='" + kekId + '\'' +
                ", purpose=" + purpose +
                ", algorithm='" + algorithm + '\'' +
@@ -162,4 +129,3 @@ public class WrappedKey {
                '}';
     }
 }
-

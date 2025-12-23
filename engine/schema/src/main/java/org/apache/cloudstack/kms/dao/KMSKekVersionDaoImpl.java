@@ -25,72 +25,23 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-/**
- * Implementation of KMSKekVersionDao
- */
 @Component
 public class KMSKekVersionDaoImpl extends GenericDaoBase<KMSKekVersionVO, Long> implements KMSKekVersionDao {
 
-    private final SearchBuilder<KMSKekVersionVO> uuidSearch;
-    private final SearchBuilder<KMSKekVersionVO> kmsKeyIdSearch;
-    private final SearchBuilder<KMSKekVersionVO> activeVersionSearch;
-    private final SearchBuilder<KMSKekVersionVO> decryptionVersionsSearch;
-    private final SearchBuilder<KMSKekVersionVO> versionNumberSearch;
-    private final SearchBuilder<KMSKekVersionVO> kekLabelSearch;
+    private final SearchBuilder<KMSKekVersionVO> allFieldSearch;
 
     public KMSKekVersionDaoImpl() {
-        super();
-
-        // Search by UUID
-        uuidSearch = createSearchBuilder();
-        uuidSearch.and("uuid", uuidSearch.entity().getUuid(), SearchCriteria.Op.EQ);
-        uuidSearch.and("removed", uuidSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
-        uuidSearch.done();
-
-        // Search by KMS key ID
-        kmsKeyIdSearch = createSearchBuilder();
-        kmsKeyIdSearch.and("kmsKeyId", kmsKeyIdSearch.entity().getKmsKeyId(), SearchCriteria.Op.EQ);
-        kmsKeyIdSearch.and("removed", kmsKeyIdSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
-        kmsKeyIdSearch.done();
-
-        // Search for active version by KMS key ID
-        activeVersionSearch = createSearchBuilder();
-        activeVersionSearch.and("kmsKeyId", activeVersionSearch.entity().getKmsKeyId(), SearchCriteria.Op.EQ);
-        activeVersionSearch.and("status", activeVersionSearch.entity().getStatus(), SearchCriteria.Op.EQ);
-        activeVersionSearch.and("removed", activeVersionSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
-        activeVersionSearch.done();
-
-        // Search for versions usable for decryption (Active or Previous)
-        decryptionVersionsSearch = createSearchBuilder();
-        decryptionVersionsSearch.and("kmsKeyId", decryptionVersionsSearch.entity().getKmsKeyId(), SearchCriteria.Op.EQ);
-        decryptionVersionsSearch.and("status", decryptionVersionsSearch.entity().getStatus(), SearchCriteria.Op.IN);
-        decryptionVersionsSearch.and("removed", decryptionVersionsSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
-        decryptionVersionsSearch.done();
-
-        // Search by KMS key ID and version number
-        versionNumberSearch = createSearchBuilder();
-        versionNumberSearch.and("kmsKeyId", versionNumberSearch.entity().getKmsKeyId(), SearchCriteria.Op.EQ);
-        versionNumberSearch.and("versionNumber", versionNumberSearch.entity().getVersionNumber(), SearchCriteria.Op.EQ);
-        versionNumberSearch.and("removed", versionNumberSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
-        versionNumberSearch.done();
-
-        // Search by KEK label
-        kekLabelSearch = createSearchBuilder();
-        kekLabelSearch.and("kekLabel", kekLabelSearch.entity().getKekLabel(), SearchCriteria.Op.EQ);
-        kekLabelSearch.and("removed", kekLabelSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
-        kekLabelSearch.done();
-    }
-
-    @Override
-    public KMSKekVersionVO findByUuid(String uuid) {
-        SearchCriteria<KMSKekVersionVO> sc = uuidSearch.create();
-        sc.setParameters("uuid", uuid);
-        return findOneBy(sc);
+        allFieldSearch = createSearchBuilder();
+        allFieldSearch.and("kmsKeyId", allFieldSearch.entity().getKmsKeyId(), SearchCriteria.Op.EQ);
+        allFieldSearch.and("status", allFieldSearch.entity().getStatus(), SearchCriteria.Op.IN);
+        allFieldSearch.and("versionNumber", allFieldSearch.entity().getVersionNumber(), SearchCriteria.Op.EQ);
+        allFieldSearch.and("kekLabel", allFieldSearch.entity().getKekLabel(), SearchCriteria.Op.EQ);
+        allFieldSearch.done();
     }
 
     @Override
     public KMSKekVersionVO getActiveVersion(Long kmsKeyId) {
-        SearchCriteria<KMSKekVersionVO> sc = activeVersionSearch.create();
+        SearchCriteria<KMSKekVersionVO> sc = allFieldSearch.create();
         sc.setParameters("kmsKeyId", kmsKeyId);
         sc.setParameters("status", KMSKekVersionVO.Status.Active);
         return findOneBy(sc);
@@ -98,7 +49,7 @@ public class KMSKekVersionDaoImpl extends GenericDaoBase<KMSKekVersionVO, Long> 
 
     @Override
     public List<KMSKekVersionVO> getVersionsForDecryption(Long kmsKeyId) {
-        SearchCriteria<KMSKekVersionVO> sc = decryptionVersionsSearch.create();
+        SearchCriteria<KMSKekVersionVO> sc = allFieldSearch.create();
         sc.setParameters("kmsKeyId", kmsKeyId);
         sc.setParameters("status", KMSKekVersionVO.Status.Active, KMSKekVersionVO.Status.Previous);
         return listBy(sc);
@@ -106,14 +57,14 @@ public class KMSKekVersionDaoImpl extends GenericDaoBase<KMSKekVersionVO, Long> 
 
     @Override
     public List<KMSKekVersionVO> listByKmsKeyId(Long kmsKeyId) {
-        SearchCriteria<KMSKekVersionVO> sc = kmsKeyIdSearch.create();
+        SearchCriteria<KMSKekVersionVO> sc = allFieldSearch.create();
         sc.setParameters("kmsKeyId", kmsKeyId);
         return listBy(sc);
     }
 
     @Override
     public KMSKekVersionVO findByKmsKeyIdAndVersion(Long kmsKeyId, Integer versionNumber) {
-        SearchCriteria<KMSKekVersionVO> sc = versionNumberSearch.create();
+        SearchCriteria<KMSKekVersionVO> sc = allFieldSearch.create();
         sc.setParameters("kmsKeyId", kmsKeyId);
         sc.setParameters("versionNumber", versionNumber);
         return findOneBy(sc);
@@ -121,9 +72,8 @@ public class KMSKekVersionDaoImpl extends GenericDaoBase<KMSKekVersionVO, Long> 
 
     @Override
     public KMSKekVersionVO findByKekLabel(String kekLabel) {
-        SearchCriteria<KMSKekVersionVO> sc = kekLabelSearch.create();
+        SearchCriteria<KMSKekVersionVO> sc = allFieldSearch.create();
         sc.setParameters("kekLabel", kekLabel);
         return findOneBy(sc);
     }
 }
-

@@ -59,7 +59,7 @@ public class ListKMSKeysCmd extends BaseListAccountResourcesCmd implements UserC
 
     @Parameter(name = ApiConstants.PURPOSE,
                type = CommandType.STRING,
-               description = "Filter by purpose: VOLUME_ENCRYPTION, TLS_CERT, CONFIG_SECRET")
+               description = "Filter by purpose: volume, tls")
     private String purpose;
 
     @Parameter(name = ApiConstants.ZONE_ID,
@@ -109,4 +109,3 @@ public class ListKMSKeysCmd extends BaseListAccountResourcesCmd implements UserC
         return s_name;
     }
 }
-

@@ -19,6 +19,8 @@ package org.apache.cloudstack.framework.kms;
 
 import org.apache.cloudstack.framework.config.Configurable;
 
+import com.cloud.utils.component.Adapter;
+
 import java.util.List;
 
 /**
@@ -35,7 +37,7 @@ import java.util.List;
  * <p>
  * Thread-safety: Implementations must be thread-safe for concurrent operations.
  */
-public interface KMSProvider extends Configurable {
+public interface KMSProvider extends Configurable, Adapter {
 
     /**
      * Get the unique name of this provider
@@ -141,4 +143,3 @@ public interface KMSProvider extends Configurable {
      */
     boolean healthCheck() throws KMSException;
 }
-

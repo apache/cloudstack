@@ -79,6 +79,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     protected GenericSearchBuilder<VolumeVO, SumCount> secondaryStorageSearch;
     private final SearchBuilder<VolumeVO> poolAndPathSearch;
     final GenericSearchBuilder<VolumeVO, Integer> CountByOfferingId;
+    private final SearchBuilder<VolumeVO> kmsMigrationSearch;
 
     @Inject
     ReservationDao reservationDao;
@@ -512,6 +513,13 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         CountByOfferingId.select(null, Func.COUNT, CountByOfferingId.entity().getId());
         CountByOfferingId.and("diskOfferingId", CountByOfferingId.entity().getDiskOfferingId(), Op.EQ);
         CountByOfferingId.done();
+
+        kmsMigrationSearch = createSearchBuilder();
+        kmsMigrationSearch.and("passphraseId", kmsMigrationSearch.entity().getPassphraseId(), Op.NNULL);
+        kmsMigrationSearch.and("zoneId", kmsMigrationSearch.entity().getDataCenterId(), Op.EQ);
+        kmsMigrationSearch.and("accountId", kmsMigrationSearch.entity().getAccountId(), Op.EQ);
+        kmsMigrationSearch.and("domainId", kmsMigrationSearch.entity().getDomainId(), Op.EQ);
+        kmsMigrationSearch.done();
     }
 
     @Override
@@ -730,6 +738,23 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("passphraseId", passphraseId);
         return listBy(sc);
+    }
+
+    @Override
+    public Pair<List<VolumeVO>, Integer> listVolumesForKMSMigration(Long zoneId, Long accountId, Long domainId, Integer limit) {
+        SearchCriteria<VolumeVO> sc = kmsMigrationSearch.create();
+
+        Filter filter = new Filter(limit);
+        sc.setParameters("zoneId", zoneId);
+        if (accountId != null) {
+            sc.setParameters("accountId", accountId);
+        }
+        if (domainId != null) {
+            sc.setParameters("domainId", domainId);
+        }
+        Integer count = getCount(sc);
+        List<VolumeVO> volumes = listBy(sc, filter);
+        return new Pair<>(volumes, count);
     }
 
     @Override

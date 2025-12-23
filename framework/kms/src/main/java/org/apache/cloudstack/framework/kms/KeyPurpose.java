@@ -30,12 +30,7 @@ public enum KeyPurpose {
     /**
      * Keys used for protecting TLS certificate private keys
      */
-    TLS_CERT("tls", "TLS certificate private keys"),
-
-    /**
-     * Keys used for encrypting configuration secrets and sensitive settings
-     */
-    CONFIG_SECRET("config", "Configuration secrets");
+    TLS_CERT("tls", "TLS certificate private keys");
 
     private final String name;
     private final String description;
@@ -79,4 +74,3 @@ public enum KeyPurpose {
         return name + "-kek-" + (customLabel != null ? customLabel : "v1");
     }
 }
-
