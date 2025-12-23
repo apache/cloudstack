@@ -26,15 +26,15 @@ import com.cloud.serializer.Param;
 public class CapabilityResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the capability name")
+    @Param(description = "The capability name")
     private String name;
 
     @SerializedName(ApiConstants.VALUE)
-    @Param(description = "the capability value")
+    @Param(description = "The capability value")
     private String value;
 
     @SerializedName(ApiConstants.CAN_CHOOSE_SERVICE_CAPABILITY)
-    @Param(description = "can this service capability value can be choosable while creatine network offerings")
+    @Param(description = "Can this service capability value can be choosable while creatine Network offerings")
     private boolean canChoose;
 
     public String getName() {

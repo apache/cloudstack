@@ -70,7 +70,7 @@ public class VMSnapshotUsageParser {
         List<UsageVMSnapshotVO> usageUsageVMSnapshots = s_usageVMSnapshotDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate);
 
         if (usageUsageVMSnapshots.isEmpty()) {
-            LOGGER.debug("No VM snapshot usage events for this period");
+            LOGGER.debug("No Instance Snapshot usage events for this period");
             return true;
         }
 

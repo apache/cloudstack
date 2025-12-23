@@ -26,7 +26,7 @@ import com.google.gson.annotations.SerializedName;
 public class HostForMigrationResponse extends HostResponse {
 
     @SerializedName("requiresStorageMotion")
-    @Param(description = "true if migrating a vm to this host requires storage motion, false otherwise")
+    @Param(description = "True if migrating an Instance to this host requires storage motion, false otherwise")
     private Boolean requiresStorageMotion;
 
     public void setRequiresStorageMotion(Boolean requiresStorageMotion) {
