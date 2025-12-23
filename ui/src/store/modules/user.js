@@ -345,15 +345,7 @@ const user = {
         const isPwdChangeRequired = vueProps.$localStorage.get(PASSWORD_CHANGE_REQUIRED)
         commit('SET_PASSWORD_CHANGE_REQUIRED', isPwdChangeRequired)
         if (isPwdChangeRequired) {
-          getAPI('listUsers', { id: Cookies.get('userid') }).then(response => {
-            const result = response.listusersresponse.user[0]
-            commit('SET_INFO', result)
-            commit('SET_NAME', result.firstname + ' ' + result.lastname)
-            if (result.icon?.base64image) commit('SET_AVATAR', result.icon.base64image)
-            resolve({})
-          }).catch(error => {
-            reject(error)
-          })
+          resolve()
           return
         }
 

@@ -132,10 +132,6 @@ public class UserResponse extends BaseResponse implements SetResourceIconRespons
     @Param(description = "whether api key access is Enabled, Disabled or set to Inherit (it inherits the value from the parent)", since = "4.20.1.0")
     ApiConstants.ApiKeyAccess apiKeyAccess;
 
-    @SerializedName(value = ApiConstants.PASSWORD_CHANGE_REQUIRED)
-    @Param(description = "Indicates whether the User is required to change password on next login.", since = "4.23.0")
-    private Boolean passwordChangeRequired;
-
     @Override
     public String getObjectId() {
         return this.getId();
@@ -320,13 +316,5 @@ public class UserResponse extends BaseResponse implements SetResourceIconRespons
 
     public void setApiKeyAccess(Boolean apiKeyAccess) {
         this.apiKeyAccess = ApiConstants.ApiKeyAccess.fromBoolean(apiKeyAccess);
-    }
-
-    public Boolean isPasswordChangeRequired() {
-        return Boolean.TRUE.equals(passwordChangeRequired);
-    }
-
-    public void setPasswordChangeRequired(Boolean passwordChangeRequired) {
-        this.passwordChangeRequired = passwordChangeRequired;
     }
 }

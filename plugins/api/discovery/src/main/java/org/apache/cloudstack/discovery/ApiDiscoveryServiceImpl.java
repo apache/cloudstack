@@ -69,7 +69,7 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
     List<APIChecker> _apiAccessCheckers = null;
     List<PluggableService> _services = null;
     protected static Map<String, ApiDiscoveryResponse> s_apiNameDiscoveryResponseMap = null;
-    public static final List<String> APIS_ALLOWED_FOR_PASSWORD_CHANGE = Arrays.asList("login", "logout", "updateUser", "listUsers", "listApis");
+    public static final List<String> APIS_ALLOWED_FOR_PASSWORD_CHANGE = Arrays.asList("login", "logout", "updateUser", "listApis");
 
     @Inject
     AccountService accountService;

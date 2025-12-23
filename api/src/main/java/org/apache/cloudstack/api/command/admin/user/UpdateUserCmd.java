@@ -203,8 +203,4 @@ public class UpdateUserCmd extends BaseCmd {
     public Boolean isPasswordChangeRequired() {
         return BooleanUtils.isTrue(passwordChangeRequired);
     }
-
-    public void setPasswordChangeRequired(Boolean passwordChangeRequired) {
-        this.passwordChangeRequired = passwordChangeRequired;
-    }
 }

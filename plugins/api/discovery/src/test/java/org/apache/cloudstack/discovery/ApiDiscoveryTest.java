@@ -167,6 +167,6 @@ public class ApiDiscoveryTest {
         Mockito.when(roleServiceMock.findRole(Mockito.anyLong())).thenReturn(userRoleVO);
         Mockito.when(apiNameDiscoveryResponseMapMock.get(Mockito.anyString())).thenReturn(Mockito.mock(ApiDiscoveryResponse.class));
         ListResponse<ApiDiscoveryResponse> response = (ListResponse<ApiDiscoveryResponse>) discoveryServiceSpy.listApis(getTestUser(), null);
-        Assert.assertEquals(5, response.getResponses().size());
+        Assert.assertEquals(4, response.getResponses().size());
     }
 }

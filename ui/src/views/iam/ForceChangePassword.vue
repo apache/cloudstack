@@ -41,7 +41,7 @@
               type="primary"
               size="large"
               block
-              @click="handleLogout"
+              @click="redirectToLogin()"
               style="margin-top: 20px;"
             >
               {{ $t('label.login') }}
@@ -95,7 +95,7 @@
             </a-form-item>
 
             <div class="actions">
-              <a @click="handleLogout">{{ $t('label.logout') }}</a>
+              <a @click="logoutAndRedirectToLogin()">{{ $t('label.logout') }}</a>
             </div>
           </a-form>
           </a-spin>
@@ -167,7 +167,8 @@ export default {
           currentpassword: values.currentpassword
         }
         postAPI('updateUser', params).then(() => {
-          this.$message.success(this.$t('message.please.login.new.password'))
+          this.$localStorage.remove(PASSWORD_CHANGE_REQUIRED)
+          this.handleLogout()
           this.isSubmitted = true
         }).catch(error => {
           console.error(error)
@@ -187,30 +188,19 @@ export default {
       } finally {
         Cookies.remove('userid')
         Cookies.remove('token')
-        this.$localStorage.remove(PASSWORD_CHANGE_REQUIRED)
-        this.$router.replace({ path: '/user/login' })
       }
+    },
+    redirectToLogin () {
+      this.$router.replace('/user/login')
+    },
+    logoutAndRedirectToLogin () {
+      this.handleLogout().then(() => {
+        this.redirectToLogin()
+      })
     },
     async isPasswordChangeRequired () {
-      try {
-        this.loading = true
-        const user = await this.getUserInfo()
-        if (user && !user.passwordchangerequired) {
-          this.isSubmitted = true
-        }
-      } catch (e) {
-        console.error('Failed to resolve user info:', e)
-      } finally {
-        this.loading = false
-      }
-    },
-    async getUserInfo () {
-      const userInfo = this.$store.getters.userInfo
-      if (userInfo && userInfo.id) {
-        return userInfo
-      }
-      await this.$store.dispatch('GetInfo')
-      return this.$store.getters.userInfo
+      const passwordChangeRequired = this.$localStorage.get(PASSWORD_CHANGE_REQUIRED)
+      this.isSubmitted = !passwordChangeRequired
     }
   }
 }
