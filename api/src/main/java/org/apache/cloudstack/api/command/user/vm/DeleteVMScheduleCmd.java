@@ -37,7 +37,7 @@ import javax.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 
-@APICommand(name = "deleteVMSchedule", description = "Delete VM Schedule.", responseObject = SuccessResponse.class,
+@APICommand(name = "deleteVMSchedule", description = "Delete Instance Schedule.", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class DeleteVMScheduleCmd extends BaseCmd {
@@ -48,20 +48,20 @@ public class DeleteVMScheduleCmd extends BaseCmd {
             type = CommandType.UUID,
             entityType = UserVmResponse.class,
             required = true,
-            description = "ID of VM")
+            description = "ID of Instance")
     private Long vmId;
     @Parameter(name = ApiConstants.ID,
             type = CommandType.UUID,
             entityType = VMScheduleResponse.class,
             required = false,
-            description = "ID of VM schedule")
+            description = "ID of Instance schedule")
     private Long id;
     @Parameter(name = ApiConstants.IDS,
             type = CommandType.LIST,
             collectionType = CommandType.UUID,
             entityType = VMScheduleResponse.class,
             required = false,
-            description = "IDs of VM schedule")
+            description = "IDs of Instance schedule")
     private List<Long> ids;
 
     /////////////////////////////////////////////////////
@@ -97,7 +97,7 @@ public class DeleteVMScheduleCmd extends BaseCmd {
             response.setObjectName(VMSchedule.class.getSimpleName().toLowerCase());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete VM Schedules");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete Instance Schedules");
         }
     }
 
@@ -105,7 +105,7 @@ public class DeleteVMScheduleCmd extends BaseCmd {
     public long getEntityOwnerId() {
         VirtualMachine vm = _entityMgr.findById(VirtualMachine.class, getVmId());
         if (vm == null) {
-            throw new InvalidParameterValueException(String.format("Unable to find VM by id=%d", getVmId()));
+            throw new InvalidParameterValueException(String.format("Unable to find Instance by id=%d", getVmId()));
         }
         return vm.getAccountId();
     }

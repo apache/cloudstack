@@ -40,7 +40,7 @@ public class BaremetalProvisionDoneNotificationCmd extends BaseAsyncCmd {
     @Inject
     private BaremetalManager bmMgr;
 
-    @Parameter(name="mac", required = true, description = "mac of the nic used for provision")
+    @Parameter(name="mac", required = true, description = "MAC of the NIC used for provision")
     private String mac;
 
     @Override
@@ -59,7 +59,7 @@ public class BaremetalProvisionDoneNotificationCmd extends BaseAsyncCmd {
             bmMgr.notifyProvisionDone(this);
             this.setResponseObject(new SuccessResponse(getCommandName()));
         } catch (Exception e) {
-            logger.warn(String.format("unable to notify baremetal provision done[mac:%s]", mac), e);
+            logger.warn(String.format("Unable to notify baremetal provision done[mac:%s]", mac), e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }
