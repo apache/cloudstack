@@ -19,6 +19,7 @@ package org.apache.cloudstack.kms;
 
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.framework.kms.KeyPurpose;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -92,18 +93,12 @@ public class KMSKeyVO implements KMSKey {
     @Temporal(TemporalType.TIMESTAMP)
     private Date removed;
 
-    /**
-     * Default constructor (required by JPA)
-     */
     public KMSKeyVO() {
         this.uuid = UUID.randomUUID().toString();
         this.created = new Date();
         this.state = State.Enabled;
     }
 
-    /**
-     * Constructor for creating a new KMS key
-     */
     public KMSKeyVO(String name, String description, String kekLabel, KeyPurpose purpose,
                     Long accountId, Long domainId, Long zoneId, String providerName,
                     String algorithm, Integer keyBits) {
@@ -120,8 +115,6 @@ public class KMSKeyVO implements KMSKey {
         this.keyBits = keyBits;
     }
 
-    // Identity interface methods
-
     @Override
     public long getId() {
         return id;
@@ -131,8 +124,6 @@ public class KMSKeyVO implements KMSKey {
     public String getUuid() {
         return uuid;
     }
-
-    // KMSKey interface methods
 
     @Override
     public String getName() {
@@ -206,8 +197,6 @@ public class KMSKeyVO implements KMSKey {
         return KMSKey.class;
     }
 
-    // Setters
-
     public void setId(Long id) {
         this.id = id;
     }
@@ -270,8 +259,7 @@ public class KMSKeyVO implements KMSKey {
 
     @Override
     public String toString() {
-        return String.format("KMSKey[id=%d, uuid=%s, name=%s, purpose=%s, account=%d, zone=%d, state=%s]",
-                id, uuid, name, purpose, accountId, zoneId, state);
+        return String.format("KMSKey %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "name", "purpose", "accountId", "zoneId", "state"));
     }
 }
-

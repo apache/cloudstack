@@ -15,44 +15,47 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.kms.dao;
+package org.apache.cloudstack.kms.provider.database.dao;
 
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.framework.kms.KeyPurpose;
-import org.apache.cloudstack.kms.KMSKey;
-import org.apache.cloudstack.kms.KMSKeyVO;
+import org.apache.cloudstack.kms.provider.database.KMSDatabaseKekObjectVO;
 
 import java.util.List;
 
-public interface KMSKeyDao extends GenericDao<KMSKeyVO, Long> {
+/**
+ * DAO for KMSDatabaseKekObject entities
+ * Provides PKCS#11-like object storage operations for KEKs
+ */
+public interface KMSDatabaseKekObjectDao extends GenericDao<KMSDatabaseKekObjectVO, Long> {
 
     /**
-     * Find a KMS key by KEK label and provider
+     * Find a KEK object by label (PKCS#11 CKA_LABEL)
      */
-    KMSKeyVO findByKekLabel(String kekLabel, String providerName);
+    KMSDatabaseKekObjectVO findByLabel(String label);
 
     /**
-     * List KMS keys owned by an account
+     * Find a KEK object by object ID (PKCS#11 CKA_ID)
      */
-    List<KMSKeyVO> listByAccount(Long accountId, KeyPurpose purpose, KMSKey.State state);
+    KMSDatabaseKekObjectVO findByObjectId(byte[] objectId);
 
     /**
-     * List KMS keys in a zone
+     * List all KEK objects by purpose
      */
-    List<KMSKeyVO> listByZone(Long zoneId, KeyPurpose purpose, KMSKey.State state);
+    List<KMSDatabaseKekObjectVO> listByPurpose(KeyPurpose purpose);
 
     /**
-     * List KMS keys accessible to an account (owns or in parent domain)
+     * List all KEK objects by key type (PKCS#11 CKA_KEY_TYPE)
      */
-    List<KMSKeyVO> listAccessibleKeys(Long accountId, Long domainId, Long zoneId, KeyPurpose purpose, KMSKey.State state);
+    List<KMSDatabaseKekObjectVO> listByKeyType(String keyType);
 
     /**
-     * Count how many wrapped keys reference this KEK
+     * List all KEK objects by object class (PKCS#11 CKA_CLASS)
      */
-    long countWrappedKeysByKmsKey(Long kmsKeyId);
+    List<KMSDatabaseKekObjectVO> listByObjectClass(String objectClass);
 
     /**
-     * Count KEKs by label (to check for duplicates)
+     * Check if a KEK object exists with the given label
      */
-    long countByKekLabel(String kekLabel, String providerName);
+    boolean existsByLabel(String label);
 }

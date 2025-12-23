@@ -21,12 +21,17 @@ import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.EnumUtils;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.admin.kms.MigrateVolumesToKMSCmd;
+import org.apache.cloudstack.api.command.admin.kms.RotateKMSKeyCmd;
 import org.apache.cloudstack.api.command.user.kms.CreateKMSKeyCmd;
 import org.apache.cloudstack.api.command.user.kms.DeleteKMSKeyCmd;
 import org.apache.cloudstack.api.command.user.kms.ListKMSKeysCmd;
@@ -43,22 +48,24 @@ import org.apache.cloudstack.framework.kms.WrappedKey;
 import org.apache.cloudstack.kms.dao.KMSKekVersionDao;
 import org.apache.cloudstack.kms.dao.KMSKeyDao;
 import org.apache.cloudstack.kms.dao.KMSWrappedKeyDao;
+import org.apache.cloudstack.secret.PassphraseVO;
+import org.apache.cloudstack.secret.dao.PassphraseDao;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Implementation of KMS Manager.
- * Provides high-level KMS operations with provider abstraction, zone-scoping,
- * retry logic, and audit logging.
- */
 public class KMSManagerImpl extends ManagerBase implements KMSManager, PluggableService {
     private static final Logger logger = LogManager.getLogger(KMSManagerImpl.class);
     private static final Map<String, KMSProvider> kmsProviderMap = new HashMap<>();
@@ -73,6 +80,10 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     private AccountManager accountManager;
     @Inject
     private ResponseGenerator responseGenerator;
+    @Inject
+    private VolumeDao volumeDao;
+    @Inject
+    private PassphraseDao passphraseDao;
     private List<KMSProvider> kmsProviders;
 
     // ==================== Provider Management ====================
@@ -139,11 +150,17 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     public void deleteKek(Long zoneId, String kekId) throws KMSException {
         validateKmsEnabled(zoneId);
 
-        // TODO: Check if any wrapped keys use this KEK
-        // This requires finding KMSKeyVO by kekLabel first, then checking wrapped keys
-        // For now, allow deletion (will be fixed in Phase 5)
-
         KMSProvider provider = getKMSProviderForZone(zoneId);
+
+        // Check if any wrapped keys use this KEK
+        KMSKeyVO key = kmsKeyDao.findByKekLabel(kekId, provider.getProviderName());
+        if (key != null) {
+            long wrappedKeyCount = kmsKeyDao.countWrappedKeysByKmsKey(key.getId());
+            if (wrappedKeyCount > 0) {
+                throw KMSException.invalidParameter("Cannot delete KEK: " + wrappedKeyCount +
+                        " wrapped key(s) still reference the corresponding KMS key");
+            }
+        }
 
         try {
             logger.warn("Deleting KEK {} for zone {}", kekId, zoneId);
@@ -187,7 +204,6 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_KMS_KEK_ROTATE, eventDescription = "rotating KEK", async = true)
     public String rotateKek(Long zoneId, KeyPurpose purpose, String oldKekLabel,
             String newKekLabel, int keyBits) throws KMSException {
         validateKmsEnabled(zoneId);
@@ -220,12 +236,11 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             KMSKekVersionVO newVersion = createKekVersion(kmsKey.getId(), newKekId, keyBits);
 
             logger.info("KEK rotation: KMS key {} now has {} versions (active: v{}, previous: v{})",
-                    kmsKey.getUuid(), newVersion.getVersionNumber(), newVersion.getVersionNumber(),
+                    kmsKey, newVersion.getVersionNumber(), newVersion.getVersionNumber(),
                     newVersion.getVersionNumber() - 1);
 
-            // TODO: Schedule background job to rewrap all DEKs (Phase 5)
+            // Schedule background job to rewrap all DEKs
             // This will gradually rewrap wrapped keys to use the new KEK version
-
             return newKekId;
 
         } catch (Exception e) {
@@ -241,10 +256,6 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     public byte[] unwrapVolumeKey(WrappedKey wrappedKey, Long zoneId) throws KMSException {
         validateKmsEnabled(zoneId);
 
-        return unwrapDek(wrappedKey);
-    }
-
-    private byte[] unwrapDek(WrappedKey wrappedKey) throws KMSException {
         // Determine provider from wrapped key
         String providerName = wrappedKey.getProviderName();
         KMSProvider provider = getKMSProvider(providerName);
@@ -306,19 +317,16 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                 KMSKekVersionVO.Status.Active);
         initialVersion = kmsKekVersionDao.persist(initialVersion);
 
-        logger.info("Created KMS key '{}' (UUID: {}) with initial KEK version {} for account {} in zone {}",
-                name, kmsKey.getUuid(), initialVersion.getVersionNumber(), accountId, zoneId);
+        logger.info("Created KMS key ({}) with initial KEK version {} for account {} in zone {}",
+                kmsKey, initialVersion.getVersionNumber(), accountId, zoneId);
         return kmsKey;
     }
 
     @Override
     public List<? extends KMSKey> listUserKMSKeys(Long accountId, Long domainId, Long zoneId,
             KeyPurpose purpose, KMSKey.State state) {
-        // List keys accessible to the account (owned by account or in domain)
         return kmsKeyDao.listAccessibleKeys(accountId, domainId, zoneId, purpose, state);
     }
-
-    // ==================== Health Check ====================
 
     @Override
     public KMSKey getUserKMSKey(String uuid, Long callerAccountId) {
@@ -326,46 +334,47 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         if (key == null || key.getState() == KMSKey.State.Deleted) {
             return null;
         }
-        // Check permission
-        if (!hasPermission(callerAccountId, uuid)) {
+
+        if (!hasPermission(callerAccountId, key)) {
             return null;
         }
         return key;
     }
 
-    // ==================== Helper Methods ====================
-
     @Override
-    public boolean hasPermission(Long callerAccountId, String keyUuid) {
-        KMSKeyVO key = kmsKeyDao.findByUuid(keyUuid);
+    public boolean hasPermission(Long callerAccountId, KMSKey key) {
         if (key == null || key.getState() == KMSKey.State.Deleted) {
             return false;
         }
 
-        // Owner always has permission
         if (key.getAccountId() == callerAccountId) {
             return true;
         }
 
-        // TODO: Domain admin can access keys in their domain/subdomains
-        // For now, only owner has permission
-        return false;
-    }
+        Account caller = accountManager.getAccount(callerAccountId);
+        Account owner = accountManager.getAccount(key.getAccountId());
 
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_KMS_KEK_DELETE, eventDescription = "deleting user KMS key", async = false)
-    public void deleteUserKMSKey(String uuid, Long callerAccountId) throws KMSException {
-        KMSKeyVO key = kmsKeyDao.findByUuid(uuid);
-        if (key == null) {
-            throw KMSException.kekNotFound("KMS key not found: " + uuid);
+        if (caller == null || owner == null) {
+            return false;
         }
 
-        // Check permission
-        if (!hasPermission(callerAccountId, uuid)) {
-            throw KMSException.invalidParameter("No permission to delete KMS key: " + uuid);
+        try {
+            accountManager.checkAccess(caller, null, true, owner);
+            return true;
+        } catch (PermissionDeniedException e) {
+            return false;
+        }
+    }
+
+    private void deleteUserKMSKey(KMSKeyVO key, Long callerAccountId) throws KMSException {
+        if (!hasPermission(callerAccountId, key)) {
+            throw KMSException.invalidParameter("No permission to delete KMS key: " + key.getUuid());
         }
 
         // Check if key is in use
+
+        // TODO: Check if there are any volumes linked with the kms key and delete accordingly.
+        // The below check seems incorrect here.
         long wrappedKeyCount = kmsKeyDao.countWrappedKeysByKmsKey(key.getId());
         if (wrappedKeyCount > 0) {
             throw KMSException.invalidParameter("Cannot delete KMS key: " + wrappedKeyCount +
@@ -374,27 +383,16 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
 
         // Soft delete
         key.setState(KMSKey.State.Deleted);
-        key.setRemoved(new java.util.Date());
+        key.setRemoved(new Date());
         kmsKeyDao.update(key.getId(), key);
 
-        // Optionally delete KEK from provider (but keep metadata for audit)
-        // provider.deleteKek(key.getKekLabel());
-
-        logger.info("Deleted KMS key '{}' (UUID: {})", key.getName(), uuid);
+        logger.info("Deleted KMS key {}", key);
     }
 
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_KMS_KEK_CREATE, eventDescription = "updating user KMS key", async = false)
-    public KMSKey updateUserKMSKey(String uuid, Long callerAccountId,
+    private KMSKey updateUserKMSKey(KMSKeyVO key, Long callerAccountId,
             String name, String description, KMSKey.State state) throws KMSException {
-        KMSKeyVO key = kmsKeyDao.findByUuid(uuid);
-        if (key == null) {
-            throw KMSException.kekNotFound("KMS key not found: " + uuid);
-        }
-
-        // Check permission
-        if (!hasPermission(callerAccountId, uuid)) {
-            throw KMSException.invalidParameter("No permission to update KMS key: " + uuid);
+        if (!hasPermission(callerAccountId, key)) {
+            throw KMSException.invalidParameter("No permission to update KMS key: " + key.getUuid());
         }
 
         boolean updated = false;
@@ -416,7 +414,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
 
         if (updated) {
             kmsKeyDao.update(key.getId(), key);
-            logger.info("Updated KMS key '{}' (UUID: {})", key.getName(), uuid);
+            logger.info("Updated KMS key {}", key);
         }
 
         return key;
@@ -458,7 +456,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         }
 
         // Fallback: try all available versions for decryption
-        List<KMSKekVersionVO> versions = getKekVersionsForDecryption(kmsKey.getId());
+        List<KMSKekVersionVO> versions = kmsKekVersionDao.getVersionsForDecryption(kmsKey.getId());
         for (KMSKekVersionVO version : versions) {
             try {
                 WrappedKey wrapped = new WrappedKey(version.getKekLabel(), kmsKey.getPurpose(),
@@ -478,32 +476,23 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
 
     // ==================== Lifecycle Methods ====================
 
-    /**
-     * Get all KEK versions that can be used for decryption (Active and Previous)
-     */
-    private List<KMSKekVersionVO> getKekVersionsForDecryption(Long kmsKeyId) {
-        return kmsKekVersionDao.getVersionsForDecryption(kmsKeyId);
-    }
-
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_KMS_KEY_WRAP,
             eventDescription = "generating volume key with specified KEK", async = false)
-    public WrappedKey generateVolumeKeyWithKek(String kekUuid, Long callerAccountId) throws KMSException {
+    public WrappedKey generateVolumeKeyWithKek(KMSKey kmsKey, Long callerAccountId) throws KMSException {
         // Get and validate KMS key
-        KMSKey kmsKey = getUserKMSKey(kekUuid, callerAccountId);
         if (kmsKey == null) {
-            throw KMSException.kekNotFound("KMS key not found or no permission: " + kekUuid);
+            throw KMSException.kekNotFound("KMS key not found");
         }
 
         if (kmsKey.getState() != KMSKey.State.Enabled) {
-            throw KMSException.invalidParameter("KMS key is not enabled: " + kekUuid);
+            throw KMSException.invalidParameter("KMS key is not enabled: " + kmsKey);
         }
 
         if (kmsKey.getPurpose() != KeyPurpose.VOLUME_ENCRYPTION) {
-            throw KMSException.invalidParameter("KMS key purpose is not VOLUME_ENCRYPTION: " + kekUuid);
+            throw KMSException.invalidParameter("KMS key purpose is not VOLUME_ENCRYPTION: " + kmsKey);
         }
 
-        // Get provider
         KMSProvider provider = getKMSProviderForZone(kmsKey.getZoneId());
 
         // Get active KEK version
@@ -522,7 +511,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
 
             // Return WrappedKey with database UUID so it can be looked up later
             // Note: Volume creation code should look up by UUID and set volume.kmsWrappedKeyId
-            WrappedKey persistedWrappedKey = new WrappedKey(
+            wrappedKey = new WrappedKey(
                     wrappedKeyVO.getUuid(),
                     wrappedKey.getKekId(),
                     wrappedKey.getPurpose(),
@@ -532,13 +521,12 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                     wrappedKey.getCreated(),
                     wrappedKey.getZoneId()
             );
-            wrappedKey = persistedWrappedKey;
         } catch (Exception e) {
             throw handleKmsException(e);
         }
 
-        logger.debug("Generated volume key using KMS key '{}' (UUID: {}) with KEK version {}, wrapped key UUID: {}",
-                kmsKey.getName(), kekUuid, activeVersion.getVersionNumber(), wrappedKey.getId());
+        logger.debug("Generated volume key using KMS key {} with KEK version {}, wrapped key UUID: {}",
+                kmsKey, activeVersion.getVersionNumber(), wrappedKey.getUuid());
         return wrappedKey;
     }
 
@@ -560,7 +548,6 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         Account caller = CallContext.current().getCallingAccount();
         Account targetAccount = caller;
 
-        // If account/domain specified, validate permissions and resolve account
         if (cmd.getAccountName() != null || cmd.getDomainId() != null) {
             // Only admins and domain admins can create keys for other accounts
             if (!accountManager.isAdmin(caller.getId()) &&
@@ -575,7 +562,6 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                     throw KMSException.invalidParameter(
                             "Unable to find account " + cmd.getAccountName() + " in domain " + cmd.getDomainId());
                 }
-                // Check access
                 accountManager.checkAccess(caller, null, true, targetAccount);
             } else {
                 throw KMSException.invalidParameter("Both accountName and domainId must be specified together");
@@ -588,7 +574,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             keyPurpose = KeyPurpose.fromString(cmd.getPurpose());
         } catch (IllegalArgumentException e) {
             throw KMSException.invalidParameter("Invalid purpose: " + cmd.getPurpose() +
-                                                ". Valid values: VOLUME_ENCRYPTION, TLS_CERT, CONFIG_SECRET");
+                                                ". Valid values: volume, tls");
         }
 
         // Validate key bits
@@ -617,52 +603,42 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     public ListResponse<KMSKeyResponse> listKMSKeys(ListKMSKeysCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
         if (caller == null) {
-            ListResponse<KMSKeyResponse> response = new ListResponse<>();
-            response.setResponses(new java.util.ArrayList<>(), 0);
-            return response;
+            return createEmptyListResponse();
         }
 
-        // Parse purpose if provided
         KeyPurpose keyPurpose = null;
         if (cmd.getPurpose() != null) {
             try {
                 keyPurpose = KeyPurpose.fromString(cmd.getPurpose());
             } catch (IllegalArgumentException e) {
-                // Invalid purpose - will be ignored
+                throw KMSException.invalidParameter("Invalid purpose: " + cmd.getPurpose() + ". Valid values: volume, tls");
             }
         }
 
-        // Parse state if provided
         KMSKey.State keyState = null;
         if (cmd.getState() != null) {
-            try {
-                keyState = KMSKey.State.valueOf(cmd.getState());
-            } catch (IllegalArgumentException e) {
-                // Invalid state - will be ignored
+            keyState = EnumUtils.getEnumIgnoreCase(KMSKey.State.class, cmd.getState());
+            if (keyState == null) {
+                throw KMSException.invalidParameter("Invalid state: " + cmd.getState() + ". Valid values: Enabled, Disabled");
             }
         }
 
-        // If specific ID requested
         if (cmd.getId() != null) {
-            // Look up key by ID to get UUID
             KMSKeyVO key = kmsKeyDao.findById(cmd.getId());
-            if (key == null) {
-                // Key not found - return empty list
+            if (key == null || key.getState() == KMSKey.State.Deleted) {
+                return createEmptyListResponse();
+            }
+
+            if (hasPermission(caller.getId(), key)) {
+                List<KMSKeyResponse> responses = new ArrayList<>();
+                responses.add(responseGenerator.createKMSKeyResponse(key));
                 ListResponse<KMSKeyResponse> listResponse = new ListResponse<>();
-                listResponse.setResponses(new java.util.ArrayList<>(), 0);
+                listResponse.setResponses(responses, responses.size());
                 return listResponse;
             }
-            KMSKey kmsKey = getUserKMSKey(key.getUuid(), caller.getId());
-            List<KMSKeyResponse> responses = new java.util.ArrayList<>();
-            if (kmsKey != null && hasPermission(caller.getId(), kmsKey.getUuid())) {
-                responses.add(responseGenerator.createKMSKeyResponse(kmsKey));
-            }
-            ListResponse<KMSKeyResponse> listResponse = new ListResponse<>();
-            listResponse.setResponses(responses, responses.size());
-            return listResponse;
+            return createEmptyListResponse();
         }
 
-        // List accessible keys
         List<? extends KMSKey> keys = listUserKMSKeys(
                 caller.getId(),
                 caller.getDomainId(),
@@ -671,7 +647,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                 keyState
         );
 
-        List<KMSKeyResponse> responses = new java.util.ArrayList<>();
+        List<KMSKeyResponse> responses = new ArrayList<>();
         for (KMSKey key : keys) {
             responses.add(responseGenerator.createKMSKeyResponse(key));
         }
@@ -685,27 +661,23 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     public KMSKeyResponse updateKMSKey(UpdateKMSKeyCmd cmd) throws KMSException {
         Long callerAccountId = CallContext.current().getCallingAccount().getId();
 
-        // Parse state if provided
         KMSKey.State keyState = null;
         if (cmd.getState() != null) {
-            try {
-                keyState = KMSKey.State.valueOf(cmd.getState());
-                if (keyState == KMSKey.State.Deleted) {
-                    throw KMSException.invalidParameter("Cannot set state to Deleted. Use deleteKMSKey instead.");
-                }
-            } catch (IllegalArgumentException e) {
-                throw KMSException.invalidParameter(
-                        "Invalid state: " + cmd.getState() + ". Valid values: Enabled, Disabled");
+            keyState = EnumUtils.getEnumIgnoreCase(KMSKey.State.class, cmd.getState());
+            if (keyState == KMSKey.State.Deleted) {
+                throw KMSException.invalidParameter("Cannot set state to Deleted. Use deleteKMSKey instead.");
+            }
+            if (keyState == null) {
+                throw KMSException.invalidParameter("Invalid state: " + cmd.getState() + ". Valid values: Enabled, Disabled");
             }
         }
 
-        // Look up key by ID to get UUID
         KMSKeyVO key = kmsKeyDao.findById(cmd.getId());
         if (key == null) {
             throw KMSException.kekNotFound("KMS key not found: " + cmd.getId());
         }
 
-        KMSKey updatedKey = updateUserKMSKey(key.getUuid(), callerAccountId,
+        KMSKey updatedKey = updateUserKMSKey(key, callerAccountId,
                 cmd.getName(), cmd.getDescription(), keyState);
         return responseGenerator.createKMSKeyResponse(updatedKey);
     }
@@ -714,15 +686,13 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     public SuccessResponse deleteKMSKey(DeleteKMSKeyCmd cmd) throws KMSException {
         Long callerAccountId = CallContext.current().getCallingAccount().getId();
 
-        // Look up key by ID to get UUID
         KMSKeyVO key = kmsKeyDao.findById(cmd.getId());
         if (key == null) {
             throw KMSException.kekNotFound("KMS key not found: " + cmd.getId());
         }
 
-        deleteUserKMSKey(key.getUuid(), callerAccountId);
-        SuccessResponse response = new SuccessResponse();
-        return response;
+        deleteUserKMSKey(key, callerAccountId);
+        return new SuccessResponse();
     }
 
     // ==================== User KEK Management ====================
@@ -752,6 +722,272 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
 
         logger.info("Created KEK version {} for KMS key {} (label: {})", nextVersion, kmsKeyId, kekLabel);
         return newVersion;
+    }
+
+    // ==================== Admin Operations ====================
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_KMS_KEK_ROTATE, eventDescription = "rotating KMS key", async = true)
+    public String rotateKMSKey(RotateKMSKeyCmd cmd) throws KMSException {
+        Integer keyBits = cmd.getKeyBits();
+
+        KMSKeyVO kmsKey = kmsKeyDao.findById(cmd.getId());
+        if (kmsKey == null) {
+            throw KMSException.kekNotFound("KMS key not found: " + cmd.getId());
+        }
+
+        if (kmsKey.getState() != KMSKey.State.Enabled) {
+            throw KMSException.invalidParameter("KMS key is not enabled: " + kmsKey);
+        }
+
+        // Get current active version to determine key bits if not provided
+        int newKeyBits = keyBits != null ? keyBits : kmsKey.getKeyBits();
+        KMSKekVersionVO currentActive = getActiveKekVersion(kmsKey.getId());
+
+        rotateKek(
+                kmsKey.getZoneId(),
+                kmsKey.getPurpose(),
+                currentActive.getKekLabel(),
+                null, // auto-generate new label
+                newKeyBits
+        );
+
+        KMSKekVersionVO newVersion = getActiveKekVersion(kmsKey.getId());
+
+        logger.info("KMS key rotation completed: {} -> new KEK version {} (UUID: {})",
+                kmsKey, newVersion.getVersionNumber(), newVersion.getUuid());
+
+        // Perform rewrapping of existing wrapped keys
+        // This runs within the async job context
+        rewrapWrappedKeysForKMSKey(kmsKey.getId(), newVersion.getId(), 50);
+
+        return newVersion.getUuid();
+    }
+
+    @Override
+    public int rewrapWrappedKeysForKMSKey(Long kmsKeyId, Long newKekVersionId, int batchSize) throws KMSException {
+        if (kmsKeyId == null || newKekVersionId == null) {
+            throw KMSException.invalidParameter("kmsKeyId and newKekVersionId must be specified");
+        }
+
+        if (batchSize <= 0) {
+            batchSize = 50; // Default batch size
+        }
+
+        // Get KMS key and new version
+        KMSKeyVO kmsKey = kmsKeyDao.findById(kmsKeyId);
+        if (kmsKey == null) {
+            throw KMSException.kekNotFound("KMS key not found: " + kmsKeyId);
+        }
+
+        KMSKekVersionVO newVersion = kmsKekVersionDao.findById(newKekVersionId);
+        if (newVersion == null || !newVersion.getKmsKeyId().equals(kmsKeyId)) {
+            throw KMSException.kekNotFound("KEK version not found or doesn't belong to KMS key: " + newKekVersionId);
+        }
+
+        KMSProvider provider = getKMSProviderForZone(kmsKey.getZoneId());
+
+        // Get all wrapped keys that need rewrap
+        List<KMSWrappedKeyVO> wrappedKeys = kmsWrappedKeyDao.listWrappedKeysForRewrap(kmsKeyId, newKekVersionId);
+        int totalKeys = wrappedKeys.size();
+        int successCount = 0;
+        int failureCount = 0;
+
+        logger.info("Starting rewrap operation for {} wrapped keys (KMS key: {}, new version: {})",
+                totalKeys, kmsKey, newKekVersionId);
+
+        for (int i = 0; i < wrappedKeys.size(); i += batchSize) {
+            int endIndex = Math.min(i + batchSize, wrappedKeys.size());
+            List<KMSWrappedKeyVO> batch = wrappedKeys.subList(i, endIndex);
+
+            for (KMSWrappedKeyVO wrappedKeyVO : batch) {
+                byte[] dek = null;
+                try {
+                    // Unwrap with old version
+                    dek = unwrapKey(wrappedKeyVO.getId());
+
+                    // Wrap the existing DEK with new active version
+                    WrappedKey newWrapped = provider.wrapKey(
+                            dek,
+                            kmsKey.getPurpose(),
+                            newVersion.getKekLabel()
+                    );
+
+                    wrappedKeyVO.setKekVersionId(newKekVersionId);
+                    wrappedKeyVO.setWrappedBlob(newWrapped.getWrappedKeyMaterial());
+                    kmsWrappedKeyDao.update(wrappedKeyVO.getId(), wrappedKeyVO);
+
+                    successCount++;
+                    logger.debug("Rewrapped key {} (batch {}/{})", wrappedKeyVO.getId(),
+                            (i / batchSize) + 1, (totalKeys + batchSize - 1) / batchSize);
+                } catch (Exception e) {
+                    failureCount++;
+                    logger.warn("Failed to rewrap key {}: {}", wrappedKeyVO.getId(), e.getMessage());
+                } finally {
+                    // Zeroize DEK
+                    if (dek != null) {
+                        Arrays.fill(dek, (byte) 0);
+                    }
+                }
+            }
+
+            logger.info("Processed batch {}/{}: {} success, {} failures",
+                    (i / batchSize) + 1, (totalKeys + batchSize - 1) / batchSize, successCount, failureCount);
+        }
+
+        // Archive old versions if no wrapped keys reference them
+        List<KMSKekVersionVO> oldVersions = kmsKekVersionDao.getVersionsForDecryption(kmsKeyId);
+        for (KMSKekVersionVO oldVersion : oldVersions) {
+            if (oldVersion.getStatus() == KMSKekVersionVO.Status.Previous) {
+                List<KMSWrappedKeyVO> keysUsingVersion = kmsWrappedKeyDao.listByKekVersionId(oldVersion.getId());
+                if (keysUsingVersion.isEmpty()) {
+                    oldVersion.setStatus(KMSKekVersionVO.Status.Archived);
+                    kmsKekVersionDao.update(oldVersion.getId(), oldVersion);
+                    logger.info("Archived KEK version {} (no wrapped keys using it)", oldVersion.getVersionNumber());
+                }
+            }
+        }
+
+        logger.info("Rewrap operation completed: {} success, {} failures out of {} total",
+                successCount, failureCount, totalKeys);
+
+        return successCount;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_MIGRATE_TO_KMS, eventDescription = "migrating volumes to KMS", async = true)
+    public int migrateVolumesToKMS(MigrateVolumesToKMSCmd cmd) throws KMSException {
+        Long zoneId = cmd.getZoneId();
+        String accountName = cmd.getAccountName();
+        Long domainId = cmd.getDomainId();
+
+        if (zoneId == null) {
+            throw KMSException.invalidParameter("zoneId must be specified");
+        }
+
+        validateKmsEnabled(zoneId);
+
+        Long accountId = null;
+        if (accountName != null) {
+            accountId = accountManager.finalyzeAccountId(accountName, domainId, null, true);
+        }
+
+        int pageSize = 100; // Process 100 volumes per page to avoid OutOfMemoryError
+
+        // Get provider
+        KMSProvider provider = getKMSProviderForZone(zoneId);
+
+        int successCount = 0;
+        int failureCount = 0;
+        logger.info("Starting migration of volumes to KMS (zone: {}, account: {}, domain: {})",
+                zoneId, accountId, domainId);
+
+        Pair<List<VolumeVO>, Integer> volumeListPair = volumeDao.listVolumesForKMSMigration(zoneId, accountId, domainId, pageSize);
+        List<VolumeVO> volumes = volumeListPair.first();
+        int totalCount = volumeListPair.second();
+
+        while (true) {
+
+            if (CollectionUtils.isEmpty(volumes) || totalCount == 0) {
+                break;
+            }
+
+            for (VolumeVO volume : volumes) {
+                try {
+                    // Load passphrase
+                    PassphraseVO passphrase = passphraseDao.findById(volume.getPassphraseId());
+                    if (passphrase == null) {
+                        logger.warn("Passphrase not found for volume {}: {}", volume.getId(), volume.getPassphraseId());
+                        failureCount++;
+                        continue;
+                    }
+
+                    // Get passphrase bytes
+                    // Note: PassphraseVO.getPassphrase() returns Base64-encoded bytes
+                    // This is consistent with how hypervisors (KVM/QEMU) expect the key format
+                    // The KMS will store the same format, maintaining compatibility
+                    byte[] passphraseBytes = passphrase.getPassphrase();
+
+                    // Get or create KMS key for account
+                    KMSKeyVO kmsKey = null;
+                    List<? extends KMSKey> accountKeys = listUserKMSKeys(
+                            volume.getAccountId(),
+                            volume.getDomainId(),
+                            zoneId,
+                            KeyPurpose.VOLUME_ENCRYPTION,
+                            KMSKey.State.Enabled
+                    );
+
+                    if (!accountKeys.isEmpty()) {
+                        kmsKey = (KMSKeyVO) accountKeys.get(0); // Use first available key
+                    } else {
+                        // Create new KMS key for account
+                        String keyName = "Volume-Encryption-Key-" + volume.getAccountId();
+                        kmsKey = (KMSKeyVO) createUserKMSKey(
+                                volume.getAccountId(),
+                                volume.getDomainId(),
+                                zoneId,
+                                keyName,
+                                "Auto-created for volume migration",
+                                KeyPurpose.VOLUME_ENCRYPTION,
+                                256 // Default to 256 bits
+                        );
+                        logger.info("Created KMS key {} for account {} during migration", kmsKey, volume.getAccountId());
+                    }
+
+                    // Get active KEK version
+                    KMSKekVersionVO activeVersion = getActiveKekVersion(kmsKey.getId());
+
+                    // Wrap existing passphrase bytes as DEK (don't generate new DEK)
+                    WrappedKey wrappedKey = provider.wrapKey(
+                            passphraseBytes,
+                            KeyPurpose.VOLUME_ENCRYPTION,
+                            activeVersion.getKekLabel()
+                    );
+
+                    // Store wrapped key
+                    KMSWrappedKeyVO wrappedKeyVO = new KMSWrappedKeyVO(
+                            kmsKey.getId(),
+                            activeVersion.getId(),
+                            zoneId,
+                            wrappedKey.getWrappedKeyMaterial()
+                    );
+                    wrappedKeyVO = kmsWrappedKeyDao.persist(wrappedKeyVO);
+
+                    // Update volume
+                    volume.setKmsWrappedKeyId(wrappedKeyVO.getId());
+                    volume.setKmsKeyId(kmsKey.getId());
+                    volume.setPassphraseId(null); // Clear passphrase reference
+                    volumeDao.update(volume.getId(), volume);
+
+                    // Zeroize passphrase bytes
+                    if (passphraseBytes != null) {
+                        Arrays.fill(passphraseBytes, (byte) 0);
+                    }
+
+                    successCount++;
+                    logger.debug("Migrated volume's encryption {} to KMS (batch {})", volume, kmsKey);
+                } catch (Exception e) {
+                    failureCount++;
+                    logger.warn("Failed to migrate volume {}: {}", volume.getId(), e.getMessage());
+                    // Continue with next volume
+                }
+            }
+
+            logger.debug("Processed {} volumes. success: {}, failure: {}", volumes.size(),
+                    successCount, failureCount);
+            volumeListPair = volumeDao.listVolumesForKMSMigration(zoneId, accountId, domainId, pageSize);
+            volumes = volumeListPair.first();
+            if (totalCount == volumeListPair.second()) {
+                logger.debug("{} volumes pending for migration because passphrase was not found or migration failed", totalCount);
+                break;
+            }
+            totalCount = volumeListPair.second();
+        }
+        logger.info("Migration operation completed: {} total volumes processed, {} success, {} failures",
+                successCount + failureCount, successCount, failureCount);
+
+        return successCount;
     }
 
     private void validateKmsEnabled(Long zoneId) throws KMSException {
@@ -787,7 +1023,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                             attempt + 1, maxRetries + 1, e.getMessage());
 
                     try {
-                        Thread.sleep((long) retryDelay * (attempt + 1)); // Exponential backoff
+                        Thread.sleep((long) retryDelay * (attempt + 1));
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
                         throw new CloudRuntimeException("Interrupted during retry", ie);
@@ -818,8 +1054,9 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         }
 
         String providerName = KMSProviderPlugin.value();
-        if (kmsProviderMap.containsKey(providerName) && kmsProviderMap.get(providerName) != null) {
-            configuredKmsProvider = kmsProviderMap.get(providerName);
+        String providerKey = providerName != null ? providerName.toLowerCase() : null;
+        if (providerKey != null && kmsProviderMap.containsKey(providerKey) && kmsProviderMap.get(providerKey) != null) {
+            configuredKmsProvider = kmsProviderMap.get(providerKey);
             return configuredKmsProvider;
         }
 
@@ -833,9 +1070,22 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
 
     // ==================== API Response Methods ====================
 
+    /**
+     * Helper method to create an empty list response
+     */
+    private ListResponse<KMSKeyResponse> createEmptyListResponse() {
+        ListResponse<KMSKeyResponse> response = new ListResponse<>();
+        response.setResponses(new ArrayList<>(), 0);
+        return response;
+    }
+
     private void initializeKmsProviderMap() {
-        if (kmsProviderMap != null && kmsProviderMap.size() != kmsProviders.size()) {
-            for (KMSProvider provider : kmsProviders) {
+        if (kmsProviders == null) {
+            return;
+        }
+        kmsProviderMap.clear();
+        for (KMSProvider provider : kmsProviders) {
+            if (provider != null) {
                 kmsProviderMap.put(provider.getProviderName().toLowerCase(), provider);
                 logger.info("Registered KMS provider: {}", provider.getProviderName());
             }
@@ -848,8 +1098,9 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         initializeKmsProviderMap();
 
         String configuredProviderName = KMSProviderPlugin.value();
-        if (kmsProviderMap.containsKey(configuredProviderName)) {
-            configuredKmsProvider = kmsProviderMap.get(configuredProviderName);
+        String providerKey = configuredProviderName != null ? configuredProviderName.toLowerCase() : null;
+        if (providerKey != null && kmsProviderMap.containsKey(providerKey)) {
+            configuredKmsProvider = kmsProviderMap.get(providerKey);
             logger.info("Configured KMS provider: {}", configuredKmsProvider.getProviderName());
         }
 
@@ -898,6 +1149,8 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         cmdList.add(CreateKMSKeyCmd.class);
         cmdList.add(UpdateKMSKeyCmd.class);
         cmdList.add(DeleteKMSKeyCmd.class);
+        cmdList.add(RotateKMSKeyCmd.class);
+        cmdList.add(MigrateVolumesToKMSCmd.class);
 
         return cmdList;
     }
@@ -907,4 +1160,3 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         T execute() throws Exception;
     }
 }
-

@@ -30,14 +30,6 @@ import java.util.List;
 public interface KMSWrappedKeyDao extends GenericDao<KMSWrappedKeyVO, Long> {
 
     /**
-     * Find a wrapped key by UUID
-     *
-     * @param uuid the key UUID
-     * @return the wrapped key, or null if not found
-     */
-    KMSWrappedKeyVO findByUuid(String uuid);
-
-    /**
      * List all wrapped keys using a specific KMS key
      * (useful for key rotation)
      *
@@ -69,5 +61,13 @@ public interface KMSWrappedKeyDao extends GenericDao<KMSWrappedKeyVO, Long> {
      * @return list of wrapped keys
      */
     List<KMSWrappedKeyVO> listByKekVersionId(Long kekVersionId);
-}
 
+    /**
+     * List wrapped keys for a KMS key that need re-encryption (not using specified version)
+     *
+     * @param kmsKeyId the KMS key ID
+     * @param excludeKekVersionId the KEK version ID to exclude (keys using this version don't need rewrap)
+     * @return list of wrapped keys that need re-encryption
+     */
+    List<KMSWrappedKeyVO> listWrappedKeysForRewrap(long kmsKeyId, long excludeKekVersionId);
+}

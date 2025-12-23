@@ -25,69 +25,50 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-/**
- * Implementation of KMSWrappedKeyDao
- */
 @Component
 public class KMSWrappedKeyDaoImpl extends GenericDaoBase<KMSWrappedKeyVO, Long> implements KMSWrappedKeyDao {
 
-    private final SearchBuilder<KMSWrappedKeyVO> uuidSearch;
-    private final SearchBuilder<KMSWrappedKeyVO> kmsKeyIdSearch;
-    private final SearchBuilder<KMSWrappedKeyVO> kekVersionIdSearch;
-    private final SearchBuilder<KMSWrappedKeyVO> zoneSearch;
+    private final SearchBuilder<KMSWrappedKeyVO> allFieldSearch;
+    private final SearchBuilder<KMSWrappedKeyVO> rewrapExcludeVersionSearch;
 
     public KMSWrappedKeyDaoImpl() {
         super();
 
         // Search by UUID
-        uuidSearch = createSearchBuilder();
-        uuidSearch.and("uuid", uuidSearch.entity().getUuid(), SearchCriteria.Op.EQ);
-        uuidSearch.and("removed", uuidSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
-        uuidSearch.done();
+        allFieldSearch = createSearchBuilder();
+        allFieldSearch.and("kmsKeyId", allFieldSearch.entity().getKmsKeyId(), SearchCriteria.Op.EQ);
+        allFieldSearch.and("kekVersionId", allFieldSearch.entity().getKekVersionId(), SearchCriteria.Op.EQ);
+        allFieldSearch.and("zoneId", allFieldSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
+        allFieldSearch.and("kmsKeyId", allFieldSearch.entity().getKmsKeyId(), SearchCriteria.Op.EQ);
+        allFieldSearch.done();
 
-        // Search by KMS Key ID (FK to kms_keys)
-        kmsKeyIdSearch = createSearchBuilder();
-        kmsKeyIdSearch.and("kmsKeyId", kmsKeyIdSearch.entity().getKmsKeyId(), SearchCriteria.Op.EQ);
-        kmsKeyIdSearch.and("removed", kmsKeyIdSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
-        kmsKeyIdSearch.done();
-
-        // Search by KEK Version ID (FK to kms_kek_versions)
-        kekVersionIdSearch = createSearchBuilder();
-        kekVersionIdSearch.and("kekVersionId", kekVersionIdSearch.entity().getKekVersionId(), SearchCriteria.Op.EQ);
-        kekVersionIdSearch.and("removed", kekVersionIdSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
-        kekVersionIdSearch.done();
-
-        // Search by zone
-        zoneSearch = createSearchBuilder();
-        zoneSearch.and("zoneId", zoneSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
-        zoneSearch.and("removed", zoneSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
-        zoneSearch.done();
-    }
-
-    @Override
-    public KMSWrappedKeyVO findByUuid(String uuid) {
-        SearchCriteria<KMSWrappedKeyVO> sc = uuidSearch.create();
-        sc.setParameters("uuid", uuid);
-        return findOneBy(sc);
+        // Search builder for excluding specific version using OR condition
+        rewrapExcludeVersionSearch = createSearchBuilder();
+        rewrapExcludeVersionSearch.and("kmsKeyId", rewrapExcludeVersionSearch.entity().getKmsKeyId(), SearchCriteria.Op.EQ);
+        // OR group: (kekVersionId != excludeKekVersionId OR kekVersionId IS NULL)
+        rewrapExcludeVersionSearch.and().op("kekVersionId", rewrapExcludeVersionSearch.entity().getKekVersionId(), SearchCriteria.Op.NEQ);
+        rewrapExcludeVersionSearch.or("kekVersionIdNull", rewrapExcludeVersionSearch.entity().getKekVersionId(), SearchCriteria.Op.NULL);
+        rewrapExcludeVersionSearch.cp();
+        rewrapExcludeVersionSearch.done();
     }
 
     @Override
     public List<KMSWrappedKeyVO> listByKmsKeyId(Long kmsKeyId) {
-        SearchCriteria<KMSWrappedKeyVO> sc = kmsKeyIdSearch.create();
+        SearchCriteria<KMSWrappedKeyVO> sc = allFieldSearch.create();
         sc.setParameters("kmsKeyId", kmsKeyId);
         return listBy(sc);
     }
 
     @Override
     public List<KMSWrappedKeyVO> listByZone(Long zoneId) {
-        SearchCriteria<KMSWrappedKeyVO> sc = zoneSearch.create();
+        SearchCriteria<KMSWrappedKeyVO> sc = allFieldSearch.create();
         sc.setParameters("zoneId", zoneId);
         return listBy(sc);
     }
 
     @Override
     public long countByKmsKeyId(Long kmsKeyId) {
-        SearchCriteria<KMSWrappedKeyVO> sc = kmsKeyIdSearch.create();
+        SearchCriteria<KMSWrappedKeyVO> sc = allFieldSearch.create();
         sc.setParameters("kmsKeyId", kmsKeyId);
         Integer count = getCount(sc);
         return count != null ? count.longValue() : 0L;
@@ -95,9 +76,16 @@ public class KMSWrappedKeyDaoImpl extends GenericDaoBase<KMSWrappedKeyVO, Long> 
 
     @Override
     public List<KMSWrappedKeyVO> listByKekVersionId(Long kekVersionId) {
-        SearchCriteria<KMSWrappedKeyVO> sc = kekVersionIdSearch.create();
+        SearchCriteria<KMSWrappedKeyVO> sc = allFieldSearch.create();
         sc.setParameters("kekVersionId", kekVersionId);
         return listBy(sc);
     }
-}
 
+    @Override
+    public List<KMSWrappedKeyVO> listWrappedKeysForRewrap(long kmsKeyId, long excludeKekVersionId) {
+            SearchCriteria<KMSWrappedKeyVO> sc = rewrapExcludeVersionSearch.create();
+            sc.setParameters("kmsKeyId", kmsKeyId);
+            sc.setParameters("kekVersionId", excludeKekVersionId);
+            return listBy(sc);
+    }
+}

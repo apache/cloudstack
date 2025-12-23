@@ -28,83 +28,29 @@ import org.springframework.stereotype.Component;
 import javax.inject.Inject;
 import java.util.List;
 
-/**
- * Implementation of KMSKeyDao
- */
 @Component
 public class KMSKeyDaoImpl extends GenericDaoBase<KMSKeyVO, Long> implements KMSKeyDao {
 
-    private final SearchBuilder<KMSKeyVO> uuidSearch;
-    private final SearchBuilder<KMSKeyVO> kekLabelSearch;
-    private final SearchBuilder<KMSKeyVO> accountSearch;
-    private final SearchBuilder<KMSKeyVO> domainSearch;
-    private final SearchBuilder<KMSKeyVO> zoneSearch;
-    private final SearchBuilder<KMSKeyVO> accessibleSearch;
+    private final SearchBuilder<KMSKeyVO> allFieldSearch;
 
     @Inject
     private KMSWrappedKeyDao kmsWrappedKeyDao;
 
     public KMSKeyDaoImpl() {
-        super();
-
-        // Search by UUID
-        uuidSearch = createSearchBuilder();
-        uuidSearch.and("uuid", uuidSearch.entity().getUuid(), SearchCriteria.Op.EQ);
-        uuidSearch.and("removed", uuidSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
-        uuidSearch.done();
-
-        // Search by KEK label and provider
-        kekLabelSearch = createSearchBuilder();
-        kekLabelSearch.and("kekLabel", kekLabelSearch.entity().getKekLabel(), SearchCriteria.Op.EQ);
-        kekLabelSearch.and("providerName", kekLabelSearch.entity().getProviderName(), SearchCriteria.Op.EQ);
-        kekLabelSearch.and("removed", kekLabelSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
-        kekLabelSearch.done();
-
-        // Search by account
-        accountSearch = createSearchBuilder();
-        accountSearch.and("accountId", accountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        accountSearch.and("purpose", accountSearch.entity().getPurpose(), SearchCriteria.Op.EQ);
-        accountSearch.and("state", accountSearch.entity().getState(), SearchCriteria.Op.EQ);
-        accountSearch.and("removed", accountSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
-        accountSearch.done();
-
-        // Search by domain
-        domainSearch = createSearchBuilder();
-        domainSearch.and("domainId", domainSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
-        domainSearch.and("purpose", domainSearch.entity().getPurpose(), SearchCriteria.Op.EQ);
-        domainSearch.and("state", domainSearch.entity().getState(), SearchCriteria.Op.EQ);
-        domainSearch.and("removed", domainSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
-        domainSearch.done();
-
-        // Search by zone
-        zoneSearch = createSearchBuilder();
-        zoneSearch.and("zoneId", zoneSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
-        zoneSearch.and("purpose", zoneSearch.entity().getPurpose(), SearchCriteria.Op.EQ);
-        zoneSearch.and("state", zoneSearch.entity().getState(), SearchCriteria.Op.EQ);
-        zoneSearch.and("removed", zoneSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
-        zoneSearch.done();
-
-        // Search for accessible keys (by account or domain)
-        accessibleSearch = createSearchBuilder();
-        accessibleSearch.and("accountId", accessibleSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        accessibleSearch.and("domainId", accessibleSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
-        accessibleSearch.and("zoneId", accessibleSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
-        accessibleSearch.and("purpose", accessibleSearch.entity().getPurpose(), SearchCriteria.Op.EQ);
-        accessibleSearch.and("state", accessibleSearch.entity().getState(), SearchCriteria.Op.EQ);
-        accessibleSearch.and("removed", accessibleSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
-        accessibleSearch.done();
-    }
-
-    @Override
-    public KMSKeyVO findByUuid(String uuid) {
-        SearchCriteria<KMSKeyVO> sc = uuidSearch.create();
-        sc.setParameters("uuid", uuid);
-        return findOneBy(sc);
+        allFieldSearch = createSearchBuilder();
+        allFieldSearch.and("kekLabel", allFieldSearch.entity().getKekLabel(), SearchCriteria.Op.EQ);
+        allFieldSearch.and("providerName", allFieldSearch.entity().getProviderName(), SearchCriteria.Op.EQ);
+        allFieldSearch.and("domainId", allFieldSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
+        allFieldSearch.and("accountId", allFieldSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        allFieldSearch.and("purpose", allFieldSearch.entity().getPurpose(), SearchCriteria.Op.EQ);
+        allFieldSearch.and("state", allFieldSearch.entity().getState(), SearchCriteria.Op.EQ);
+        allFieldSearch.and("zoneId", allFieldSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
+        allFieldSearch.done();
     }
 
     @Override
     public KMSKeyVO findByKekLabel(String kekLabel, String providerName) {
-        SearchCriteria<KMSKeyVO> sc = kekLabelSearch.create();
+        SearchCriteria<KMSKeyVO> sc = allFieldSearch.create();
         sc.setParameters("kekLabel", kekLabel);
         sc.setParameters("providerName", providerName);
         return findOneBy(sc);
@@ -112,7 +58,7 @@ public class KMSKeyDaoImpl extends GenericDaoBase<KMSKeyVO, Long> implements KMS
 
     @Override
     public List<KMSKeyVO> listByAccount(Long accountId, KeyPurpose purpose, KMSKey.State state) {
-        SearchCriteria<KMSKeyVO> sc = accountSearch.create();
+        SearchCriteria<KMSKeyVO> sc = allFieldSearch.create();
         sc.setParameters("accountId", accountId);
         if (purpose != null) {
             sc.setParameters("purpose", purpose);
@@ -124,23 +70,8 @@ public class KMSKeyDaoImpl extends GenericDaoBase<KMSKeyVO, Long> implements KMS
     }
 
     @Override
-    public List<KMSKeyVO> listByDomain(Long domainId, KeyPurpose purpose, KMSKey.State state, boolean includeSubdomains) {
-        SearchCriteria<KMSKeyVO> sc = domainSearch.create();
-        sc.setParameters("domainId", domainId);
-        if (purpose != null) {
-            sc.setParameters("purpose", purpose);
-        }
-        if (state != null) {
-            sc.setParameters("state", state);
-        }
-        // TODO: Implement subdomain traversal if includeSubdomains is true
-        // For now, just return keys in this domain
-        return listBy(sc);
-    }
-
-    @Override
     public List<KMSKeyVO> listByZone(Long zoneId, KeyPurpose purpose, KMSKey.State state) {
-        SearchCriteria<KMSKeyVO> sc = zoneSearch.create();
+        SearchCriteria<KMSKeyVO> sc = allFieldSearch.create();
         sc.setParameters("zoneId", zoneId);
         if (purpose != null) {
             sc.setParameters("purpose", purpose);
@@ -153,8 +84,7 @@ public class KMSKeyDaoImpl extends GenericDaoBase<KMSKeyVO, Long> implements KMS
 
     @Override
     public List<KMSKeyVO> listAccessibleKeys(Long accountId, Long domainId, Long zoneId, KeyPurpose purpose, KMSKey.State state) {
-        SearchCriteria<KMSKeyVO> sc = accessibleSearch.create();
-        // Keys owned by the account or in the domain
+        SearchCriteria<KMSKeyVO> sc = allFieldSearch.create();
         sc.setParameters("accountId", accountId);
         if (zoneId != null) {
             sc.setParameters("zoneId", zoneId);
@@ -173,17 +103,15 @@ public class KMSKeyDaoImpl extends GenericDaoBase<KMSKeyVO, Long> implements KMS
         if (kmsKeyId == null) {
             return 0;
         }
-        // Delegate to KMSWrappedKeyDao
         return kmsWrappedKeyDao.countByKmsKeyId(kmsKeyId);
     }
 
     @Override
     public long countByKekLabel(String kekLabel, String providerName) {
-        SearchCriteria<KMSKeyVO> sc = kekLabelSearch.create();
+        SearchCriteria<KMSKeyVO> sc = allFieldSearch.create();
         sc.setParameters("kekLabel", kekLabel);
         sc.setParameters("providerName", providerName);
         Integer count = getCount(sc);
         return count != null ? count.longValue() : 0L;
     }
 }
-

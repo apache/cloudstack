@@ -45,7 +45,7 @@ public class KMSKeyResponse extends BaseResponse implements ControlledEntityResp
     private String description;
 
     @SerializedName(ApiConstants.PURPOSE)
-    @Param(description = "the purpose of the key (VOLUME_ENCRYPTION, TLS_CERT, CONFIG_SECRET)")
+    @Param(description = "the purpose of the key (VOLUME_ENCRYPTION, TLS_CERT)")
     private String purpose;
 
     @SerializedName(ApiConstants.ACCOUNT)
@@ -253,4 +253,3 @@ public class KMSKeyResponse extends BaseResponse implements ControlledEntityResp
         this.kekLabel = kekLabel;
     }
 }
-

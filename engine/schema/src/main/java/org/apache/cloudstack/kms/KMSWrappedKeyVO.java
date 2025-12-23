@@ -18,6 +18,7 @@
 package org.apache.cloudstack.kms;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -68,20 +69,13 @@ public class KMSWrappedKeyVO {
     @Temporal(TemporalType.TIMESTAMP)
     private Date removed;
 
-    /**
-     * Constructor for creating a new wrapped key entry
-     */
     public KMSWrappedKeyVO(KMSKeyVO kmsKey, byte[] wrappedBlob) {
         this();
         this.kmsKeyId = kmsKey.getId();
         this.zoneId = kmsKey.getZoneId();
-        // Defensive copy
         this.wrappedBlob = wrappedBlob != null ? Arrays.copyOf(wrappedBlob, wrappedBlob.length) : null;
     }
 
-    /**
-     * Constructor for creating a new wrapped key entry with KEK version
-     */
     public KMSWrappedKeyVO(KMSKeyVO kmsKey, Long kekVersionId, byte[] wrappedBlob) {
         this();
         this.kmsKeyId = kmsKey.getId();
@@ -91,38 +85,25 @@ public class KMSWrappedKeyVO {
         this.wrappedBlob = wrappedBlob != null ? Arrays.copyOf(wrappedBlob, wrappedBlob.length) : null;
     }
 
-    /**
-     * Constructor with explicit parameters
-     */
     public KMSWrappedKeyVO(Long kmsKeyId, Long zoneId, byte[] wrappedBlob) {
         this();
         this.kmsKeyId = kmsKeyId;
         this.zoneId = zoneId;
-        // Defensive copy
         this.wrappedBlob = wrappedBlob != null ? Arrays.copyOf(wrappedBlob, wrappedBlob.length) : null;
     }
 
-    /**
-     * Constructor with explicit parameters including KEK version
-     */
     public KMSWrappedKeyVO(Long kmsKeyId, Long kekVersionId, Long zoneId, byte[] wrappedBlob) {
         this();
         this.kmsKeyId = kmsKeyId;
         this.kekVersionId = kekVersionId;
         this.zoneId = zoneId;
-        // Defensive copy
         this.wrappedBlob = wrappedBlob != null ? Arrays.copyOf(wrappedBlob, wrappedBlob.length) : null;
     }
 
-    /**
-     * Default constructor (required by JPA)
-     */
     public KMSWrappedKeyVO() {
         this.uuid = UUID.randomUUID().toString();
         this.created = new Date();
     }
-
-    // Getters and Setters
 
     public Long getId() {
         return id;
@@ -165,12 +146,10 @@ public class KMSWrappedKeyVO {
     }
 
     public byte[] getWrappedBlob() {
-        // Return defensive copy
         return wrappedBlob != null ? Arrays.copyOf(wrappedBlob, wrappedBlob.length) : null;
     }
 
     public void setWrappedBlob(byte[] wrappedBlob) {
-        // Store defensive copy
         this.wrappedBlob = wrappedBlob != null ? Arrays.copyOf(wrappedBlob, wrappedBlob.length) : null;
     }
 
@@ -192,16 +171,8 @@ public class KMSWrappedKeyVO {
 
     @Override
     public String toString() {
-        return "KMSWrappedKeyVO{" +
-                "id=" + id +
-                ", uuid='" + uuid + '\'' +
-                ", kmsKeyId=" + kmsKeyId +
-                ", kekVersionId=" + kekVersionId +
-                ", zoneId=" + zoneId +
-                ", blobSize=" + (wrappedBlob != null ? wrappedBlob.length : 0) +
-                ", created=" + created +
-                ", removed=" + removed +
-                '}';
+        return String.format("KMSWrappedKey %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "kmsKeyId", "kekVersionId", "accountId", "zoneId", "state", "created", "removed"));
     }
 }
-

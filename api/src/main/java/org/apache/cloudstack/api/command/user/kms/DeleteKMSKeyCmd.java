@@ -45,7 +45,6 @@ import javax.inject.Inject;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class DeleteKMSKeyCmd extends BaseAsyncCmd implements UserCmd {
-    private static final String s_name = "deletekmskeyresponse";
 
     @Inject
     private KMSManager kmsManager;
@@ -86,11 +85,6 @@ public class DeleteKMSKeyCmd extends BaseAsyncCmd implements UserCmd {
     }
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccount().getId();
     }
@@ -110,4 +104,3 @@ public class DeleteKMSKeyCmd extends BaseAsyncCmd implements UserCmd {
         return ApiCommandResourceType.KmsKey;
     }
 }
-

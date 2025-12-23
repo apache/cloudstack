@@ -46,6 +46,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.kms.KMSManager;
+import org.apache.cloudstack.kms.dao.KMSWrappedKeyDao;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
@@ -97,6 +99,10 @@ public class VolumeObject implements VolumeInfo {
     VolumeDao volumeDao;
     @Inject
     VolumeDataStoreDao volumeStoreDao;
+    @Inject
+    KMSManager kmsManager;
+    @Inject
+    KMSWrappedKeyDao kmsWrappedKeyDao;
     @Inject
     ObjectInDataStoreManager objectInStoreMgr;
     @Inject
@@ -900,6 +906,26 @@ public class VolumeObject implements VolumeInfo {
         volumeVO.setPassphraseId(id);
     }
 
+    @Override
+    public Long getKmsKeyId() {
+        return volumeVO.getKmsKeyId();
+    }
+
+    @Override
+    public void setKmsKeyId(Long id) {
+        volumeVO.setKmsKeyId(id);
+    }
+
+    @Override
+    public Long getKmsWrappedKeyId() {
+        return volumeVO.getKmsWrappedKeyId();
+    }
+
+    @Override
+    public void setKmsWrappedKeyId(Long id) {
+        volumeVO.setKmsWrappedKeyId(id);
+    }
+
     /**
      * Removes passphrase reference from underlying volume. Also removes the associated passphrase entry if it is the last user.
      */
@@ -929,9 +955,21 @@ public class VolumeObject implements VolumeInfo {
 
     /**
      * Looks up passphrase from underlying volume.
-     * @return passphrase as bytes
+     * Supports both legacy passphrase-based encryption and KMS-based encryption.
+     * @return passphrase/DEK as bytes
      */
     public byte[] getPassphrase() {
+        // First check for KMS-encrypted volume
+        if (volumeVO.getKmsWrappedKeyId() != null) {
+            try {
+                return kmsManager.unwrapKey(volumeVO.getKmsWrappedKeyId());
+            } catch (org.apache.cloudstack.framework.kms.KMSException e) {
+                logger.error("Failed to unwrap KMS key for volume {}: {}", volumeVO.getId(), e.getMessage());
+                return new byte[0];
+            }
+        }
+
+        // Fallback to legacy passphrase-based encryption
         PassphraseVO passphrase = passphraseDao.findById(volumeVO.getPassphraseId());
         if (passphrase != null) {
             return passphrase.getPassphrase();

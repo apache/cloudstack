@@ -44,7 +44,6 @@ import javax.inject.Inject;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class UpdateKMSKeyCmd extends BaseAsyncCmd implements UserCmd {
-    private static final String s_name = "updatekmskeyresponse";
 
     @Inject
     private KMSManager kmsManager;
@@ -109,11 +108,6 @@ public class UpdateKMSKeyCmd extends BaseAsyncCmd implements UserCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,
                     "Failed to update KMS key: " + e.getMessage());
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

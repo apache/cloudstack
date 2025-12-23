@@ -119,6 +119,55 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kms_wrapped_key` (
     CONSTRAINT `fk_kms_wrapped_key__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='KMS wrapped encryption keys (DEKs) - references kms_keys for KEK metadata and kek_versions for specific version';
 
+-- Add KMS key reference to volumes table (which KMS key was used)
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes', 'kms_key_id', 'BIGINT UNSIGNED COMMENT ''KMS key ID used for volume encryption''');
+CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.volumes', 'fk_volumes__kms_key_id', '(kms_key_id)', '`kms_keys`(`id`)');
+
 -- Add KMS wrapped key reference to volumes table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes', 'kms_wrapped_key_id', 'BIGINT UNSIGNED COMMENT ''KMS wrapped key ID for volume encryption''');
 CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.volumes', 'fk_volumes__kms_wrapped_key_id', '(kms_wrapped_key_id)', '`kms_wrapped_key`(`id`)');
+
+-- KMS Database Provider KEK Objects (PKCS#11-like object storage)
+-- Stores KEKs for the database KMS provider in a PKCS#11-compatible format
+CREATE TABLE IF NOT EXISTS `cloud`.`kms_database_kek_objects` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Object handle (PKCS#11 CKA_HANDLE)',
+    `uuid` VARCHAR(40) NOT NULL COMMENT 'UUID',
+    -- PKCS#11 Object Class (CKA_CLASS)
+    `object_class` VARCHAR(32) NOT NULL DEFAULT 'CKO_SECRET_KEY' COMMENT 'PKCS#11 object class (CKO_SECRET_KEY, CKO_PRIVATE_KEY, etc.)',
+    -- PKCS#11 Label (CKA_LABEL) - human-readable identifier
+    `label` VARCHAR(255) NOT NULL COMMENT 'PKCS#11 label (CKA_LABEL) - human-readable identifier',
+    -- PKCS#11 ID (CKA_ID) - application-defined identifier
+    `object_id` VARBINARY(64) COMMENT 'PKCS#11 object ID (CKA_ID) - application-defined identifier',
+    -- Key Type (CKA_KEY_TYPE)
+    `key_type` VARCHAR(32) NOT NULL DEFAULT 'CKK_AES' COMMENT 'PKCS#11 key type (CKK_AES, CKK_RSA, etc.)',
+    -- Key Material (CKA_VALUE) - encrypted KEK material
+    `key_material` VARBINARY(512) NOT NULL COMMENT 'PKCS#11 key value (CKA_VALUE) - encrypted KEK material',
+    -- Key Attributes (PKCS#11 boolean attributes)
+    `is_sensitive` BOOLEAN NOT NULL DEFAULT TRUE COMMENT 'PKCS#11 CKA_SENSITIVE - key material is sensitive',
+    `is_extractable` BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'PKCS#11 CKA_EXTRACTABLE - key can be extracted',
+    `is_token` BOOLEAN NOT NULL DEFAULT TRUE COMMENT 'PKCS#11 CKA_TOKEN - object is on token (persistent)',
+    `is_private` BOOLEAN NOT NULL DEFAULT TRUE COMMENT 'PKCS#11 CKA_PRIVATE - object is private',
+    `is_modifiable` BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'PKCS#11 CKA_MODIFIABLE - object can be modified',
+    `is_copyable` BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'PKCS#11 CKA_COPYABLE - object can be copied',
+    `is_destroyable` BOOLEAN NOT NULL DEFAULT TRUE COMMENT 'PKCS#11 CKA_DESTROYABLE - object can be destroyed',
+    `always_sensitive` BOOLEAN NOT NULL DEFAULT TRUE COMMENT 'PKCS#11 CKA_ALWAYS_SENSITIVE - key was always sensitive',
+    `never_extractable` BOOLEAN NOT NULL DEFAULT TRUE COMMENT 'PKCS#11 CKA_NEVER_EXTRACTABLE - key was never extractable',
+    -- Key Metadata
+    `purpose` VARCHAR(32) NOT NULL COMMENT 'Key purpose (VOLUME_ENCRYPTION, TLS_CERT, CONFIG_SECRET)',
+    `key_bits` INT NOT NULL COMMENT 'Key size in bits (128, 192, 256)',
+    `algorithm` VARCHAR(64) NOT NULL DEFAULT 'AES/GCM/NoPadding' COMMENT 'Encryption algorithm',
+    -- Validity Dates (PKCS#11 CKA_START_DATE, CKA_END_DATE)
+    `start_date` DATETIME COMMENT 'PKCS#11 CKA_START_DATE - key validity start',
+    `end_date` DATETIME COMMENT 'PKCS#11 CKA_END_DATE - key validity end',
+    -- Lifecycle
+    `created` DATETIME NOT NULL COMMENT 'Creation timestamp',
+    `last_used` DATETIME COMMENT 'Last usage timestamp',
+    `removed` DATETIME COMMENT 'Removal timestamp for soft delete',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_uuid` (`uuid`),
+    UNIQUE KEY `uk_label_removed` (`label`, `removed`),
+    INDEX `idx_purpose_removed` (`purpose`, `removed`),
+    INDEX `idx_key_type` (`key_type`, `removed`),
+    INDEX `idx_object_class` (`object_class`, `removed`),
+    INDEX `idx_created` (`created`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='KMS Database Provider KEK Objects - PKCS#11-like object storage for KEKs';

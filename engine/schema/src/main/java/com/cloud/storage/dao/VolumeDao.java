@@ -110,6 +110,17 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
     List<VolumeVO> listVolumesByPassphraseId(long passphraseId);
 
     /**
+     * List volumes with passphrase_id for migration to KMS
+     *
+     * @param zoneId    Zone ID (required)
+     * @param accountId Account ID filter (optional, null for all accounts)
+     * @param domainId  Domain ID filter (optional, null for all domains)
+     * @param limit     Maximum number of volumes to return
+     * @return list of volumes that need migration
+     */
+    Pair<List<VolumeVO>, Integer> listVolumesForKMSMigration(Long zoneId, Long accountId, Long domainId, Integer limit);
+
+    /**
      * Gets the Total Primary Storage space allocated for an account
      *
      * @param accountId

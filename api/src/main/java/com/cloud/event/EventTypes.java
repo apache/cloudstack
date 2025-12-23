@@ -278,6 +278,7 @@ public class EventTypes {
     public static final String EVENT_KMS_KEK_ROTATE = "KMS.KEK.ROTATE";
     public static final String EVENT_KMS_KEK_DELETE = "KMS.KEK.DELETE";
     public static final String EVENT_KMS_HEALTH_CHECK = "KMS.HEALTH.CHECK";
+    public static final String EVENT_VOLUME_MIGRATE_TO_KMS = "VOLUME.MIGRATE.TO.KMS";
 
     // Account events
     public static final String EVENT_ACCOUNT_ENABLE = "ACCOUNT.ENABLE";

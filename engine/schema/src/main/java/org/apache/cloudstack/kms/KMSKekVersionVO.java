@@ -18,6 +18,7 @@
 package org.apache.cloudstack.kms;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -89,9 +90,6 @@ public class KMSKekVersionVO {
         Archived
     }
 
-    /**
-     * Default constructor (required by JPA)
-     */
     public KMSKekVersionVO() {
         this.uuid = UUID.randomUUID().toString();
         this.created = new Date();
@@ -113,8 +111,6 @@ public class KMSKekVersionVO {
         this.kekLabel = kekLabel;
         this.status = status;
     }
-
-    // Getters and Setters
 
     public Long getId() {
         return id;
@@ -182,8 +178,8 @@ public class KMSKekVersionVO {
 
     @Override
     public String toString() {
-        return String.format("KMSKekVersion[id=%d, uuid=%s, kmsKeyId=%d, version=%d, status=%s, kekLabel=%s]",
-                id, uuid, kmsKeyId, versionNumber, status, kekLabel);
+        return String.format("KMSKekVersion %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "kmsKeyId", "versionNumber", "status", "kekLabel"));
     }
 }
-
