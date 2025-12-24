@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.OperationCancelledException;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
@@ -499,7 +500,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
         try {
             RollingMaintenanceAnswer answer = (RollingMaintenanceAnswer) agentManager.send(host.getId(), new RollingMaintenanceCommand(true));
             return answer.isMaintenaceScriptDefined();
-        } catch (AgentUnavailableException | OperationTimedoutException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
             String msg = String.format("Could not check for maintenance script on %s due to: %s", host, e.getMessage());
             logger.error(msg, e);
             return false;
@@ -544,7 +545,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
         while (!completed && timeSpent < timeout * 1000L) {
             try {
                 answer = agentManager.send(host.getId(), cmd);
-            } catch (AgentUnavailableException | OperationTimedoutException e) {
+            } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
                 // Agent may be restarted on the scripts - continue polling until it is up
                 String msg = String.format("Cannot send command to %s, waiting %sms - %s", host, pingInterval, e.getMessage());
                 logger.warn(msg, e);

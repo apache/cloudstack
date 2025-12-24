@@ -18,6 +18,7 @@ package com.cloud.agent;
 
 import java.util.Map;
 
+import com.cloud.exception.OperationCancelledException;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.Answer;
@@ -85,7 +86,7 @@ public interface AgentManager {
      * @return an Answer
      */
 
-    Answer send(Long hostId, Command cmd) throws AgentUnavailableException, OperationTimedoutException;
+    Answer send(Long hostId, Command cmd) throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException;
 
     /**
      * Synchronous sending a list of commands to the agent.
@@ -100,9 +101,9 @@ public interface AgentManager {
      *            should the agent stop execution on the first error.
      * @return an array of Answer
      */
-    Answer[] send(Long hostId, Commands cmds) throws AgentUnavailableException, OperationTimedoutException;
+    Answer[] send(Long hostId, Commands cmds) throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException;
 
-    Answer[] send(Long hostId, Commands cmds, int timeout) throws AgentUnavailableException, OperationTimedoutException;
+    Answer[] send(Long hostId, Commands cmds, int timeout) throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException;
 
     /**
      * Asynchronous sending of a command to the agent.
@@ -178,4 +179,6 @@ public interface AgentManager {
     boolean transferDirectAgentsFromMS(String fromMsUuid, long fromMsId, long timeoutDurationInMs, boolean excludeHostsInMaintenance);
 
     int getHostSshPort(HostVO host);
+
+    Long getAsyncJobId();
 }

@@ -42,6 +42,7 @@ select
     async_job.removed,
     async_job.instance_type,
     async_job.instance_id,
+    async_job.related,
     async_job.job_executing_msid,
     CASE
         WHEN async_job.instance_type = 'Volume' THEN volumes.uuid

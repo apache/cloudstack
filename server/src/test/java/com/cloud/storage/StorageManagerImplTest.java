@@ -26,6 +26,7 @@ import java.util.Optional;
 
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.resource.ResourceManager;
@@ -506,14 +507,14 @@ public class StorageManagerImplTest {
         try {
             Mockito.when(agentManager.send(Mockito.anyLong(), Mockito.any(Command.class)))
                     .thenThrow(AgentUnavailableException.class);
-        } catch (AgentUnavailableException | OperationTimedoutException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
             Assert.fail(e.getMessage());
         }
         storageManagerImpl.getCheckDatastorePolicyComplianceAnswer("1", pool);
         try {
             Mockito.when(agentManager.send(Mockito.anyLong(), Mockito.any(Command.class)))
                     .thenThrow(OperationTimedoutException.class);
-        } catch (AgentUnavailableException | OperationTimedoutException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
             Assert.fail(e.getMessage());
         }
         storageManagerImpl.getCheckDatastorePolicyComplianceAnswer("1", pool);
@@ -535,7 +536,7 @@ public class StorageManagerImplTest {
                             Mockito.any(CheckDataStoreStoragePolicyComplianceCommand.class)))
                     .thenReturn(new com.cloud.agent.api.Answer(
                             Mockito.mock(CheckDataStoreStoragePolicyComplianceCommand.class)));
-        } catch (AgentUnavailableException | OperationTimedoutException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
             Assert.fail(e.getMessage());
         }
         com.cloud.agent.api.Answer answer =
