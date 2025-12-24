@@ -1378,7 +1378,7 @@ public class SystemVmTemplateRegistrationTest {
             systemVmTemplateRegistration.registerNewTemplate(name, templateDetails, zoneId, storeId, filePath);
         });
 
-        assertTrue(exception.getMessage().contains("Failed to register template for"));
+        assertTrue(exception.getMessage().contains("Failed to register Template for"));
         verify(systemVmTemplateRegistration).performTemplateRegistrationOperations(
                 name, templateDetails, templateDetails.getUrl(), templateDetails.getChecksum(),
                 SystemVmTemplateRegistration.HYPERVISOR_IMAGE_FORMAT_MAP.get(hypervisor),
@@ -1418,7 +1418,7 @@ public class SystemVmTemplateRegistrationTest {
                 systemVmTemplateRegistration.registerNewTemplate(name, templateDetails, zoneId, storeId, filePath);
             });
 
-            assertTrue(exception.getMessage().contains("Failed to register template for"));
+            assertTrue(exception.getMessage().contains("Failed to register Template for"));
             verify(systemVmTemplateRegistration).updateTemplateEntriesOnFailure(templateId);
             mockedStatic.verify(() -> SystemVmTemplateRegistration.cleanupStore(templateId, filePath));
         }
@@ -1526,7 +1526,7 @@ public class SystemVmTemplateRegistrationTest {
             systemVmTemplateRegistration.updateSeededTemplateDetails(templateId, storeId, size, physicalSize);
         });
 
-        assertTrue(exception.getMessage().contains("Failed to update template-store record for seeded system VM template"));
+        assertTrue(exception.getMessage().contains("Failed to update template-store record for seeded system VM Template"));
         verify(templateDataStoreDao).update(templateDataStoreVO.getId(), templateDataStoreVO);
     }
 
