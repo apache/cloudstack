@@ -37,25 +37,25 @@ import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.snapshot.VMSnapshot;
 
-@APICommand(name = "createVMSnapshot", description = "Creates snapshot for a vm.", responseObject = VMSnapshotResponse.class, since = "4.2.0", entityType = {VMSnapshot.class},
+@APICommand(name = "createVMSnapshot", description = "Creates Snapshot for an Instance.", responseObject = VMSnapshotResponse.class, since = "4.2.0", entityType = {VMSnapshot.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVMSnapshotCmd extends BaseAsyncCreateCmd {
 
 
     @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, required = true, entityType = UserVmResponse.class, description = "The ID of the vm")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, required = true, entityType = UserVmResponse.class, description = "The ID of the Instance")
     private Long vmId;
 
-    @Parameter(name = ApiConstants.VM_SNAPSHOT_DESCRIPTION, type = CommandType.STRING, required = false, description = "The description of the snapshot")
+    @Parameter(name = ApiConstants.VM_SNAPSHOT_DESCRIPTION, type = CommandType.STRING, required = false, description = "The description of the Snapshot")
     private String description;
 
-    @Parameter(name = ApiConstants.VM_SNAPSHOT_DISPLAYNAME, type = CommandType.STRING, required = false, description = "The display name of the snapshot")
+    @Parameter(name = ApiConstants.VM_SNAPSHOT_DISPLAYNAME, type = CommandType.STRING, required = false, description = "The display name of the Snapshot")
     private String displayName;
 
-    @Parameter(name = ApiConstants.VM_SNAPSHOT_MEMORY, type = CommandType.BOOLEAN, required = false, description = "snapshot memory if true")
+    @Parameter(name = ApiConstants.VM_SNAPSHOT_MEMORY, type = CommandType.BOOLEAN, required = false, description = "Snapshot memory if true")
     private Boolean snapshotMemory;
 
-    @Parameter(name = ApiConstants.VM_SNAPSHOT_QUIESCEVM, type = CommandType.BOOLEAN, required = false, description = "quiesce vm if true")
+    @Parameter(name = ApiConstants.VM_SNAPSHOT_QUIESCEVM, type = CommandType.BOOLEAN, required = false, description = "Quiesce Instance if true")
     private Boolean quiescevm;
 
     public Boolean snapshotMemory() {
@@ -92,20 +92,20 @@ public class CreateVMSnapshotCmd extends BaseAsyncCreateCmd {
         try {
             vmsnapshot = _vmSnapshotService.allocVMSnapshot(getVmId(), getDisplayName(), getDescription(), snapshotMemory());
         } catch (CloudRuntimeException e) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create vm snapshot: " + e.getMessage(), e);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Instance Snapshot: " + e.getMessage(), e);
         }
 
         if (vmsnapshot != null) {
             setEntityId(vmsnapshot.getId());
             setEntityUuid(vmsnapshot.getUuid());
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create vm snapshot");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Instance Snapshot");
         }
     }
 
     @Override
     public String getEventDescription() {
-        return "creating snapshot for VM: " + this._uuidMgr.getUuid(VirtualMachine.class, getVmId());
+        return "Creating Snapshot for Instance: " + this._uuidMgr.getUuid(VirtualMachine.class, getVmId());
     }
 
     @Override
@@ -122,7 +122,7 @@ public class CreateVMSnapshotCmd extends BaseAsyncCreateCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create vm snapshot due to an internal error creating snapshot for vm " + getVmId());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Instance Snapshot due to an internal error creating Snapshot for Instance " + getVmId());
         }
     }
 

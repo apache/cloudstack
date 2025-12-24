@@ -2083,7 +2083,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             try {
 
                                 List<VMTemplateStoragePoolVO> unusedTemplatesInPool = _tmpltMgr.getUnusedTemplatesInPool(pool);
-                                logger.debug("Storage pool garbage collector found [{}] templates to be cleaned up in storage pool [{}].", unusedTemplatesInPool.size(), pool);
+                                logger.debug("Storage pool garbage collector found [{}] Templates to be cleaned up in storage pool [{}].", unusedTemplatesInPool.size(), pool);
                                 for (VMTemplateStoragePoolVO templatePoolVO : unusedTemplatesInPool) {
                                     if (templatePoolVO.getDownloadState() != VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
                                         logger.debug("Storage pool garbage collector is skipping " +
@@ -2433,7 +2433,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 try {
                     long storeId = store.getId();
                     List<TemplateDataStoreVO> destroyedTemplateStoreVOs = _templateStoreDao.listDestroyed(storeId);
-                    logger.debug("Secondary storage garbage collector found {} templates to cleanup on template_store_ref for store: {}", destroyedTemplateStoreVOs.size(), store);
+                    logger.debug("Secondary storage garbage collector found {} Templates to cleanup on template_store_ref for store: {}", destroyedTemplateStoreVOs.size(), store);
                     for (TemplateDataStoreVO destroyedTemplateStoreVO : destroyedTemplateStoreVOs) {
                         if (logger.isDebugEnabled()) {
                             logger.debug("Deleting template store DB entry: " + destroyedTemplateStoreVO);
@@ -2441,7 +2441,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         _templateStoreDao.remove(destroyedTemplateStoreVO.getId());
                     }
                 } catch (Exception e) {
-                    logger.warn("problem cleaning up templates in template_store_ref for store: {}", store, e);
+                    logger.warn("Problem cleaning up Templates in template_store_ref for store: {}", store, e);
                 }
             }
 
@@ -3354,7 +3354,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new InvalidParameterValueException(String.format("host: %s is not a secondary storage", secHost));
         }
 
-        URI uri = null;
+        URI uri;
         try {
             uri = new URI(UriUtils.encodeURIComponent(newUrl));
             if (uri.getScheme() == null) {
@@ -3377,7 +3377,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         String oldUrl = secHost.getStorageUrl();
 
-        URI oldUri = null;
+        URI oldUri;
         try {
             oldUri = new URI(UriUtils.encodeURIComponent(oldUrl));
             if (!oldUri.getScheme().equalsIgnoreCase(uri.getScheme())) {
@@ -4271,7 +4271,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         // search if there are user templates stored on this image store, excluding system, builtin templates
         List<TemplateJoinVO> templates = _templateViewDao.listActiveTemplates(storeId);
         if (templates != null && templates.size() > 0) {
-            throw new InvalidParameterValueException("Cannot delete image store with active templates backup!");
+            throw new InvalidParameterValueException("Cannot delete image store with active Templates backup!");
         }
 
         // ready to delete
@@ -4378,12 +4378,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
         List<VolumeDataStoreVO> volumes = _volumeStoreDao.listActiveOnCache(storeId);
         if (volumes != null && volumes.size() > 0) {
-            throw new InvalidParameterValueException("Cannot delete cache store with staging volumes currently in use!");
+            throw new InvalidParameterValueException("Cannot delete cache store with staging Volumes currently in use!");
         }
 
         List<TemplateDataStoreVO> templates = _templateStoreDao.listActiveOnCache(storeId);
         if (templates != null && templates.size() > 0) {
-            throw new InvalidParameterValueException("Cannot delete cache store with staging templates currently in use!");
+            throw new InvalidParameterValueException("Cannot delete cache store with staging Templates currently in use!");
         }
 
         // ready to delete
@@ -4602,7 +4602,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 DataStoreDownloadFollowRedirects,
                 AllowVolumeReSizeBeyondAllocation,
                 StoragePoolHostConnectWorkers,
-                ObjectStorageCapacityThreshold
+                ObjectStorageCapacityThreshold,
+                COPY_PUBLIC_TEMPLATES_FROM_OTHER_STORAGES
         };
     }
 

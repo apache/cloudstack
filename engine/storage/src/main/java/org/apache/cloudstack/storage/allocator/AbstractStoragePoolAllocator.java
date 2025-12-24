@@ -241,7 +241,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     List<StoragePool> reorderStoragePoolsBasedOnAlgorithm(List<StoragePool> pools, DeploymentPlan plan, Account account) {
         String volumeAllocationAlgorithm = VolumeOrchestrationService.VolumeAllocationAlgorithm.value();
         logger.debug("Using volume allocation algorithm {} to reorder pools.", volumeAllocationAlgorithm);
-        if (volumeAllocationAlgorithm.equals("random") || volumeAllocationAlgorithm.equals("userconcentratedpod_random") || (account == null)) {
+        if (volumeAllocationAlgorithm.equals("random") || (account == null)) {
             reorderRandomPools(pools);
         } else if (StringUtils.equalsAny(volumeAllocationAlgorithm, "userdispersing", "firstfitleastconsumed")) {
             if (logger.isTraceEnabled()) {

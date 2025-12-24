@@ -48,7 +48,7 @@ public class CreateInternalLoadBalancerElementCmd extends BaseAsyncCreateCmd {
                type = CommandType.UUID,
                entityType = ProviderResponse.class,
                required = true,
-               description = "the network service provider ID of the internal load balancer element")
+               description = "The network service provider ID of the internal load balancer element")
     private Long nspId;
 
     /////////////////////////////////////////////////////

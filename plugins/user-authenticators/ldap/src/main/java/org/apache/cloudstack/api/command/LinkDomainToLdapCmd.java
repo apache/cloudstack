@@ -40,7 +40,7 @@ import com.cloud.user.Account;
 
 import java.util.UUID;
 
-@APICommand(name = "linkDomainToLdap", description = "link an existing cloudstack domain to group or OU in ldap", responseObject = LinkDomainToLdapResponse.class, since = "4.6.0",
+@APICommand(name = "linkDomainToLdap", description = "Link an existing Cloudstack domain to group or OU in ldap", responseObject = LinkDomainToLdapResponse.class, since = "4.6.0",
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class LinkDomainToLdapCmd extends BaseCmd {
 
@@ -48,17 +48,13 @@ public class LinkDomainToLdapCmd extends BaseCmd {
             + "linked to LDAP.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true, description = "type of the ldap name. GROUP or OU")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true, description = "Type of the ldap name. GROUP or OU")
     private String type;
 
-    @Parameter(name = ApiConstants.LDAP_DOMAIN, type = CommandType.STRING, required = false, description = "name of the group or OU in LDAP")
+    @Parameter(name = ApiConstants.LDAP_DOMAIN, type = CommandType.STRING, required = true, description = "Name of the GROUP or OU in LDAP")
     private String ldapDomain;
 
-    @Deprecated
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = false, description = "name of the group or OU in LDAP")
-    private String name;
-
-    @Parameter(name = ApiConstants.ADMIN, type = CommandType.STRING, required = false, description = "domain admin username in LDAP ")
+    @Parameter(name = ApiConstants.ADMIN, type = CommandType.STRING, description = "Domain admin username in LDAP ")
     private String admin;
 
     @Parameter(name = ApiConstants.ACCOUNT_TYPE, type = CommandType.INTEGER, required = true, description = "Type of the account to auto import. Specify 0 for user and 2 for " +
@@ -77,7 +73,7 @@ public class LinkDomainToLdapCmd extends BaseCmd {
     }
 
     public String getLdapDomain() {
-        return ldapDomain == null ? name : ldapDomain;
+        return ldapDomain;
     }
 
     public String getAdmin() {
@@ -98,7 +94,7 @@ public class LinkDomainToLdapCmd extends BaseCmd {
                 try {
                     ldapUser = _ldapManager.getUser(admin, type, getLdapDomain(), domainId);
                 } catch (NoLdapUserMatchingQueryException e) {
-                    logger.debug("no ldap user matching username " + admin + " in the given group/ou", e);
+                    logger.debug("no ldap user matching username {} in the given group/ou", admin, e);
                 }
                 if (ldapUser != null && !ldapUser.isDisabled()) {
                     Account account = _accountService.getActiveAccountByName(admin, domainId);
@@ -115,7 +111,7 @@ public class LinkDomainToLdapCmd extends BaseCmd {
                         logger.debug("an account with name {} already exists in the domain {} with id {}", admin, _domainService.getDomain(domainId), domainId);
                     }
                 } else {
-                    logger.debug("ldap user with username "+admin+" is disabled in the given group/ou");
+                    logger.debug("ldap user with username {} is disabled in the given Group/OU", admin);
                 }
             }
             response.setObjectName("LinkDomainToLdap");
