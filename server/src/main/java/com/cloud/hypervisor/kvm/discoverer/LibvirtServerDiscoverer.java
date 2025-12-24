@@ -29,6 +29,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.OperationCancelledException;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
@@ -486,9 +487,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
         try {
             ShutdownCommand cmd = new ShutdownCommand(ShutdownCommand.DeleteHost, null, !ADD_HOST_ON_SERVICE_RESTART_KVM.value());
             agentMgr.send(host.getId(), cmd);
-        } catch (AgentUnavailableException e) {
-            logger.warn("Sending ShutdownCommand failed: ", e);
-        } catch (OperationTimedoutException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
             logger.warn("Sending ShutdownCommand failed: ", e);
         }
 

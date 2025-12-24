@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.vm;
 
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
 import java.net.URI;
@@ -166,11 +167,11 @@ public interface VirtualMachineManager extends Manager {
             ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
 
     void orchestrateStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy, DeploymentPlanner planner) throws InsufficientCapacityException,
-        ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
+            ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
 
     void advanceStop(String vmUuid, boolean cleanupEvenIfUnableToStop) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 
-    void advanceExpunge(String vmUuid) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
+    void advanceExpunge(String vmUuid) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException, OperationCancelledException;
 
     void destroy(String vmUuid, boolean expunge) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 

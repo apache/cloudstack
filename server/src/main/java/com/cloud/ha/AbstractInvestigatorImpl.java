@@ -28,6 +28,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
@@ -113,6 +114,11 @@ public abstract class AbstractInvestigatorImpl extends AdapterBase implements In
         } catch (OperationTimedoutException e) {
             if (logger.isDebugEnabled()) {
                 logger.debug("host (" + testHostIp + "): " + e.getLocalizedMessage() + ", trapped OperationTimedoutException returning Unknown state");
+            }
+            return Status.Unknown;
+        } catch (OperationCancelledException e) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("host (" + testHostIp + "): " + e.getLocalizedMessage() + ", trapped OperationCancelledException returning Unknown state");
             }
             return Status.Unknown;
         }

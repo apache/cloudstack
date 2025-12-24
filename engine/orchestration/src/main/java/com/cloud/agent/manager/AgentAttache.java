@@ -33,11 +33,14 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import com.cloud.agent.api.CleanupPersistentNetworkResourceCommand;
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.agent.lb.SetupMSListCommand;
 import org.apache.cloudstack.command.ReconcileAnswer;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.logging.log4j.Logger;
@@ -409,15 +412,18 @@ public abstract class AgentAttache {
         }
     }
 
-    public Answer[] send(final Request req, final int wait) throws AgentUnavailableException, OperationTimedoutException {
+    public Answer[] send(final Request req, final int wait) throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         SynchronousListener sl = new SynchronousListener(null);
-
+        Long jobId = _agentMgr.getAsyncJobId();
         long seq = req.getSequence();
         send(req, sl);
 
         try {
             for (int i = 0; i < 2; i++) {
                 Answer[] answers = null;
+                if (_agentMgr._asyncJobDao.isJobCancelled(jobId)) {
+                    throw new OperationCancelledException(req.getCommands(), _id, seq, wait, false);
+                }
                 Command[] cmds = req.getCommands();
                 if (cmds != null && cmds.length == 1 && (cmds[0] != null) && cmds[0].isReconcile()
                         && !sl.isDisconnected() && _agentMgr.isReconcileCommandsEnabled(_hypervisorType)) {
@@ -428,6 +434,9 @@ public abstract class AgentAttache {
                         answers = sl.waitFor(wait);
                     } catch (final InterruptedException e) {
                         logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Interrupted");
+                        if (_agentMgr._asyncJobDao.isJobCancelled(jobId)) {
+                            throw new OperationCancelledException(req.getCommands(), _id, seq, wait, false);
+                        }
                     }
                 }
                 if (answers != null) {
@@ -471,10 +480,27 @@ public abstract class AgentAttache {
                 sendNext(seq);
             }
             _agentMgr.updateReconcileCommandsIfNeeded(req.getSequence(), req.getCommands(), Command.State.TIMED_OUT);
+            if (e instanceof OperationCancelledException) {
+                throw e;
+            }
             throw new OperationTimedoutException(req.getCommands(), _id, seq, wait, false);
         } finally {
             unregisterListener(seq);
         }
+    }
+
+    private Long getAsyncJobId() {
+        Long jobId = null;
+        final AsyncJobExecutionContext context = AsyncJobExecutionContext.getCurrent();
+        if (context != null && context.getJob() != null) {
+            AsyncJob job = context.getJob();
+            if (job.getRelated() != null && !job.getRelated().isEmpty()) {
+                jobId = Long.parseLong(job.getRelated());
+            } else {
+                jobId = job.getId();
+            }
+        }
+        return jobId;
     }
 
     private Answer[] waitForAnswerOfReconcileCommand(SynchronousListener sl, final long seq, final Command command, final int wait) {

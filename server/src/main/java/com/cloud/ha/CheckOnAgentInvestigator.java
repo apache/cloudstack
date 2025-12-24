@@ -23,6 +23,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.Status;
@@ -59,6 +60,9 @@ public class CheckOnAgentInvestigator extends AdapterBase implements Investigato
             throw new UnknownVM();
         } catch (OperationTimedoutException e) {
             logger.debug("Operation timed out for " + vm.toString() + ": " + e.getMessage());
+            throw new UnknownVM();
+        } catch (OperationCancelledException e) {
+            logger.debug("Operation cancelled for " + vm.toString() + ": " + e.getMessage());
             throw new UnknownVM();
         }
     }
