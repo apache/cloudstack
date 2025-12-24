@@ -70,4 +70,8 @@ public interface AsyncJobDao extends GenericDao<AsyncJobVO, Long> {
     long countPendingNonPseudoJobs(Long... msIds);
 
     List<Long> listPendingJobIdsForAccount(long accountId);
+
+    List<AsyncJobVO> getCancelledJobs();
+
+    boolean isJobCancelled(Long jobId);
 }

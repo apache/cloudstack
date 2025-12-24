@@ -915,6 +915,7 @@ public class EventTypes {
     public static final String EVENT_INSTANCE_BOOT_GROUP_READINESS_RULE_UPDATE = "INSTANCE.BOOT.GROUP.READINESS.RULE.UPDATE";
     public static final String EVENT_INSTANCE_BOOT_GROUP_READINESS_RULE_DELETE = "INSTANCE.BOOT.GROUP.READINESS.RULE.DELETE";
 
+    public static final String EVENT_JOB_CANCEL = "JOB.CANCEL";
 
     static {
 
