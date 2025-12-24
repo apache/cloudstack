@@ -1,0 +1,9 @@
+{
+    "vm.deploy.network.not.found.ip.map": "The network selected {{networkId}} in IP to network map could not be found. It may have been removed or is no longer accessible.",
+    "vm.deploy.serviceoffering.not.specified": "Unable to deploy Instance as the required parameter 'serviceofferingid' is missing.",
+    "vm.deploy.serviceoffering.inactive": "Unable to deploy Instance as the given service offering {{serviceOffering}} is inactive. Specify an active service offering.",
+    "vm.deploy.serviceoffering.override.not.allowed": "Unable to deploy Instance as the selected service offering {{serviceOffering}} does not allow changing the disk offering.",
+    "vm.deploy.serviceoffering.override.not.allowed.admin": "Unable to deploy Instance as the selected service offering {{serviceOffering}} uses disk offering strictness and does not allow changing the disk offering.",
+    "vm.deploy.serviceoffering.fixed.parameters.not.allowed": "Unable to deploy the instance because the selected service offering {{serviceOffering}} does not allow specifying {{cpuNumberKey}}, {{cpuSpeedKey}}, or {{memory}}.",
+    "vm.deploy.serviceoffering.fixed.parameters.not.allowed.admin": "Unable to deploy the instance because the selected service offering {{serviceOffering}} is not a dynamic offering and it does not allow specifying {{cpuNumberKey}}, {{cpuSpeedKey}}, or {{memory}}."
+}
