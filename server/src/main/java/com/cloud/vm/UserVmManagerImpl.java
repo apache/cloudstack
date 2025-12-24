@@ -6323,18 +6323,23 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     private void verifyServiceOffering(BaseDeployVMCmd cmd, ServiceOffering serviceOffering) {
         if (ServiceOffering.State.Inactive.equals(serviceOffering.getState())) {
-            throw new InvalidParameterValueException(String.format("Service offering is inactive: [%s].", serviceOffering.getUuid()));
+            throw new InvalidParameterValueException("vm.deploy.serviceoffering.inactive",
+                    Map.of("serviceOffering", serviceOffering));
         }
 
         Long overrideDiskOfferingId = cmd.getOverrideDiskOfferingId();
         if (serviceOffering.getDiskOfferingStrictness() && overrideDiskOfferingId != null) {
-            throw new InvalidParameterValueException(String.format("Cannot override disk offering id %d since provided service offering is strictly mapped to its disk offering", overrideDiskOfferingId));
+            throw new InvalidParameterValueException("vm.deploy.serviceoffering.override.not.allowed",
+                    Map.of("serviceOffering", serviceOffering));
         }
 
         if (!serviceOffering.isDynamic()) {
             for (String detail: cmd.getDetails().keySet()) {
                 if (detail.equalsIgnoreCase(VmDetailConstants.CPU_NUMBER) || detail.equalsIgnoreCase(VmDetailConstants.CPU_SPEED) || detail.equalsIgnoreCase(VmDetailConstants.MEMORY)) {
-                    throw new InvalidParameterValueException("cpuNumber or cpuSpeed or memory should not be specified for static service offering");
+                    throw new InvalidParameterValueException("vm.deploy.serviceoffering.fixed.parameters.not.allowed",
+                            Map.of("cpuNumberKey", VmDetailConstants.CPU_NUMBER,
+                                    "cpuSpeedKey", VmDetailConstants.CPU_NUMBER,
+                                    "memoryKey", VmDetailConstants.CPU_NUMBER));
                 }
             }
         }
@@ -6382,7 +6387,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         Long serviceOfferingId = cmd.getServiceOfferingId();
         if (serviceOfferingId == null) {
-            throw new InvalidParameterValueException("Unable to execute API command deployvirtualmachine due to missing parameter serviceofferingid");
+            throw new InvalidParameterValueException("vm.deploy.serviceoffering.not.specified", Collections.emptyMap());
         }
         Long overrideDiskOfferingId = cmd.getOverrideDiskOfferingId();
 
