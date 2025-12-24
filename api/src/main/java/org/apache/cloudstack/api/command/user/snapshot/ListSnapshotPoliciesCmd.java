@@ -32,7 +32,7 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listSnapshotPolicies", description = "Lists snapshot policies.", responseObject = SnapshotPolicyResponse.class,
+@APICommand(name = "listSnapshotPolicies", description = "Lists Snapshot policies.", responseObject = SnapshotPolicyResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListSnapshotPoliciesCmd extends BaseListProjectAndAccountResourcesCmd {
 
@@ -41,13 +41,13 @@ public class ListSnapshotPoliciesCmd extends BaseListProjectAndAccountResourcesC
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class, description = "the ID of the disk volume")
+    @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class, description = "The ID of the disk volume")
     private Long volumeId;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = SnapshotPolicyResponse.class, description = "the ID of the snapshot policy")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = SnapshotPolicyResponse.class, description = "The ID of the Snapshot policy")
     private Long id;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "List resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     /////////////////////////////////////////////////////

@@ -255,7 +255,6 @@ ingore
 initalize
 initator
 inspite
-instace
 instal
 instnace
 intefaces
@@ -376,7 +375,6 @@ renabling
 reponse
 reqest
 reqiured
-requried
 reserv
 reserverd
 reseted

@@ -166,7 +166,7 @@ public class SystemVmTemplateRegistration {
     }
 
     /**
-     * Convenience constructor method to use when there is no system VM template change for a new version.
+     * Convenience constructor method to use when there is no system VM Template change for a new version.
      */
     public SystemVmTemplateRegistration(String systemVmTemplateVersion) {
         this();
@@ -465,14 +465,14 @@ public class SystemVmTemplateRegistration {
     }
 
     /**
-     * This method parses the metadata file consisting of the system VM templates information
-     * @return the version of the system VM template that is to be used. This is done in order
-     * to fallback on the latest available version of the system VM template when there doesn't
+     * This method parses the metadata file consisting of the system VM Templates information
+     * @return the version of the system VM Template that is to be used. This is done in order
+     * to fallback on the latest available version of the system VM Template when there doesn't
      * exist a template corresponding to the current code version.
      */
     public static String parseMetadataFile() {
         String metadataFilePath = getMetadataFilePath();
-        String errMsg = String.format("Failed to parse system VM template metadata file: %s", metadataFilePath);
+        String errMsg = String.format("Failed to parse system VM Template metadata file: %s", metadataFilePath);
         final Ini ini = new Ini();
         try (FileReader reader = new FileReader(metadataFilePath)) {
             ini.load(reader);
@@ -576,7 +576,7 @@ public class SystemVmTemplateRegistration {
     protected Pair<String, Long> getNfsStoreInZone(Long zoneId) {
         ImageStoreVO storeVO = imageStoreDao.findOneByZoneAndProtocol(zoneId, "nfs");
         if (storeVO == null) {
-            String errMsg = String.format("Failed to fetch NFS store in zone = %s for SystemVM template registration",
+            String errMsg = String.format("Failed to fetch NFS store in zone = %s for SystemVM Template registration",
                     zoneId);
             LOGGER.error(errMsg);
             throw new CloudRuntimeException(errMsg);
@@ -640,7 +640,7 @@ public class SystemVmTemplateRegistration {
             VMTemplateZoneVO templateZoneVO = createOrUpdateTemplateZoneEntry(dc.getId(), templateId);
             if (templateZoneVO == null) {
                 throw new CloudRuntimeException(String.format("Failed to create template-zone record for the system " +
-                        "VM template (ID : %d) and zone: %s", templateId, dc));
+                        "VM Template (ID : %d) and zone: %s", templateId, dc));
             }
         }
     }
@@ -673,7 +673,7 @@ public class SystemVmTemplateRegistration {
         templateDataStoreVO.setState(ObjectInDataStoreStateMachine.State.Ready);
         boolean updated = templateDataStoreDao.update(templateDataStoreVO.getId(), templateDataStoreVO);
         if (!updated) {
-            throw new CloudRuntimeException("Failed to update template-store record for registered system VM template");
+            throw new CloudRuntimeException("Failed to update template-store record for registered system VM Template");
         }
     }
 
@@ -688,7 +688,7 @@ public class SystemVmTemplateRegistration {
         templateDataStoreVO.setLastUpdated(new Date(DateUtil.currentGMTTime().getTime()));
         boolean updated = templateDataStoreDao.update(templateDataStoreVO.getId(), templateDataStoreVO);
         if (!updated) {
-            throw new CloudRuntimeException("Failed to update template-store record for seeded system VM template");
+            throw new CloudRuntimeException("Failed to update template-store record for seeded system VM Template");
         }
     }
 
@@ -704,7 +704,7 @@ public class SystemVmTemplateRegistration {
                         DEFAULT_SYSTEM_VM_GUEST_OS_NAME);
                 return;
             }
-            LOGGER.debug("Updating system VM template guest OS [{}] ID", DEFAULT_SYSTEM_VM_GUEST_OS_NAME);
+            LOGGER.debug("Updating system VM Template guest OS [{}] ID", DEFAULT_SYSTEM_VM_GUEST_OS_NAME);
             SystemVmTemplateRegistration.LINUX_12_ID = Math.toIntExact(guestOS.getId());
             hypervisorGuestOsMap.put(Hypervisor.HypervisorType.KVM, LINUX_12_ID);
             hypervisorGuestOsMap.put(Hypervisor.HypervisorType.Hyperv, LINUX_12_ID);
@@ -762,14 +762,14 @@ public class SystemVmTemplateRegistration {
         scr.add("-d", destTempFolder);
         String result = scr.execute();
         if (result != null) {
-            String errMsg = String.format("failed to create template: %s ", result);
+            String errMsg = String.format("Failed to create Template: %s ", result);
             LOGGER.error(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
     }
 
     /**
-     * Register or update a system VM template record and seed it on the target store.
+     * Register or update a system VM Template record and seed it on the target store.
      *
      * @param name display name of the template
      * @param templateDetails metadata for the template
@@ -793,7 +793,7 @@ public class SystemVmTemplateRegistration {
         if (templateId == null) {
             VMTemplateVO template = createTemplateObjectInDB(details);
             if (template == null) {
-                throw new CloudRuntimeException(String.format("Failed to register template for hypervisor: %s",
+                throw new CloudRuntimeException(String.format("Failed to register Template for hypervisor: %s",
                         templateDetails.getHypervisorType().name()));
             }
             templateId = template.getId();
@@ -817,7 +817,7 @@ public class SystemVmTemplateRegistration {
     }
 
     /**
-     * Add an existing system VM template to a secondary image store and update related DB entries.
+     * Add an existing system VM Template to a secondary image store and update related DB entries.
      *
      * @param templateVO the existing VM template (must not be null)
      * @param templateDetails the metadata details of the template to be added
@@ -842,7 +842,7 @@ public class SystemVmTemplateRegistration {
     }
 
     /**
-     * Registers a new system VM template for the given hypervisor/arch when no existing template is present.
+     * Registers a new system VM Template for the given hypervisor/arch when no existing template is present.
      *
      * @param name the name of the new template
      *  @param templateDetails the metadata details of the template to be registered
@@ -862,7 +862,7 @@ public class SystemVmTemplateRegistration {
             updateConfigurationParams(hypervisor, name, zoneId);
             updateSystemVMEntries(templateId, hypervisor);
         } catch (Exception e) {
-            String errMsg = String.format("Failed to register template for %s", templateDetails.getHypervisorType());
+            String errMsg = String.format("Failed to register Template for hypervisor: %s", hypervisor);
             LOGGER.error(errMsg, e);
             if (templateId != null) {
                 updateTemplateEntriesOnFailure(templateId);
@@ -883,7 +883,7 @@ public class SystemVmTemplateRegistration {
     protected MetadataTemplateDetails getValidatedTemplateDetailsForHypervisorAndArch(
             Hypervisor.HypervisorType hypervisor, CPU.CPUArch arch) {
         if (!AVAILABLE_SYSTEM_TEMPLATES_HYPERVISOR_ARCH_LIST.contains(new Pair<>(hypervisor, arch))) {
-            throw new CloudRuntimeException("No system VM template available for the given hypervisor and arch");
+            throw new CloudRuntimeException("No system VM Template available for the given hypervisor and arch");
         }
         MetadataTemplateDetails templateDetails = getMetadataTemplateDetails(hypervisor, arch);
         if (templateDetails == null) {
@@ -934,7 +934,7 @@ public class SystemVmTemplateRegistration {
      * Validate that templates for the provided hypervisor/architecture pairs which are in use and are valid.
      *
      * If a template is missing or validation fails for any required pair, a
-     * {@link CloudRuntimeException} is thrown to abort the upgrade. If system VM template for a hypervisor/arch is
+     * {@link CloudRuntimeException} is thrown to abort the upgrade. If system VM Template for a hypervisor/arch is
      * not considered available then validation is skipped for that pair.
      *
      * @param hypervisorArchList list of hypervisor/architecture pairs to validate
@@ -943,7 +943,7 @@ public class SystemVmTemplateRegistration {
         boolean templatesFound = true;
         for (Pair<Hypervisor.HypervisorType, CPU.CPUArch> hypervisorArch : hypervisorArchList) {
             if (!AVAILABLE_SYSTEM_TEMPLATES_HYPERVISOR_ARCH_LIST.contains(hypervisorArch)) {
-                LOGGER.info("No system VM template available for {}. Skipping validation.",
+                LOGGER.info("No system VM Template available for {}. Skipping validation.",
                         getHypervisorArchLog(hypervisorArch.first(), hypervisorArch.second()));
                 continue;
             }
@@ -957,14 +957,14 @@ public class SystemVmTemplateRegistration {
             }
         }
         if (!templatesFound) {
-            String errMsg = "SystemVm template not found. Cannot upgrade system Vms";
+            String errMsg = "SystemVM Template not found. Cannot upgrade system VMs";
             LOGGER.error(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
     }
 
     /**
-     * Register or ensure system VM templates are present on the NFS store for a given zone.
+     * Register or ensure system VM Templates are present on the NFS store for a given zone.
      *
      * Mounts the zone image store, enumerates hypervisors and architectures in the zone,
      * and for each template either adds an existing template to the store or registers
@@ -1010,9 +1010,9 @@ public class SystemVmTemplateRegistration {
     protected void registerTemplates(List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> hypervisorsArchInUse) {
         GlobalLock lock = GlobalLock.getInternLock("UpgradeDatabase-Lock");
         try {
-            LOGGER.info("Grabbing lock to register templates.");
+            LOGGER.info("Grabbing lock to register Templates.");
             if (!lock.lock(LOCK_WAIT_TIMEOUT)) {
-                throw new CloudRuntimeException("Unable to acquire lock to register system VM template.");
+                throw new CloudRuntimeException("Unable to acquire lock to register system VM Template.");
             }
             try {
                 validateTemplates(hypervisorsArchInUse);
@@ -1032,13 +1032,13 @@ public class SystemVmTemplateRegistration {
                                 unmountStore(filePath);
                             } catch (Exception e) {
                                 unmountStore(filePath);
-                                throw new CloudRuntimeException("Failed to register system VM template. Upgrade Failed");
+                                throw new CloudRuntimeException("Failed to register system VM Template. Upgrade Failed");
                             }
                         }
                     }
                 });
             } catch (Exception e) {
-                throw new CloudRuntimeException("Failed to register system VM template. Upgrade Failed");
+                throw new CloudRuntimeException("Failed to register system VM Template. Upgrade Failed");
             }
         } finally {
             lock.unlock();
@@ -1066,7 +1066,8 @@ public class SystemVmTemplateRegistration {
         }
         boolean updated = vmTemplateDao.update(templateVO.getId(), templateVO);
         if (!updated) {
-            String errMsg = String.format("Exception while updating template with id %s to be marked as 'system'", templateId);
+            String errMsg = String.format("Exception while updating template with id %s to be marked as 'system'",
+                    templateId);
             LOGGER.error(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
@@ -1093,14 +1094,14 @@ public class SystemVmTemplateRegistration {
     }
 
     /**
-     * Updates or registers the system VM template for the given hypervisor/arch if not already present.
+     * Updates or registers the system VM Template for the given hypervisor/arch if not already present.
      * Returns true if a new template was registered.
-     * If there is an existing system VM template for the given hypervisor/arch, its details are updated.
+     * If there is an existing system VM Template for the given hypervisor/arch, its details are updated.
      * If no existing template is found, new templates are registered for the valid hypervisor/arch which are in use.
      */
     protected boolean updateOrRegisterSystemVmTemplate(MetadataTemplateDetails templateDetails,
                List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> hypervisorArchInUse) {
-        String systemVmTemplateLog = String.format("%s system VM template for %s", getSystemVmTemplateVersion(),
+        String systemVmTemplateLog = String.format("%s system VM Template for %s", getSystemVmTemplateVersion(),
                 templateDetails.getHypervisorArchLog());
         LOGGER.debug("Registering or updating {}", systemVmTemplateLog,
                 templateDetails.getHypervisorArchLog());
@@ -1174,7 +1175,7 @@ public class SystemVmTemplateRegistration {
     }
 
     /**
-     * Validate metadata for the given hypervisor/arch and register a new system VM template
+     * Validate metadata for the given hypervisor/arch and register a new system VM Template
      * on the specified store and zone. Creates DB entries and seeds the template on the store.
      *
      * @param hypervisor hypervisor type
@@ -1232,7 +1233,7 @@ public class SystemVmTemplateRegistration {
     }
 
     /**
-     * Finds a registered system VM template matching the provided criteria.
+     * Finds a registered system VM Template matching the provided criteria.
      *
      * <p>The method first attempts to locate the latest template by {@code templateName},
      * {@code hypervisorType} and {@code arch}. If none is found and a non-blank {@code url}
@@ -1261,7 +1262,7 @@ public class SystemVmTemplateRegistration {
     }
 
     /**
-     * Update or register system VM templates based on metadata.
+     * Update or register system VM Templates based on metadata.
      *
      * Runs the registration logic inside a database transaction: obtains the
      * set of hypervisors/architectures in use, iterates over metadata entries
@@ -1287,7 +1288,7 @@ public class SystemVmTemplateRegistration {
                             break;
                         }
                     } catch (final Exception e) {
-                        String errMsg = "Exception while registering/updating system VM templates for hypervisors in metadata";
+                        String errMsg = "Exception while registering/updating system VM Templates for hypervisors in metadata";
                         LOGGER.error(errMsg, e);
                         throw new CloudRuntimeException(errMsg, e);
                     }

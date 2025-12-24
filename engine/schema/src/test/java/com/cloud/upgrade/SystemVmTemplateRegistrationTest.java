@@ -160,7 +160,7 @@ public class SystemVmTemplateRegistrationTest {
             setupMetadataFile(mockedStatic, null);
             CloudRuntimeException exception = assertThrows(CloudRuntimeException.class,
                     SystemVmTemplateRegistration::parseMetadataFile);
-            assertTrue(exception.getMessage().startsWith("Failed to parse system VM template metadata file"));
+            assertTrue(exception.getMessage().contains("Failed to parse system VM Template metadata file"));
         }
     }
 
@@ -171,7 +171,7 @@ public class SystemVmTemplateRegistrationTest {
             setupMetadataFile(mockedStatic, "abc");
             CloudRuntimeException exception = assertThrows(CloudRuntimeException.class,
                     SystemVmTemplateRegistration::parseMetadataFile);
-            assertTrue(exception.getMessage().startsWith("Failed to parse system VM template metadata file"));
+            assertTrue(exception.getMessage().contains("Failed to parse system VM Template metadata file"));
         }
     }
 

@@ -43,7 +43,7 @@
             v-if="item.taggedresource && item.taggedresource.length > 0"
             class="tagged-limit-collapse"
             @change="handleCollapseChange(item.resourcetypename)">
-          <a-collapse-panel key="1" :header="collpaseActive[item.resourcetypename] ? $t('label.tagged.limits') : $t('label.tagged.limits') + ' - ' + item.tagsasstring">
+          <a-collapse-panel key="1" :header="collapseActive[item.resourcetypename] ? $t('label.tagged.limits') : $t('label.tagged.limits') + ' - ' + item.tagsasstring">
             <div v-for="(subItem, subItemIndex) in item.taggedresource" :key="subItemIndex">
               <a-form-item
                 :v-bind="subItem.resourcetypename"
@@ -94,7 +94,7 @@ export default {
     return {
       formLoading: false,
       dataResource: [],
-      collpaseActive: {},
+      collapseActive: {},
       resourceTypeIdNames: {}
     }
   },
@@ -259,11 +259,11 @@ export default {
       })
     },
     handleCollapseChange (type) {
-      if (this.collpaseActive[type]) {
-        this.collpaseActive[type] = null
+      if (this.collapseActive[type]) {
+        this.collapseActive[type] = null
         return
       }
-      this.collpaseActive[type] = true
+      this.collapseActive[type] = true
     }
   }
 }

@@ -63,8 +63,8 @@ function getChecksum() {
 }
 
 function createMetadataFile() {
-  local fileData=$(cat $SOURCEFILE)
-  echo -e "["default"]\nversion = $VERSION.${securityversion}\ndownloadrepository = $CS_SYSTEMTEMPLATE_REPO\n" >> $METADATAFILE
+  local fileData=$(cat "$SOURCEFILE")
+  echo -e "["default"]\nversion = $VERSION.${securityversion}\ndownloadrepository = $CS_SYSTEMTEMPLATE_REPO\n" >> "$METADATAFILE"
   for template in "${templates[@]}"
   do
     section="${template%%:*}"
@@ -77,7 +77,7 @@ function createMetadataFile() {
     templatename="systemvm-${sectionHv%.*}-${VERSION}-${arch}"
     checksum=$(getChecksum "$fileData" "$VERSION-${arch}-$hvName")
     filename=$(echo ${downloadurl##*'/'})
-    echo -e "["$section"]\ntemplatename = $templatename\nchecksum = $checksum\ndownloadurl = $downloadurl\nfilename = $filename\narch = $arch\nguestos = $guestos\n" >> $METADATAFILE
+    echo -e "["$section"]\ntemplatename = $templatename\nchecksum = $checksum\ndownloadurl = $downloadurl\nfilename = $filename\narch = $arch\nguestos = $guestos\n" >> "$METADATAFILE"
   done
 }
 
@@ -100,8 +100,8 @@ for key in "${!template_specs[@]}"; do
 done
 
 PARENTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )/dist/systemvm-templates/"
-mkdir -p $PARENTPATH
-METADATAFILE=${PARENTPATH}"metadata.ini"
-echo > $METADATAFILE
-SOURCEFILE=${PARENTPATH}'sha512sum.txt'
+mkdir -p "$PARENTPATH"
+METADATAFILE="${PARENTPATH}metadata.ini"
+echo > "$METADATAFILE"
+SOURCEFILE="${PARENTPATH}sha512sum.txt"
 createMetadataFile

@@ -34,7 +34,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteAutoScaleVmGroup", description = "Deletes a autoscale vm group.", responseObject = SuccessResponse.class, entityType = {AutoScaleVmGroup.class},
+@APICommand(name = "deleteAutoScaleVmGroup", description = "Deletes an autoscale Instance group.", responseObject = SuccessResponse.class, entityType = {AutoScaleVmGroup.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteAutoScaleVmGroupCmd extends BaseAsyncCmd {
     // ///////////////////////////////////////////////////
@@ -46,12 +46,12 @@ public class DeleteAutoScaleVmGroupCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = AutoScaleVmGroupResponse.class,
                required = true,
-               description = "the ID of the autoscale group")
+               description = "The ID of the autoscale group")
     private Long id;
 
     @Parameter(name = ApiConstants.CLEANUP,
             type = CommandType.BOOLEAN,
-            description = "true if all VMs have to be cleaned up, false otherwise",
+            description = "True if all VMs have to be cleaned up, false otherwise",
             since = "4.18.0")
     private Boolean cleanup;
 
@@ -89,19 +89,19 @@ public class DeleteAutoScaleVmGroupCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "deleting autoscale vm group: " + getId();
+        return "Deleting autoscale Instance group: " + getId();
     }
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("AutoScale Vm Group Id: " + getId());
+        CallContext.current().setEventDetails("AutoScale Instance Group Id: " + getId());
         boolean result = _autoScaleService.deleteAutoScaleVmGroup(id, getCleanup());
 
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            logger.warn("Failed to delete autoscale vm group " + getId());
+            logger.warn("Failed to delete autoscale Instance group {}", getId());
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete autoscale vm group");
         }
     }

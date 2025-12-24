@@ -21,7 +21,6 @@ import java.util.List;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.response.VolumeMetricsStatsResponse;
 
@@ -34,13 +33,13 @@ public class ListVolumesUsageHistoryCmd extends BaseResourceUsageHistoryCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VolumeResponse.class, description = "the ID of the volume.")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VolumeResponse.class, description = "The ID of the volume.")
     private Long id;
 
-    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType= SystemVmResponse.class, description="the IDs of the volumes, mutually exclusive with id.")
+    @Parameter(name = ApiConstants.IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = VolumeResponse.class, description = "the IDs of the Volumes, mutually exclusive with id.")
     private List<Long> ids;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the volume (a substring match is made against the parameter value returning the data for all matching Volumes).")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Name of the volume (a substring match is made against the parameter value returning the data for all matching Volumes).")
     private String name;
 
     /////////////////////////////////////////////////////
