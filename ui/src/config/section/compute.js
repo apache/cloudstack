@@ -47,7 +47,7 @@ export default {
         return filters
       },
       columns: () => {
-        const fields = ['displayname', 'state', 'ipaddress']
+        const fields = ['name', 'state', 'ipaddress']
         const metricsFields = ['cpunumber', 'cputotal', 'cpuused', 'memorytotal',
           {
             memoryused: (record) => {
@@ -78,7 +78,7 @@ export default {
         fields.push('zonename')
         return fields
       },
-      searchFilters: ['displayname', 'zoneid', 'domainid', 'account', 'groupid', 'arch', 'tags'],
+      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'groupid', 'arch', 'tags'],
       details: () => {
         var fields = ['name', 'displayname', 'id', 'state', 'ipaddress', 'ip6address', 'templatename', 'ostypename',
           'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'arch', 'boottype', 'bootmode', 'account',
