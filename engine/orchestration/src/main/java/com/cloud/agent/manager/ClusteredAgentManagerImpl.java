@@ -42,6 +42,7 @@ import javax.naming.ConfigurationException;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.resource.ResourceState;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.framework.config.ConfigDepot;
@@ -1236,7 +1237,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         return _gson.toJson(answers);
     }
 
-    public Answer[] sendToAgent(final Long hostId, final Command[] cmds, final boolean stopOnError) throws AgentUnavailableException, OperationTimedoutException {
+    public Answer[] sendToAgent(final Long hostId, final Command[] cmds, final boolean stopOnError) throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         final Commands commands = new Commands(stopOnError ? Command.OnError.Stop : Command.OnError.Continue);
         for (final Command cmd : cmds) {
             commands.addCommand(cmd);
@@ -1355,6 +1356,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 logger.warn("Agent is unavailable", e);
             } catch (final OperationTimedoutException e) {
                 logger.warn("Timed Out", e);
+            } catch (OperationCancelledException e) {
+                logger.warn("Operation Cancelled", e);
             }
 
             return null;

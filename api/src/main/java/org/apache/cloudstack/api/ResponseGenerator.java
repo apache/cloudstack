@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.cloudstack.api.command.user.job.CancelAsyncJobCmd;
 import org.apache.cloudstack.api.response.ConsoleSessionResponse;
 import org.apache.cloudstack.consoleproxy.ConsoleSession;
 import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
@@ -396,6 +397,8 @@ public interface ResponseGenerator {
             Long id);
 
     AsyncJobResponse queryJobResult(QueryAsyncJobResultCmd cmd);
+
+    AsyncJobResponse cancelJobResponse(CancelAsyncJobCmd cmd);
 
     NetworkOfferingResponse createNetworkOfferingResponse(NetworkOffering offering);
 

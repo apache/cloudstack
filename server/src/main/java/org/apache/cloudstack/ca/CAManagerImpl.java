@@ -57,6 +57,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
+import com.cloud.exception.OperationCancelledException;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.ca.IssueCertificateCmd;
@@ -223,7 +224,7 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
             }
             final Certificate certificate = issueCertificate(csr, Arrays.asList(host.getName(), host.getPrivateIpAddress()), Arrays.asList(host.getPrivateIpAddress(), host.getPublicIpAddress(), host.getStorageIpAddress()), CAManager.CertValidityPeriod.value(), caProvider);
             return deployCertificate(host, certificate, reconnect, null);
-        } catch (final AgentUnavailableException | OperationTimedoutException e) {
+        } catch (final AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
             logger.error("Host/agent is not available or operation timed out, failed to setup keystore and generate CSR for host/agent {}, due to: ", host, e);
             throw new CloudRuntimeException(String.format("Failed to generate keystore and get CSR from the host/agent %s", host));
         }
@@ -365,7 +366,7 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
     }
 
     @Override
-    public String generateKeyStoreAndCsr(final Host host, final Map<String, String> sshAccessDetails) throws AgentUnavailableException, OperationTimedoutException {
+    public String generateKeyStoreAndCsr(final Host host, final Map<String, String> sshAccessDetails) throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         final SetupKeyStoreCommand cmd = new SetupKeyStoreCommand(CertValidityPeriod.value());
         if (sshAccessDetails != null && !sshAccessDetails.isEmpty()) {
             cmd.setAccessDetail(sshAccessDetails);
@@ -377,7 +378,7 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
 
     @Override
     public boolean deployCertificate(final Host host, final Certificate certificate, final Boolean reconnect, final Map<String, String> sshAccessDetails)
-            throws AgentUnavailableException, OperationTimedoutException {
+            throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         final SetupCertificateCommand cmd = new SetupCertificateCommand(certificate);
         if (sshAccessDetails != null && !sshAccessDetails.isEmpty()) {
             cmd.setAccessDetail(sshAccessDetails);

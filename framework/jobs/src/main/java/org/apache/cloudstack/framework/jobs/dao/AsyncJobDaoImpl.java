@@ -50,6 +50,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
     private final SearchBuilder<AsyncJobVO> byIdResourceIdResourceTypeSearch;
     private final GenericSearchBuilder<AsyncJobVO, Long> asyncJobTypeSearch;
     private final GenericSearchBuilder<AsyncJobVO, Long> pendingNonPseudoAsyncJobsSearch;
+    private final SearchBuilder<AsyncJobVO> cancelledAsyncJobSearch;
 
     public AsyncJobDaoImpl() {
         pendingAsyncJobSearch = createSearchBuilder();
@@ -116,6 +117,11 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         pendingNonPseudoAsyncJobsSearch.and("instanceTypeNEQ", pendingNonPseudoAsyncJobsSearch.entity().getInstanceType(), SearchCriteria.Op.NEQ);
         pendingNonPseudoAsyncJobsSearch.and("jobStatusEQ", pendingNonPseudoAsyncJobsSearch.entity().getStatus(), SearchCriteria.Op.EQ);
         pendingNonPseudoAsyncJobsSearch.and("executingMsidIN", pendingNonPseudoAsyncJobsSearch.entity().getExecutingMsid(), SearchCriteria.Op.IN);
+
+        cancelledAsyncJobSearch = createSearchBuilder();
+        cancelledAsyncJobSearch.and("status", cancelledAsyncJobSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        cancelledAsyncJobSearch.and("completeMsId", cancelledAsyncJobSearch.entity().getCompleteMsid(), SearchCriteria.Op.NULL);
+        cancelledAsyncJobSearch.done();
     }
 
     @Override
@@ -308,5 +314,18 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         SearchCriteria<Long> sc = sb.create();
         sc.setParameters("accountId", accountId);
         return customSearch(sc, null);
+    }
+
+    @Override
+    public List<AsyncJobVO> getCancelledJobs() {
+        SearchCriteria<AsyncJobVO> sc = cancelledAsyncJobSearch.create();
+        sc.setParameters("status", JobInfo.Status.CANCELLED);
+        return listBy(sc);
+    }
+
+    @Override
+    public boolean isJobCancelled(Long jobId) {
+        AsyncJobVO job = findById(jobId);
+        return job != null && job.getStatus() == JobInfo.Status.CANCELLED;
     }
 }
