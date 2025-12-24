@@ -511,7 +511,6 @@ const user = {
         vueProps.$localStorage.remove(ACCESS_TOKEN)
         vueProps.$localStorage.remove(HEADER_NOTICES)
 
-        vueProps.$localStorage.remove(PASSWORD_CHANGE_REQUIRED)
         commit('SET_PASSWORD_CHANGE_REQUIRED', false)
 
         logout(state.token).then(() => {

@@ -92,7 +92,7 @@ public class LoginCmdResponse extends AuthenticationCmdResponse {
 
     @SerializedName(value = ApiConstants.PASSWORD_CHANGE_REQUIRED)
     @Param(description = "Indicates whether the User is required to change password on next login.", since = "4.23.0")
-    private String passwordChangeRequired;
+    private Boolean passwordChangeRequired;
 
     public String getUsername() {
         return username;
@@ -228,11 +228,11 @@ public class LoginCmdResponse extends AuthenticationCmdResponse {
         this.managementServerId = managementServerId;
     }
 
-    public String getPasswordChangeRequired() {
+    public Boolean getPasswordChangeRequired() {
         return passwordChangeRequired;
     }
 
     public void setPasswordChangeRequired(String passwordChangeRequired) {
-        this.passwordChangeRequired = passwordChangeRequired;
+        this.passwordChangeRequired = Boolean.parseBoolean(passwordChangeRequired);
     }
 }
