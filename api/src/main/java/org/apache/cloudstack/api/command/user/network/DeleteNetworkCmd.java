@@ -33,7 +33,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
 
-@APICommand(name = "deleteNetwork", description = "Deletes a network", responseObject = SuccessResponse.class, entityType = {Network.class},
+@APICommand(name = "deleteNetwork", description = "Deletes a Network", responseObject = SuccessResponse.class, entityType = {Network.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteNetworkCmd extends BaseAsyncCmd {
 
@@ -41,7 +41,7 @@ public class DeleteNetworkCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkResponse.class, required = true, description = "the ID of the network")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkResponse.class, required = true, description = "The ID of the network")
     private Long id;
 
     @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force delete a network." +

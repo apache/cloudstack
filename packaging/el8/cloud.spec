@@ -102,7 +102,7 @@ The Apache CloudStack files shared between agent and management server
 Summary: CloudStack Agent for KVM hypervisors
 Requires: (openssh-clients or openssh)
 Requires: java-17-openjdk
-Requires: tzdata-java
+Requires: (tzdata-java or timezone-java)
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: libvirt-daemon-driver-storage-rbd
@@ -143,7 +143,7 @@ The CloudStack baremetal agent
 %package usage
 Summary: CloudStack Usage calculation server
 Requires: java-17-openjdk
-Requires: tzdata-java
+Requires: (tzdata-java or timezone-java)
 Group: System Environment/Libraries
 %description usage
 The CloudStack usage calculation service
@@ -268,8 +268,7 @@ install -D client/target/utilities/bin/cloud-setup-baremetal ${RPM_BUILD_ROOT}%{
 install -D client/target/utilities/bin/cloud-sysvmadm ${RPM_BUILD_ROOT}%{_bindir}/%{name}-sysvmadm
 install -D client/target/utilities/bin/cloud-update-xenserver-licenses ${RPM_BUILD_ROOT}%{_bindir}/%{name}-update-xenserver-licenses
 # Bundle cmk in cloudstack-management
-CMK_REL=$(wget -O - "https://api.github.com/repos/apache/cloudstack-cloudmonkey/releases" 2>/dev/null | jq -r '.[0].tag_name')
-wget https://github.com/apache/cloudstack-cloudmonkey/releases/download/$CMK_REL/cmk.linux.x86-64 -O ${RPM_BUILD_ROOT}%{_bindir}/cmk
+wget https://github.com/apache/cloudstack-cloudmonkey/releases/latest/download/cmk.linux.x86-64 -O ${RPM_BUILD_ROOT}%{_bindir}/cmk
 chmod +x ${RPM_BUILD_ROOT}%{_bindir}/cmk
 
 cp -r client/target/utilities/scripts/db/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup

@@ -710,7 +710,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 if (ObjectUtils.anyNotNull(uefiEnabled, virtv2vVersion, ovftoolVersion)) {
                     _hostDao.loadDetails(host);
                     boolean updateNeeded = false;
-                    if (!uefiEnabled.equals(host.getDetails().get(Host.HOST_UEFI_ENABLE))) {
+                    if (StringUtils.isNotBlank(uefiEnabled) && !uefiEnabled.equals(host.getDetails().get(Host.HOST_UEFI_ENABLE))) {
                         host.getDetails().put(Host.HOST_UEFI_ENABLE, uefiEnabled);
                         updateNeeded = true;
                     }
@@ -1571,7 +1571,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         }
                     }
                 } catch (final Throwable th) {
-                    logger.warn("Caught: ", th);
+                    logger.error("Caught: ", th);
                     answer = new Answer(cmd, false, th.getMessage());
                 }
                 answers[i] = answer;
@@ -1586,7 +1586,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             try {
                 link.send(response.toBytes());
             } catch (final ClosedChannelException e) {
-                logger.warn("Unable to send response because connection is closed: {}", response);
+                logger.error("Unable to send response because connection is closed: {}", response);
             }
         }
 

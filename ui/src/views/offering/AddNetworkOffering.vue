@@ -323,6 +323,7 @@
             <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
           </template>
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             showSearch
             optionFilterProp="label"
             v-model:value="form.serviceofferingid"
@@ -505,6 +506,7 @@
           </template>
           <a-select
             mode="multiple"
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.domainid"
             showSearch
             optionFilterProp="label"
@@ -529,6 +531,7 @@
           <a-select
             id="zone-selection"
             mode="multiple"
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.zoneid"
             showSearch
             optionFilterProp="label"

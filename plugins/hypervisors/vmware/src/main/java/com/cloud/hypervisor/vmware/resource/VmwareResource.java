@@ -4568,7 +4568,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             if (vmMo != null) {
                 if (vmMo.isToolsInstallerMounted()) {
                     toolsInstallerMounted = true;
-                    logger.trace("Detected mounted vmware tools installer for :[" + cmd.getVmName() + "]");
+                    logger.trace("Detected mounted VMware tools installer for :[" + cmd.getVmName() + "]");
                 }
                 try {
                     if (canSetEnableSetupConfig(vmMo,cmd.getVirtualMachine())) {
@@ -4602,9 +4602,9 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             if (toolsInstallerMounted) {
                 try {
                     vmMo.mountToolsInstaller();
-                    logger.debug(String.format("Successfully re-mounted vmware tools installer for :[%s].", cmd.getVmName()));
+                    logger.debug(String.format("Successfully re-mounted VMware tools installer for :[%s].", cmd.getVmName()));
                 } catch (Exception e) {
-                    logger.error(String.format("Unabled to re-mount vmware tools installer for: [%s].", cmd.getVmName()), e);
+                    logger.error(String.format("Unabled to re-mount VMware tools installer for: [%s].", cmd.getVmName()), e);
                 }
             }
         }
@@ -5556,7 +5556,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         String expectedSnapshotBackupUuid = null;
         String actualSnapshotBackupUuid = null;
         String actualSnapshotUuid = null;
-        return new ValidateSnapshotAnswer(cmd, false, "ValidateSnapshotCommand is not supported for vmware yet", expectedSnapshotBackupUuid, actualSnapshotBackupUuid,
+        return new ValidateSnapshotAnswer(cmd, false, "ValidateSnapshotCommand is not supported for VMWare yet", expectedSnapshotBackupUuid, actualSnapshotBackupUuid,
                 actualSnapshotUuid);
     }
 
@@ -5837,11 +5837,20 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 if (toolsStatus == VirtualMachineToolsStatus.TOOLS_NOT_INSTALLED) {
                     details += "Vmware tools not installed.";
                 } else {
-                    ip = guestInfo.getIpAddress();
-                    if (ip != null) {
-                        result = true;
+                    var normalizedMac = cmd.getMacAddress().replaceAll("-", ":");
+                    for(var guestInfoNic : guestInfo.getNet()) {
+                        var normalizedNicMac = guestInfoNic.getMacAddress().replaceAll("-", ":");
+                        if (!result && normalizedNicMac.equalsIgnoreCase(normalizedMac)) {
+                            result = true;
+                            details = null;
+                            for (var ipAddr : guestInfoNic.getIpAddress()) {
+                                if (NetUtils.isValidIp4(ipAddr) && (cmd.getVmNetworkCidr() == null || NetUtils.isIpWithInCidrRange(ipAddr, cmd.getVmNetworkCidr()))) {
+                                    details = ipAddr;
+                                }
+                            }
+                            break;
+                        }
                     }
-                    details = ip;
                 }
             } else {
                 details += "VM " + vmName + " no longer exists on vSphere host: " + hyperHost.getHyperHostName();

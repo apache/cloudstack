@@ -1386,6 +1386,9 @@ export default {
             if ('successMethod' in action) {
               action.successMethod(this, result)
             }
+            if (['createProject', 'updateProject', 'deleteProject'].includes(action.api)) {
+              eventBus.emit('projects-updated', { action: action.api, project: this.resource })
+            }
             resolve(true)
           },
           errorMethod: () => {
@@ -1720,10 +1723,12 @@ export default {
       const query = Object.assign({}, this.$route.query)
       delete query.templatefilter
       delete query.isofilter
-      delete query.account
-      delete query.domainid
       delete query.state
       delete query.annotationfilter
+      if (!['publicip'].includes(this.$route.name)) {
+        delete query.account
+        delete query.domainid
+      }
       if (this.$route.name === 'template') {
         query.templatefilter = filter
       } else if (this.$route.name === 'iso') {
@@ -1816,8 +1821,12 @@ export default {
     },
     onSearch (opts) {
       const query = Object.assign({}, this.$route.query)
-      for (const key in this.searchParams) {
-        delete query[key]
+      let searchFilters = this.$route?.meta?.searchFilters || []
+      if (typeof searchFilters === 'function') {
+        searchFilters = searchFilters()
+      }
+      if (Array.isArray(searchFilters)) {
+        searchFilters.forEach(key => delete query[key])
       }
       delete query.name
       delete query.templatetype

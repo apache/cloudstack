@@ -84,9 +84,8 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-
+import org.apache.logging.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo;
@@ -394,7 +393,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 templateVol.setSize(size);
                 templateVol.setVirtualSize(size);
             } else {
-                logger.debug("Using templates disk size of " + toHumanReadableSize(templateVol.getVirtualSize()) + "since size passed was " + toHumanReadableSize(size));
+                logger.debug("Using Templates disk size of " + toHumanReadableSize(templateVol.getVirtualSize()) + "since size passed was " + toHumanReadableSize(size));
             }
 
             return storagePoolMgr.copyPhysicalDisk(templateVol, volUuid, primaryPool, timeout);
@@ -588,7 +587,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         try {
             final String volumeName = UUID.randomUUID().toString();
 
-            final String destVolumeName = volumeName + "." + destFormat.getFileExtension();
+            final String destVolumeName = volumeName + "." + ImageFormat.QCOW2.getFileExtension();
             final KVMPhysicalDisk volume = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), srcVolumePath);
             volume.setFormat(PhysicalDiskFormat.valueOf(srcFormat.toString()));
 
@@ -1083,7 +1082,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         } finally {
             srcVolume.clearPassphrase();
             if (isCreatedFromVmSnapshot) {
-                logger.debug("Ignoring removal of vm snapshot on primary as this snapshot is created from vm snapshot");
+                logger.debug("Ignoring removal of Instance Snapshot on primary as this snapshot is created from Instance Snapshot");
             } else if (primaryPool != null && primaryPool.getType() != StoragePoolType.RBD) {
                 deleteSnapshotOnPrimary(cmd, snapshot, primaryPool);
             }
@@ -1875,7 +1874,7 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     protected void deleteFullVmSnapshotAfterConvertingItToExternalDiskSnapshot(Domain vm, String snapshotName, VolumeObjectTO volume, String vmName) throws LibvirtException {
-        logger.debug(String.format("Deleting full VM snapshot [%s] of VM [%s] as we already converted it to an external disk snapshot of the volume [%s].", snapshotName, vmName,
+        logger.debug(String.format("Deleting full Instance Snapshot [%s] of Instance [%s] as we already converted it to an external disk Snapshot of the volume [%s].", snapshotName, vmName,
                 volume));
 
         DomainSnapshot domainSnapshot = vm.snapshotLookupByName(snapshotName);
@@ -1889,10 +1888,10 @@ public class KVMStorageProcessor implements StorageProcessor {
 
         try {
             QemuImg qemuImg = new QemuImg(_cmdsTimeout);
-            logger.debug(String.format("Converting full VM snapshot [%s] of VM [%s] to external disk snapshot of the volume [%s].", snapshotName, vmName, volume));
+            logger.debug(String.format("Converting full Instance Snapshot [%s] of Instance [%s] to external disk Snapshot of the volume [%s].", snapshotName, vmName, volume));
             qemuImg.convert(srcFile, destFile, null, snapshotName, true);
         } catch (QemuImgException qemuException) {
-            String message = String.format("Could not convert full VM snapshot [%s] of VM [%s] to external disk snapshot of volume [%s] due to [%s].", snapshotName, vmName, volume,
+            String message = String.format("Could not convert full Instance Snapshot [%s] of Instance [%s] to external disk snapshot of volume [%s] due to [%s].", snapshotName, vmName, volume,
                     qemuException.getMessage());
 
             logger.error(message, qemuException);
@@ -1907,7 +1906,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
         long start = System.currentTimeMillis();
         vm.snapshotCreateXML(String.format(XML_CREATE_FULL_VM_SNAPSHOT, snapshotName, vmUuid));
-        logger.debug(String.format("Full VM Snapshot [%s] of VM [%s] took [%s] seconds to finish.", snapshotName, vmName, (System.currentTimeMillis() - start)/1000));
+        logger.debug(String.format("Full Instance Snapshot [%s] of Instance [%s] took [%s] seconds to finish.", snapshotName, vmName, (System.currentTimeMillis() - start)/1000));
     }
 
     protected void validateConvertResult(String convertResult, String snapshotPath) throws CloudRuntimeException, IOException {
@@ -2429,7 +2428,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             logger.debug("Verifying temporary location for downloading the template exists on the host");
             String temporaryDownloadPath = resource.getDirectDownloadTemporaryDownloadPath();
             if (!isLocationAccessible(temporaryDownloadPath)) {
-                String msg = "The temporary location path for downloading templates does not exist: " +
+                String msg = "The temporary location path for downloading Templates does not exist: " +
                         temporaryDownloadPath + " on this host";
                 logger.error(msg);
                 return new DirectDownloadAnswer(false, msg, true);
@@ -2476,7 +2475,9 @@ public class KVMStorageProcessor implements StorageProcessor {
             if (template != null) {
                 templatePath = template.getPath();
             }
-            if (StringUtils.isEmpty(templatePath)) {
+            if (ImageFormat.ISO.equals(cmd.getFormat())) {
+                logger.debug("Skipping template validations as image format is {}", cmd.getFormat());
+            } else if (StringUtils.isEmpty(templatePath)) {
                 logger.warn("Skipped validation whether downloaded file is QCOW2 for template {}, due to downloaded template path is empty", template.getName());
             } else if (!new File(templatePath).exists()) {
                 logger.warn("Skipped validation whether downloaded file is QCOW2 for template {}, due to downloaded template path is not valid: {}", template.getName(), templatePath);

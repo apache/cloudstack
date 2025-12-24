@@ -83,6 +83,15 @@ public interface UserVmManager extends UserVmService {
             "If set to true, tags specified in `resource.limit.host.tags` are also included in vm.strict.host.tags.",
             true);
 
+    ConfigKey<Boolean> EnableAdditionalVmConfig = new ConfigKey<>(
+            "Advanced",
+            Boolean.class,
+            "enable.additional.vm.configuration",
+            "false",
+            "allow additional arbitrary configuration to vm",
+            true,
+            ConfigKey.Scope.Account);
+
     static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
 
     public  static  final String CKS_NODE = "cksnode";
