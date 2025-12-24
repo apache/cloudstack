@@ -39,7 +39,7 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 
-@APICommand(name = "copyTemplate", description = "Copies a template from one zone to another.", responseObject = TemplateResponse.class, responseView = ResponseView.Restricted,
+@APICommand(name = "copyTemplate", description = "Copies a Template from one zone to another.", responseObject = TemplateResponse.class, responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CopyTemplateCmd extends BaseAsyncCmd implements UserCmd {
     private static final String s_name = "copytemplateresponse";
@@ -52,7 +52,7 @@ public class CopyTemplateCmd extends BaseAsyncCmd implements UserCmd {
                type = CommandType.UUID,
                entityType = ZoneResponse.class,
                required = false,
-               description = "ID of the zone the template is being copied to.")
+               description = "ID of the zone the Template is being copied to.")
     protected Long destZoneId;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
@@ -62,9 +62,9 @@ public class CopyTemplateCmd extends BaseAsyncCmd implements UserCmd {
     @Parameter(name = ApiConstants.SOURCE_ZONE_ID,
                type = CommandType.UUID,
                entityType = ZoneResponse.class,
-            description = "ID of the zone the template is currently hosted on. " +
-                    "If not specified and template is cross-zone, " +
-                    "then we will sync this template to region wide image store.")
+            description = "ID of the zone the Template is currently hosted on. " +
+                    "If not specified and Template is cross-zone, " +
+                    "then we will sync this Template to region wide image store.")
     private Long sourceZoneId;
 
     @Parameter(name = ApiConstants.DESTINATION_ZONE_ID_LIST,
@@ -72,8 +72,8 @@ public class CopyTemplateCmd extends BaseAsyncCmd implements UserCmd {
                     collectionType = CommandType.UUID,
                     entityType = ZoneResponse.class,
                     required = false,
-                    description = "A list of IDs of the zones that the template needs to be copied to." +
-                            "Specify this list if the template needs to copied to multiple zones in one go. " +
+                    description = "A list of IDs of the zones that the Template needs to be copied to." +
+                            "Specify this list if the Template needs to copied to multiple zones in one go. " +
                             "Do not specify destzoneid and destzoneids together, however one of them is required.")
     protected List<Long> destZoneIds;
 
@@ -148,7 +148,7 @@ public class CopyTemplateCmd extends BaseAsyncCmd implements UserCmd {
             }
         }
 
-        return  "copying template: " + this._uuidMgr.getUuid(VirtualMachineTemplate.class, getId()) +((getSourceZoneId() != null) ? " from zone: " + this._uuidMgr.getUuid(DataCenter.class, getSourceZoneId()) : "") + ((descBuilder.length() > 0) ? " to zones: " + descBuilder.toString() : "");
+        return  "Copying Template: " + this._uuidMgr.getUuid(VirtualMachineTemplate.class, getId()) +((getSourceZoneId() != null) ? " from zone: " + this._uuidMgr.getUuid(DataCenter.class, getSourceZoneId()) : "") + ((descBuilder.length() > 0) ? " to zones: " + descBuilder.toString() : "");
     }
 
     @Override
@@ -186,7 +186,7 @@ public class CopyTemplateCmd extends BaseAsyncCmd implements UserCmd {
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to copy template");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to copy Template");
             }
         } catch (StorageUnavailableException ex) {
             logger.warn("Exception: ", ex);

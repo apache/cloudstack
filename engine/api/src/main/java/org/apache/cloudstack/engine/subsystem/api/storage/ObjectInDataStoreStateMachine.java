@@ -32,7 +32,7 @@ public interface ObjectInDataStoreStateMachine extends StateObject<ObjectInDataS
         Migrated("The object has been migrated"),
         Destroying("Template is destroying"),
         Destroyed("Template is destroyed"),
-        Failed("Failed to download template");
+        Failed("Failed to download Template");
         String _description;
 
         private State(String description) {
