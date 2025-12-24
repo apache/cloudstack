@@ -46,15 +46,15 @@ public class VgpuResponse extends BaseResponse {
     private Long maxResolutionY;
 
     @SerializedName(ApiConstants.MAXVGPUPERPGPU)
-    @Param(description = "Maximum no. of vgpu per gpu card (pgpu)")
+    @Param(description = "Maximum no. of vGPU per GPU card (pgpu)")
     private Long maxVgpuPerPgpu;
 
     @SerializedName(ApiConstants.REMAININGCAPACITY)
-    @Param(description = "Remaining capacity in terms of no. of more VMs that can be deployped with this vGPU type")
+    @Param(description = "Remaining capacity in terms of no. of more Instances that can be deployed with this vGPU type")
     private Long remainingCapacity;
 
     @SerializedName(ApiConstants.MAXCAPACITY)
-    @Param(description = "Maximum vgpu can be created with this vgpu type on the given gpu group")
+    @Param(description = "Maximum vGPU can be created with this vGPU type on the given GPU group")
     private Long maxCapacity;
 
     public void setName(String name) {

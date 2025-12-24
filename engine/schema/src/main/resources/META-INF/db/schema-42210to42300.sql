@@ -19,6 +19,11 @@
 -- Schema upgrade from 4.22.1.0 to 4.23.0.0
 --;
 
+-- Update value to random for the config 'vm.allocation.algorithm' or 'volume.allocation.algorithm' if configured as userconcentratedpod_random
+-- Update value to firstfit for the config 'vm.allocation.algorithm' or 'volume.allocation.algorithm' if configured as userconcentratedpod_firstfit
+UPDATE `cloud`.`configuration` SET value='random' WHERE name IN ('vm.allocation.algorithm', 'volume.allocation.algorithm') AND value='userconcentratedpod_random';
+UPDATE `cloud`.`configuration` SET value='firstfit' WHERE name IN ('vm.allocation.algorithm', 'volume.allocation.algorithm') AND value='userconcentratedpod_firstfit';
+
 -- Create webhook_filter table
 DROP TABLE IF EXISTS `cloud`.`webhook_filter`;
 CREATE TABLE IF NOT EXISTS `cloud`.`webhook_filter` (

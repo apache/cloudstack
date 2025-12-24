@@ -49,7 +49,6 @@ public class XmlObjectParser {
 
         @Override
         public void startElement(String namespaceURI, String localName, String qName, Attributes atts) throws SAXException {
-            //System.out.println(String.format("startElement: namespaceURI:%s, localName:%s, qName:%s", namespaceURI, localName, qName));
             currentValue = null;
             XmlObject obj = new XmlObject();
             for (int i = 0; i < atts.getLength(); i++) {
@@ -73,8 +72,6 @@ public class XmlObjectParser {
             if (stack.isEmpty()) {
                 root = currObj;
             }
-
-            //System.out.println(String.format("endElement: namespaceURI:%s, localName:%s, qName:%s", namespaceURI, localName, qName));
         }
 
         @Override
@@ -82,7 +79,6 @@ public class XmlObjectParser {
             StringBuilder str = new StringBuilder();
             str.append(ch, start, length);
             currentValue = str.toString();
-            //System.out.println(String.format("characters: %s", str.toString()));
         }
 
         XmlObject getRoot() {

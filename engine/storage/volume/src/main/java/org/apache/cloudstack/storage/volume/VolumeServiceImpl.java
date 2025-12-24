@@ -722,7 +722,6 @@ public class VolumeServiceImpl implements VolumeService {
         VolumeApiResult res = new VolumeApiResult(volumeInfo);
 
         if (result.isSuccess()) {
-            // volumeInfo.processEvent(Event.OperationSuccessed, result.getAnswer());
 
             VolumeVO volume = volDao.findById(volumeInfo.getId());
             CopyCmdAnswer answer = (CopyCmdAnswer)result.getAnswer();
@@ -864,7 +863,7 @@ public class VolumeServiceImpl implements VolumeService {
             Answer ans = result.getAnswer();
             if (ans instanceof CopyCmdAnswer && ans.getDetails().contains(StorageProcessor.REQUEST_TEMPLATE_RELOAD)) {
                 if (tmplOnPrimary != null) {
-                    logger.info("Reset template_spool_ref entry so that vmware template can be reloaded in next try");
+                    logger.info("Reset template_spool_ref entry so that VMware Template can be reloaded in next try");
                     VMTemplateStoragePoolVO templatePoolRef = _tmpltPoolDao.findByPoolTemplate(tmplOnPrimary.getDataStore().getId(), tmplOnPrimary.getId(), deployAsIsConfiguration);
                     if (templatePoolRef != null) {
                         long templatePoolRefId = templatePoolRef.getId();
