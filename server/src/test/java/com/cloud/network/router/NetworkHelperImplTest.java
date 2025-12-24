@@ -32,6 +32,7 @@ import com.cloud.configuration.Config;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.rules.LbStickinessMethod;
 import com.cloud.network.rules.LoadBalancer;
@@ -163,7 +164,7 @@ public class NetworkHelperImplTest {
 
     @Test(expected=ResourceUnavailableException.class)
     public void testSendCommandsToRouterWrongRouterVersion()
-            throws AgentUnavailableException, OperationTimedoutException, ResourceUnavailableException {
+            throws AgentUnavailableException, OperationTimedoutException, ResourceUnavailableException, OperationCancelledException {
         // Prepare
         NetworkHelperImpl nwHelperUT = networkHelperSpy;
         VirtualRouter vr = mock(VirtualRouter.class);
@@ -178,7 +179,7 @@ public class NetworkHelperImplTest {
 
     @Test
     public void testSendCommandsToRouter()
-            throws AgentUnavailableException, OperationTimedoutException, ResourceUnavailableException {
+            throws AgentUnavailableException, OperationTimedoutException, ResourceUnavailableException, OperationCancelledException {
         // Prepare
         NetworkHelperImpl nwHelperUT = networkHelperSpy;
         VirtualRouter vr = mock(VirtualRouter.class);
@@ -216,7 +217,7 @@ public class NetworkHelperImplTest {
      */
     @Test
     public void testSendCommandsToRouterWithTrueResult()
-            throws AgentUnavailableException, OperationTimedoutException, ResourceUnavailableException {
+            throws AgentUnavailableException, OperationTimedoutException, ResourceUnavailableException, OperationCancelledException {
         // Prepare
         NetworkHelperImpl nwHelperUT = networkHelperSpy;
         VirtualRouter vr = mock(VirtualRouter.class);
@@ -254,7 +255,7 @@ public class NetworkHelperImplTest {
      */
     @Test
     public void testSendCommandsToRouterWithNoAnswers()
-            throws AgentUnavailableException, OperationTimedoutException, ResourceUnavailableException {
+            throws AgentUnavailableException, OperationTimedoutException, ResourceUnavailableException, OperationCancelledException {
         // Prepare
         NetworkHelperImpl nwHelperUT = networkHelperSpy;
         VirtualRouter vr = mock(VirtualRouter.class);

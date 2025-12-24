@@ -31,6 +31,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.jobs.JobInfo;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -117,23 +118,30 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
                 CallContext.unregister();
             }
         } catch (Throwable e) {
-            String errorMsg = null;
-            int errorCode = ApiErrorCode.INTERNAL_ERROR.getHttpCode();
-            if (!(e instanceof ServerApiException)) {
-                logger.error("Unexpected exception while executing " + job.getCmd(), e);
-                errorMsg = e.getMessage();
-            } else {
-                ServerApiException sApiEx = (ServerApiException)e;
-                errorMsg = sApiEx.getDescription();
-                errorCode = sApiEx.getErrorCode().getHttpCode();
+            //Get the latest job status from DB to check if it has been cancelled during execution
+            AsyncJobVO jobFromDb = _asyncJobMgr.getAsyncJob(job.getId());
+            if (!jobFromDb.getStatus().done()) {
+                String errorMsg = null;
+                int errorCode = ApiErrorCode.INTERNAL_ERROR.getHttpCode();
+                if (!(e instanceof ServerApiException)) {
+                    logger.error("Unexpected exception while executing {}", job.getCmd(), e);
+                    errorMsg = e.getMessage();
+                } else {
+                    ServerApiException sApiEx = (ServerApiException) e;
+                    errorMsg = sApiEx.getDescription();
+                    errorCode = sApiEx.getErrorCode().getHttpCode();
+                }
+
+                ExceptionResponse response = new ExceptionResponse();
+                response.setErrorCode(errorCode);
+                response.setErrorText(errorMsg);
+                response.setResponseName((cmdObj == null) ? "unknowncommandresponse" : cmdObj.getCommandName());
+
+                // FIXME:  setting resultCode to ApiErrorCode.INTERNAL_ERROR is not right, usually executors have their exception handling
+                //         and we need to preserve that as much as possible here
+
+                _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), ApiSerializerHelper.toSerializedString(response));
             }
-
-            ExceptionResponse response = new ExceptionResponse();
-            response.setErrorCode(errorCode);
-            response.setErrorText(errorMsg);
-            response.setResponseName((cmdObj == null) ? "unknowncommandresponse" : cmdObj.getCommandName());
-
-            _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, errorCode, ApiSerializerHelper.toSerializedString(response));
         }
     }
 }

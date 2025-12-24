@@ -27,6 +27,8 @@ public class AgentUnavailableException extends ResourceUnavailableException {
 
     private static final long serialVersionUID = SerialVersionUID.AgentUnavailableException;
 
+    private boolean isCancelled;
+
     public AgentUnavailableException(String msg, long agentId) {
         this(msg, agentId, null);
     }
@@ -37,5 +39,14 @@ public class AgentUnavailableException extends ResourceUnavailableException {
 
     public AgentUnavailableException(String msg, long agentId, Throwable cause) {
         super("Host " + agentId + ": " + msg, Host.class, agentId, cause);
+    }
+
+    public AgentUnavailableException(String msg, long agentId, boolean isCancelled) {
+        this(msg, agentId, null);
+        this.isCancelled = isCancelled;
+    }
+
+    public boolean isCancelled() {
+        return isCancelled;
     }
 }

@@ -105,6 +105,8 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
             s_fsm.addTransition(new Transition<State, Event>(State.Starting, VirtualMachine.Event.AgentReportRunning, State.Running, Arrays.asList(new Impact[]{Impact.USAGE})));
             s_fsm.addTransition(new Transition<State, Event>(State.Starting, VirtualMachine.Event.AgentReportStopped, State.Stopped, null));
             s_fsm.addTransition(new Transition<State, Event>(State.Starting, VirtualMachine.Event.AgentReportShutdowned, State.Stopped, null));
+            s_fsm.addTransition(new Transition<State, Event>(State.Starting, VirtualMachine.Event.StopRequested, State.Stopping, null));
+//            s_fsm.addTransition(new Transition<State, Event>(State.Starting, VirtualMachine.Event.OperationCancelled, State.Stopping, null));
             s_fsm.addTransition(new Transition<State, Event>(State.Destroyed, VirtualMachine.Event.RecoveryRequested, State.Stopped, Arrays.asList(new Impact[]{Impact.USAGE})));
             s_fsm.addTransition(new Transition<State, Event>(State.Destroyed, VirtualMachine.Event.ExpungeOperation, State.Expunging, null));
             s_fsm.addTransition(new Transition<State, Event>(State.Running, VirtualMachine.Event.MigrationRequested, State.Migrating, null));

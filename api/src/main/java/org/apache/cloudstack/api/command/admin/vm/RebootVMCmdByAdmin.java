@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.admin.vm;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.CancellableCmd;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.command.user.vm.RebootVMCmd;
@@ -26,4 +27,4 @@ import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "rebootVirtualMachine", description = "Reboots  an Instance.", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class RebootVMCmdByAdmin extends RebootVMCmd implements AdminCmd {}
+public class RebootVMCmdByAdmin extends RebootVMCmd implements AdminCmd, CancellableCmd {}
