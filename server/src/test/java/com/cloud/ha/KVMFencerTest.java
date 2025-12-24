@@ -23,6 +23,7 @@ import com.cloud.agent.api.FenceAnswer;
 import com.cloud.agent.api.FenceCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -96,7 +97,7 @@ public class KVMFencerTest {
     }
 
     @Test
-    public void testWithHosts() throws AgentUnavailableException, OperationTimedoutException {
+    public void testWithHosts() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         HostVO host = Mockito.mock(HostVO.class);
         Mockito.when(host.getClusterId()).thenReturn(1l);
         Mockito.when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
@@ -124,7 +125,7 @@ public class KVMFencerTest {
     }
 
     @Test
-    public void testWithFailingFence() throws AgentUnavailableException, OperationTimedoutException {
+    public void testWithFailingFence() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         HostVO host = Mockito.mock(HostVO.class);
         Mockito.when(host.getClusterId()).thenReturn(1l);
         Mockito.when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
@@ -151,7 +152,7 @@ public class KVMFencerTest {
     }
 
     @Test
-    public void testWithTimeoutingFence() throws AgentUnavailableException, OperationTimedoutException {
+    public void testWithTimeoutingFence() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         HostVO host = Mockito.mock(HostVO.class);
         Mockito.when(host.getClusterId()).thenReturn(1l);
         Mockito.when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);

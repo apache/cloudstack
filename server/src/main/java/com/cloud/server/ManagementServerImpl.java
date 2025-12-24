@@ -45,6 +45,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.ApiKeyPairVO;
 import com.cloud.api.query.MutualExclusiveIdsManagerBase;
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.network.vpc.VpcVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -3469,7 +3470,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         Answer answer;
         try {
             answer = _agentMgr.send(hostVO.getId(), cmd);
-        } catch (AgentUnavailableException | OperationTimedoutException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
             String errorMsg = "Could not send allow session command to CPVM: " + e.getMessage();
             logger.error(errorMsg, e);
             return new Pair<>(false, errorMsg);
@@ -5959,6 +5960,10 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
             }
         } catch (AgentUnavailableException | OperationTimedoutException e) {
             String errMsg = "SystemVM live patch failed";
+            logger.error(errMsg, e);
+            return new Pair<>(false,  String.format("%s due to: %s", errMsg, e.getMessage()));
+        } catch (OperationCancelledException e) {
+            String errMsg = "SystemVM live patch cancelled";
             logger.error(errMsg, e);
             return new Pair<>(false,  String.format("%s due to: %s", errMsg, e.getMessage()));
         }

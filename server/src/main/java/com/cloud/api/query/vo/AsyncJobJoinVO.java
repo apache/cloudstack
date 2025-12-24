@@ -107,6 +107,9 @@ public class AsyncJobJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name = "instance_uuid")
     private String instanceUuid;
 
+    @Column(name = "related")
+    private String related;
+
     public AsyncJobJoinVO() {
     }
 
@@ -206,6 +209,10 @@ public class AsyncJobJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     public String getInstanceUuid() {
         return instanceUuid;
+    }
+
+    public String getRelated() {
+        return related;
     }
 
     @Override

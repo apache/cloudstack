@@ -21,29 +21,17 @@ import com.cloud.utils.SerialVersionUID;
 
 import java.util.Arrays;
 
-/**
- * wait timeout.
- */
-public class OperationTimedoutException extends CloudException {
-    private static final long serialVersionUID = SerialVersionUID.OperationTimedoutException;
-
+public class OperationCancelledException extends CloudException {
+    private static final long serialVersionUID = SerialVersionUID.OperationCancelledException;
     long _agentId;
     long _seqId;
     int _time;
 
-    // TODO
-    // I did a reference search on usage of getCommands() and found none
-    //
-    // to prevent serialization problems across boundaries, I'm disabling serialization of _cmds here
-    // getCommands() will still be available within the same serialization boundary, but it will be lost
-    // when exception is propagated across job boundaries.
-    //
     transient Command[] _cmds;
     boolean _isActive;
-    boolean _isCancelled;
 
-    public OperationTimedoutException(Command[] cmds, long agentId, long seqId, int time, boolean isActive) {
-        super("Commands: " + Arrays.toString(cmds) + " to Host " + agentId + " with seqId " + seqId + " timed out after " + time + " secs");
+    public OperationCancelledException(Command[] cmds, long agentId, long seqId, int time, boolean isActive) {
+        super("Commands: " + Arrays.toString(cmds) + " to Host " + agentId + " with seqId " + seqId + " cancelled after " + time + " secs");
         _agentId = agentId;
         _seqId = seqId;
         _time = time;
@@ -69,9 +57,5 @@ public class OperationTimedoutException extends CloudException {
 
     public boolean isActive() {
         return _isActive;
-    }
-
-    public boolean isCancelled() {
-        return _isCancelled;
     }
 }

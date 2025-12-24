@@ -109,6 +109,7 @@ import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.PermissionDeniedException;
@@ -745,7 +746,7 @@ public class UnmanagedVMsManagerImplTest {
     }
 
     private void baseTestImportVmFromVmwareToKvm(VcenterParameter vcenterParameter, boolean selectConvertHost,
-                                                 boolean selectTemporaryStorage) throws OperationTimedoutException, AgentUnavailableException {
+                                                 boolean selectTemporaryStorage) throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
         long clusterId = 1L;
         long zoneId = 1L;
         long existingDatacenterId = 1L;
@@ -993,42 +994,42 @@ public class UnmanagedVMsManagerImplTest {
     }
 
     @Test
-    public void testImportVmFromVmwareToKvmExistingVcenter() throws OperationTimedoutException, AgentUnavailableException {
+    public void testImportVmFromVmwareToKvmExistingVcenter() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
         baseTestImportVmFromVmwareToKvm(VcenterParameter.EXISTING, false, false);
     }
 
     @Test
-    public void testImportVmFromVmwareToKvmExistingVcenterSetConvertHost() throws OperationTimedoutException, AgentUnavailableException {
+    public void testImportVmFromVmwareToKvmExistingVcenterSetConvertHost() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
         baseTestImportVmFromVmwareToKvm(VcenterParameter.EXISTING, true, false);
     }
 
     @Test
-    public void testImportVmFromVmwareToKvmExistingVcenterSetConvertHostAndTemporaryStorage() throws OperationTimedoutException, AgentUnavailableException {
+    public void testImportVmFromVmwareToKvmExistingVcenterSetConvertHostAndTemporaryStorage() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
         baseTestImportVmFromVmwareToKvm(VcenterParameter.EXISTING, true, true);
     }
 
     @Test(expected = ServerApiException.class)
-    public void testImportVmFromVmwareToKvmExistingVcenterExclusiveParameters() throws OperationTimedoutException, AgentUnavailableException {
+    public void testImportVmFromVmwareToKvmExistingVcenterExclusiveParameters() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
         baseTestImportVmFromVmwareToKvm(VcenterParameter.BOTH, false, false);
     }
 
     @Test(expected = ServerApiException.class)
-    public void testImportVmFromVmwareToKvmExistingVcenterMissingParameters() throws OperationTimedoutException, AgentUnavailableException {
+    public void testImportVmFromVmwareToKvmExistingVcenterMissingParameters() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
         baseTestImportVmFromVmwareToKvm(VcenterParameter.NONE, false, false);
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void testImportVmFromVmwareToKvmExistingVcenterInvalid() throws OperationTimedoutException, AgentUnavailableException {
+    public void testImportVmFromVmwareToKvmExistingVcenterInvalid() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
         baseTestImportVmFromVmwareToKvm(VcenterParameter.EXISTING_INVALID, false, false);
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void testImportVmFromVmwareToKvmExistingVcenterAgentUnavailable() throws OperationTimedoutException, AgentUnavailableException {
+    public void testImportVmFromVmwareToKvmExistingVcenterAgentUnavailable() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
         baseTestImportVmFromVmwareToKvm(VcenterParameter.AGENT_UNAVAILABLE, false, false);
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void testImportVmFromVmwareToKvmExistingVcenterConvertFailure() throws OperationTimedoutException, AgentUnavailableException {
+    public void testImportVmFromVmwareToKvmExistingVcenterConvertFailure() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
         baseTestImportVmFromVmwareToKvm(VcenterParameter.CONVERT_FAILURE, false, false);
     }
 

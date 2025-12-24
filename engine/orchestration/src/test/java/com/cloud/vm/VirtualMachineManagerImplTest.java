@@ -57,6 +57,7 @@ import com.cloud.agent.api.to.DiskTO;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
@@ -1405,7 +1406,7 @@ public class VirtualMachineManagerImplTest {
     }
 
     @Test
-    public void recreateCheckpointsKvmOnVmAfterMigrationTestReturnIfVolumesDoNotHaveCheckpoints() throws OperationTimedoutException, AgentUnavailableException {
+    public void recreateCheckpointsKvmOnVmAfterMigrationTestReturnIfVolumesDoNotHaveCheckpoints() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
         Mockito.doReturn(HypervisorType.KVM).when(vmInstanceMock).getHypervisorType();
         Mockito.doReturn(new ArrayList<VolumeObjectTO>()).when(virtualMachineManagerImpl).getVmVolumesWithCheckpointsToRecreate(Mockito.any());
 
@@ -1415,7 +1416,7 @@ public class VirtualMachineManagerImplTest {
     }
 
     @Test (expected = CloudRuntimeException.class)
-    public void recreateCheckpointsKvmOnVmAfterMigrationTestAgentUnavailableThrowsCloudRuntimeExceptionAndEndsSnapshotChains() throws OperationTimedoutException, AgentUnavailableException {
+    public void recreateCheckpointsKvmOnVmAfterMigrationTestAgentUnavailableThrowsCloudRuntimeExceptionAndEndsSnapshotChains() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
         Mockito.doReturn(HypervisorType.KVM).when(vmInstanceMock).getHypervisorType();
         Mockito.doReturn(List.of(new VolumeObjectTO())).when(virtualMachineManagerImpl).getVmVolumesWithCheckpointsToRecreate(Mockito.any());
 
@@ -1428,7 +1429,7 @@ public class VirtualMachineManagerImplTest {
     }
 
     @Test (expected = CloudRuntimeException.class)
-    public void recreateCheckpointsKvmOnVmAfterMigrationTestOperationTimedoutExceptionThrowsCloudRuntimeExceptionAndEndsSnapshotChains() throws OperationTimedoutException, AgentUnavailableException {
+    public void recreateCheckpointsKvmOnVmAfterMigrationTestOperationTimedoutExceptionThrowsCloudRuntimeExceptionAndEndsSnapshotChains() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
         Mockito.doReturn(HypervisorType.KVM).when(vmInstanceMock).getHypervisorType();
         Mockito.doReturn(List.of(new VolumeObjectTO())).when(virtualMachineManagerImpl).getVmVolumesWithCheckpointsToRecreate(Mockito.any());
 
@@ -1441,7 +1442,7 @@ public class VirtualMachineManagerImplTest {
     }
 
     @Test
-    public void recreateCheckpointsKvmOnVmAfterMigrationTestRecreationFails() throws OperationTimedoutException, AgentUnavailableException {
+    public void recreateCheckpointsKvmOnVmAfterMigrationTestRecreationFails() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
         Mockito.doReturn(HypervisorType.KVM).when(vmInstanceMock).getHypervisorType();
         Mockito.doReturn(List.of(new VolumeObjectTO())).when(virtualMachineManagerImpl).getVmVolumesWithCheckpointsToRecreate(Mockito.any());
 
@@ -1454,7 +1455,7 @@ public class VirtualMachineManagerImplTest {
     }
 
     @Test
-    public void recreateCheckpointsKvmOnVmAfterMigrationTestRecreationSucceeds() throws OperationTimedoutException, AgentUnavailableException {
+    public void recreateCheckpointsKvmOnVmAfterMigrationTestRecreationSucceeds() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
         Mockito.doReturn(HypervisorType.KVM).when(vmInstanceMock).getHypervisorType();
         Mockito.doReturn(List.of(new VolumeObjectTO())).when(virtualMachineManagerImpl).getVmVolumesWithCheckpointsToRecreate(Mockito.any());
 
@@ -1667,7 +1668,7 @@ public class VirtualMachineManagerImplTest {
     }
 
     @Test
-    public void processPrepareExternalProvisioning_nonExternalHypervisor_noAction() throws OperationTimedoutException, AgentUnavailableException {
+    public void processPrepareExternalProvisioning_nonExternalHypervisor_noAction() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
         Host host = mock(Host.class);
         VirtualMachineProfile vmProfile = mock(VirtualMachineProfile.class);
         VirtualMachineTemplate template = mock(VirtualMachineTemplate.class);
@@ -1678,7 +1679,7 @@ public class VirtualMachineManagerImplTest {
     }
 
     @Test
-    public void processPrepareExternalProvisioning_externalHypervisor_sendsCommand() throws OperationTimedoutException, AgentUnavailableException {
+    public void processPrepareExternalProvisioning_externalHypervisor_sendsCommand() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
         Host host = mock(Host.class);
         VirtualMachineProfile vmProfile = mock(VirtualMachineProfile.class);
         VirtualMachineTemplate template = mock(VirtualMachineTemplate.class);
@@ -1787,7 +1788,7 @@ public class VirtualMachineManagerImplTest {
     }
 
     @Test
-    public void testPersistDomainForKvmForRunningVmSuccess() throws AgentUnavailableException, OperationTimedoutException {
+    public void testPersistDomainForKvmForRunningVmSuccess() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         when(vmInstanceMock.getState()).thenReturn(VirtualMachine.State.Running);
         when(vmInstanceMock.getHostId()).thenReturn(hostMockId);
         UnmanageInstanceAnswer successAnswer = new UnmanageInstanceAnswer(null, true, "success");
@@ -1800,7 +1801,7 @@ public class VirtualMachineManagerImplTest {
     }
 
     @Test
-    public void testPersistDomainForKvmForStoppedVmSuccess() throws AgentUnavailableException, OperationTimedoutException {
+    public void testPersistDomainForKvmForStoppedVmSuccess() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         when(vmInstanceMock.getState()).thenReturn(VirtualMachine.State.Stopped);
         VirtualMachineTO vmTO = new VirtualMachineTO() {};
         vmTO.setName(vmName);
@@ -1832,7 +1833,7 @@ public class VirtualMachineManagerImplTest {
     }
 
     @Test
-    public void testPersistDomainForKvmForRunningVmAgentFailure() throws AgentUnavailableException, OperationTimedoutException {
+    public void testPersistDomainForKvmForRunningVmAgentFailure() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         when(vmInstanceMock.getState()).thenReturn(VirtualMachine.State.Running);
         when(vmInstanceMock.getHostId()).thenReturn(hostMockId);
         UnmanageInstanceAnswer failureAnswer = new UnmanageInstanceAnswer(null, false, "failure");
@@ -1842,7 +1843,7 @@ public class VirtualMachineManagerImplTest {
     }
 
     @Test
-    public void testPersistDomainForKvmAgentUnavailable() throws AgentUnavailableException, OperationTimedoutException {
+    public void testPersistDomainForKvmAgentUnavailable() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         when(vmInstanceMock.getState()).thenReturn(VirtualMachine.State.Running);
         when(vmInstanceMock.getHostId()).thenReturn(hostMockId);
         doThrow(new AgentUnavailableException("Agent down", hostMockId)).when(agentManagerMock).send(anyLong(), any(UnmanageInstanceCommand.class));
@@ -1859,7 +1860,7 @@ public class VirtualMachineManagerImplTest {
     }
 
     @Test
-    public void testPersistDomainForKvmOperationTimedOut() throws AgentUnavailableException, OperationTimedoutException {
+    public void testPersistDomainForKvmOperationTimedOut() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         when(vmInstanceMock.getState()).thenReturn(VirtualMachine.State.Running);
         when(vmInstanceMock.getHostId()).thenReturn(hostMockId);
         doThrow(new OperationTimedoutException(null, hostMockId, 123L, 60, false)).when(agentManagerMock).send(anyLong(), any(UnmanageInstanceCommand.class));

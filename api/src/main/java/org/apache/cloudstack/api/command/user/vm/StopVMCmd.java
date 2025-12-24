@@ -24,6 +24,7 @@ import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.CancellableCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
@@ -39,7 +40,7 @@ import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "stopVirtualMachine", responseObject = UserVmResponse.class, description = "Stops  an Instance.", responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class StopVMCmd extends BaseAsyncCmd implements UserCmd {
+public class StopVMCmd extends BaseAsyncCmd implements UserCmd, CancellableCmd {
 
     private static final String s_name = "stopvirtualmachineresponse";
 

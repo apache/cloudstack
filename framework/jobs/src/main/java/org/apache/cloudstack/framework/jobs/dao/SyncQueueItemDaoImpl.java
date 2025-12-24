@@ -43,6 +43,7 @@ import com.cloud.utils.db.TransactionLegacy;
 public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> implements SyncQueueItemDao {
     final GenericSearchBuilder<SyncQueueItemVO, Long> queueIdSearch;
     final GenericSearchBuilder<SyncQueueItemVO, Integer> queueActiveItemSearch;
+    final SearchBuilder<SyncQueueItemVO> queuedItemsSearch;
 
     public SyncQueueItemDaoImpl() {
         super();
@@ -57,6 +58,10 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
         queueActiveItemSearch.and("processNumber", queueActiveItemSearch.entity().getLastProcessNumber(), Op.NNULL);
         queueActiveItemSearch.select(null, Func.COUNT, queueActiveItemSearch.entity().getId());
         queueActiveItemSearch.done();
+
+        queuedItemsSearch = createSearchBuilder();
+        queuedItemsSearch.and("queueId", queuedItemsSearch.entity().getQueueId(), SearchCriteria.Op.EQ);
+        queuedItemsSearch.done();
     }
 
     @Override
@@ -136,6 +141,16 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
         if (exclusive)
             return lockRows(sc, filter, true);
         return listBy(sc, filter);
+    }
+
+    @Override
+    public List<SyncQueueItemVO> getQueuedItems(long queueId) {
+        SearchCriteria<SyncQueueItemVO> sc = queuedItemsSearch.create();
+        sc.setParameters("queueId", queueId);
+
+        Filter filter = new Filter(SyncQueueItemVO.class, "created", true, null, null);
+        List<SyncQueueItemVO> queueItems = search(sc, filter);
+        return queueItems;
     }
 
     @Override

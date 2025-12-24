@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
@@ -55,6 +56,8 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.maintenance.ManagementServerMaintenanceListener;
 import org.apache.cloudstack.maintenance.ManagementServerMaintenanceManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
@@ -143,6 +146,8 @@ import com.cloud.utils.nio.NioServer;
 import com.cloud.utils.nio.Task;
 import com.cloud.utils.time.InaccurateClock;
 
+import static org.apache.cloudstack.jobs.AsyncJobService.CancelJobInterval;
+
 /**
  * Implementation of the Agent Manager. This class controls the connection to the agents.
  **/
@@ -159,6 +164,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected List<Long> _loadingAgents = new ArrayList<>();
     protected Map<String, Integer> _commandTimeouts = new HashMap<>();
     private int _monitorId = 0;
+    protected Map<Long, Pair<Long, Long>> _sequenceMap = new HashMap<>();
 
     @Inject
     protected CAManager caService;
@@ -182,6 +188,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected ConfigurationDao _configDao = null;
     @Inject
     protected ClusterDao _clusterDao = null;
+    @Inject
+    public AsyncJobDao _asyncJobDao = null;
 
     @Inject
     protected HighAvailabilityManager _haMgr = null;
@@ -210,6 +218,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected ScheduledExecutorService _directAgentExecutor;
     protected ScheduledExecutorService _cronJobExecutor;
     protected ScheduledExecutorService _monitorExecutor;
+    protected ScheduledExecutorService _cancelJobExecutor;
 
     private int _directAgentThreadCap;
 
@@ -390,6 +399,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     public void onManagementServerMaintenance() {
         logger.debug("Management server maintenance enabled");
         _monitorExecutor.shutdownNow();
+        _cancelJobExecutor.shutdownNow();
         newAgentConnectionsMonitor.shutdownNow();
         if (_connection != null) {
             _connection.stop();
@@ -421,6 +431,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         if (_monitorExecutor.isShutdown()) {
             initAndScheduleMonitorExecutor();
         }
+        if (_connectExecutor.isShutdown()) {
+            initAndScheduleCancelJobExecutor();
+        }
         if (newAgentConnectionsMonitor.isShutdown()) {
             initAndScheduleAgentConnectionsMonitor();
         }
@@ -435,6 +448,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     private void initAndScheduleMonitorExecutor() {
         _monitorExecutor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("AgentMonitor"));
         _monitorExecutor.scheduleWithFixedDelay(new MonitorTask(), mgmtServiceConf.getPingInterval(), mgmtServiceConf.getPingInterval(), TimeUnit.SECONDS);
+    }
+
+    private void initAndScheduleCancelJobExecutor() {
+        _cancelJobExecutor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("CancelJob"));
+        _cancelJobExecutor.scheduleWithFixedDelay(new CancelJobTask(), CancelJobInterval.value(), CancelJobInterval.value(), TimeUnit.SECONDS);
     }
 
     private void initAndScheduleAgentConnectionsMonitor() {
@@ -509,7 +527,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     @Override
-    public Answer send(final Long hostId, final Command cmd) throws AgentUnavailableException, OperationTimedoutException {
+    public Answer send(final Long hostId, final Command cmd) throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         final Commands cmds = new Commands(Command.OnError.Stop);
         cmds.addCommand(cmd);
         send(hostId, cmds, cmd.getWait());
@@ -631,10 +649,16 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     @Override
-    public Answer[] send(final Long hostId, final Commands commands, int timeout) throws AgentUnavailableException, OperationTimedoutException {
+    public Answer[] send(final Long hostId, final Commands commands, int timeout) throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         assert hostId != null : "Who's not checking the agent id before sending?  ... (finger wagging)";
         if (hostId == null) {
             throw new AgentUnavailableException(-1);
+        }
+
+        Long jobId = getAsyncJobId();
+        if (jobId != null && _asyncJobDao.isJobCancelled(jobId)) {
+            logger.debug("job-{} for host: {}, with commands: {} is cancelled", jobId, hostId, commands.toString());
+            throw new OperationCancelledException(commands.toCommands(), hostId, 0, 0, false);
         }
 
         int wait = getTimeout(commands, timeout);
@@ -664,18 +688,27 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             throw new AgentUnavailableException("agent not logged into this management server", hostId);
         }
 
-        final Request req = new Request(hostId, agent.getName(), _nodeId, cmds, commands.stopOnError(), true);
-        req.setSequence(agent.getNextSequence());
+        try {
+            final Request req = new Request(hostId, agent.getName(), _nodeId, cmds, commands.stopOnError(), true);
+            req.setSequence(agent.getNextSequence());
+            if (jobId != null) {
+                _sequenceMap.put(jobId, new Pair<>(hostId, req.getSequence()));
+            }
 
-        reconcileCommandService.persistReconcileCommands(hostId, req.getSequence(), cmds);
+            reconcileCommandService.persistReconcileCommands(hostId, req.getSequence(), cmds);
 
-        final Answer[] answers = agent.send(req, wait);
+            final Answer[] answers = agent.send(req, wait);
 
-        reconcileCommandService.processAnswers(req.getSequence(), cmds, answers);
+            reconcileCommandService.processAnswers(req.getSequence(), cmds, answers);
 
-        notifyAnswersToMonitors(hostId, req.getSequence(), answers);
-        commands.setAnswers(answers);
-        return answers;
+            notifyAnswersToMonitors(hostId, req.getSequence(), answers);
+            commands.setAnswers(answers);
+            return answers;
+        } finally {
+            if (jobId != null) {
+                _sequenceMap.remove(jobId);
+            }
+        }
     }
 
     protected Status investigate(final AgentAttache agent) {
@@ -891,6 +924,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         ManagementServerHostVO msHost = _mshostDao.findByMsid(_nodeId);
         if (msHost != null && (ManagementServerHost.State.Maintenance.equals(msHost.getState()) || ManagementServerHost.State.PreparingForMaintenance.equals(msHost.getState()))) {
             _monitorExecutor.shutdownNow();
+            _cancelJobExecutor.shutdownNow();
             newAgentConnectionsMonitor.shutdownNow();
             return true;
         }
@@ -907,6 +941,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
 
         initAndScheduleMonitorExecutor();
+        initAndScheduleCancelJobExecutor();
         initAndScheduleAgentConnectionsMonitor();
         return true;
     }
@@ -1069,6 +1104,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         _connectExecutor.shutdownNow();
         _monitorExecutor.shutdownNow();
+        _cancelJobExecutor.shutdownNow();
         newAgentConnectionsMonitor.shutdownNow();
         return true;
     }
@@ -1297,7 +1333,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     @Override
-    public Answer[] send(final Long hostId, final Commands cmds) throws AgentUnavailableException, OperationTimedoutException {
+    public Answer[] send(final Long hostId, final Commands cmds) throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         int wait = 0;
         if (cmds.size() > 1) {
             logger.debug("Checking the wait time in seconds to be used for the following commands : {}. If there are multiple commands sent at once," +
@@ -2064,6 +2100,24 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
     }
 
+    protected class CancelJobTask extends ManagedContextRunnable {
+        @Override
+        protected void runInContext() {
+            final List<AsyncJobVO> jobs = _asyncJobDao.getCancelledJobs();
+            for (final AsyncJobVO job : jobs) {
+                Pair<Long, Long> sequence = _sequenceMap.get(job.getId());
+                if (sequence != null) {
+                    try {
+                        final AgentAttache agent = getAttache(sequence.first());
+                        agent.cancel(sequence.second());
+                    } catch (AgentUnavailableException e) {
+                        logger.debug("Agent {} not found", sequence.first());
+                    }
+                }
+            }
+        }
+    }
+
     protected class AgentNewConnectionsMonitorTask extends ManagedContextRunnable {
         @Override
         protected void runInContext() {
@@ -2304,6 +2358,21 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
 
         return Integer.parseInt(hostPort);
+    }
+
+    @Override
+    public Long getAsyncJobId() {
+        Long jobId = null;
+        final AsyncJobExecutionContext context = AsyncJobExecutionContext.getCurrent();
+        if (context != null && context.getJob() != null) {
+            AsyncJob job = context.getJob();
+            if (StringUtils.isNotEmpty(job.getRelated())) {
+                jobId = Long.parseLong(job.getRelated());
+            } else {
+                jobId = job.getId();
+            }
+        }
+        return jobId;
     }
 
     private GlobalLock getHostJoinLock(Long hostId) {

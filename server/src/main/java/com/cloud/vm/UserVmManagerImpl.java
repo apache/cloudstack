@@ -67,6 +67,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
 import com.cloud.agent.api.StartCommand;
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.network.NetworkService;
 import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -855,6 +856,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
             } catch (OperationTimedoutException e) {
                 logger.warn("Timed Out", e);
+            } catch (OperationCancelledException e) {
+                logger.warn("Operation Cancelled", e);
             } catch (AgentUnavailableException e) {
                 logger.warn("Agent Unavailable ", e);
             } finally {
@@ -2739,6 +2742,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             return false;
         } catch (OperationTimedoutException e) {
             logger.warn("Operation time out on expunging " + vm, e);
+            return false;
+        } catch (OperationCancelledException e) {
+            logger.warn("Operation cancelled on expunging " + vm, e);
             return false;
         } catch (ConcurrentOperationException e) {
             logger.warn("Concurrent operations on expunging " + vm, e);
@@ -5719,6 +5725,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             answer = _agentMgr.send(hostId, cmd);
         } catch (OperationTimedoutException e) {
             logger.warn("Timed Out", e);
+            return false;
+        } catch (OperationCancelledException e) {
+            logger.warn("Operation Cancelled", e);
             return false;
         } catch (AgentUnavailableException e) {
             logger.warn("Agent Unavailable ", e);

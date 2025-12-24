@@ -61,6 +61,7 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
@@ -2111,7 +2112,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         CheckConvertInstanceAnswer checkConvertInstanceAnswer;
         try {
             checkConvertInstanceAnswer = (CheckConvertInstanceAnswer) agentManager.send(convertHost.getId(), cmd);
-        } catch (AgentUnavailableException | OperationTimedoutException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
             String err = String.format("Failed to check %s conversion support on the host %s for converting instance %s from VMware to KVM due to: %s",
                     checkWindowsGuestConversionSupport? "windows guest" : "", convertHost, sourceVM, e.getMessage());
             logger.error(err);
@@ -2202,7 +2203,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         Answer convertAnswer;
         try {
             convertAnswer = agentManager.send(convertHost.getId(), convertInstanceCommand);
-        } catch (AgentUnavailableException | OperationTimedoutException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
             String err = String.format("Could not send the convert instance command to host %s due to: %s",
                     convertHost, e.getMessage());
             logger.error(err, e);
@@ -2234,7 +2235,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 logger.error(err);
                 throw new CloudRuntimeException(err);
             }
-        } catch (AgentUnavailableException | OperationTimedoutException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
             cleanupConvertedDisks = true;
             String err = String.format(
                     "Could not send the import converted instance command to host %s due to: %s",
