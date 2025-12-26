@@ -201,10 +201,11 @@ public class TemplateServiceImplTest {
     }
 
     @Test
-    public void tryCopyingTemplateToImageStoreTestReturnsTrueWhenTemplateExistsInAnotherZone() throws StorageUnavailableException, ResourceAllocationException {
+    public void tryCopyingTemplateToImageStoreTestReturnsTrueWhenTemplateExistsInAnotherZone() {
         Scope scopeMock = Mockito.mock(Scope.class);
         Mockito.doReturn(scopeMock).when(destStoreMock).getScope();
         Mockito.doReturn(1L).when(scopeMock).getScopeId();
+        Mockito.doReturn(100L).when(tmpltMock).getId();
         Mockito.doReturn(List.of(sourceStoreMock)).when(dataStoreManagerMock).getImageStoresByZoneIds(1L);
         Mockito.doReturn(null).when(templateService).listTemplate(sourceStoreMock);
         Mockito.doReturn(List.of(1L, 2L)).when(_dcDao).listAllIds();
@@ -215,6 +216,10 @@ public class TemplateServiceImplTest {
         Map<String, TemplateProp> templatesInOtherZone = new HashMap<>();
         templatesInOtherZone.put(tmpltMock.getUniqueName(), tmpltPropMock);
         Mockito.doReturn(templatesInOtherZone).when(templateService).listTemplate(otherZoneStoreMock);
+
+        TemplateObject sourceTmplMock = Mockito.mock(TemplateObject.class);
+        Mockito.doReturn(sourceTmplMock).when(templateDataFactoryMock).getTemplate(100L, otherZoneStoreMock);
+        Mockito.doReturn("/mnt/secondary/template.qcow2").when(sourceTmplMock).getInstallPath();
 
         DataCenterVO dstZoneMock = Mockito.mock(DataCenterVO.class);
         Mockito.doReturn(dstZoneMock).when(_dcDao).findById(1L);
@@ -229,6 +234,7 @@ public class TemplateServiceImplTest {
         Scope scopeMock = Mockito.mock(Scope.class);
         Mockito.doReturn(scopeMock).when(destStoreMock).getScope();
         Mockito.doReturn(1L).when(scopeMock).getScopeId();
+        Mockito.doReturn(100L).when(tmpltMock).getId();
         Mockito.doReturn(List.of(1L, 2L)).when(_dcDao).listAllIds();
         Mockito.doReturn(List.of()).when(dataStoreManagerMock).getImageStoresByZoneIds(1L);
 
@@ -238,6 +244,10 @@ public class TemplateServiceImplTest {
         Map<String, TemplateProp> templates = new HashMap<>();
         templates.put(tmpltMock.getUniqueName(), tmpltPropMock);
         Mockito.doReturn(templates).when(templateService).listTemplate(otherZoneStoreMock);
+
+        TemplateObject sourceTmplMock = Mockito.mock(TemplateObject.class);
+        Mockito.doReturn(sourceTmplMock).when(templateDataFactoryMock).getTemplate(100L, otherZoneStoreMock);
+        Mockito.doReturn("/mnt/secondary/template.qcow2").when(sourceTmplMock).getInstallPath();
         Mockito.doReturn(null).when(_dcDao).findById(1L);
 
         boolean result = templateService.tryCopyingTemplateToImageStore(tmpltMock, destStoreMock);
@@ -250,23 +260,20 @@ public class TemplateServiceImplTest {
         Scope scopeMock = Mockito.mock(Scope.class);
         Mockito.doReturn(scopeMock).when(destStoreMock).getScope();
         Mockito.doReturn(1L).when(scopeMock).getScopeId();
-
+        Mockito.doReturn(100L).when(tmpltMock).getId();
         Mockito.doReturn(List.of(1L, 2L)).when(_dcDao).listAllIds();
-
-        Mockito.doReturn(List.of())
-                .when(dataStoreManagerMock)
-                .getImageStoresByZoneIds(1L);
+        Mockito.doReturn(List.of()).when(dataStoreManagerMock).getImageStoresByZoneIds(1L);
 
         DataStore otherZoneStoreMock = Mockito.mock(DataStore.class);
-        Mockito.doReturn(List.of(otherZoneStoreMock))
-                .when(dataStoreManagerMock)
-                .getImageStoresByZoneIds(2L);
+        Mockito.doReturn(List.of(otherZoneStoreMock)).when(dataStoreManagerMock).getImageStoresByZoneIds(2L);
 
         Map<String, TemplateProp> templates = new HashMap<>();
         templates.put(tmpltMock.getUniqueName(), tmpltPropMock);
-        Mockito.doReturn(templates)
-                .when(templateService)
-                .listTemplate(otherZoneStoreMock);
+        Mockito.doReturn(templates).when(templateService).listTemplate(otherZoneStoreMock);
+
+        TemplateObject sourceTmplMock = Mockito.mock(TemplateObject.class);
+        Mockito.doReturn(sourceTmplMock).when(templateDataFactoryMock).getTemplate(100L, otherZoneStoreMock);
+        Mockito.doReturn("/mnt/secondary/template.qcow2").when(sourceTmplMock).getInstallPath();
 
         DataCenterVO dstZoneMock = Mockito.mock(DataCenterVO.class);
         Mockito.doReturn(dstZoneMock).when(_dcDao).findById(1L);
