@@ -126,7 +126,7 @@ public class SystemVmResponse extends BaseResponseWithAnnotations {
     @Param(description = "the public netmask for the system VM")
     private String publicNetmask;
 
-    @SerializedName("storagenetworkip")
+    @SerializedName("storageip")
     @Param(description = "the ip address for the system VM on the storage network")
     private String storageIp;
 
