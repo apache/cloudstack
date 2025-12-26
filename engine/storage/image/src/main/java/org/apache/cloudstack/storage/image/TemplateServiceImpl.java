@@ -31,7 +31,6 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.StorageOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -644,7 +643,7 @@ public class TemplateServiceImpl implements TemplateService {
                 continue;
             }
 
-            DataStore sourceStore = findTemplateInStores(tmplt, storesInOtherZone);
+            DataStore sourceStore = findImageStorageHavingTemplate(tmplt, storesInOtherZone);
             if (sourceStore == null) {
                 logger.debug("Template [{}] not found in any image store of zone [{}].",
                         tmplt.getUniqueName(), otherZoneId);
@@ -685,7 +684,7 @@ public class TemplateServiceImpl implements TemplateService {
         return false;
     }
 
-    private DataStore findTemplateInStores(VMTemplateVO tmplt, List<DataStore> stores) {
+    private DataStore findImageStorageHavingTemplate(VMTemplateVO tmplt, List<DataStore> stores) {
         for (DataStore store : stores) {
             Map<String, TemplateProp> templates = listTemplate(store);
             if (templates != null && templates.containsKey(tmplt.getUniqueName())) {
@@ -707,9 +706,10 @@ public class TemplateServiceImpl implements TemplateService {
             return false;
         }
 
+        TemplateObject sourceTmpl = (TemplateObject) _templateFactory.getTemplate(tmplt.getId(), sourceStore);
         try {
-            Long userId = CallContext.current().getCallingUserId();
-            return _tmpltMgr.copy(userId, tmplt, sourceStore, dstZone);
+            storageOrchestrator.orchestrateTemplateCopyAcrossZones(sourceTmpl, sourceStore, destStore);
+            return true;
         } catch (Exception e) {
             logger.error("Failed to copy template [{}] from zone [{}] to zone [{}]",
                     tmplt.getUniqueName(),

@@ -32,4 +32,6 @@ public interface StorageOrchestrationService {
     MigrationResponse migrateResources(Long srcImgStoreId, Long destImgStoreId, List<Long> templateIdList, List<Long> snapshotIdList);
 
     Future<TemplateApiResult> orchestrateTemplateCopyToImageStore(TemplateInfo source, DataStore destStore);
+
+    Future<TemplateApiResult> orchestrateTemplateCopyAcrossZones(TemplateInfo source, DataStore sourceStore, DataStore destStore);
 }
