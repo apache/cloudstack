@@ -20,8 +20,6 @@ package org.apache.cloudstack.storage.image;
 
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.template.TemplateManager;
 import org.apache.cloudstack.engine.orchestration.service.StorageOrchestrationService;
