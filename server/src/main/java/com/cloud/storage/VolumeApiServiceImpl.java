@@ -1536,6 +1536,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
             }
 
+            volume = _volsDao.findById(volumeId);
             if (newDiskOfferingId != null) {
                 volume.setDiskOfferingId(newDiskOfferingId);
                 _volumeMgr.saveVolumeDetails(newDiskOfferingId, volume.getId());
@@ -1550,7 +1551,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             // Update size if volume has same size as before, else it is already updated
-            volume = _volsDao.findById(volumeId);
             if (currentSize == volume.getSize() && currentSize != newSize) {
                 volume.setSize(newSize);
             } else if (volume.getSize() != newSize) {
@@ -2375,7 +2375,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (volume.getInstanceId() != null) {
                 // Check that VM to which this volume is attached does not have VM snapshots
                 if (_vmSnapshotDao.findByVm(volume.getInstanceId()).size() > 0) {
-                    throw new InvalidParameterValueException("A volume that is attached to a VM with any VM snapshots cannot be resized.");
+                    throw new InvalidParameterValueException("A volume that is attached to a Instance with any Instance Snapshots cannot be resized.");
                 }
             }
 
@@ -2428,6 +2428,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (!shrinkOk) {
                     throw new InvalidParameterValueException("Going from existing size of " + currentSize + " to size of " + newSize + " would shrink the volume."
                             + "Need to sign off by supplying the shrinkok parameter with value of true.");
+                }
+                if (ApiDBUtils.getHypervisorTypeFromFormat(volume.getDataCenterId(), volume.getFormat()) == HypervisorType.XenServer) {
+                    throw new InvalidParameterValueException("Shrink volume is not supported for the XenServer hypervisor.");
                 }
             }
         }
@@ -2602,7 +2605,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         excludeLocalStorageIfNeeded(volumeToAttach);
 
-        checkForDevicesInCopies(vmId, vm);
+        checkForVMSnapshots(vmId, vm);
+
+        checkForBackups(vm, true);
 
         checkRightsToAttach(caller, volumeToAttach, vm);
 
@@ -2704,17 +2709,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
-    private void checkForDevicesInCopies(Long vmId, UserVmVO vm) {
+    private void checkForVMSnapshots(Long vmId, UserVmVO vm) {
         // if target VM has associated VM snapshots
         List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
         if (vmSnapshots.size() > 0) {
-            throw new InvalidParameterValueException(String.format("Unable to attach volume to VM %s/%s, please specify a VM that does not have VM snapshots", vm.getName(), vm.getUuid()));
-        }
-
-        // if target VM has backups
-        List<Backup> backups = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
-        if (vm.getBackupOfferingId() != null && !backups.isEmpty()) {
-            throw new InvalidParameterValueException(String.format("Unable to attach volume to VM %s/%s, please specify a VM that does not have any backups", vm.getName(), vm.getUuid()));
+            throw new InvalidParameterValueException(String.format("Unable to attach volume to Instance %s/%s, please specify an Instance that does not have Instance Snapshots", vm.getName(), vm.getUuid()));
         }
     }
 
@@ -2815,7 +2814,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return volumeToAttach;
     }
 
-    protected void validateIfVmHasBackups(UserVmVO vm, boolean attach) {
+    protected void checkForBackups(UserVmVO vm, boolean attach) {
         if ((vm.getBackupOfferingId() == null || CollectionUtils.isEmpty(vm.getBackupVolumeList())) || BooleanUtils.isTrue(BackupManager.BackupEnableAttachDetachVolumes.value())) {
             return;
         }
@@ -3032,10 +3031,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // Don't allow detach if target VM has associated VM snapshots
         List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
         if (CollectionUtils.isNotEmpty(vmSnapshots)) {
-            throw new InvalidParameterValueException("Unable to detach volume, please specify a VM that does not have VM snapshots");
+            throw new InvalidParameterValueException("Unable to detach volume, please specify an Instance that does not have Instance Snapshots");
         }
 
-        validateIfVmHasBackups(vm, false);
+        checkForBackups(vm, false);
 
         AsyncJobExecutionContext asyncExecutionContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (asyncExecutionContext != null) {
@@ -3319,7 +3318,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // Check that Vm to which this volume is attached does not have VM Snapshots
         // OfflineVmwareMigration: consider if this is needed and desirable
         if (vm != null && _vmSnapshotDao.findByVm(vm.getId()).size() > 0) {
-            throw new InvalidParameterValueException("Volume cannot be migrated, please remove all VM snapshots for VM to which this volume is attached");
+            throw new InvalidParameterValueException("Volume cannot be migrated, please remove all Instance Snapshots for Instance to which this volume is attached");
         }
 
         StoragePoolVO srcStoragePoolVO = _storagePoolDao.findById(vol.getPoolId());
@@ -3328,7 +3327,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (vm != null && State.Running.equals(vm.getState())) {
             // Check if the VM is GPU enabled.
             if (_serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
-                throw new InvalidParameterValueException("Live Migration of GPU enabled VM is not supported");
+                throw new InvalidParameterValueException("Live Migration of GPU enabled Instance is not supported");
             }
 
             // Check if the underlying hypervisor supports storage motion.

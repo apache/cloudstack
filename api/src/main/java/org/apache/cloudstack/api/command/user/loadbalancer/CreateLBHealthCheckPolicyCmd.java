@@ -53,10 +53,10 @@ public class CreateLBHealthCheckPolicyCmd extends BaseAsyncCreateCmd {
                type = CommandType.UUID,
                entityType = FirewallRuleResponse.class,
                required = true,
-               description = "the ID of the load balancer rule")
+               description = "The ID of the load balancer rule")
     private Long lbRuleId;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "the description of the load balancer health check policy")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "The description of the load balancer health check policy")
     private String description;
 
     @Parameter(name = ApiConstants.HEALTHCHECK_PINGPATH, type = CommandType.STRING, required = false, description = "HTTP ping path")
@@ -77,16 +77,16 @@ public class CreateLBHealthCheckPolicyCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.HEALTHCHECK_HEALTHY_THRESHOLD,
                type = CommandType.INTEGER,
                required = false,
-               description = "Number of consecutive health check success before declaring an instance healthy")
+               description = "Number of consecutive health check success before declaring an Instance healthy")
     private int healthyThreshold;
 
     @Parameter(name = ApiConstants.HEALTHCHECK_UNHEALTHY_THRESHOLD,
                type = CommandType.INTEGER,
                required = false,
-               description = "Number of consecutive health check failures before declaring an instance unhealthy")
+               description = "Number of consecutive health check failures before declaring an Instance unhealthy")
     private int unhealthyThreshold;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
 

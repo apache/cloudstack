@@ -616,10 +616,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
                 boolean dataDiskDeletetionResult = true;
                 List<VMTemplateVO> dataDiskTemplates = templateDao.listByParentTemplatetId(template.getId());
-                if (dataDiskTemplates != null && dataDiskTemplates.size() > 0) {
-                    logger.info("Template: {} has Datadisk template(s) associated with it. Delete Datadisk templates before deleting the template", template);
+                if (CollectionUtils.isNotEmpty(dataDiskTemplates)) {
+                    logger.info("Template: {} has Datadisk template(s) associated with it. Delete Datadisk Templates before deleting the Template", template);
                     for (VMTemplateVO dataDiskTemplate : dataDiskTemplates) {
-                        logger.info("Delete Datadisk template: {} from image store: {}", dataDiskTemplate, imageStore);
+                        logger.info("Delete Datadisk Template: {} from image store: {}", dataDiskTemplate, imageStore);
                         AsyncCallFuture<TemplateApiResult> future = imageService.deleteTemplateAsync(imageFactory.getTemplate(dataDiskTemplate.getId(), imageStore));
                         try {
                             TemplateApiResult result = future.get();
@@ -674,7 +674,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                     }
                 } else {
                     logger.warn("Template: {} won't be deleted from image store: {} " +
-                            "because deletion of one of the Datadisk templates that belonged to the template failed", template, imageStore);
+                            "because deletion of one of the Datadisk Templates that belonged to the Template failed", template, imageStore);
                 }
             }
 
@@ -682,6 +682,9 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         if (success) {
             if ((imageStores != null && imageStores.size() > 1) && (profile.getZoneIdList() != null)) {
                 //if template is stored in more than one image stores, and the zone id is not null, then don't delete other templates.
+                if (templateMgr.TemplateDeleteFromPrimaryStorage.value()) {
+                    templateMgr.evictTemplateFromStoragePoolsForZones(template.getId(), profile.getZoneIdList());
+                }
                 return cleanupTemplate(template, success);
             }
 
@@ -694,7 +697,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
             // find all eligible image stores for this template
             List<DataStore> iStores = templateMgr.getImageStoreByTemplate(template.getId(), null);
-            if (iStores == null || iStores.size() == 0) {
+            if (CollectionUtils.isEmpty(iStores)) {
                 // remove any references from template_zone_ref
                 List<VMTemplateZoneVO> templateZones = templateZoneDao.listByTemplateId(template.getId());
                 if (templateZones != null) {
@@ -713,6 +716,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                     _resourceLimitMgr.decrementResourceCount(template.getAccountId(), ResourceType.template);
                     _resourceLimitMgr.recalculateResourceCount(template.getAccountId(), account.getDomainId(), ResourceType.secondary_storage.getOrdinal());
 
+            }
+
+            if (templateMgr.TemplateDeleteFromPrimaryStorage.value()) {
+                templateMgr.evictTemplateFromStoragePoolsForZones(template.getId(), profile.getZoneIdList());
             }
 
             // remove its related ACL permission

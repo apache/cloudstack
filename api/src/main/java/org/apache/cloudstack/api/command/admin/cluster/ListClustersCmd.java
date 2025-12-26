@@ -42,31 +42,31 @@ public class ListClustersCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "lists clusters by the cluster ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "Lists clusters by the cluster ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "lists clusters by the cluster name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Lists clusters by the cluster name")
     private String clusterName;
 
-    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "lists clusters by Pod ID")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "Lists clusters by Pod ID")
     private Long podId;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "lists clusters by Zone ID")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "Lists clusters by Zone ID")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "lists clusters by hypervisor type")
+    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "Lists clusters by hypervisor type")
     private String hypervisorType;
 
-    @Parameter(name = ApiConstants.CLUSTER_TYPE, type = CommandType.STRING, description = "lists clusters by cluster type")
+    @Parameter(name = ApiConstants.CLUSTER_TYPE, type = CommandType.STRING, description = "Lists clusters by cluster type")
     private String clusterType;
 
-    @Parameter(name = ApiConstants.ALLOCATION_STATE, type = CommandType.STRING, description = "lists clusters by allocation state")
+    @Parameter(name = ApiConstants.ALLOCATION_STATE, type = CommandType.STRING, description = "Lists clusters by allocation state")
     private String allocationState;
 
-    @Parameter(name = ApiConstants.MANAGED_STATE, type = CommandType.STRING, description = "whether this cluster is managed by cloudstack")
+    @Parameter(name = ApiConstants.MANAGED_STATE, type = CommandType.STRING, description = "Whether this cluster is managed by cloudstack")
     private String managedState;
 
-    @Parameter(name = ApiConstants.SHOW_CAPACITIES, type = CommandType.BOOLEAN, description = "flag to display the capacity of the clusters")
+    @Parameter(name = ApiConstants.SHOW_CAPACITIES, type = CommandType.BOOLEAN, description = "Flag to display the capacity of the clusters")
     private Boolean showCapacities;
 
     @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
@@ -128,19 +128,19 @@ public class ListClustersCmd extends BaseListCmd {
 
     protected Pair<List<ClusterResponse>, Integer> getClusterResponses() {
         Pair<List<? extends Cluster>, Integer> result = _mgr.searchForClusters(this);
-        List<ClusterResponse> clusterResponses = new ArrayList<ClusterResponse>();
+        List<ClusterResponse> clusterResponses = new ArrayList<>();
         for (Cluster cluster : result.first()) {
             ClusterResponse clusterResponse = _responseGenerator.createClusterResponse(cluster, showCapacities);
             clusterResponse.setObjectName("cluster");
             clusterResponses.add(clusterResponse);
         }
-        return new Pair<List<ClusterResponse>, Integer>(clusterResponses, result.second());
+        return new Pair<>(clusterResponses, result.second());
     }
 
     @Override
     public void execute() {
         Pair<List<ClusterResponse>, Integer> clusterResponses = getClusterResponses();
-        ListResponse<ClusterResponse> response = new ListResponse<ClusterResponse>();
+        ListResponse<ClusterResponse> response = new ListResponse<>();
         response.setResponses(clusterResponses.first(), clusterResponses.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

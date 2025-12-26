@@ -367,18 +367,36 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         logTransitStateAndThrow(logLevel, message, null, null, ex);
     }
 
-    private boolean isKubernetesServiceNetworkOfferingConfigured(DataCenter zone) {
+    private boolean isKubernetesServiceNetworkOfferingConfigured(DataCenter zone, Long networkId) {
         // Check network offering
         String networkOfferingName = KubernetesClusterNetworkOffering.value();
-        if (networkOfferingName == null || networkOfferingName.isEmpty()) {
-            logger.warn(String.format("Global setting %s is empty. Admin has not yet specified the network offering to be used for provisioning isolated network for the cluster", KubernetesClusterNetworkOffering.key()));
+        if (StringUtils.isEmpty(networkOfferingName) && networkId == null) {
+            logger.warn("Global setting: {} is empty. Admin has not yet specified the network offering to be used for provisioning isolated network for the cluster nor has a pre-created network been passed", KubernetesClusterNetworkOffering.key());
             return false;
         }
-        NetworkOfferingVO networkOffering = networkOfferingDao.findByUniqueName(networkOfferingName);
-        if (networkOffering == null) {
-            logger.warn(String.format("Unable to find the network offering %s to be used for provisioning Kubernetes cluster", networkOfferingName));
-            return false;
+        NetworkOfferingVO networkOffering = null;
+        if (networkId != null) {
+            NetworkVO network = networkDao.findById(networkId);
+            if (network == null) {
+                logger.warn("Unable to find the network with ID: {} passed for the Kubernetes cluster", networkId);
+                return false;
+            }
+            if (isDirectAccess(network)) {
+                return true;
+            }
+            networkOffering = networkOfferingDao.findById(network.getNetworkOfferingId());
+            if (networkOffering == null) {
+                logger.warn("Unable to find the network offering of the network: {} ({}) to be used for provisioning Kubernetes cluster", network.getName(), network.getUuid());
+                return false;
+            }
+        } else if (StringUtils.isNotEmpty(networkOfferingName)) {
+            networkOffering = networkOfferingDao.findByUniqueName(networkOfferingName);
+            if (networkOffering == null) {
+                logger.warn("Unable to find the network offering: {} to be used for provisioning Kubernetes cluster", networkOfferingName);
+                return false;
+            }
         }
+
         if (networkOffering.getState() == NetworkOffering.State.Disabled) {
             logger.warn("Network offering: {} is not enabled", networkOffering);
             return false;
@@ -413,8 +431,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return true;
     }
 
-    private boolean isKubernetesServiceConfigured(DataCenter zone) {
-        if (!isKubernetesServiceNetworkOfferingConfigured(zone)) {
+    private boolean isKubernetesServiceConfigured(DataCenter zone, Long networkId) {
+        if (!isKubernetesServiceNetworkOfferingConfigured(zone, networkId)) {
             return false;
         }
         return true;
@@ -433,16 +451,30 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return null;
     }
 
-    public VMTemplateVO getKubernetesServiceTemplate(DataCenter dataCenter, Hypervisor.HypervisorType hypervisorType) {
-        VMTemplateVO template = templateDao.findSystemVMReadyTemplate(dataCenter.getId(), hypervisorType);
+    public VMTemplateVO getKubernetesServiceTemplate(DataCenter dataCenter, Hypervisor.HypervisorType hypervisorType,
+                                                     KubernetesSupportedVersion clusterKubernetesVersion) {
+        String systemVMPreferredArchitecture = ResourceManager.SystemVmPreferredArchitecture.valueIn(dataCenter.getId());
+        VMTemplateVO cksIso = clusterKubernetesVersion != null ?
+                templateDao.findById(clusterKubernetesVersion.getIsoId()) :
+                null;
+        String preferredArchitecture = getCksClusterPreferredArch(systemVMPreferredArchitecture, cksIso);
+        VMTemplateVO template = templateDao.findSystemVMReadyTemplate(dataCenter.getId(), hypervisorType, preferredArchitecture);
         if (DataCenter.Type.Edge.equals(dataCenter.getType()) && template != null && !template.isDirectDownload()) {
             logger.debug(String.format("Template %s can not be used for edge zone %s", template, dataCenter));
             template = templateDao.findRoutingTemplate(hypervisorType, networkHelper.getHypervisorRouterTemplateConfigMap().get(hypervisorType).valueIn(dataCenter.getId()));
         }
         if (template == null) {
-            throw new CloudRuntimeException("Not able to find the System or Routing template in ready state for the zone " + dataCenter.getUuid());
+            throw new CloudRuntimeException("Not able to find the System or Routing Template in ready state for the zone " + dataCenter.getUuid());
         }
         return  template;
+    }
+
+    protected String getCksClusterPreferredArch(String systemVMPreferredArchitecture, VMTemplateVO cksIso) {
+        if (cksIso == null) {
+            return systemVMPreferredArchitecture;
+        }
+        String cksIsoArchName = cksIso.getArch().name();
+        return cksIsoArchName.equals(systemVMPreferredArchitecture) ? systemVMPreferredArchitecture : cksIsoArchName;
     }
 
     protected void validateIsolatedNetworkIpRules(long ipId, FirewallRule.Purpose purpose, Network network, int clusterTotalNodeCount) {
@@ -522,7 +554,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException(String.format("Custom service offerings are not supported for creating clusters, service offering ID: %s", serviceOffering.getUuid()));
         }
         if (serviceOffering.getCpu() < MIN_KUBERNETES_CLUSTER_NODE_CPU || serviceOffering.getRamSize() < MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE) {
-            throw new InvalidParameterValueException(String.format("Kubernetes cluster cannot be created with service offering ID: %s, Kubernetes cluster template needs minimum %d vCPUs and %d MB RAM", serviceOffering.getUuid(), MIN_KUBERNETES_CLUSTER_NODE_CPU, MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE));
+            throw new InvalidParameterValueException(String.format("Kubernetes cluster cannot be created with service offering ID: %s, Kubernetes cluster Template needs minimum %d vCPUs and %d MB RAM", serviceOffering.getUuid(), MIN_KUBERNETES_CLUSTER_NODE_CPU, MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE));
         }
         if (serviceOffering.getCpu() < version.getMinimumCpu()) {
             throw new InvalidParameterValueException(String.format("Kubernetes cluster cannot be created with service offering ID: %s, Kubernetes version ID: %s needs minimum %d vCPUs", serviceOffering.getUuid(), version.getUuid(), version.getMinimumCpu()));
@@ -838,7 +870,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
         DataCenter zone = validateAndGetZoneForKubernetesCreateParameters(zoneId, networkId);
 
-        if (!isKubernetesServiceConfigured(zone)) {
+        if (!isKubernetesServiceConfigured(zone, networkId)) {
             throw new CloudRuntimeException("Kubernetes service has not been configured properly to provision Kubernetes clusters");
         }
 
@@ -1006,7 +1038,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (clusterSize > kubernetesCluster.getNodeCount()) { // Upscale
             VMTemplateVO template = templateDao.findById(kubernetesCluster.getTemplateId());
             if (template == null) {
-                throw new InvalidParameterValueException(String.format("Invalid template associated with Kubernetes cluster : %s",  kubernetesCluster.getName()));
+                throw new InvalidParameterValueException(String.format("Invalid Template associated with Kubernetes cluster : %s",  kubernetesCluster.getName()));
             }
             if (CollectionUtils.isEmpty(templateJoinDao.newTemplateView(template, zone.getId(), true))) {
                 throw new InvalidParameterValueException(String.format("Template : %s associated with Kubernetes cluster : %s is not in Ready state for datacenter : %s", template.getName(), kubernetesCluster.getName(), zone.getName()));
@@ -1302,7 +1334,10 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
 
         final Network defaultNetwork = getKubernetesClusterNetworkIfMissing(cmd.getName(), zone, owner, (int)controlNodeCount, (int)clusterSize, cmd.getExternalLoadBalancerIpAddress(), cmd.getNetworkId());
-        final VMTemplateVO finalTemplate = getKubernetesServiceTemplate(zone, deployDestination.getCluster().getHypervisorType());
+        final VMTemplateVO finalTemplate = getKubernetesServiceTemplate(zone, deployDestination.getCluster().getHypervisorType(), clusterKubernetesVersion);
+
+        compareKubernetesIsoArchToSelectedTemplateArch(clusterKubernetesVersion, finalTemplate);
+
         final long cores = serviceOffering.getCpu() * (controlNodeCount + clusterSize);
         final long memory = serviceOffering.getRamSize() * (controlNodeCount + clusterSize);
 
@@ -1329,6 +1364,21 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
         CallContext.current().putContextParameter(KubernetesCluster.class, cluster.getUuid());
         return cluster;
+    }
+
+    private void compareKubernetesIsoArchToSelectedTemplateArch(KubernetesSupportedVersion clusterKubernetesVersion, VMTemplateVO finalTemplate) {
+        VMTemplateVO cksIso = templateDao.findById(clusterKubernetesVersion.getIsoId());
+        if (cksIso == null) {
+            String err = String.format("Cannot find Kubernetes ISO associated to the Kubernetes version %s (id=%s)",
+                    clusterKubernetesVersion.getName(), clusterKubernetesVersion.getUuid());
+            throw new CloudRuntimeException(err);
+        }
+        if (!cksIso.getArch().equals(finalTemplate.getArch())) {
+            String err = String.format("The selected Kubernetes ISO %s arch (%s) doesn't match the template %s arch (%s) " +
+                            "to deploy the Kubernetes cluster",
+                    clusterKubernetesVersion.getName(), cksIso.getArch(), finalTemplate.getName(), finalTemplate.getArch());
+            throw new CloudRuntimeException(err);
+        }
     }
 
     private SecurityGroup getOrCreateSecurityGroupForAccount(Account owner) {
@@ -1504,7 +1554,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         try {
             Role role = getProjectKubernetesAccountRole();
             UserAccount userAccount = accountService.createUserAccount(accountName,
-                    UuidUtils.first(UUID.randomUUID().toString()), PROJECT_KUBERNETES_ACCOUNT_FIRST_NAME,
+                    UUID.randomUUID().toString(), PROJECT_KUBERNETES_ACCOUNT_FIRST_NAME,
                     PROJECT_KUBERNETES_ACCOUNT_LAST_NAME, null, null, accountName, Account.Type.NORMAL, role.getId(),
                     project.getDomainId(), null, null, null, null, User.Source.NATIVE);
             projectManager.assignAccountToProject(project, userAccount.getAccountId(), ProjectAccount.Role.Regular,

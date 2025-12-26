@@ -44,6 +44,9 @@
           <span v-if="record.icon && record.icon.base64image">
             <resource-icon :image="record.icon.base64image" size="2x"/>
           </span>
+          <span v-else-if="record.vmtype === 'sharedfsvm'">
+            <file-text-outlined style="font-size: 18px;" />
+          </span>
           <os-logo v-else :osId="record.ostypeid" :osName="record.osdisplayname" size="xl" />
         </span>
         <span style="min-width: 120px" >
@@ -362,7 +365,14 @@
         <resource-label :resourceType="record.resourcetype" :resourceId="record.resourceid" :resourceName="record.resourcename" />
       </template>
       <template v-if="column.key === 'domain'">
-        <router-link v-if="record.domainid && !record.domainid.toString().includes(',') && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + record.domainid, query: { tab: 'details' } }">{{ text }}</router-link>
+        <span v-if="record.domainid && $store.getters.userInfo.roletype !== 'User'">
+          <template v-for="(id, idx) in record.domainid.split(',')" :key="id">
+            <router-link :to="{ path: '/domain/' + id, query: { tab: 'details' } }">
+              {{ record.domain.split(',')[idx] || id }}
+            </router-link>
+            <span v-if="idx < record.domainid.split(',').length - 1">, </span>
+          </template>
+        </span>
         <span v-else>{{ text }}</span>
       </template>
       <template v-if="column.key === 'domainpath'">
@@ -591,6 +601,7 @@ import { createPathBasedOnVmType } from '@/utils/plugins'
 import { validateLinks } from '@/utils/links'
 import cronstrue from 'cronstrue/i18n'
 import moment from 'moment-timezone'
+import { FileTextOutlined } from '@ant-design/icons-vue'
 
 export default {
   name: 'ListView',
@@ -601,7 +612,8 @@ export default {
     CopyLabel,
     TooltipButton,
     ResourceIcon,
-    ResourceLabel
+    ResourceLabel,
+    FileTextOutlined
   },
   props: {
     columns: {

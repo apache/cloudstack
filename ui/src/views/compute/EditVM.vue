@@ -86,10 +86,16 @@
       </a-form-item>
       <a-form-item v-if="userDataEnabled">
         <template #label>
-          <tooltip-label :title="$t('label.userdata')" :tooltip="apiParams.userdata.description"/>
+          <tooltip-label :title="$t('label.user.data')" :tooltip="apiParams.userdata.description"/>
         </template>
         <a-textarea v-model:value="form.userdata">
         </a-textarea>
+      </a-form-item>
+      <a-form-item v-if="extraConfigEnabled">
+        <template #label>
+          <tooltip-label :title="$t('label.extraconfig')" :tooltip="$t('label.extraconfig.tooltip')"/>
+        </template>
+        <a-textarea v-model:value="form.extraconfig"/>
       </a-form-item>
       <a-form-item ref="securitygroupids" name="securitygroupids" :label="$t('label.security.groups')" v-if="securityGroupsEnabled">
         <a-select
@@ -152,7 +158,6 @@ export default {
       template: {},
       userDataEnabled: false,
       securityGroupsEnabled: false,
-      dynamicScalingVmConfig: false,
       loading: false,
       securitygroups: {
         loading: false,
@@ -166,6 +171,19 @@ export default {
         loading: false,
         opts: []
       }
+    }
+  },
+  computed: {
+    extraConfigEnabled () {
+      return this.$store.getters.features.additionalconfigenabled
+    },
+    combinedExtraConfig () {
+      if (!this.extraConfigEnabled || !this.resource.details) return ''
+      const configs = Object.keys(this.resource.details)
+        .filter(key => key.startsWith('extraconfig-'))
+        .map(key => this.resource.details[key] || '')
+        .filter(val => val.trim())
+      return configs.join('\n\n')
     }
   },
   beforeCreate () {
@@ -186,7 +204,8 @@ export default {
         deleteprotection: this.resource.deleteprotection,
         group: this.resource.group,
         userdata: '',
-        haenable: this.resource.haenable
+        haenable: this.resource.haenable,
+        extraconfig: this.combinedExtraConfig
       })
       this.rules = reactive({})
     },
@@ -197,7 +216,6 @@ export default {
       this.fetchInstaceGroups()
       this.fetchServiceOfferingData()
       this.fetchTemplateData()
-      this.fetchDynamicScalingVmConfig()
       this.fetchUserData()
     },
     fetchZoneDetails () {
@@ -249,18 +267,8 @@ export default {
         this.template = templateResponses[0]
       })
     },
-    fetchDynamicScalingVmConfig () {
-      const params = {}
-      params.name = 'enable.dynamic.scale.vm'
-      params.zoneid = this.resource.zoneid
-      var apiName = 'listConfigurations'
-      api(apiName, params).then(json => {
-        const configResponse = json.listconfigurationsresponse.configuration
-        this.dynamicScalingVmConfig = configResponse[0]?.value === 'true'
-      })
-    },
-    canDynamicScalingEnabled () {
-      return this.template.isdynamicallyscalable && this.serviceOffering.dynamicscalingenabled && this.dynamicScalingVmConfig
+    isDynamicScalingEnabled () {
+      return this.template.isdynamicallyscalable && this.serviceOffering.dynamicscalingenabled && this.$store.getters.features.dynamicscalingenabled
     },
     fetchOsTypes () {
       this.osTypes.loading = true
@@ -353,6 +361,9 @@ export default {
         }
         if (values.userdata && values.userdata.length > 0) {
           params.userdata = this.$toBase64AndURIEncoded(values.userdata)
+        }
+        if (values.extraconfig && values.extraconfig.length > 0) {
+          params.extraconfig = encodeURIComponent(values.extraconfig)
         }
         this.loading = true
 

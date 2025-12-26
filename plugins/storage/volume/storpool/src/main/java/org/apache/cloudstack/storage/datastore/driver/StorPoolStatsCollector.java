@@ -146,12 +146,12 @@ public class StorPoolStatsCollector extends ManagerBase {
                 }
                 for (StoragePoolVO storagePool : onePoolforZone.values()) {
                     try {
-                        logger.debug(String.format("Collecting templates statistics for zone [%s]", storagePool.getDataCenterId()));
+                        logger.debug(String.format("Collecting Templates statistics for zone [%s]", storagePool.getDataCenterId()));
                         JsonArray arr = StorPoolUtil.templatesStats(StorPoolUtil.getSpConnection(storagePool.getUuid(),
                                 storagePool.getId(), storagePoolDetailsDao, storagePoolDao));
                         templatesStats.put(storagePool.getDataCenterId(), getClusterVolumeOrTemplateSpace(arr, StorPoolObject.TEMPLATE));
                     } catch (Exception e) {
-                        logger.debug(String.format("Could not collect StorPool templates statistics %s", e.getMessage()));
+                        logger.debug(String.format("Could not collect StorPool Templates statistics %s", e.getMessage()));
                     }
                 }
             }

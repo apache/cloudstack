@@ -26,24 +26,39 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Storage;
+import com.cloud.utils.script.Script;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.joda.time.Duration;
 import org.libvirt.LibvirtException;
 
 @ResourceWrapper(handles = LinstorRevertBackupSnapshotCommand.class)
 public final class LinstorRevertBackupSnapshotCommandWrapper
     extends CommandWrapper<LinstorRevertBackupSnapshotCommand, CopyCmdAnswer, LibvirtComputingResource>
 {
-    private void convertQCow2ToRAW(final String srcPath, final String dstPath, int waitMilliSeconds)
+
+    private void convertQCow2ToRAW(
+            KVMStoragePool pool, final String srcPath, final String dstUuid, int waitMilliSeconds)
         throws LibvirtException, QemuImgException
     {
+        final String dstPath = pool.getPhysicalDisk(dstUuid).getPath();
         final QemuImgFile srcQemuFile = new QemuImgFile(
             srcPath, QemuImg.PhysicalDiskFormat.QCOW2);
-        final QemuImg qemu = new QemuImg(waitMilliSeconds);
+        boolean zeroedDevice = LinstorUtil.resourceSupportZeroBlocks(pool, LinstorUtil.RSC_PREFIX + dstUuid);
+        if (zeroedDevice)
+        {
+            // blockdiscard the device to ensure the device is filled with zeroes
+            Script blkDiscardScript = new Script("blkdiscard", Duration.millis(waitMilliSeconds));
+            blkDiscardScript.add("-f");
+            blkDiscardScript.add(dstPath);
+            blkDiscardScript.execute();
+        }
+        final QemuImg qemu = new QemuImg(waitMilliSeconds, zeroedDevice, true);
         final QemuImgFile dstFile = new QemuImgFile(dstPath, QemuImg.PhysicalDiskFormat.RAW);
         qemu.convert(srcQemuFile, dstFile);
     }
@@ -70,8 +85,9 @@ public final class LinstorRevertBackupSnapshotCommandWrapper
                 srcDataStore.getUrl() + File.separator + srcFile.getParent());
 
             convertQCow2ToRAW(
+                linstorPool,
                 secondaryPool.getLocalPath() + File.separator + srcFile.getName(),
-                linstorPool.getPhysicalDisk(dst.getPath()).getPath(),
+                dst.getPath(),
                 cmd.getWaitInMillSeconds());
 
             final VolumeObjectTO dstVolume = new VolumeObjectTO();

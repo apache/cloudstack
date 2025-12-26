@@ -48,7 +48,7 @@ import com.cloud.vm.VirtualMachine;
 @APICommand(name = "runDiagnostics", responseObject = RunDiagnosticsResponse.class, entityType = {VirtualMachine.class},
         responseHasSensitiveInfo = false,
         requestHasSensitiveInfo = false,
-        description = "Execute network-utility command (ping/arping/tracert) on system VMs remotely",
+        description = "Execute network-utility command (ping/arping/tracert) on System VMs remotely",
         authorized = {RoleType.Admin},
         since = "4.12.0.0")
 public class RunDiagnosticsCmd extends BaseAsyncCmd {
@@ -62,7 +62,7 @@ public class RunDiagnosticsCmd extends BaseAsyncCmd {
     @ACL(accessType = SecurityChecker.AccessType.OperateEntry)
     @Parameter(name = ApiConstants.TARGET_ID, type = CommandType.UUID, required = true, entityType = SystemVmResponse.class,
             validations = {ApiArgValidator.PositiveNumber},
-            description = "The ID of the system VM instance to diagnose")
+            description = "The ID of the System VM to diagnose")
     private Long id;
 
     @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, required = true,
@@ -70,7 +70,7 @@ public class RunDiagnosticsCmd extends BaseAsyncCmd {
     private String address;
 
     @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true,
-            description = "The system VM diagnostics type  valid options are: ping, traceroute, arping")
+            description = "The System VM diagnostics type valid options are: ping, traceroute, arping")
     private String type;
 
     @Parameter(name = ApiConstants.PARAMS, type = CommandType.STRING,
@@ -153,7 +153,7 @@ public class RunDiagnosticsCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Executing diagnostics on system vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
+        return "Executing diagnostics on System VM: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
     }
 
     @Override
