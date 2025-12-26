@@ -36,7 +36,13 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.template.TemplateManager;
 import org.apache.cloudstack.api.response.MigrationResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.StorageOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -103,6 +109,13 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
     VolumeDataStoreDao volumeDataStoreDao;
     @Inject
     DataMigrationUtility migrationHelper;
+    @Inject
+    TemplateManager templateManager;
+    @Inject
+    VMTemplateDao templateDao;
+    @Inject
+    DataCenterDao dcDao;
+
 
     ConfigKey<Double> ImageStoreImbalanceThreshold = new ConfigKey<>("Advanced", Double.class,
             "image.store.imbalance.threshold",
@@ -306,6 +319,14 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
     @Override
     public Future<TemplateApiResult> orchestrateTemplateCopyToImageStore(TemplateInfo source, DataStore destStore) {
         return submit(destStore.getScope().getScopeId(), new CopyTemplateTask(source, destStore));
+    }
+
+    @Override
+    public Future<TemplateApiResult> orchestrateTemplateCopyAcrossZones(TemplateInfo templateInfo, DataStore sourceStore, DataStore destStore) {
+        Long dstZoneId = destStore.getScope().getScopeId();
+        DataCenterVO dstZone = dcDao.findById(dstZoneId);
+        Long userId = CallContext.current().getCallingUserId();
+        return submit(dstZoneId, new CrossZoneCopyTemplateTask(userId, templateInfo, sourceStore, dstZone));
     }
 
     protected Pair<String, Boolean> migrateCompleted(Long destDatastoreId, DataStore srcDatastore, List<DataObject> files, MigrationPolicy migrationPolicy, int skipped) {
@@ -650,6 +671,53 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             }
             tryCleaningUpExecutor(destStore.getScope().getScopeId());
             ThreadContext.clearAll();
+            return result;
+        }
+    }
+
+    private class CrossZoneCopyTemplateTask implements Callable<TemplateApiResult> {
+        private final long userId;
+        private final TemplateInfo sourceTmpl;
+        private final DataStore sourceStore;
+        private final DataCenterVO dstZone;
+        private final String logid;
+
+        CrossZoneCopyTemplateTask(long userId,
+                                  TemplateInfo sourceTmpl,
+                                  DataStore sourceStore,
+                                  DataCenterVO dstZone) {
+            this.userId = userId;
+            this.sourceTmpl = sourceTmpl;
+            this.sourceStore = sourceStore;
+            this.dstZone = dstZone;
+            this.logid = ThreadContext.get(LOGCONTEXTID);
+        }
+
+        @Override
+        public TemplateApiResult call() {
+            ThreadContext.put(LOGCONTEXTID, logid);
+            TemplateApiResult result;
+            VMTemplateVO template = templateDao.findById(sourceTmpl.getId());
+            try {
+                boolean success = templateManager.copy(userId, template, sourceStore, dstZone);
+
+                result = new TemplateApiResult(sourceTmpl);
+                if (!success) {
+                    result.setResult("Cross-zone template copy failed");
+                }
+            } catch (Exception e) {
+                logger.error("Exception while copying template [{}] from zone [{}] to zone [{}]",
+                        template,
+                        sourceStore.getScope().getScopeId(),
+                        dstZone.getId(),
+                        e);
+                result = new TemplateApiResult(sourceTmpl);
+                result.setResult(e.getMessage());
+            } finally {
+                tryCleaningUpExecutor(dstZone.getId());
+                ThreadContext.clearAll();
+            }
+
             return result;
         }
     }
