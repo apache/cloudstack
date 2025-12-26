@@ -37,7 +37,7 @@ public class DeleteProjectInvitationCmd extends BaseAsyncCmd {
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProjectInvitationResponse.class, required = true, description = "id of the invitation")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProjectInvitationResponse.class, required = true, description = "ID of the invitation")
     private Long id;
 
     // ///////////////////////////////////////////////////

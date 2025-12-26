@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.cpu.CPU;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.commons.lang.StringEscapeUtils;
@@ -420,7 +421,9 @@ public class LibvirtVMDef {
                         guestDef.append("<boot dev='" + bo + "'/>\n");
                     }
                 }
-                guestDef.append("<smbios mode='sysinfo'/>\n");
+                if (!CPU.CPUArch.s390x.getType().equalsIgnoreCase(_arch)) {
+                    guestDef.append("<smbios mode='sysinfo'/>\n");
+                }
                 guestDef.append("</os>\n");
                 if (iothreads) {
                     guestDef.append(String.format("<iothreads>%s</iothreads>", NUMBER_OF_IOTHREADS));
@@ -1511,7 +1514,13 @@ public class LibvirtVMDef {
         @Override
         public String toString() {
             StringBuilder memBalloonBuilder = new StringBuilder();
-            memBalloonBuilder.append("<memballoon model='" + memBalloonModel + "'>\n");
+            memBalloonBuilder.append("<memballoon model='" + memBalloonModel + "'");
+            /* Version integer format: major * 1,000,000 + minor * 1,000 + release.
+             * Require: libvirt 6.9.0, qemu 5.1.0 */
+            if (memBalloonModel != MemBalloonModel.NONE && s_qemuVersion >= 5001000 && s_libvirtVersion >= 6009000) {
+                memBalloonBuilder.append(" autodeflate='on' freePageReporting='on'");
+            }
+            memBalloonBuilder.append(">\n");
             if (StringUtils.isNotBlank(memBalloonStatsPeriod)) {
                 memBalloonBuilder.append("<stats period='" + memBalloonStatsPeriod +"'/>\n");
             }

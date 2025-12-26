@@ -986,7 +986,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             double totalcpucap = 0;
             if (StringUtils.isEmpty(cpucaps)) {
                 String totalCpus = Script.runSimpleBashScript("nproc --all| tr '\\n' \" \"");
-                String maxCpuSpeed = Script.runSimpleBashScript("lscpu | egrep 'CPU max MHz' | head -1 | cut -f 2 -d : | tr -d ' '| tr '\\n' \" \"");
+                String maxCpuSpeed = Script.runSimpleBashScript("lscpu | grep -E 'CPU max MHz' | head -1 | cut -f 2 -d : | tr -d ' '| tr '\\n' \" \"");
                 if (StringUtils.isNotEmpty(totalCpus) && StringUtils.isNotEmpty(maxCpuSpeed)) {
                     totalcpucap = Double.parseDouble(totalCpus) * Double.parseDouble(maxCpuSpeed);
                 }
