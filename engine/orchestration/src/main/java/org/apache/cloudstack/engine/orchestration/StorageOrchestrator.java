@@ -325,7 +325,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
     public Future<TemplateApiResult> orchestrateTemplateCopyAcrossZones(TemplateInfo templateInfo, DataStore sourceStore, DataStore destStore) {
         Long dstZoneId = destStore.getScope().getScopeId();
         DataCenterVO dstZone = dcDao.findById(dstZoneId);
-        Long userId = CallContext.current().getCallingUserId();
+        long userId = CallContext.current().getCallingUserId();
         return submit(dstZoneId, new CrossZoneCopyTemplateTask(userId, templateInfo, sourceStore, dstZone));
     }
 

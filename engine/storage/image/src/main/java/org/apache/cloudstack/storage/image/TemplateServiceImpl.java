@@ -641,7 +641,7 @@ public class TemplateServiceImpl implements TemplateService {
             return true;
         }
 
-        logger.debug("Template [{}] not found in any image store of zone [{}]. Checking other zones",
+        logger.debug("Template [{}] not found in any image store of zone [{}]. Checking other zones.",
                 tmplt.getUniqueName(), destZoneId);
 
         return searchAndCopyAcrossZones(tmplt, destStore, destZoneId);
@@ -666,6 +666,13 @@ public class TemplateServiceImpl implements TemplateService {
             if (sourceStore == null) {
                 logger.debug("Template [{}] not found in any image store of zone [{}].",
                         tmplt.getUniqueName(), otherZoneId);
+                continue;
+            }
+
+            TemplateObject sourceTmpl = (TemplateObject) _templateFactory.getTemplate(tmplt.getId(), sourceStore);
+            if (sourceTmpl.getInstallPath() == null) {
+                logger.warn("Cannot copy template [{}] from image store [{}]; install path is null.",
+                        tmplt.getUniqueName(), sourceStore.getName());
                 continue;
             }
 
@@ -720,7 +727,7 @@ public class TemplateServiceImpl implements TemplateService {
         DataCenterVO dstZone = _dcDao.findById(dstZoneId);
 
         if (dstZone == null) {
-            logger.warn("Destination zone [{}] not found for template [{}]",
+            logger.warn("Destination zone [{}] not found for template [{}].",
                     dstZoneId, tmplt.getUniqueName());
             return false;
         }
@@ -730,7 +737,7 @@ public class TemplateServiceImpl implements TemplateService {
             storageOrchestrator.orchestrateTemplateCopyAcrossZones(sourceTmpl, sourceStore, destStore);
             return true;
         } catch (Exception e) {
-            logger.error("Failed to copy template [{}] from zone [{}] to zone [{}]",
+            logger.error("Failed to copy template [{}] from zone [{}] to zone [{}].",
                     tmplt.getUniqueName(),
                     sourceStore.getScope().getScopeId(),
                     dstZoneId,
