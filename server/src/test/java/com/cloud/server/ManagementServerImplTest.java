@@ -1089,8 +1089,6 @@ public class ManagementServerImplTest {
         Mockito.doReturn(Account.Type.NORMAL).when(account).getType();
         Mockito.doReturn(callerId).when(account).getId();
         Mockito.doReturn(account).when(spy).getCaller();
-        Mockito.doReturn(1L).when(eventDao).archiveEvents(Mockito.anyList(), Mockito.anyString(), Mockito.any(),
-                Mockito.any(), Mockito.any(), Mockito.anyList(), Mockito.anyLong());
 
         spy.archiveEvents(cmd);
 
@@ -1109,8 +1107,6 @@ public class ManagementServerImplTest {
         Mockito.doReturn(callerDomainId).when(account).getDomainId();
         Mockito.doReturn(account).when(spy).getCaller();
         Mockito.doReturn(domainIds).when(domainDao).getDomainAndChildrenIds(callerDomainId);
-        Mockito.doReturn(1L).when(eventDao).archiveEvents(Mockito.anyList(), Mockito.anyString(), Mockito.any(),
-                Mockito.any(), Mockito.any(), Mockito.anyList(), Mockito.anyLong());
 
         spy.archiveEvents(cmd);
 
@@ -1136,8 +1132,6 @@ public class ManagementServerImplTest {
         Mockito.doReturn(Account.Type.NORMAL).when(account).getType();
         Mockito.doReturn(callerId).when(account).getId();
         Mockito.doReturn(account).when(spy).getCaller();
-        Mockito.doReturn(1L).when(eventDao).purgeAll(Mockito.anyList(), Mockito.any(), Mockito.any(), Mockito.any(),
-                Mockito.anyString(), Mockito.any(), Mockito.anyList(), Mockito.anyLong());
 
         spy.deleteEvents(cmd);
 
@@ -1156,8 +1150,6 @@ public class ManagementServerImplTest {
         Mockito.doReturn(callerDomainId).when(account).getDomainId();
         Mockito.doReturn(account).when(spy).getCaller();
         Mockito.doReturn(domainIds).when(domainDao).getDomainAndChildrenIds(callerDomainId);
-        Mockito.doReturn(1L).when(eventDao).purgeAll(Mockito.anyList(), Mockito.any(), Mockito.any(), Mockito.any(),
-                Mockito.anyString(), Mockito.any(), Mockito.anyList(), Mockito.anyLong());
 
         spy.deleteEvents(cmd);
 
