@@ -29,6 +29,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
+import org.apache.cloudstack.storage.datastore.driver.EcsConstants;
 import org.apache.cloudstack.storage.object.datastore.ObjectStoreHelper;
 import org.apache.cloudstack.storage.object.datastore.ObjectStoreProviderManager;
 import org.apache.cloudstack.storage.object.store.lifecycle.ObjectStoreLifeCycle;
@@ -36,7 +37,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpGet; // change to POST if ECS needs it
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -51,16 +52,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class EcsObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
 
     private static final Logger LOG = LogManager.getLogger(EcsObjectStoreLifeCycleImpl.class);
-
-    // detail keys coming from the API
-    private static final String MGMT_URL = "mgmt_url";
-    private static final String SA_USER = "sa_user";
-    private static final String SA_PASS = "sa_password";
-    private static final String INSECURE = "insecure";
-
-    // optional details (currently not used in persistence logic but accepted)
-    private static final String S3_HOST = "s3_host";
-    private static final String NAMESPACE = "namespace";
 
     private static final String PROVIDER_NAME = "ECS";
 
@@ -79,19 +70,21 @@ public class EcsObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
 
         final String url = getString(dsInfos, "url", true);
         final String name = getString(dsInfos, "name", true);
-        final Long size = getLong(dsInfos, "size");
+        final Long size = getLong(dsInfos, "size"); // optional
         final String providerName = getProviderName(dsInfos);
 
-        final Map<String, String> details = getDetails(dsInfos);
+        final Map<String, String> details = getDetails(dsInfos); // typed map, no unchecked cast
 
         final EcsConfig cfg = verifyAndNormalize(details);
 
         LOG.info("ECS initialize: provider='{}', name='{}', url='{}', mgmt_url='{}', insecure={}, s3_host='{}', namespace='{}'",
                 providerName, name, url, cfg.mgmtUrl, cfg.insecure,
-                details.get(S3_HOST), details.get(NAMESPACE));
+                details.get(EcsConstants.S3_HOST), details.get(EcsConstants.NAMESPACE));
 
+        // Try ECS login up-front so we fail fast on bad config
         loginAndGetToken(cfg.mgmtUrl, cfg.saUser, cfg.saPass, cfg.insecure);
 
+        // Put “canonical” values back into details (so DB keeps what we validated)
         applyCanonicalDetails(details, cfg);
 
         final Map<String, Object> objectStoreParameters = buildObjectStoreParams(name, url, size, providerName);
@@ -228,14 +221,14 @@ public class EcsObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
     }
 
     private static EcsConfig verifyAndNormalize(final Map<String, String> details) {
-        final String mgmtUrl = trim(details.get(MGMT_URL));
-        final String saUser = safe(details.get(SA_USER));
-        final String saPass = safe(details.get(SA_PASS));
-        final boolean insecure = Boolean.parseBoolean(details.getOrDefault(INSECURE, "false"));
+        final String mgmtUrl = trim(details.get(EcsConstants.MGMT_URL));
+        final String saUser = safe(details.get(EcsConstants.SA_USER));
+        final String saPass = safe(details.get(EcsConstants.SA_PASS));
+        final boolean insecure = Boolean.parseBoolean(details.getOrDefault(EcsConstants.INSECURE, "false"));
 
-        verifyRequiredDetail(MGMT_URL, mgmtUrl);
-        verifyRequiredDetail(SA_USER, saUser);
-        verifyRequiredDetail(SA_PASS, saPass);
+        verifyRequiredDetail(EcsConstants.MGMT_URL, mgmtUrl);
+        verifyRequiredDetail(EcsConstants.SA_USER, saUser);
+        verifyRequiredDetail(EcsConstants.SA_PASS, saPass);
 
         return new EcsConfig(mgmtUrl, saUser, saPass, insecure);
     }
@@ -247,10 +240,11 @@ public class EcsObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
     }
 
     private static void applyCanonicalDetails(final Map<String, String> details, final EcsConfig cfg) {
-        details.put(MGMT_URL, cfg.mgmtUrl);
-        details.put(SA_USER, cfg.saUser);
-        details.put(SA_PASS, cfg.saPass);
-        details.put(INSECURE, Boolean.toString(cfg.insecure));
+        details.put(EcsConstants.MGMT_URL, cfg.mgmtUrl);
+        details.put(EcsConstants.SA_USER, cfg.saUser);
+        details.put(EcsConstants.SA_PASS, cfg.saPass);
+        details.put(EcsConstants.INSECURE, Boolean.toString(cfg.insecure));
+        // keep any optional keys already present (S3_HOST, NAMESPACE, etc.)
     }
 
     private static Map<String, Object> buildObjectStoreParams(final String name,

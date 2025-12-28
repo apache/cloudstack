@@ -97,9 +97,9 @@
           <!-- S3 host (hostname[:port], no scheme) -> details[1].value (s3_host) -->
           <a-form-item name="s3Host" ref="s3Host" :rules="[{ required: true, message: $t('label.required') }]">
             <template #label>
-              <tooltip-label :title="'ECS Private URL'" :tooltip="'The internal S3 endpoint URL used by CloudStack to communicate with ECS.May be the same as the Public URL.'"/>
+              <tooltip-label :title="'ECS Private URL'" :tooltip="'The internal S3 endpoint URL used by CloudStack to communicate with ECS. May be the same as the Public URL.'"/>
             </template>
-            <a-input v-model:value="form.s3Host" placeholder="https://ecs.example.com" />
+            <a-input v-model:value="form.s3Host" placeholder="ecs.example.com or ecs.example.com:9020" />
           </a-form-item>
 
           <!-- Service account user -> details[2].value (sa_user) -->
@@ -126,7 +126,15 @@
             <a-input v-model:value="form.namespace" placeholder="cloudstack" />
           </a-form-item>
 
-          <!-- Insecure -> details[5].value (insecure) -->
+          <!-- User prefix -> details[5].value (user_prefix) -->
+          <a-form-item name="userPrefix" ref="userPrefix">
+            <template #label>
+              <tooltip-label :title="'User prefix'" :tooltip="'Prefix used for ECS user creation. Default is cs- (user_prefix). Example: cs-'"/>
+            </template>
+            <a-input v-model:value="form.userPrefix" placeholder="cs-" />
+          </a-form-item>
+
+          <!-- Insecure -> details[6].value (insecure) -->
           <a-form-item name="insecure" ref="insecure">
             <a-checkbox v-model:checked="form.insecure">
               Allow insecure HTTPS (set insecure=true)
@@ -210,6 +218,7 @@ export default {
         mgmtUrl: '',
         s3Host: '',
         namespace: '',
+        userPrefix: 'cs-',
         insecure: false
       })
       this.rules = reactive({
@@ -252,14 +261,8 @@ export default {
           data['details[4].key'] = 'iamUrl'
           data['details[4].value'] = values.iamUrl
         } else if (provider === 'ECS') {
-          // ECS details matching your CLI example:
-          // add objectstoragepool name=ecsstore-4 provider=ECS url=https://ecs.earthlink.dev
-          //   details[0].key=mgmt_url    details[0].value=https://ecs-api.elcld.net
-          //   details[1].key=s3_host     details[1].value=ecs.earthlink.dev
-          //   details[2].key=sa_user     details[2].value=cloudstack
-          //   details[3].key=sa_password details[3].value=...
-          //   details[4].key=namespace   details[4].value=cloudstack
-          //   details[5].key=insecure    details[5].value=true
+          // ECS details:
+          // details[0]=mgmt_url, [1]=s3_host, [2]=sa_user, [3]=sa_password, [4]=namespace, [5]=user_prefix, [6]=insecure
 
           data['details[0].key'] = 'mgmt_url'
           data['details[0].value'] = values.mgmtUrl
@@ -276,8 +279,18 @@ export default {
           data['details[4].key'] = 'namespace'
           data['details[4].value'] = values.namespace
 
-          data['details[5].key'] = 'insecure'
-          data['details[5].value'] = values.insecure ? 'true' : 'false'
+          // Optional; only send if user entered something (driver defaults to cs- when missing)
+          if (values.userPrefix && values.userPrefix.trim() !== '') {
+            data['details[5].key'] = 'user_prefix'
+            data['details[5].value'] = values.userPrefix.trim()
+          } else {
+            // keep ordering stable for insecure when prefix omitted
+            data['details[5].key'] = 'user_prefix'
+            data['details[5].value'] = 'cs-'
+          }
+
+          data['details[6].key'] = 'insecure'
+          data['details[6].value'] = values.insecure ? 'true' : 'false'
         } else {
           // Generic non-Cloudian, non-ECS object stores
           data['details[0].key'] = 'accesskey'
