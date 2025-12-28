@@ -150,7 +150,6 @@ public class ManagementServerImplTest {
     @Mock
     AnnotationDao annotationDao;
 
-
     @Mock
     UserVmDao userVmDao;
 
