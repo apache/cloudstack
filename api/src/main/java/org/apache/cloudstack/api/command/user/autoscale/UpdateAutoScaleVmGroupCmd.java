@@ -38,7 +38,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateAutoScaleVmGroup", description = "Updates an existing autoscale vm group.", responseObject = AutoScaleVmGroupResponse.class, entityType = {AutoScaleVmGroup.class},
+@APICommand(name = "updateAutoScaleVmGroup", description = "Updates an existing autoscale Instance group.", responseObject = AutoScaleVmGroupResponse.class, entityType = {AutoScaleVmGroup.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCustomIdCmd {
 
@@ -49,35 +49,35 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCustomIdCmd {
 
     @Parameter(name = ApiConstants.NAME,
             type = CommandType.STRING,
-            description = "the name of the autoscale vmgroup",
+            description = "The name of the autoscale vmgroup",
             since = "4.18.0")
     private String name;
 
     @Parameter(name = ApiConstants.MIN_MEMBERS,
                type = CommandType.INTEGER,
-               description = "the minimum number of members in the vmgroup, the number of instances in the vm group will be equal to or more than this number.")
+               description = "The minimum number of members in the vmgroup, the number of Instances in the Instance group will be equal to or more than this number.")
     private Integer minMembers;
 
     @Parameter(name = ApiConstants.MAX_MEMBERS,
                type = CommandType.INTEGER,
-               description = "the maximum number of members in the vmgroup, The number of instances in the vm group will be equal to or less than this number.")
+               description = "The maximum number of members in the vmgroup, The number of Instances in the Instance group will be equal to or less than this number.")
     private Integer maxMembers;
 
-    @Parameter(name = ApiConstants.INTERVAL, type = CommandType.INTEGER, description = "the frequency in which the performance counters to be collected")
+    @Parameter(name = ApiConstants.INTERVAL, type = CommandType.INTEGER, description = "The frequency in which the performance counters to be collected")
     private Integer interval;
 
     @Parameter(name = ApiConstants.SCALEUP_POLICY_IDS,
                type = CommandType.LIST,
                collectionType = CommandType.UUID,
                entityType = AutoScalePolicyResponse.class,
-               description = "list of scaleup autoscale policies")
+               description = "List of scaleup autoscale policies")
     private List<Long> scaleUpPolicyIds;
 
     @Parameter(name = ApiConstants.SCALEDOWN_POLICY_IDS,
                type = CommandType.LIST,
                collectionType = CommandType.UUID,
                entityType = AutoScalePolicyResponse.class,
-               description = "list of scaledown autoscale policies")
+               description = "List of scaledown autoscale policies")
     private List<Long> scaleDownPolicyIds;
 
     @ACL(accessType = AccessType.OperateEntry)
@@ -85,10 +85,10 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCustomIdCmd {
                type = CommandType.UUID,
                entityType = AutoScaleVmGroupResponse.class,
                required = true,
-               description = "the ID of the autoscale group")
+               description = "The ID of the autoscale group")
     private Long id;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the group to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the group to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     // ///////////////////////////////////////////////////
@@ -97,7 +97,7 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("AutoScale Vm Group Id: " + getId());
+        CallContext.current().setEventDetails("AutoScale Instance Group Id: " + getId());
         AutoScaleVmGroup result = _autoScaleService.updateAutoScaleVmGroup(this);
         if (result != null) {
             AutoScaleVmGroupResponse response = _responseGenerator.createAutoScaleVmGroupResponse(result);
@@ -151,7 +151,7 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public String getEventDescription() {
-        return "Updating AutoScale Vm Group. Vm Group Id: " + getId();
+        return "Updating AutoScale Instance Group. Instance Group Id: " + getId();
     }
 
     @Override

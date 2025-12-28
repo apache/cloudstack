@@ -382,7 +382,7 @@ public abstract class BaseCmd {
             if (roleIsAllowed) {
                 validFields.add(field);
             } else {
-                logger.debug("Ignoring parameter " + parameterAnnotation.name() + " as the caller is not authorized to pass it in");
+                logger.debug("Ignoring parameter {} as the caller is not authorized to pass it in", parameterAnnotation.name());
             }
         }
 

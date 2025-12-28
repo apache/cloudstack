@@ -27,39 +27,39 @@ import com.google.gson.annotations.SerializedName;
 @EntityReference(value = HypervisorCapabilities.class)
 public class HypervisorCapabilitiesResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the hypervisor capabilities row")
+    @Param(description = "The hypervisor capability ID")
     private String id;
 
     @SerializedName(ApiConstants.HYPERVISOR_VERSION)
-    @Param(description = "the hypervisor version")
+    @Param(description = "The hypervisor version")
     private String hypervisorVersion;
 
     @SerializedName(ApiConstants.HYPERVISOR)
-    @Param(description = "the hypervisor type")
+    @Param(description = "The hypervisor type")
     private String hypervisor;
 
     @SerializedName(ApiConstants.MAX_GUESTS_LIMIT)
-    @Param(description = "the maximum number of guest vms recommended for this hypervisor")
+    @Param(description = "The maximum number of guest Instances recommended for this hypervisor")
     private Long maxGuestsLimit;
 
     @SerializedName(ApiConstants.SECURITY_GROUP_EANBLED)
-    @Param(description = "true if security group is supported")
+    @Param(description = "True if security group is supported")
     private boolean isSecurityGroupEnabled;
 
     @SerializedName(ApiConstants.MAX_DATA_VOLUMES_LIMIT)
-    @Param(description = "the maximum number of Data Volumes that can be attached for this hypervisor")
+    @Param(description = "The maximum number of Data Volumes that can be attached for this hypervisor")
     private Integer maxDataVolumesLimit;
 
     @SerializedName(ApiConstants.MAX_HOSTS_PER_CLUSTER)
-    @Param(description = "the maximum number of Hosts per cluster for this hypervisor")
+    @Param(description = "The maximum number of Hosts per cluster for this hypervisor")
     private Integer maxHostsPerCluster;
 
     @SerializedName(ApiConstants.STORAGE_MOTION_ENABLED)
-    @Param(description = "true if storage motion is supported")
+    @Param(description = "True if storage motion is supported")
     private boolean isStorageMotionSupported;
 
     @SerializedName(ApiConstants.VM_SNAPSHOT_ENABELD)
-    @Param(description = "true if VM snapshots are enabled for this hypervisor")
+    @Param(description = "True if Instance Snapshots are enabled for this hypervisor")
     private boolean isVmSnapshotEnabled;
 
     public HypervisorCapabilitiesResponse(){

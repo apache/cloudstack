@@ -30,43 +30,43 @@ import java.util.Set;
 @EntityReference(value = SecurityRule.class)
 public class SecurityGroupRuleResponse extends BaseResponse {
     @SerializedName("ruleid")
-    @Param(description = "the id of the security group rule")
+    @Param(description = "The ID of the security group rule")
     private String ruleId;
 
     @SerializedName("protocol")
-    @Param(description = "the protocol of the security group rule")
+    @Param(description = "The protocol of the security group rule")
     private String protocol;
 
     @SerializedName(ApiConstants.ICMP_TYPE)
-    @Param(description = "the type of the ICMP message response")
+    @Param(description = "The type of the ICMP message response")
     private Integer icmpType;
 
     @SerializedName(ApiConstants.ICMP_CODE)
-    @Param(description = "the code for the ICMP message response")
+    @Param(description = "The code for the ICMP message response")
     private Integer icmpCode;
 
     @SerializedName(ApiConstants.START_PORT)
-    @Param(description = "the starting IP of the security group rule")
+    @Param(description = "The starting IP of the security group rule")
     private Integer startPort;
 
     @SerializedName(ApiConstants.END_PORT)
-    @Param(description = "the ending IP of the security group rule ")
+    @Param(description = "The ending IP of the security group rule ")
     private Integer endPort;
 
     @SerializedName(ApiConstants.SECURITY_GROUP_NAME)
-    @Param(description = "security group name")
+    @Param(description = "Security group name")
     private String securityGroupName;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "account owning the security group rule")
+    @Param(description = "Account owning the security group rule")
     private String accountName;
 
     @SerializedName(ApiConstants.CIDR)
-    @Param(description = "the CIDR notation for the base IP address of the security group rule")
+    @Param(description = "The CIDR notation for the base IP address of the security group rule")
     private String cidr;
 
     @SerializedName(ApiConstants.TAGS)
-    @Param(description = "the list of resource tags associated with the rule", responseObject = ResourceTagResponse.class)
+    @Param(description = "The list of resource tags associated with the rule", responseObject = ResourceTagResponse.class)
     private java.util.Set<ResourceTagResponse> tags;
 
     public String getRuleId() {
