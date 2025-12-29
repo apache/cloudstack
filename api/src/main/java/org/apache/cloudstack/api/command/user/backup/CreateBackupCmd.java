@@ -42,7 +42,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "createBackup",
-        description = "Create VM backup",
+        description = "Create Instance backup",
         responseObject = SuccessResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CreateBackupCmd extends BaseAsyncCreateCmd {
@@ -58,7 +58,7 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
             type = CommandType.UUID,
             entityType = UserVmResponse.class,
             required = true,
-            description = "ID of the VM")
+            description = "ID of the Instance")
     private Long vmId;
 
     @Parameter(name = ApiConstants.NAME,
@@ -115,7 +115,7 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new CloudRuntimeException("Error while creating backup of VM");
+                throw new CloudRuntimeException("Error while creating backup of Instance");
             }
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
@@ -140,7 +140,7 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
     @Override
     public String getEventDescription() {
         String vmUuid = _uuidMgr.getUuid(VirtualMachine.class, getVmId());
-        return "Creating backup for VM " + vmUuid;
+        return "Creating backup for Instance " + vmUuid;
     }
 
     @Override

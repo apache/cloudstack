@@ -32,7 +32,7 @@ import java.util.Map;
 public class BackupResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "ID of the VM backup")
+    @Param(description = "ID of the Instance backup")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
@@ -44,71 +44,71 @@ public class BackupResponse extends BaseResponse {
     private String description;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
-    @Param(description = "ID of the VM")
+    @Param(description = "ID of the Instance")
     private String vmId;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_NAME)
-    @Param(description = "name of the VM")
+    @Param(description = "Name of the Instance")
     private String vmName;
 
     @SerializedName(ApiConstants.EXTERNAL_ID)
-    @Param(description = "external backup id")
+    @Param(description = "External backup id")
     private String externalId;
 
     @SerializedName(ApiConstants.TYPE)
-    @Param(description = "backup type")
+    @Param(description = "Backup type")
     private String type;
 
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "backup date")
+    @Param(description = "Backup date")
     private Date date;
 
     @SerializedName(ApiConstants.SIZE)
-    @Param(description = "backup size in bytes")
+    @Param(description = "Backup size in bytes")
     private Long size;
 
     @SerializedName(ApiConstants.VIRTUAL_SIZE)
-    @Param(description = "backup protected (virtual) size in bytes")
+    @Param(description = "Backup protected (virtual) size in bytes")
     private Long protectedSize;
 
     @SerializedName(ApiConstants.STATUS)
-    @Param(description = "backup status")
+    @Param(description = "Backup status")
     private Backup.Status status;
 
     @SerializedName(ApiConstants.VOLUMES)
-    @Param(description = "backed up volumes")
+    @Param(description = "Backed up volumes")
     private String volumes;
 
     @SerializedName(ApiConstants.BACKUP_OFFERING_ID)
-    @Param(description = "backup offering id")
+    @Param(description = "Backup offering id")
     private String backupOfferingId;
 
     @SerializedName(ApiConstants.BACKUP_OFFERING_NAME)
-    @Param(description = "backup offering name")
+    @Param(description = "Backup offering name")
     private String backupOfferingName;
 
     @SerializedName(ApiConstants.ACCOUNT_ID)
-    @Param(description = "account id")
+    @Param(description = "Account id")
     private String accountId;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "account name")
+    @Param(description = "Account name")
     private String account;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "domain id")
+    @Param(description = "Domain ID")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "domain name")
+    @Param(description = "Domain name")
     private String domain;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "zone id")
+    @Param(description = "Zone ID")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE)
-    @Param(description = "zone name")
+    @Param(description = "Zone name")
     private String zone;
 
     @SerializedName(ApiConstants.VM_DETAILS)

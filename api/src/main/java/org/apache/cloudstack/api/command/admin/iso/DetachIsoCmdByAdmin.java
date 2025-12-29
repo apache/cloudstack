@@ -22,6 +22,6 @@ import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.command.user.iso.DetachIsoCmd;
 import org.apache.cloudstack.api.response.UserVmResponse;
 
-@APICommand(name = "detachIso", description = "Detaches any ISO file (if any) currently attached to a virtual machine.", responseObject = UserVmResponse.class, responseView = ResponseView.Full,
+@APICommand(name = "detachIso", description = "Detaches any ISO file (if any) currently attached to  an Instance.", responseObject = UserVmResponse.class, responseView = ResponseView.Full,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class DetachIsoCmdByAdmin extends DetachIsoCmd implements AdminCmd {}
