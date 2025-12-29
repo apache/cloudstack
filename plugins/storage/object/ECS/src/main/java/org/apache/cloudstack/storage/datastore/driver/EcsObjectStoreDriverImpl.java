@@ -1357,9 +1357,11 @@ public class EcsObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     private BucketVO resolveBucketVO(final BucketTO bucket) {
-    if (bucket == null) return null;
+    if (bucket == null) {
+        return null;
+    }
 
-    long id = getLongFromGetter(bucket, "getId", -1L);
+    final long id = getLongFromGetter(bucket, "getId", -1L);
     if (id > 0) {
         return bucketDao.findById(id);
     }
