@@ -61,8 +61,6 @@ import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 public class EcsObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
