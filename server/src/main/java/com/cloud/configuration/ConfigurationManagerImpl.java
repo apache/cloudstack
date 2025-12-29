@@ -3211,52 +3211,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Integer maxMemory = cmd.getMaxMemory();
         Integer minMemory = cmd.getMinMemory();
 
-        checkSpeedOnConstrainedOffering(cmd.isCustomized(), cpuSpeed, offeringName, maxCPU, minCPU, maxMemory, minMemory);
-
         // Check if service offering is Custom,
-        // If Customized, the following conditions must hold
-        // 1. cpuNumber, cpuSpeed and memory should be all null
-        // 2. minCPU, maxCPU, minMemory and maxMemory should all be null or all specified
         boolean isCustomized = cmd.isCustomized();
         if (isCustomized) {
-            // validate specs
-            //restricting the createserviceoffering to allow setting all or none of the dynamic parameters to null
-            if (cpuNumber != null || memory != null) {
-                throw new InvalidParameterValueException("For creating a custom compute offering cpu and memory all should be null");
-            }
-            // if any of them is null, then all of them shoull be null
-            if (maxCPU == null || minCPU == null || maxMemory == null || minMemory == null || cpuSpeed == null) {
-                if (maxCPU != null || minCPU != null || maxMemory != null || minMemory != null || cpuSpeed != null) {
-                    throw new InvalidParameterValueException("For creating a custom compute offering min/max cpu and min/max memory/cpu speed should all be null or all specified");
-                }
-            } else {
-                if (cpuSpeed.intValue() < 0 || cpuSpeed.longValue() > Integer.MAX_VALUE) {
-                    throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the cpu speed value between 1 and " + Integer.MAX_VALUE);
-                }
-                if ((maxCPU <= 0 || maxCPU.longValue() > Integer.MAX_VALUE) || (minCPU <= 0 || minCPU.longValue() > Integer.MAX_VALUE )  ) {
-                    throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the minimum or minimum cpu number value between 1 and " + Integer.MAX_VALUE);
-                }
-                if (minMemory < 32 || (minMemory.longValue() > Integer.MAX_VALUE) || (maxMemory.longValue() > Integer.MAX_VALUE)) {
-                    throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the memory value between 32 and " + Integer.MAX_VALUE + " MB");
-                }
-                // Persist min/max CPU and Memory parameters in the service_offering_details table
-                details.put(ApiConstants.MIN_MEMORY, minMemory.toString());
-                details.put(ApiConstants.MAX_MEMORY, maxMemory.toString());
-                details.put(ApiConstants.MIN_CPU_NUMBER, minCPU.toString());
-                details.put(ApiConstants.MAX_CPU_NUMBER, maxCPU.toString());
-            }
+            checkSpeedOnCustomOffering(cpuNumber, memory, maxCPU, minCPU, maxMemory, minMemory, cpuSpeed, offeringName, details);
         } else {
-            Integer maxCPUCores = VM_SERVICE_OFFERING_MAX_CPU_CORES.value() == 0 ? Integer.MAX_VALUE: VM_SERVICE_OFFERING_MAX_CPU_CORES.value();
-            Integer maxRAMSize = VM_SERVICE_OFFERING_MAX_RAM_SIZE.value() == 0 ? Integer.MAX_VALUE: VM_SERVICE_OFFERING_MAX_RAM_SIZE.value();
-            if (cpuNumber != null && (cpuNumber.intValue() <= 0 || cpuNumber.longValue() > maxCPUCores)) {
-                throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the cpu number value between 1 and " + maxCPUCores);
-            }
-            if (cpuSpeed == null || (cpuSpeed.intValue() < 0 || cpuSpeed.longValue() > Integer.MAX_VALUE)) {
-                throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the cpu speed value between 0 and " + Integer.MAX_VALUE);
-            }
-            if (memory != null && (memory.intValue() < 32 || memory.longValue() > maxRAMSize)) {
-                throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the memory value between 32 and " + maxRAMSize + " MB");
-            }
+            checkSpeedOnConstrainedOffering(cpuSpeed, offeringName, maxCPU, minCPU, maxMemory, minMemory, cpuNumber, memory);
         }
 
         // check if valid domain
@@ -3378,6 +3338,48 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 cmd.getDiskOfferingStrictness(), cmd.isCustomized(), cmd.getEncryptRoot(), cmd.isPurgeResources());
     }
 
+    /**
+     * If Customized, the following conditions must hold
+     * 1. cpuNumber, cpuSpeed and memory should be all null
+     * 2. minCPU, maxCPU, minMemory and maxMemory should all be null or all specified
+     * @param cpuNumber
+     * @param memory
+     * @param maxCPU
+     * @param minCPU
+     * @param maxMemory
+     * @param minMemory
+     * @param cpuSpeed
+     * @param offeringName
+     */
+    private static void checkSpeedOnCustomOffering(Integer cpuNumber, Integer memory, Integer maxCPU, Integer minCPU, Integer maxMemory, Integer minMemory, Integer cpuSpeed, String offeringName, Map<String, String> details) {
+        // validate specs
+        //restricting the createserviceoffering to allow setting all or none of the dynamic parameters to null
+        if (cpuNumber != null || memory != null) {
+            throw new InvalidParameterValueException("For creating a custom compute offering cpu and memory all should be null");
+        }
+        // if any of them is null, then all of them should be null
+        if (maxCPU == null || minCPU == null || maxMemory == null || minMemory == null || cpuSpeed == null) {
+            if (maxCPU != null || minCPU != null || maxMemory != null || minMemory != null || cpuSpeed != null) {
+                throw new InvalidParameterValueException("For creating a custom compute offering min/max cpu and min/max memory/cpu speed should all be null or all specified");
+            }
+        } else {
+            if (cpuSpeed.intValue() < 0 || cpuSpeed.longValue() > Integer.MAX_VALUE) {
+                throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the cpu speed value between 1 and " + Integer.MAX_VALUE);
+            }
+            if ((maxCPU <= 0 || maxCPU.longValue() > Integer.MAX_VALUE) || (minCPU <= 0 || minCPU.longValue() > Integer.MAX_VALUE )  ) {
+                throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the minimum or minimum cpu number value between 1 and " + Integer.MAX_VALUE);
+            }
+            if (minMemory < 32 || (minMemory.longValue() > Integer.MAX_VALUE) || (maxMemory.longValue() > Integer.MAX_VALUE)) {
+                throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the memory value between 32 and " + Integer.MAX_VALUE + " MB");
+            }
+            // Persist min/max CPU and Memory parameters in the service_offering_details table
+            details.put(ApiConstants.MIN_MEMORY, minMemory.toString());
+            details.put(ApiConstants.MAX_MEMORY, maxMemory.toString());
+            details.put(ApiConstants.MIN_CPU_NUMBER, minCPU.toString());
+            details.put(ApiConstants.MAX_CPU_NUMBER, maxCPU.toString());
+        }
+    }
+
     private static void checkNameAndText(String name, String displayText) {
         if (name == null || name.length() == 0) {
             throw new InvalidParameterValueException("Failed to create service offering: specify the name that has non-zero length");
@@ -3388,16 +3390,25 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
     }
 
-    private static void checkSpeedOnConstrainedOffering(boolean customised, Integer cpuSpeed, String offeringName, Integer maxCPU, Integer minCPU, Integer maxMemory, Integer minMemory) {
+    private static void checkSpeedOnConstrainedOffering(Integer cpuSpeed, String offeringName, Integer maxCPU, Integer minCPU, Integer maxMemory, Integer minMemory, Integer cpuNumber, Integer memory) {
         // Check for the combination of zero speed and custom or constrained offering
         if (cpuSpeed != null && cpuSpeed.intValue() == 0) {
-            if (customised) {
-                throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": cpu speed cannot be zero for custom offerings");
-            }
             if (maxCPU != null || minCPU != null || maxMemory != null || minMemory != null) {
                 throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": cpu speed cannot be zero for constrained offerings");
             }
         }
+        Integer maxCPUCores = VM_SERVICE_OFFERING_MAX_CPU_CORES.value() == 0 ? Integer.MAX_VALUE: VM_SERVICE_OFFERING_MAX_CPU_CORES.value();
+        Integer maxRAMSize = VM_SERVICE_OFFERING_MAX_RAM_SIZE.value() == 0 ? Integer.MAX_VALUE: VM_SERVICE_OFFERING_MAX_RAM_SIZE.value();
+        if (cpuNumber != null && (cpuNumber.intValue() <= 0 || cpuNumber.longValue() > maxCPUCores)) {
+            throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the cpu number value between 1 and " + maxCPUCores);
+        }
+        if (cpuSpeed == null || (cpuSpeed.intValue() < 0 || cpuSpeed.longValue() > Integer.MAX_VALUE)) {
+            throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the cpu speed value between 0 and " + Integer.MAX_VALUE);
+        }
+        if (memory != null && (memory.intValue() < 32 || memory.longValue() > maxRAMSize)) {
+            throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the memory value between 32 and " + maxRAMSize + " MB");
+        }
+
     }
 
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
