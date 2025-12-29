@@ -48,10 +48,6 @@
           <a-form-item name="zone" ref="zone" :label="$t('label.zone')">
             <a-select
               v-model:value="form.zone"
-              @change="() => {
-                fetchCopyTemplatesConfig()
-                checkOtherSecondaryStorages()
-              }"
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
@@ -163,7 +159,7 @@
             <a-input v-model:value="form.secondaryStorageNFSPath"/>
           </a-form-item>
         </div>
-        <div v-if="form.provider === 'NFS' && showCopyTemplatesToggle">
+        <div v-if="showCopyTemplatesToggle">
           <a-form-item
             name="copyTemplatesFromOtherSecondaryStorages"
             ref="copyTemplatesFromOtherSecondaryStorages"
@@ -243,6 +239,8 @@ export default {
     },
     fetchData () {
       this.listZones()
+      this.fetchCopyTemplatesConfig()
+      this.checkOtherSecondaryStorages()
     },
     closeModal () {
       this.$emit('close-action')
@@ -274,25 +272,15 @@ export default {
 
           if (this.zones.length > 0) {
             this.form.zone = this.zones[0].id || ''
-            this.fetchCopyTemplatesConfig()
-            this.checkOtherSecondaryStorages()
           }
         }
       })
     },
     checkOtherSecondaryStorages () {
-      api('listImageStores', {
-        listall: true
-      }).then(json => {
+      api('listImageStores', { listall: true }).then(json => {
         const stores = json?.listimagestoresresponse?.imagestore || []
 
-        this.showCopyTemplatesToggle = stores.some(store => {
-          if (store.providername !== 'NFS') {
-            return false
-          }
-
-          return store.zoneid !== this.form.zone || store.zoneid === this.form.zone
-        })
+        this.showCopyTemplatesToggle = stores.length > 0
       })
     },
     onCopyTemplatesToggleChanged (val) {
@@ -422,7 +410,6 @@ export default {
         }
 
         if (
-          provider === 'NFS' &&
           this.showCopyTemplatesToggle &&
           this.copyTemplatesTouched
         ) {
