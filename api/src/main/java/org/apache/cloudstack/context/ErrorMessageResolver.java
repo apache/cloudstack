@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -47,6 +48,7 @@ public final class ErrorMessageResolver {
 
     private static final String ERROR_MESSAGES_FILENAME = "error-messages.json";
     private static final String ERROR_KEY_ADMIN_SUFFIX = ".admin";
+    private static final boolean INCLUDE_METADATA_ID_IN_MESSAGE = false;
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -127,12 +129,16 @@ public final class ErrorMessageResolver {
         StringBuilder sb = new StringBuilder();
         sb.append("'").append(name).append("'");
 
+        if (!CallContext.current().isCallingAccountRootAdmin()) {
+            return sb.toString();
+        }
+
         Long id = null;
-        if (CallContext.current().isCallingAccountRootAdmin() && obj instanceof InternalIdentity) {
+        if (INCLUDE_METADATA_ID_IN_MESSAGE && obj instanceof InternalIdentity) {
             id = ((InternalIdentity) obj).getId();
         }
 
-        if (id == null && uuid == null) {
+        if (ObjectUtils.allNull(id, uuid)) {
             return sb.toString();
         }
         sb.append(" (");
@@ -225,7 +231,11 @@ public final class ErrorMessageResolver {
     }
 
     private static String expand(String template, Map<String, String> metadata) {
-        if (metadata == null || metadata.isEmpty()) {
+        Map<String, Object> allMetadata = CallContext.current().getContextStringKeyParameters();
+        if (MapUtils.isNotEmpty(allMetadata)) {
+            allMetadata.putAll(metadata);
+        }
+        if (MapUtils.isEmpty(allMetadata)) {
             return template;
         }
         String result = template;

@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.managed.threadlocal.ManagedThreadLocal;
@@ -416,6 +417,12 @@ public class CallContext {
     public Map<Object, Object> getContextParameters() {
         return context;
     }
+
+    public Map<String, Object> getContextStringKeyParameters() {
+            return context.entrySet().stream()
+                .filter(entry -> entry.getKey() instanceof String)
+                .collect(Collectors.toMap(entry -> (String) entry.getKey(), Map.Entry::getValue));
+        }
 
     public void putContextParameters(Map<Object, Object> details){
         if (details == null) return;
