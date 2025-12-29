@@ -6264,15 +6264,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private void verifyServiceOffering(BaseDeployVMCmd cmd, ServiceOffering serviceOffering) {
+        CallContext.current().putContextParameter("serviceOffering", serviceOffering);
         if (ServiceOffering.State.Inactive.equals(serviceOffering.getState())) {
             throw new InvalidParameterValueException("vm.deploy.serviceoffering.inactive",
-                    Map.of("serviceOffering", serviceOffering));
+                    Collections.emptyMap());
         }
 
         Long overrideDiskOfferingId = cmd.getOverrideDiskOfferingId();
         if (serviceOffering.getDiskOfferingStrictness() && overrideDiskOfferingId != null) {
             throw new InvalidParameterValueException("vm.deploy.serviceoffering.override.not.allowed",
-                    Map.of("serviceOffering", serviceOffering));
+                    Collections.emptyMap());
         }
 
         if (!serviceOffering.isDynamic()) {
