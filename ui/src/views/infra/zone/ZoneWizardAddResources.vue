@@ -846,7 +846,7 @@ export default {
           key: 'copyTemplatesFromOtherSecondaryStorages',
           required: false,
           switch: true,
-          checked: this.copytemplate,
+          checked: this.copytemplate
         }
       ]
     }
