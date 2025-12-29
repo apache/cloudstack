@@ -31,16 +31,16 @@ import org.slf4j.LoggerFactory;
 import com.cloud.utils.PropertiesUtil;
 
 public class ServerPropertiesUtil {
-    public static final String SHARE_DIR = "share";
     private static final Logger logger = LoggerFactory.getLogger(ServerPropertiesUtil.class);
-    protected static final String PROPERTIES_FILE = "server.properties";
 
+    public static final String SHARE_DIR = "share";
     private static final String CONTEXT_PATH = "context.path";
     private static final String SHARE_ENABLED = "share.enabled";
     private static final String SHARE_BASE_DIR = "share.base.dir";
     private static final String SHARE_CACHE_CONTROL = "share.cache.control";
     private static final String SHARE_SECRET = "share.secret";
 
+    protected static final String PROPERTIES_FILE = "server.properties";
     protected static final AtomicReference<Properties> propertiesRef = new AtomicReference<>();
 
     public static String getProperty(String name) {
@@ -83,7 +83,7 @@ public class ServerPropertiesUtil {
         String sunCmd = System.getProperty("sun.java.command", "");
         String combined = args + " " + sunCmd;
 
-        String[] mavenMarkers = new String[] {
+        String[] mavenMarkers = new String[]{
                 "org.codehaus.plexus.classworlds.launcher.Launcher",
                 "org.apache.maven.wrapper.MavenWrapperMain",
                 "org.apache.maven.cli.MavenCli",
