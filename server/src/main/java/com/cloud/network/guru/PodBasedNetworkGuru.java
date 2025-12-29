@@ -53,6 +53,8 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     DataCenterDao _dcDao;
     @Inject
     StorageNetworkManager _sNwMgr;
+    @Inject
+    NetworkModel _networkModel;
 
     Random _rand = new Random(System.currentTimeMillis());
 
@@ -131,7 +133,11 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         Integer vlan = result.getVlan();
 
         nic.setIPv4Address(result.getIpAddress());
-        nic.setMacAddress(NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(result.getMacAddress(), NetworkModel.MACIdentifier.value())));
+        String macAddress = NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(result.getMacAddress(), _networkModel.getMacIdentifier(dest.getDataCenter().getId())));
+        if (!_networkModel.isMACUnique(macAddress, config.getId())) {
+            macAddress =  _networkModel.getNextAvailableMacAddressInNetwork(config.getId());
+        }
+        nic.setMacAddress(macAddress);
         nic.setIPv4Gateway(pod.getGateway());
         nic.setFormat(AddressFormat.Ip4);
         String netmask = NetUtils.getCidrNetmask(pod.getCidrSize());

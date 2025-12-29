@@ -47,6 +47,8 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     @Inject
     StorageNetworkManager _sNwMgr;
     @Inject
+    NetworkModel _networkModel;
+    @Inject
     NetworkDao _nwDao;
 
     protected StorageNetworkGuru() {
@@ -130,7 +132,11 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 
         vlan = ip.getVlan();
         nic.setIPv4Address(ip.getIpAddress());
-        nic.setMacAddress(NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ip.getMac(), NetworkModel.MACIdentifier.value())));
+        String macAddress = NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ip.getMac(), _networkModel.getMacIdentifier(dest.getDataCenter().getId())));
+        if (!_networkModel.isMACUnique(macAddress, network.getId())) {
+            macAddress =  _networkModel.getNextAvailableMacAddressInNetwork(network.getId());
+        }
+        nic.setMacAddress(macAddress);
         nic.setFormat(AddressFormat.Ip4);
         nic.setIPv4Netmask(ip.getNetmask());
         nic.setBroadcastType(BroadcastDomainType.Storage);

@@ -125,6 +125,10 @@ public interface NetworkModel {
      */
     String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException;
 
+    default boolean isMACUnique(String mac, long networkId) {
+        return true;
+    }
+
     PublicIpAddress getPublicIpAddress(long ipAddressId);
 
     List<? extends Vlan> listPodVlans(long podId);
@@ -362,4 +366,8 @@ public interface NetworkModel {
 
     boolean checkSecurityGroupSupportForNetwork(Account account, DataCenter zone, List<Long> networkIds,
                                                 List<Long> securityGroupsIds);
+
+    default long getMacIdentifier(Long dataCenterId) {
+        return 0;
+    }
 }

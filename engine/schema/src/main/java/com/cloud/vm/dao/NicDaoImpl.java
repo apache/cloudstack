@@ -400,9 +400,10 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
     }
 
     @Override
-    public NicVO findByMacAddress(String macAddress) {
+    public NicVO findByMacAddress(String macAddress, long networkId) {
         SearchCriteria<NicVO> sc = AllFieldsSearch.create();
         sc.setParameters("macAddress", macAddress);
+        sc.setParameters("networkId", networkId);
         return findOneBy(sc);
     }
 
