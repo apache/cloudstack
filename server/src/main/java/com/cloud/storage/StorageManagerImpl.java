@@ -2028,23 +2028,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         try {
             final String snapshotUuid = snapshot.getUuid();
             final String storeRole = snapshotDataStoreVO.getRole().toString().toLowerCase();
-            if (logger.isDebugEnabled()) {
-                logger.debug("Snapshot [{}] is in {} state on {} data store ID: {}.", snapshotUuid, snapshotDataStoreVO.getState(), storeRole, snapshotDataStoreVO.getDataStoreId());
-            }
+            logger.debug("Snapshot [{}] is in {} state on {} data store ID: {}.", snapshotUuid, snapshotDataStoreVO.getState(), storeRole, snapshotDataStoreVO.getDataStoreId());
             SnapshotInfo snapshotInfo = snapshotFactory.getSnapshotIncludingRemoved(snapshotDataStoreVO.getSnapshotId(), snapshotDataStoreVO.getDataStoreId(), snapshotDataStoreVO.getRole());
             if (snapshotInfo != null) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Snapshot [{}] in {} state found on {} data store [{}], it will be deleted.", snapshotUuid, snapshotDataStoreVO.getState(), storeRole, snapshotInfo.getDataStore().getUuid());
-                }
+                logger.debug("Snapshot [{}] in {} state found on {} data store [{}], it will be deleted.", snapshotUuid, snapshotDataStoreVO.getState(), storeRole, snapshotInfo.getDataStore().getUuid());
                 _snapshotService.deleteSnapshot(snapshotInfo);
-            } else if (logger.isDebugEnabled()) {
+            } else {
                 logger.debug("Did not find snapshot [{}] in {} state on {} data store ID: {}.", snapshotUuid, snapshotDataStoreVO.getState(), storeRole, snapshotDataStoreVO.getDataStoreId());
             }
         } catch (Exception e) {
-            logger.error("Failed to delete snapshot [{}] from storage due to: [{}].", snapshot, e.getMessage());
-            if (logger.isDebugEnabled()) {
-                logger.debug("Failed to delete snapshot [{}] from storage.", snapshot, e);
-            }
+            logger.error("Failed to delete snapshot [{}] from storage due to: [{}].", snapshot, e.getMessage(), e);
         }
     }
 
