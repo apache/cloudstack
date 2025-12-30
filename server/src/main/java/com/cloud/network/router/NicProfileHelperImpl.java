@@ -93,7 +93,7 @@ public class NicProfileHelperImpl implements NicProfileHelper {
             if (router.getIsRedundantRouter()) {
               String newMacAddress = NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress(), _networkModel.getMacIdentifier(privateNetwork.getDataCenterId())));
               if (!_networkModel.isMACUnique(newMacAddress, privateNetwork.getId())) {
-                  newMacAddress =  _networkModel.getNextAvailableMacAddressInNetwork(privateNetwork.getId());
+                  newMacAddress = _networkModel.getNextAvailableMacAddressInNetwork(privateNetwork.getId());
               }
               privateNicProfile.setMacAddress(newMacAddress);
             }
@@ -101,7 +101,7 @@ public class NicProfileHelperImpl implements NicProfileHelper {
             final String netmask = NetUtils.getCidrNetmask(privateNetwork.getCidr());
             String newMacAddress = NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress(), _networkModel.getMacIdentifier(privateNetwork.getDataCenterId())));
             if (!_networkModel.isMACUnique(newMacAddress, privateNetwork.getId())) {
-                newMacAddress =  _networkModel.getNextAvailableMacAddressInNetwork(privateNetwork.getId());
+                newMacAddress = _networkModel.getNextAvailableMacAddressInNetwork(privateNetwork.getId());
             }
             final PrivateIpAddress ip =
                     new PrivateIpAddress(ipVO, privateNetwork.getBroadcastUri().toString(), privateNetwork.getGateway(), netmask, newMacAddress);

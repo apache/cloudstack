@@ -604,7 +604,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             if (mac == null) {
                 throw new InsufficientAddressCapacityException("Unable to create another mac address", Network.class, networkId);
             }
-        } while(! isMACUnique(mac, networkId));
+        } while (!isMACUnique(mac, networkId));
         return mac;
     }
 

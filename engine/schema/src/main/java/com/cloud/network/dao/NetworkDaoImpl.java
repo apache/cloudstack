@@ -432,7 +432,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     public String getNextAvailableMacAddress(final long networkConfigId, Integer zoneMacIdentifier) {
         final SequenceFetcher fetch = SequenceFetcher.getInstance();
         long seq = fetch.getNextSequence(Long.class, _tgMacAddress, networkConfigId);
-        if (zoneMacIdentifier != null && zoneMacIdentifier != 0 ) {
+        if (zoneMacIdentifier != null && zoneMacIdentifier != 0) {
             seq = seq | _prefix << 40 | (long)zoneMacIdentifier << 32 | networkConfigId << 16 & 0x00000000ffff0000L;
         }
         return NetUtils.long2Mac(seq);

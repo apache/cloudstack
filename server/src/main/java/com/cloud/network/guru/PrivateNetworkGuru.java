@@ -191,7 +191,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
             String netmask = NetUtils.getCidrNetmask(network.getCidr());
             String macAddress = NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress(), networkModel.getMacIdentifier(network.getDataCenterId())));
             if (!networkModel.isMACUnique(macAddress, network.getId())) {
-                macAddress =  networkModel.getNextAvailableMacAddressInNetwork(network.getId());
+                macAddress = networkModel.getNextAvailableMacAddressInNetwork(network.getId());
             }
             PrivateIpAddress ip =
                 new PrivateIpAddress(ipVO, vlanTag, network.getGateway(), netmask, macAddress);

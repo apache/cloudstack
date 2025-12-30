@@ -135,7 +135,7 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         nic.setIPv4Address(result.getIpAddress());
         String macAddress = NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(result.getMacAddress(), _networkModel.getMacIdentifier(dest.getDataCenter().getId())));
         if (!_networkModel.isMACUnique(macAddress, config.getId())) {
-            macAddress =  _networkModel.getNextAvailableMacAddressInNetwork(config.getId());
+            macAddress = _networkModel.getNextAvailableMacAddressInNetwork(config.getId());
         }
         nic.setMacAddress(macAddress);
         nic.setIPv4Gateway(pod.getGateway());

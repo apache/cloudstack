@@ -403,7 +403,7 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
     public NicVO findByMacAddress(String macAddress, long networkId) {
         SearchCriteria<NicVO> sc = AllFieldsSearch.create();
         sc.setParameters("macAddress", macAddress);
-        sc.setParameters("networkId", networkId);
+        sc.setParameters("network", networkId);
         return findOneBy(sc);
     }
 

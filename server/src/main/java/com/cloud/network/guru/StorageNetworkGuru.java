@@ -134,7 +134,7 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         nic.setIPv4Address(ip.getIpAddress());
         String macAddress = NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ip.getMac(), _networkModel.getMacIdentifier(dest.getDataCenter().getId())));
         if (!_networkModel.isMACUnique(macAddress, network.getId())) {
-            macAddress =  _networkModel.getNextAvailableMacAddressInNetwork(network.getId());
+            macAddress = _networkModel.getNextAvailableMacAddressInNetwork(network.getId());
         }
         nic.setMacAddress(macAddress);
         nic.setFormat(AddressFormat.Ip4);
