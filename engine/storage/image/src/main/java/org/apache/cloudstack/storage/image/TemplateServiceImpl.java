@@ -634,13 +634,11 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     protected boolean tryCopyingTemplateToImageStore(VMTemplateVO tmplt, DataStore destStore) {
-        Long destZoneId = destStore.getScope().getScopeId();
-
-        List<DataStore> storesInSameZone = _storeMgr.getImageStoresByZoneIds(destZoneId);
-        if (searchAndCopyWithinZone(tmplt, destStore, storesInSameZone)) {
+        if (searchAndCopyWithinZone(tmplt, destStore)) {
             return true;
         }
 
+        Long destZoneId = destStore.getScope().getScopeId();
         logger.debug("Template [{}] not found in any image store of zone [{}]. Checking other zones.",
                 tmplt.getUniqueName(), destZoneId);
 
@@ -662,45 +660,54 @@ public class TemplateServiceImpl implements TemplateService {
                 continue;
             }
 
-            DataStore sourceStore = findImageStorageHavingTemplate(tmplt, storesInOtherZone);
-            if (sourceStore == null) {
-                logger.debug("Template [{}] not found in any image store of zone [{}].",
+            TemplateObject sourceTmpl = findUsableTemplate(tmplt, storesInOtherZone);
+            if (sourceTmpl == null) {
+                logger.debug("Template [{}] not found with a valid install path in any image store of zone [{}].",
                         tmplt.getUniqueName(), otherZoneId);
-                continue;
-            }
-
-            TemplateObject sourceTmpl = (TemplateObject) _templateFactory.getTemplate(tmplt.getId(), sourceStore);
-            if (sourceTmpl.getInstallPath() == null) {
-                logger.warn("Cannot copy template [{}] from image store [{}]; install path is null.",
-                        tmplt.getUniqueName(), sourceStore.getName());
                 continue;
             }
 
             logger.info("Template [{}] found in zone [{}]. Initiating cross-zone copy to zone [{}].",
                     tmplt.getUniqueName(), otherZoneId, destZoneId);
 
-            return copyTemplateAcrossZones(sourceStore, destStore, tmplt);
+            return copyTemplateAcrossZones(destStore, sourceTmpl);
         }
 
-        logger.debug("Template [{}] was not found in any zone. Cannot perform zone-to-zone copy.",
-                tmplt.getUniqueName());
+        logger.debug("Template [{}] was not found in any zone. Cannot perform zone-to-zone copy.", tmplt.getUniqueName());
         return false;
     }
 
-    private boolean searchAndCopyWithinZone(VMTemplateVO tmplt, DataStore destStore, List<DataStore> stores) {
-        for (DataStore sourceStore : stores) {
+    protected TemplateObject findUsableTemplate(VMTemplateVO tmplt, List<DataStore> imageStores) {
+        for (DataStore store : imageStores) {
+            TemplateObject tmpl = (TemplateObject) _templateFactory.getTemplate(tmplt.getId(), store);
+            if (tmpl == null) {
+                continue;
+            }
+
+            if (tmpl.getInstallPath() == null) {
+                logger.debug("Template [{}] found in image store [{}] but install path is null. Skipping.",
+                        tmplt.getUniqueName(), store.getName());
+                continue;
+            }
+            return tmpl;
+        }
+        return null;
+    }
+
+    private boolean searchAndCopyWithinZone(VMTemplateVO tmplt, DataStore destStore) {
+        Long destZoneId = destStore.getScope().getScopeId();
+        List<DataStore> storesInSameZone = _storeMgr.getImageStoresByZoneIds(destZoneId);
+        for (DataStore sourceStore : storesInSameZone) {
             Map<String, TemplateProp> existingTemplatesInSourceStore = listTemplate(sourceStore);
             if (existingTemplatesInSourceStore == null ||
                     !existingTemplatesInSourceStore.containsKey(tmplt.getUniqueName())) {
-                logger.debug("Template [{}] does not exist on image store [{}]; searching another.",
-                        tmplt.getUniqueName(), sourceStore.getName());
+                logger.debug("Template [{}] does not exist on image store [{}]; searching another.", tmplt.getUniqueName(), sourceStore.getName());
                 continue;
             }
 
             TemplateObject sourceTmpl = (TemplateObject) _templateFactory.getTemplate(tmplt.getId(), sourceStore);
             if (sourceTmpl.getInstallPath() == null) {
-                logger.warn("Cannot copy template [{}] from image store [{}]; install path is null.",
-                        tmplt.getUniqueName(), sourceStore.getName());
+                logger.warn("Cannot copy template [{}] from image store [{}]; install path is null.", tmplt.getUniqueName(), sourceStore.getName());
                 continue;
             }
 
@@ -710,36 +717,22 @@ public class TemplateServiceImpl implements TemplateService {
         return false;
     }
 
-    private DataStore findImageStorageHavingTemplate(VMTemplateVO tmplt, List<DataStore> stores) {
-        for (DataStore store : stores) {
-            Map<String, TemplateProp> templates = listTemplate(store);
-            if (templates != null && templates.containsKey(tmplt.getUniqueName())) {
-                return store;
-            }
-        }
-        return null;
-    }
-
-    private boolean copyTemplateAcrossZones(DataStore sourceStore,
-                                            DataStore destStore,
-                                            VMTemplateVO tmplt) {
+    private boolean copyTemplateAcrossZones(DataStore destStore, TemplateObject sourceTmpl) {
         Long dstZoneId = destStore.getScope().getScopeId();
         DataCenterVO dstZone = _dcDao.findById(dstZoneId);
 
         if (dstZone == null) {
-            logger.warn("Destination zone [{}] not found for template [{}].",
-                    dstZoneId, tmplt.getUniqueName());
+            logger.warn("Destination zone [{}] not found for template [{}].", dstZoneId, sourceTmpl.getUniqueName());
             return false;
         }
 
-        TemplateObject sourceTmpl = (TemplateObject) _templateFactory.getTemplate(tmplt.getId(), sourceStore);
         try {
-            storageOrchestrator.orchestrateTemplateCopyAcrossZones(sourceTmpl, sourceStore, destStore);
+            storageOrchestrator.orchestrateTemplateCopyAcrossZones(sourceTmpl, destStore);
             return true;
         } catch (Exception e) {
             logger.error("Failed to copy template [{}] from zone [{}] to zone [{}].",
-                    tmplt.getUniqueName(),
-                    sourceStore.getScope().getScopeId(),
+                    sourceTmpl.getUniqueName(),
+                    sourceTmpl.getDataStore().getScope().getScopeId(),
                     dstZoneId,
                     e);
             return false;

@@ -38,6 +38,8 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.template.TemplateManager;
@@ -322,11 +324,11 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
     }
 
     @Override
-    public Future<TemplateApiResult> orchestrateTemplateCopyAcrossZones(TemplateInfo templateInfo, DataStore sourceStore, DataStore destStore) {
+    public Future<TemplateApiResult> orchestrateTemplateCopyAcrossZones(TemplateInfo templateInfo, DataStore destStore) {
         Long dstZoneId = destStore.getScope().getScopeId();
         DataCenterVO dstZone = dcDao.findById(dstZoneId);
         long userId = CallContext.current().getCallingUserId();
-        return submit(dstZoneId, new CrossZoneCopyTemplateTask(userId, templateInfo, sourceStore, dstZone));
+        return submit(dstZoneId, new CrossZoneCopyTemplateTask(userId, templateInfo, dstZone));
     }
 
     protected Pair<String, Boolean> migrateCompleted(Long destDatastoreId, DataStore srcDatastore, List<DataObject> files, MigrationPolicy migrationPolicy, int skipped) {
@@ -678,17 +680,12 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
     private class CrossZoneCopyTemplateTask implements Callable<TemplateApiResult> {
         private final long userId;
         private final TemplateInfo sourceTmpl;
-        private final DataStore sourceStore;
         private final DataCenterVO dstZone;
         private final String logid;
 
-        CrossZoneCopyTemplateTask(long userId,
-                                  TemplateInfo sourceTmpl,
-                                  DataStore sourceStore,
-                                  DataCenterVO dstZone) {
+        CrossZoneCopyTemplateTask(long userId, TemplateInfo sourceTmpl, DataCenterVO dstZone) {
             this.userId = userId;
             this.sourceTmpl = sourceTmpl;
-            this.sourceStore = sourceStore;
             this.dstZone = dstZone;
             this.logid = ThreadContext.get(LOGCONTEXTID);
         }
@@ -699,16 +696,17 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             TemplateApiResult result;
             VMTemplateVO template = templateDao.findById(sourceTmpl.getId());
             try {
+                DataStore sourceStore = sourceTmpl.getDataStore();
                 boolean success = templateManager.copy(userId, template, sourceStore, dstZone);
 
                 result = new TemplateApiResult(sourceTmpl);
                 if (!success) {
                     result.setResult("Cross-zone template copy failed");
                 }
-            } catch (Exception e) {
+            } catch (StorageUnavailableException | ResourceAllocationException e) {
                 logger.error("Exception while copying template [{}] from zone [{}] to zone [{}]",
                         template,
-                        sourceStore.getScope().getScopeId(),
+                        sourceTmpl.getDataStore().getScope().getScopeId(),
                         dstZone.getId(),
                         e);
                 result = new TemplateApiResult(sourceTmpl);

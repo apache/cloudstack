@@ -216,7 +216,6 @@ public class TemplateServiceImplTest {
 
         Map<String, TemplateProp> templatesInOtherZone = new HashMap<>();
         templatesInOtherZone.put(tmpltMock.getUniqueName(), tmpltPropMock);
-        Mockito.doReturn(templatesInOtherZone).when(templateService).listTemplate(otherZoneStoreMock);
 
         TemplateObject sourceTmplMock = Mockito.mock(TemplateObject.class);
         Mockito.doReturn(sourceTmplMock).when(templateDataFactoryMock).getTemplate(100L, otherZoneStoreMock);
@@ -244,7 +243,6 @@ public class TemplateServiceImplTest {
 
         Map<String, TemplateProp> templates = new HashMap<>();
         templates.put(tmpltMock.getUniqueName(), tmpltPropMock);
-        Mockito.doReturn(templates).when(templateService).listTemplate(otherZoneStoreMock);
 
         TemplateObject sourceTmplMock = Mockito.mock(TemplateObject.class);
         Mockito.doReturn(sourceTmplMock).when(templateDataFactoryMock).getTemplate(100L, otherZoneStoreMock);
@@ -270,7 +268,6 @@ public class TemplateServiceImplTest {
 
         Map<String, TemplateProp> templates = new HashMap<>();
         templates.put(tmpltMock.getUniqueName(), tmpltPropMock);
-        Mockito.doReturn(templates).when(templateService).listTemplate(otherZoneStoreMock);
 
         TemplateObject sourceTmplMock = Mockito.mock(TemplateObject.class);
         Mockito.doReturn(sourceTmplMock).when(templateDataFactoryMock).getTemplate(100L, otherZoneStoreMock);
@@ -296,5 +293,32 @@ public class TemplateServiceImplTest {
         boolean result = templateService.tryCopyingTemplateToImageStore(tmpltMock, destStoreMock);
 
         Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testFindUsableTemplateReturnsTemplateWithNonNullInstallPath() {
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(template.getId()).thenReturn(10L);
+        Mockito.when(template.getUniqueName()).thenReturn("test-template");
+
+        DataStore storeWithNullPath = Mockito.mock(DataStore.class);
+        Mockito.when(storeWithNullPath.getName()).thenReturn("store-null");
+
+        DataStore storeWithValidPath = Mockito.mock(DataStore.class);
+        TemplateObject tmplWithNullPath = Mockito.mock(TemplateObject.class);
+        Mockito.when(tmplWithNullPath.getInstallPath()).thenReturn(null);
+
+        TemplateObject tmplWithValidPath = Mockito.mock(TemplateObject.class);
+        Mockito.when(tmplWithValidPath.getInstallPath()).thenReturn("/mnt/secondary/template.qcow2");
+
+        Mockito.doReturn(tmplWithNullPath).when(templateDataFactoryMock).getTemplate(10L, storeWithNullPath);
+        Mockito.doReturn(tmplWithValidPath).when(templateDataFactoryMock).getTemplate(10L, storeWithValidPath);
+
+        List<DataStore> imageStores = List.of(storeWithNullPath, storeWithValidPath);
+
+        TemplateObject result = templateService.findUsableTemplate(template, imageStores);
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(tmplWithValidPath, result);
     }
 }

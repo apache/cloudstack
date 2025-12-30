@@ -79,7 +79,6 @@ public class ImageStoreDetailsUtil {
     }
 
     public boolean isCopyTemplatesFromOtherStoragesEnabled(Long storeId, Long zoneId) {
-
         final Map<String, String> storeDetails = imageStoreDetailsDao.getDetails(storeId);
         final String keyWithoutDots = StorageManager.COPY_TEMPLATES_FROM_OTHER_SECONDARY_STORAGES.key()
                 .replace(".", "");
