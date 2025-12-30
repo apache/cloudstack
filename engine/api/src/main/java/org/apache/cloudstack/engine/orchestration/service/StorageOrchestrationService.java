@@ -33,5 +33,5 @@ public interface StorageOrchestrationService {
 
     Future<TemplateApiResult> orchestrateTemplateCopyToImageStore(TemplateInfo source, DataStore destStore);
 
-    Future<TemplateApiResult> orchestrateTemplateCopyAcrossZones(TemplateInfo source, DataStore sourceStore, DataStore destStore);
+    Future<TemplateApiResult> orchestrateTemplateCopyAcrossZones(TemplateInfo source, DataStore destStore);
 }
