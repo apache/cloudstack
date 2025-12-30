@@ -168,7 +168,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         INSTALLING_ISO("Installing ISO"),
         BYPASSED_SECONDARY_STORAGE("Bypassed Secondary Storage"),
         PROCESSING("Processing"),
-        DOWNLOADING("%d%% Downloaded");
+        DOWNLOADING("%d%% Downloaded"),
+        DOWNLOAD_COMPLETE("Download Complete");
 
         private final String status;
         TemplateStatus(String status) {
@@ -187,16 +188,13 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         if (template == null) {
             return  null;
         }
-
+        boolean isIso = Storage.ImageFormat.ISO == template.getFormat();
         TemplateStatus templateStatus;
         if (template.getDownloadState() == Status.DOWNLOADED) {
-            templateStatus = TemplateStatus.SUCCESSFULLY_INSTALLED;
+            templateStatus =  isIso ? TemplateStatus.SUCCESSFULLY_INSTALLED : TemplateStatus.DOWNLOAD_COMPLETE;
         } else if (template.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
             if (template.getDownloadPercent() == 100) {
-                templateStatus = TemplateStatus.INSTALLING_TEMPLATE;
-                if (Storage.ImageFormat.ISO == template.getFormat()) {
-                    templateStatus = TemplateStatus.INSTALLING_ISO;
-                }
+                templateStatus = isIso ? TemplateStatus.INSTALLING_ISO : TemplateStatus.INSTALLING_TEMPLATE;
             } else {
                 return TemplateStatus.DOWNLOADING.format(template.getDownloadPercent());
             }
