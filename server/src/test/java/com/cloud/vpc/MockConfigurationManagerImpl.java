@@ -51,6 +51,7 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.net.NetUtils;
 import org.apache.cloudstack.api.command.admin.config.ResetCfgCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
+import org.apache.cloudstack.api.command.admin.network.CloneNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIpv6PrefixCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
@@ -60,6 +61,8 @@ import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.ListGuestNetworkIpv6PrefixesCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.offering.CloneDiskOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.CloneServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
@@ -113,6 +116,24 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      */
     @Override
     public ServiceOffering createServiceOffering(CreateServiceOfferingCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public ServiceOffering cloneServiceOffering(CloneServiceOfferingCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public DiskOffering cloneDiskOffering(CloneDiskOfferingCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public NetworkOffering cloneNetworkOffering(CloneNetworkOfferingCmd cmd) {
         // TODO Auto-generated method stub
         return null;
     }

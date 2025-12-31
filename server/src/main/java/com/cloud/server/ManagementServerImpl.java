@@ -130,6 +130,7 @@ import org.apache.cloudstack.api.command.admin.management.ListMgmtsCmd;
 import org.apache.cloudstack.api.command.admin.management.RemoveManagementServerCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkDeviceCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkServiceProviderCmd;
+import org.apache.cloudstack.api.command.admin.network.CloneNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
@@ -160,6 +161,8 @@ import org.apache.cloudstack.api.command.admin.network.UpdateNetworkServiceProvi
 import org.apache.cloudstack.api.command.admin.network.UpdatePhysicalNetworkCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateStorageNetworkIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.offering.CloneDiskOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.CloneServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
@@ -3840,6 +3843,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(AddNetworkDeviceCmd.class);
         cmdList.add(AddNetworkServiceProviderCmd.class);
         cmdList.add(CreateNetworkOfferingCmd.class);
+        cmdList.add(CloneNetworkOfferingCmd.class);
         cmdList.add(CreatePhysicalNetworkCmd.class);
         cmdList.add(CreateStorageNetworkIpRangeCmd.class);
         cmdList.add(DeleteNetworkDeviceCmd.class);
@@ -3860,7 +3864,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListDedicatedGuestVlanRangesCmd.class);
         cmdList.add(ReleaseDedicatedGuestVlanRangeCmd.class);
         cmdList.add(CreateDiskOfferingCmd.class);
+        cmdList.add(CloneDiskOfferingCmd.class);
         cmdList.add(CreateServiceOfferingCmd.class);
+        cmdList.add(CloneServiceOfferingCmd.class);
         cmdList.add(DeleteDiskOfferingCmd.class);
         cmdList.add(DeleteServiceOfferingCmd.class);
         cmdList.add(IsAccountAllowedToCreateOfferingsWithTagsCmd.class);
