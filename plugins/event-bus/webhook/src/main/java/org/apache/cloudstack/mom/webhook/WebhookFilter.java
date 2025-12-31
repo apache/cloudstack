@@ -100,8 +100,7 @@ public interface WebhookFilter extends Identity, InternalIdentity {
             }
 
             // 2. Opposite mode (INCLUDE vs EXCLUDE) — check for overlap
-            if (Mode.Exclude.equals(f.getMode())
-                    && Mode.Include.equals(this.getMode())) {
+            if (f.getMode() != this.getMode()) {
                 String oldVal = f.getValue().toUpperCase();
                 String newVal = this.getValue().toUpperCase();
 

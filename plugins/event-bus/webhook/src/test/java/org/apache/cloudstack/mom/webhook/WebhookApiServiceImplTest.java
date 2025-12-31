@@ -64,6 +64,7 @@ import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
@@ -1256,6 +1257,28 @@ public class WebhookApiServiceImplTest {
         Mockito.when(cmd.getMode()).thenReturn("Include");
         Mockito.when(cmd.getMatchType()).thenReturn("Exact");
         Mockito.when(cmd.getValue()).thenReturn("value.extra");
+        Mockito.when(webhookDao.findById(1L)).thenReturn(webhook);
+        Mockito.when(webhookFilterDao.listByWebhook(1L)).thenReturn(List.of(filter));
+
+        webhookApiServiceImpl.addWebhookFilter(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void addWebhookFilterSameEventConflictsWithExisting() {
+        AddWebhookFilterCmd cmd = Mockito.mock(AddWebhookFilterCmd.class);
+        WebhookVO webhook = Mockito.mock(WebhookVO.class);
+        WebhookFilterVO filter = Mockito.mock(WebhookFilterVO.class);
+
+        Mockito.when(webhook.getId()).thenReturn(1L);
+        Mockito.when(filter.getType()).thenReturn(WebhookFilter.Type.EventType);
+        Mockito.when(filter.getMode()).thenReturn(WebhookFilter.Mode.Include);
+        Mockito.when(filter.getMatchType()).thenReturn(WebhookFilter.MatchType.Exact);
+        Mockito.when(filter.getValue()).thenReturn(EventTypes.EVENT_VM_CREATE);
+        Mockito.when(cmd.getId()).thenReturn(1L);
+        Mockito.when(cmd.getType()).thenReturn(WebhookFilter.Type.EventType.name());
+        Mockito.when(cmd.getMode()).thenReturn(WebhookFilter.Mode.Exclude.name());
+        Mockito.when(cmd.getMatchType()).thenReturn(WebhookFilter.MatchType.Exact.name());
+        Mockito.when(cmd.getValue()).thenReturn(EventTypes.EVENT_VM_CREATE);
         Mockito.when(webhookDao.findById(1L)).thenReturn(webhook);
         Mockito.when(webhookFilterDao.listByWebhook(1L)).thenReturn(List.of(filter));
 
