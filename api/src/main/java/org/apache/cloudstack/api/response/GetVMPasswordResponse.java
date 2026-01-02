@@ -25,7 +25,7 @@ import com.cloud.serializer.Param;
 public class GetVMPasswordResponse extends BaseResponse {
 
     @SerializedName("encryptedpassword")
-    @Param(description = "The base64 encoded encrypted password of the VM", isSensitive = true)
+    @Param(description = "The base64 encoded encrypted password of the Instance", isSensitive = true)
     private String encryptedPassword;
 
     public GetVMPasswordResponse() {

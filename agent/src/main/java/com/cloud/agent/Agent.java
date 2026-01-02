@@ -1228,7 +1228,14 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                     logger.error("Error parsing task", e);
                 }
             } else if (task.getType() == Task.Type.DISCONNECT) {
-                logger.debug("Executing disconnect task - {}", () -> getLinkLog(task.getLink()));
+                try {
+                    // an issue has been found if reconnect immediately after disconnecting.
+                    // wait 5 seconds before reconnecting
+                    logger.debug("Wait for 5 secs before reconnecting, disconnect task - {}", () -> getLinkLog(task.getLink()));
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                }
+                logger.debug("Executing disconnect task - {} and reconnecting", () -> getLinkLog(task.getLink()));
                 reconnect(task.getLink());
             } else if (task.getType() == Task.Type.OTHER) {
                 processOtherTask(task);
