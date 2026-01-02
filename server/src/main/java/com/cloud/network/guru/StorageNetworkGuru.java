@@ -37,7 +37,6 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
-import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -132,10 +131,7 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 
         vlan = ip.getVlan();
         nic.setIPv4Address(ip.getIpAddress());
-        String macAddress = NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ip.getMac(), _networkModel.getMacIdentifier(dest.getDataCenter().getId())));
-        if (!_networkModel.isMACUnique(macAddress, network.getId())) {
-            macAddress = _networkModel.getNextAvailableMacAddressInNetwork(network.getId());
-        }
+        String macAddress = _networkModel.getUniqueMacAddress(ip.getMac(), network.getId(), dest.getDataCenter().getId());
         nic.setMacAddress(macAddress);
         nic.setFormat(AddressFormat.Ip4);
         nic.setIPv4Netmask(ip.getNetmask());

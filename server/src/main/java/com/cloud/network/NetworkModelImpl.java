@@ -608,8 +608,19 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         return mac;
     }
 
+    @Override
+    public String getUniqueMacAddress(long macAddress, long networkId, long datacenterId) throws InsufficientAddressCapacityException {
+        String macAddressStr = NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(macAddress, getMacIdentifier(datacenterId)));
+        if (!isMACUnique(macAddressStr, networkId)) {
+            macAddressStr = getNextAvailableMacAddressInNetwork(networkId);
+        }
+        return macAddressStr;
+    }
+
+    @Override
     public boolean isMACUnique(String mac, long networkId) {
         return (_nicDao.findByMacAddress(mac, networkId) == null);
+
     }
 
     @Override

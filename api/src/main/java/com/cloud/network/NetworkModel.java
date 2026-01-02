@@ -125,9 +125,9 @@ public interface NetworkModel {
      */
     String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException;
 
-    default boolean isMACUnique(String mac, long networkId) {
-        return true;
-    }
+    String getUniqueMacAddress(long macAddress, long networkId, long datacenterId) throws InsufficientAddressCapacityException;
+
+    boolean isMACUnique(String mac, long networkId);
 
     PublicIpAddress getPublicIpAddress(long ipAddressId);
 
