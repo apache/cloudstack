@@ -704,7 +704,7 @@ public class VolumeServiceImpl implements VolumeService {
         VolumeApiResult res = new VolumeApiResult(volumeInfo);
 
         if (result.isSuccess()) {
-            // volumeInfo.processEvent(Event.OperationSuccessed, result.getAnswer());
+            // volumeInfo.processEvent(Event.OperationSucceeded, result.getAnswer());
 
             VolumeVO volume = volDao.findById(volumeInfo.getId());
             CopyCmdAnswer answer = (CopyCmdAnswer)result.getAnswer();
