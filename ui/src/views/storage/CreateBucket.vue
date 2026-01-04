@@ -128,26 +128,13 @@ export default {
       const selectedId = this.form?.objectstore
       const stores = this.objectstores || []
       const selected = stores.find(os => os.id === selectedId)
-      if (!selected) {
-        return false
-      }
+      if (!selected) return false
 
-      const provider = (
-        selected.objectstoreprovider ||
-        selected.objectStoreProvider ||
-        selected.provider ||
-        ''
-      ).toString().toUpperCase()
+      const provider = (selected.providername || '')
+        .toString()
+        .toUpperCase()
 
-      const name = (selected.name || '').toString().toUpperCase()
-
-      if (provider.includes('ECS')) {
-        return true
-      }
-      if (name.includes('ECS')) {
-        return true
-      }
-      return false
+      return provider.includes('ECS')
     },
     showObjectLocking () {
       return !this.isEcsObjectStore

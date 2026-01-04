@@ -23,7 +23,6 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
 import javax.inject.Inject;
 import javax.net.ssl.SSLContext;
 
@@ -65,16 +64,20 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class EcsObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
     // ---- Injected dependencies ----
-    @Inject private AccountDao accountDao;
-    @Inject private AccountDetailsDao accountDetailsDao;
-    @Inject private BucketDao bucketDao;
-    @Inject private ObjectStoreDetailsDao storeDetailsDao;
+    @Inject
+    private AccountDao accountDao;
+    @Inject
+    private AccountDetailsDao accountDetailsDao;
+    @Inject
+    private BucketDao bucketDao;
+    @Inject
+    private ObjectStoreDetailsDao storeDetailsDao;
 
     private final EcsMgmtTokenManager tokenManager = new EcsMgmtTokenManager();
     private final EcsXmlParser xml = new EcsXmlParser();
 
     // Versioning retry (ECS can be eventually consistent)
-    private static final int VERSIONING_MAX_TRIES = 45;
+    private static final int VERSIONING_MAX_TRIES = 10;
     private static final long VERSIONING_RETRY_SLEEP_MS = 1000L;
 
     public EcsObjectStoreDriverImpl() {
@@ -622,113 +625,79 @@ public class EcsObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         return setOrSuspendVersioning(bucket, storeId, false);
     }
 
-    private boolean setOrSuspendVersioning(final BucketTO bucket, final long storeId, final boolean enable) {
+    private boolean setOrSuspendVersioning(final BucketTO bucket,
+                                        final long storeId,
+                                        final boolean enable) {
         final Map<String, String> ds = storeDetailsDao.getDetails(storeId);
         final S3Endpoint ep = resolveS3Endpoint(ds, storeId);
         final boolean insecure = "true".equalsIgnoreCase(ds.getOrDefault(EcsConstants.INSECURE, "false"));
 
         if (ep == null || StringUtils.isBlank(ep.host)) {
-            logger.warn("ECS: {}BucketVersioning requested but S3 endpoint is not resolvable; skipping.",
-                    enable ? "set" : "delete");
-            return true;
+            logger.warn("ECS: S3 endpoint not resolvable; skipping bucket versioning.");
+            return true; // best-effort
         }
 
         final String bucketName = bucket.getName();
         final String desired = enable ? "Enabled" : "Suspended";
 
-        // First try: use calling account (normal API usage)
-        final CallContext ctx = CallContext.current();
+        // Resolve accountId
         long accountId = -1L;
+        final CallContext ctx = CallContext.current();
         if (ctx != null && ctx.getCallingAccount() != null) {
             accountId = ctx.getCallingAccount().getId();
         }
-
-        // Fallback: bucket VO may contain accountId (depends on CloudStack version & call path)
         if (accountId <= 0) {
-            final BucketVO vo = resolveBucketVO(bucket, storeId);
+            final BucketVO vo = resolveBucketVO(bucket);
             if (vo != null) {
-                try { accountId = vo.getAccountId(); } catch (Throwable ignore) { }
-            }
-        }
-
-        // Fallback: reflection on BucketTO (if present in this branch)
-        if (accountId <= 0) {
-            accountId = getLongFromGetter(bucket, "getAccountId", -1L);
-        }
-
-        // Fallback: query ECS mgmt API for owner -> account
-        if (accountId <= 0) {
-            final Long aid = resolveAccountIdViaMgmt(bucketName, ds, insecure);
-            if (aid != null && aid > 0) {
-                accountId = aid;
+                accountId = vo.getAccountId();
             }
         }
 
         if (accountId <= 0) {
-            logger.warn("ECS: cannot resolve accountId for bucket='{}'; skipping versioning request.", bucketName);
+            logger.warn("ECS: cannot resolve accountId for bucket='{}'; skipping versioning.", bucketName);
             return true;
         }
 
-        for (int attempt = 1; attempt <= VERSIONING_MAX_TRIES; attempt++) {
-            String accessKey = valueOrNull(accountDetailsDao.findDetail(accountId, EcsConstants.AD_KEY_ACCESS));
-            String secretKey = valueOrNull(accountDetailsDao.findDetail(accountId, EcsConstants.AD_KEY_SECRET));
+        String accessKey = valueOrNull(accountDetailsDao.findDetail(accountId, EcsConstants.AD_KEY_ACCESS));
+        String secretKey = valueOrNull(accountDetailsDao.findDetail(accountId, EcsConstants.AD_KEY_SECRET));
 
-            // If missing, try to provision now
-            if (StringUtils.isBlank(accessKey) || StringUtils.isBlank(secretKey)) {
-                try {
-                    final EcsCfg cfg = ecsCfgFromDetails(ds, storeId);
-                    final Account acct = accountDao.findById(accountId);
-                    if (acct != null) {
-                        final String ownerUser = getUserPrefix(ds) + acct.getUuid();
-                        ensureAccountUserAndSecret(accountId, ownerUser, cfg.mgmtUrl, cfg.saUser, cfg.saPass, cfg.ns, cfg.insecure);
-                        accessKey = valueOrNull(accountDetailsDao.findDetail(accountId, EcsConstants.AD_KEY_ACCESS));
-                        secretKey = valueOrNull(accountDetailsDao.findDetail(accountId, EcsConstants.AD_KEY_SECRET));
-                    }
-                } catch (Exception e) {
-                    logger.debug("ECS: ensureAccountUserAndSecret failed during versioning (attempt {}): {}", attempt, e.getMessage());
-                }
-            }
-
-            if (!StringUtils.isBlank(accessKey) && !StringUtils.isBlank(secretKey)) {
-                try (CloseableHttpClient http = buildHttpClient(insecure)) {
-                    setS3BucketVersioningWithVerify(http, ep.scheme, ep.host, bucketName, accessKey, secretKey, desired);
-                    logger.info("ECS: S3 versioning {} for bucket='{}' (accountId={}) succeeded on attempt {}/{}.",
-                            desired, bucketName, accountId, attempt, VERSIONING_MAX_TRIES);
-                    return true;
-                } catch (Exception e) {
-                    logger.warn("ECS: versioning {} for '{}' failed on attempt {}/{}: {}",
-                            desired, bucketName, attempt, VERSIONING_MAX_TRIES, e.getMessage());
-                }
-            } else {
-                logger.debug("ECS: missing S3 keys for accountId={} (attempt {}/{}).", accountId, attempt, VERSIONING_MAX_TRIES);
-            }
-
-            if (attempt < VERSIONING_MAX_TRIES) {
-                try {
-                    Thread.sleep(VERSIONING_RETRY_SLEEP_MS);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    return true;
-                }
-            }
+        if (StringUtils.isBlank(accessKey) || StringUtils.isBlank(secretKey)) {
+            logger.warn("ECS: missing S3 credentials for accountId={}; skipping versioning.", accountId);
+            return true;
         }
 
-        logger.warn("ECS: versioning {} for '{}' gave up after {} attempts; leaving as-is.",
-                desired, bucketName, VERSIONING_MAX_TRIES);
-        return true;
+        try (CloseableHttpClient http = buildHttpClient(insecure)) {
+            putBucketVersioningSigV2(
+                    http,
+                    ep.scheme,
+                    ep.host,
+                    bucketName,
+                    accessKey,
+                    secretKey,
+                    desired
+            );
+            logger.info("ECS: bucket versioning {} succeeded for '{}'", desired, bucketName);
+            return true;
+        } catch (Exception e) {
+            logger.warn("ECS: bucket versioning {} failed for '{}': {}",
+                    desired, bucketName, e.getMessage());
+            return true; // best-effort (do NOT break createBucket)
+        }
     }
 
-    // ----- S3 Versioning (SigV2 path-style) -----
+    // ----- S3 Versioning (SigV2, EXACTLY matches bash script) -----
 
-    private void setS3BucketVersioning(final CloseableHttpClient http,
-                                       final String scheme,
-                                       final String host,
-                                       final String bucketName,
-                                       final String accessKey,
-                                       final String secretKey,
-                                       final String status) throws Exception {
+    private void putBucketVersioningSigV2(final CloseableHttpClient http,
+                                        final String scheme,
+                                        final String host,
+                                        final String bucketName,
+                                        final String accessKey,
+                                        final String secretKey,
+                                        final String status) throws Exception {
+
+        // EXACT XML (no namespace, matches bash)
         final String body =
-                "<VersioningConfiguration xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">"
+                "<VersioningConfiguration>"
                         + "<Status>" + status + "</Status>"
                         + "</VersioningConfiguration>";
 
@@ -737,98 +706,39 @@ public class EcsObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         final String contentMd5 = base64Md5(bodyBytes);
         final String dateHdr = rfc1123Now();
 
-        // IMPORTANT: include trailing slash before subresource
-        final String canonicalResource = "/" + bucketName + "/?versioning";
-        final String sts = "PUT\n" + contentMd5 + "\n" + contentType + "\n" + dateHdr + "\n" + canonicalResource;
-        final String signature = hmacSha1Base64(sts, secretKey);
+        // IMPORTANT: NO trailing slash before ?versioning
+        final String canonicalResource = "/" + bucketName + "?versioning";
 
-        final String url = scheme + "://" + host + "/" + bucketName + "/?versioning";
+        final String stringToSign =
+                "PUT\n"
+                        + contentMd5 + "\n"
+                        + contentType + "\n"
+                        + dateHdr + "\n"
+                        + canonicalResource;
+
+        final String signature = hmacSha1Base64(stringToSign, secretKey);
+
+        final String url = scheme + "://" + host + "/" + bucketName + "?versioning";
+
         final HttpPut put = new HttpPut(url);
-        put.setHeader("Host", host);
         put.setHeader("Date", dateHdr);
-        put.setHeader("Authorization", "AWS " + accessKey + ":" + signature);
         put.setHeader("Content-Type", contentType);
         put.setHeader("Content-MD5", contentMd5);
+        put.setHeader("Authorization", "AWS " + accessKey + ":" + signature);
         put.setEntity(new StringEntity(body, StandardCharsets.UTF_8));
 
         try (CloseableHttpResponse resp = http.execute(put)) {
-            final int st = resp.getStatusLine().getStatusCode();
-            final String rb = resp.getEntity() != null
+            final int statusCode = resp.getStatusLine().getStatusCode();
+            final String respBody = resp.getEntity() != null
                     ? EntityUtils.toString(resp.getEntity(), StandardCharsets.UTF_8)
                     : "";
 
-            if (st != 200 && st != 204) {
-                throw new CloudRuntimeException("S3 versioning " + status + " failed: HTTP " + st + " body=" + rb);
+            if (statusCode != 200 && statusCode != 204) {
+                throw new CloudRuntimeException(
+                        "S3 versioning failed: HTTP " + statusCode + " body=" + respBody
+                );
             }
         }
-    }
-
-    private String getS3BucketVersioningStatus(final CloseableHttpClient http,
-                                               final String scheme,
-                                               final String host,
-                                               final String bucketName,
-                                               final String accessKey,
-                                               final String secretKey) throws Exception {
-        final String dateHdr = rfc1123Now();
-        final String canonicalResource = "/" + bucketName + "/?versioning";
-        final String sts = "GET\n\n\n" + dateHdr + "\n" + canonicalResource;
-        final String signature = hmacSha1Base64(sts, secretKey);
-
-        final String url = scheme + "://" + host + "/" + bucketName + "/?versioning";
-        final HttpGet get = new HttpGet(url);
-        get.setHeader("Host", host);
-        get.setHeader("Date", dateHdr);
-        get.setHeader("Authorization", "AWS " + accessKey + ":" + signature);
-
-        try (CloseableHttpResponse resp = http.execute(get)) {
-            final int st = resp.getStatusLine().getStatusCode();
-            final String rb = resp.getEntity() != null
-                    ? EntityUtils.toString(resp.getEntity(), StandardCharsets.UTF_8)
-                    : "";
-
-            if (st != 200 && st != 204) {
-                throw new CloudRuntimeException("S3 get versioning failed: HTTP " + st + " body=" + rb);
-            }
-
-            final String status = xml.extractTag(rb, "Status");
-            return status != null ? status.trim() : "";
-        }
-    }
-
-    private void setS3BucketVersioningWithVerify(final CloseableHttpClient http,
-                                                 final String scheme,
-                                                 final String host,
-                                                 final String bucketName,
-                                                 final String accessKey,
-                                                 final String secretKey,
-                                                 final String desired) throws Exception {
-        setS3BucketVersioning(http, scheme, host, bucketName, accessKey, secretKey, desired);
-
-        // Verify (best-effort; ECS may be eventually consistent)
-        for (int i = 1; i <= 10; i++) {
-            try {
-                final String got = getS3BucketVersioningStatus(http, scheme, host, bucketName, accessKey, secretKey);
-                if (desired.equalsIgnoreCase(got)) {
-                    logger.info("ECS: versioning verify OK for '{}': {}", bucketName, got);
-                    return;
-                }
-                logger.warn("ECS: versioning verify mismatch for '{}': desired={} got={} (try {}/10)",
-                        bucketName, desired, got, i);
-            } catch (Exception e) {
-                logger.debug("ECS: versioning verify error for '{}': {} (try {}/10)",
-                        bucketName, e.getMessage(), i);
-            }
-
-            try {
-                Thread.sleep(500L);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-                return;
-            }
-        }
-
-        logger.warn("ECS: versioning verify FAILED for '{}': desired={} (backend may be eventually consistent)",
-                bucketName, desired);
     }
 
     // ---------------- Quota ----------------
@@ -1355,15 +1265,15 @@ public class EcsObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     private BucketVO resolveBucketVO(final BucketTO bucket) {
-    if (bucket == null) {
-        return null;
-    }
+        if (bucket == null) {
+            return null;
+        }
 
-    final long id = getLongFromGetter(bucket, "getId", -1L);
-    if (id > 0) {
-        return bucketDao.findById(id);
-    }
-    return null;
+        final long id = getLongFromGetter(bucket, "getId", -1L);
+        if (id > 0) {
+            return bucketDao.findById(id);
+        }
+        return null;
     }
 
     private static String base64Md5(final byte[] data) throws Exception {

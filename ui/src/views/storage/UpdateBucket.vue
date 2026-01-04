@@ -31,7 +31,7 @@
           :placeholder="$t('label.quota')"/>
       </a-form-item>
 
-      <!-- Encryption toggle hidden only when object store provider is ECS -->
+      <!-- Encryption hidden when object store provider is ECS -->
       <a-form-item
         v-if="showEncryption"
         name="encryption"
@@ -46,6 +46,17 @@
         <a-switch
           v-model:checked="form.versioning"
           :checked="form.versioning"/>
+      </a-form-item>
+
+      <!-- Object Lock hidden when object store provider is ECS -->
+      <a-form-item
+        v-if="showObjectLocking"
+        name="objectlocking"
+        ref="objectlocking"
+        :label="$t('label.objectlocking')">
+        <a-switch
+          v-model:checked="form.objectlocking"
+          :checked="form.objectlocking"/>
       </a-form-item>
 
       <a-form-item name="Bucket Policy" ref="policy" :label="$t('label.bucket.policy')">
@@ -98,15 +109,19 @@ export default {
     isEcsObjectStore () {
       const r = this.resource || {}
       const provider = (
+        r.providername ||
         r.objectstoreprovider ||
         r.objectStoreProvider ||
         r.objectStoreprovider ||
         r.provider ||
         ''
       ).toString().toUpperCase()
-      return provider === 'ECS'
+      return provider.includes('ECS')
     },
     showEncryption () {
+      return !this.isEcsObjectStore
+    },
+    showObjectLocking () {
       return !this.isEcsObjectStore
     }
   },
@@ -132,33 +147,43 @@ export default {
       this.loading = true
       Object.keys(this.apiParams).forEach(item => {
         const field = this.apiParams[item]
-        let fieldName = field.name
+        let fieldName = null
+
         if (field.type === 'list' || field.name === 'account') {
           fieldName = field.name.replace('ids', 'name').replace('id', 'name')
+        } else {
+          fieldName = field.name
         }
-        const fieldValue = this.resource[fieldName] ?? null
+
+        const fieldValue = this.resource?.[fieldName]
         if (fieldValue !== null && fieldValue !== undefined) {
           form[field.name] = fieldValue
         }
       })
       this.loading = false
     },
-    handleSubmit () {
+    handleSubmit (e) {
+      if (e?.preventDefault) e.preventDefault()
       if (this.loading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
+
         const data = {
           id: this.resource.id,
           quota: values.quota,
           versioning: values.versioning,
-          objectlocking: values.objectlocking,
           policy: values.policy
         }
+
+        // Hide + do not send encryption/objectlocking for ECS
         if (!this.isEcsObjectStore) {
           data.encryption = values.encryption
+          data.objectlocking = values.objectlocking
         }
+
         this.loading = true
-        postAPI('updateBucket', data).then(response => {
+        postAPI('updateBucket', data).then(() => {
           this.$emit('refresh-data')
           this.$notification.success({
             message: this.$t('label.bucket.update'),
