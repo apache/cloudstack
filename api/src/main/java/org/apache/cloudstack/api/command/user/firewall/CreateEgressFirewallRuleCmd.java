@@ -57,37 +57,37 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
                type = CommandType.UUID,
                entityType = NetworkResponse.class,
                required = true,
-               description = "the network id of the port forwarding rule")
+               description = "The Network ID of the port forwarding rule")
     private Long networkId;
 
     @Parameter(name = ApiConstants.PROTOCOL,
                type = CommandType.STRING,
                required = true,
-               description = "the protocol for the firewall rule. Valid values are TCP/UDP/ICMP.")
+               description = "The protocol for the firewall rule. Valid values are TCP/UDP/ICMP.")
     private String protocol;
 
-    @Parameter(name = ApiConstants.START_PORT, type = CommandType.INTEGER, description = "the starting port of firewall rule")
+    @Parameter(name = ApiConstants.START_PORT, type = CommandType.INTEGER, description = "The starting port of firewall rule")
     private Integer publicStartPort;
 
-    @Parameter(name = ApiConstants.END_PORT, type = CommandType.INTEGER, description = "the ending port of firewall rule")
+    @Parameter(name = ApiConstants.END_PORT, type = CommandType.INTEGER, description = "The ending port of firewall rule")
     private Integer publicEndPort;
 
-    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to forward traffic from. Multiple entries must be separated by a single comma character (,).")
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "The CIDR list to forward traffic from. Multiple entries must be separated by a single comma character (,).")
     private List<String> cidrlist;
 
-    @Parameter(name = ApiConstants.DEST_CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to forward traffic to. Multiple entries must be separated by a single comma character (,).")
+    @Parameter(name = ApiConstants.DEST_CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "The CIDR list to forward traffic to. Multiple entries must be separated by a single comma character (,).")
     private List<String> destCidrList;
 
-    @Parameter(name = ApiConstants.ICMP_TYPE, type = CommandType.INTEGER, description = "type of the icmp message being sent")
+    @Parameter(name = ApiConstants.ICMP_TYPE, type = CommandType.INTEGER, description = "Type of the ICMP message being sent")
     private Integer icmpType;
 
-    @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "error code for this icmp message")
+    @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "Error code for this ICMP message")
     private Integer icmpCode;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "type of firewallrule: system/user")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "Type of firewallrule: system/user")
     private String type;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     // ///////////////////////////////////////////////////
@@ -255,11 +255,8 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
             }
         } catch (NetworkRuleConflictException ex) {
             String message = "Network rule conflict: ";
-            if (!logger.isTraceEnabled()) {
-                logger.info(message + ex.getMessage());
-            } else {
-                logger.trace(message, ex);
-            }
+            logger.error("{}{}", message, ex.getMessage());
+            logger.trace(message, ex);
             throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage());
         }
     }

@@ -129,11 +129,11 @@ def VmSnapshotToCheckDataIntegrity(self, vm):
     """
     This method takes VMSnapshot of the VM post migration
     to check data integrity.
-    VM snapshot is not possible if VM's volumes have snapshots.
+    Instance Snapshot is not possible if VM's volumes have snapshots.
     So, first we will check if there are any volume
     snapshots after migration and delete them if
-    there are any. Once VM snapshot is successful,
-    Delete the VM snapshot
+    there are any. Once Instance Snapshot is successful,
+    Delete the Instance Snapshot
     """
     volumes = list_volumes(self.apiclient, virtualmachineid=vm.id,
                 listall=True)
@@ -145,18 +145,18 @@ def VmSnapshotToCheckDataIntegrity(self, vm):
                 try:
                     Snapshot.deletesnap(self.apiclient, snapid=snap.id)
                 except Exception as e:
-                    raise Exception("Warning: Exception during Volume snapshot deletion : %s" % e)
+                    raise Exception("Warning: Exception during Volume Snapshot deletion : %s" % e)
     #Take VM snapshot to check data integrity
     try:
         vm_snapshot = VmSnapshot.create(self.apiclient, vmid=vm.id)
     except Exception as e:
-        raise Exception("Warning: Exception during VM snapshot creation : %s" % e)
+        raise Exception("Warning: Exception during Instance Snapshot creation : %s" % e)
 
     #Delete the snapshot
     try:
         VmSnapshot.deleteVMSnapshot(self.apiclient, vmsnapshotid=vm_snapshot.id)
     except Exception as e:
-        raise Exception("Warning: Exception during VM snapshot deletion : %s" % e)
+        raise Exception("Warning: Exception during Instance Snapshot deletion : %s" % e)
 
     return
 
