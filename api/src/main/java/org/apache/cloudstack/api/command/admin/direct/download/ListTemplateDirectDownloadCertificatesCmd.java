@@ -41,7 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @APICommand(name = "listTemplateDirectDownloadCertificates",
-        description = "List the uploaded certificates for direct download templates",
+        description = "List the uploaded certificates for direct download Templates",
         responseObject = DirectDownloadCertificateResponse.class,
         since = "4.17.0",
         authorized = {RoleType.Admin})
@@ -51,15 +51,15 @@ public class ListTemplateDirectDownloadCertificatesCmd extends BaseListCmd {
     DirectDownloadManager directDownloadManager;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DirectDownloadCertificateResponse.class,
-            description = "list direct download certificate by ID")
+            description = "List direct download certificate by ID")
     private Long id;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class,
-            description = "the zone where certificates are uploaded")
+            description = "The zone where certificates are uploaded")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.LIST_HOSTS, type = CommandType.BOOLEAN,
-            description = "if set to true: include the hosts where the certificate is uploaded to")
+            description = "If set to true: include the hosts where the certificate is uploaded to")
     private Boolean listHosts;
 
 

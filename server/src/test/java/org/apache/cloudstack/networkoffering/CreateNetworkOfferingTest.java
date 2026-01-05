@@ -229,7 +229,6 @@ public class CreateNetworkOfferingTest extends TestCase {
         NetworkOfferingVO off =
             configMgr.createNetworkOffering("isolated", "isolated", TrafficType.Guest, null, true, Availability.Optional, 200, serviceProviderMap, false,
                 Network.GuestType.Isolated, false, null, false, null, false, false, null, false, null, true, true, false, false, false,null, null, null, false, null, null, false);
-        // System.out.println("Creating Vpc Network Offering");
         assertNotNull("Vpc Isolated network offering with Vpc provider ", off);
     }
 
@@ -249,7 +248,6 @@ public class CreateNetworkOfferingTest extends TestCase {
         NetworkOfferingVO off =
             configMgr.createNetworkOffering("isolated", "isolated", TrafficType.Guest, null, true, Availability.Optional, 200, serviceProviderMap, false,
                 Network.GuestType.Isolated, false, null, false, null, false, false, null, false, null, true, true, false, false, false,null, null, null, false, null, null, false);
-        // System.out.println("Creating Vpc Network Offering");
         assertNotNull("Vpc Isolated network offering with Vpc and Netscaler provider ", off);
     }
 }
