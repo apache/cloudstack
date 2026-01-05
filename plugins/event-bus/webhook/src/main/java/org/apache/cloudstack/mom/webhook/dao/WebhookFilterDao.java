@@ -15,34 +15,17 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.mom.webhook;
+package org.apache.cloudstack.mom.webhook.dao;
 
-import java.util.Date;
+import java.util.List;
 
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.mom.webhook.vo.WebhookFilterVO;
 
-public interface Webhook extends ControlledEntity, Identity, InternalIdentity {
-    long ID_DUMMY = 0L;
-    String NAME_DUMMY = "Test";
-    enum State {
-        Enabled, Disabled;
-    };
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.GenericDao;
 
-    enum Scope {
-        Local, Domain, Global;
-    };
-
-    long getId();
-    String getName();
-    String getDescription();
-    State getState();
-    long getDomainId();
-    long getAccountId();
-    String getPayloadUrl();
-    String getSecretKey();
-    boolean isSslVerification();
-    Scope getScope();
-    Date getCreated();
+public interface WebhookFilterDao extends GenericDao<WebhookFilterVO, Long> {
+    Pair<List<WebhookFilterVO>, Integer> searchBy(Long id, Long webhookId, Long startIndex, Long pageSize);
+    List<WebhookFilterVO> listByWebhook(Long webhookId);
+    int delete(Long id, Long webhookId);
 }
