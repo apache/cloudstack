@@ -114,8 +114,8 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kms_wrapped_key` (
     INDEX `idx_kms_key_id` (`kms_key_id`, `removed`),
     INDEX `idx_kek_version_id` (`kek_version_id`, `removed`),
     INDEX `idx_zone_id` (`zone_id`, `removed`),
-    CONSTRAINT `fk_kms_wrapped_key__kms_key_id` FOREIGN KEY (`kms_key_id`) REFERENCES `kms_keys`(`id`) ON DELETE RESTRICT,
-    CONSTRAINT `fk_kms_wrapped_key__kek_version_id` FOREIGN KEY (`kek_version_id`) REFERENCES `kms_kek_versions`(`id`) ON DELETE RESTRICT,
+    CONSTRAINT `fk_kms_wrapped_key__kms_key_id` FOREIGN KEY (`kms_key_id`) REFERENCES `kms_keys`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_kms_wrapped_key__kek_version_id` FOREIGN KEY (`kek_version_id`) REFERENCES `kms_kek_versions`(`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_kms_wrapped_key__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='KMS wrapped encryption keys (DEKs) - references kms_keys for KEK metadata and kek_versions for specific version';
 

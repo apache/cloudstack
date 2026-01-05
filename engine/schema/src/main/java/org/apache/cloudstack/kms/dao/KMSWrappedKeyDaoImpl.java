@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.kms.dao;
 
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -79,6 +80,14 @@ public class KMSWrappedKeyDaoImpl extends GenericDaoBase<KMSWrappedKeyVO, Long> 
         SearchCriteria<KMSWrappedKeyVO> sc = allFieldSearch.create();
         sc.setParameters("kekVersionId", kekVersionId);
         return listBy(sc);
+    }
+
+    @Override
+    public List<KMSWrappedKeyVO> listByKekVersionId(Long kekVersionId, int limit) {
+        SearchCriteria<KMSWrappedKeyVO> sc = allFieldSearch.create();
+        sc.setParameters("kekVersionId", kekVersionId);
+        Filter filter = new Filter(limit);
+        return listBy(sc, filter);
     }
 
     @Override

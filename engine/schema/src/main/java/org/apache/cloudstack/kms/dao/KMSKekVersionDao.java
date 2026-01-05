@@ -47,4 +47,10 @@ public interface KMSKekVersionDao extends GenericDao<KMSKekVersionVO, Long> {
      * Find a KEK version by KEK label
      */
     KMSKekVersionVO findByKekLabel(String kekLabel);
+
+    /**
+     * Find all KEK versions with a specific status
+     * (useful for background jobs to find versions needing processing)
+     */
+    List<KMSKekVersionVO> findByStatus(KMSKekVersionVO.Status status);
 }
