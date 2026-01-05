@@ -249,4 +249,3 @@ public class BackupOfferingDetailsDaoImplTest {
         return new BackupOfferingDetailsVO(resourceId, name, value, display);
     }
 }
-
