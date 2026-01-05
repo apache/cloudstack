@@ -48,6 +48,7 @@ import org.apache.cloudstack.framework.security.keystore.KeystoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 
@@ -152,8 +153,10 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 
+import static com.cloud.vm.VirtualMachineManager.SystemVmEnableUserData;
+
 /**
- * Class to manage console proxys. <br><br>
+ * Class to manage console proxies. <br><br>
  * Possible console proxy state transition cases:<br>
  * - Stopped -> Starting -> Running <br>
  * - HA -> Stopped -> Starting -> Running <br>
@@ -227,6 +230,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     private CAManager caManager;
     @Inject
     private NetworkOrchestrationService networkMgr;
+    @Inject
+    private UserDataManager userDataManager;
 
     private ConsoleProxyListener consoleProxyListener;
 
@@ -558,13 +563,13 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     public ConsoleProxyVO startNew(long dataCenterId) throws ConcurrentOperationException, ConfigurationException {
 
         if (logger.isDebugEnabled()) {
-            logger.debug("Assign console proxy from a newly started instance for request from data center : " + dataCenterId);
+            logger.debug("Assign console proxy from a newly started Instance for request from data center : " + dataCenterId);
         }
 
         if (!allowToLaunchNew(dataCenterId)) {
             String configKey = ConsoleProxyLaunchMax.key();
             Integer configValue = ConsoleProxyLaunchMax.valueIn(dataCenterId);
-            logger.warn(String.format("The number of launched console proxys on zone [%s] has reached the limit [%s]. Limit set in [%s].", dataCenterId, configValue, configKey));
+            logger.warn(String.format("The number of launched console proxies on zone [%s] has reached the limit [%s]. Limit set in [%s].", dataCenterId, configValue, configKey));
             return null;
         }
 
@@ -572,7 +577,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         List<VMTemplateVO> templates = vmTemplateDao.findSystemVMReadyTemplates(dataCenterId, availableHypervisor,
                 ResourceManager.SystemVmPreferredArchitecture.valueIn(dataCenterId));
         if (CollectionUtils.isEmpty(templates)) {
-            throw new CloudRuntimeException("Not able to find the System templates or not downloaded in zone " + dataCenterId);
+            throw new CloudRuntimeException("Not able to find the System Templates or not downloaded in zone " + dataCenterId);
         }
 
         Map<String, Object> context = createProxyInstance(dataCenterId, templates);
@@ -580,7 +585,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         long proxyVmId = (Long)context.get("proxyVmId");
         if (proxyVmId == 0) {
             if (logger.isDebugEnabled()) {
-                logger.debug(String.format("Unable to create proxy instance in zone [%s].", dataCenterId));
+                logger.debug(String.format("Unable to create proxy Instance in zone [%s].", dataCenterId));
             }
             return null;
         }
@@ -731,7 +736,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                     logger.debug("Unable to allocate proxy {} with {} in {} due to [{}]. Retrying with another template", proxy, template, dc, e.getMessage(), e);
                     continue;
                 }
-                throw new CloudRuntimeException("Failed to allocate proxy [%s] in zone [%s] with available templates", e);
+                throw new CloudRuntimeException(String.format("Failed to allocate proxy [%s] in zone [%s] with available templates", proxy, dc), e);
             }
         }
 
@@ -1265,6 +1270,19 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             buf.append(" vncport=").append(getVncPort(datacenterId));
         }
         buf.append(" keystore_password=").append(VirtualMachineGuru.getEncodedString(PasswordGenerator.generateRandomPassword(16)));
+
+        if (SystemVmEnableUserData.valueIn(dc.getId())) {
+            String userDataUuid = ConsoleProxyVmUserData.valueIn(dc.getId());
+            try {
+                String userData = userDataManager.validateAndGetUserDataForSystemVM(userDataUuid);
+                if (StringUtils.isNotBlank(userData)) {
+                    buf.append(" userdata=").append(userData);
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to load user data for the cpvm, ignored", e);
+            }
+        }
+
         String bootArgs = buf.toString();
         if (logger.isDebugEnabled()) {
             logger.debug("Boot Args for " + profile + ": " + bootArgs);
@@ -1570,9 +1588,10 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { ConsoleProxySslEnabled, NoVncConsoleDefault, NoVncConsoleSourceIpCheckEnabled, ConsoleProxyServiceOffering,
-                ConsoleProxyCapacityStandby, ConsoleProxyCapacityScanInterval, ConsoleProxyCmdPort, ConsoleProxyRestart, ConsoleProxyUrlDomain, ConsoleProxySessionMax, ConsoleProxySessionTimeout, ConsoleProxyDisableRpFilter, ConsoleProxyLaunchMax,
-                ConsoleProxyManagementLastState, ConsoleProxyServiceManagementState, NoVncConsoleShowDot };
+        return new ConfigKey<?>[] {ConsoleProxySslEnabled, NoVncConsoleDefault, NoVncConsoleSourceIpCheckEnabled, ConsoleProxyServiceOffering,
+                                   ConsoleProxyCapacityStandby, ConsoleProxyCapacityScanInterval, ConsoleProxyCmdPort, ConsoleProxyRestart, ConsoleProxyUrlDomain, ConsoleProxySessionMax, ConsoleProxySessionTimeout, ConsoleProxyDisableRpFilter, ConsoleProxyLaunchMax,
+                                   ConsoleProxyManagementLastState, ConsoleProxyServiceManagementState, NoVncConsoleShowDot,
+                                   ConsoleProxyVmUserData};
     }
 
     protected ConsoleProxyStatus parseJsonToConsoleProxyStatus(String json) throws JsonParseException {

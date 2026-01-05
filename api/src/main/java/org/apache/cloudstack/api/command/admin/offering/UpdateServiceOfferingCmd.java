@@ -49,39 +49,39 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
             type = CommandType.UUID,
             entityType = ServiceOfferingResponse.class,
             required = true,
-            description = "the ID of the service offering to be updated")
+            description = "The ID of the service offering to be updated")
     private Long id;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the service offering to be updated")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "The display text of the service offering to be updated")
     private String displayText;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the service offering to be updated")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the service offering to be updated")
     private String serviceOfferingName;
 
-    @Parameter(name = ApiConstants.SORT_KEY, type = CommandType.INTEGER, description = "sort key of the service offering, integer")
+    @Parameter(name = ApiConstants.SORT_KEY, type = CommandType.INTEGER, description = "Sort key of the service offering, integer")
     private Integer sortKey;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.STRING,
-            description = "the ID of the containing domain(s) as comma separated string, public for public offerings",
+            description = "The ID of the containing domain(s) as comma separated string, public for public offerings",
             length = 4096)
     private String domainIds;
 
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.STRING,
-            description = "the ID of the containing zone(s) as comma separated string, all for all zones offerings",
+            description = "The ID of the containing zone(s) as comma separated string, all for all zones offerings",
             since = "4.13")
     private String zoneIds;
 
     @Parameter(name = ApiConstants.STORAGE_TAGS,
             type = CommandType.STRING,
-            description = "comma-separated list of tags for the service offering, tags should match with existing storage pool tags",
+            description = "Comma-separated list of tags for the service offering, tags should match with existing storage pool tags",
             since = "4.16")
     private String storageTags;
 
     @Parameter(name = ApiConstants.HOST_TAGS,
             type = CommandType.STRING,
-            description = "the host tag for this service offering.",
+            description = "The host tag for this service offering.",
             since = "4.16")
     private String hostTags;
 
@@ -100,6 +100,14 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
             description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue",
             since = "4.21.0")
     private Map externalDetails;
+
+    @Parameter(name = ApiConstants.CLEAN_UP_EXTERNAL_DETAILS,
+            type = CommandType.BOOLEAN,
+            description = "Optional boolean field, which indicates if external details should be cleaned up or not " +
+                    "(If set to true, external details removed for this offering, externaldetails field ignored; " +
+                    "if false or not set, no action)",
+            since = "4.22.0")
+    protected Boolean cleanupExternalDetails;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -203,6 +211,10 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
 
     public Map<String, String> getExternalDetails() {
         return convertExternalDetailsToMap(externalDetails);
+    }
+
+    public boolean isCleanupExternalDetails() {
+        return Boolean.TRUE.equals(cleanupExternalDetails);
     }
 
     /////////////////////////////////////////////////////

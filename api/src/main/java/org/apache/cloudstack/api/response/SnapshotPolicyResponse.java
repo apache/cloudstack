@@ -30,31 +30,35 @@ import java.util.Set;
 @EntityReference(value = SnapshotPolicy.class)
 public class SnapshotPolicyResponse extends BaseResponseWithTagInformation {
     @SerializedName("id")
-    @Param(description = "the ID of the snapshot policy")
+    @Param(description = "The ID of the Snapshot policy")
     private String id;
 
     @SerializedName("volumeid")
-    @Param(description = "the ID of the disk volume")
+    @Param(description = "The ID of the disk volume")
     private String volumeId;
 
+    @SerializedName("volumename")
+    @Param(description = "the name of the disk volume")
+    private String volumeName;
+
     @SerializedName("schedule")
-    @Param(description = "time the snapshot is scheduled to be taken.")
+    @Param(description = "Time the Snapshot is scheduled to be taken.")
     private String schedule;
 
     @SerializedName("intervaltype")
-    @Param(description = "the interval type of the snapshot policy")
+    @Param(description = "The interval type of the Snapshot policy")
     private short intervalType;
 
     @SerializedName("maxsnaps")
-    @Param(description = "maximum number of snapshots retained")
+    @Param(description = "Maximum number of Snapshots retained")
     private int maxSnaps;
 
     @SerializedName("timezone")
-    @Param(description = "the time zone of the snapshot policy")
+    @Param(description = "The time zone of the Snapshot policy")
     private String timezone;
 
     @SerializedName(ApiConstants.FOR_DISPLAY)
-    @Param(description = "is this policy for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    @Param(description = "Is this policy for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
 
     @SerializedName(ApiConstants.ZONE)
@@ -85,6 +89,10 @@ public class SnapshotPolicyResponse extends BaseResponseWithTagInformation {
 
     public void setVolumeId(String volumeId) {
         this.volumeId = volumeId;
+    }
+
+    public void setVolumeName(String volumeName) {
+        this.volumeName = volumeName;
     }
 
     public String getSchedule() {

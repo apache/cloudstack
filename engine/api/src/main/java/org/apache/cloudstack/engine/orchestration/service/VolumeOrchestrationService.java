@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.storage.Storage;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -89,11 +90,11 @@ public interface VolumeOrchestrationService {
             "volume.allocation.algorithm",
             "Advanced",
             "random",
-            "Order in which storage pool within a cluster will be considered for volume allocation. The value can be 'random', 'firstfit', 'userdispersing', 'userconcentratedpod_random', 'userconcentratedpod_firstfit', or 'firstfitleastconsumed'.",
+            "Order in which storage pool within a cluster will be considered for volume allocation. The value can be 'random', 'firstfit', 'userdispersing', or 'firstfitleastconsumed'.",
             true,
             ConfigKey.Scope.Global, null, null, null, null, null,
             ConfigKey.Kind.Select,
-            "random,firstfit,userdispersing,userconcentratedpod_random,userconcentratedpod_firstfit,firstfitleastconsumed");
+            "random,firstfit,userdispersing,firstfitleastconsumed");
 
     VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType)
         throws ConcurrentOperationException, StorageUnavailableException;
@@ -182,10 +183,10 @@ public interface VolumeOrchestrationService {
      */
     DiskProfile importVolume(Type type, String name, DiskOffering offering, Long sizeInBytes, Long minIops, Long maxIops,
                              Long zoneId, HypervisorType hypervisorType, VirtualMachine vm, VirtualMachineTemplate template,
-                             Account owner, Long deviceId, Long poolId, String path, String chainInfo);
+                             Account owner, Long deviceId, Long poolId, Storage.StoragePoolType poolType, String path, String chainInfo);
 
     DiskProfile updateImportedVolume(Type type, DiskOffering offering, VirtualMachine vm, VirtualMachineTemplate template,
-                                     Long deviceId, Long poolId, String path, String chainInfo, DiskProfile diskProfile);
+                                     Long deviceId, Long poolId, Storage.StoragePoolType poolType, String path, String chainInfo, DiskProfile diskProfile);
 
     /**
      * Unmanage VM volumes

@@ -396,7 +396,7 @@ export default {
           placeHolder: 'message.error.server',
           required: true,
           display: {
-            primaryStorageProtocol: ['nfs', 'iscsi', 'gluster', 'SMB', 'Linstor']
+            primaryStorageProtocol: ['nfs', 'iscsi', 'gluster', 'SMB', 'Linstor', 'datastorecluster', 'vmfs']
           }
         },
         {
@@ -865,6 +865,9 @@ export default {
       }, {
         id: 'aarch64',
         description: 'ARM 64 bits (aarch64)'
+      }, {
+        id: 's390x',
+        description: 'IBM Z 64 bits (s390x)'
       }],
       storageProviders: [],
       currentStep: null,

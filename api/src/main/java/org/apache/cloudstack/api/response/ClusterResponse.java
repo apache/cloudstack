@@ -34,51 +34,51 @@ public class ClusterResponse extends BaseResponseWithAnnotations {
     private transient long internalId;
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the cluster ID")
+    @Param(description = "The cluster ID")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the cluster name")
+    @Param(description = "The cluster name")
     private String name;
 
     @SerializedName(ApiConstants.POD_ID)
-    @Param(description = "the Pod ID of the cluster")
+    @Param(description = "The Pod ID of the cluster")
     private String podId;
 
     @SerializedName("podname")
-    @Param(description = "the Pod name of the cluster")
+    @Param(description = "The Pod name of the cluster")
     private String podName;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the Zone ID of the cluster")
+    @Param(description = "The Zone ID of the cluster")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "the Zone name of the cluster")
+    @Param(description = "The Zone name of the cluster")
     private String zoneName;
 
     @SerializedName("hypervisortype")
-    @Param(description = "the hypervisor type of the cluster")
+    @Param(description = "The hypervisor type of the cluster")
     private String hypervisorType;
 
     @SerializedName("clustertype")
-    @Param(description = "the type of the cluster")
+    @Param(description = "The type of the cluster")
     private String clusterType;
 
     @SerializedName("allocationstate")
-    @Param(description = "the allocation state of the cluster")
+    @Param(description = "The allocation state of the cluster")
     private String allocationState;
 
     @SerializedName("managedstate")
-    @Param(description = "whether this cluster is managed by cloudstack")
+    @Param(description = "Whether this cluster is managed by Cloudstack")
     private String managedState;
 
     @SerializedName("capacity")
-    @Param(description = "the capacity of the Cluster", responseObject = CapacityResponse.class)
+    @Param(description = "The capacity of the Cluster", responseObject = CapacityResponse.class)
     private List<CapacityResponse> capacities;
 
     @SerializedName("cpuovercommitratio")
-    @Param(description = "The cpu overcommit ratio of the cluster")
+    @Param(description = "The CPU overcommit ratio of the cluster")
     private String cpuovercommitratio;
 
     @SerializedName("memoryovercommitratio")

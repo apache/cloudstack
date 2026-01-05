@@ -1,3 +1,22 @@
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+ -->
+
 # Apache CloudStack Installation basics
 
 This document describes how to develop, build, package and install Apache
@@ -7,9 +26,21 @@ or the developer [wiki](https://cwiki.apache.org/confluence/display/CLOUDSTACK/H
 Apache CloudStack developers use various platforms for development, this guide
 was tested against a CentOS 7 x86_64 setup.
 
-* [Setting up development environment](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Setting+up+CloudStack+Development+Environment) for Apache CloudStack.
-* [Building](https://cwiki.apache.org/confluence/display/CLOUDSTACK/How+to+build+CloudStack) Apache CloudStack.
-* [Appliance based development](https://github.com/rhtyd/monkeybox)
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+- [Setting up Development Environment](#setting-up-development-environment)
+  - [Using jenv and/or pyenv for Version Management](#using-jenv-andor-pyenv-for-version-management)
+- [Getting the Source Code](#getting-the-source-code)
+- [Building](#building)
+- [To bring up CloudStack UI](#to-bring-up-cloudstack-ui)
+- [Building with non-redistributable plugins](#building-with-non-redistributable-plugins)
+- [Packaging and Installation](#packaging-and-installation)
+  - [Debian/Ubuntu](#debianubuntu)
+  - [RHEL/CentOS](#rhelcentos)
+- [Notes](#notes)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## Setting up Development Environment
 

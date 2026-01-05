@@ -40,7 +40,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 
 @APICommand(name = "assignVirtualMachineToBackupOffering",
-        description = "Assigns a VM to a backup offering",
+        description = "Assigns an Instance to a backup offering",
         responseObject = SuccessResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class AssignVirtualMachineToBackupOfferingCmd extends BaseAsyncCmd {
@@ -56,7 +56,7 @@ public class AssignVirtualMachineToBackupOfferingCmd extends BaseAsyncCmd {
             type = CommandType.UUID,
             entityType = UserVmResponse.class,
             required = true,
-            description = "ID of the virtual machine")
+            description = "ID of the  Instance")
     private Long vmId;
 
     @Parameter(name = ApiConstants.BACKUP_OFFERING_ID,
@@ -90,7 +90,7 @@ public class AssignVirtualMachineToBackupOfferingCmd extends BaseAsyncCmd {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add VM to backup offering");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add Instance to backup offering");
             }
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
@@ -109,6 +109,6 @@ public class AssignVirtualMachineToBackupOfferingCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Assigning VM to backup offering ID: " + offeringId;
+        return "Assigning Instance to backup offering ID: " + offeringId;
     }
 }

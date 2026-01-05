@@ -63,7 +63,7 @@ class bash:
         return self.stdout.decode('utf-8').strip('\n')
 
     def getLines(self):
-        return self.stdout.decode('utf-8').strip('\n')
+        return self.stdout.decode('utf-8').strip('\n').split('\n')
 
     def getStderr(self):
         return self.stderr.decode('utf-8').strip('\n')
