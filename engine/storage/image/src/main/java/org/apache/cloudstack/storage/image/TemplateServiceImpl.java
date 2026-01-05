@@ -671,7 +671,7 @@ public class TemplateServiceImpl implements TemplateService {
         TemplateApiResult res = new TemplateApiResult(tmplt);
         if (result.isSuccess()) {
             logger.info("Copied template [{}] to image store [{}].", tmplt.getUniqueName(), tmplt.getDataStore().getName());
-            tmplt.processEvent(Event.OperationSuccessed, result.getAnswer());
+            tmplt.processEvent(Event.OperationSucceeded, result.getAnswer());
             publishTemplateCreation(tmplt);
         } else {
             logger.warn("Failed to copy template [{}] to image store [{}].", tmplt.getUniqueName(), tmplt.getDataStore().getName());
@@ -824,7 +824,7 @@ public class TemplateServiceImpl implements TemplateService {
         }
 
         try {
-            template.processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed);
+            template.processEvent(ObjectInDataStoreStateMachine.Event.OperationSucceeded);
         } catch (Exception e) {
             result.setResult(e.toString());
             if (parentCallback != null) {
@@ -1033,7 +1033,7 @@ public class TemplateServiceImpl implements TemplateService {
         CommandResult result = callback.getResult();
         TemplateObject vo = context.getTemplate();
         if (result.isSuccess()) {
-            vo.processEvent(Event.OperationSuccessed);
+            vo.processEvent(Event.OperationSucceeded);
         } else {
             vo.processEvent(Event.OperationFailed);
         }
@@ -1093,7 +1093,7 @@ public class TemplateServiceImpl implements TemplateService {
                 // no change to existing template_store_ref, will try to re-sync later if other call triggers this sync operation, like copy template
             } else {
                 // this will update install path properly, next time it will not sync anymore.
-                destTemplate.processEvent(Event.OperationSuccessed, result.getAnswer());
+                destTemplate.processEvent(Event.OperationSucceeded, result.getAnswer());
             }
             future.complete(res);
         } catch (Exception e) {
@@ -1273,7 +1273,7 @@ public class TemplateServiceImpl implements TemplateService {
                 res.setResult(result.getResult());
                 destTemplate.processEvent(Event.OperationFailed);
             } else {
-                destTemplate.processEvent(Event.OperationSuccessed, result.getAnswer());
+                destTemplate.processEvent(Event.OperationSucceeded, result.getAnswer());
             }
             future.complete(res);
         } catch (Exception e) {
@@ -1298,7 +1298,7 @@ public class TemplateServiceImpl implements TemplateService {
                 res.setResult(result.getResult());
                 destTemplate.processEvent(Event.OperationFailed);
             } else {
-                destTemplate.processEvent(Event.OperationSuccessed, result.getAnswer());
+                destTemplate.processEvent(Event.OperationSucceeded, result.getAnswer());
             }
             future.complete(res);
         } catch (Exception e) {
@@ -1384,7 +1384,7 @@ public class TemplateServiceImpl implements TemplateService {
         TemplateApiResult dataDiskTemplateResult = new TemplateApiResult((TemplateObject)dataDiskTemplate);
         try {
             if (result.isSuccess()) {
-                dataDiskTemplate.processEvent(Event.OperationSuccessed, result.getAnswer());
+                dataDiskTemplate.processEvent(Event.OperationSucceeded, result.getAnswer());
             } else {
                 dataDiskTemplate.processEvent(Event.OperationFailed);
                 dataDiskTemplateResult.setResult(result.getResult());
