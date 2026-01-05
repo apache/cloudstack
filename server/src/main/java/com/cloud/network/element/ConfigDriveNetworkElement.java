@@ -241,7 +241,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         // Upper layers should save password in db, we do not need to update/create config drive iso at this point
         // Config drive will be created with updated password when VM starts in future
         if (vm != null && vm.getVirtualMachine().getState().equals(VirtualMachine.State.Running)) {
-            throw new CloudRuntimeException("VM should to stopped to reset password");
+            throw new CloudRuntimeException("Instance should to stopped to reset password");
         }
 
         final boolean canHandle = canHandle(network.getTrafficType());
@@ -259,7 +259,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         // Upper layers should save ssh public key in db, we do not need to update/create config drive iso at this point
         // Config drive will be created with updated password when VM starts in future
         if (vm != null && vm.getVirtualMachine().getState().equals(VirtualMachine.State.Running)) {
-            throw new CloudRuntimeException("VM should to stopped to reset password");
+            throw new CloudRuntimeException("Instance should to stopped to reset password");
         }
 
         final boolean canHandle = canHandle(network.getTrafficType());
@@ -286,7 +286,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         // Upper layers should save userdata in db, we do not need to update/create config drive iso at this point
         // Config drive will be created with updated password when VM starts in future
         if (vm != null && vm.getVirtualMachine().getState().equals(VirtualMachine.State.Running)) {
-            throw new CloudRuntimeException("VM should to stopped to reset password");
+            throw new CloudRuntimeException("Instance should to stopped to reset password");
         }
         return canHandle(network.getTrafficType());
     }
@@ -351,7 +351,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
             return false;
         }
         if (Provider.ConfigDrive.equals(userDataUpdateProvider.getProvider())) {
-            logger.trace(String.format("[prepareMigration] for vm: %s", vm.getInstanceName()));
+            logger.trace(String.format("[prepareMigration] for Instance: %s", vm.getInstanceName()));
             try {
                 if (isConfigDriveIsoOnHostCache(vm.getId())) {
                     vm.setConfigDriveLocation(Location.HOST);
@@ -568,7 +568,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
                     ConfigDriveNetworkElement.class, 0L);
         }
 
-        logger.debug("Creating config drive ISO for vm: {} on host: {}", profile, host);
+        logger.debug("Creating config drive ISO for Instance: {} on host: {}", profile, host);
 
         Map<String, String> customUserdataParamMap = getVMCustomUserdataParamMap(profile.getId());
 
@@ -581,11 +581,11 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
         final HandleConfigDriveIsoAnswer answer = (HandleConfigDriveIsoAnswer) agentManager.easySend(host.getId(), configDriveIsoCommand);
         if (answer == null) {
-            throw new CloudRuntimeException(String.format("Unable to get an answer to handle config drive creation for vm: %s on host: %s", profile, host));
+            throw new CloudRuntimeException(String.format("Unable to get an answer to handle config drive creation for Instance: %s on host: %s", profile, host));
         }
 
         if (!answer.getResult()) {
-            throw new ResourceUnavailableException(String.format("Config drive iso creation failed, details: %s",
+            throw new ResourceUnavailableException(String.format("Config drive ISO creation failed, details: %s",
                     answer.getDetails()), ConfigDriveNetworkElement.class, 0L);
         }
 
@@ -597,14 +597,14 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
     private boolean deleteConfigDriveIsoOnHostCache(final VirtualMachine vm, final Long hostId) throws ResourceUnavailableException {
         if (hostId == null) {
-            throw new ResourceUnavailableException("Config drive iso deletion failed, host not available",
+            throw new ResourceUnavailableException("Config drive ISO deletion failed, host not available",
                     ConfigDriveNetworkElement.class, 0L);
         }
 
         final String isoPath = ConfigDrive.createConfigDrivePath(vm.getInstanceName());
         final HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(isoPath, null, null, false, true, false);
         HostVO hostVO = _hostDao.findById(hostId);
-        logger.debug("Deleting config drive ISO for vm: {} on host: {}({})", vm, hostId, hostVO);
+        logger.debug("Deleting config drive ISO for Instance: {} on host: {}({})", vm, hostId, hostVO);
         if (hostVO == null) {
             logger.warn(String.format("Host %s appears to be unavailable, skipping deletion of config-drive ISO on host cache", hostId));
             return false;
@@ -651,11 +651,11 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
         final Long agentId = findAgentId(profile, dest, dataStore);
         if (agentId == null || dataStore == null) {
-            throw new ResourceUnavailableException("Config drive iso creation failed, agent or datastore not available",
+            throw new ResourceUnavailableException("Config drive ISO creation failed, agent or datastore not available",
                     ConfigDriveNetworkElement.class, 0L);
         }
 
-        logger.debug("Creating config drive ISO for vm: {}", profile);
+        logger.debug("Creating config drive ISO for Instance: {}", profile);
 
         Map<String, String> customUserdataParamMap = getVMCustomUserdataParamMap(profile.getId());
 
@@ -671,7 +671,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
         final HandleConfigDriveIsoAnswer answer = (HandleConfigDriveIsoAnswer) agentManager.easySend(agentId, configDriveIsoCommand);
         if (!answer.getResult()) {
-            throw new ResourceUnavailableException(String.format("Config drive iso creation failed, details: %s",
+            throw new ResourceUnavailableException(String.format("Config drive ISO creation failed, details: %s",
                     answer.getDetails()), ConfigDriveNetworkElement.class, 0L);
         }
         profile.setConfigDriveLocation(answer.getConfigDriveLocation());
@@ -735,7 +735,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         Long hostId  = (vm.getHostId() != null) ? vm.getHostId() : vm.getLastHostId();
         Location location = getConfigDriveLocation(vm.getId());
         if (hostId == null) {
-            logger.info("The VM was never booted; no config-drive ISO created for VM {}", vm);
+            logger.info("The Instance was never booted; no config-drive ISO created for Instance {}", vm);
             return true;
         }
         if (location == Location.HOST) {
@@ -759,11 +759,11 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         }
 
         if (agentId == null || dataStore == null) {
-            throw new ResourceUnavailableException("Config drive iso deletion failed, agent or datastore not available",
+            throw new ResourceUnavailableException("Config drive ISO deletion failed, agent or datastore not available",
                     ConfigDriveNetworkElement.class, 0L);
         }
 
-        logger.debug("Deleting config drive ISO for vm: {}", vm);
+        logger.debug("Deleting config drive ISO for Instance: {}", vm);
 
         final String isoPath = ConfigDrive.createConfigDrivePath(vm.getInstanceName());
         final HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(isoPath, null, dataStore.getTO(), false, false, false);
@@ -800,7 +800,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
             profile.addDisk(new DiskTO(dataTO, CONFIGDRIVEDISKSEQ.longValue(), isoPath, Volume.Type.ISO));
         } else {
-            logger.warn("Config drive iso already is in VM profile.");
+            logger.warn("Config drive ISO already is in Instance profile.");
         }
     }
 

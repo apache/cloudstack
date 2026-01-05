@@ -35,7 +35,7 @@ public class MigrationResponse extends BaseResponse {
     private String migrationType;
 
     @SerializedName("success")
-    @Param(description = "true if operation is executed successfully")
+    @Param(description = "True if operation is executed successfully")
     private boolean success;
 
     MigrationResponse() {

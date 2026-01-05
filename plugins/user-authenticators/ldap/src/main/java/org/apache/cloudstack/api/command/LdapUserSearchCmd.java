@@ -41,7 +41,7 @@ public class LdapUserSearchCmd extends BaseListCmd {
     @Inject
     private LdapManager _ldapManager;
 
-    @Parameter(name = "query", type = CommandType.STRING, entityType = LdapUserResponse.class, required = true, description = "query to search using")
+    @Parameter(name = "query", type = CommandType.STRING, entityType = LdapUserResponse.class, required = true, description = "Query to search using")
     private String query;
 
     public LdapUserSearchCmd() {
