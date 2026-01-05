@@ -132,7 +132,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
             VirtualMachine vm = vmProfile.getVirtualMachine();
             HostVO host = hostDao.findById(vm.getHostId());
             if (host == null) {
-                logger.warn("Host is not available. Skipping CPU quota calculation for VM: {}", vm);
+                logger.warn("Host is not available. Skipping setting CPU quota percentage for VM: {}", vm);
                 return;
             }
             logger.debug("Limiting CPU usage for VM: {} on host: {}", vm, host);
