@@ -60,7 +60,18 @@ version="1.0">
 					</span>
 					<p></p>
 					<h1><xsl:value-of select="name"/></h1>
-					<p><xsl:value-of select="description"/></p>
+                    <xsl:if test="sinceVersion">
+                        <h1>(since: <xsl:value-of select="sinceVersion"/>)</h1>
+                        <h2>(since: <xsl:value-of select="sinceVersion"/>)</h2>
+                        <h2>since: <xsl:value-of select="sinceVersion"/></h2>
+                        <h3>(since: <xsl:value-of select="sinceVersion"/>)</h3>
+                    </xsl:if>
+                    <span>
+                        <xsl:value-of select="description"/>
+                        <xsl:if test="sinceVersion">
+                            <xsl:text> </xsl:text>(since: <xsl:value-of select="sinceVersion"/>)
+                        </xsl:if>
+                    </span>
 				</xsl:for-each>
                             </div>
 
@@ -70,7 +81,7 @@ version="1.0">
                             </div>
                         </div>
 			<div class="api_tablepanel">
-				<h2>Request parameters</h2>
+				<h2>Request Parameters</h2>
 				<table class="apitable">
 				<tr class="hed">
 					<td style="width:200px;"><strong>Parameter Name</strong></td>
@@ -81,13 +92,37 @@ version="1.0">
 				<xsl:for-each select="command/command/request/arg">
                                 <tr>
 				    <xsl:if test="required='true'">
-                                    <td style="width:200px;"><strong><xsl:value-of select="name"/></strong></td>
-				    <td style="width:500px;"><strong><xsl:value-of select="description"/></strong></td>
+                                    <td style="width:200px;">
+                                        <strong><xsl:value-of select="name"/></strong>
+                                        <xsl:if test="sinceVersion">
+                                            <xsl:text> </xsl:text>(since: <xsl:value-of select="sinceVersion"/>)
+                                        </xsl:if>
+                                    </td>
+				    <td style="width:500px;">
+                        <strong>
+                            <xsl:value-of select="description"/>
+                            <xsl:if test="sinceVersion">
+                                <xsl:text> </xsl:text>(since: <xsl:value-of select="sinceVersion"/>)
+                            </xsl:if>
+                        </strong>
+                    </td>
                                     <td style="width:180px;"><strong><xsl:value-of select="required"/></strong></td>
 				    </xsl:if>
 				    <xsl:if test="required='false'">
-					<td style="width:200px;"><i><xsl:value-of select="name"/></i></td>
-                                    <td style="width:500px;"><i><xsl:value-of select="description"/></i></td>
+					<td style="width:200px;">
+                        <i><xsl:value-of select="name"/></i>
+                        <xsl:if test="sinceVersion">
+                            <xsl:text> </xsl:text>(since: <xsl:value-of select="sinceVersion"/>)
+                        </xsl:if>
+                    </td>
+                                    <td style="width:500px;">
+                                        <i>
+                                            <xsl:value-of select="description"/>
+                                            <xsl:if test="sinceVersion">
+                                                <xsl:text> </xsl:text>(since: <xsl:value-of select="sinceVersion"/>)
+                                            </xsl:if>
+                                        </i>
+                                    </td>
                                     <td style="width:180px;"><i><xsl:value-of select="required"/></i></td>
 				    </xsl:if>
                                 </tr>
@@ -97,7 +132,7 @@ version="1.0">
 
 
                          <div class="api_tablepanel">
-				<h2>Response Tags</h2>
+				<h2>Response Parameters</h2>
 				<table class="apitable">
 				<tr class="hed">
 					<td style="width:200px;"><strong>Response Name</strong></td>
@@ -106,17 +141,37 @@ version="1.0">
 
 				<xsl:for-each select="command/command/response/arg">
                                 <tr>
-					<td style="width:200px;"><strong><xsl:value-of select="name"/></strong></td>
-                                    <td style="width:500px;"><xsl:value-of select="description"/></td>
+					<td style="width:200px;">
+                        <strong><xsl:value-of select="name"/></strong>
+                        <xsl:if test="sinceVersion">
+                            <xsl:text> </xsl:text>(since: <xsl:value-of select="sinceVersion"/>)
+                        </xsl:if>
+                    </td>
+                                    <td style="width:500px;">
+                                        <xsl:value-of select="description"/>
+                                        <xsl:if test="sinceVersion">
+                                            <xsl:text> </xsl:text>(since: <xsl:value-of select="sinceVersion"/>)
+                                        </xsl:if>
+                                    </td>
 					<xsl:for-each select="./arguments/arg">
 					<tr>
-					<td style="width:180px; padding-left:25px;"><strong><xsl:value-of select="name"/></strong></td>
+					<td style="width:180px; padding-left:25px;">
+                        <strong><xsl:value-of select="name"/></strong>
+                        <xsl:if test="sinceVersion">
+                            <xsl:text> </xsl:text>(since: <xsl:value-of select="sinceVersion"/>)
+                        </xsl:if>
+                    </td>
 					<td style="width:500px;"><xsl:value-of select="description"/></td>
 					</tr>
 						<xsl:for-each select="./arguments/arg">
 						<tr>
 						<td style="width:165px; padding-left:40px;"><xsl:value-of select="name"/></td>
-						<td style="width:500px;"><xsl:value-of select="description"/></td>
+						<td style="width:500px;">
+                            <xsl:value-of select="description"/>
+                            <xsl:if test="sinceVersion">
+                                <xsl:text> </xsl:text>(since: <xsl:value-of select="sinceVersion"/>)
+                            </xsl:if>
+                        </td>
 						</tr>
 					</xsl:for-each>
 					</xsl:for-each>
