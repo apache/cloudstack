@@ -31,6 +31,7 @@
     <bean id="webhookJoinDao" class="org.apache.cloudstack.mom.webhook.dao.WebhookJoinDaoImpl" />
     <bean id="webhookDeliveryDao" class="org.apache.cloudstack.mom.webhook.dao.WebhookDeliveryDaoImpl" />
     <bean id="webhookDeliveryJoinDao" class="org.apache.cloudstack.mom.webhook.dao.WebhookDeliveryJoinDaoImpl" />
+    <bean id="webhookFilterDao" class="org.apache.cloudstack.mom.webhook.dao.WebhookFilterDaoImpl" />
     <bean id="webhookApiService" class="org.apache.cloudstack.mom.webhook.WebhookApiServiceImpl" />
     <bean id="webhookService" class="org.apache.cloudstack.mom.webhook.WebhookServiceImpl" />
 
