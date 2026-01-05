@@ -127,6 +127,32 @@ public interface KMSManager extends Manager, Configurable {
             ConfigKey.Scope.Global
     );
 
+    /**
+     * Global: batch size for background rewrap operations
+     */
+    ConfigKey<Integer> KMSRewrapBatchSize = new ConfigKey<>(
+            "Advanced",
+            Integer.class,
+            "kms.rewrap.batch.size",
+            "50",
+            "Number of wrapped keys to rewrap per batch in background job",
+            true,
+            ConfigKey.Scope.Global
+    );
+
+    /**
+     * Global: interval for background rewrap job
+     */
+    ConfigKey<Long> KMSRewrapIntervalMs = new ConfigKey<>(
+            "Advanced",
+            Long.class,
+            "kms.rewrap.interval.ms",
+            "300000",
+            "Interval in milliseconds between background rewrap job executions (default: 5 minutes)",
+            true,
+            ConfigKey.Scope.Global
+    );
+
     // ==================== Provider Management ====================
 
     /**
@@ -161,63 +187,6 @@ public interface KMSManager extends Manager, Configurable {
      */
     boolean isKmsEnabled(Long zoneId);
 
-    // ==================== KEK Management ====================
-
-    /**
-     * Create a new KEK for a zone and purpose
-     *
-     * @param zoneId  the zone ID
-     * @param purpose the key purpose
-     * @param label   optional custom label (null for auto-generated)
-     * @param keyBits key size in bits
-     * @return the KEK identifier
-     * @throws KMSException if creation fails
-     */
-    String createKek(Long zoneId, KeyPurpose purpose, String label, int keyBits) throws KMSException;
-
-    /**
-     * Delete a KEK (WARNING: makes all DEKs wrapped by it unrecoverable)
-     *
-     * @param zoneId the zone ID
-     * @param kekId  the KEK identifier
-     * @throws KMSException if deletion fails
-     */
-    void deleteKek(Long zoneId, String kekId) throws KMSException;
-
-    /**
-     * List KEKs for a zone and purpose
-     *
-     * @param zoneId  the zone ID
-     * @param purpose the purpose filter (null for all)
-     * @return list of KEK identifiers
-     * @throws KMSException if listing fails
-     */
-    List<String> listKeks(Long zoneId, KeyPurpose purpose) throws KMSException;
-
-    /**
-     * Check if a KEK is available
-     *
-     * @param zoneId the zone ID
-     * @param kekId  the KEK identifier
-     * @return true if available
-     * @throws KMSException if check fails
-     */
-    boolean isKekAvailable(Long zoneId, String kekId) throws KMSException;
-
-    /**
-     * Rotate a KEK (create new one and rewrap all DEKs)
-     *
-     * @param zoneId      the zone ID
-     * @param purpose     the purpose
-     * @param oldKekLabel the old KEK label (must be specified)
-     * @param newKekLabel the new KEK label (null for auto-generated)
-     * @param keyBits     the new KEK size
-     * @return the new KEK identifier
-     * @throws KMSException if rotation fails
-     */
-    String rotateKek(Long zoneId, KeyPurpose purpose, String oldKekLabel,
-            String newKekLabel, int keyBits) throws KMSException;
-
     // ==================== DEK Operations ====================
 
     /**
@@ -232,15 +201,6 @@ public interface KMSManager extends Manager, Configurable {
     byte[] unwrapVolumeKey(WrappedKey wrappedKey, Long zoneId) throws KMSException;
 
     // ==================== Health & Status ====================
-
-    /**
-     * Check KMS provider health for a zone
-     *
-     * @param zoneId the zone ID (null for global)
-     * @return true if healthy
-     * @throws KMSException if health check fails critically
-     */
-    boolean healthCheck(Long zoneId) throws KMSException;
 
     // ==================== User KEK Management ====================
 
@@ -275,19 +235,10 @@ public interface KMSManager extends Manager, Configurable {
                                           KeyPurpose purpose, KMSKey.State state);
 
     /**
-     * Get a KMS key by UUID (with permission check)
-     *
-     * @param uuid           the key UUID
-     * @param callerAccountId the caller's account ID
-     * @return the KMS key, or null if not found or no permission
-     */
-    KMSKey getUserKMSKey(String uuid, Long callerAccountId);
-
-    /**
      * Check if caller has permission to use a KMS key
      *
      * @param callerAccountId the caller's account ID
-     * @param keyUuid         the key UUID
+     * @param key         the KMS key
      * @return true if caller has permission
      */
     boolean hasPermission(Long callerAccountId, KMSKey key);
@@ -305,7 +256,7 @@ public interface KMSManager extends Manager, Configurable {
     /**
      * Generate and wrap a DEK using a specific KMS key UUID
      *
-     * @param kekUuid        the KMS key UUID
+     * @param kmsKey        the KMS key
      * @param callerAccountId the caller's account ID
      * @return wrapped key ready for database storage
      * @throws KMSException if operation fails
@@ -365,17 +316,6 @@ public interface KMSManager extends Manager, Configurable {
     String rotateKMSKey(RotateKMSKeyCmd cmd) throws KMSException;
 
     /**
-     * Gradually rewrap all wrapped keys for a KMS key to use new KEK version
-     *
-     * @param kmsKeyId KMS key ID
-     * @param newKekVersionId New active KEK version ID
-     * @param batchSize Number of keys to process per batch
-     * @return Number of keys successfully rewrapped
-     * @throws KMSException if rewrap fails
-     */
-    int rewrapWrappedKeysForKMSKey(Long kmsKeyId, Long newKekVersionId, int batchSize) throws KMSException;
-
-    /**
      * Migrate passphrase-based volumes to KMS encryption
      *
      * @param cmd the migrate command with all parameters
@@ -383,4 +323,12 @@ public interface KMSManager extends Manager, Configurable {
      * @throws KMSException if migration fails
      */
     int migrateVolumesToKMS(MigrateVolumesToKMSCmd cmd) throws KMSException;
+
+    /**
+     * Delete all KMS keys owned by an account (called during account cleanup)
+     *
+     * @param accountId the account ID
+     * @return true if all keys were successfully deleted
+     */
+    boolean deleteKMSKeysByAccountId(Long accountId);
 }

@@ -63,6 +63,16 @@ public interface KMSWrappedKeyDao extends GenericDao<KMSWrappedKeyVO, Long> {
     List<KMSWrappedKeyVO> listByKekVersionId(Long kekVersionId);
 
     /**
+     * List wrapped keys using a specific KEK version with pagination limit
+     * (useful for batch processing in background jobs)
+     *
+     * @param kekVersionId the KEK version ID (FK to kms_kek_versions)
+     * @param limit maximum number of keys to return
+     * @return list of wrapped keys (limited to specified count)
+     */
+    List<KMSWrappedKeyVO> listByKekVersionId(Long kekVersionId, int limit);
+
+    /**
      * List wrapped keys for a KMS key that need re-encryption (not using specified version)
      *
      * @param kmsKeyId the KMS key ID

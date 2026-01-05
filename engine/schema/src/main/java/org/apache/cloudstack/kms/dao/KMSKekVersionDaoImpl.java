@@ -76,4 +76,11 @@ public class KMSKekVersionDaoImpl extends GenericDaoBase<KMSKekVersionVO, Long> 
         sc.setParameters("kekLabel", kekLabel);
         return findOneBy(sc);
     }
+
+    @Override
+    public List<KMSKekVersionVO> findByStatus(KMSKekVersionVO.Status status) {
+        SearchCriteria<KMSKekVersionVO> sc = allFieldSearch.create();
+        sc.setParameters("status", status);
+        return listBy(sc);
+    }
 }
