@@ -684,6 +684,11 @@ public class TemplateServiceImpl implements TemplateService {
                 continue;
             }
 
+            Map<String, TemplateProp> templates = listTemplate(store);
+            if (templates == null || !templates.containsKey(tmplt.getUniqueName())) {
+                continue;
+            }
+
             if (tmpl.getInstallPath() == null) {
                 logger.debug("Template [{}] found in image store [{}] but install path is null. Skipping.",
                         tmplt.getUniqueName(), store.getName());
@@ -697,24 +702,14 @@ public class TemplateServiceImpl implements TemplateService {
     private boolean searchAndCopyWithinZone(VMTemplateVO tmplt, DataStore destStore) {
         Long destZoneId = destStore.getScope().getScopeId();
         List<DataStore> storesInSameZone = _storeMgr.getImageStoresByZoneIds(destZoneId);
-        for (DataStore sourceStore : storesInSameZone) {
-            Map<String, TemplateProp> existingTemplatesInSourceStore = listTemplate(sourceStore);
-            if (existingTemplatesInSourceStore == null ||
-                    !existingTemplatesInSourceStore.containsKey(tmplt.getUniqueName())) {
-                logger.debug("Template [{}] does not exist on image store [{}]; searching another.", tmplt.getUniqueName(), sourceStore.getName());
-                continue;
-            }
 
-            TemplateObject sourceTmpl = (TemplateObject) _templateFactory.getTemplate(tmplt.getId(), sourceStore);
-            if (sourceTmpl.getInstallPath() == null) {
-                logger.warn("Cannot copy template [{}] from image store [{}]; install path is null.", tmplt.getUniqueName(), sourceStore.getName());
-                continue;
-            }
-
-            storageOrchestrator.orchestrateTemplateCopyToImageStore(sourceTmpl, destStore);
-            return true;
+        TemplateObject sourceTmpl = findUsableTemplate(tmplt, storesInSameZone);
+        if (sourceTmpl == null) {
+            return false;
         }
-        return false;
+
+        storageOrchestrator.orchestrateTemplateCopyToImageStore(sourceTmpl, destStore);
+        return true;
     }
 
     private boolean copyTemplateAcrossZones(DataStore destStore, TemplateObject sourceTmpl) {

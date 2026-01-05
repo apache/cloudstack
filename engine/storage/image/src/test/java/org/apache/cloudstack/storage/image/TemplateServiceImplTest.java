@@ -305,6 +305,8 @@ public class TemplateServiceImplTest {
         Mockito.when(storeWithNullPath.getName()).thenReturn("store-null");
 
         DataStore storeWithValidPath = Mockito.mock(DataStore.class);
+        Mockito.when(storeWithValidPath.getName()).thenReturn("store-valid");
+
         TemplateObject tmplWithNullPath = Mockito.mock(TemplateObject.class);
         Mockito.when(tmplWithNullPath.getInstallPath()).thenReturn(null);
 
@@ -313,6 +315,12 @@ public class TemplateServiceImplTest {
 
         Mockito.doReturn(tmplWithNullPath).when(templateDataFactoryMock).getTemplate(10L, storeWithNullPath);
         Mockito.doReturn(tmplWithValidPath).when(templateDataFactoryMock).getTemplate(10L, storeWithValidPath);
+
+        Map<String, TemplateProp> templates = new HashMap<>();
+        templates.put("test-template", Mockito.mock(TemplateProp.class));
+
+        Mockito.doReturn(templates).when(templateService).listTemplate(storeWithNullPath);
+        Mockito.doReturn(templates).when(templateService).listTemplate(storeWithValidPath);
 
         List<DataStore> imageStores = List.of(storeWithNullPath, storeWithValidPath);
 
