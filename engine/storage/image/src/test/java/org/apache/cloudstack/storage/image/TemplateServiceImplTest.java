@@ -207,6 +207,7 @@ public class TemplateServiceImplTest {
         Mockito.doReturn(scopeMock).when(destStoreMock).getScope();
         Mockito.doReturn(1L).when(scopeMock).getScopeId();
         Mockito.doReturn(100L).when(tmpltMock).getId();
+        Mockito.doReturn("unique-name").when(tmpltMock).getUniqueName();
         Mockito.doReturn(List.of(sourceStoreMock)).when(dataStoreManagerMock).getImageStoresByZoneIds(1L);
         Mockito.doReturn(null).when(templateService).listTemplate(sourceStoreMock);
         Mockito.doReturn(List.of(1L, 2L)).when(_dcDao).listAllIds();
@@ -215,7 +216,8 @@ public class TemplateServiceImplTest {
         Mockito.doReturn(List.of(otherZoneStoreMock)).when(dataStoreManagerMock).getImageStoresByZoneIds(2L);
 
         Map<String, TemplateProp> templatesInOtherZone = new HashMap<>();
-        templatesInOtherZone.put(tmpltMock.getUniqueName(), tmpltPropMock);
+        templatesInOtherZone.put("unique-name", tmpltPropMock);
+        Mockito.doReturn(templatesInOtherZone).when(templateService).listTemplate(otherZoneStoreMock);
 
         TemplateObject sourceTmplMock = Mockito.mock(TemplateObject.class);
         Mockito.doReturn(sourceTmplMock).when(templateDataFactoryMock).getTemplate(100L, otherZoneStoreMock);
@@ -235,6 +237,7 @@ public class TemplateServiceImplTest {
         Mockito.doReturn(scopeMock).when(destStoreMock).getScope();
         Mockito.doReturn(1L).when(scopeMock).getScopeId();
         Mockito.doReturn(100L).when(tmpltMock).getId();
+        Mockito.doReturn("unique-name").when(tmpltMock).getUniqueName();
         Mockito.doReturn(List.of(1L, 2L)).when(_dcDao).listAllIds();
         Mockito.doReturn(List.of()).when(dataStoreManagerMock).getImageStoresByZoneIds(1L);
 
@@ -242,7 +245,8 @@ public class TemplateServiceImplTest {
         Mockito.doReturn(List.of(otherZoneStoreMock)).when(dataStoreManagerMock).getImageStoresByZoneIds(2L);
 
         Map<String, TemplateProp> templates = new HashMap<>();
-        templates.put(tmpltMock.getUniqueName(), tmpltPropMock);
+        templates.put("unique-name", tmpltPropMock);
+        Mockito.doReturn(templates).when(templateService).listTemplate(otherZoneStoreMock);
 
         TemplateObject sourceTmplMock = Mockito.mock(TemplateObject.class);
         Mockito.doReturn(sourceTmplMock).when(templateDataFactoryMock).getTemplate(100L, otherZoneStoreMock);
@@ -260,6 +264,7 @@ public class TemplateServiceImplTest {
         Mockito.doReturn(scopeMock).when(destStoreMock).getScope();
         Mockito.doReturn(1L).when(scopeMock).getScopeId();
         Mockito.doReturn(100L).when(tmpltMock).getId();
+        Mockito.doReturn("unique-name").when(tmpltMock).getUniqueName();
         Mockito.doReturn(List.of(1L, 2L)).when(_dcDao).listAllIds();
         Mockito.doReturn(List.of()).when(dataStoreManagerMock).getImageStoresByZoneIds(1L);
 
@@ -267,7 +272,9 @@ public class TemplateServiceImplTest {
         Mockito.doReturn(List.of(otherZoneStoreMock)).when(dataStoreManagerMock).getImageStoresByZoneIds(2L);
 
         Map<String, TemplateProp> templates = new HashMap<>();
-        templates.put(tmpltMock.getUniqueName(), tmpltPropMock);
+        templates.put("unique-name", tmpltPropMock);
+
+        Mockito.doReturn(templates).when(templateService).listTemplate(otherZoneStoreMock);
 
         TemplateObject sourceTmplMock = Mockito.mock(TemplateObject.class);
         Mockito.doReturn(sourceTmplMock).when(templateDataFactoryMock).getTemplate(100L, otherZoneStoreMock);
@@ -305,8 +312,6 @@ public class TemplateServiceImplTest {
         Mockito.when(storeWithNullPath.getName()).thenReturn("store-null");
 
         DataStore storeWithValidPath = Mockito.mock(DataStore.class);
-        Mockito.when(storeWithValidPath.getName()).thenReturn("store-valid");
-
         TemplateObject tmplWithNullPath = Mockito.mock(TemplateObject.class);
         Mockito.when(tmplWithNullPath.getInstallPath()).thenReturn(null);
 

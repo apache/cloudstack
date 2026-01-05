@@ -679,16 +679,13 @@ public class TemplateServiceImpl implements TemplateService {
 
     protected TemplateObject findUsableTemplate(VMTemplateVO tmplt, List<DataStore> imageStores) {
         for (DataStore store : imageStores) {
-            TemplateObject tmpl = (TemplateObject) _templateFactory.getTemplate(tmplt.getId(), store);
-            if (tmpl == null) {
-                continue;
-            }
 
             Map<String, TemplateProp> templates = listTemplate(store);
             if (templates == null || !templates.containsKey(tmplt.getUniqueName())) {
                 continue;
             }
 
+            TemplateObject tmpl = (TemplateObject) _templateFactory.getTemplate(tmplt.getId(), store);
             if (tmpl.getInstallPath() == null) {
                 logger.debug("Template [{}] found in image store [{}] but install path is null. Skipping.",
                         tmplt.getUniqueName(), store.getName());
