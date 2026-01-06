@@ -22,15 +22,15 @@ import com.cloud.serializer.Param;
 
 public class StorageTagResponse extends BaseResponse {
     @SerializedName("id")
-    @Param(description = "the ID of the storage tag")
+    @Param(description = "The ID of the storage tag")
     private String id;
 
     @SerializedName("poolid")
-    @Param(description = "the pool ID of the storage tag")
+    @Param(description = "The pool ID of the storage tag")
     private long poolId;
 
     @SerializedName("name")
-    @Param(description = "the name of the storage tag")
+    @Param(description = "The name of the storage tag")
     private String name;
 
     public String getId() {
