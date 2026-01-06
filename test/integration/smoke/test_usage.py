@@ -40,6 +40,7 @@ from marvin.lib.base import (Account,
 from marvin.lib.common import (get_zone,
                                get_domain,
                                get_suitable_test_template,
+                               list_storage_pools,
                                find_storage_pool_type)
 
 
@@ -611,17 +612,17 @@ class TestVolumeUsage(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to stop instance: %s" % e)
 
-        volume_response = Volume.list(
+        data_volume_response = Volume.list(
             self.apiclient,
             virtualmachineid=self.virtual_machine.id,
             type='DATADISK',
             listall=True)
         self.assertEqual(
-            isinstance(volume_response, list),
+            isinstance(data_volume_response, list),
             True,
             "Check for valid list volumes response"
         )
-        data_volume = volume_response[0]
+        data_volume = data_volume_response[0]
 
         # Detach data Disk
         self.debug("Detaching volume ID: %s VM with ID: %s" % (
@@ -769,7 +770,25 @@ class TestVolumeUsage(cloudstackTestCase):
             "Running",
             "VM state should be running after deployment"
         )
-        self.virtual_machine.attach_volume(self.apiclient,volume_uploaded)
+        root_volume_response = Volume.list(
+            self.apiclient,
+            virtualmachineid=self.virtual_machine.id,
+            type='ROOT',
+            listall=True)
+        root_volume = root_volume_response[0]
+        rool_volume_pool_response = list_storage_pools(
+            self.apiclient,
+            id=root_volume.storageid
+        )
+        rool_volume_pool = rool_volume_pool_response[0]
+        try:
+            self.virtual_machine.attach_volume(self.apiclient,volume_uploaded)
+        except Exception as e:
+            self.debug("Exception %s: " % e)
+            if rool_volume_pool.type.lower() == "powerflex" and "this operation is unsupported on storage pool type PowerFlex" in str(e):
+               return
+            self.fail(e)
+
         self.debug("select type from usage_event where offering_id = 6 and volume_id = '%s';"
                    % volume_id)
 

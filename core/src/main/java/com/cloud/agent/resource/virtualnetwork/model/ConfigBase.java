@@ -39,6 +39,7 @@ public abstract class ConfigBase {
     public static final String MONITORSERVICE = "monitorservice";
     public static final String DHCP_CONFIG = "dhcpconfig";
     public static final String LOAD_BALANCER = "loadbalancer";
+    public final static String BGP_PEERS = "bgppeers";
 
     private String type = UNKNOWN;
 

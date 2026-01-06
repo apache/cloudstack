@@ -24,6 +24,7 @@ import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
 import org.apache.cloudstack.vm.schedule.VMSchedule;
 import org.apache.cloudstack.vm.schedule.VMScheduleManager;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,8 +32,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-
-import java.security.InvalidParameterException;
 
 public class UpdateVMScheduleCmdTest {
     @Mock
@@ -42,9 +41,16 @@ public class UpdateVMScheduleCmdTest {
     @InjectMocks
     private UpdateVMScheduleCmd updateVMScheduleCmd = new UpdateVMScheduleCmd();
 
+    private AutoCloseable closeable;
+
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     /**
@@ -63,11 +69,11 @@ public class UpdateVMScheduleCmdTest {
     /**
      * given: "We have a VMScheduleManager and UpdateVMScheduleCmd"
      * when: "UpdateVMScheduleCmd is executed with an invalid parameter"
-     * then: "an InvalidParameterException is thrown"
+     * then: "an InvalidParameterValueException is thrown"
      */
-    @Test(expected = InvalidParameterException.class)
-    public void testInvalidParameterException() {
-        Mockito.when(vmScheduleManager.updateSchedule(updateVMScheduleCmd)).thenThrow(InvalidParameterException.class);
+    @Test(expected = InvalidParameterValueException.class)
+    public void testInvalidParameterValueException() {
+        Mockito.when(vmScheduleManager.updateSchedule(updateVMScheduleCmd)).thenThrow(InvalidParameterValueException.class);
         updateVMScheduleCmd.execute();
     }
 
@@ -91,7 +97,7 @@ public class UpdateVMScheduleCmdTest {
     /**
      * given: "We have an EntityManager and UpdateVMScheduleCmd"
      * when: "UpdateVMScheduleCmd.getEntityOwnerId is executed for a VM Schedule which doesn't exist"
-     * then: "an InvalidParameterException is thrown"
+     * then: "an InvalidParameterValueException is thrown"
      */
     @Test(expected = InvalidParameterValueException.class)
     public void testFailureGetEntityOwnerId() {

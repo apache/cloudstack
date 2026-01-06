@@ -20,7 +20,6 @@ package org.apache.cloudstack.api;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.PodResponse;
@@ -38,7 +37,6 @@ import com.cloud.exception.ResourceUnavailableException;
 
 public class AddBaremetalPxeCmd extends BaseAsyncCmd {
     private static final String s_name = "addbaremetalpxeresponse";
-    public static final Logger s_logger = Logger.getLogger(AddBaremetalPxeCmd.class);
 
     @Inject
     BaremetalPxeManager pxeMgr;
@@ -49,7 +47,7 @@ public class AddBaremetalPxeCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = PhysicalNetworkResponse.class,
                required = true,
-               description = "the Physical Network ID")
+               description = "The Physical Network ID")
     private Long physicalNetworkId;
 
     @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "Pod Id")
@@ -58,7 +56,7 @@ public class AddBaremetalPxeCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "URL of the external pxe device")
     private String url;
 
-    @Parameter(name = ApiConstants.PXE_SERVER_TYPE, type = CommandType.STRING, required = true, description = "type of pxe device")
+    @Parameter(name = ApiConstants.PXE_SERVER_TYPE, type = CommandType.STRING, required = true, description = "Type of pxe device")
     private String deviceType;
 
     @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "Credentials to reach external pxe device")
@@ -86,7 +84,7 @@ public class AddBaremetalPxeCmd extends BaseAsyncCmd {
             rsp.setResponseName(getCommandName());
             this.setResponseObject(rsp);
         } catch (Exception e) {
-            s_logger.warn("Unable to add external pxe server with url: " + getUrl(), e);
+            logger.warn("Unable to add external pxe server with url: " + getUrl(), e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }

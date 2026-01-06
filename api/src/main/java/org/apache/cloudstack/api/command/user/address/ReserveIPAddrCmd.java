@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command.user.address;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -43,7 +42,7 @@ import com.cloud.projects.Project;
 import com.cloud.user.Account;
 
 @APICommand(name = "reserveIpAddress",
-        description = "Reserve a public IP to an account.",
+        description = "Reserve a public IP to an Account.",
         since = "4.17",
         responseObject = IPAddressResponse.class,
         responseView = ResponseView.Restricted,
@@ -51,7 +50,6 @@ import com.cloud.user.Account;
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ReserveIPAddrCmd extends BaseCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(ReserveIPAddrCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -59,24 +57,24 @@ public class ReserveIPAddrCmd extends BaseCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.ACCOUNT,
             type = CommandType.STRING,
-            description = "the account to reserve with this IP address")
+            description = "The Account to reserve with this IP address")
     private String accountName;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.UUID,
             entityType = DomainResponse.class,
-            description = "the ID of the domain to reserve with this IP address")
+            description = "The ID of the domain to reserve with this IP address")
     private Long domainId;
 
     @Parameter(name = ApiConstants.PROJECT_ID,
             type = CommandType.UUID,
             entityType = ProjectResponse.class,
-            description = "the ID of the project to reserve with this IP address")
+            description = "The ID of the project to reserve with this IP address")
     private Long projectId;
 
     @Parameter(name = ApiConstants.FOR_DISPLAY,
             type = CommandType.BOOLEAN,
-            description = "an optional field, whether to the display the IP to the end user or not",
+            description = "An optional field, whether to the display the IP to the end User or not",
             authorized = {RoleType.Admin})
     private Boolean display;
 
@@ -84,7 +82,7 @@ public class ReserveIPAddrCmd extends BaseCmd implements UserCmd {
             type = CommandType.UUID,
             entityType = IPAddressResponse.class,
             required = true,
-            description = "the ID of the public IP address to reserve")
+            description = "The ID of the public IP address to reserve")
     private Long id;
 
     /////////////////////////////////////////////////////

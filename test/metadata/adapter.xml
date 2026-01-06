@@ -18,9 +18,9 @@ under the License.
 -->
 <regression>
 	<globalparam>
-		
+
 	<!-- PARAMETERS USED BY SANITY TEST, HAVE TO BE SET -->
-	
+
 		<param description="Management server ip address">
 			<name>192.168.131.168</name>
 			<variable>hostip</variable>
@@ -53,7 +53,7 @@ under the License.
 			<name>204</name>
 			<variable>globalnetworkid</variable>
 		</param>
-		
+
 	<!-- PARAMETERS USED BY OTHER TESTS -->
 		<param>
 			<name>192.168.131.168</name>
@@ -152,19 +152,19 @@ under the License.
 			<variable>flatnetworkdiskofferingid</variable>
 		</param>
 	</globalparam>
-	
+
 
 	<test>
 		<filename>../metadata/func/sanity.xml</filename>
 		<testname>SANITY TEST</testname>
 	</test>
 
-	<test> 
+	<test>
 		<class>com.cloud.test.regression.SanityTest</class>
 		<filename>../metadata/func/regression.xml</filename>
 		<testname>REGRESSION TEST</testname>
 	</test>
-	
+
 	<test>
 		<filename>../metadata/func/templatedwnldstress.xml</filename>
 		<testname>TEMPLATE DOWNLOAD STRESS TEST</testname>
@@ -173,8 +173,8 @@ under the License.
 <!--		<filename>../metadata/func/static_nat.xml</filename> -->
 <!--		<testname>1-1 NAT FEATURE</testname>-->
 <!--	</test>-->
-	
-	
+
+
 <!--	<test>-->
 <!--		<filename>../metadata/func/ha.xml</filename>-->
 <!--		<testname>HA TEST - BASIC CASES ONLY</testname>-->
@@ -272,7 +272,7 @@ under the License.
 <!--			<filename>../metadata/func/flatnetwork.xml</filename>-->
 <!--			<testname>Flat network test</testname>-->
 <!--		</test>-->
-	
+
 
 <!--	<test>
 		<class>com.cloud.test.regression.DelegatedAdminTest</class>
@@ -330,7 +330,7 @@ under the License.
 		<filename>../metadata/delegatedAdmin/delegated_admin_verify_part2.xml</filename>
 		<filename>../metadata/delegatedAdmin/delegated_admin_cleanup.xml</filename> -->
 <!--	</test> -->
-	
+
 
 
 </regression>

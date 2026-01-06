@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command.user.nat;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -38,7 +37,6 @@ import com.cloud.network.IpAddress;
 @APICommand(name = "disableStaticNat", description = "Disables static rule for given IP address", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DisableStaticNatCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DisableStaticNatCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -48,7 +46,7 @@ public class DisableStaticNatCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = IPAddressResponse.class,
                required = true,
-               description = "the public IP address ID for which static NAT feature is being disabled")
+               description = "The public IP address ID for which static NAT feature is being disabled")
     private Long ipAddressId;
 
     /////////////////////////////////////////////////////

@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.address;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -36,17 +35,16 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IpAddress;
 import com.cloud.user.Account;
 
-@APICommand(name = "disassociateIpAddress", description = "Disassociates an IP address from the account.", responseObject = SuccessResponse.class,
+@APICommand(name = "disassociateIpAddress", description = "Disassociates an IP address from the Account.", responseObject = SuccessResponse.class,
  requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, entityType = { IpAddress.class })
 public class DisassociateIPAddrCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DisassociateIPAddrCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = IPAddressResponse.class, description = "the ID of the public IP address"
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = IPAddressResponse.class, description = "The ID of the public IP address"
         + " to disassociate. Mutually exclusive with the ipaddress parameter")
     private Long id;
 

@@ -31,7 +31,6 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.db.UpdateBuilder;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementVO;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import java.sql.PreparedStatement;
@@ -41,7 +40,6 @@ import java.util.List;
 @DB
 @Component
 public class OutOfBandManagementDaoImpl extends GenericDaoBase<OutOfBandManagementVO, Long> implements OutOfBandManagementDao {
-    private static final Logger LOG = Logger.getLogger(OutOfBandManagementDaoImpl.class);
 
     private SearchBuilder<OutOfBandManagementVO> HostSearch;
     private SearchBuilder<OutOfBandManagementVO> ManagementServerSearch;
@@ -109,7 +107,7 @@ public class OutOfBandManagementDaoImpl extends GenericDaoBase<OutOfBandManageme
                     pstmt.executeUpdate();
                 } catch (SQLException e) {
                     txn.rollback();
-                    LOG.warn("Failed to expire ownership for out-of-band management server id: " + resource);
+                    logger.warn("Failed to expire ownership for out-of-band management server id: " + resource);
                 }
             }
         });
@@ -119,8 +117,8 @@ public class OutOfBandManagementDaoImpl extends GenericDaoBase<OutOfBandManageme
     public void expireServerOwnership(long serverId) {
         final String resetOwnerSql = "UPDATE oobm set mgmt_server_id=NULL, power_state=NULL where mgmt_server_id=?";
         executeExpireOwnershipSql(resetOwnerSql, serverId);
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Expired out-of-band management ownership for hosts owned by management server id:" + serverId);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Expired out-of-band management ownership for hosts owned by management server id:" + serverId);
         }
     }
 
@@ -128,8 +126,8 @@ public class OutOfBandManagementDaoImpl extends GenericDaoBase<OutOfBandManageme
     public boolean updateState(OutOfBandManagement.PowerState oldStatus, OutOfBandManagement.PowerState.Event event, OutOfBandManagement.PowerState newStatus, OutOfBandManagement vo, Object data) {
         OutOfBandManagementVO oobmHost = (OutOfBandManagementVO) vo;
         if (oobmHost == null) {
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("Invalid out-of-band management host view object provided");
+            if (logger.isTraceEnabled()) {
+                logger.trace("Invalid out-of-band management host view object provided");
             }
             return false;
         }
@@ -156,8 +154,8 @@ public class OutOfBandManagementDaoImpl extends GenericDaoBase<OutOfBandManageme
         ub.set(oobmHost, MsIdAttr, newManagementServerId);
 
         int result = update(ub, sc, null);
-        if (LOG.isDebugEnabled() && result <= 0) {
-            LOG.debug(String.format("Failed to update out-of-band management power state from:%s to:%s due to event:%s for the host id:%d", oldStatus, newStatus, event, oobmHost.getHostId()));
+        if (logger.isDebugEnabled() && result <= 0) {
+            logger.debug(String.format("Failed to update out-of-band management power state from:%s to:%s due to event:%s for the host id:%d", oldStatus, newStatus, event, oobmHost.getHostId()));
         }
         return result > 0;
     }

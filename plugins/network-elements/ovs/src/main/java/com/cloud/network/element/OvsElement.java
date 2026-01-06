@@ -27,7 +27,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupOvsCommand;
@@ -102,7 +101,6 @@ StaticNatServiceProvider, IpDeployer {
     @Inject
     NetworkTopologyContext _networkTopologyContext;
 
-    private static final Logger s_logger = Logger.getLogger(OvsElement.class);
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
     @Override
@@ -116,22 +114,19 @@ StaticNatServiceProvider, IpDeployer {
     }
 
     protected boolean canHandle(final Network network, final Service service) {
-        s_logger.debug("Checking if OvsElement can handle service "
-                + service.getName() + " on network " + network.getDisplayText());
+        logger.debug(String.format("Checking if OvsElement can handle service %s on network %s", service.getName(), network));
         if (network.getBroadcastDomainType() != BroadcastDomainType.Vswitch) {
             return false;
         }
 
         if (!_networkModel.isProviderForNetwork(getProvider(), network.getId())) {
-            s_logger.debug("OvsElement is not a provider for network "
-                    + network.getDisplayText());
+            logger.debug(String.format("OvsElement is not a provider for network %s", network));
             return false;
         }
 
         if (!_ntwkSrvcDao.canProviderSupportServiceInNetwork(network.getId(),
                 service, Network.Provider.Ovs)) {
-            s_logger.debug("OvsElement can't provide the " + service.getName()
-                    + " service on network " + network.getDisplayText());
+            logger.debug(String.format("OvsElement can't provide the %s service on network %s", service.getName(), network));
             return false;
         }
 
@@ -151,9 +146,7 @@ StaticNatServiceProvider, IpDeployer {
             final DeployDestination dest, final ReservationContext context)
                     throws ConcurrentOperationException, ResourceUnavailableException,
                     InsufficientCapacityException {
-        s_logger.debug("entering OvsElement implement function for network "
-                + network.getDisplayText() + " (state " + network.getState()
-                + ")");
+        logger.debug(String.format("entering OvsElement implement function for network %s (state %s)", network, network.getState()));
 
         if (!canHandle(network, Service.Connectivity)) {
             return false;
@@ -249,7 +242,7 @@ StaticNatServiceProvider, IpDeployer {
     @Override
     public boolean verifyServicesCombination(final Set<Service> services) {
         if (!services.contains(Service.Connectivity)) {
-            s_logger.warn("Unable to provide services without Connectivity service enabled for this element");
+            logger.warn("Unable to provide services without Connectivity service enabled for this element");
             return false;
         }
 
@@ -439,9 +432,8 @@ StaticNatServiceProvider, IpDeployer {
             final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
                     network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
-                s_logger.debug("Virtual router element doesn't need to associate ip addresses on the backend; virtual "
-                        + "router doesn't exist in the network "
-                        + network.getId());
+                logger.debug(String.format("Virtual router element doesn't need to associate ip" +
+                        " addresses on the backend; virtual router doesn't exist in the network %s", network));
                 return true;
             }
 
@@ -464,8 +456,8 @@ StaticNatServiceProvider, IpDeployer {
         final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
                 network.getId(), Role.VIRTUAL_ROUTER);
         if (routers == null || routers.isEmpty()) {
-            s_logger.debug("Ovs element doesn't need to apply static nat on the backend; virtual "
-                    + "router doesn't exist in the network " + network.getId());
+            logger.debug(String.format("Ovs element doesn't need to apply static nat on the " +
+                    "backend; virtual router doesn't exist in the network %s", network));
             return true;
         }
 
@@ -487,8 +479,8 @@ StaticNatServiceProvider, IpDeployer {
         final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
                 network.getId(), Role.VIRTUAL_ROUTER);
         if (routers == null || routers.isEmpty()) {
-            s_logger.debug("Ovs element doesn't need to apply firewall rules on the backend; virtual "
-                    + "router doesn't exist in the network " + network.getId());
+            logger.debug(String.format("Ovs element doesn't need to apply firewall rules on the" +
+                    " backend; virtual router doesn't exist in the network %s", network));
             return true;
         }
 
@@ -513,9 +505,8 @@ StaticNatServiceProvider, IpDeployer {
             final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
                     network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
-                s_logger.debug("Virtual router elemnt doesn't need to apply load balancing rules on the backend; virtual "
-                        + "router doesn't exist in the network "
-                        + network.getId());
+                logger.debug(String.format("Virtual router element doesn't need to apply load " +
+                        "balancing rules on the backend; virtual router doesn't exist in the network %s", network));
                 return true;
             }
 
@@ -525,7 +516,7 @@ StaticNatServiceProvider, IpDeployer {
             for (final DomainRouterVO domainRouterVO : routers) {
                 result = result && networkTopology.applyLoadBalancingRules(network, rules, domainRouterVO);
                 if (!result) {
-                    s_logger.debug("Failed to apply load balancing rules in network " + network.getId());
+                    logger.debug(String.format("Failed to apply load balancing rules in network %s", network));
                 }
             }
         }
@@ -566,7 +557,7 @@ StaticNatServiceProvider, IpDeployer {
             if (schemeCaps != null) {
                 for (final LoadBalancingRule rule : rules) {
                     if (!schemeCaps.contains(rule.getScheme().toString())) {
-                        s_logger.debug("Scheme " + rules.get(0).getScheme()
+                        logger.debug("Scheme " + rules.get(0).getScheme()
                                 + " is not supported by the provider "
                                 + getName());
                         return false;
@@ -605,18 +596,13 @@ StaticNatServiceProvider, IpDeployer {
                 }
                 if (expire != null
                         && !containsOnlyNumbers(expire, timeEndChar)) {
-                    throw new InvalidParameterValueException(
-                            "Failed LB in validation rule id: " + rule.getId()
-                            + " Cause: expire is not in timeformat: "
-                            + expire);
+                    throw new InvalidParameterValueException(String.format("Failed LB in validation rule id: %s Cause: expire is not in time format: %s",
+                            rule.getUuid(), expire));
                 }
                 if (tablesize != null
                         && !containsOnlyNumbers(tablesize, "kmg")) {
-                    throw new InvalidParameterValueException(
-                            "Failed LB in validation rule id: "
-                                    + rule.getId()
-                                    + " Cause: tablesize is not in size format: "
-                                    + tablesize);
+                    throw new InvalidParameterValueException(String.format("Failed LB in validation rule id: %s Cause: table size is not in size format: %s",
+                            rule.getUuid(), tablesize));
 
                 }
             } else if (StickinessMethodType.AppCookieBased.getName()
@@ -636,18 +622,14 @@ StaticNatServiceProvider, IpDeployer {
                 }
 
                 if (length != null && !containsOnlyNumbers(length, null)) {
-                    throw new InvalidParameterValueException(
-                            "Failed LB in validation rule id: " + rule.getId()
-                            + " Cause: length is not a number: "
-                            + length);
+                    throw new InvalidParameterValueException(String.format("Failed LB in validation rule id: %s Cause: length is not a number: %s",
+                            rule.getUuid(), length));
                 }
                 if (holdTime != null
                         && !containsOnlyNumbers(holdTime, timeEndChar) && !containsOnlyNumbers(
                                 holdTime, null)) {
-                    throw new InvalidParameterValueException(
-                            "Failed LB in validation rule id: " + rule.getId()
-                            + " Cause: holdtime is not in timeformat: "
-                            + holdTime);
+                    throw new InvalidParameterValueException(String.format("Failed LB in validation rule id: %s Cause: holdtime is not in time format: %s",
+                            rule.getUuid(), holdTime));
                 }
             }
         }

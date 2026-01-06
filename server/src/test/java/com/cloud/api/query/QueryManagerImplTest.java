@@ -17,13 +17,18 @@
 
 package com.cloud.api.query;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.TemplateJoinDao;
+import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.TemplateJoinVO;
+import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.EventJoinDao;
@@ -36,13 +41,16 @@ import com.cloud.network.VNF;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.server.ResourceTag;
 import com.cloud.storage.BucketVO;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.dao.BucketDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
@@ -54,8 +62,11 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.command.admin.storage.ListObjectStoragePoolsCmd;
+import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.admin.vm.ListAffectedVmsForStorageScopeChangeCmd;
+import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.bucket.ListBucketsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.resource.ListDetailOptionsCmd;
@@ -63,10 +74,12 @@ import org.apache.cloudstack.api.response.DetailOptionsResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ObjectStoreResponse;
+import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.VirtualMachineResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.Assert;
@@ -141,9 +154,20 @@ public class QueryManagerImplTest {
 
     @Mock
     BucketDao bucketDao;
+    @Mock
+    VMTemplateDao templateDao;
 
     @Mock
     UserVmJoinDao userVmJoinDao;
+
+    @Mock
+    UserAccountJoinDao userAccountJoinDao;
+
+    @Mock
+    DomainDao domainDao;
+
+    @Mock
+    AccountDao accountDao;
 
     private AccountVO account;
     private UserVO user;
@@ -384,6 +408,54 @@ public class QueryManagerImplTest {
     }
 
     @Test
+    public void testGetHostTagsFromTemplateForServiceOfferingsListingNoTemplateId() {
+        Assert.assertTrue(CollectionUtils.isEmpty(queryManager.getHostTagsFromTemplateForServiceOfferingsListing(Mockito.mock(AccountVO.class), null)));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testGetHostTagsFromTemplateForServiceOfferingsListingException() {
+        queryManager.getHostTagsFromTemplateForServiceOfferingsListing(Mockito.mock(AccountVO.class), 1L);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testGetHostTagsForServiceOfferingsListingNoAccess() {
+        long templateId = 1L;
+        Account account = Mockito.mock(Account.class);
+        Mockito.when(account.getType()).thenReturn(Account.Type.NORMAL);
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(templateDao.findByIdIncludingRemoved(templateId)).thenReturn(template);
+        Mockito.lenient().doThrow(PermissionDeniedException.class).when(accountManager).checkAccess(account, null, false, template);
+        queryManager.getHostTagsFromTemplateForServiceOfferingsListing(account, templateId);
+    }
+
+    @Test
+    public void testGetHostTagsFromTemplateForServiceOfferingsListingAdmin() {
+        long templateId = 1L;
+        Account account = Mockito.mock(Account.class);
+        Mockito.when(account.getType()).thenReturn(Account.Type.ADMIN);
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(template.getTemplateTag()).thenReturn("tag");
+        Mockito.when(templateDao.findByIdIncludingRemoved(templateId)).thenReturn(template);
+        Mockito.lenient().doThrow(PermissionDeniedException.class).when(accountManager).checkAccess(account, null, false, template);
+        List<String> result = queryManager.getHostTagsFromTemplateForServiceOfferingsListing(account, templateId);
+        Assert.assertTrue(CollectionUtils.isNotEmpty(result));
+    }
+
+    @Test
+    public void testGetHostTagsForServiceOfferingsListingSuccess() {
+        long templateId = 1L;
+        Account account = Mockito.mock(Account.class);
+        Mockito.when(account.getType()).thenReturn(Account.Type.NORMAL);
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(templateDao.findByIdIncludingRemoved(templateId)).thenReturn(template);
+        Mockito.lenient().doNothing().when(accountManager).checkAccess(account, null, false, template);
+        List<String> result = queryManager.getHostTagsFromTemplateForServiceOfferingsListing(account, templateId);
+        Assert.assertTrue(CollectionUtils.isEmpty(result));
+        Mockito.when(template.getTemplateTag()).thenReturn("tag");
+        result = queryManager.getHostTagsFromTemplateForServiceOfferingsListing(account, templateId);
+        Assert.assertTrue(CollectionUtils.isNotEmpty(result));
+    }
+
     public void testListAffectedVmsForScopeChange() {
         Long clusterId = 1L;
         Long poolId = 2L;
@@ -423,5 +495,80 @@ public class QueryManagerImplTest {
         response = queryManager.listAffectedVmsForStorageScopeChange(cmd);
         Assert.assertEquals(response.getResponses().get(0).getId(), instanceUuid);
         Assert.assertEquals(response.getResponses().get(0).getName(), vmName);
+    }
+
+    @Test
+    public void testSearchForUsers() {
+        ListUsersCmd cmd = Mockito.mock(ListUsersCmd.class);
+        String username = "Admin";
+        String accountName = "Admin";
+        Account.Type accountType = Account.Type.ADMIN;
+        Long domainId = 1L;
+        String apiKeyAccess = "Disabled";
+        Mockito.when(cmd.getUsername()).thenReturn(username);
+        Mockito.when(cmd.getAccountName()).thenReturn(accountName);
+        Mockito.when(cmd.getAccountType()).thenReturn(accountType);
+        Mockito.when(cmd.getDomainId()).thenReturn(domainId);
+        Mockito.when(cmd.getApiKeyAccess()).thenReturn(apiKeyAccess);
+
+        UserAccountJoinVO user = new UserAccountJoinVO();
+        DomainVO domain = Mockito.mock(DomainVO.class);
+        SearchBuilder<UserAccountJoinVO> sb = Mockito.mock(SearchBuilder.class);
+        SearchCriteria<UserAccountJoinVO> sc = Mockito.mock(SearchCriteria.class);
+        List<UserAccountJoinVO> users = new ArrayList<>();
+        Pair<List<UserAccountJoinVO>, Integer> result = new Pair<>(users, 0);
+        UserResponse response = Mockito.mock(UserResponse.class);
+
+        Mockito.when(userAccountJoinDao.createSearchBuilder()).thenReturn(sb);
+        Mockito.when(sb.entity()).thenReturn(user);
+        Mockito.when(sb.create()).thenReturn(sc);
+        Mockito.when(userAccountJoinDao.searchAndCount(any(SearchCriteria.class), any(Filter.class))).thenReturn(result);
+
+        queryManager.searchForUsers(ResponseObject.ResponseView.Restricted, cmd);
+
+        Mockito.verify(sc).setParameters("username", username);
+        Mockito.verify(sc).setParameters("accountName", accountName);
+        Mockito.verify(sc).setParameters("type", accountType);
+        Mockito.verify(sc).setParameters("domainId", domainId);
+        Mockito.verify(sc).setParameters("apiKeyAccess", false);
+        Mockito.verify(userAccountJoinDao, Mockito.times(1)).searchAndCount(
+                any(SearchCriteria.class), any(Filter.class));
+    }
+
+    @Test
+    public void testSearchForAccounts() {
+        ListAccountsCmd cmd = Mockito.mock(ListAccountsCmd.class);
+        Long domainId = 1L;
+        String accountName = "Admin";
+        Account.Type accountType = Account.Type.ADMIN;
+        String apiKeyAccess = "Enabled";
+        Mockito.when(cmd.getId()).thenReturn(null);
+        Mockito.when(cmd.getDomainId()).thenReturn(domainId);
+        Mockito.when(cmd.getSearchName()).thenReturn(accountName);
+        Mockito.when(cmd.getAccountType()).thenReturn(accountType);
+        Mockito.when(cmd.getApiKeyAccess()).thenReturn(apiKeyAccess);
+
+        DomainVO domain = Mockito.mock(DomainVO.class);
+        SearchBuilder<AccountVO> sb = Mockito.mock(SearchBuilder.class);
+        SearchCriteria<AccountVO> sc = Mockito.mock(SearchCriteria.class);
+        Pair<List<AccountVO>, Integer> uniqueAccountPair = new Pair<>(new ArrayList<>(), 0);
+        Mockito.when(domainDao.findById(domainId)).thenReturn(domain);
+        Mockito.doNothing().when(accountManager).checkAccess(account, domain);
+
+        Mockito.when(accountDao.createSearchBuilder()).thenReturn(sb);
+        Mockito.when(sb.entity()).thenReturn(account);
+        Mockito.when(sb.create()).thenReturn(sc);
+        Mockito.when(accountDao.searchAndCount(any(SearchCriteria.class), any(Filter.class))).thenReturn(uniqueAccountPair);
+
+        try (MockedStatic<ApiDBUtils> apiDBUtilsMocked = Mockito.mockStatic(ApiDBUtils.class)) {
+            queryManager.searchForAccounts(cmd);
+        }
+
+        Mockito.verify(sc).setParameters("domainId", domainId);
+        Mockito.verify(sc).setParameters("accountName", accountName);
+        Mockito.verify(sc).setParameters("type", accountType);
+        Mockito.verify(sc).setParameters("apiKeyAccess", true);
+        Mockito.verify(accountDao, Mockito.times(1)).searchAndCount(
+                any(SearchCriteria.class), any(Filter.class));
     }
 }

@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.user.vpc;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -39,25 +38,24 @@ import com.cloud.utils.Pair;
         responseView = ResponseObject.ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListPrivateGatewaysCmd extends BaseListProjectAndAccountResourcesCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(ListPrivateGatewaysCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = PrivateGatewayResponse.class, description = "list private gateway by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = PrivateGatewayResponse.class, description = "List private gateway by ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "list gateways by ip address")
+    @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "List gateways by IP address")
     private String ipAddress;
 
-    @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "list gateways by vlan")
+    @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "List gateways by VLAN")
     private String vlan;
 
-    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "list gateways by vpc")
+    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "List gateways by VPC")
     private Long vpcId;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "list gateways by state")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "List gateways by state")
     private String state;
 
     /////////////////////////////////////////////////////

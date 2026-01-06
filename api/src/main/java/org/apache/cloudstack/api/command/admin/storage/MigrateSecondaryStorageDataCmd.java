@@ -28,12 +28,11 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.MigrationResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 
 @APICommand(name = "migrateSecondaryStorageData",
-        description = "migrates data objects from one secondary storage to destination image store(s)",
+        description = "Migrates data objects from one secondary storage to destination image store(s)",
         responseObject = MigrationResponse.class,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
@@ -41,7 +40,6 @@ import com.cloud.event.EventTypes;
         authorized = {RoleType.Admin})
 public class MigrateSecondaryStorageDataCmd extends BaseAsyncCmd {
 
-    public static final Logger LOGGER = Logger.getLogger(MigrateSecondaryStorageDataCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -51,7 +49,7 @@ public class MigrateSecondaryStorageDataCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.SRC_POOL,
             type = CommandType.UUID,
             entityType = ImageStoreResponse.class,
-            description = "id of the image store from where the data is to be migrated",
+            description = "ID of the image store from where the data is to be migrated",
     required = true)
     private Long id;
 
@@ -59,7 +57,7 @@ public class MigrateSecondaryStorageDataCmd extends BaseAsyncCmd {
     type = CommandType.LIST,
     collectionType = CommandType.UUID,
     entityType = ImageStoreResponse.class,
-    description = "id(s) of the destination secondary storage pool(s) to which the templates are to be migrated",
+    description = "ID(s) of the destination secondary storage pool(s) to which the Templates are to be migrated",
     required = true)
     private List<Long> migrateTo;
 

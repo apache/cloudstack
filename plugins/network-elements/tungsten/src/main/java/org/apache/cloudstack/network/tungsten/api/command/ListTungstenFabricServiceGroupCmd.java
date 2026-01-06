@@ -36,27 +36,25 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricServiceGroupResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
-import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
 
-@APICommand(name = ListTungstenFabricServiceGroupCmd.APINAME, description = "list Tungsten-Fabric service group",
+@APICommand(name = ListTungstenFabricServiceGroupCmd.APINAME, description = "List Tungsten-Fabric service group",
     responseObject = TungstenFabricServiceGroupResponse.class, requestHasSensitiveInfo = false,
     responseHasSensitiveInfo = false)
 public class ListTungstenFabricServiceGroupCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListTungstenFabricServiceGroupCmd.class.getName());
     public static final String APINAME = "listTungstenFabricServiceGroup";
 
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.SERVICE_GROUP_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric service group")
+    @Parameter(name = ApiConstants.SERVICE_GROUP_UUID, type = CommandType.STRING, description = "The uuid of Tungsten-Fabric service group")
     private String serviceGroupUuid;
 
     @Override

@@ -15,7 +15,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import CsHelper
+from . import CsHelper
 import logging
 
 
@@ -112,7 +112,7 @@ class CsRoute:
         """ Return True if a default route is present
         :return: bool
         """
-        logging.info("Checking if default ipv4 route is present")
+        logging.info("Checking if default IPv4 route is present")
         route_found = CsHelper.execute("ip -4 route list 0/0")
 
         if len(route_found) > 0:

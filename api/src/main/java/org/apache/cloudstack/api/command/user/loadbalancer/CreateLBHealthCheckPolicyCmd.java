@@ -26,7 +26,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -44,7 +43,6 @@ import com.cloud.user.Account;
             responseHasSensitiveInfo = false)
 @SuppressWarnings("rawtypes")
 public class CreateLBHealthCheckPolicyCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateLBHealthCheckPolicyCmd.class.getName());
 
 
     // ///////////////////////////////////////////////////
@@ -55,10 +53,10 @@ public class CreateLBHealthCheckPolicyCmd extends BaseAsyncCreateCmd {
                type = CommandType.UUID,
                entityType = FirewallRuleResponse.class,
                required = true,
-               description = "the ID of the load balancer rule")
+               description = "The ID of the load balancer rule")
     private Long lbRuleId;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "the description of the load balancer health check policy")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "The description of the load balancer health check policy")
     private String description;
 
     @Parameter(name = ApiConstants.HEALTHCHECK_PINGPATH, type = CommandType.STRING, required = false, description = "HTTP ping path")
@@ -79,16 +77,16 @@ public class CreateLBHealthCheckPolicyCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.HEALTHCHECK_HEALTHY_THRESHOLD,
                type = CommandType.INTEGER,
                required = false,
-               description = "Number of consecutive health check success before declaring an instance healthy")
+               description = "Number of consecutive health check success before declaring an Instance healthy")
     private int healthyThreshold;
 
     @Parameter(name = ApiConstants.HEALTHCHECK_UNHEALTHY_THRESHOLD,
                type = CommandType.INTEGER,
                required = false,
-               description = "Number of consecutive health check failures before declaring an instance unhealthy")
+               description = "Number of consecutive health check failures before declaring an Instance unhealthy")
     private int unhealthyThreshold;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
 
@@ -181,7 +179,7 @@ public class CreateLBHealthCheckPolicyCmd extends BaseAsyncCreateCmd {
             this.setEntityId(result.getId());
             this.setEntityUuid(result.getUuid());
         } catch (InvalidParameterValueException e) {
-            s_logger.warn("Exception: ", e);
+            logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, e.getMessage());
         }
     }

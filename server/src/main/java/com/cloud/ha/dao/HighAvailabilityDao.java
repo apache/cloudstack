@@ -87,4 +87,8 @@ public interface HighAvailabilityDao extends GenericDao<HaWorkVO, Long> {
     List<HaWorkVO> listPendingMigrationsForVm(long vmId);
 
     List<HaWorkVO> listPendingHAWorkForHost(long hostId);
+
+    int expungeByVmList(List<Long> vmIds, Long batchSize);
+    void markPendingWorksAsInvestigating();
+    void markServerPendingWorksAsInvestigating(long managementServerId);
 }

@@ -17,7 +17,6 @@
 
 package org.apache.cloudstack.api.command.user.autoscale;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -34,10 +33,9 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.user.Account;
 
-@APICommand(name = "disableAutoScaleVmGroup", description = "Disables an AutoScale Vm Group", responseObject = AutoScaleVmGroupResponse.class, entityType = {AutoScaleVmGroup.class},
+@APICommand(name = "disableAutoScaleVmGroup", description = "Disables an AutoScale Instance Group", responseObject = AutoScaleVmGroupResponse.class, entityType = {AutoScaleVmGroup.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DisableAutoScaleVmGroupCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DisableAutoScaleVmGroupCmd.class.getName());
     private static final String s_name = "disableautoscalevmGroupresponse";
 
     // ///////////////////////////////////////////////////
@@ -49,7 +47,7 @@ public class DisableAutoScaleVmGroupCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = AutoScaleVmGroupResponse.class,
                required = true,
-               description = "the ID of the autoscale group")
+               description = "The ID of the autoscale group")
     private Long id;
 
     // ///////////////////////////////////////////////////
@@ -64,7 +62,7 @@ public class DisableAutoScaleVmGroupCmd extends BaseAsyncCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to disable AutoScale Vm Group");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to disable AutoScale Instance Group");
         }
     }
 
@@ -98,7 +96,7 @@ public class DisableAutoScaleVmGroupCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Disabling AutoScale Vm Group. Vm Group Id: " + getId();
+        return "Disabling AutoScale Instance Group. Instance Group Id: " + getId();
     }
 
     @Override

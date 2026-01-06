@@ -18,9 +18,11 @@
  */
 package org.apache.cloudstack.api.command.user.vm;
 
+import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
 import org.apache.cloudstack.vm.schedule.VMScheduleManager;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,7 +31,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
-import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -38,10 +39,16 @@ public class ListVMScheduleCmdTest {
     public VMScheduleManager vmScheduleManager;
     @InjectMocks
     private ListVMScheduleCmd listVMScheduleCmd = new ListVMScheduleCmd();
+    private AutoCloseable closeable;
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     /**
@@ -81,11 +88,11 @@ public class ListVMScheduleCmdTest {
     /**
      * given: "We have a VMScheduleManager and ListVMScheduleCmd"
      * when: "ListVMScheduleCmd is executed with an invalid parameter"
-     * then: "an InvalidParameterException is thrown"
+     * then: "an InvalidParameterValueException is thrown"
      */
-    @Test(expected = InvalidParameterException.class)
-    public void testInvalidParameterException() {
-        Mockito.when(vmScheduleManager.listSchedule(listVMScheduleCmd)).thenThrow(InvalidParameterException.class);
+    @Test(expected = InvalidParameterValueException.class)
+    public void testInvalidParameterValueException() {
+        Mockito.when(vmScheduleManager.listSchedule(listVMScheduleCmd)).thenThrow(InvalidParameterValueException.class);
         listVMScheduleCmd.execute();
         ListResponse<VMScheduleResponse> actualResponseObject = (ListResponse<VMScheduleResponse>) listVMScheduleCmd.getResponseObject();
     }

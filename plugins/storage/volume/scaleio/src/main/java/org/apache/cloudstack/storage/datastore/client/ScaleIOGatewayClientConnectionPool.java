@@ -22,15 +22,18 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.cloud.storage.StoragePool;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.storage.StorageManager;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.google.common.base.Preconditions;
 
 public class ScaleIOGatewayClientConnectionPool {
-    private static final Logger LOGGER = Logger.getLogger(ScaleIOGatewayClientConnectionPool.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private ConcurrentHashMap<Long, ScaleIOGatewayClient> gatewayClients;
 
@@ -48,9 +51,26 @@ public class ScaleIOGatewayClientConnectionPool {
         gatewayClients = new ConcurrentHashMap<Long, ScaleIOGatewayClient>();
     }
 
-    public ScaleIOGatewayClient getClient(Long storagePoolId, StoragePoolDetailsDao storagePoolDetailsDao)
+    public ScaleIOGatewayClient getClient(StoragePool storagePool,
+                                          StoragePoolDetailsDao storagePoolDetailsDao)
             throws NoSuchAlgorithmException, KeyManagementException, URISyntaxException {
-        Preconditions.checkArgument(storagePoolId != null && storagePoolId > 0, "Invalid storage pool id");
+        return getClient(storagePool.getId(), storagePool.getUuid(), storagePoolDetailsDao);
+    }
+
+
+    public ScaleIOGatewayClient getClient(DataStore dataStore,
+                                          StoragePoolDetailsDao storagePoolDetailsDao)
+            throws NoSuchAlgorithmException, KeyManagementException, URISyntaxException {
+        return getClient(dataStore.getId(), dataStore.getUuid(), storagePoolDetailsDao);
+    }
+
+
+    private ScaleIOGatewayClient getClient(Long storagePoolId, String storagePoolUuid,
+                                           StoragePoolDetailsDao storagePoolDetailsDao)
+            throws NoSuchAlgorithmException, KeyManagementException, URISyntaxException {
+
+        Preconditions.checkArgument(storagePoolId != null && storagePoolId > 0,
+                "Invalid storage pool id");
 
         ScaleIOGatewayClient client = null;
         synchronized (gatewayClients) {
@@ -66,23 +86,24 @@ public class ScaleIOGatewayClientConnectionPool {
 
                 client = new ScaleIOGatewayClientImpl(url, username, password, false, clientTimeout, clientMaxConnections);
                 gatewayClients.put(storagePoolId, client);
-                LOGGER.debug("Added gateway client for the storage pool: " + storagePoolId);
+                logger.debug("Added gateway client for the storage pool [id: {}, uuid: {}]", storagePoolId, storagePoolUuid);
             }
         }
 
         return client;
     }
 
-    public boolean removeClient(Long storagePoolId) {
-        Preconditions.checkArgument(storagePoolId != null && storagePoolId > 0, "Invalid storage pool id");
+    public boolean removeClient(DataStore dataStore) {
+        Preconditions.checkArgument(dataStore != null && dataStore.getId() > 0,
+                "Invalid storage pool id");
 
         ScaleIOGatewayClient client = null;
         synchronized (gatewayClients) {
-            client = gatewayClients.remove(storagePoolId);
+            client = gatewayClients.remove(dataStore.getId());
         }
 
         if (client != null) {
-            LOGGER.debug("Removed gateway client for the storage pool: " + storagePoolId);
+            logger.debug("Removed gateway client for the storage pool: {}", dataStore);
             return true;
         }
 

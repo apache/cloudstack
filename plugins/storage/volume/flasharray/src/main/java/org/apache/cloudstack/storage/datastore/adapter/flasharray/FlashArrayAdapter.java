@@ -57,18 +57,19 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.ssl.SSLContextBuilder;
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Array API
  */
 public class FlashArrayAdapter implements ProviderAdapter {
-    private Logger logger = Logger.getLogger(FlashArrayAdapter.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public static final String HOSTGROUP = "hostgroup";
     public static final String STORAGE_POD = "pod";

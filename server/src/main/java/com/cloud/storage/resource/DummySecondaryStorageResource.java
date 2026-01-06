@@ -24,7 +24,6 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
@@ -54,7 +53,6 @@ import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateProp;
 
 public class DummySecondaryStorageResource extends ServerResourceBase implements ServerResource {
-    private static final Logger s_logger = Logger.getLogger(DummySecondaryStorageResource.class);
 
     String _dc;
     String _pod;

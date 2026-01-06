@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.to.DiskTO;
@@ -39,7 +38,6 @@ import com.xensource.xenapi.VM;
 
 public class XenServer610Resource extends XenServer600Resource {
 
-    private static final Logger s_logger = Logger.getLogger(XenServer610Resource.class);
 
     public List<VolumeObjectTO> getUpdatedVolumePathsOfMigratedVm(final Connection connection, final VM migratedVm, final DiskTO[] volumes) throws CloudRuntimeException {
         final List<VolumeObjectTO> volumeToList = new ArrayList<VolumeObjectTO>();
@@ -69,7 +67,7 @@ public class XenServer610Resource extends XenServer600Resource {
                 }
             }
         } catch (final Exception e) {
-            s_logger.error("Unable to get the updated VDI paths of the migrated vm " + e.toString(), e);
+            logger.error("Unable to get the updated VDI paths of the migrated vm " + e.toString(), e);
             throw new CloudRuntimeException("Unable to get the updated VDI paths of the migrated vm " + e.toString(), e);
         }
 

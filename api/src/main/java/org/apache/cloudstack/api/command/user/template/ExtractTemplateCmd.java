@@ -27,7 +27,6 @@ import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.event.EventTypes;
@@ -35,30 +34,29 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 
-@APICommand(name = "extractTemplate", description = "Extracts a template", responseObject = ExtractResponse.class,
+@APICommand(name = "extractTemplate", description = "Extracts a Template", responseObject = ExtractResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ExtractTemplateCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(ExtractTemplateCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "the ID of the template")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "The ID of the Template")
     private Long id;
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = false, length = 2048, description = "the url to which the ISO would be extracted")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = false, length = 2048, description = "The url to which the ISO would be extracted")
     private String url;
 
     @Parameter(name = ApiConstants.ZONE_ID,
                type = CommandType.UUID,
                entityType = ZoneResponse.class,
                required = false,
-               description = "the ID of the zone where the ISO is originally located")
+               description = "The ID of the zone where the ISO is originally located")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.MODE, type = CommandType.STRING, required = true, description = "the mode of extraction - HTTP_DOWNLOAD or FTP_UPLOAD")
+    @Parameter(name = ApiConstants.MODE, type = CommandType.STRING, required = true, description = "The mode of extraction - HTTP_DOWNLOAD or FTP_UPLOAD")
     private String mode;
 
     /////////////////////////////////////////////////////
@@ -103,7 +101,15 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-     return "extracting template: " + this._uuidMgr.getUuid(VirtualMachineTemplate.class, getId()) + ((getZoneId() != null) ? " from zone: " + this._uuidMgr.getUuid(DataCenter.class, getZoneId()) : "");
+        String templateId = this._uuidMgr.getUuid(VirtualMachineTemplate.class, getId());
+        String baseDescription = String.format("Extracting Template: %s", templateId);
+
+        Long zoneId = getZoneId();
+        if (zoneId == null) {
+            return baseDescription;
+        }
+
+        return String.format("%s from zone: %s", baseDescription, this._uuidMgr.getUuid(DataCenter.class, zoneId));
     }
 
     @Override
@@ -122,14 +128,15 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
             CallContext.current().setEventDetails(getEventDescription());
             String uploadUrl = _templateService.extract(this);
             if (uploadUrl != null) {
-                ExtractResponse response = _responseGenerator.createExtractResponse(id, zoneId, getEntityOwnerId(), mode, uploadUrl);
+                ExtractResponse response = _responseGenerator.createImageExtractResponse(id, zoneId, getEntityOwnerId(), mode, uploadUrl);
                 response.setResponseName(getCommandName());
+                response.setObjectName("template");
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to extract template");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to extract Template");
             }
         } catch (InternalErrorException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
     }

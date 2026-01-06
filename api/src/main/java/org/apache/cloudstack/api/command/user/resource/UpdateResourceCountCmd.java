@@ -30,15 +30,16 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceCountResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ResourceCount;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateResourceCount", description = "Recalculate and update resource count for an account or domain.", responseObject = ResourceCountResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "updateResourceCount",
+            description = "Recalculate and update resource count for an account or domain. " +
+                    "This also executes some cleanup tasks before calculating resource counts.",
+            responseObject = ResourceCountResponse.class,
+            requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateResourceCountCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateResourceCountCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -60,11 +61,11 @@ public class UpdateResourceCountCmd extends BaseCmd {
     @Parameter(name = ApiConstants.RESOURCE_TYPE,
                type = CommandType.INTEGER,
                description = "Type of resource to update. If specifies valid values are 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 and 11. If not specified will update all resource counts"
-                   + "0 - Instance. Number of instances a user can create. "
+                   + "0 - Instance. Number of Instances a user can create. "
                    + "1 - IP. Number of public IP addresses a user can own. "
                    + "2 - Volume. Number of disk volumes a user can create. "
-                   + "3 - Snapshot. Number of snapshots a user can create. "
-                   + "4 - Template. Number of templates that a user can register/create. "
+                   + "3 - Snapshot. Number of Snapshots a user can create. "
+                   + "4 - Template. Number of Templates that a user can register/create. "
                    + "5 - Project. Number of projects that a user can create. "
                    + "6 - Network. Number of guest network a user can create. "
                    + "7 - VPC. Number of VPC a user can create. "
@@ -76,6 +77,9 @@ public class UpdateResourceCountCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Update resource limits for project")
     private Long projectId;
+
+    @Parameter(name = ApiConstants.TAG, type = CommandType.STRING, description = "Tag for the resource type", since = "4.20.0")
+    private String tag;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -91,6 +95,10 @@ public class UpdateResourceCountCmd extends BaseCmd {
 
     public Integer getResourceType() {
         return resourceType;
+    }
+
+    public String getTag() {
+        return tag;
     }
 
     /////////////////////////////////////////////////////
@@ -119,7 +127,7 @@ public class UpdateResourceCountCmd extends BaseCmd {
     @Override
     public void execute() {
         List<? extends ResourceCount> result =
-                _resourceLimitService.recalculateResourceCount(_accountService.finalyzeAccountId(accountName, domainId, projectId, true), getDomainId(), getResourceType());
+                _resourceLimitService.recalculateResourceCount(_accountService.finalyzeAccountId(accountName, domainId, projectId, true), getDomainId(), getResourceType(), getTag());
 
         if ((result != null) && (result.size() > 0)) {
             ListResponse<ResourceCountResponse> response = new ListResponse<ResourceCountResponse>();
@@ -127,7 +135,6 @@ public class UpdateResourceCountCmd extends BaseCmd {
 
             for (ResourceCount count : result) {
                 ResourceCountResponse resourceCountResponse = _responseGenerator.createResourceCountResponse(count);
-                resourceCountResponse.setObjectName("resourcecount");
                 countResponses.add(resourceCountResponse);
             }
 

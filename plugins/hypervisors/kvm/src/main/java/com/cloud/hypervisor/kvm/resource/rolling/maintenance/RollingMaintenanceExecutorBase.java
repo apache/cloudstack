@@ -18,7 +18,8 @@ package com.cloud.hypervisor.kvm.resource.rolling.maintenance;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.io.File;
 
@@ -30,7 +31,7 @@ public abstract class RollingMaintenanceExecutorBase implements RollingMaintenan
 
     static final int exitValueAvoidMaintenance = 70;
     static final int exitValueTerminatedSignal = 143;
-    private static final Logger s_logger = Logger.getLogger(RollingMaintenanceExecutor.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     void setTimeout(int timeout) {
         this.timeout = timeout;
@@ -66,7 +67,7 @@ public abstract class RollingMaintenanceExecutorBase implements RollingMaintenan
             return new File(scriptPath + ".py");
         } else {
             String msg = "Unable to locate script for stage: " + stage + " in directory: " + hooksDir;
-            s_logger.warn(msg);
+            logger.warn(msg);
             return null;
         }
     }

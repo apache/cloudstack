@@ -18,6 +18,7 @@
 package org.apache.cloudstack.ha;
 
 import com.cloud.api.response.SimulatorHAStateResponse;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.fsm.StateListener;
@@ -30,7 +31,6 @@ import org.apache.cloudstack.ha.provider.host.HAAbstractHostProvider;
 import org.joda.time.DateTime;
 
 import javax.inject.Inject;
-import java.security.InvalidParameterException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -129,7 +129,7 @@ public class SimulatorHAProvider extends HAAbstractHostProvider implements HAPro
             case RecoveryWaitTimeout:
                 return 1L;
             default:
-                throw new InvalidParameterException("Unknown HAProviderConfig " + name.toString());
+                throw new InvalidParameterValueException("Unknown HAProviderConfig " + name.toString());
         }
     }
 

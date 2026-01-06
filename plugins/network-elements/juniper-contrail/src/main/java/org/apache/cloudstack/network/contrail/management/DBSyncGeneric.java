@@ -26,13 +26,14 @@ import java.util.List;
 
 import net.juniper.contrail.api.ApiObjectBase;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.api.Identity;
 
 public class DBSyncGeneric {
 
-    private static final Logger s_logger = Logger.getLogger(DBSyncGeneric.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     /* for each synchronization VNC class, following methods
      * needs to be defined.
@@ -141,7 +142,7 @@ public class DBSyncGeneric {
         String filterMethod = filterMethodPrefix + getClassName(cls);
         Method method = _methodMap.get(filterMethod);
         if (method == null) {
-            s_logger.debug("Method not implemented: " + getClassName(_scope.getClass()) + ":" + filterMethod);
+            logger.debug("Method not implemented: " + getClassName(_scope.getClass()) + ":" + filterMethod);
             return false;
         }
         return (Boolean)method.invoke(_scope, parameters);
@@ -151,7 +152,7 @@ public class DBSyncGeneric {
         String equalMethod = equalMethodPrefix + getClassName(cls);
         Method method = _methodMap.get(equalMethod);
         if (method == null) {
-            s_logger.debug("Method not implemented: " + getClassName(_scope.getClass()) + ":" + equalMethod);
+            logger.debug("Method not implemented: " + getClassName(_scope.getClass()) + ":" + equalMethod);
             return true;
         }
         return (Boolean)method.invoke(_scope, parameters);
@@ -300,7 +301,7 @@ public class DBSyncGeneric {
         SyncStats stats = new SyncStats();
         stats.log("Sync log for <" + getClassName(cls) + ">");
 
-        s_logger.debug("Generic db sync : " + getClassName(cls));
+        logger.debug("Generic db sync : " + getClassName(cls));
 
         java.util.Collections.sort(dbList, this.dbComparator(cls));
         java.util.Collections.sort(vncList, this.vncComparator(cls));
@@ -308,16 +309,16 @@ public class DBSyncGeneric {
         syncCollections(cls, dbList, vncList, _syncMode != SYNC_MODE_CHECK, stats);
 
         if (_syncMode != SYNC_MODE_CHECK) {
-            s_logger.debug("Sync stats<" + getClassName(cls) + ">:  " + stats.toString());
-            s_logger.debug(stats.logMsg);
-            s_logger.debug("Generic db sync : " + getClassName(cls) + " done");
+            logger.debug("Sync stats<" + getClassName(cls) + ">:  " + stats.toString());
+            logger.debug(stats.logMsg);
+            logger.debug("Generic db sync : " + getClassName(cls) + " done");
         } else {
-            s_logger.debug("Sync state checking stats<" + getClassName(cls) + ">: " + stats.toString());
+            logger.debug("Sync state checking stats<" + getClassName(cls) + ">: " + stats.toString());
             if (!stats.isSynchronized()) {
-                s_logger.debug("DB and VNC objects out of sync is detected : " + getClassName(cls));
-                s_logger.debug("Log message: \n" + stats.logMsg);
+                logger.debug("DB and VNC objects out of sync is detected : " + getClassName(cls));
+                logger.debug("Log message: \n" + stats.logMsg);
             } else {
-                s_logger.debug("DB and VNC objects are in sync : " + getClassName(cls));
+                logger.debug("DB and VNC objects are in sync : " + getClassName(cls));
             }
         }
 

@@ -52,7 +52,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -76,10 +76,10 @@ import java.util.UUID;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -149,12 +149,12 @@ public class AffinityApiUnitTest {
         _affinityService.setAffinityGroupProcessors(affinityProcessors);
 
         AffinityGroupVO group = new AffinityGroupVO("group1", "mock", "mock group", domainId, 200L, ControlledEntity.ACLType.Account);
-        Mockito.when(_affinityGroupDao.persist(Matchers.any(AffinityGroupVO.class))).thenReturn(group);
-        Mockito.when(_affinityGroupDao.findById(Matchers.anyLong())).thenReturn(group);
-        Mockito.when(_affinityGroupDao.findByAccountAndName(Matchers.anyLong(), Matchers.anyString())).thenReturn(group);
-        Mockito.when(_affinityGroupDao.lockRow(Matchers.anyLong(), anyBoolean())).thenReturn(group);
-        Mockito.when(_affinityGroupDao.expunge(Matchers.anyLong())).thenReturn(true);
-        Mockito.when(_eventDao.persist(Matchers.any(EventVO.class))).thenReturn(new EventVO());
+        Mockito.when(_affinityGroupDao.persist(ArgumentMatchers.any(AffinityGroupVO.class))).thenReturn(group);
+        Mockito.when(_affinityGroupDao.findById(ArgumentMatchers.anyLong())).thenReturn(group);
+        Mockito.when(_affinityGroupDao.findByAccountAndName(ArgumentMatchers.anyLong(), ArgumentMatchers.anyString())).thenReturn(group);
+        Mockito.when(_affinityGroupDao.lockRow(ArgumentMatchers.anyLong(), anyBoolean())).thenReturn(group);
+        Mockito.when(_affinityGroupDao.expunge(ArgumentMatchers.anyLong())).thenReturn(true);
+        Mockito.when(_eventDao.persist(ArgumentMatchers.any(EventVO.class))).thenReturn(new EventVO());
     }
 
     @After

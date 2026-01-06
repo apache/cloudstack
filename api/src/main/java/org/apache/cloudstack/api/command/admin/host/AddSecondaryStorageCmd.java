@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.host;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -34,16 +33,15 @@ import com.cloud.user.Account;
 @APICommand(name = "addSecondaryStorage", description = "Adds secondary storage.", responseObject = ImageStoreResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddSecondaryStorageCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(AddSecondaryStorageCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "the URL for the secondary storage")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "The URL for the secondary storage")
     protected String url;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the Zone ID for the secondary storage")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The Zone ID for the secondary storage")
     protected Long zoneId;
 
     /////////////////////////////////////////////////////
@@ -81,7 +79,7 @@ public class AddSecondaryStorageCmd extends BaseCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add secondary storage");
             }
         } catch (DiscoveryException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
     }

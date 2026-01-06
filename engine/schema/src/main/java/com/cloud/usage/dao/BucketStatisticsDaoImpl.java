@@ -20,14 +20,12 @@ import com.cloud.usage.BucketStatisticsVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 @Component
 public class BucketStatisticsDaoImpl extends GenericDaoBase<BucketStatisticsVO, Long> implements BucketStatisticsDao {
-    private static final Logger s_logger = Logger.getLogger(BucketStatisticsDaoImpl.class);
     private final SearchBuilder<BucketStatisticsVO> AllFieldsSearch;
     private final SearchBuilder<BucketStatisticsVO> AccountSearch;
 

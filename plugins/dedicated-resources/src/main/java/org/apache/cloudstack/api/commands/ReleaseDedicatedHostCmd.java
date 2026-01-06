@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.commands;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -36,7 +35,6 @@ import com.cloud.user.Account;
 @APICommand(name = "releaseDedicatedHost", description = "Release the dedication for host", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ReleaseDedicatedHostCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(ReleaseDedicatedHostCmd.class.getName());
 
     @Inject
     DedicatedService dedicatedService;
@@ -45,7 +43,7 @@ public class ReleaseDedicatedHostCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "the ID of the host")
+    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "The ID of the host")
     private Long hostId;
 
     /////////////////////////////////////////////////////

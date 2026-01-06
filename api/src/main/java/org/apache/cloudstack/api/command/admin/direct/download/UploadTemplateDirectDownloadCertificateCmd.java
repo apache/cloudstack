@@ -33,14 +33,13 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.direct.download.DirectDownloadCertificate;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
 import org.apache.cloudstack.direct.download.DirectDownloadManager.HostCertificateStatus;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
 @APICommand(name = "uploadTemplateDirectDownloadCertificate",
-        description = "Upload a certificate for HTTPS direct template download on KVM hosts",
+        description = "Upload a certificate for HTTPS direct Template download on KVM hosts",
         responseObject = DirectDownloadCertificateResponse.class,
         since = "4.11.0",
         authorized = {RoleType.Admin})
@@ -49,7 +48,6 @@ public class UploadTemplateDirectDownloadCertificateCmd extends BaseCmd {
     @Inject
     DirectDownloadManager directDownloadManager;
 
-    private static final Logger LOG = Logger.getLogger(UploadTemplateDirectDownloadCertificateCmd.class);
 
     @Parameter(name = ApiConstants.CERTIFICATE, type = BaseCmd.CommandType.STRING, required = true, length = 65535,
             description = "SSL certificate")
@@ -67,7 +65,7 @@ public class UploadTemplateDirectDownloadCertificateCmd extends BaseCmd {
     private Long zoneId;
 
     @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class,
-            description = "(optional) the host ID to upload certificate")
+            description = "(Optional) the host ID to upload certificate")
     private Long hostId;
 
     private void createResponse(DirectDownloadCertificate certificate, final List<HostCertificateStatus> hostStatusList) {
@@ -97,7 +95,7 @@ public class UploadTemplateDirectDownloadCertificateCmd extends BaseCmd {
         }
 
         try {
-            LOG.debug("Uploading certificate " + name + " to agents for Direct Download");
+            logger.debug("Uploading certificate " + name + " to agents for Direct Download");
             Pair<DirectDownloadCertificate, List<HostCertificateStatus>> uploadStatus =
                     directDownloadManager.uploadCertificateToHosts(certificate, name, hypervisor, zoneId, hostId);
             DirectDownloadCertificate certificate = uploadStatus.first();

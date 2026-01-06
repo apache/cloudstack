@@ -22,7 +22,6 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import java.io.File;
 import java.text.MessageFormat;
 
-import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo.DomainState;
@@ -49,7 +48,6 @@ import com.cloud.utils.script.Script;
 @ResourceWrapper(handles =  ManageSnapshotCommand.class)
 public final class LibvirtManageSnapshotCommandWrapper extends CommandWrapper<ManageSnapshotCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtManageSnapshotCommandWrapper.class);
 
     @Override
     public Answer execute(final ManageSnapshotCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -66,7 +64,7 @@ public final class LibvirtManageSnapshotCommandWrapper extends CommandWrapper<Ma
                     vm = libvirtComputingResource.getDomain(conn, command.getVmName());
                     state = vm.getInfo().state;
                 } catch (final LibvirtException e) {
-                    s_logger.trace("Ignoring libvirt error.", e);
+                    logger.trace("Ignoring libvirt error.", e);
                 }
             }
 
@@ -83,7 +81,7 @@ public final class LibvirtManageSnapshotCommandWrapper extends CommandWrapper<Ma
                 final String vmUuid = vm.getUUIDString();
                 final Object[] args = new Object[] {snapshotName, vmUuid};
                 final String snapshot = snapshotXML.format(args);
-                s_logger.debug(snapshot);
+                logger.debug(snapshot);
                 if (command.getCommandSwitch().equalsIgnoreCase(ManageSnapshotCommand.CREATE_SNAPSHOT)) {
                     vm.snapshotCreateXML(snapshot);
                 } else {
@@ -121,31 +119,31 @@ public final class LibvirtManageSnapshotCommandWrapper extends CommandWrapper<Ma
                         r.confSet("key", primaryPool.getAuthSecret());
                         r.confSet("client_mount_timeout", "30");
                         r.connect();
-                        s_logger.debug("Successfully connected to Ceph cluster at " + r.confGet("mon_host"));
+                        logger.debug("Successfully connected to Ceph cluster at " + r.confGet("mon_host"));
 
                         final IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
                         final Rbd rbd = new Rbd(io);
                         final RbdImage image = rbd.open(disk.getName());
 
                         if (command.getCommandSwitch().equalsIgnoreCase(ManageSnapshotCommand.CREATE_SNAPSHOT)) {
-                            s_logger.debug("Attempting to create RBD snapshot " + disk.getName() + "@" + snapshotName);
+                            logger.debug("Attempting to create RBD snapshot " + disk.getName() + "@" + snapshotName);
                             image.snapCreate(snapshotName);
                         } else {
-                            s_logger.debug("Attempting to remove RBD snapshot " + disk.getName() + "@" + snapshotName);
+                            logger.debug("Attempting to remove RBD snapshot " + disk.getName() + "@" + snapshotName);
                             image.snapRemove(snapshotName);
                         }
 
                         rbd.close(image);
                         r.ioCtxDestroy(io);
                     } catch (final Exception e) {
-                        s_logger.error("A RBD snapshot operation on " + disk.getName() + " failed. The error was: " + e.getMessage());
+                        logger.error("A RBD snapshot operation on " + disk.getName() + " failed. The error was: " + e.getMessage());
                     }
                 } else {
                     /* VM is not running, create a snapshot by ourself */
                     final int cmdsTimeout = libvirtComputingResource.getCmdsTimeout();
                     final String manageSnapshotPath = libvirtComputingResource.manageSnapshotPath();
 
-                    final Script scriptCommand = new Script(manageSnapshotPath, cmdsTimeout, s_logger);
+                    final Script scriptCommand = new Script(manageSnapshotPath, cmdsTimeout, logger);
                     if (command.getCommandSwitch().equalsIgnoreCase(ManageSnapshotCommand.CREATE_SNAPSHOT)) {
                         scriptCommand.add("-c", disk.getPath());
                     } else {
@@ -155,14 +153,14 @@ public final class LibvirtManageSnapshotCommandWrapper extends CommandWrapper<Ma
                     scriptCommand.add("-n", snapshotName);
                     final String result = scriptCommand.execute();
                     if (result != null) {
-                        s_logger.debug("Failed to manage snapshot: " + result);
+                        logger.debug("Failed to manage snapshot: " + result);
                         return new ManageSnapshotAnswer(command, false, "Failed to manage snapshot: " + result);
                     }
                 }
             }
             return new ManageSnapshotAnswer(command, command.getSnapshotId(), disk.getPath() + File.separator + snapshotName, true, null);
         } catch (final LibvirtException e) {
-            s_logger.debug("Failed to manage snapshot: " + e.toString());
+            logger.debug("Failed to manage snapshot: " + e.toString());
             return new ManageSnapshotAnswer(command, false, "Failed to manage snapshot: " + e.toString());
         }
     }

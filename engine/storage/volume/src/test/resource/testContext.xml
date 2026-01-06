@@ -22,7 +22,7 @@
   xmlns:tx="http://www.springframework.org/schema/tx" xmlns:aop="http://www.springframework.org/schema/aop"
   xsi:schemaLocation="http://www.springframework.org/schema/beans
                         http://www.springframework.org/schema/beans/spring-beans.xsd
-                         http://www.springframework.org/schema/tx 
+                         http://www.springframework.org/schema/tx
        http://www.springframework.org/schema/tx/spring-tx.xsd
        http://www.springframework.org/schema/aop
        http://www.springframework.org/schema/aop/spring-aop.xsd
@@ -38,7 +38,7 @@
   <context:component-scan base-package="com.cloud.dc.dao" />
   <context:component-scan base-package="com.cloud.dc.dao" />
   <context:component-scan base-package="org.apache.cloudstack.framework" />
-  
+
   <tx:annotation-driven transaction-manager="transactionManager" />
   <bean class="org.apache.cloudstack.storage.volume.test.TestConfiguration" />
   <aop:config proxy-target-class="true">
@@ -49,7 +49,7 @@
   </aop:config>
 
   <bean id="transactionContextBuilder" class="com.cloud.utils.db.TransactionContextBuilder" />
-  
+
   <bean id="onwireRegistry" class="org.apache.cloudstack.framework.serializer.OnwireClassRegistry"
     init-method="scan" >
     <property name="packages">
@@ -58,7 +58,7 @@
       </list>
     </property>
   </bean>
-  
+
   <bean id="messageSerializer" class="org.apache.cloudstack.framework.serializer.JsonMessageSerializer">
     <property name="onwireClassRegistry" ref="onwireRegistry" />
   </bean>
@@ -68,12 +68,12 @@
     <property name="nodeId" value="Node1" />
     <property name="messageSerializer" ref="messageSerializer" />
   </bean>
-  
+
   <bean id="rpcProvider" class="org.apache.cloudstack.framework.rpc.RpcProviderImpl" init-method="initialize">
     <constructor-arg ref="transportProvider" />
     <property name="messageSerializer" ref="messageSerializer" />
   </bean>
 
   <bean id="eventBus" class = "org.apache.cloudstack.framework.eventbus.EventBusBase" />
-  
+
 </beans>

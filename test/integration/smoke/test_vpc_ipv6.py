@@ -520,7 +520,7 @@ class TestIpv6Vpc(cloudstackTestCase):
             cmd,
             hypervisor=self.routerDetailsMap[router.id]['hypervisor']
         )
-        self.assertTrue(type(result) == list and len(result) > 0,
+        self.assertTrue(type(result) == list,
             "%s on router %s returned invalid result" % (cmd, router.id))
         result = '\n'.join(result)
         return result
@@ -761,8 +761,9 @@ class TestIpv6Vpc(cloudstackTestCase):
             acl_chain = nic + ACL_CHAINS_SUFFIX[rule["traffictype"]]
             routerCmd = "nft list chain ip6 %s %s" % (ACL_TABLE, acl_chain)
             res = self.getRouterProcessStatus(router, routerCmd)
-            self.assertTrue(rule["parsedrule"] in res,
-                "Listing firewall rule with nft list chain failure for rule: %s" % rule["parsedrule"])
+            parsed_rule_new = rule["parsedrule"].replace("{ ", "").replace(" }", "")
+            self.assertTrue(rule["parsedrule"] in res or parsed_rule_new in res,
+                "Listing firewall rule with nft list chain failure for rule: '%s' is not in '%s'" % (rule["parsedrule"], res))
 
     def checkIpv6AclRule(self):
         router = self.getVpcRouter(self.vpc)

@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.user.vpn;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -34,33 +33,32 @@ import org.apache.cloudstack.api.response.RemoteAccessVpnResponse;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listRemoteAccessVpns", description = "Lists remote access vpns", responseObject = RemoteAccessVpnResponse.class, entityType = {RemoteAccessVpn.class},
+@APICommand(name = "listRemoteAccessVpns", description = "Lists remote access VPNs", responseObject = RemoteAccessVpnResponse.class, entityType = {RemoteAccessVpn.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListRemoteAccessVpnsCmd extends BaseListProjectAndAccountResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListRemoteAccessVpnsCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.PUBLIC_IP_ID, type = CommandType.UUID, entityType = IPAddressResponse.class, description = "public ip address id of the vpn server")
+    @Parameter(name = ApiConstants.PUBLIC_IP_ID, type = CommandType.UUID, entityType = IPAddressResponse.class, description = "Public ip address id of the VPN server")
     private Long publicIpId;
 
     @Parameter(name = ApiConstants.ID,
                type = CommandType.UUID,
                entityType = RemoteAccessVpnResponse.class,
-               description = "Lists remote access vpn rule with the specified ID",
+               description = "Lists remote access VPN rule with the specified ID",
                since = "4.3")
     private Long id;
 
     @Parameter(name = ApiConstants.NETWORK_ID,
                type = CommandType.UUID,
                entityType = NetworkResponse.class,
-               description = "list remote access VPNs for certain network",
+               description = "List remote access VPNs for certain Network",
                since = "4.3")
     private Long networkId;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "List resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     /////////////////////////////////////////////////////

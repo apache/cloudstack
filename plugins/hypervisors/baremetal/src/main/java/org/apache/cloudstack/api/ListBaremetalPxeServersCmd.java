@@ -27,15 +27,13 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.List;
 
-@APICommand(name = "listBaremetalPxeServers", description = "list baremetal pxe server", responseObject = BaremetalPxeResponse.class,
+@APICommand(name = "listBaremetalPxeServers", description = "List baremetal pxe server", responseObject = BaremetalPxeResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListBaremetalPxeServersCmd extends BaseListCmd {
-    private static final Logger s_logger = Logger.getLogger(ListBaremetalPxeServersCmd.class);
 
     @Inject
     BaremetalPxeManager _pxeMgr;
@@ -50,7 +48,7 @@ public class ListBaremetalPxeServersCmd extends BaseListCmd {
             type = CommandType.UUID,
             entityType = PhysicalNetworkResponse.class,
             required = true,
-            description = "the Physical Network ID")
+            description = "The Physical Network ID")
     private Long physicalNetworkId;
 
     public Long getId() {
@@ -76,7 +74,7 @@ public class ListBaremetalPxeServersCmd extends BaseListCmd {
             response.setObjectName("baremetalpxeservers");
             this.setResponseObject(response);
         } catch (Exception e) {
-            s_logger.debug("Exception happened while executing ListPingPxeServersCmd", e);
+            logger.debug("Exception happened while executing ListPingPxeServersCmd", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }

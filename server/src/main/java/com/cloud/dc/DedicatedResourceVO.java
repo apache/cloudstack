@@ -26,6 +26,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.utils.NumbersUtil;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "dedicated_resources")
@@ -169,5 +170,12 @@ public class DedicatedResourceVO implements DedicatedResources {
     @Override
     public int hashCode() {
         return NumbersUtil.hash(id);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("DedicatedResource %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid"));
     }
 }

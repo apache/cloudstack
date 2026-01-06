@@ -23,6 +23,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -36,29 +37,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
-import com.cloud.dc.ClusterDetailsDao;
-import com.cloud.dc.ClusterDetailsVO;
-import com.cloud.dc.Pod;
-import com.cloud.deploy.DeployDestination;
-import com.cloud.deploy.DeploymentPlanningManager;
-import com.cloud.hypervisor.HypervisorGuruManager;
-import com.cloud.org.Cluster;
-import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.user.Account;
-import com.cloud.user.User;
-import com.cloud.utils.Journal;
-import com.cloud.utils.Pair;
-import com.cloud.utils.Ternary;
-import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.fsm.StateMachine2;
-import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.collections.MapUtils;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -71,23 +60,43 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.api.query.dao.UserVmJoinDao;
+import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.Pod;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.deploy.DeploymentPlanningManager;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.org.Cluster;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -105,11 +114,21 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.Account;
+import com.cloud.user.AccountVO;
+import com.cloud.user.User;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.Journal;
+import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.springframework.test.util.ReflectionTestUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class VirtualMachineManagerImplTest {
@@ -178,11 +197,23 @@ public class VirtualMachineManagerImplTest {
     @Mock
     private UserVmVO userVmMock;
     @Mock
+    private NetworkDao networkDao;
+    @Mock
+    private AccountDao accountDao;
+    @Mock
+    private DomainDao domainDao;
+    @Mock
+    private DataCenterDao dcDao;
+    @Mock
+    private VpcDao vpcDao;
+    @Mock
     private EntityManager _entityMgr;
     @Mock
     private DeploymentPlanningManager _dpMgr;
     @Mock
     private HypervisorGuruManager _hvGuruMgr;
+    @Mock
+    private ClusterDao clusterDao;
     @Mock
     private ClusterDetailsDao _clusterDetailsDao;
     @Mock
@@ -192,8 +223,12 @@ public class VirtualMachineManagerImplTest {
     @Mock
     protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
 
+    private ConfigDepotImpl configDepotImpl;
+    private boolean updatedConfigKeyDepot = false;
+
     @Before
     public void setup() {
+        ReflectionTestUtils.getField(VirtualMachineManager.VmMetadataManufacturer, "s_depot");
         virtualMachineManagerImpl.setHostAllocators(new ArrayList<>());
 
         when(vmInstanceMock.getId()).thenReturn(vmInstanceVoMockId);
@@ -221,6 +256,13 @@ public class VirtualMachineManagerImplTest {
         ArrayList<StoragePoolAllocator> storagePoolAllocators = new ArrayList<>();
         storagePoolAllocators.add(storagePoolAllocatorMock);
         virtualMachineManagerImpl.setStoragePoolAllocators(storagePoolAllocators);
+    }
+
+    @After
+    public void cleanup() {
+        if (updatedConfigKeyDepot) {
+            ReflectionTestUtils.setField(VirtualMachineManager.VmMetadataManufacturer, "s_depot", configDepotImpl);
+        }
     }
 
     @Test
@@ -742,7 +784,7 @@ public class VirtualMachineManagerImplTest {
         List<Volume> volumesNotMapped = new ArrayList<>();
 
         Mockito.doReturn(volumeToPoolObjectMap).when(virtualMachineManagerImpl).buildMapUsingUserInformation(Mockito.eq(virtualMachineProfileMock), Mockito.eq(hostMock),
-                Mockito.anyMapOf(Long.class, Long.class));
+                Mockito.anyMap());
 
         Mockito.doReturn(volumesNotMapped).when(virtualMachineManagerImpl).findVolumesThatWereNotMappedByTheUser(virtualMachineProfileMock, volumeToPoolObjectMap);
         Mockito.doNothing().when(virtualMachineManagerImpl).createStoragePoolMappingsForVolumes(Mockito.eq(virtualMachineProfileMock),
@@ -753,7 +795,7 @@ public class VirtualMachineManagerImplTest {
         assertEquals(mappingVolumeAndStoragePool, volumeToPoolObjectMap);
 
         InOrder inOrder = Mockito.inOrder(virtualMachineManagerImpl);
-        inOrder.verify(virtualMachineManagerImpl).buildMapUsingUserInformation(Mockito.eq(virtualMachineProfileMock), Mockito.eq(hostMock), Mockito.anyMapOf(Long.class, Long.class));
+        inOrder.verify(virtualMachineManagerImpl).buildMapUsingUserInformation(Mockito.eq(virtualMachineProfileMock), Mockito.eq(hostMock), Mockito.anyMap());
         inOrder.verify(virtualMachineManagerImpl).findVolumesThatWereNotMappedByTheUser(virtualMachineProfileMock, volumeToPoolObjectMap);
         inOrder.verify(virtualMachineManagerImpl).createStoragePoolMappingsForVolumes(Mockito.eq(virtualMachineProfileMock),
                 any(DataCenterDeployment.class), Mockito.eq(volumeToPoolObjectMap), Mockito.eq(volumesNotMapped));
@@ -933,9 +975,52 @@ public class VirtualMachineManagerImplTest {
     }
 
     @Test
+    public void checkIfVmNetworkDetailsReturnedIsCorrect() {
+        VMInstanceVO vm = new VMInstanceVO(1L, 1L, "VM1", "i-2-2-VM",
+                VirtualMachine.Type.User, 1L, HypervisorType.KVM, 1L, 1L, 1L,
+                1L, false, false);
+
+        VirtualMachineTO vmTO = new VirtualMachineTO() {
+        };
+        UserVmJoinVO userVm = new UserVmJoinVO();
+        NetworkVO networkVO = mock(NetworkVO.class);
+        AccountVO accountVO = mock(AccountVO.class);
+        DomainVO domainVO = mock(DomainVO.class);
+        domainVO.setName("testDomain");
+        DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+        VpcVO vpcVO = mock(VpcVO.class);
+
+        networkVO.setAccountId(1L);
+        networkVO.setName("testNet");
+        networkVO.setVpcId(1L);
+
+        accountVO.setAccountName("testAcc");
+
+        vpcVO.setName("VPC1");
+
+
+        List<UserVmJoinVO> userVms = List.of(userVm);
+        Mockito.when(userVmJoinDaoMock.searchByIds(anyLong())).thenReturn(userVms);
+        Mockito.when(networkDao.findById(anyLong())).thenReturn(networkVO);
+        Mockito.when(accountDao.findById(anyLong())).thenReturn(accountVO);
+        Mockito.when(domainDao.findById(anyLong())).thenReturn(domainVO);
+        Mockito.when(dcDao.findById(anyLong())).thenReturn(dataCenterVO);
+        Mockito.when(vpcDao.findById(anyLong())).thenReturn(vpcVO);
+        Mockito.when(dataCenterVO.getId()).thenReturn(1L);
+        when(accountVO.getId()).thenReturn(2L);
+        Mockito.when(domainVO.getId()).thenReturn(3L);
+        Mockito.when(vpcVO.getId()).thenReturn(4L);
+        Mockito.when(networkVO.getId()).thenReturn(5L);
+        virtualMachineManagerImpl.setVmNetworkDetails(vm, vmTO);
+        assertEquals(1, vmTO.getNetworkIdToNetworkNameMap().size());
+        assertEquals("D3-A2-Z1-V4-S5", vmTO.getNetworkIdToNetworkNameMap().get(5L));
+    }
+
+    @Test
     public void testOrchestrateStartNonNullPodId() throws Exception {
         VMInstanceVO vmInstance = new VMInstanceVO();
         ReflectionTestUtils.setField(vmInstance, "id", 1L);
+        ReflectionTestUtils.setField(vmInstance, "accountId", 1L);
         ReflectionTestUtils.setField(vmInstance, "uuid", "vm-uuid");
         ReflectionTestUtils.setField(vmInstance, "serviceOfferingId", 2L);
         ReflectionTestUtils.setField(vmInstance, "instanceName", "myVm");
@@ -949,6 +1034,7 @@ public class VirtualMachineManagerImplTest {
         User user = mock(User.class);
 
         Account account = mock(Account.class);
+        Account owner = mock(Account.class);
 
         ReservationContext ctx = mock(ReservationContext.class);
 
@@ -972,12 +1058,13 @@ public class VirtualMachineManagerImplTest {
         doReturn(vmGuru).when(virtualMachineManagerImpl).getVmGuru(vmInstance);
 
         Ternary<VMInstanceVO, ReservationContext, ItWorkVO> start = new Ternary<>(vmInstance, ctx, work);
-        Mockito.doReturn(start).when(virtualMachineManagerImpl).changeToStartState(vmGuru, vmInstance, user, account);
+        Mockito.doReturn(start).when(virtualMachineManagerImpl).changeToStartState(vmGuru, vmInstance, user, account, owner, serviceOffering, template);
 
         when(ctx.getJournal()).thenReturn(Mockito.mock(Journal.class));
 
         when(serviceOfferingDaoMock.findById(vmInstance.getId(), vmInstance.getServiceOfferingId())).thenReturn(serviceOffering);
 
+        when(_entityMgr.findById(Account.class, vmInstance.getAccountId())).thenReturn(owner);
         when(_entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, vmInstance.getTemplateId())).thenReturn(template);
 
         Host destHost = mock(Host.class);
@@ -1029,6 +1116,7 @@ public class VirtualMachineManagerImplTest {
     public void testOrchestrateStartNullPodId() throws Exception {
         VMInstanceVO vmInstance = new VMInstanceVO();
         ReflectionTestUtils.setField(vmInstance, "id", 1L);
+        ReflectionTestUtils.setField(vmInstance, "accountId", 1L);
         ReflectionTestUtils.setField(vmInstance, "uuid", "vm-uuid");
         ReflectionTestUtils.setField(vmInstance, "serviceOfferingId", 2L);
         ReflectionTestUtils.setField(vmInstance, "instanceName", "myVm");
@@ -1042,6 +1130,7 @@ public class VirtualMachineManagerImplTest {
         User user = mock(User.class);
 
         Account account = mock(Account.class);
+        Account owner = mock(Account.class);
 
         ReservationContext ctx = mock(ReservationContext.class);
 
@@ -1065,12 +1154,13 @@ public class VirtualMachineManagerImplTest {
         doReturn(vmGuru).when(virtualMachineManagerImpl).getVmGuru(vmInstance);
 
         Ternary<VMInstanceVO, ReservationContext, ItWorkVO> start = new Ternary<>(vmInstance, ctx, work);
-        Mockito.doReturn(start).when(virtualMachineManagerImpl).changeToStartState(vmGuru, vmInstance, user, account);
+        Mockito.doReturn(start).when(virtualMachineManagerImpl).changeToStartState(vmGuru, vmInstance, user, account, owner, serviceOffering, template);
 
         when(ctx.getJournal()).thenReturn(Mockito.mock(Journal.class));
 
         when(serviceOfferingDaoMock.findById(vmInstance.getId(), vmInstance.getServiceOfferingId())).thenReturn(serviceOffering);
 
+        when(_entityMgr.findById(Account.class, vmInstance.getAccountId())).thenReturn(owner);
         when(_entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, vmInstance.getTemplateId())).thenReturn(template);
 
         Host destHost = mock(Host.class);
@@ -1116,5 +1206,102 @@ public class VirtualMachineManagerImplTest {
         }
 
         assertNull(vmInstance.getPodIdToDeployIn());
+    }
+
+    @Test
+    public void testIsDiskOfferingSuitableForVmSuccess() {
+        Mockito.doReturn(Mockito.mock(DiskOfferingVO.class)).when(diskOfferingDaoMock).findById(anyLong());
+        List<StoragePool> poolListMock = new ArrayList<>();
+        poolListMock.add(storagePoolVoMock);
+        Mockito.doReturn(poolListMock).when(storagePoolAllocatorMock).allocateToPool(any(DiskProfile.class), any(VirtualMachineProfile.class), any(DeploymentPlan.class),
+                any(ExcludeList.class), Mockito.eq(1));
+        boolean result = virtualMachineManagerImpl.isDiskOfferingSuitableForVm(vmInstanceMock, virtualMachineProfileMock, 1L, 1L, 1L, 1L);
+        assertTrue(result);
+    }
+
+    @Test
+    public void testIsDiskOfferingSuitableForVmNegative() {
+        Mockito.doReturn(Mockito.mock(DiskOfferingVO.class)).when(diskOfferingDaoMock).findById(anyLong());
+        Mockito.doReturn(new ArrayList<>()).when(storagePoolAllocatorMock).allocateToPool(any(DiskProfile.class), any(VirtualMachineProfile.class), any(DeploymentPlan.class),
+                any(ExcludeList.class), Mockito.eq(1));
+        boolean result = virtualMachineManagerImpl.isDiskOfferingSuitableForVm(vmInstanceMock, virtualMachineProfileMock, 1L, 1L, 1L, 1L);
+        assertFalse(result);
+    }
+
+    @Test
+    public void testGetDiskOfferingSuitabilityForVm() {
+        Mockito.doReturn(vmInstanceMock).when(vmInstanceDaoMock).findById(1L);
+        Mockito.when(vmInstanceMock.getHostId()).thenReturn(1L);
+        Mockito.doReturn(hostMock).when(hostDaoMock).findById(1L);
+        Mockito.when(hostMock.getClusterId()).thenReturn(1L);
+        ClusterVO cluster = Mockito.mock(ClusterVO.class);
+        Mockito.when(cluster.getPodId()).thenReturn(1L);
+        Mockito.doReturn(cluster).when(clusterDao).findById(1L);
+        List<Long> diskOfferingIds = List.of(1L, 2L);
+        Mockito.doReturn(false).when(virtualMachineManagerImpl)
+                .isDiskOfferingSuitableForVm(eq(vmInstanceMock), any(VirtualMachineProfile.class),
+                        eq(1L), eq(1L), eq(1L), eq(1L));
+        Mockito.doReturn(true).when(virtualMachineManagerImpl)
+                .isDiskOfferingSuitableForVm(eq(vmInstanceMock), any(VirtualMachineProfile.class),
+                        eq(1L), eq(1L), eq(1L), eq(2L));
+        Map<Long, Boolean> result = virtualMachineManagerImpl.getDiskOfferingSuitabilityForVm(1L, diskOfferingIds);
+        assertTrue(MapUtils.isNotEmpty(result));
+        assertEquals(2, result.keySet().size());
+        assertFalse(result.get(1L));
+        assertTrue(result.get(2L));
+    }
+
+    private void overrideVmMetadataConfigValue(final String manufacturer, final String product) {
+        ConfigKey configKey = VirtualMachineManager.VmMetadataManufacturer;
+        this.configDepotImpl = (ConfigDepotImpl)ReflectionTestUtils.getField(configKey, "s_depot");
+        ConfigDepotImpl configDepot = Mockito.mock(ConfigDepotImpl.class);
+        Mockito.when(configDepot.getConfigStringValue(Mockito.eq(configKey.key()),
+                Mockito.eq(ConfigKey.Scope.Zone), Mockito.anyLong())).thenReturn(manufacturer);
+        Mockito.when(configDepot.getConfigStringValue(Mockito.eq(VirtualMachineManager.VmMetadataProductName.key()),
+                Mockito.eq(ConfigKey.Scope.Zone), Mockito.anyLong())).thenReturn(product);
+        ReflectionTestUtils.setField(configKey, "s_depot", configDepot);
+        updatedConfigKeyDepot = true;
+    }
+
+    private Pair<VirtualMachineTO, VMInstanceVO> getDummyVmTOAndVm() {
+        VirtualMachineTO virtualMachineTO = new VirtualMachineTO(1L, "VM", VirtualMachine.Type.User, 1,
+                1000, 256, 512, VirtualMachineTemplate.BootloaderType.HVM, "OS",
+                false, false, "Pass");
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm.getDataCenterId()).thenReturn(1L);
+        Mockito.when(vm.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        return new Pair<>(virtualMachineTO, vm);
+    }
+
+    @Test
+    public void testUpdateVmMetadataManufacturerAndProductDefaultManufacturer() {
+        overrideVmMetadataConfigValue("", "");
+        Pair<VirtualMachineTO, VMInstanceVO> pair = getDummyVmTOAndVm();
+        VirtualMachineTO to = pair.first();
+        virtualMachineManagerImpl.updateVmMetadataManufacturerAndProduct(to, pair.second());
+        Assert.assertEquals(VirtualMachineManager.VmMetadataManufacturer.defaultValue(), to.getMetadataManufacturer());
+    }
+
+    @Test
+    public void testUpdateVmMetadataManufacturerAndProductCustomManufacturerDefaultProduct() {
+        String manufacturer = "Custom";
+        overrideVmMetadataConfigValue(manufacturer, "");
+        Pair<VirtualMachineTO, VMInstanceVO> pair = getDummyVmTOAndVm();
+        VirtualMachineTO to = pair.first();
+        virtualMachineManagerImpl.updateVmMetadataManufacturerAndProduct(to, pair.second());
+        Assert.assertEquals(manufacturer, to.getMetadataManufacturer());
+        Assert.assertEquals("CloudStack KVM Hypervisor", to.getMetadataProductName());
+    }
+
+    @Test
+    public void testUpdateVmMetadataManufacturerAndProductCustomManufacturer() {
+        String manufacturer = UUID.randomUUID().toString();
+        String product = UUID.randomUUID().toString();
+        overrideVmMetadataConfigValue(manufacturer, product);
+        Pair<VirtualMachineTO, VMInstanceVO> pair = getDummyVmTOAndVm();
+        VirtualMachineTO to = pair.first();
+        virtualMachineManagerImpl.updateVmMetadataManufacturerAndProduct(to, pair.second());
+        Assert.assertEquals(manufacturer, to.getMetadataManufacturer());
+        Assert.assertEquals(product, to.getMetadataProductName());
     }
 }

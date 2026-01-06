@@ -22,8 +22,8 @@ import com.cloud.host.Status;
 
 public class DummyAttache extends AgentAttache {
 
-    public DummyAttache(AgentManagerImpl agentMgr, long id, String name, boolean maintenance) {
-        super(agentMgr, id, name, maintenance);
+    public DummyAttache(AgentManagerImpl agentMgr, long id, String uuid, String name, boolean maintenance) {
+        super(agentMgr, id, uuid, name, maintenance);
     }
 
     @Override

@@ -21,7 +21,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -42,7 +41,6 @@ import com.cloud.user.Account;
 @APICommand(name = "dedicateZone", description = "Dedicates a zones.", responseObject = DedicateZoneResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DedicateZoneCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DedicateZoneCmd.class.getName());
 
     @Inject
     public DedicatedService dedicatedService;
@@ -51,17 +49,17 @@ public class DedicateZoneCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of the zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of the zone")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
                entityType = DomainResponse.class,
                required = true,
-               description = "the ID of the containing domain")
+               description = "The ID of the containing domain")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the name of the account which needs dedication. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "The name of the account which needs dedication. Must be used with domainId.")
     private String accountName;
 
     /////////////////////////////////////////////////////

@@ -16,14 +16,16 @@
 // under the License.
 package com.cloud.dc;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import java.util.stream.Collectors;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.SearchBuilder;
@@ -90,6 +92,23 @@ public class ClusterDetailsDaoImpl extends ResourceDetailsDaoBase<ClusterDetails
     }
 
     @Override
+    public Map<String, String> findDetails(long clusterId, Collection<String> names) {
+        if (CollectionUtils.isEmpty(names)) {
+            return new HashMap<>();
+        }
+        SearchBuilder<ClusterDetailsVO> sb = createSearchBuilder();
+        sb.and("clusterId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.IN);
+        sb.done();
+        SearchCriteria<ClusterDetailsVO> sc = sb.create();
+        sc.setParameters("clusterId", clusterId);
+        sc.setParameters("name", names.toArray());
+        List<ClusterDetailsVO> results = search(sc, null);
+        return results.stream()
+                .collect(Collectors.toMap(ClusterDetailsVO::getName, ClusterDetailsVO::getValue));
+    }
+
+    @Override
     public void deleteDetails(long clusterId) {
         SearchCriteria<ClusterDetailsVO> sc = ClusterSearch.create();
         sc.setParameters("clusterId", clusterId);
@@ -142,9 +161,9 @@ public class ClusterDetailsDaoImpl extends ResourceDetailsDaoBase<ClusterDetails
     }
 
     @Override
-    public String getConfigValue(long id, ConfigKey<?> key) {
-        ClusterDetailsVO vo = findDetail(id, key.key());
-        return vo == null ? null : getActualValue(vo);
+    public String getConfigValue(long id, String key) {
+        ClusterDetailsVO vo = findDetail(id, key);
+        return vo == null ? null : vo.getValue();
     }
 
     @Override

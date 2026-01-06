@@ -32,12 +32,13 @@ import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.storage.Storage;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
 public class QemuImg {
-    private Logger logger = Logger.getLogger(this.getClass());
+    private Logger logger = LogManager.getLogger(this.getClass());
 
     public static final String BACKING_FILE = "backing_file";
     public static final String BACKING_FILE_FORMAT = "backing_file_format";

@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 
 import com.cloud.vm.Nic;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -42,10 +41,9 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "removeNicFromVirtualMachine", description = "Removes VM from specified network by deleting a NIC", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
+@APICommand(name = "removeNicFromVirtualMachine", description = "Removes Instance from specified Network by deleting a NIC", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class RemoveNicFromVMCmd extends BaseAsyncCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(RemoveNicFromVMCmd.class);
     private static final String s_name = "removenicfromvirtualmachineresponse";
 
     /////////////////////////////////////////////////////
@@ -53,7 +51,7 @@ public class RemoveNicFromVMCmd extends BaseAsyncCmd implements UserCmd {
     /////////////////////////////////////////////////////
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType=UserVmResponse.class,
-            required=true, description="Virtual Machine ID")
+            required=true, description = "Instance ID")
     private Long vmId;
 
     @Parameter(name = ApiConstants.NIC_ID, type = CommandType.UUID, entityType = NicResponse.class, required = true, description = "NIC ID")
@@ -91,7 +89,7 @@ public class RemoveNicFromVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Removing NIC " + this._uuidMgr.getUuid(Nic.class, getNicId()) + " from user vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getVmId());
+        return  "Removing NIC " + this._uuidMgr.getUuid(Nic.class, getNicId()) + " from User Instance: " + this._uuidMgr.getUuid(VirtualMachine.class, getVmId());
     }
 
     @Override
@@ -115,7 +113,7 @@ public class RemoveNicFromVMCmd extends BaseAsyncCmd implements UserCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove NIC from vm, see error log for details");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove NIC from Instance, see error log for details");
         }
     }
 }

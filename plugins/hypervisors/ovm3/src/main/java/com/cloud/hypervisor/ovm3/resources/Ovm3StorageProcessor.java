@@ -41,7 +41,8 @@ import org.apache.cloudstack.storage.command.SyncVolumePathCommand;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -78,7 +79,7 @@ import com.cloud.vm.DiskProfile;
  * Storage related bits
  */
 public class Ovm3StorageProcessor implements StorageProcessor {
-    private final Logger LOGGER = Logger.getLogger(Ovm3StorageProcessor.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private Connection c;
     private OvmObject ovmObject = new OvmObject();
     private Ovm3StoragePool pool;
@@ -92,7 +93,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
     }
 
     public final Answer execute(final CopyCommand cmd) {
-        LOGGER.debug("execute: "+ cmd.getClass());
+        logger.debug("execute: "+ cmd.getClass());
         DataTO srcData = cmd.getSrcTO();
         DataStoreTO srcStore = srcData.getDataStore();
         DataTO destData = cmd.getDestTO();
@@ -111,7 +112,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                     return cloneVolumeFromBaseTemplate(cmd);
                 } else {
                     msg = "Primary to Primary doesn't match";
-                    LOGGER.debug(msg);
+                    logger.debug(msg);
                 }
             } else if ((srcData.getObjectType() == DataObjectType.SNAPSHOT)
                     && (destData.getObjectType() == DataObjectType.SNAPSHOT)) {
@@ -126,38 +127,38 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                 msg = "Unable to do stuff for " + srcStore.getClass() + ":"
                         + srcData.getObjectType() + " to "
                         + destStore.getClass() + ":" + destData.getObjectType();
-                LOGGER.debug(msg);
+                logger.debug(msg);
             }
         } catch (Exception e) {
             msg = "Catch Exception " + e.getClass().getName()
                     + " for template due to " + e.toString();
-            LOGGER.warn(msg, e);
+            logger.warn(msg, e);
             return new CopyCmdAnswer(msg);
         }
-        LOGGER.warn(msg + " " + cmd.getClass());
+        logger.warn(msg + " " + cmd.getClass());
         return new CopyCmdAnswer(msg);
     }
 
     public Answer execute(DeleteCommand cmd) {
         DataTO data = cmd.getData();
         String msg;
-        LOGGER.debug("Deleting object: " + data.getObjectType());
+        logger.debug("Deleting object: " + data.getObjectType());
         if (data.getObjectType() == DataObjectType.VOLUME) {
             return deleteVolume(cmd);
         } else if (data.getObjectType() == DataObjectType.SNAPSHOT) {
             return deleteSnapshot(cmd);
         } else if (data.getObjectType() == DataObjectType.TEMPLATE) {
             msg = "Template deletion is not implemented yet.";
-            LOGGER.info(msg);
+            logger.info(msg);
         } else {
             msg = data.getObjectType() + " deletion is not implemented yet.";
-            LOGGER.info(msg);
+            logger.info(msg);
         }
         return new Answer(cmd, false, msg);
     }
 
     public CreateAnswer execute(CreateCommand cmd) {
-        LOGGER.debug("execute: "+ cmd.getClass());
+        logger.debug("execute: "+ cmd.getClass());
         StorageFilerTO primaryStorage = cmd.getPool();
         DiskProfile disk = cmd.getDiskCharacteristics();
         /* disk should have a uuid */
@@ -168,13 +169,13 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         try {
             StoragePlugin store = new StoragePlugin(c);
             if (cmd.getTemplateUrl() != null) {
-                LOGGER.debug("CreateCommand " + cmd.getTemplateUrl() + " "
+                logger.debug("CreateCommand " + cmd.getTemplateUrl() + " "
                         + dst);
                 Linux host = new Linux(c);
                 host.copyFile(cmd.getTemplateUrl(), dst);
             } else {
                 /* this is a dup with the createVolume ? */
-                LOGGER.debug("CreateCommand " + dst);
+                logger.debug("CreateCommand " + dst);
                 store.storagePluginCreate(primaryStorage.getUuid(),
                         primaryStorage.getHost(), dst, disk.getSize(), false);
             }
@@ -186,7 +187,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                     fp.getSize(), null);
             return new CreateAnswer(cmd, volume);
         } catch (Exception e) {
-            LOGGER.debug("CreateCommand failed", e);
+            logger.debug("CreateCommand failed", e);
             return new CreateAnswer(cmd, e.getMessage());
         }
     }
@@ -196,7 +197,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      */
     @Override
     public CopyCmdAnswer copyTemplateToPrimaryStorage(CopyCommand cmd) {
-        LOGGER.debug("execute copyTemplateToPrimaryStorage: "+ cmd.getClass());
+        logger.debug("execute copyTemplateToPrimaryStorage: "+ cmd.getClass());
         DataTO srcData = cmd.getSrcTO();
         DataStoreTO srcStore = srcData.getDataStore();
         DataTO destData = cmd.getDestTO();
@@ -225,7 +226,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                         + "/" + destUuid + ".raw";
             }
             String destFile = destPath + "/" + destUuid + ".raw";
-            LOGGER.debug("CopyFrom: " + srcData.getObjectType() + ","
+            logger.debug("CopyFrom: " + srcData.getObjectType() + ","
                     + srcFile + " to " + destData.getObjectType() + ","
                     + destFile);
             host.copyFile(srcFile, destFile);
@@ -237,7 +238,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             return new CopyCmdAnswer(newVol);
         } catch (Ovm3ResourceException e) {
             String msg = "Error while copying template to primary storage: " + e.getMessage();
-            LOGGER.info(msg);
+            logger.info(msg);
             return new CopyCmdAnswer(msg);
         }
     }
@@ -246,7 +247,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      */
     @Override
     public Answer copyVolumeFromPrimaryToSecondary(CopyCommand cmd) {
-        LOGGER.debug("execute copyVolumeFromPrimaryToSecondary: "+ cmd.getClass());
+        logger.debug("execute copyVolumeFromPrimaryToSecondary: "+ cmd.getClass());
         return new Answer(cmd);
     }
     /**
@@ -254,7 +255,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      */
     @Override
     public CopyCmdAnswer cloneVolumeFromBaseTemplate(CopyCommand cmd) {
-        LOGGER.debug("execute cloneVolumeFromBaseTemplate: "+ cmd.getClass());
+        logger.debug("execute cloneVolumeFromBaseTemplate: "+ cmd.getClass());
         try {
             // src
             DataTO srcData = cmd.getSrcTO();
@@ -266,7 +267,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             VolumeObjectTO dest = (VolumeObjectTO) destData;
             String destFile = getVirtualDiskPath(dest.getUuid(), dest.getDataStore().getUuid());
             Linux host = new Linux(c);
-            LOGGER.debug("CopyFrom: " + srcData.getObjectType() + ","
+            logger.debug("CopyFrom: " + srcData.getObjectType() + ","
                     + srcFile + " to " + destData.getObjectType() + ","
                     + destFile);
             host.copyFile(srcFile, destFile);
@@ -278,7 +279,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             return new CopyCmdAnswer(newVol);
         } catch (Ovm3ResourceException e) {
             String msg = "Error cloneVolumeFromBaseTemplate: " + e.getMessage();
-            LOGGER.info(msg);
+            logger.info(msg);
             return new CopyCmdAnswer(msg);
         }
     }
@@ -287,7 +288,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      */
     @Override
     public Answer createTemplateFromVolume(CopyCommand cmd) {
-        LOGGER.debug("execute createTemplateFromVolume: "+ cmd.getClass());
+        logger.debug("execute createTemplateFromVolume: "+ cmd.getClass());
         return new Answer(cmd);
     }
     /**
@@ -295,7 +296,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      */
     @Override
     public Answer copyVolumeFromImageCacheToPrimary(CopyCommand cmd) {
-        LOGGER.debug("execute copyVolumeFromImageCacheToPrimary: "+ cmd.getClass());
+        logger.debug("execute copyVolumeFromImageCacheToPrimary: "+ cmd.getClass());
         return new Answer(cmd);
     }
     /**
@@ -303,7 +304,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      */
     @Override
     public Answer createTemplateFromSnapshot(CopyCommand cmd) {
-        LOGGER.debug("execute createTemplateFromSnapshot: "+ cmd.getClass());
+        logger.debug("execute createTemplateFromSnapshot: "+ cmd.getClass());
         try {
             // src.getPath contains the uuid of the snapshot.
             DataTO srcData = cmd.getSrcTO();
@@ -333,7 +334,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             return new CopyCmdAnswer(newVol);
         } catch (Ovm3ResourceException e) {
             String msg = "Error backupSnapshot: " + e.getMessage();
-            LOGGER.info(msg);
+            logger.info(msg);
             return new CopyCmdAnswer(msg);
         }
     }
@@ -344,7 +345,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      */
     @Override
     public CopyCmdAnswer backupSnapshot(CopyCommand cmd) {
-        LOGGER.debug("execute backupSnapshot: "+ cmd.getClass());
+        logger.debug("execute backupSnapshot: "+ cmd.getClass());
         try {
             DataTO srcData = cmd.getSrcTO();
             DataTO destData = cmd.getDestTO();
@@ -366,7 +367,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             Linux host = new Linux(c);
             CloudstackPlugin csp = new CloudstackPlugin(c);
             csp.ovsMkdirs(destDir);
-            LOGGER.debug("CopyFrom: " + srcData.getObjectType() + ","
+            logger.debug("CopyFrom: " + srcData.getObjectType() + ","
                     + srcFile + " to " + destData.getObjectType() + ","
                     + destFile);
             host.copyFile(srcFile, destFile);
@@ -381,20 +382,20 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             return new CopyCmdAnswer(newSnap);
         } catch (Ovm3ResourceException e) {
             String msg = "Error backupSnapshot: " + e.getMessage();
-            LOGGER.info(msg);
+            logger.info(msg);
             return new CopyCmdAnswer(msg);
         }
     }
 
     public Answer execute(CreateObjectCommand cmd) {
-        LOGGER.debug("execute: "+ cmd.getClass());
+        logger.debug("execute: "+ cmd.getClass());
         DataTO data = cmd.getData();
         if (data.getObjectType() == DataObjectType.VOLUME) {
             return createVolume(cmd);
         } else if (data.getObjectType() == DataObjectType.SNAPSHOT) {
             return createSnapshot(cmd);
         } else if (data.getObjectType() == DataObjectType.TEMPLATE) {
-            LOGGER.debug("Template object creation not supported.");
+            logger.debug("Template object creation not supported.");
         }
         return new CreateObjectAnswer(data.getObjectType()
                 + " object creation not supported");
@@ -404,7 +405,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      */
     @Override
     public AttachAnswer attachIso(AttachCommand cmd) {
-        LOGGER.debug("execute attachIso: "+ cmd.getClass());
+        logger.debug("execute attachIso: "+ cmd.getClass());
         String vmName = cmd.getVmName();
         DiskTO disk = cmd.getDisk();
         return attachDetach(cmd, vmName, disk, true);
@@ -414,7 +415,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      */
     @Override
     public AttachAnswer dettachIso(DettachCommand cmd) {
-        LOGGER.debug("execute dettachIso: "+ cmd.getClass());
+        logger.debug("execute dettachIso: "+ cmd.getClass());
         String vmName = cmd.getVmName();
         DiskTO disk = cmd.getDisk();
         return attachDetach(cmd, vmName, disk, false);
@@ -470,7 +471,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             boolean isAttach) {
         Xen xen = new Xen(c);
         String doThis = (isAttach) ? "Attach" : "Dettach";
-        LOGGER.debug(doThis + " volume type " + disk.getType() + "  " + vmName);
+        logger.debug(doThis + " volume type " + disk.getType() + "  " + vmName);
         String msg = "";
         String path = "";
         try {
@@ -478,7 +479,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             /* check running */
             if (vm == null) {
                 msg = doThis + " can't find VM " + vmName;
-                LOGGER.debug(msg);
+                logger.debug(msg);
                 return new AttachAnswer(msg);
             }
             if (disk.getType() == Volume.Type.ISO) {
@@ -488,7 +489,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             }
             if ("".equals(path)) {
                 msg = doThis + " can't do anything with an empty path.";
-                LOGGER.debug(msg);
+                logger.debug(msg);
                 return new AttachAnswer(msg);
             }
             if (isAttach) {
@@ -501,7 +502,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                 if (!vm.removeDisk(path)) {
                     msg = doThis + " failed for " + vmName + disk.getType()
                             + "  was not attached " + path;
-                    LOGGER.debug(msg);
+                    logger.debug(msg);
                     return new AttachAnswer(msg);
                 }
             }
@@ -510,7 +511,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             return new AttachAnswer(disk);
         } catch (Ovm3ResourceException e) {
             msg = doThis + " failed for " + vmName + " " + e.getMessage();
-            LOGGER.warn(msg, e);
+            logger.warn(msg, e);
             return new AttachAnswer(msg);
         }
     }
@@ -519,7 +520,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      */
     @Override
     public AttachAnswer attachVolume(AttachCommand cmd) {
-        LOGGER.debug("execute attachVolume: "+ cmd.getClass());
+        logger.debug("execute attachVolume: "+ cmd.getClass());
         String vmName = cmd.getVmName();
         DiskTO disk = cmd.getDisk();
         return attachDetach(cmd, vmName, disk, true);
@@ -529,7 +530,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      */
     @Override
     public AttachAnswer dettachVolume(DettachCommand cmd) {
-        LOGGER.debug("execute dettachVolume: "+ cmd.getClass());
+        logger.debug("execute dettachVolume: "+ cmd.getClass());
         String vmName = cmd.getVmName();
         DiskTO disk = cmd.getDisk();
         return attachDetach(cmd, vmName, disk, false);
@@ -540,7 +541,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      */
     @Override
     public Answer createVolume(CreateObjectCommand cmd) {
-        LOGGER.debug("execute createVolume: "+ cmd.getClass());
+        logger.debug("execute createVolume: "+ cmd.getClass());
         DataTO data = cmd.getData();
         VolumeObjectTO volume = (VolumeObjectTO) data;
         try {
@@ -567,7 +568,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             newVol.setPath(volume.getUuid());
             return new CreateObjectAnswer(newVol);
         } catch (Ovm3ResourceException | URISyntaxException e) {
-            LOGGER.info("Volume creation failed: " + e.toString(), e);
+            logger.info("Volume creation failed: " + e.toString(), e);
             return new CreateObjectAnswer(e.toString());
         }
     }
@@ -586,7 +587,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      */
     @Override
     public Answer createSnapshot(CreateObjectCommand cmd) {
-        LOGGER.debug("execute createSnapshot: "+ cmd.getClass());
+        logger.debug("execute createSnapshot: "+ cmd.getClass());
         DataTO data = cmd.getData();
         Xen xen = new Xen(c);
         SnapshotObjectTO snap = (SnapshotObjectTO) data;
@@ -611,7 +612,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                 src = getVirtualDiskPath(vol.getUuid(),data.getDataStore().getUuid());
                 dest = src.replace(vol.getUuid(), uuid);
             }
-            LOGGER.debug("Snapshot " + src + " to " + dest);
+            logger.debug("Snapshot " + src + " to " + dest);
             host.copyFile(src, dest);
             SnapshotObjectTO nsnap = new SnapshotObjectTO();
             // nsnap.setPath(dest);
@@ -626,7 +627,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
 
     @Override
     public Answer deleteVolume(DeleteCommand cmd) {
-        LOGGER.debug("execute deleteVolume: "+ cmd.getClass());
+        logger.debug("execute deleteVolume: "+ cmd.getClass());
         DataTO data = cmd.getData();
         VolumeObjectTO volume = (VolumeObjectTO) data;
         try {
@@ -635,9 +636,9 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             String path = getVirtualDiskPath(uuid, poolUuid);
             StoragePlugin sp = new StoragePlugin(c);
             sp.storagePluginDestroy(poolUuid, path);
-            LOGGER.debug("Volume deletion success: " + path);
+            logger.debug("Volume deletion success: " + path);
         } catch (Ovm3ResourceException e) {
-            LOGGER.info("Volume deletion failed: " + e.toString(), e);
+            logger.info("Volume deletion failed: " + e.toString(), e);
             return new CreateObjectAnswer(e.toString());
         }
         return new Answer(cmd);
@@ -648,7 +649,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      * bumper bowling.
      */
     public CopyVolumeAnswer execute(CopyVolumeCommand cmd) {
-        LOGGER.debug("execute: "+ cmd.getClass());
+        logger.debug("execute: "+ cmd.getClass());
         String volumePath = cmd.getVolumePath();
         /* is a repository */
         String secondaryStorageURL = cmd.getSecondaryStorageURL();
@@ -662,26 +663,26 @@ public class Ovm3StorageProcessor implements StorageProcessor {
 
             /* to secondary storage */
             if (cmd.toSecondaryStorage()) {
-                LOGGER.debug("Copy to  secondary storage " + volumePath
+                logger.debug("Copy to  secondary storage " + volumePath
                         + " to " + secondaryStorageURL);
                 host.copyFile(volumePath, secondaryStorageURL);
                 /* from secondary storage */
             } else {
-                LOGGER.debug("Copy from secondary storage "
+                logger.debug("Copy from secondary storage "
                         + secondaryStorageURL + " to " + volumePath);
                 host.copyFile(secondaryStorageURL, volumePath);
             }
             /* check the truth of this */
             return new CopyVolumeAnswer(cmd, true, null, null, null);
         } catch (Ovm3ResourceException e) {
-            LOGGER.debug("Copy volume failed", e);
+            logger.debug("Copy volume failed", e);
             return new CopyVolumeAnswer(cmd, false, e.getMessage(), null, null);
         }
     }
 
     /* Destroy a volume (image) */
     public Answer execute(DestroyCommand cmd) {
-        LOGGER.debug("execute: "+ cmd.getClass());
+        logger.debug("execute: "+ cmd.getClass());
         VolumeTO vol = cmd.getVolume();
         String vmName = cmd.getVmName();
         try {
@@ -689,7 +690,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             store.storagePluginDestroy(vol.getPoolUuid(), vol.getPath());
             return new Answer(cmd, true, "Success");
         } catch (Ovm3ResourceException e) {
-            LOGGER.debug("Destroy volume " + vol.getName() + " failed for "
+            logger.debug("Destroy volume " + vol.getName() + " failed for "
                     + vmName + " ", e);
             return new Answer(cmd, false, e.getMessage());
         }
@@ -698,7 +699,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
     /* check if a VM is running should be added */
     public CreatePrivateTemplateAnswer execute(
             final CreatePrivateTemplateFromVolumeCommand cmd) {
-        LOGGER.debug("execute: "+ cmd.getClass());
+        logger.debug("execute: "+ cmd.getClass());
         String volumePath = cmd.getVolumePath();
         Long accountId = cmd.getAccountId();
         Long templateId = cmd.getTemplateId();
@@ -717,7 +718,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             host.copyFile(volumePath, installPath);
             return new CreatePrivateTemplateAnswer(cmd, true, installPath);
         } catch (Exception e) {
-            LOGGER.debug("Create template failed", e);
+            logger.debug("Create template failed", e);
             return new CreatePrivateTemplateAnswer(cmd, false, e.getMessage());
         }
     }
@@ -727,7 +728,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      */
     @Override
     public Answer createVolumeFromSnapshot(CopyCommand cmd) {
-        LOGGER.debug("execute createVolumeFromSnapshot: "+ cmd.getClass());
+        logger.debug("execute createVolumeFromSnapshot: "+ cmd.getClass());
         try {
             DataTO srcData = cmd.getSrcTO();
             DataStoreTO srcStore = srcData.getDataStore();
@@ -757,7 +758,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             return new CopyCmdAnswer(newVol);
             /* we assume the cache for templates is local */
         } catch (Ovm3ResourceException e) {
-            LOGGER.debug("Failed to createVolumeFromSnapshot: ", e);
+            logger.debug("Failed to createVolumeFromSnapshot: ", e);
             return new CopyCmdAnswer(e.toString());
         }
     }
@@ -767,7 +768,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      */
     @Override
     public Answer deleteSnapshot(DeleteCommand cmd) {
-        LOGGER.debug("execute deleteSnapshot: "+ cmd.getClass());
+        logger.debug("execute deleteSnapshot: "+ cmd.getClass());
         DataTO data = cmd.getData();
         SnapshotObjectTO snap = (SnapshotObjectTO) data;
         String storeUrl = data.getDataStore().getUrl();
@@ -780,10 +781,10 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                     + snapUuid + ".raw";
             StoragePlugin sp = new StoragePlugin(c);
             sp.storagePluginDestroy(secPoolUuid, filePath);
-            LOGGER.debug("Snapshot deletion success: " + filePath);
+            logger.debug("Snapshot deletion success: " + filePath);
             return new Answer(cmd, true, "Deleted Snapshot " + filePath);
         } catch (Ovm3ResourceException e) {
-            LOGGER.info("Snapshot deletion failed: " + e.toString(), e);
+            logger.info("Snapshot deletion failed: " + e.toString(), e);
             return new CreateObjectAnswer(e.toString());
         }
     }
@@ -792,7 +793,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      */
     @Override
     public Answer introduceObject(IntroduceObjectCmd cmd) {
-        LOGGER.debug("execute introduceObject: "+ cmd.getClass());
+        logger.debug("execute introduceObject: "+ cmd.getClass());
         return new Answer(cmd, false, "not implemented yet");
     }
     /**
@@ -800,7 +801,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      */
     @Override
     public Answer forgetObject(ForgetObjectCmd cmd) {
-        LOGGER.debug("execute forgetObject: "+ cmd.getClass());
+        logger.debug("execute forgetObject: "+ cmd.getClass());
         return new Answer(cmd, false, "not implemented yet");
     }
 
@@ -811,14 +812,14 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      */
     @Override
     public SnapshotAndCopyAnswer snapshotAndCopy(SnapshotAndCopyCommand cmd) {
-        LOGGER.info("'SnapshotAndCopyAnswer snapshotAndCopy(SnapshotAndCopyCommand)' not currently used for Ovm3StorageProcessor");
+        logger.info("'SnapshotAndCopyAnswer snapshotAndCopy(SnapshotAndCopyCommand)' not currently used for Ovm3StorageProcessor");
 
         return new SnapshotAndCopyAnswer("Not implemented");
     }
 
     @Override
     public ResignatureAnswer resignature(final ResignatureCommand cmd) {
-        LOGGER.info("'ResignatureAnswer resignature(ResignatureCommand)' not currently used for Ovm3StorageProcessor");
+        logger.info("'ResignatureAnswer resignature(ResignatureCommand)' not currently used for Ovm3StorageProcessor");
 
         return new ResignatureAnswer("Not implemented");
     }
@@ -830,13 +831,13 @@ public class Ovm3StorageProcessor implements StorageProcessor {
 
     @Override
     public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplainceCommand cmd) {
-        LOGGER.info("'CheckDataStoreStoragePolicyComplainceCommand' not applicable used for Ovm3StorageProcessor");
+        logger.info("'CheckDataStoreStoragePolicyComplainceCommand' not applicable used for Ovm3StorageProcessor");
         return new Answer(cmd,false,"Not applicable used for Ovm3StorageProcessor");
     }
 
     @Override
     public Answer syncVolumePath(SyncVolumePathCommand cmd) {
-        LOGGER.info("SyncVolumePathCommand not currently applicable for Ovm3StorageProcessor");
+        logger.info("SyncVolumePathCommand not currently applicable for Ovm3StorageProcessor");
         return new Answer(cmd, false, "Not currently applicable for Ovm3StorageProcessor");
     }
 
@@ -851,7 +852,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      * @return
      */
     public Answer execute(AttachCommand cmd) {
-        LOGGER.debug("execute: "+ cmd.getClass());
+        logger.debug("execute: "+ cmd.getClass());
         String vmName = cmd.getVmName();
         DiskTO disk = cmd.getDisk();
         return attachDetach(cmd, vmName, disk, true);
@@ -863,7 +864,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      * @return
      */
     public Answer execute(DettachCommand cmd) {
-        LOGGER.debug("execute: "+ cmd.getClass());
+        logger.debug("execute: "+ cmd.getClass());
         String vmName = cmd.getVmName();
         DiskTO disk = cmd.getDisk();
         return attachDetach(cmd, vmName, disk, false);

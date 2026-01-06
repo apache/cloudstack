@@ -43,7 +43,7 @@ def merge(dbag, rules):
                 dbag[source_ip] = [newrule]
             elif rules["type"] == "forwardrules":
                 index = -1
-                if source_ip in dbag.keys():
+                if source_ip in list(dbag.keys()):
                     for forward in dbag[source_ip]:
                         if ruleCompare(forward, newrule):
                             index = dbag[source_ip].index(forward)
@@ -55,10 +55,10 @@ def merge(dbag, rules):
                     dbag[source_ip] = [newrule]
         else:
             if rules["type"] == "staticnatrules":
-                if source_ip in dbag.keys():
+                if source_ip in list(dbag.keys()):
                     del dbag[source_ip]
             elif rules["type"] == "forwardrules":
-                if source_ip in dbag.keys():
+                if source_ip in list(dbag.keys()):
                     index = -1
                     for forward in dbag[source_ip]:
                         if ruleCompare(forward, newrule):

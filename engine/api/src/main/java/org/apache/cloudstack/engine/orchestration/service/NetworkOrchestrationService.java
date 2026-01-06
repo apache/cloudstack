@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.dc.DataCenter;
+import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
@@ -79,7 +80,7 @@ public interface NetworkOrchestrationService {
             "What version should the Virtual Routers report", true, ConfigKey.Scope.Zone, null);
 
     ConfigKey<Integer> NetworkLockTimeout = new ConfigKey<Integer>(Integer.class, NetworkLockTimeoutCK, "Network", "600",
-        "Lock wait timeout (seconds) while implementing network", true, Scope.Global, null);
+        "Lock wait timeout (seconds) while implementing Network", true, Scope.Global, null);
 
     ConfigKey<String> DeniedRoutes = new ConfigKey<String>(String.class, "denied.routes", "Network", "",
             "Routes that are denied, can not be used for Static Routes creation for the VPC Private Gateway", true, ConfigKey.Scope.Zone, null);
@@ -91,13 +92,13 @@ public interface NetworkOrchestrationService {
         "Default data transfer rate in megabits per second allowed in network.", true, ConfigKey.Scope.Zone);
 
     ConfigKey<Boolean> PromiscuousMode = new ConfigKey<Boolean>("Advanced", Boolean.class, "network.promiscuous.mode", "false",
-            "Whether to allow or deny promiscuous mode on nics for applicable network elements such as for vswitch/dvswitch portgroups.", true);
+            "Whether to allow or deny promiscuous mode on NICs for applicable network elements such as for vswitch/dvswitch portgroups.", true);
 
     ConfigKey<Boolean> MacAddressChanges = new ConfigKey<Boolean>("Advanced", Boolean.class, "network.mac.address.changes", "true",
-            "Whether to allow or deny mac address changes on nics for applicable network elements such as for vswitch/dvswitch porgroups.", true);
+            "Whether to allow or deny mac address changes on NICs for applicable network elements such as for vswitch/dvswitch porgroups.", true);
 
     ConfigKey<Boolean> ForgedTransmits = new ConfigKey<Boolean>("Advanced", Boolean.class, "network.forged.transmits", "true",
-            "Whether to allow or deny forged transmits on nics for applicable network elements such as for vswitch/dvswitch portgroups.", true);
+            "Whether to allow or deny forged transmits on NICs for applicable network elements such as for vswitch/dvswitch portgroups.", true);
 
     ConfigKey<Boolean> MacLearning = new ConfigKey<Boolean>("Advanced", Boolean.class, "network.mac.learning", "false",
             "Whether to allow or deny MAC learning on nics for applicable network elements such as for dvswitch portgroups.", true);
@@ -107,6 +108,9 @@ public interface NetworkOrchestrationService {
 
     static final ConfigKey<Boolean> TUNGSTEN_ENABLED = new ConfigKey<>(Boolean.class, "tungsten.plugin.enable", "Advanced", "false",
             "Indicates whether to enable the Tungsten plugin", false, ConfigKey.Scope.Zone, null);
+
+    static final ConfigKey<Boolean> NSX_ENABLED = new ConfigKey<>(Boolean.class, "nsx.plugin.enable", "Advanced", "false",
+            "Indicates whether to enable the NSX plugin", false, ConfigKey.Scope.Zone, null);
 
     List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
         throws ConcurrentOperationException;
@@ -143,6 +147,8 @@ public interface NetworkOrchestrationService {
     void removeNics(VirtualMachineProfile vm);
 
     List<NicProfile> getNicProfiles(VirtualMachine vm);
+
+    List<NicProfile> getNicProfiles(Long vmId, Hypervisor.HypervisorType hypervisorType);
 
     Map<String, String> getSystemVMAccessDetails(VirtualMachine vm);
 
@@ -196,7 +202,7 @@ public interface NetworkOrchestrationService {
     Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr, String vlanId, boolean bypassVlanOverlapCheck, String networkDomain, Account owner,
                                Long domainId, PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String ip6Gateway, String ip6Cidr,
                                Boolean displayNetworkEnabled, String isolatedPvlan, Network.PVlanType isolatedPvlanType, String externalId, String routerIp, String routerIpv6,
-                               String ip4Dns1, String ip4Dns2, String ip6Dns1, String ip6Dns2, Pair<Integer, Integer> vrIfaceMTUs) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
+                               String ip4Dns1, String ip4Dns2, String ip6Dns1, String ip6Dns2, Pair<Integer, Integer> vrIfaceMTUs, Integer networkCidrSize) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
     UserDataServiceProvider getPasswordResetProvider(Network network);
 
@@ -348,4 +354,6 @@ public interface NetworkOrchestrationService {
     Pair<NicProfile, Integer> importNic(final String macAddress, int deviceId, final Network network, final Boolean isDefaultNic, final VirtualMachine vm, final Network.IpAddresses ipAddresses, final DataCenter datacenter, boolean forced) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException;
 
     void unmanageNics(VirtualMachineProfile vm);
+
+    void expungeLbVmRefs(List<Long> vmIds, Long batchSize);
 }

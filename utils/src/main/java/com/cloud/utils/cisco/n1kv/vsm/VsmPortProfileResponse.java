@@ -21,7 +21,6 @@ package com.cloud.utils.cisco.n1kv.vsm;
 
 import java.util.StringTokenizer;
 
-import org.apache.log4j.Logger;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -32,7 +31,6 @@ import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.PortProfileType;
 import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.SwitchPortMode;
 
 public class VsmPortProfileResponse extends VsmResponse {
-    private static final Logger s_logger = Logger.getLogger(VsmPortProfileResponse.class);
     private static final String s_portProfileDetails = "__XML__OPT_Cmd_show_port_profile___readonly__";
 
     private PortProfile _portProfile = new PortProfile();
@@ -93,7 +91,7 @@ public class VsmPortProfileResponse extends VsmResponse {
                 }
             }
         } catch (DOMException e) {
-            s_logger.error("Error parsing the response : " + e.toString());
+            logger.error("Error parsing the response : " + e.toString());
         }
     }
 

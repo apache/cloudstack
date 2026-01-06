@@ -19,7 +19,7 @@ docker pull apache/cloudstack-simulator:4.17.2.0
 
 docker run --name simulator -p 8080:5050 -d apache/cloudstack-simulator
 
-or 
+or
 
 docker run --name simulator -p 8080:5050 -d apache/cloudstack-simulator:4.17.2.0
 
@@ -48,7 +48,7 @@ Log into the simulator:
 docker exec -it simulator bash
 ```
 
-### CloudStack Management-server 
+### CloudStack Management-server
 
 ```
 docker pull mysql:5.5

@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.admin.account;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -43,7 +42,6 @@ import com.cloud.user.Account;
 @APICommand(name = "disableAccount", description = "Disables an account", responseObject = AccountResponse.class, entityType = {Account.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class DisableAccountCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DisableAccountCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -52,13 +50,13 @@ public class DisableAccountCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "Account id")
     private Long id;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "Disables specified account.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "Disables specified Account.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "Disables specified account in this domain.")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "Disables specified Account in this domain.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.LOCK, type = CommandType.BOOLEAN, required = true, description = "If true, only lock the account; else disable the account")
+    @Parameter(name = ApiConstants.LOCK, type = CommandType.BOOLEAN, required = true, description = "If true, only lock the Account; else disable the Account")
     private Boolean lockRequested;
 
     @Inject
@@ -110,7 +108,7 @@ public class DisableAccountCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "disabling account: " + getAccountName() + " in domain: " + getDomainId();
+        return  "Disabling Account: " + getAccountName() + " in domain: " + getDomainId();
     }
 
     @Override
@@ -122,7 +120,7 @@ public class DisableAccountCmd extends BaseAsyncCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, lockRequested == true ? "Failed to lock account" : "Failed to disable account");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, lockRequested == true ? "Failed to lock Account" : "Failed to disable Account");
         }
     }
 

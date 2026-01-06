@@ -1,8 +1,8 @@
 ### Configure virtualbox
 
-1. Open virtualbox and navigate to its preferences/settings window. 
+1. Open virtualbox and navigate to its preferences/settings window.
 
-1. Click onto the network tab and then onto the host only network tab. 
+1. Click onto the network tab and then onto the host only network tab.
 
 1. Configure your adapters as follows:
 
@@ -10,7 +10,7 @@
     - IPv4 IP address of 192.168.22.1
     - Subnet of 255.255.255.0
     - DHCP server disabled
-    
+
 
 ### Start the vagrant boxes
 
@@ -33,8 +33,8 @@ vagrant up
 	```
 
 	*** Note: ***
-	
-	Personally I prefer to use the 4.3 codebase rather than main. If you wish to do the same:	
+
+	Personally I prefer to use the 4.3 codebase rather than main. If you wish to do the same:
 
 	```
 	git reset --hard 0810029
@@ -54,7 +54,7 @@ vagrant up
 	cd /path/to/cloudstack/repo
 	mvn -P developer,systemvm clean install -DskipTests=true
 	```
-	
+
 1. Deploy Cloudstack Database:
 
 	```bash
@@ -79,5 +79,5 @@ vagrant up
 1. Deploying:
 
     ```
-    python -m marvin.deployDataCenter -i marvin.cfg 
+    python -m marvin.deployDataCenter -i marvin.cfg
     ```

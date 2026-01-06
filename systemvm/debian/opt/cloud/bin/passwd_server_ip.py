@@ -31,10 +31,10 @@ import os
 import sys
 import syslog
 import threading
-import urlparse
+import urllib.parse
 
-from BaseHTTPServer   import BaseHTTPRequestHandler, HTTPServer
-from SocketServer     import ThreadingMixIn #, ForkingMixIn
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from socketserver import ThreadingMixIn
 
 
 passMap = {}
@@ -55,7 +55,7 @@ def initToken():
         with open(getTokenFile(), 'r') as f:
             secureToken = f.read()
     if not secureToken:
-        secureToken = binascii.hexlify(os.urandom(16))
+        secureToken = binascii.hexlify(os.urandom(16)).decode()
         with open(getTokenFile(), 'w') as f:
             f.write(secureToken)
 
@@ -64,7 +64,7 @@ def checkToken(token):
 
 def loadPasswordFile():
     try:
-        with file(getPasswordFile()) as f:
+        with open(getPasswordFile()) as f:
             for line in f:
                 if '=' not in line: continue
                 key, value = line.strip().split('=', 1)
@@ -75,11 +75,11 @@ def loadPasswordFile():
 def savePasswordFile():
     with lock:
         try:
-            with file(getPasswordFile(), 'w') as f:
+            with open(getPasswordFile(), 'w') as f:
                 for ip in passMap:
                     f.write('%s=%s\n' % (ip, passMap[ip]))
             f.close()
-        except IOError, e:
+        except IOError as e:
             syslog.syslog('serve_password: Unable to save to password file %s' % e)
 
 def getPassword(ip):
@@ -114,19 +114,19 @@ class PasswordRequestHandler(BaseHTTPRequestHandler):
         if requestType == 'send_my_password':
             password = getPassword(clientAddress)
             if not password:
-                self.wfile.write('saved_password')
+                self.wfile.write('saved_password'.encode())
                 syslog.syslog('serve_password: requested password not found for %s' % clientAddress)
             else:
-                self.wfile.write(password)
+                self.wfile.write(password.encode())
                 syslog.syslog('serve_password: password sent to %s' % clientAddress)
         elif requestType == 'saved_password':
             removePassword(clientAddress)
             savePasswordFile()
-            self.wfile.write('saved_password')
+            self.wfile.write('saved_password'.encode())
             syslog.syslog('serve_password: saved_password ack received from %s' % clientAddress)
         else:
             self.send_response(400)
-            self.wfile.write('bad_request')
+            self.wfile.write('bad_request'.encode())
             syslog.syslog('serve_password: bad_request from IP %s' % clientAddress)
         return
 
@@ -192,7 +192,7 @@ def serve(HandlerClass = PasswordRequestHandler,
     except KeyboardInterrupt:
         syslog.syslog('serve_password shutting down')
         passwordServer.socket.close()
-    except Exception, e:
+    except Exception as e:
         syslog.syslog('serve_password hit exception %s -- died' % e)
         passwordServer.socket.close()
 

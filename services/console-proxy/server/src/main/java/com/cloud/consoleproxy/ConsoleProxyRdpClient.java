@@ -21,7 +21,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.net.InetSocketAddress;
 
-import org.apache.log4j.Logger;
 
 import rdpclient.RdpClient;
 import streamer.Pipeline;
@@ -41,7 +40,6 @@ import common.SizeChangeListener;
 
 public class ConsoleProxyRdpClient extends ConsoleProxyClientBase {
 
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyRdpClient.class);
 
     private static final int SHIFT_KEY_MASK = 64;
     private static final int CTRL_KEY_MASK = 128;
@@ -75,7 +73,7 @@ public class ConsoleProxyRdpClient extends ConsoleProxyClientBase {
 
     @Override
     public void onClientClose() {
-        s_logger.info("Received client close indication. remove viewer from map.");
+        logger.info("Received client close indication. remove viewer from map.");
         ConsoleProxy.removeViewer(this);
     }
 
@@ -89,7 +87,7 @@ public class ConsoleProxyRdpClient extends ConsoleProxyClientBase {
     public boolean isFrontEndAlive() {
         if (_socket != null) {
             if (_workerDone || System.currentTimeMillis() - getClientLastFrontEndActivityTime() > ConsoleProxy.VIEWER_LINGER_SECONDS * 1000) {
-                s_logger.info("Front end has been idle for too long");
+                logger.info("Front end has been idle for too long");
                 _socket.shutdown();
                 return false;
             } else {
@@ -276,7 +274,7 @@ public class ConsoleProxyRdpClient extends ConsoleProxyClientBase {
                 }
             });
 
-            s_logger.info("connecting to instance " + instanceId + " on host " + host);
+            logger.info("connecting to instance " + instanceId + " on host " + host);
             _client = new RdpClient("client", host, domain, name, password, instanceId, _screen, _canvas, sslState);
 
             _mouseEventSource = _client.getMouseEventSource();
@@ -296,16 +294,16 @@ public class ConsoleProxyRdpClient extends ConsoleProxyClientBase {
 
                     try {
                         _workerDone = false;
-                        s_logger.info("Connecting socket to remote server and run main loop(s)");
+                        logger.info("Connecting socket to remote server and run main loop(s)");
                         _socket.connect(address);
                     } catch (Exception e) {
-                        s_logger.info(" error occurred in connecting to socket " + e.getMessage());
+                        logger.info(" error occurred in connecting to socket " + e.getMessage());
                     } finally {
                         shutdown();
                     }
 
                     _threadStopTime = System.currentTimeMillis();
-                    s_logger.info("Receiver thread stopped.");
+                    logger.info("Receiver thread stopped.");
                     _workerDone = true;
                 }
             });
@@ -313,7 +311,7 @@ public class ConsoleProxyRdpClient extends ConsoleProxyClientBase {
             _worker.start();
         } catch (Exception e) {
             _workerDone = true;
-            s_logger.info("error occurred in initializing rdp client " + e.getMessage());
+            logger.info("error occurred in initializing rdp client " + e.getMessage());
         }
     }
 

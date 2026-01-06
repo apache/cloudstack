@@ -27,7 +27,7 @@
                       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
                       http://www.springframework.org/schema/context
                       http://www.springframework.org/schema/context/spring-context.xsd"
-                      >                     
+                      >
 
   <!--
     LifeCycle
@@ -43,13 +43,13 @@
   <bean id="transactionContextInterceptor" class="com.cloud.utils.db.TransactionContextInterceptor" />
   <bean id="actionEventInterceptor" class="com.cloud.event.ActionEventInterceptor" />
   <aop:config>
-    <aop:advisor advice-ref="transactionContextInterceptor" 
+    <aop:advisor advice-ref="transactionContextInterceptor"
         pointcut="target(com.cloud.utils.db.GenericDaoBase)" />
-    <aop:advisor advice-ref="transactionContextInterceptor" 
+    <aop:advisor advice-ref="transactionContextInterceptor"
         pointcut="execution(* com.cloud.utils.db.EntityManager.*(..))" />
-    <aop:advisor advice-ref="actionEventInterceptor" 
+    <aop:advisor advice-ref="actionEventInterceptor"
         pointcut="execution(* *(..)) &amp;&amp; @annotation(com.cloud.event.ActionEvent)" />
-    <aop:advisor advice-ref="actionEventInterceptor" 
+    <aop:advisor advice-ref="actionEventInterceptor"
         pointcut="execution(* *(..)) &amp;&amp; @annotation(com.cloud.event.ActionEvents)" />
   </aop:config>
 

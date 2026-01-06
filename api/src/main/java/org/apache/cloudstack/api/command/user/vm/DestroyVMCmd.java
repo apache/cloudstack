@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.user.vm;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -42,11 +41,10 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "destroyVirtualMachine", description = "Destroys a virtual machine.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
+@APICommand(name = "destroyVirtualMachine", description = "Destroys  an Instance.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
 public class DestroyVMCmd extends BaseAsyncCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(DestroyVMCmd.class.getName());
 
     private static final String s_name = "destroyvirtualmachineresponse";
 
@@ -56,12 +54,12 @@ public class DestroyVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserVmResponse.class,
-            required=true, description="The ID of the virtual machine")
+            required=true, description = "The ID of the Instance")
     private Long id;
 
     @Parameter(name = ApiConstants.EXPUNGE,
                type = CommandType.BOOLEAN,
-               description = "If true is passed, the vm is expunged immediately. False by default.",
+               description = "If true is passed, the Instance is expunged immediately. False by default.",
                since = "4.2.1")
     private Boolean expunge;
 
@@ -118,7 +116,7 @@ public class DestroyVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return  "destroying vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
+        return  "destroying Instance: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
     }
 
     @Override
@@ -142,10 +140,11 @@ public class DestroyVMCmd extends BaseAsyncCmd implements UserCmd {
             if (responses != null && !responses.isEmpty()) {
                 response = responses.get(0);
             }
-            response.setResponseName("virtualmachine");
+            response.setResponseName(getCommandName());
+            response.setObjectName("virtualmachine");
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to destroy vm");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to destroy Instance");
         }
     }
 }

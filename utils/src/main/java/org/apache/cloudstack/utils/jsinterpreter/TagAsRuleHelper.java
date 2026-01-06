@@ -16,22 +16,22 @@
 //under the License.
 package org.apache.cloudstack.utils.jsinterpreter;
 
-import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.commons.lang3.StringEscapeUtils;
-import org.apache.log4j.Logger;
-
 import java.io.IOException;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class TagAsRuleHelper {
 
-    private static final Logger LOGGER = Logger.getLogger(TagAsRuleHelper.class);
+    protected static Logger LOGGER = LogManager.getLogger(TagAsRuleHelper.class);
 
     private static final String PARSE_TAGS = "tags = tags ? tags.split(',') : [];";
 
 
     public static boolean interpretTagAsRule(String rule, String tags, long timeout) {
         String script = PARSE_TAGS + rule;
-        tags = String.format("'%s'", StringEscapeUtils.escapeEcmaScript(tags));
         try (JsInterpreter jsInterpreter = new JsInterpreter(timeout)) {
             jsInterpreter.injectVariable("tags", tags);
             Object scriptReturn = jsInterpreter.executeScript(script);

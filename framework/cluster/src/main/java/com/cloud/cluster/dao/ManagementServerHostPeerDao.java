@@ -20,10 +20,17 @@ import org.apache.cloudstack.management.ManagementServerHost;
 import com.cloud.cluster.ManagementServerHostPeerVO;
 import com.cloud.utils.db.GenericDao;
 
+import java.util.Date;
+
 public interface ManagementServerHostPeerDao extends GenericDao<ManagementServerHostPeerVO, Long> {
     void clearPeerInfo(long ownerMshost);
 
     void updatePeerInfo(long ownerMshost, long peerMshost, long peerRunid, ManagementServerHost.State peerState);
 
-    int countStateSeenInPeers(long mshost, long runid, ManagementServerHost.State state);
+    int countStateSeenInPeers(long peerMshost, long runid, ManagementServerHost.State state);
+
+    boolean isPeerUpState(long peerMshost, Date cutTime);
+
+    boolean isPeerUpState(long ownerMshost, long peerMshost, Date cutTime);
+
 }

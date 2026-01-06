@@ -30,7 +30,6 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.RegionService;
-import org.apache.log4j.Logger;
 
 import com.cloud.domain.Domain;
 import com.cloud.event.EventTypes;
@@ -40,7 +39,6 @@ import com.cloud.user.Account;
 requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {
         RoleType.Admin, RoleType.DomainAdmin })
 public class DeleteDomainCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteDomainCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -51,7 +49,7 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.CLEANUP,
             type = CommandType.BOOLEAN,
-            description = "true if all domain resources (child domains, accounts) have to be cleaned up, false otherwise")
+            description = "True if all domain resources (child domains, Accounts) have to be cleaned up, false otherwise")
     private Boolean cleanup;
 
     @Inject
@@ -90,7 +88,7 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "deleting domain: " + getId();
+        return "Deleting domain: " + getId();
     }
 
     @Override

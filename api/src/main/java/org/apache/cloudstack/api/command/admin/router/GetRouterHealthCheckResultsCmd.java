@@ -30,7 +30,6 @@ import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import org.apache.cloudstack.api.response.RouterHealthCheckResultsListResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang.BooleanUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -47,17 +46,16 @@ import com.cloud.vm.VirtualMachine;
         responseHasSensitiveInfo = false,
         since = "4.14.0")
 public class GetRouterHealthCheckResultsCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(GetRouterHealthCheckResultsCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.ROUTER_ID, type = CommandType.UUID, entityType = DomainRouterResponse.class,
-            required = true, description = "the ID of the router")
+            required = true, description = "The ID of the router")
     private Long routerId;
 
-    @Parameter(name = ApiConstants.PERFORM_FRESH_CHECKS, type = CommandType.BOOLEAN, description = "if true is passed for this parameter, " +
+    @Parameter(name = ApiConstants.PERFORM_FRESH_CHECKS, type = CommandType.BOOLEAN, description = "If true is passed for this parameter, " +
             "health checks are performed on the fly. Else last performed checks data is fetched")
     private Boolean performFreshChecks;
 

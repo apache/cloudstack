@@ -57,7 +57,7 @@ public class UpdateProjectRolePermissionCmd extends BaseCmd {
     private Long projectId;
 
     @Parameter(name = ApiConstants.RULE_ORDER, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = ProjectRolePermissionResponse.class,
-            description = "The parent role permission uuid, use 0 to move this rule at the top of the list")
+            description = "ID of the parent role permission, use 0 to move this rule at the top of the list")
     private List<Long> projectRulePermissionOrder;
 
     @Parameter(name = ApiConstants.PROJECT_ROLE_PERMISSION_ID, type = CommandType.UUID, entityType = ProjectRolePermissionResponse.class,

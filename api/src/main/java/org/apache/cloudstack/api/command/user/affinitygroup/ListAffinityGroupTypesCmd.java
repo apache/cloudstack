@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.user.affinitygroup;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.affinity.AffinityGroupTypeResponse;
 import org.apache.cloudstack.api.APICommand;
@@ -31,7 +30,6 @@ import com.cloud.user.Account;
 @APICommand(name = "listAffinityGroupTypes", description = "Lists affinity group types available", responseObject = AffinityGroupTypeResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListAffinityGroupTypesCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListAffinityGroupTypesCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

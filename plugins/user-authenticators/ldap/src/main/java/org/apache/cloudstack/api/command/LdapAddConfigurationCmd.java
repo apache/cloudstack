@@ -20,7 +20,6 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -36,7 +35,6 @@ import com.cloud.user.Account;
 @APICommand(name = "addLdapConfiguration", description = "Add a new Ldap Configuration", responseObject = LdapConfigurationResponse.class, since = "4.2.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class LdapAddConfigurationCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(LdapAddConfigurationCmd.class.getName());
     private static final String s_name = "ldapconfigurationresponse";
 
     @Inject
@@ -48,7 +46,7 @@ public class LdapAddConfigurationCmd extends BaseCmd {
     @Parameter(name = ApiConstants.PORT, type = CommandType.INTEGER, required = true, description = "Port")
     private int port;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = false, entityType = DomainResponse.class, description = "linked domain")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = false, entityType = DomainResponse.class, description = "Linked domain")
     private Long domainId;
 
     public LdapAddConfigurationCmd() {

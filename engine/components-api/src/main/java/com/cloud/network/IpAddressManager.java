@@ -19,6 +19,7 @@ package com.cloud.network;
 import java.util.Date;
 import java.util.List;
 
+import com.cloud.user.User;
 import org.apache.cloudstack.api.response.AcquirePodIpCmdResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
@@ -88,7 +89,7 @@ public interface IpAddressManager {
      * @param caller
      * @return true if it did; false if it didn't
      */
-    boolean disassociatePublicIpAddress(long id, long userId, Account caller);
+    boolean disassociatePublicIpAddress(IpAddress ipAddress, long userId, Account caller);
 
     boolean applyRules(List<? extends FirewallRule> rules, FirewallRule.Purpose purpose, NetworkRuleApplier applier, boolean continueOnError)
             throws ResourceUnavailableException;
@@ -191,7 +192,7 @@ public interface IpAddressManager {
     PublicIp assignDedicateIpAddress(Account owner, Long guestNtwkId, Long vpcId, long dcId, boolean isSourceNat)
             throws ConcurrentOperationException, InsufficientAddressCapacityException;
 
-    IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, long callerId, DataCenter zone, Boolean displayIp, String ipaddress)
+    IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, User callerId, DataCenter zone, Boolean displayIp, String ipaddress)
             throws ConcurrentOperationException, ResourceAllocationException, InsufficientAddressCapacityException;
 
     PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp, String requestedGateway, boolean isSystem)

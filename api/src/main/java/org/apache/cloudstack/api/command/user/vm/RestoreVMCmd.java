@@ -17,11 +17,8 @@
 package org.apache.cloudstack.api.command.user.vm;
 
 import com.cloud.vm.VmDetailConstants;
-import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.cloudstack.api.response.DiskOfferingResponse;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -31,6 +28,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.UserCmd;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -46,22 +44,21 @@ import com.cloud.vm.VirtualMachine;
 
 import java.util.Map;
 
-@APICommand(name = "restoreVirtualMachine", description = "Restore a VM to original template/ISO or new template/ISO", responseObject = UserVmResponse.class, since = "3.0.0", responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
+@APICommand(name = "restoreVirtualMachine", description = "Restore an Instance to original Template/ISO or new Template/ISO", responseObject = UserVmResponse.class, since = "3.0.0", responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
 public class RestoreVMCmd extends BaseAsyncCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(RestoreVMCmd.class);
     private static final String s_name = "restorevmresponse";
 
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType=UserVmResponse.class,
-            required=true, description="Virtual Machine ID")
+            required=true, description = "Instance ID")
     private Long vmId;
 
     @Parameter(name = ApiConstants.TEMPLATE_ID,
                type = CommandType.UUID,
                entityType = TemplateResponse.class,
-               description = "an optional template Id to restore vm from the new template. This can be an ISO id in case of restore vm deployed using ISO")
+               description = "An optional Template Id to restore Instance from the new Template. This can be an ISO id in case of restore Instance deployed using ISO")
     private Long templateId;
 
     @Parameter(name = ApiConstants.DISK_OFFERING_ID,
@@ -93,7 +90,7 @@ public class RestoreVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return "Restore a VM to original template or specific snapshot";
+        return "Restore an Instance to original Template or specific Snapshot";
     }
 
     @Override
@@ -107,7 +104,7 @@ public class RestoreVMCmd extends BaseAsyncCmd implements UserCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to restore vm " + getVmId());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to restore Instance " + getVmId());
         }
     }
 

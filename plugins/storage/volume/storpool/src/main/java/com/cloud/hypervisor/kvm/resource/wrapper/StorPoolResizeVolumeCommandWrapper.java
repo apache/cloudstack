@@ -19,7 +19,6 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
 import com.cloud.agent.api.storage.StorPoolResizeVolumeCommand;
@@ -37,7 +36,6 @@ import com.cloud.utils.script.Script;
 @ResourceWrapper(handles = StorPoolResizeVolumeCommand.class)
 public final class StorPoolResizeVolumeCommandWrapper extends CommandWrapper<StorPoolResizeVolumeCommand, ResizeVolumeAnswer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(StorPoolResizeVolumeCommandWrapper.class);
 
     @Override
     public ResizeVolumeAnswer execute(final StorPoolResizeVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -51,7 +49,7 @@ public final class StorPoolResizeVolumeCommandWrapper extends CommandWrapper<Sto
 
         if (currentSize == newSize) {
             // nothing to do
-            s_logger.info("No need to resize volume: current size " + currentSize + " is same as new size " + newSize);
+            logger.info("No need to resize volume: current size " + currentSize + " is same as new size " + newSize);
             return new ResizeVolumeAnswer(command, true, "success", currentSize);
         }
 
@@ -65,7 +63,7 @@ public final class StorPoolResizeVolumeCommandWrapper extends CommandWrapper<Sto
             if (!command.isAttached()) {
                 StorPoolStorageAdaptor.attachOrDetachVolume("attach", "volume", path);
             }
-            final Script resizecmd = new Script(libvirtComputingResource.getResizeVolumePath(), libvirtComputingResource.getCmdsTimeout(), s_logger);
+            final Script resizecmd = new Script(libvirtComputingResource.getResizeVolumePath(), libvirtComputingResource.getCmdsTimeout(), logger);
             resizecmd.add("-s", String.valueOf(newSize));
             resizecmd.add("-c", String.valueOf(currentSize));
             resizecmd.add("-p", path);
@@ -83,11 +81,11 @@ public final class StorPoolResizeVolumeCommandWrapper extends CommandWrapper<Sto
             pool.refresh();
 
             final long finalSize = pool.getPhysicalDisk(volid).getVirtualSize();
-            s_logger.debug("after resize, size reports as " + finalSize + ", requested " + newSize);
+            logger.debug("after resize, size reports as " + finalSize + ", requested " + newSize);
             return new ResizeVolumeAnswer(command, true, "success", finalSize);
         } catch (final Exception e) {
             final String error = "Failed to resize volume: " + e.getMessage();
-            s_logger.debug(error);
+            logger.debug(error);
             return new ResizeVolumeAnswer(command, false, error);
         } finally {
             if (!command.isAttached() && volPath != null) {

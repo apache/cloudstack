@@ -22,6 +22,7 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
+import com.cloud.network.Network;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.Nic;
@@ -47,7 +48,7 @@ public interface RulesManager extends RulesService {
     FirewallRule[] reservePorts(IpAddress ip, String protocol, FirewallRule.Purpose purpose, boolean openFirewall, Account caller, int... ports)
         throws NetworkRuleConflictException;
 
-    boolean applyStaticNatsForNetwork(long networkId, boolean continueOnError, Account caller);
+    boolean applyStaticNatsForNetwork(Network network, boolean continueOnError, Account caller);
 
     void getSystemIpAndEnableStaticNatForVm(VirtualMachine vm, boolean getNewIp) throws InsufficientAddressCapacityException;
 
@@ -60,7 +61,7 @@ public interface RulesManager extends RulesService {
      * @param forRevoke
      * @return
      */
-    boolean applyStaticNatForNetwork(long networkId, boolean continueOnError, Account caller, boolean forRevoke);
+    boolean applyStaticNatForNetwork(Network network, boolean continueOnError, Account caller, boolean forRevoke);
 
     List<FirewallRuleVO> listAssociatedRulesForGuestNic(Nic nic);
 

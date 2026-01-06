@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command.admin.internallb;
 
 import org.apache.commons.lang.BooleanUtils;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -36,10 +35,9 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "listInternalLoadBalancerVMs", description = "List internal LB VMs.", responseObject = DomainRouterResponse.class, entityType = {VirtualMachine.class},
+@APICommand(name = "listInternalLoadBalancerVMs", description = "List internal LB Instances.", responseObject = DomainRouterResponse.class, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListInternalLBVMsCmd extends BaseListProjectAndAccountResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListInternalLBVMsCmd.class.getName());
 
     private static final String s_name = "listinternallbvmsresponse";
 
@@ -47,36 +45,36 @@ public class ListInternalLBVMsCmd extends BaseListProjectAndAccountResourcesCmd 
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "the host ID of the Internal LB VM")
+    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "The host ID of the Internal LB Instance")
     private Long hostId;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, description = "the ID of the Internal LB VM")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, description = "The ID of the Internal LB Instance")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the Internal LB VM")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the Internal LB Instance")
     private String routerName;
 
-    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "the Pod ID of the Internal LB VM")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "The Pod ID of the Internal LB Instance")
     private Long podId;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "the state of the Internal LB VM")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "The state of the Internal LB Instance")
     private String state;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the Zone ID of the Internal LB VM")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The Zone ID of the Internal LB Instance")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "list by network id")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "List by Network ID")
     private Long networkId;
 
-    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "List Internal LB VMs by VPC")
+    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "List Internal LB Instances by VPC")
     private Long vpcId;
 
-    @Parameter(name = ApiConstants.FOR_VPC, type = CommandType.BOOLEAN, description = "if true is passed for this parameter, list only VPC Internal LB VMs")
+    @Parameter(name = ApiConstants.FOR_VPC, type = CommandType.BOOLEAN, description = "If true is passed for this parameter, list only VPC Internal LB Instances")
     private Boolean forVpc;
 
 
     @Parameter(name = ApiConstants.FETCH_ROUTER_HEALTH_CHECK_RESULTS, type = CommandType.BOOLEAN, since = "4.14",
-            description = "if true is passed for this parameter, also fetch last executed health check results for the VM. Default is false")
+            description = "If true is passed for this parameter, also fetch last executed health check results for the Instance. Default is false")
     private Boolean fetchHealthCheckResults;
 
     /////////////////////////////////////////////////////

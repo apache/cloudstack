@@ -30,7 +30,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.management.StandardMBean;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
@@ -45,9 +46,9 @@ import com.cloud.utils.mgmt.JmxUtil;
  */
 public class ConnectionConcierge {
 
-    static final Logger s_logger = Logger.getLogger(ConnectionConcierge.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
-    static final ConnectionConciergeManager s_mgr = new ConnectionConciergeManager();
+    private final ConnectionConciergeManager sMgr = new ConnectionConciergeManager();
 
     Connection _conn;
     String _name;
@@ -57,7 +58,7 @@ public class ConnectionConcierge {
     int _holdability;
 
     public ConnectionConcierge(String name, Connection conn, boolean keepAlive) {
-        _name = name + s_mgr.getNextId();
+        _name = name + sMgr.getNextId();
         _keepAlive = keepAlive;
         try {
             _autoCommit = conn.getAutoCommit();
@@ -73,7 +74,7 @@ public class ConnectionConcierge {
         try {
             release();
         } catch (Throwable th) {
-            s_logger.error("Unable to release a connection", th);
+            logger.error("Unable to release a connection", th);
         }
         _conn = conn;
         try {
@@ -81,10 +82,10 @@ public class ConnectionConcierge {
             _conn.setHoldability(_holdability);
             _conn.setTransactionIsolation(_isolationLevel);
         } catch (SQLException e) {
-            s_logger.error("Unable to release a connection", e);
+            logger.error("Unable to release a connection", e);
         }
-        s_mgr.register(_name, this);
-        s_logger.debug("Registering a database connection for " + _name);
+        sMgr.register(_name, this);
+        logger.debug("Registering a database connection for " + _name);
     }
 
     public final Connection conn() {
@@ -92,7 +93,7 @@ public class ConnectionConcierge {
     }
 
     public void release() {
-        s_mgr.unregister(_name);
+        sMgr.unregister(_name);
         try {
             if (_conn != null) {
                 _conn.close();
@@ -114,7 +115,7 @@ public class ConnectionConcierge {
         return _keepAlive;
     }
 
-    protected static class ConnectionConciergeManager extends StandardMBean implements ConnectionConciergeMBean {
+    protected class ConnectionConciergeManager extends StandardMBean implements ConnectionConciergeMBean {
         ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("ConnectionKeeper"));
         final ConcurrentHashMap<String, ConnectionConcierge> _conns = new ConcurrentHashMap<String, ConnectionConcierge>();
         final AtomicInteger _idGenerator = new AtomicInteger();
@@ -125,7 +126,7 @@ public class ConnectionConcierge {
             try {
                 JmxUtil.registerMBean("DB Connections", "DB Connections", this);
             } catch (Exception e) {
-                s_logger.error("Unable to register mbean", e);
+                logger.error("Unable to register mbean", e);
             }
         }
 
@@ -144,10 +145,10 @@ public class ConnectionConcierge {
         protected String testValidity(String name, Connection conn) {
             if (conn != null) {
                 synchronized (conn) {
-                    try (PreparedStatement pstmt = conn.prepareStatement("SELECT 1");) {
+                    try (PreparedStatement pstmt = conn.prepareStatement("/* ping */ SELECT 1");) {
                         pstmt.executeQuery();
                     } catch (Throwable th) {
-                        s_logger.error("Unable to keep the db connection for " + name, th);
+                        logger.error("Unable to keep the db connection for " + name, th);
                         return th.toString();
                     }
                 }
@@ -187,7 +188,7 @@ public class ConnectionConcierge {
                 try {
                     _executor.shutdown();
                 } catch (Exception e) {
-                    s_logger.error("Unable to shutdown executor", e);
+                    logger.error("Unable to shutdown executor", e);
                 }
             }
 
@@ -196,13 +197,13 @@ public class ConnectionConcierge {
             _executor.scheduleAtFixedRate(new ManagedContextRunnable() {
                 @Override
                 protected void runInContext() {
-                    s_logger.trace("connection concierge keep alive task");
+                    logger.trace("connection concierge keep alive task");
                     for (Map.Entry<String, ConnectionConcierge> entry : _conns.entrySet()) {
                         String name = entry.getKey();
                         ConnectionConcierge concierge = entry.getValue();
                         if (concierge.keepAlive()) {
                             if (testValidity(name, concierge.conn()) != null) {
-                                s_logger.info("Resetting DB connection " + name);
+                                logger.info("Resetting DB connection " + name);
                                 resetConnection(name);
                             }
                         }

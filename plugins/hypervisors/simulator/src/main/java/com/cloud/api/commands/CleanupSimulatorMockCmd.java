@@ -30,19 +30,17 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
 
-@APICommand(name = "cleanupSimulatorMock", description="cleanup simulator mock", responseObject=SuccessResponse.class)
+@APICommand(name = "cleanupSimulatorMock", description = "Cleanup simulator mock", responseObject=SuccessResponse.class)
 public class CleanupSimulatorMockCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CleanupSimulatorMockCmd.class.getName());
     private static final String s_name = "cleanupsimulatormockresponse";
 
     @Inject SimulatorManager _simMgr;
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="id of the configured mock")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description = "ID of the configured mock")
     private Long id;
 
     @Override

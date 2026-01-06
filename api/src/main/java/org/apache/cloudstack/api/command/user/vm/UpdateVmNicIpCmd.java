@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.user.vm;
 import java.util.ArrayList;
 import java.util.EnumSet;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -47,15 +46,14 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 
-@APICommand(name = "updateVmNicIp", description = "Update the default Ip of a VM Nic", responseObject = UserVmResponse.class)
+@APICommand(name = "updateVmNicIp", description = "Update the default IP of an Instance NIC", responseObject = UserVmResponse.class)
 public class UpdateVmNicIpCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateVmNicIpCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @Parameter(name=ApiConstants.NIC_ID, type=CommandType.UUID, entityType = NicResponse.class, required = true,
-            description="the ID of the nic to which you want to assign private IP")
+            description = "The ID of the   NIC  to which you want to assign private IP")
             private Long nicId;
 
     @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, required = false,
@@ -81,7 +79,7 @@ public class UpdateVmNicIpCmd extends BaseAsyncCmd {
     private long getZoneId() {
         Network ntwk = _entityMgr.findById(Network.class, getNetworkId());
         if (ntwk == null) {
-            throw new InvalidParameterValueException("Can't find zone id for specified");
+            throw new InvalidParameterValueException("Can't find zone ID for specified");
         }
         return ntwk.getDataCenterId();
     }
@@ -89,7 +87,7 @@ public class UpdateVmNicIpCmd extends BaseAsyncCmd {
     public Long getNetworkId() {
         Nic nic = _entityMgr.findById(Nic.class, nicId);
         if (nic == null) {
-            throw new InvalidParameterValueException("Can't find network id for specified nic");
+            throw new InvalidParameterValueException("Can't find Network ID for specified NIC");
         }
         Long networkId = nic.getNetworkId();
         return networkId;
@@ -125,7 +123,7 @@ public class UpdateVmNicIpCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "associating ip to nic id: " + this._uuidMgr.getUuid(Network.class, getNetworkId()) + " in zone " + this._uuidMgr.getUuid(DataCenter.class, getZoneId());
+        return  "Associating IP to NIC id: " + this._uuidMgr.getUuid(Network.class, getNetworkId()) + " in zone " + this._uuidMgr.getUuid(DataCenter.class, getZoneId());
     }
 
     /////////////////////////////////////////////////////
@@ -145,7 +143,7 @@ public class UpdateVmNicIpCmd extends BaseAsyncCmd {
         String ip;
         if ((ip = getIpaddress()) != null) {
             if (!NetUtils.isValidIp4(ip)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Invalid ip address " + ip);
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Invalid IP address " + ip);
             }
         }
 
@@ -158,7 +156,7 @@ public class UpdateVmNicIpCmd extends BaseAsyncCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update ip address on vm NIC. Refer to server logs for details.");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update IP address on Instance NIC. Refer to server logs for details.");
         }
     }
 

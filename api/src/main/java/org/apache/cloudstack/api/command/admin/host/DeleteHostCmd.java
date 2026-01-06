@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.host;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -32,24 +31,23 @@ import com.cloud.user.Account;
 @APICommand(name = "deleteHost", description = "Deletes a host.", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteHostCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteHostCmd.class.getName());
 
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "the host ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "The host ID")
     private Long id;
 
     @Parameter(name = ApiConstants.FORCED,
                type = CommandType.BOOLEAN,
-               description = "Force delete the host. All HA enabled vms running on the host will be put to HA; HA disabled ones will be stopped")
+               description = "Force delete the host. All HA enabled Instances running on the host will be put to HA; HA disabled ones will be stopped")
     private Boolean forced;
 
     @Parameter(name = ApiConstants.FORCED_DESTROY_LOCAL_STORAGE,
                type = CommandType.BOOLEAN,
-               description = "Force destroy local storage on this host. All VMs created on this local storage will be destroyed")
+               description = "Force destroy local storage on this host. All Instances created on this local storage will be destroyed")
     private Boolean forceDestroyLocalStorage;
 
     // ///////////////////////////////////////////////////

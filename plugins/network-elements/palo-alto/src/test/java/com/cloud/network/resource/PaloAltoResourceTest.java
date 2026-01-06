@@ -98,7 +98,7 @@ public class PaloAltoResourceTest {
         _context.put("public_using_ethernet", "true");
         _context.put("private_using_ethernet", "true");
         _context.put("has_management_profile", "true");
-        _context.put("enable_console_output", "false"); // CHANGE TO "true" TO ENABLE CONSOLE LOGGING OF TESTS
+        _context.put("enable_console_output", "false"); // CHANGE TO "true" TO ENABLE CONSOLE loggerGING OF TESTS
         _resource.setMockContext(_context);
     }
 

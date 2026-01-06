@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.address;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -34,21 +33,20 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IpAddress;
 
 @APICommand(name = "releaseIpAddress",
-        description = "Releases an IP address from the account.",
+        description = "Releases an IP address from the Account.",
         since = "4.17",
         responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ReleaseIPAddrCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(ReleaseIPAddrCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = IPAddressResponse.class, required = true, description = "the ID of the public IP address"
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = IPAddressResponse.class, required = true, description = "The ID of the public IP address"
         + " to release")
     private Long id;
 

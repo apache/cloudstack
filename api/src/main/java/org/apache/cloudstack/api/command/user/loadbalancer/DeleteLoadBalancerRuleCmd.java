@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.loadbalancer;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -37,7 +36,6 @@ import com.cloud.user.Account;
 @APICommand(name = "deleteLoadBalancerRule", description = "Deletes a load balancer rule.", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteLoadBalancerRuleCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteLoadBalancerRuleCmd.class.getName());
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -46,7 +44,7 @@ public class DeleteLoadBalancerRuleCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = FirewallRuleResponse.class,
                required = true,
-               description = "the ID of the load balancer rule")
+               description = "The ID of the load balancer rule")
     private Long id;
 
     /////////////////////////////////////////////////////

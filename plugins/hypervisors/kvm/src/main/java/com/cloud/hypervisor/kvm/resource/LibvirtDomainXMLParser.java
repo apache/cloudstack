@@ -29,7 +29,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.cloudstack.utils.qemu.QemuObject;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -47,9 +48,10 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef.RngBackendModel;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogAction;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogModel;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestDef;
 
 public class LibvirtDomainXMLParser {
-    private static final Logger s_logger = Logger.getLogger(LibvirtDomainXMLParser.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private final List<InterfaceDef> interfaces = new ArrayList<InterfaceDef>();
     private MemBalloonDef memBalloonDef = new MemBalloonDef();
     private final List<DiskDef> diskDefs = new ArrayList<DiskDef>();
@@ -62,6 +64,8 @@ public class LibvirtDomainXMLParser {
     private LibvirtVMDef.CpuTuneDef cpuTuneDef;
     private LibvirtVMDef.CpuModeDef cpuModeDef;
     private String name;
+    private GuestDef.BootType bootType;
+    private GuestDef.BootMode bootMode;
 
     public boolean parseDomainXML(String domXML) {
         DocumentBuilder builder;
@@ -331,7 +335,7 @@ public class LibvirtDomainXMLParser {
                 String bytes = getAttrValue("rate", "bytes", rng);
                 String period = getAttrValue("rate", "period", rng);
                 if (StringUtils.isAnyEmpty(bytes, period)) {
-                    s_logger.debug(String.format("Bytes and period in the rng section should not be null, please check the VM %s", name));
+                    logger.debug(String.format("Bytes and period in the rng section should not be null, please check the VM %s", name));
                 }
 
                 if (bytes == null) {
@@ -387,13 +391,14 @@ public class LibvirtDomainXMLParser {
             }
             extractCpuTuneDef(rootElement);
             extractCpuModeDef(rootElement);
+            extractBootDef(rootElement);
             return true;
         } catch (ParserConfigurationException e) {
-            s_logger.debug(e.toString());
+            logger.debug(e.toString());
         } catch (SAXException e) {
-            s_logger.debug(e.toString());
+            logger.debug(e.toString());
         } catch (IOException e) {
-            s_logger.debug(e.toString());
+            logger.debug(e.toString());
         }
         return false;
     }
@@ -515,6 +520,14 @@ public class LibvirtDomainXMLParser {
         return cpuModeDef;
     }
 
+    public GuestDef.BootType getBootType() {
+        return bootType;
+    }
+
+    public GuestDef.BootMode getBootMode() {
+        return bootMode;
+    }
+
     private void extractCpuTuneDef(final Element rootElement) {
         NodeList cpuTunesList = rootElement.getElementsByTagName("cputune");
         if (cpuTunesList.getLength() > 0) {
@@ -562,9 +575,32 @@ public class LibvirtDomainXMLParser {
             }
             final String sockets = getAttrValue("topology", "sockets", cpuModeDefElement);
             final String cores = getAttrValue("topology", "cores", cpuModeDefElement);
-            if (StringUtils.isNotBlank(sockets) && StringUtils.isNotBlank(cores)) {
-                cpuModeDef.setTopology(Integer.parseInt(cores), Integer.parseInt(sockets));
+            final String threads = getAttrValue("topology", "threads", cpuModeDefElement);
+            if (StringUtils.isNotBlank(sockets) && StringUtils.isNotBlank(cores) && StringUtils.isNotBlank(threads)) {
+                cpuModeDef.setTopology(Integer.parseInt(cores), Integer.parseInt(threads), Integer.parseInt(sockets));
             }
+        }
+    }
+
+    protected void extractBootDef(final Element rootElement) {
+        bootType = GuestDef.BootType.BIOS;
+        bootMode = GuestDef.BootMode.LEGACY;
+        Element osElement = (Element) rootElement.getElementsByTagName("os").item(0);
+        if (osElement == null) {
+            return;
+        }
+        NodeList loaderList = osElement.getElementsByTagName("loader");
+        if (loaderList.getLength() == 0) {
+            return;
+        }
+        Element loader = (Element) loaderList.item(0);
+        String type = loader.getAttribute("type");
+        String secure = loader.getAttribute("secure");
+        if ("pflash".equalsIgnoreCase(type) || loader.getTextContent().toLowerCase().contains("uefi")) {
+            bootType = GuestDef.BootType.UEFI;
+        }
+        if ("yes".equalsIgnoreCase(secure)) {
+            bootMode = GuestDef.BootMode.SECURE;
         }
     }
 }

@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.user.affinitygroup;
 
 
 import org.apache.cloudstack.api.response.ProjectResponse;
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -40,18 +39,17 @@ import com.cloud.user.Account;
 @APICommand(name = "deleteAffinityGroup", description = "Deletes affinity group", responseObject = SuccessResponse.class, entityType = {AffinityGroup.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteAffinityGroupCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteAffinityGroupCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the account of the affinity group. Must be specified with domain ID")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "The account of the affinity group. Must be specified with domain ID")
     private String accountName;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
-               description = "the domain ID of account owning the affinity group",
+               description = "The domain ID of account owning the affinity group",
                entityType = DomainResponse.class)
     private Long domainId;
 
@@ -65,7 +63,7 @@ public class DeleteAffinityGroupCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the affinity group. Mutually exclusive with ID parameter")
     private String name;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, description = "the project of the affinity group", entityType = ProjectResponse.class)
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, description = "The project of the affinity group", entityType = ProjectResponse.class)
     private Long projectId;
 
     /////////////////////////////////////////////////////

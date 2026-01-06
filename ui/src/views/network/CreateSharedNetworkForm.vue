@@ -546,7 +546,8 @@ export default {
       minMTU: 68,
       setMTU: false,
       errorPublicMtu: '',
-      errorPrivateMtu: ''
+      errorPrivateMtu: '',
+      isNsxEnabled: false
     }
   },
   watch: {
@@ -665,6 +666,7 @@ export default {
       this.setMTU = zone?.allowuserspecifyvrmtu || false
       this.privateMtuMax = zone?.routerprivateinterfacemaxmtu || 1500
       this.publicMtuMax = zone?.routerpublicinterfacemaxmtu || 1500
+      this.isNsxEnabled = zone?.isnsxenabled || false
       if (isAdmin()) {
         this.fetchPhysicalNetworkData()
       } else {
@@ -716,7 +718,7 @@ export default {
           var trafficTypes = json.listtraffictypesresponse.traffictype
           if (this.arrayHasItems(trafficTypes)) {
             for (const type of trafficTypes) {
-              if (type.traffictype === 'Guest') {
+              if (type.traffictype === 'Guest' && physicalNetwork.isolationmethods !== 'NSX') {
                 this.formPhysicalNetworks.push(physicalNetwork)
                 break
               }

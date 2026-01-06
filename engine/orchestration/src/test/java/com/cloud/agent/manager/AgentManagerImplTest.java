@@ -47,7 +47,7 @@ public class AgentManagerImplTest {
         host = new HostVO("some-Uuid");
         host.setDataCenterId(1L);
         cmds = new StartupCommand[]{new StartupRoutingCommand()};
-        attache = new ConnectedAgentAttache(null, 1L, "kvm-attache", null, false);
+        attache = new ConnectedAgentAttache(null, 1L, "uuid", "kvm-attache", null, false);
 
         hostDao = Mockito.mock(HostDao.class);
         storagePoolMonitor = Mockito.mock(Listener.class);
@@ -82,5 +82,25 @@ public class AgentManagerImplTest {
             Assert.assertEquals(e.getMessage(), connectionException.getMessage());
         }
         Mockito.verify(mgr, Mockito.times(1)).handleDisconnectWithoutInvestigation(Mockito.any(attache.getClass()), Mockito.eq(Status.Event.AgentDisconnected), Mockito.eq(true), Mockito.eq(true));
+    }
+
+    @Test
+    public void testGetTimeoutWithPositiveTimeout() {
+        Commands commands = Mockito.mock(Commands.class);
+        int timeout = 30;
+        int result = mgr.getTimeout(commands, timeout);
+
+        Assert.assertEquals(30, result);
+    }
+
+    @Test
+    public void testGetTimeoutWithGranularTimeout() {
+        Commands commands = Mockito.mock(Commands.class);
+        Mockito.doReturn(50).when(mgr).getTimeoutFromGranularWaitTime(commands);
+
+        int timeout = 0;
+        int result = mgr.getTimeout(commands, timeout);
+
+        Assert.assertEquals(50, result);
     }
 }

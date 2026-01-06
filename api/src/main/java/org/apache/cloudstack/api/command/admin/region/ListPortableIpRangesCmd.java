@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.admin.region;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -33,11 +32,10 @@ import org.apache.cloudstack.region.PortableIpRange;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "listPortableIpRanges", description = "list portable IP ranges", responseObject = PortableIpRangeResponse.class,
+@APICommand(name = "listPortableIpRanges", description = "List portable IP ranges", responseObject = PortableIpRangeResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListPortableIpRangesCmd extends BaseListCmd {
 
-    public static final Logger s_logger = Logger.getLogger(ListPortableIpRangesCmd.class.getName());
 
     private static final String s_name = "listportableipresponse";
 

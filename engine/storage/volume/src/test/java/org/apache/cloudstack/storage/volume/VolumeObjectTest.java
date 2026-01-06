@@ -147,7 +147,7 @@ public class VolumeObjectTest extends TestCase{
         expectedResult.put(ObjectInDataStoreStateMachine.Event.MigrationRequested, Volume.Event.CopyRequested);
         expectedResult.put(ObjectInDataStoreStateMachine.Event.DestroyRequested, Volume.Event.DestroyRequested);
         expectedResult.put(ObjectInDataStoreStateMachine.Event.ExpungeRequested, Volume.Event.ExpungingRequested);
-        expectedResult.put(ObjectInDataStoreStateMachine.Event.OperationSuccessed, Volume.Event.OperationSucceeded);
+        expectedResult.put(ObjectInDataStoreStateMachine.Event.OperationSucceeded, Volume.Event.OperationSucceeded);
         expectedResult.put(ObjectInDataStoreStateMachine.Event.MigrationCopySucceeded, Volume.Event.MigrationCopySucceeded);
         expectedResult.put(ObjectInDataStoreStateMachine.Event.OperationFailed, Volume.Event.OperationFailed);
         expectedResult.put(ObjectInDataStoreStateMachine.Event.MigrationCopyFailed, Volume.Event.MigrationCopyFailed);
@@ -168,7 +168,7 @@ public class VolumeObjectTest extends TestCase{
         expectedResult.put(ObjectInDataStoreStateMachine.Event.MigrationCopyRequested, Volume.Event.MigrationCopyRequested);
         expectedResult.put(ObjectInDataStoreStateMachine.Event.DestroyRequested, Volume.Event.DestroyRequested);
         expectedResult.put(ObjectInDataStoreStateMachine.Event.ExpungeRequested, Volume.Event.ExpungingRequested);
-        expectedResult.put(ObjectInDataStoreStateMachine.Event.OperationSuccessed, Volume.Event.OperationSucceeded);
+        expectedResult.put(ObjectInDataStoreStateMachine.Event.OperationSucceeded, Volume.Event.OperationSucceeded);
         expectedResult.put(ObjectInDataStoreStateMachine.Event.MigrationCopySucceeded, Volume.Event.MigrationCopySucceeded);
         expectedResult.put(ObjectInDataStoreStateMachine.Event.OperationFailed, Volume.Event.OperationFailed);
         expectedResult.put(ObjectInDataStoreStateMachine.Event.MigrationCopyFailed, Volume.Event.MigrationCopyFailed);

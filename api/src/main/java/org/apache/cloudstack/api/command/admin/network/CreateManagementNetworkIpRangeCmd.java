@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.network;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiArgValidator;
@@ -35,6 +34,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
+import com.cloud.utils.StringUtils;
 
 @APICommand(name = "createManagementNetworkIpRange",
         description = "Creates a Management network IP range.",
@@ -44,7 +44,6 @@ import com.cloud.user.Account;
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
 public class CreateManagementNetworkIpRangeCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateManagementNetworkIpRangeCmd.class);
 
 
     /////////////////////////////////////////////////////
@@ -120,7 +119,7 @@ public class CreateManagementNetworkIpRangeCmd extends BaseAsyncCmd {
     }
 
     public String getVlan() {
-        if (vlan == null || vlan.isEmpty()) {
+        if (StringUtils.isBlank(vlan)) {
             vlan = "untagged";
         }
         return vlan;

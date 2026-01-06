@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.job;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -29,14 +28,13 @@ import com.cloud.user.Account;
 @APICommand(name = "queryAsyncJobResult", description = "Retrieves the current status of asynchronous job.", responseObject = AsyncJobResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QueryAsyncJobResultCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(QueryAsyncJobResultCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.JOB_ID, type = CommandType.UUID, entityType = AsyncJobResponse.class, required = true, description = "the ID of the asynchronous job")
+    @Parameter(name = ApiConstants.JOB_ID, type = CommandType.UUID, entityType = AsyncJobResponse.class, required = true, description = "The ID of the asynchronous job")
     private Long id;
 
     /////////////////////////////////////////////////////

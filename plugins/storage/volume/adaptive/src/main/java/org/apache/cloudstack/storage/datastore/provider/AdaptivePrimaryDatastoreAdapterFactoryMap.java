@@ -21,13 +21,14 @@ import java.util.Map;
 
 import org.apache.cloudstack.storage.datastore.adapter.ProviderAdapter;
 import org.apache.cloudstack.storage.datastore.adapter.ProviderAdapterFactory;
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class AdaptivePrimaryDatastoreAdapterFactoryMap {
-    private final Logger logger = Logger.getLogger(ProviderAdapter.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private Map<String,ProviderAdapterFactory> factoryMap = new HashMap<String,ProviderAdapterFactory>();
     private Map<String,ProviderAdapter> apiMap = new HashMap<String,ProviderAdapter>();
 

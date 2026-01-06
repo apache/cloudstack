@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -38,10 +37,9 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "stopVirtualMachine", responseObject = UserVmResponse.class, description = "Stops a virtual machine.", responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
+@APICommand(name = "stopVirtualMachine", responseObject = UserVmResponse.class, description = "Stops  an Instance.", responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class StopVMCmd extends BaseAsyncCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(StopVMCmd.class.getName());
 
     private static final String s_name = "stopvirtualmachineresponse";
 
@@ -51,12 +49,12 @@ public class StopVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType=UserVmResponse.class,
-            required = true, description = "The ID of the virtual machine")
+            required = true, description = "The ID of the Instance")
     private Long id;
 
-    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force stop the VM "
-        + "(vm is marked as Stopped even when command fails to be send to the backend, otherwise a force poweroff is attempted)."
-        + " This option is to be used if the caller knows the VM is stopped and should be marked as such.")
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force stop the Instance "
+        + "(Instance is marked as Stopped even when command fails to be send to the backend, otherwise a force poweroff is attempted)."
+        + " This option is to be used if the caller knows the Instance is stopped and should be marked as such.")
     private Boolean forced;
 
     // ///////////////////////////////////////////////////
@@ -98,7 +96,7 @@ public class StopVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return "stopping user vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
+        return "Stopping User Instance: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
     }
 
     @Override
@@ -127,7 +125,7 @@ public class StopVMCmd extends BaseAsyncCmd implements UserCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to stop vm");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to stop Instance");
         }
     }
 }

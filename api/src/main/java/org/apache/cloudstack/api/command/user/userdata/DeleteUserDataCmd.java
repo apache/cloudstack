@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 import com.cloud.user.UserData;
@@ -39,26 +38,25 @@ import com.cloud.user.UserData;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class DeleteUserDataCmd extends BaseCmd {
 
-    public static final Logger s_logger = Logger.getLogger(DeleteUserDataCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true, entityType = UserDataResponse.class, description = "the ID of the Userdata")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true, entityType = UserDataResponse.class, description = "The ID of the Userdata")
     private Long id;
 
     //Owner information
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the userdata. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "An optional account for the userdata. Must be used with domainId.")
     private String accountName;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.UUID,
             entityType = DomainResponse.class,
-            description = "an optional domainId for the userdata. If the account parameter is used, domainId must also be used.")
+            description = "An optional domainId for the userdata. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the userdata")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "An optional project for the userdata")
     private Long projectId;
 
     /////////////////////////////////////////////////////

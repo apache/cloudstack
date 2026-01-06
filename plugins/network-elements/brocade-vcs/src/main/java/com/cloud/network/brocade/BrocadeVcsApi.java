@@ -42,7 +42,8 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.network.schema.interfacevlan.InterfaceVlan;
 import com.cloud.network.schema.interfacevlan.Interface;
@@ -61,7 +62,7 @@ import com.cloud.network.schema.portprofile.VlanProfile.SwitchportBasic.Basic;
 import com.cloud.network.schema.showvcs.Output;
 
 public class BrocadeVcsApi {
-    private static final Logger s_logger = Logger.getLogger(BrocadeVcsApi.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private final String _host;
     private final String _adminuser;
@@ -74,7 +75,7 @@ public class BrocadeVcsApi {
         try {
             url = new URL(Constants.PROTOCOL, _host, Constants.PORT, uri).toString();
         } catch (final MalformedURLException e) {
-            s_logger.error("Unable to build Brocade Switch API URL", e);
+            logger.error("Unable to build Brocade Switch API URL", e);
             throw new BrocadeVcsApiException("Unable to build Brocade Switch API URL", e);
         }
 
@@ -338,12 +339,12 @@ public class BrocadeVcsApi {
             try {
                 errorMessage = responseToErrorMessage(response);
             } catch (final IOException e) {
-                s_logger.error("Failed to update object : " + e.getMessage());
+                logger.error("Failed to update object : " + e.getMessage());
                 throw new BrocadeVcsApiException("Failed to update object : " + e.getMessage());
             }
 
             pm.releaseConnection();
-            s_logger.error("Failed to update object : " + errorMessage);
+            logger.error("Failed to update object : " + errorMessage);
             throw new BrocadeVcsApiException("Failed to update object : " + errorMessage);
         }
 
@@ -363,12 +364,12 @@ public class BrocadeVcsApi {
             marshaller.marshal(object, stringWriter);
 
         } catch (final JAXBException e) {
-            s_logger.error("Failed to convert object to string : " + e.getMessage());
+            logger.error("Failed to convert object to string : " + e.getMessage());
             throw new BrocadeVcsApiException("Failed to convert object to string : " + e.getMessage());
         }
 
         final String str = stringWriter.toString();
-        s_logger.info(str);
+        logger.info(str);
 
         return str;
 
@@ -387,11 +388,11 @@ public class BrocadeVcsApi {
 
             if (result instanceof Output) {
                 output = (Output)result;
-                s_logger.info(output);
+                logger.info(output);
             }
 
         } catch (final JAXBException e) {
-            s_logger.error("Failed to convert string to object : " + e.getMessage());
+            logger.error("Failed to convert string to object : " + e.getMessage());
             throw new BrocadeVcsApiException("Failed to convert string to object : " + e.getMessage());
         }
 
@@ -417,12 +418,12 @@ public class BrocadeVcsApi {
             try {
                 errorMessage = responseToErrorMessage(response);
             } catch (final IOException e) {
-                s_logger.error("Failed to create object : " + e.getMessage());
+                logger.error("Failed to create object : " + e.getMessage());
                 throw new BrocadeVcsApiException("Failed to create object : " + e.getMessage());
             }
 
             pm.releaseConnection();
-            s_logger.error("Failed to create object : " + errorMessage);
+            logger.error("Failed to create object : " + errorMessage);
             throw new BrocadeVcsApiException("Failed to create object : " + errorMessage);
         }
 
@@ -451,12 +452,12 @@ public class BrocadeVcsApi {
             try {
                 errorMessage = responseToErrorMessage(response);
             } catch (final IOException e) {
-                s_logger.error("Failed to retreive status : " + e.getMessage());
+                logger.error("Failed to retreive status : " + e.getMessage());
                 throw new BrocadeVcsApiException("Failed to retreive status : " + e.getMessage());
             }
 
             pm.releaseConnection();
-            s_logger.error("Failed to retreive status : " + errorMessage);
+            logger.error("Failed to retreive status : " + errorMessage);
             throw new BrocadeVcsApiException("Failed to retreive status : " + errorMessage);
         }
 
@@ -464,12 +465,12 @@ public class BrocadeVcsApi {
             sb = new StringBuffer();
 
             while ((readLine = br.readLine()) != null) {
-                s_logger.debug(readLine);
+                logger.debug(readLine);
                 sb.append(readLine);
 
             }
         } catch (final Exception e) {
-            s_logger.error("Failed to retreive status : " + e.getMessage());
+            logger.error("Failed to retreive status : " + e.getMessage());
             throw new BrocadeVcsApiException("Failed to retreive status : " + e.getMessage());
         }
 
@@ -494,12 +495,12 @@ public class BrocadeVcsApi {
             try {
                 errorMessage = responseToErrorMessage(response);
             } catch (final IOException e) {
-                s_logger.error("Failed to delete object : " + e.getMessage());
+                logger.error("Failed to delete object : " + e.getMessage());
                 throw new BrocadeVcsApiException("Failed to delete object : " + e.getMessage());
             }
 
             dm.releaseConnection();
-            s_logger.error("Failed to delete object : " + errorMessage);
+            logger.error("Failed to delete object : " + errorMessage);
             throw new BrocadeVcsApiException("Failed to delete object : " + errorMessage);
         }
         dm.releaseConnection();
@@ -514,7 +515,7 @@ public class BrocadeVcsApi {
                 response = _client.execute(method);
             }
         } catch (final IOException e) {
-            s_logger.error("IOException caught while trying to connect to the Brocade Switch", e);
+            logger.error("IOException caught while trying to connect to the Brocade Switch", e);
             method.releaseConnection();
             throw new BrocadeVcsApiException("API call to Brocade Switch Failed", e);
         }

@@ -26,7 +26,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDao;
-import org.apache.log4j.Logger;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.Vlan.VlanType;
@@ -50,7 +50,6 @@ import com.cloud.utils.net.Ip;
 @Component
 @DB
 public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implements IPAddressDao {
-    private static final Logger s_logger = Logger.getLogger(IPAddressDaoImpl.class);
 
     protected SearchBuilder<IPAddressVO> AllFieldsSearch;
     protected SearchBuilder<IPAddressVO> VlanDbIdSearchUnallocated;
@@ -374,7 +373,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
                 ipCount = rs.getInt(1);
             }
         } catch (Exception e) {
-            s_logger.warn("Exception counting IP addresses", e);
+            logger.warn("Exception counting IP addresses", e);
         }
 
         return ipCount;
@@ -422,7 +421,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     public long countFreeIpsInVlan(long vlanDbId) {
         SearchCriteria<IPAddressVO> sc = VlanDbIdSearchUnallocated.create();
         sc.setParameters("vlanDbId", vlanDbId);
-        return listBy(sc).size();
+        return getCount(sc);
     }
 
     @Override
@@ -562,5 +561,17 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         sc.setParameters("dataCenterId", dataCenterId);
         sc.setParameters("state", State.Free);
         return findOneBy(sc);
+    }
+
+    @Override
+    public int expungeByVmList(List<Long> vmIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(vmIds)) {
+            return 0;
+        }
+        SearchBuilder<IPAddressVO> sb = createSearchBuilder();
+        sb.and("vmIds", sb.entity().getAssociatedWithVmId(), SearchCriteria.Op.IN);
+        SearchCriteria<IPAddressVO> sc = sb.create();
+        sc.setParameters("vmIds", vmIds.toArray());
+        return batchExpunge(sc, batchSize);
     }
 }

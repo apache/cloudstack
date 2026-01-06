@@ -24,6 +24,7 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
 
     private long managementServerHostId;
     private String managementServerHostUuid;
+    private long managementServerRunId;
 
     private Date collectionTime;
     private long sessions;
@@ -95,7 +96,16 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     }
 
     @Override
-    public Date getCollectionTime(){
+    public long getManagementServerRunId() {
+        return managementServerRunId;
+    }
+
+    public void setManagementServerRunId(long managementServerRunId) {
+        this.managementServerRunId = managementServerRunId;
+    }
+
+    @Override
+    public Date getCollectionTime() {
         return collectionTime;
     }
 

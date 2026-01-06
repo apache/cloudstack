@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.storage;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -37,7 +36,6 @@ import com.cloud.user.Account;
 @APICommand(name = "enableStorageMaintenance", description = "Puts storage pool into maintenance state", responseObject = StoragePoolResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class PreparePrimaryStorageForMaintenanceCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(PreparePrimaryStorageForMaintenanceCmd.class.getName());
     private static final String s_name = "prepareprimarystorageformaintenanceresponse";
 
     /////////////////////////////////////////////////////

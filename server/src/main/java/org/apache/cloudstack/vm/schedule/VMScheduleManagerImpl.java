@@ -39,7 +39,6 @@ import org.apache.cloudstack.vm.schedule.dao.VMScheduleDao;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.springframework.scheduling.support.CronExpression;
 
 import com.cloud.api.query.MutualExclusiveIdsManagerBase;
@@ -58,8 +57,6 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 
 public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase implements VMScheduleManager, PluggableService {
-
-    private static Logger LOGGER = Logger.getLogger(VMScheduleManagerImpl.class);
 
     @Inject
     private VMScheduleDao vmScheduleDao;
@@ -121,7 +118,7 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
             description = String.format("%s - %s", action, DateUtil.getHumanReadableSchedule(cronExpression));
         } else description = cmd.getDescription();
 
-        LOGGER.warn(String.format("Using timezone [%s] for running the schedule for VM [%s], as an equivalent of [%s].", timeZoneId, vm.getUuid(), cmdTimeZone));
+        logger.warn("Using timezone [{}] for running the schedule for VM [{}], as an equivalent of [{}].", timeZoneId, vm, cmdTimeZone);
 
         String finalDescription = description;
         VMSchedule.Action finalAction = action;
@@ -221,8 +218,8 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
             timeZone = TimeZone.getTimeZone(cmdTimeZone);
             timeZoneId = timeZone.getID();
             if (!timeZoneId.equals(cmdTimeZone)) {
-                LOGGER.warn(String.format("Using timezone [%s] for running the schedule [%s] for VM %s, as an equivalent of [%s].",
-                        timeZoneId, vmSchedule.getSchedule(), vmSchedule.getVmId(), cmdTimeZone));
+                logger.warn("Using timezone [{}] for running the schedule [{}] for VM {}, as an equivalent of [{}].",
+                        timeZoneId, vmSchedule.getSchedule(), userVmManager.getUserVm(vmSchedule.getVmId()), cmdTimeZone);
             }
             vmSchedule.setTimeZone(timeZoneId);
         } else {

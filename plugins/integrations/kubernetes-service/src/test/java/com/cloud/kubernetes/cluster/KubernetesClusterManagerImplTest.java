@@ -21,6 +21,7 @@ package com.cloud.kubernetes.cluster;
 
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.vo.TemplateJoinVO;
+import com.cloud.cpu.CPU;
 import com.cloud.dc.DataCenter;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -291,5 +292,23 @@ public class KubernetesClusterManagerImplTest {
         Mockito.when(cluster.getClusterType()).thenReturn(KubernetesCluster.ClusterType.ExternalManaged);
         Mockito.when(kubernetesClusterDao.findById(Mockito.anyLong())).thenReturn(cluster);
         Assert.assertTrue(kubernetesClusterManager.removeVmsFromCluster(cmd).size() > 0);
+    }
+
+    @Test
+    public void testGetCksClusterPreferredArchDifferentArchsPreferCKSIsoArch() {
+        String systemVMArch = "x86_64";
+        VMTemplateVO cksIso = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(cksIso.getArch()).thenReturn(CPU.CPUArch.arm64);
+        String cksClusterPreferredArch = kubernetesClusterManager.getCksClusterPreferredArch(systemVMArch, cksIso);
+        Assert.assertEquals(CPU.CPUArch.arm64.name(), cksClusterPreferredArch);
+    }
+
+    @Test
+    public void testGetCksClusterPreferredArchSameArch() {
+        String systemVMArch = "x86_64";
+        VMTemplateVO cksIso = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(cksIso.getArch()).thenReturn(CPU.CPUArch.amd64);
+        String cksClusterPreferredArch = kubernetesClusterManager.getCksClusterPreferredArch(systemVMArch, cksIso);
+        Assert.assertEquals(CPU.CPUArch.amd64.name(), cksClusterPreferredArch);
     }
 }

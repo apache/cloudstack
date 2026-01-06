@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -33,25 +32,24 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.user.Account;
 
-@APICommand(name = "resetVpnConnection", description = "Reset site to site vpn connection", responseObject = Site2SiteVpnConnectionResponse.class, entityType = {Site2SiteVpnConnection.class},
+@APICommand(name = "resetVpnConnection", description = "Reset site to site VPN connection", responseObject = Site2SiteVpnConnectionResponse.class, entityType = {Site2SiteVpnConnection.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ResetVpnConnectionCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(ResetVpnConnectionCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = Site2SiteVpnConnectionResponse.class, required = true, description = "id of vpn connection")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = Site2SiteVpnConnectionResponse.class, required = true, description = "ID of VPN connection")
     private Long id;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for connection. " + "Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "An optional Account for connection. " + "Must be used with domainId.")
     private String accountName;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
                entityType = DomainResponse.class,
-               description = "an optional domainId for connection. If the account parameter is used, domainId must also be used.")
+               description = "An optional domainId for connection. If the Account parameter is used, domainId must also be used.")
     private Long domainId;
 
     /////////////////////////////////////////////////////
@@ -85,7 +83,7 @@ public class ResetVpnConnectionCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Reset site-to-site VPN connection for account " + getEntityOwnerId();
+        return "Reset site-to-site VPN connection for Account " + getEntityOwnerId();
     }
 
     @Override
@@ -105,7 +103,7 @@ public class ResetVpnConnectionCmd extends BaseAsyncCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to reset site to site VPN connection");
             }
         } catch (ResourceUnavailableException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         }
     }

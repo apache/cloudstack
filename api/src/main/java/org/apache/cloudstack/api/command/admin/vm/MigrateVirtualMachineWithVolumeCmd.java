@@ -33,7 +33,6 @@ import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -47,12 +46,11 @@ import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "migrateVirtualMachineWithVolume",
-            description = "Attempts Migration of a VM with its volumes to a different host",
+            description = "Attempts Migration of an Instance with its volumes to a different host",
             responseObject = UserVmResponse.class, entityType = {VirtualMachine.class},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
 public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(MigrateVirtualMachineWithVolumeCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -62,14 +60,14 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.HOST_ID,
                type = CommandType.UUID,
                entityType = HostResponse.class,
-               description = "Destination Host ID to migrate VM to.")
+               description = "Destination Host ID to migrate Instance to.")
     private Long hostId;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
                type = CommandType.UUID,
                entityType = UserVmResponse.class,
                required = true,
-               description = "the ID of the virtual machine")
+               description = "The ID of the Instance")
     private Long virtualMachineId;
 
     @Parameter(name = ApiConstants.MIGRATE_TO,
@@ -86,7 +84,7 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.AUTO_SELECT,
             since = "4.19.0",
             type = CommandType.BOOLEAN,
-            description = "Automatically select a destination host for a running instance, if hostId is not specified. false by default")
+            description = "Automatically select a destination host for a running Instance, if hostId is not specified. false by default")
     private Boolean autoSelect;
 
     /////////////////////////////////////////////////////
@@ -137,7 +135,7 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Attempting to migrate VM Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getVirtualMachineId()) + " to host Id: " + this._uuidMgr.getUuid(Host.class, getHostId());
+        return "Attempting to migrate Instance Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getVirtualMachineId()) + " to host Id: " + this._uuidMgr.getUuid(Host.class, getHostId());
     }
 
     @Override
@@ -157,8 +155,8 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
         Host destinationHost = _resourceService.getHost(getHostId());
         // OfflineVmwareMigration: destination host would have to not be a required parameter for stopped VMs
         if (destinationHost == null) {
-            s_logger.error(String.format("Unable to find the host with ID [%s].", getHostId()));
-            throw new InvalidParameterValueException("Unable to find the specified host to migrate the VM.");
+            logger.error(String.format("Unable to find the host with ID [%s].", getHostId()));
+            throw new InvalidParameterValueException("Unable to find the specified host to migrate the Instance.");
         }
         return destinationHost;
     }
@@ -166,7 +164,7 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         if (hostId == null && MapUtils.isEmpty(migrateVolumeTo) && !Boolean.TRUE.equals(autoSelect)) {
-            throw new InvalidParameterValueException(String.format("Either %s or %s must be passed or %s must be true for migrating the VM.", ApiConstants.HOST_ID, ApiConstants.MIGRATE_TO, ApiConstants.AUTO_SELECT));
+            throw new InvalidParameterValueException(String.format("Either %s or %s must be passed or %s must be true for migrating the Instance.", ApiConstants.HOST_ID, ApiConstants.MIGRATE_TO, ApiConstants.AUTO_SELECT));
         }
 
         VirtualMachine virtualMachine = _userVmService.getVm(getVirtualMachineId());
@@ -190,13 +188,13 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
             if (migratedVm != null) {
                 setResponseBasedOnVmType(virtualMachine, migratedVm);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to migrate vm");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to migrate Instance");
             }
         } catch (ResourceUnavailableException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         } catch (ConcurrentOperationException | ManagementServerException | VirtualMachineMigrationException e) {
-            s_logger.warn("Exception: ", e);
+            logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }

@@ -27,6 +27,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.network.vpc.VpcOffering;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -77,6 +78,12 @@ public class VpcOfferingJoinVO implements VpcOffering {
     @Column(name = "sort_key")
     int sortKey;
 
+    @Column(name = "for_nsx")
+    boolean forNsx = false;
+
+    @Column(name = "network_mode")
+    NetworkOffering.NetworkMode networkMode;
+
     @Column(name = "domain_id")
     private String domainId;
 
@@ -100,6 +107,13 @@ public class VpcOfferingJoinVO implements VpcOffering {
 
     @Column(name = "internet_protocol")
     private String internetProtocol = null;
+
+    @Column(name="routing_mode")
+    @Enumerated(value = EnumType.STRING)
+    private NetworkOffering.RoutingMode routingMode;
+
+    @Column(name = "specify_as_number")
+    private Boolean specifyAsNumber = false;
 
     public VpcOfferingJoinVO() {
     }
@@ -139,6 +153,16 @@ public class VpcOfferingJoinVO implements VpcOffering {
     }
 
     @Override
+    public boolean isForNsx() {
+        return forNsx;
+    }
+
+    @Override
+    public NetworkOffering.NetworkMode getNetworkMode() {
+        return networkMode;
+    }
+
+    @Override
     public Date getRemoved() {
         return removed;
     }
@@ -146,6 +170,24 @@ public class VpcOfferingJoinVO implements VpcOffering {
     @Override
     public Date getCreated() {
         return created;
+    }
+
+    @Override
+    public NetworkOffering.RoutingMode getRoutingMode() {
+        return routingMode;
+    }
+
+    public void setRoutingMode(NetworkOffering.RoutingMode routingMode) {
+        this.routingMode = routingMode;
+    }
+
+    @Override
+    public Boolean isSpecifyAsNumber() {
+        return specifyAsNumber;
+    }
+
+    public void setSpecifyAsNumber(Boolean specifyAsNumber) {
+        this.specifyAsNumber = specifyAsNumber;
     }
 
     @Override

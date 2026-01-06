@@ -42,7 +42,6 @@ import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.cloudstack.utils.qemu.QemuObject.EncryptFormat;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
 
 import java.io.IOException;
@@ -52,8 +51,6 @@ import java.util.List;
 
 @ResourceWrapper(handles =  CheckAndRepairVolumeCommand.class)
 public class LibvirtCheckAndRepairVolumeCommandWrapper extends CommandWrapper<CheckAndRepairVolumeCommand, Answer, LibvirtComputingResource> {
-
-    private static final Logger s_logger = Logger.getLogger(LibvirtCheckAndRepairVolumeCommandWrapper.class);
 
     @Override
     public Answer execute(CheckAndRepairVolumeCommand command, LibvirtComputingResource serverResource) {
@@ -105,7 +102,7 @@ public class LibvirtCheckAndRepairVolumeCommandWrapper extends CommandWrapper<Ch
         EncryptFormat encryptFormat = EncryptFormat.enumValue(command.getEncryptFormat());
         byte[] passphrase = command.getPassphrase();
         String checkVolumeResult = checkAndRepairVolume(vol, null, encryptFormat, passphrase, serverResource);
-        s_logger.info(String.format("Check Volume result for the volume %s is %s", vol.getName(), checkVolumeResult));
+        logger.info(String.format("Check Volume result for the volume %s is %s", vol.getName(), checkVolumeResult));
         CheckAndRepairVolumeAnswer answer = new CheckAndRepairVolumeAnswer(command, true, checkVolumeResult);
         answer.setVolumeCheckExecutionResult(checkVolumeResult);
 
@@ -119,7 +116,7 @@ public class LibvirtCheckAndRepairVolumeCommandWrapper extends CommandWrapper<Ch
 
         String repairVolumeResult = checkAndRepairVolume(vol, repair, encryptFormat, passphrase, serverResource);
         String finalResult = (checkVolumeResult != null ? checkVolumeResult.concat(",") : "") + repairVolumeResult;
-        s_logger.info(String.format("Repair Volume result for the volume %s is %s", vol.getName(), repairVolumeResult));
+        logger.info(String.format("Repair Volume result for the volume %s is %s", vol.getName(), repairVolumeResult));
 
         CheckAndRepairVolumeAnswer answer = new CheckAndRepairVolumeAnswer(command, true, finalResult);
         answer.setVolumeRepairExecutionResult(repairVolumeResult);
@@ -138,7 +135,7 @@ public class LibvirtCheckAndRepairVolumeCommandWrapper extends CommandWrapper<Ch
                 jsonNode = objectMapper.readTree(checkVolumeResult);
             } catch (JsonProcessingException e) {
                 String msg = String.format("Error processing response %s during check volume %s", checkVolumeResult, e.getMessage());
-                s_logger.info(msg);
+                logger.info(msg);
 
                 return skipRepairVolumeCommand(command, checkVolumeResult, msg);
             }
@@ -157,7 +154,7 @@ public class LibvirtCheckAndRepairVolumeCommandWrapper extends CommandWrapper<Ch
     }
 
     private CheckAndRepairVolumeAnswer skipRepairVolumeCommand(CheckAndRepairVolumeCommand command, String checkVolumeResult, String msg) {
-        s_logger.info(msg);
+        logger.info(msg);
         String jsonStringFormat = String.format("{ \"message\": \"%s\" }", msg);
         String finalResult = (checkVolumeResult != null ? checkVolumeResult.concat(",") : "") + jsonStringFormat;
         CheckAndRepairVolumeAnswer answer = new CheckAndRepairVolumeAnswer(command, true, finalResult);

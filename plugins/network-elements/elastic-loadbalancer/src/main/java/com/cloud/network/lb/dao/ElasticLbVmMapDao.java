@@ -40,4 +40,6 @@ public interface ElasticLbVmMapDao extends GenericDao<ElasticLbVmMapVO, Long> {
 
     List<LoadBalancerVO> listLbsForElbVm(long elbVmId);
 
+    int expungeByLbVmList(List<Long> vmIds, Long batchSize);
+
 }

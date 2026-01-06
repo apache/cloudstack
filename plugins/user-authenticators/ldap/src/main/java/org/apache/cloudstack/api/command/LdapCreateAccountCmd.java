@@ -36,7 +36,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.ldap.LdapManager;
 import org.apache.cloudstack.ldap.LdapUser;
 import org.apache.cloudstack.ldap.NoLdapUserMatchingQueryException;
-import org.apache.log4j.Logger;
 import org.bouncycastle.util.encoders.Base64;
 
 import javax.inject.Inject;
@@ -47,7 +46,6 @@ import java.util.Map;
 
 @APICommand(name = "ldapCreateAccount", description = "Creates an account from an LDAP user", responseObject = AccountResponse.class, since = "4.2.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class LdapCreateAccountCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(LdapCreateAccountCmd.class.getName());
     private static final String s_name = "createaccountresponse";
 
     @Inject
@@ -74,7 +72,7 @@ public class LdapCreateAccountCmd extends BaseCmd {
     @Parameter(name = ApiConstants.NETWORK_DOMAIN, type = CommandType.STRING, description = "Network domain for the account's networks")
     private String networkDomain;
 
-    @Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "details for account used to store specific parameters")
+    @Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "Details for account used to store specific parameters")
     private Map<String, String> details;
 
     @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.STRING, description = "Account UUID, required for adding account from external provisioning system")

@@ -27,6 +27,12 @@ log_it() {
 systemctl restart systemd-journald
 
 # Restore the persistent iptables nat, rules and filters for IPv4 and IPv6 if they exist
+nftables="/etc/iptables/rules.nftables"
+if [ -e $nftables ]
+then
+  nft -f $nftables
+fi
+
 ipv4="/etc/iptables/rules.v4"
 if [ -e $ipv4 ]
 then
@@ -49,7 +55,7 @@ then
   fi
 fi
 
-if [ "$TYPE" == "cksnode" ]; then
+if [ "$TYPE" == "cksnode" ] || [ "$TYPE" == "sharedfsvm" ]; then
   pkill -9 dhclient
 fi
 

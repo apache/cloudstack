@@ -36,7 +36,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>createDomain</name>
 		<parameters>
@@ -51,8 +51,8 @@ under the License.
 				<param>level1domain2id</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>createDomain</name>
 		<parameters>
@@ -72,7 +72,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>createDomain</name>
 		<parameters>
@@ -173,8 +173,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 <!-- Create domain admin for domain1 in level 1 -->
 	<command>
 		<name>createUser</name>
@@ -218,8 +218,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 <!-- Create domain admin for domain2 in level 1 -->
 	<command>
 		<name>createUser</name>
@@ -262,8 +262,8 @@ under the License.
 				<param>domain12adminaccount</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 <!-- Create domain admin for domain1 in level 2 -->
 	<command>
 		<name>createUser</name>
@@ -307,6 +307,6 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 
 </delegatedadmin>

@@ -24,6 +24,7 @@ import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.network.addr.PublicIp;
+import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.router.NicProfileHelper;
@@ -35,7 +36,7 @@ import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.vm.DomainRouterVO;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 
 import java.util.List;
@@ -45,7 +46,7 @@ import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
-import static org.mockito.Matchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -61,6 +62,8 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
 
     @Mock
     protected VpcDao mockVpcDao;
+    @Mock
+    protected NsxProviderDao nsxProviderDao;
     @Mock
     protected PhysicalNetworkDao mockPhNwDao;
     protected PhysicalNetworkServiceProviderDao mockPhProviderDao;
@@ -205,7 +208,7 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
         final VpcOfferingVO vpcOffering = mock(VpcOfferingVO.class);
         when(mockVpcOffDao.findById(VPC_OFFERING_ID)).thenReturn(vpcOffering);
         when(vpcOffering.getServiceOfferingId()).thenReturn(null);
-        when(mockServiceOfferingDao.findDefaultSystemOffering(Matchers.anyString(), Matchers.anyBoolean())).thenReturn(mockSvcOfferingVO);
+        when(mockServiceOfferingDao.findDefaultSystemOffering(ArgumentMatchers.anyString(), ArgumentMatchers.anyBoolean())).thenReturn(mockSvcOfferingVO);
         when(mockSvcOfferingVO.getId()).thenReturn(DEFAULT_OFFERING_ID);
 
         // Execute
@@ -266,7 +269,7 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
     public void testFindSourceNatIP() throws InsufficientAddressCapacityException, ConcurrentOperationException {
         // Prepare
         final PublicIp publicIp = mock(PublicIp.class);
-        when(vpcMgr.assignSourceNatIpAddressToVpc(mockOwner, mockVpc)).thenReturn(publicIp);
+        when(vpcMgr.assignSourceNatIpAddressToVpc(mockOwner, mockVpc, null)).thenReturn(publicIp);
         deployment.isPublicNetwork = true;
 
         // Execute

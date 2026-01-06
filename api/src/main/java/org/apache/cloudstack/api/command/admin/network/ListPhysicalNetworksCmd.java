@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.admin.network;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -38,20 +37,19 @@ import com.cloud.utils.Pair;
 @APICommand(name = "listPhysicalNetworks", description = "Lists physical networks", responseObject = PhysicalNetworkResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListPhysicalNetworksCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListPhysicalNetworksCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "list physical network by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "List physical network by id")
     private Long id;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the Zone ID for the physical network")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The Zone ID for the physical network")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "search by name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Search by name")
     private String networkName;
 
     /////////////////////////////////////////////////////

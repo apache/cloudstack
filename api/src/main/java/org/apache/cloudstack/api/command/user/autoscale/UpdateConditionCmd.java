@@ -17,7 +17,6 @@
 
 package org.apache.cloudstack.api.command.user.autoscale;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -37,18 +36,17 @@ import com.cloud.exception.ResourceInUseException;
 import com.cloud.network.as.Condition;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateCondition", description = "Updates a condition for VM auto scaling", responseObject = SuccessResponse.class, entityType = {Condition.class},
+@APICommand(name = "updateCondition", description = "Updates a condition for Instance auto scaling", responseObject = SuccessResponse.class, entityType = {Condition.class},
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.18.0")
 public class UpdateConditionCmd extends BaseAsyncCmd {
-    public static final Logger LOGGER = Logger.getLogger(UpdateConditionCmd.class.getName());
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
     @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ConditionResponse.class, required = true, description = "the ID of the condition.")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ConditionResponse.class, required = true, description = "The ID of the condition.")
     private Long id;
 
     @Parameter(name = ApiConstants.RELATIONAL_OPERATOR, type = CommandType.STRING, required = true, description = "Relational Operator to be used with threshold. Valid values are EQ, GT, LT, GE, LE.")
@@ -69,7 +67,7 @@ public class UpdateConditionCmd extends BaseAsyncCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (ResourceInUseException ex) {
-            LOGGER.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_IN_USE_ERROR, ex.getMessage());
         }
     }

@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.admin.network;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -40,7 +39,6 @@ import com.cloud.user.Account;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateNetworkServiceProviderCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -49,13 +47,13 @@ public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "Enabled/Disabled/Shutdown the physical network service provider")
     private String state;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProviderResponse.class, required = true, description = "network service provider id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProviderResponse.class, required = true, description = "Network service provider ID")
     private Long id;
 
     @Parameter(name = ApiConstants.SERVICE_LIST,
                type = CommandType.LIST,
                collectionType = CommandType.STRING,
-               description = "the list of services to be enabled for this physical network service provider")
+               description = "The list of services to be enabled for this physical network service provider")
     private List<String> enabledServices;
 
     /////////////////////////////////////////////////////

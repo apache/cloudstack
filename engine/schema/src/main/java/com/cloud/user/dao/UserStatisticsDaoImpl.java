@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.TimeZone;
 
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.user.UserStatisticsVO;
@@ -36,7 +35,6 @@ import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 public class UserStatisticsDaoImpl extends GenericDaoBase<UserStatisticsVO, Long> implements UserStatisticsDao {
-    private static final Logger s_logger = Logger.getLogger(UserStatisticsDaoImpl.class);
     private static final String ACTIVE_AND_RECENTLY_DELETED_SEARCH =
         "SELECT us.id, us.data_center_id, us.account_id, us.public_ip_address, us.device_id, us.device_type, us.network_id, us.agg_bytes_received, us.agg_bytes_sent "
             + "FROM user_statistics us, account a " + "WHERE us.account_id = a.id AND (a.removed IS NULL OR a.removed >= ?) " + "ORDER BY us.id";
@@ -109,7 +107,7 @@ public class UserStatisticsDaoImpl extends GenericDaoBase<UserStatisticsVO, Long
                 userStats.add(toEntityBean(rs, false));
             }
         } catch (Exception ex) {
-            s_logger.error("error saving user stats to cloud_usage db", ex);
+            logger.error("error saving user stats to cloud_usage db", ex);
         }
         return userStats;
     }
@@ -127,7 +125,7 @@ public class UserStatisticsDaoImpl extends GenericDaoBase<UserStatisticsVO, Long
                 userStats.add(toEntityBean(rs, false));
             }
         } catch (Exception ex) {
-            s_logger.error("error lisitng updated user stats", ex);
+            logger.error("error lisitng updated user stats", ex);
         }
         return userStats;
     }

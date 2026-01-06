@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.affinitygroup;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -27,11 +26,10 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import com.cloud.vm.VirtualMachine;
 
 
-@APICommand(name = "updateVMAffinityGroup", description = "Updates the affinity/anti-affinity group associations of a virtual machine. The VM has to be stopped and restarted for the "
+@APICommand(name = "updateVMAffinityGroup", description = "Updates the affinity/anti-affinity group associations of an Instance. The Instance has to be stopped and restarted for the "
         + "new properties to take effect.", responseObject = UserVmResponse.class, responseView = ResponseView.Full,
         entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = true)
 public class UpdateVMAffinityGroupCmdByAdmin extends UpdateVMAffinityGroupCmd implements AdminCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateVMAffinityGroupCmdByAdmin.class.getName());
 }

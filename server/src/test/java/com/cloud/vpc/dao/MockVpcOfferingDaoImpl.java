@@ -48,4 +48,9 @@ public class MockVpcOfferingDaoImpl extends GenericDaoBase<VpcOfferingVO, Long> 
     public boolean isIpv6Supported(long offeringId) {
         return false;
     }
+
+    @Override
+    public boolean isRoutedVpc(long offeringId) {
+        return false;
+    }
 }

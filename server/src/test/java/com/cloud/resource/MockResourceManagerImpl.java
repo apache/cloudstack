@@ -446,7 +446,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#listAvailHypervisorInZone(java.lang.Long, java.lang.Long)
      */
     @Override
-    public List<HypervisorType> listAvailHypervisorInZone(final Long hostId, final Long zoneId) {
+    public List<HypervisorType> listAvailHypervisorInZone(final Long zoneId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -473,7 +473,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#getHostStatistics(long)
      */
     @Override
-    public HostStats getHostStatistics(final long hostId) {
+    public HostStats getHostStatistics(final Host host) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -620,7 +620,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     @Override
-    public boolean isGPUDeviceAvailable(final long hostId, final String groupName, final String vgpuType) {
+    public boolean isGPUDeviceAvailable(final Host host, final String groupName, final String vgpuType) {
         // TODO Auto-generated method stub
         return false;
     }

@@ -30,23 +30,23 @@ import com.google.gson.annotations.SerializedName;
 public class BackupScheduleResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_NAME)
-    @Param(description = "name of the VM")
+    @Param(description = "Name of the Instance")
     private String vmName;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
-    @Param(description = "ID of the VM")
+    @Param(description = "ID of the Instance")
     private String vmId;
 
     @SerializedName("schedule")
-    @Param(description = "time the backup is scheduled to be taken.")
+    @Param(description = "Time the backup is scheduled to be taken.")
     private String schedule;
 
     @SerializedName("intervaltype")
-    @Param(description = "the interval type of the backup schedule")
+    @Param(description = "The interval type of the backup schedule")
     private DateUtil.IntervalType intervalType;
 
     @SerializedName("timezone")
-    @Param(description = "the time zone of the backup schedule")
+    @Param(description = "The time zone of the backup schedule")
     private String timezone;
 
     public String getVmName() {

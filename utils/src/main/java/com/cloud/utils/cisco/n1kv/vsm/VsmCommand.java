@@ -25,7 +25,9 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.cloudstack.utils.security.ParserUtils;
+import org.apache.logging.log4j.LogManager;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
@@ -38,7 +40,7 @@ import com.cloud.utils.Pair;
 
 public class VsmCommand {
 
-    private static final Logger s_logger = Logger.getLogger(VsmCommand.class);
+    protected static Logger LOGGER = LogManager.getLogger(VsmCommand.class);
     private static final String s_namespace = "urn:ietf:params:xml:ns:netconf:base:1.0";
     private static final String s_ciscons = "http://www.cisco.com/nxos:1.0:ppm";
     private static final String s_configuremode = "__XML__MODE__exec_configure";
@@ -66,7 +68,7 @@ public class VsmCommand {
     public static String getAddPortProfile(String name, PortProfileType type, BindingType binding, SwitchPortMode mode, int vlanid, String vdc, String espName) {
         try {
             // Create the document and root element.
-            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             DOMImplementation domImpl = docBuilder.getDOMImplementation();
             Document doc = createDocument(domImpl);
@@ -88,10 +90,10 @@ public class VsmCommand {
 
             return serialize(domImpl, doc);
         } catch (ParserConfigurationException e) {
-            s_logger.error("Error while creating add port profile message : " + e.getMessage());
+            LOGGER.error("Error while creating add port profile message : " + e.getMessage());
             return null;
         } catch (DOMException e) {
-            s_logger.error("Error while creating add port profile message : " + e.getMessage());
+            LOGGER.error("Error while creating add port profile message : " + e.getMessage());
             return null;
         }
     }
@@ -99,7 +101,7 @@ public class VsmCommand {
     public static String getAddPortProfile(String name, PortProfileType type, BindingType binding, SwitchPortMode mode, int vlanid) {
         try {
             // Create the document and root element.
-            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             DOMImplementation domImpl = docBuilder.getDOMImplementation();
             Document doc = createDocument(domImpl);
@@ -121,10 +123,10 @@ public class VsmCommand {
 
             return serialize(domImpl, doc);
         } catch (ParserConfigurationException e) {
-            s_logger.error("Error while creating add port profile message : " + e.getMessage());
+            LOGGER.error("Error while creating add port profile message : " + e.getMessage());
             return null;
         } catch (DOMException e) {
-            s_logger.error("Error while creating add port profile message : " + e.getMessage());
+            LOGGER.error("Error while creating add port profile message : " + e.getMessage());
             return null;
         }
     }
@@ -132,7 +134,7 @@ public class VsmCommand {
     public static String getUpdatePortProfile(String name, SwitchPortMode mode, List<Pair<VsmCommand.OperationType, String>> params) {
         try {
             // Create the document and root element.
-            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             DOMImplementation domImpl = docBuilder.getDOMImplementation();
             Document doc = createDocument(domImpl);
@@ -154,10 +156,10 @@ public class VsmCommand {
 
             return serialize(domImpl, doc);
         } catch (ParserConfigurationException e) {
-            s_logger.error("Error while creating update port profile message : " + e.getMessage());
+            LOGGER.error("Error while creating update port profile message : " + e.getMessage());
             return null;
         } catch (DOMException e) {
-            s_logger.error("Error while creating update port profile message : " + e.getMessage());
+            LOGGER.error("Error while creating update port profile message : " + e.getMessage());
             return null;
         }
     }
@@ -165,7 +167,7 @@ public class VsmCommand {
     public static String getDeletePortProfile(String portName) {
         try {
             // Create the document and root element.
-            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             DOMImplementation domImpl = docBuilder.getDOMImplementation();
             Document doc = createDocument(domImpl);
@@ -187,10 +189,10 @@ public class VsmCommand {
 
             return serialize(domImpl, doc);
         } catch (ParserConfigurationException e) {
-            s_logger.error("Error while creating delete port profile message : " + e.getMessage());
+            LOGGER.error("Error while creating delete port profile message : " + e.getMessage());
             return null;
         } catch (DOMException e) {
-            s_logger.error("Error while creating delete port profile message : " + e.getMessage());
+            LOGGER.error("Error while creating delete port profile message : " + e.getMessage());
             return null;
         }
     }
@@ -198,7 +200,7 @@ public class VsmCommand {
     public static String getAddPolicyMap(String name, int averageRate, int maxRate, int burstRate) {
         try {
             // Create the document and root element.
-            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             DOMImplementation domImpl = docBuilder.getDOMImplementation();
             Document doc = createDocument(domImpl);
@@ -220,10 +222,10 @@ public class VsmCommand {
 
             return serialize(domImpl, doc);
         } catch (ParserConfigurationException e) {
-            s_logger.error("Error while creating policy map message : " + e.getMessage());
+            LOGGER.error("Error while creating policy map message : " + e.getMessage());
             return null;
         } catch (DOMException e) {
-            s_logger.error("Error while creating policy map message : " + e.getMessage());
+            LOGGER.error("Error while creating policy map message : " + e.getMessage());
             return null;
         }
     }
@@ -231,7 +233,7 @@ public class VsmCommand {
     public static String getDeletePolicyMap(String name) {
         try {
             // Create the document and root element.
-            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             DOMImplementation domImpl = docBuilder.getDOMImplementation();
             Document doc = createDocument(domImpl);
@@ -253,10 +255,10 @@ public class VsmCommand {
 
             return serialize(domImpl, doc);
         } catch (ParserConfigurationException e) {
-            s_logger.error("Error while creating delete policy map message : " + e.getMessage());
+            LOGGER.error("Error while creating delete policy map message : " + e.getMessage());
             return null;
         } catch (DOMException e) {
-            s_logger.error("Error while creating delete policy map message : " + e.getMessage());
+            LOGGER.error("Error while creating delete policy map message : " + e.getMessage());
             return null;
         }
     }
@@ -264,7 +266,7 @@ public class VsmCommand {
     public static String getServicePolicy(String policyMap, String portProfile, boolean attach) {
         try {
             // Create the document and root element.
-            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             DOMImplementation domImpl = docBuilder.getDOMImplementation();
             Document doc = createDocument(domImpl);
@@ -286,17 +288,17 @@ public class VsmCommand {
 
             return serialize(domImpl, doc);
         } catch (ParserConfigurationException e) {
-            s_logger.error("Error while creating attach/detach service policy message : " + e.getMessage());
+            LOGGER.error("Error while creating attach/detach service policy message : " + e.getMessage());
             return null;
         } catch (DOMException e) {
-            s_logger.error("Error while creating attach/detach service policy message : " + e.getMessage());
+            LOGGER.error("Error while creating attach/detach service policy message : " + e.getMessage());
             return null;
         }
     }
 
     public static String getPortProfile(String name) {
         try {
-            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             DOMImplementation domImpl = docBuilder.getDOMImplementation();
             Document doc = createDocument(domImpl);
@@ -323,17 +325,17 @@ public class VsmCommand {
 
             return serialize(domImpl, doc);
         } catch (ParserConfigurationException e) {
-            s_logger.error("Error while creating the message to get port profile details: " + e.getMessage());
+            LOGGER.error("Error while creating the message to get port profile details: " + e.getMessage());
             return null;
         } catch (DOMException e) {
-            s_logger.error("Error while creating the message to get port profile details: " + e.getMessage());
+            LOGGER.error("Error while creating the message to get port profile details: " + e.getMessage());
             return null;
         }
     }
 
     public static String getPolicyMap(String name) {
         try {
-            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             DOMImplementation domImpl = docBuilder.getDOMImplementation();
             Document doc = createDocument(domImpl);
@@ -356,17 +358,17 @@ public class VsmCommand {
 
             return serialize(domImpl, doc);
         } catch (ParserConfigurationException e) {
-            s_logger.error("Error while creating the message to get policy map details : " + e.getMessage());
+            LOGGER.error("Error while creating the message to get policy map details : " + e.getMessage());
             return null;
         } catch (DOMException e) {
-            s_logger.error("Error while creating the message to get policy map details : " + e.getMessage());
+            LOGGER.error("Error while creating the message to get policy map details : " + e.getMessage());
             return null;
         }
     }
 
     public static String getHello() {
         try {
-            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             DOMImplementation domImpl = docBuilder.getDOMImplementation();
 
@@ -383,10 +385,10 @@ public class VsmCommand {
 
             return serialize(domImpl, doc);
         } catch (ParserConfigurationException e) {
-            s_logger.error("Error while creating hello message : " + e.getMessage());
+            LOGGER.error("Error while creating hello message : " + e.getMessage());
             return null;
         } catch (DOMException e) {
-            s_logger.error("Error while creating hello message : " + e.getMessage());
+            LOGGER.error("Error while creating hello message : " + e.getMessage());
             return null;
         }
     }
@@ -394,7 +396,7 @@ public class VsmCommand {
     public static String getVServiceNode(String vlanId, String ipAddr) {
         try {
             // Create the document and root element.
-            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             DOMImplementation domImpl = docBuilder.getDOMImplementation();
             Document doc = createDocument(domImpl);
@@ -416,10 +418,10 @@ public class VsmCommand {
 
             return serialize(domImpl, doc);
         } catch (ParserConfigurationException e) {
-            s_logger.error("Error while adding vservice node for vlan " + vlanId + ", " + e.getMessage());
+            LOGGER.error("Error while adding vservice node for vlan " + vlanId + ", " + e.getMessage());
             return null;
         } catch (DOMException e) {
-            s_logger.error("Error while adding vservice node for vlan " + vlanId + ", " + e.getMessage());
+            LOGGER.error("Error while adding vservice node for vlan " + vlanId + ", " + e.getMessage());
             return null;
         }
     }

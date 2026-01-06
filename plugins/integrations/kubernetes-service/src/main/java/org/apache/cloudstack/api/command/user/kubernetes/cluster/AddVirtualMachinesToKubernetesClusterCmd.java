@@ -29,7 +29,6 @@ import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -40,7 +39,6 @@ import java.util.List;
         since = "4.19.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class AddVirtualMachinesToKubernetesClusterCmd extends BaseCmd {
-    public static final Logger LOGGER = Logger.getLogger(AddVirtualMachinesToKubernetesClusterCmd.class.getName());
 
     @Inject
     public KubernetesClusterService kubernetesClusterService;
@@ -52,14 +50,14 @@ public class AddVirtualMachinesToKubernetesClusterCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
             entityType = KubernetesClusterResponse.class,
             required = true,
-            description = "the ID of the Kubernetes cluster")
+            description = "The ID of the Kubernetes cluster")
     private Long id;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_IDS, type = CommandType.LIST,
             collectionType=CommandType.UUID,
             entityType = UserVmResponse.class,
             required = true,
-            description = "the IDs of the VMs to add to the cluster")
+            description = "The IDs of the VMs to add to the cluster")
     private List<Long> vmIds;
 
     @Parameter(name = ApiConstants.IS_CONTROL_NODE, type = CommandType.BOOLEAN,

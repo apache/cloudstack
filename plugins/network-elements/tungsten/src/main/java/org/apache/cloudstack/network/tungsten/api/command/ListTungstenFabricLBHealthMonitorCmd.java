@@ -34,22 +34,20 @@ import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricLBHealthMonitorResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
-import org.apache.log4j.Logger;
 
 import java.util.List;
 
 import javax.inject.Inject;
 
-@APICommand(name = ListTungstenFabricLBHealthMonitorCmd.APINAME, description = "list Tungsten-Fabric LB health monitor", responseObject =
+@APICommand(name = ListTungstenFabricLBHealthMonitorCmd.APINAME, description = "List Tungsten-Fabric LB health monitor", responseObject =
     TungstenFabricLBHealthMonitorResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListTungstenFabricLBHealthMonitorCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListTungstenFabricLBHealthMonitorCmd.class.getName());
     public static final String APINAME = "listTungstenFabricLBHealthMonitor";
 
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of lb rule")
+    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "The ID of lb rule")
     private Long lbID;
 
     @Override

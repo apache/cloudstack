@@ -25,9 +25,11 @@ import java.util.List;
 
 import com.cloud.consoleproxy.ConsoleProxyRdpClient;
 import com.cloud.consoleproxy.util.ImageHelper;
-import com.cloud.consoleproxy.util.Logger;
 import com.cloud.consoleproxy.util.TileInfo;
 import com.cloud.consoleproxy.vnc.FrameBufferCanvas;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import common.BufferedImageCanvas;
 
@@ -36,7 +38,7 @@ public class RdpBufferedImageCanvas extends BufferedImageCanvas implements Frame
      *
      */
     private static final long serialVersionUID = 1L;
-    private static final Logger s_logger = Logger.getLogger(RdpBufferedImageCanvas.class);
+    protected Logger logger = LogManager.getLogger(RdpBufferedImageCanvas.class);
 
     private final ConsoleProxyRdpClient _rdpClient;
 
@@ -68,7 +70,7 @@ public class RdpBufferedImageCanvas extends BufferedImageCanvas implements Frame
         try {
             imgBits = ImageHelper.jpegFromImage(bufferedImage);
         } catch (IOException e) {
-            s_logger.info("[ignored] read error on image", e);
+            logger.info("[ignored] read error on image", e);
         }
 
         return imgBits;
@@ -94,7 +96,7 @@ public class RdpBufferedImageCanvas extends BufferedImageCanvas implements Frame
         try {
             imgBits = ImageHelper.jpegFromImage(bufferedImage);
         } catch (IOException e) {
-            s_logger.info("[ignored] read error on image tiles", e);
+            logger.info("[ignored] read error on image tiles", e);
         }
         return imgBits;
     }

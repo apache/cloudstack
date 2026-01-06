@@ -22,8 +22,6 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.GetVmIpAddressCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
@@ -36,7 +34,6 @@ import com.cloud.utils.script.Script;
 @ResourceWrapper(handles =  GetVmIpAddressCommand.class)
 public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<GetVmIpAddressCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtGetVmIpAddressCommandWrapper.class);
 
     static String virsh_path = null;
     static String virt_win_reg_path = null;
@@ -85,9 +82,9 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
 
         if(ip != null){
             result = true;
-            s_logger.debug("GetVmIp: "+ vmName + " Found Ip: "+ip);
+            logger.debug("GetVmIp: "+ vmName + " Found Ip: "+ip);
         } else {
-            s_logger.warn("GetVmIp: "+ vmName + " IP not found.");
+            logger.warn("GetVmIp: "+ vmName + " IP not found.");
         }
 
         return new Answer(command, result, ip);
@@ -106,7 +103,7 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
                 ip = ipv4;
             }
         } else {
-            s_logger.error("ipFromDomIf: Command execution failed for VM: " + sanitizedVmName);
+            logger.error("ipFromDomIf: Command execution failed for VM: " + sanitizedVmName);
         }
         return ip;
     }
@@ -139,7 +136,7 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
                 ipv6 = ipPart;
             }
         }
-        s_logger.debug(String.format("Found ipv4: %s and ipv6: %s with mac address %s", ipv4, ipv6, macAddress));
+        logger.debug(String.format("Found ipv4: %s and ipv6: %s with mac address %s", ipv4, ipv6, macAddress));
         return new Pair<>(ipv4, ipv6);
     }
 
@@ -165,10 +162,10 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
                     ip = ipAddr;
                     break;
                 }
-                s_logger.debug("GetVmIp: "+ sanitizedVmName + " Ip: "+ipAddr+" does not belong to network "+networkCidr);
+                logger.debug("GetVmIp: "+ sanitizedVmName + " Ip: "+ipAddr+" does not belong to network "+networkCidr);
             }
         } else {
-            s_logger.error("ipFromDhcpLeaseFile: Command execution failed for VM: " + sanitizedVmName);
+            logger.error("ipFromDhcpLeaseFile: Command execution failed for VM: " + sanitizedVmName);
         }
         return ip;
     }
@@ -184,17 +181,17 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
         if(pair != null && pair.second() != null) {
             String ipList = pair.second();
             ipList = ipList.replaceAll("\"", "");
-            s_logger.debug("GetVmIp: "+ sanitizedVmName + "Ips: "+ipList);
+            logger.debug("GetVmIp: "+ sanitizedVmName + "Ips: "+ipList);
             String[] ips = ipList.split("\n");
             for (String ipAddr : ips){
                 if((ipAddr != null) && NetUtils.isIpWithInCidrRange(ipAddr, networkCidr)){
                     ip = ipAddr;
                     break;
                 }
-                s_logger.debug("GetVmIp: "+ sanitizedVmName + " Ip: "+ipAddr+" does not belong to network "+networkCidr);
+                logger.debug("GetVmIp: "+ sanitizedVmName + " Ip: "+ipAddr+" does not belong to network "+networkCidr);
             }
         } else {
-            s_logger.error("ipFromWindowsRegistry: Command execution failed for VM: " + sanitizedVmName);
+            logger.error("ipFromWindowsRegistry: Command execution failed for VM: " + sanitizedVmName);
         }
         return ip;
     }

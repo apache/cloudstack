@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.iso;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -37,19 +36,18 @@ import com.cloud.user.Account;
 @APICommand(name = "deleteIso", description = "Deletes an ISO file.", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteIsoCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteIsoCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "the ID of the ISO file")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "The ID of the ISO file")
     private Long id;
 
     @Parameter(name = ApiConstants.ZONE_ID,
                type = CommandType.UUID,
                entityType = ZoneResponse.class,
-               description = "the ID of the zone of the ISO file. If not specified, the ISO will be deleted from all the zones")
+               description = "The ID of the zone of the ISO file. If not specified, the ISO will be deleted from all the zones")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

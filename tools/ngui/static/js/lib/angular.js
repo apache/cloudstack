@@ -6428,11 +6428,11 @@ function setter(obj, path, setValue) {
 }
 
 /**
- * Return the value accesible from the object by path. Any undefined traversals are ignored
+ * Return the value accessible from the object by path. Any undefined traversals are ignored
  * @param {Object} obj starting object
  * @param {string} path path to traverse
  * @param {boolean=true} bindFnToScope
- * @returns value as accesbile by path
+ * @returns value as accessible by path
  */
 //TODO(misko): this function needs to be removed
 function getter(obj, path, bindFnToScope) {

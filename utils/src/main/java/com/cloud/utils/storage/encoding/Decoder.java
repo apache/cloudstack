@@ -26,10 +26,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class Decoder {
-    private static final Logger s_logger = Logger.getLogger(Decoder.class);
+    protected Logger logger = LogManager.getLogger(Decoder.class);
 
     private static Map<String, String> getParameters(URI uri) {
         String parameters = uri.getQuery();
@@ -45,7 +46,7 @@ public class Decoder {
         return params;
     }
 
-    public static DecodedDataObject decode(String url) throws URISyntaxException {
+    public DecodedDataObject decode(String url) throws URISyntaxException {
         URI uri = new URI(url);
         Map<String, String> params = getParameters(uri);
         DecodedDataStore store =
@@ -56,7 +57,7 @@ public class Decoder {
         try {
             size = Long.parseLong(params.get(EncodingType.SIZE.toString()));
         } catch (NumberFormatException e) {
-            s_logger.info("[ignored] number not recognised",e);
+            logger.info("[ignored] number not recognised",e);
         }
         DecodedDataObject obj =
             new DecodedDataObject(params.get(EncodingType.OBJTYPE.toString()), size, params.get(EncodingType.NAME.toString()), params.get(EncodingType.PATH.toString()),

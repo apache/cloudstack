@@ -29,19 +29,15 @@ import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 @APICommand(name = "listZones", description = "Lists zones", responseObject = ZoneResponse.class, responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListZonesCmd extends BaseListCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(ListZonesCmd.class.getName());
-
-    private static final String s_name = "listzonesresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of the zone")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The ID of the zone")
     private Long id;
 
     @Parameter(name = ApiConstants.IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = ZoneResponse.class, description = "the IDs of the zones, mutually exclusive with id", since = "4.19.0")
@@ -49,26 +45,26 @@ public class ListZonesCmd extends BaseListCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.AVAILABLE,
                type = CommandType.BOOLEAN,
-               description = "true if you want to retrieve all available Zones. False if you only want to return the Zones"
-                   + " from which you have at least one VM. Default is false.")
+               description = "True if you want to retrieve all available Zones. False if you only want to return the Zones"
+                   + " from which you have at least one Instance. Default is false.")
     private Boolean available;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "the ID of the domain associated with the zone")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "The ID of the domain associated with the zone")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the zone")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the zone")
     private String name;
 
-    @Parameter(name = ApiConstants.NETWORK_TYPE, type = CommandType.STRING, description = "the network type of the zone that the virtual machine belongs to")
+    @Parameter(name = ApiConstants.NETWORK_TYPE, type = CommandType.STRING, description = "The Network type of the zone that the Instance belongs to")
     private String networkType;
 
-    @Parameter(name = ApiConstants.SHOW_CAPACITIES, type = CommandType.BOOLEAN, description = "flag to display the capacity of the zones")
+    @Parameter(name = ApiConstants.SHOW_CAPACITIES, type = CommandType.BOOLEAN, description = "Flag to display the capacity of the zones")
     private Boolean showCapacities;
 
     @Parameter(name = ApiConstants.TAGS, type = CommandType.MAP, description = "List zones by resource tags (key/value pairs)", since = "4.3")
     private Map tags;
 
-    @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN, description = "flag to display the resource image for the zones")
+    @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN, description = "Flag to display the resource image for the zones")
     private Boolean showIcon;
 
     /////////////////////////////////////////////////////
@@ -114,11 +110,6 @@ public class ListZonesCmd extends BaseListCmd implements UserCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

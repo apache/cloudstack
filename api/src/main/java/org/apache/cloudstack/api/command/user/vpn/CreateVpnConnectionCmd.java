@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -38,10 +37,9 @@ import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.network.vpc.Vpc;
 
 
-@APICommand(name = "createVpnConnection", description = "Create site to site vpn connection", responseObject = Site2SiteVpnConnectionResponse.class, entityType = {Site2SiteVpnConnection.class},
+@APICommand(name = "createVpnConnection", description = "Create site to site VPN connection", responseObject = Site2SiteVpnConnectionResponse.class, entityType = {Site2SiteVpnConnection.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateVpnConnectionCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -51,20 +49,20 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
                type = CommandType.UUID,
                entityType = Site2SiteVpnGatewayResponse.class,
                required = true,
-               description = "id of the vpn gateway")
+               description = "ID of the VPN gateway")
     private Long vpnGatewayId;
 
     @Parameter(name = ApiConstants.S2S_CUSTOMER_GATEWAY_ID,
                type = CommandType.UUID,
                entityType = Site2SiteCustomerGatewayResponse.class,
                required = true,
-               description = "id of the customer gateway")
+               description = "ID of the customer gateway")
     private Long customerGatewayId;
 
-    @Parameter(name = ApiConstants.PASSIVE, type = CommandType.BOOLEAN, required = false, description = "connection is passive or not")
+    @Parameter(name = ApiConstants.PASSIVE, type = CommandType.BOOLEAN, required = false, description = "Connection is passive or not")
     private Boolean passive;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the vpn to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the VPN to the end User or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     /////////////////////////////////////////////////////
@@ -116,7 +114,7 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "Create site-to-site VPN connection for account " + getEntityOwnerId();
+        return "Create site-to-site VPN connection for Account " + getEntityOwnerId();
     }
 
     @Override
@@ -132,11 +130,11 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
                 setEntityId(conn.getId());
                 setEntityUuid(conn.getUuid());
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create site to site vpn connection");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create site to site VPN connection");
             }
         } catch (NetworkRuleConflictException e) {
-            s_logger.info("Network rule conflict: " + e.getMessage());
-            s_logger.trace("Network Rule Conflict: ", e);
+            logger.info("Network rule conflict: " + e.getMessage());
+            logger.trace("Network Rule Conflict: ", e);
             throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
         }
     }
@@ -150,10 +148,10 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create site to site vpn connection");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create site to site VPN connection");
             }
         } catch (ResourceUnavailableException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         }
     }

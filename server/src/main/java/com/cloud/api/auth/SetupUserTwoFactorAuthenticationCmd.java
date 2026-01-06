@@ -27,7 +27,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
@@ -36,7 +35,6 @@ import javax.inject.Inject;
 public class SetupUserTwoFactorAuthenticationCmd extends BaseCmd {
 
     public static final String APINAME = "setupUserTwoFactorAuthentication";
-    public static final Logger s_logger = Logger.getLogger(SetupUserTwoFactorAuthenticationCmd.class.getName());
 
     @Inject
     private AccountManager accountManager;
@@ -45,13 +43,13 @@ public class SetupUserTwoFactorAuthenticationCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "two factor authentication code")
+    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "Two factor authentication code")
     private String provider;
 
     @Parameter(name = ApiConstants.ENABLE, type = CommandType.BOOLEAN, description = "Enabled by default, provide false to disable 2FA")
     private Boolean enable = true;
 
-    @Parameter(name = ApiConstants.USER_ID, type = CommandType.UUID, entityType = UserResponse.class, description = "optional: the id of the user for which 2FA has to be disabled")
+    @Parameter(name = ApiConstants.USER_ID, type = CommandType.UUID, entityType = UserResponse.class, description = "Optional: the id of the User for which 2FA has to be disabled")
     private Long userId;
 
     /////////////////////////////////////////////////////

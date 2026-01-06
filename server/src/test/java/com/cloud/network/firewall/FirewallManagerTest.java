@@ -35,7 +35,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
 import com.cloud.utils.component.ComponentContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.log4j.Logger;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -51,8 +51,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -60,38 +60,7 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class FirewallManagerTest {
-    private static final Logger s_logger = Logger.getLogger(FirewallManagerTest.class);
-
-
-    @Ignore("Requires database to be set up")
-    @Test
-    public void testInjected() {
-
-//        FirewallManagerImpl firewallMgr = (FirewallManagerImpl)ComponentLocator.getCurrentLocator().getManager(FirewallManager.class);
-//        Assert.assertTrue(firewallMgr._firewallElements.enumeration().hasMoreElements());
-//        Assert.assertTrue(firewallMgr._pfElements.enumeration().hasMoreElements());
-//        Assert.assertTrue(firewallMgr._staticNatElements.enumeration().hasMoreElements());
-//        Assert.assertTrue(firewallMgr._networkAclElements.enumeration().hasMoreElements());
-//        Assert.assertNotNull(firewallMgr._networkModel);
-//
-//        Assert.assertNotNull(firewallMgr._firewallElements.get("VirtualRouter"));
-//        Assert.assertNotNull(firewallMgr._firewallElements.get("VpcVirtualRouter"));
-//        Assert.assertNotNull(firewallMgr._pfElements.get("VirtualRouter"));
-//        Assert.assertNotNull(firewallMgr._pfElements.get("VpcVirtualRouter"));
-//        Assert.assertNotNull(firewallMgr._staticNatElements.get("VirtualRouter"));
-//        Assert.assertNotNull(firewallMgr._staticNatElements.get("VpcVirtualRouter"));
-//        Assert.assertNotNull(firewallMgr._networkAclElements.get("VpcVirtualRouter"));
-//        Assert.assertNull(firewallMgr._networkAclElements.get("VirtualRouter"));
-//
-//
-//        Assert.assertTrue(firewallMgr._firewallElements.get("VirtualRouter") instanceof FirewallServiceProvider);
-//        Assert.assertTrue(firewallMgr._pfElements.get("VirtualRouter") instanceof PortForwardingServiceProvider);
-//        Assert.assertTrue(firewallMgr._staticNatElements.get("VirtualRouter") instanceof StaticNatServiceProvider);
-//        Assert.assertTrue(firewallMgr._networkAclElements.get("VpcVirtualRouter") instanceof NetworkACLServiceProvider);
-
-        s_logger.info("Done testing injection of service elements into firewall manager");
-
-    }
+    private AutoCloseable closeable;
 
     @Mock
     AccountManager _accountMgr;
@@ -123,7 +92,7 @@ public class FirewallManagerTest {
 
     @Before
     public void initMocks() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
 
         fwRule50to150 = createFirewallRule(50, 150, Purpose.Firewall);
         fwRule100to200 = createFirewallRule(100, 150, Purpose.Firewall);
@@ -132,6 +101,11 @@ public class FirewallManagerTest {
         pfRule50to150 = createFirewallRule(50, 150, Purpose.PortForwarding);
         pfRule100to200 = createFirewallRule(100, 150, Purpose.PortForwarding);
         pfRule151to200 = createFirewallRule(151, 200, Purpose.PortForwarding);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     private FirewallRule createFirewallRule(int startPort, int endPort, Purpose purpose) {

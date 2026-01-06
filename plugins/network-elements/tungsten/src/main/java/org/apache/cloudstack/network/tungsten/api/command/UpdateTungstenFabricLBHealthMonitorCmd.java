@@ -37,42 +37,40 @@ import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricLBHealthMonitorResponse;
 import org.apache.cloudstack.network.tungsten.dao.TungstenFabricLBHealthMonitorVO;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = UpdateTungstenFabricLBHealthMonitorCmd.APINAME, description = "update Tungsten-Fabric loadbalancer health monitor",
+@APICommand(name = UpdateTungstenFabricLBHealthMonitorCmd.APINAME, description = "Update Tungsten-Fabric loadbalancer health monitor",
     responseObject = TungstenFabricLBHealthMonitorResponse.class, requestHasSensitiveInfo = false,
     responseHasSensitiveInfo = false)
 public class UpdateTungstenFabricLBHealthMonitorCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateTungstenFabricLBHealthMonitorCmd.class.getName());
     public static final String APINAME = "updateTungstenFabricLBHealthMonitor";
 
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of lb rule")
+    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "The ID of LB rule")
     private Long lbId;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true, description = "loadbalancer health monitor type")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true, description = "Loadbalancer health monitor type")
     private String type;
 
-    @Parameter(name = ApiConstants.RETRY, type = CommandType.INTEGER, required = true, description = "loadbalancer health monitor retry")
+    @Parameter(name = ApiConstants.RETRY, type = CommandType.INTEGER, required = true, description = "Loadbalancer health monitor retry")
     private int retry;
 
-    @Parameter(name = ApiConstants.TIMEOUT, type = CommandType.INTEGER, required = true, description = "loadbalancer health monitor timeout")
+    @Parameter(name = ApiConstants.TIMEOUT, type = CommandType.INTEGER, required = true, description = "Loadbalancer health monitor timeout")
     private int timeout;
 
-    @Parameter(name = ApiConstants.INTERVAL, type = CommandType.INTEGER, required = true, description = "loadbalancer health monitor interval")
+    @Parameter(name = ApiConstants.INTERVAL, type = CommandType.INTEGER, required = true, description = "Loadbalancer health monitor interval")
     private int interval;
 
-    @Parameter(name = ApiConstants.HTTP_METHOD, type = CommandType.STRING, description = "loadbalancer health monitor http method")
+    @Parameter(name = ApiConstants.HTTP_METHOD, type = CommandType.STRING, description = "Loadbalancer health monitor HTTP method")
     private String httpMethod;
 
-    @Parameter(name = ApiConstants.EXPECTED_CODE, type = CommandType.STRING, description = "loadbalancer health monitor expected code")
+    @Parameter(name = ApiConstants.EXPECTED_CODE, type = CommandType.STRING, description = "Loadbalancer health monitor expected code")
     private String expectedCode;
 
-    @Parameter(name = ApiConstants.URL_PATH, type = CommandType.STRING, description = "loadbalancer health monitor url path")
+    @Parameter(name = ApiConstants.URL_PATH, type = CommandType.STRING, description = "Loadbalancer health monitor URL path")
     private String urlPath;
 
     @Override
@@ -86,7 +84,7 @@ public class UpdateTungstenFabricLBHealthMonitorCmd extends BaseAsyncCreateCmd {
 
         if (monitorType == TungstenService.MonitorType.HTTP) {
             if (httpMethod == null) {
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid http method parameter");
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid HTTP method parameter");
             }
 
             try {
@@ -100,7 +98,7 @@ public class UpdateTungstenFabricLBHealthMonitorCmd extends BaseAsyncCreateCmd {
             }
 
             if (urlPath == null) {
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid url path parameter");
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid URL path parameter");
             }
         }
 

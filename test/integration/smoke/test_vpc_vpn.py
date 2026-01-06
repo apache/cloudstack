@@ -592,7 +592,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
             time.sleep(20)
 
         # setup ssh connection to vm2
-        ssh_client = self._get_ssh_client(vm2, self.services, 10)
+        ssh_client = self._get_ssh_client(vm2, self.services, 30)
 
         if ssh_client:
             # run ping test

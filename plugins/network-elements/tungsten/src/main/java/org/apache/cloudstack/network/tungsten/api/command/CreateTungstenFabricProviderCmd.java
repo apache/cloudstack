@@ -32,18 +32,16 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricProviderResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenProviderService;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
 @APICommand(name = CreateTungstenFabricProviderCmd.APINAME, description = "Create Tungsten-Fabric provider in cloudstack",
     responseObject = TungstenFabricProviderResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateTungstenFabricProviderCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateTungstenFabricProviderCmd.class.getName());
     public static final String APINAME = "createTungstenFabricProvider";
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true
-        , description = "the ID of zone")
+        , description = "The ID of zone")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Tungsten-Fabric provider name")

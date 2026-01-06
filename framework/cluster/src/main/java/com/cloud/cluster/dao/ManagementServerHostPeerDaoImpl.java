@@ -16,10 +16,9 @@
 // under the License.
 package com.cloud.cluster.dao;
 
+import java.util.Date;
 import java.util.List;
 
-
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.management.ManagementServerHost;
 import com.cloud.cluster.ManagementServerHostPeerVO;
@@ -30,15 +29,16 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 public class ManagementServerHostPeerDaoImpl extends GenericDaoBase<ManagementServerHostPeerVO, Long> implements ManagementServerHostPeerDao {
-    private static final Logger s_logger = Logger.getLogger(ManagementServerHostPeerDaoImpl.class);
 
     private final SearchBuilder<ManagementServerHostPeerVO> ClearPeerSearch;
     private final SearchBuilder<ManagementServerHostPeerVO> FindForUpdateSearch;
     private final SearchBuilder<ManagementServerHostPeerVO> CountSearch;
+    private final SearchBuilder<ManagementServerHostPeerVO> ActiveSearch;
 
     public ManagementServerHostPeerDaoImpl() {
         ClearPeerSearch = createSearchBuilder();
         ClearPeerSearch.and("ownerMshost", ClearPeerSearch.entity().getOwnerMshost(), SearchCriteria.Op.EQ);
+        ClearPeerSearch.or("peerMshost", ClearPeerSearch.entity().getPeerMshost(), SearchCriteria.Op.EQ);
         ClearPeerSearch.done();
 
         FindForUpdateSearch = createSearchBuilder();
@@ -52,6 +52,13 @@ public class ManagementServerHostPeerDaoImpl extends GenericDaoBase<ManagementSe
         CountSearch.and("peerRunid", CountSearch.entity().getPeerRunid(), SearchCriteria.Op.EQ);
         CountSearch.and("peerState", CountSearch.entity().getPeerState(), SearchCriteria.Op.EQ);
         CountSearch.done();
+
+        ActiveSearch = createSearchBuilder();
+        ActiveSearch.and("ownerMshost", ActiveSearch.entity().getOwnerMshost(), SearchCriteria.Op.EQ);
+        ActiveSearch.and("peerMshost", ActiveSearch.entity().getPeerMshost(), SearchCriteria.Op.EQ);
+        ActiveSearch.and("peerState", ActiveSearch.entity().getPeerState(), SearchCriteria.Op.EQ);
+        ActiveSearch.and("lastUpdateTime", ActiveSearch.entity().getLastUpdateTime(), SearchCriteria.Op.GT);
+        ActiveSearch.done();
     }
 
     @Override
@@ -59,6 +66,7 @@ public class ManagementServerHostPeerDaoImpl extends GenericDaoBase<ManagementSe
     public void clearPeerInfo(long ownerMshost) {
         SearchCriteria<ManagementServerHostPeerVO> sc = ClearPeerSearch.create();
         sc.setParameters("ownerMshost", ownerMshost);
+        sc.setParameters("peerMshost", ownerMshost);
 
         expunge(sc);
     }
@@ -73,11 +81,12 @@ public class ManagementServerHostPeerDaoImpl extends GenericDaoBase<ManagementSe
             SearchCriteria<ManagementServerHostPeerVO> sc = FindForUpdateSearch.create();
             sc.setParameters("ownerMshost", ownerMshost);
             sc.setParameters("peerMshost", peerMshost);
-            sc.setParameters("peerRunid", peerRunid);
             List<ManagementServerHostPeerVO> l = listBy(sc);
             if (l.size() == 1) {
                 ManagementServerHostPeerVO peer = l.get(0);
+                peer.setPeerRunid(peerRunid);
                 peer.setPeerState(peerState);
+                peer.setLastUpdateTime(new Date());
                 update(peer.getId(), peer);
             } else {
                 ManagementServerHostPeerVO peer = new ManagementServerHostPeerVO(ownerMshost, peerMshost, peerRunid, peerState);
@@ -85,20 +94,42 @@ public class ManagementServerHostPeerDaoImpl extends GenericDaoBase<ManagementSe
             }
             txn.commit();
         } catch (Exception e) {
-            s_logger.warn("Unexpected exception, ", e);
+            logger.warn("Unexpected exception, ", e);
             txn.rollback();
         }
     }
 
     @Override
     @DB
-    public int countStateSeenInPeers(long mshost, long runid, ManagementServerHost.State state) {
+    public int countStateSeenInPeers(long peerMshost, long runid, ManagementServerHost.State state) {
         SearchCriteria<ManagementServerHostPeerVO> sc = CountSearch.create();
-        sc.setParameters("peerMshost", mshost);
+        sc.setParameters("peerMshost", peerMshost);
         sc.setParameters("peerRunid", runid);
         sc.setParameters("peerState", state);
 
-        List<ManagementServerHostPeerVO> l = listBy(sc);
-        return l.size();
+        return getCount(sc);
+    }
+
+    @Override
+    @DB
+    public boolean isPeerUpState(long peerMshost, Date cutTime) {
+        SearchCriteria<ManagementServerHostPeerVO> sc = ActiveSearch.create();
+        sc.setParameters("peerMshost", peerMshost);
+        sc.setParameters("peerState", ManagementServerHost.State.Up);
+        sc.setParameters("lastUpdateTime", cutTime);
+
+        return listBy(sc).size() > 0;
+    }
+
+    @Override
+    @DB
+    public boolean isPeerUpState(long ownerMshost, long peerMshost, Date cutTime) {
+        SearchCriteria<ManagementServerHostPeerVO> sc = ActiveSearch.create();
+        sc.setParameters("ownerMshost", ownerMshost);
+        sc.setParameters("peerMshost", peerMshost);
+        sc.setParameters("peerState", ManagementServerHost.State.Up);
+        sc.setParameters("lastUpdateTime", cutTime);
+
+        return listBy(sc).size() > 0;
     }
 }

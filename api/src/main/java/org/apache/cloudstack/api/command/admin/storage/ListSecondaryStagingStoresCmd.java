@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.storage;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -29,7 +28,6 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 @APICommand(name = "listSecondaryStagingStores", description = "Lists secondary staging stores.", responseObject = ImageStoreResponse.class, since = "4.2.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListSecondaryStagingStoresCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListSecondaryStagingStoresCmd.class.getName());
 
     private static final String s_name = "listsecondarystagingstoreresponse";
 
@@ -37,19 +35,19 @@ public class ListSecondaryStagingStoresCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the staging store")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the staging store")
     private String storeName;
 
-    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "the staging store protocol")
+    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "The staging store protocol")
     private String protocol;
 
-    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "the staging store provider")
+    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "The staging store provider")
     private String provider;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the Zone ID for the staging store")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The Zone ID for the staging store")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ImageStoreResponse.class, description = "the ID of the staging store")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ImageStoreResponse.class, description = "The ID of the staging store")
     private Long id;
 
     /////////////////////////////////////////////////////

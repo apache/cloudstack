@@ -25,7 +25,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -53,7 +52,6 @@ import com.cloud.user.Account;
             responseHasSensitiveInfo = false)
 public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
-    public static final Logger s_logger = Logger.getLogger(AssignToGlobalLoadBalancerRuleCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -64,7 +62,7 @@ public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = GlobalLoadBalancerResponse.class,
                required = true,
-               description = "the ID of the global load balancer rule")
+               description = "The ID of the global load balancer rule")
     private Long id;
 
     @Parameter(name = ApiConstants.LOAD_BALANCER_RULE_LIST,
@@ -72,7 +70,7 @@ public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
                collectionType = CommandType.UUID,
                entityType = FirewallRuleResponse.class,
                required = true,
-               description = "the list load balancer rules that will be assigned to global load balancer rule")
+               description = "The list load balancer rules that will be assigned to global load balancer rule")
     private List<Long> loadBalancerRulesIds;
 
     @Parameter(name = ApiConstants.GSLB_LBRULE_WEIGHT_MAP,

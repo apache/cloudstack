@@ -27,6 +27,7 @@ import javax.persistence.Table;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.utils.net.NetUtils;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 /**
  * This VO represents Public Load Balancer
@@ -135,5 +136,12 @@ public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
     @Override
     public String getCidrList() {
         return cidrList;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("LoadBalancer %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name", "purpose", "state"));
     }
 }

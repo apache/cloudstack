@@ -21,7 +21,9 @@ import java.util.concurrent.Callable;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import com.cloud.network.dao.NetworkDao;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.vpc.dao.PrivateIpDao;
@@ -33,12 +35,14 @@ import com.cloud.utils.db.TransactionStatus;
 @Component
 public class VpcPrivateGatewayTransactionCallable implements Callable<Boolean> {
 
-    private static final Logger s_logger = Logger.getLogger(VpcPrivateGatewayTransactionCallable.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     private VpcGatewayDao _vpcGatewayDao;
     @Inject
     private PrivateIpDao _privateIpDao;
+    @Inject
+    private NetworkDao networkDao;
 
     private PrivateGateway gateway;
     private boolean deleteNetwork = true;
@@ -53,18 +57,18 @@ public class VpcPrivateGatewayTransactionCallable implements Callable<Boolean> {
 
                 final List<PrivateIpVO> privateIps = _privateIpDao.listByNetworkId(networkId);
                 if (privateIps.size() > 1 || !privateIps.get(0).getIpAddress().equalsIgnoreCase(gateway.getIp4Address())) {
-                    s_logger.debug("Not removing network id=" + gateway.getNetworkId() + " as it has private ip addresses for other gateways");
+                    logger.debug("Not removing network {} as it has private ip addresses for other gateways", networkDao.findById(gateway.getNetworkId()));
                     deleteNetwork = false;
                 }
 
                 final PrivateIpVO ip = _privateIpDao.findByIpAndVpcId(gateway.getVpcId(), gateway.getIp4Address());
                 if (ip != null) {
                     _privateIpDao.remove(ip.getId());
-                    s_logger.debug("Deleted private ip " + ip);
+                    logger.debug("Deleted private ip " + ip);
                 }
 
                 _vpcGatewayDao.remove(gateway.getId());
-                s_logger.debug("Deleted private gateway " + gateway);
+                logger.debug("Deleted private gateway " + gateway);
             }
         });
 

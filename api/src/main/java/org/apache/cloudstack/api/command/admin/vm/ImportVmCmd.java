@@ -40,7 +40,6 @@ import org.apache.cloudstack.vm.VmImportService;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
@@ -53,7 +52,6 @@ import javax.inject.Inject;
         authorized = {RoleType.Admin},
         since = "4.19.0")
 public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
-    public static final Logger LOGGER = Logger.getLogger(ImportVmCmd.class);
 
     @Inject
     public VmImportService vmImportService;

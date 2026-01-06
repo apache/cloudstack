@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.user.autoscale;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -35,28 +34,27 @@ import com.cloud.network.as.AutoScalePolicy;
 @APICommand(name = "listAutoScalePolicies", description = "Lists autoscale policies.", responseObject = AutoScalePolicyResponse.class, entityType = {AutoScalePolicy.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListAutoScalePoliciesCmd extends BaseListProjectAndAccountResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListAutoScalePoliciesCmd.class.getName());
 
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScalePolicyResponse.class, description = "the ID of the autoscale policy")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScalePolicyResponse.class, description = "The ID of the autoscale policy")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the autoscale policy", since = "4.18.0")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the autoscale policy", since = "4.18.0")
     private String name;
 
-    @Parameter(name = ApiConstants.CONDITION_ID, type = CommandType.UUID, entityType = ConditionResponse.class, description = "the ID of the condition of the policy")
+    @Parameter(name = ApiConstants.CONDITION_ID, type = CommandType.UUID, entityType = ConditionResponse.class, description = "The ID of the condition of the policy")
     private Long conditionId;
 
     @Parameter(name = ApiConstants.ACTION,
                type = CommandType.STRING,
-               description = "the action to be executed if all the conditions evaluate to true for the specified duration.")
+               description = "The action to be executed if all the conditions evaluate to true for the specified duration.")
     private String action;
 
-    @Parameter(name = ApiConstants.VMGROUP_ID, type = CommandType.UUID, entityType = AutoScaleVmGroupResponse.class, description = "the ID of the autoscale vm group")
+    @Parameter(name = ApiConstants.VMGROUP_ID, type = CommandType.UUID, entityType = AutoScaleVmGroupResponse.class, description = "The ID of the autoscale Instance group")
     private Long vmGroupId;
 
     // ///////////////////////////////////////////////////

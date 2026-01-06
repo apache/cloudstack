@@ -46,7 +46,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.LocalHostEndpoint;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import com.cloud.capacity.CapacityManager;
@@ -69,7 +70,7 @@ import static com.cloud.host.Host.HOST_VOLUME_ENCRYPTION;
 
 @Component
 public class DefaultEndPointSelector implements EndPointSelector {
-    private static final Logger s_logger = Logger.getLogger(DefaultEndPointSelector.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     @Inject
     private HostDao hostDao;
     @Inject
@@ -79,7 +80,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
     private final String findOneHostOnPrimaryStorage = "select t.id from "
                             + "(select h.id, cd.value, hd.value as " + VOL_ENCRYPT_COLUMN_NAME + " "
                             + "from host h join storage_pool_host_ref s on h.id = s.host_id  "
-                            + "join cluster c on c.id=h.cluster_id "
+                            + "join cluster c on c.id=h.cluster_id and c.allocation_state = 'Enabled'"
                             + "left join cluster_details cd on c.id=cd.cluster_id and cd.name='" + CapacityManager.StorageOperationsExcludeCluster.key() + "' "
                             + "left join host_details hd on h.id=hd.host_id and hd.name='" + HOST_VOLUME_ENCRYPTION + "' "
                             + "where h.status = 'Up' and h.type = 'Routing' and h.resource_state = 'Enabled' and s.pool_id = ? ";
@@ -174,10 +175,10 @@ public class DefaultEndPointSelector implements EndPointSelector {
                     host = hostDao.findById(id);
                 }
             } catch (SQLException e) {
-                s_logger.warn("can't find endpoint", e);
+                logger.warn("can't find endpoint", e);
             }
         } catch (SQLException e) {
-            s_logger.warn("can't find endpoint", e);
+            logger.warn("can't find endpoint", e);
         }
         if (host == null) {
             return null;
@@ -298,7 +299,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
 
     @Override
     public EndPoint select(DataObject srcData, DataObject destData, StorageAction action, boolean encryptionRequired) {
-        s_logger.error("IR24 select BACKUPSNAPSHOT from primary to secondary " + srcData.getId() + " dest=" + destData.getId());
+        logger.error("IR24 select BACKUPSNAPSHOT from primary to secondary {} dest={}", srcData, destData);
         if (action == StorageAction.BACKUPSNAPSHOT && srcData.getDataStore().getRole() == DataStoreRole.Primary) {
             SnapshotInfo srcSnapshot = (SnapshotInfo)srcData;
             VolumeInfo volumeInfo = srcSnapshot.getBaseVolume();
@@ -425,11 +426,11 @@ public class DefaultEndPointSelector implements EndPointSelector {
             }
 
         } catch (URISyntaxException e) {
-            s_logger.debug("Received URISyntaxException for url" +downloadUrl);
+            logger.debug("Received URISyntaxException for url" +downloadUrl);
         }
 
         // If ssvm doesn't exist then find any ssvm in the zone.
-        s_logger.debug("Couldn't find ssvm for url" +downloadUrl);
+        logger.debug("Couldn't find ssvm for url" +downloadUrl);
         return findEndpointForImageStorage(store);
     }
 

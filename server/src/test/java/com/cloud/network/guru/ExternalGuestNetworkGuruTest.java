@@ -75,7 +75,7 @@ public class ExternalGuestNetworkGuruTest {
         Mockito.when(network.getIp6Dns1()).thenReturn(ip6Dns[0]);
         Mockito.when(network.getIp6Dns2()).thenReturn(ip6Dns[1]);
         Account owner = Mockito.mock(Account.class);
-        Network config = guru.design(networkOffering, plan, network, owner);
+        Network config = guru.design(networkOffering, plan, network, "", 1L, owner);
         assertNotNull(config);
         assertEquals(ip4Dns[0], config.getDns1());
         assertEquals(ip4Dns[1], config.getDns2());

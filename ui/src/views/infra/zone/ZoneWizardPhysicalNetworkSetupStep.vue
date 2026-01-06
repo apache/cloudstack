@@ -66,6 +66,8 @@
             <a-select-option value="VSP"> VSP </a-select-option>
             <a-select-option value="VCS"> VCS </a-select-option>
             <a-select-option value="TF"> TF </a-select-option>
+            <a-select-option v-if="hypervisor === 'VMware'" value="NSX"> NSX </a-select-option>
+
             <template #suffixIcon>
               <a-tooltip
                 v-if="tungstenNetworkIndex > -1 && tungstenNetworkIndex !== index"
@@ -411,7 +413,7 @@ export default {
           for (const index in net.traffics) {
             if (this.hypervisor === 'VMware') {
               delete this.physicalNetworks[idx].traffics[index].label
-            } else {
+            } else if (!net.traffics[index].label) {
               this.physicalNetworks[idx].traffics[index].label = ''
             }
             const traffic = net.traffics[index]

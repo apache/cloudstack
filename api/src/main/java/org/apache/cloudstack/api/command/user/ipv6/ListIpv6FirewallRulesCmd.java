@@ -29,7 +29,6 @@ import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.utils.Pair;
@@ -41,23 +40,22 @@ import com.cloud.utils.Pair;
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListIpv6FirewallRulesCmd extends BaseListTaggedResourcesCmd implements IListFirewallRulesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListIpv6FirewallRulesCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class,
-               description = "Lists ipv6 firewall rule with the specified ID")
+               description = "Lists IPv6 firewall rule with the specified ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "list ipv6 firewall rules by network ID")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "List IPV6 firewall rules by Network ID")
     private Long networkId;
 
-    @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "list ipv6 firewall rules by traffic type - ingress or egress")
+    @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "List IPV6 firewall rules by traffic type - ingress or egress")
     private String trafficType;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "List resources by display flag; only ROOT admin is eligible to pass this parameter", authorized = {RoleType.Admin})
     private Boolean display;
 
     /////////////////////////////////////////////////////

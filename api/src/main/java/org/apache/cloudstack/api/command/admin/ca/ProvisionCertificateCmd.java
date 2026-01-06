@@ -52,7 +52,7 @@ public class ProvisionCertificateCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, required = true, entityType = HostResponse.class,
-            description = "The host/agent uuid to which the certificate has to be provisioned (issued and propagated)")
+            description = "The host/agent ID to which the certificate has to be provisioned (issued and propagated)")
     private Long hostId;
 
     @Parameter(name = ApiConstants.RECONNECT, type = CommandType.BOOLEAN,
@@ -108,7 +108,7 @@ public class ProvisionCertificateCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "provisioning certificate for host id=" + hostId + " using provider=" + provider;
+        return "Provisioning certificate for host id=" + hostId + " using provider=" + provider;
     }
 
     @Override

@@ -62,11 +62,12 @@ import org.apache.cloudstack.api.ResourceDetail;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
@@ -78,9 +79,9 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -135,7 +136,6 @@ public class VMSnapshotManagerTest {
     VMSnapshotDetailsDao _vmSnapshotDetailsDao;
     @Mock
     UserVmManager _userVmManager;
-    int _vmSnapshotMax = 10;
 
     private static final long TEST_VM_ID = 3L;
     private static final long SERVICE_OFFERING_ID = 1L;
@@ -174,9 +174,11 @@ public class VMSnapshotManagerTest {
     @Captor
     ArgumentCaptor<List<UserVmDetailVO>> listUserVmDetailsCaptor;
 
+    private AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         doReturn(admin).when(_vmSnapshotMgr).getCaller();
         _vmSnapshotMgr._accountDao = _accountDao;
         _vmSnapshotMgr._userVMDao = _userVMDao;
@@ -190,8 +192,6 @@ public class VMSnapshotManagerTest {
         _vmSnapshotMgr._serviceOfferingDetailsDao = _serviceOfferingDetailsDao;
 
         doNothing().when(_accountMgr).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), any(ControlledEntity.class));
-
-        _vmSnapshotMgr._vmSnapshotMax = _vmSnapshotMax;
 
         _vmSnapshotMgr._serviceOfferingDao = _serviceOfferingDao;
         _vmSnapshotMgr._userVmDetailsDao = _userVmDetailsDao;
@@ -245,6 +245,11 @@ public class VMSnapshotManagerTest {
         when(userVm.getServiceOfferingId()).thenReturn(SERVICE_OFFERING_ID);
 
         when(vmSnapshotVO.getServiceOfferingId()).thenReturn(SERVICE_OFFERING_ID);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     // vmId null case
@@ -343,12 +348,12 @@ public class VMSnapshotManagerTest {
     @Test
     public void testUpdateUserVmServiceOfferingDifferentServiceOffering() throws ConcurrentOperationException, ResourceUnavailableException, ManagementServerException, VirtualMachineMigrationException {
         when(userVm.getServiceOfferingId()).thenReturn(SERVICE_OFFERING_DIFFERENT_ID);
-        when(_userVmManager.upgradeVirtualMachine(Matchers.eq(TEST_VM_ID), Matchers.eq(SERVICE_OFFERING_ID), mapDetailsCaptor.capture())).thenReturn(true);
+        when(_userVmManager.upgradeVirtualMachine(ArgumentMatchers.eq(TEST_VM_ID), ArgumentMatchers.eq(SERVICE_OFFERING_ID), mapDetailsCaptor.capture())).thenReturn(true);
         _vmSnapshotMgr.updateUserVmServiceOffering(userVm, vmSnapshotVO);
 
         verify(_vmSnapshotMgr).changeUserVmServiceOffering(userVm, vmSnapshotVO);
         verify(_vmSnapshotMgr).getVmMapDetails(userVm);
-        verify(_vmSnapshotMgr).upgradeUserVmServiceOffering(Matchers.eq(TEST_VM_ID), Matchers.eq(SERVICE_OFFERING_ID), mapDetailsCaptor.capture());
+        verify(_vmSnapshotMgr).upgradeUserVmServiceOffering(ArgumentMatchers.eq(userVm), ArgumentMatchers.eq(SERVICE_OFFERING_ID), mapDetailsCaptor.capture());
     }
 
     @Test
@@ -363,18 +368,18 @@ public class VMSnapshotManagerTest {
 
     @Test
     public void testChangeUserVmServiceOffering() throws ConcurrentOperationException, ResourceUnavailableException, ManagementServerException, VirtualMachineMigrationException {
-        when(_userVmManager.upgradeVirtualMachine(Matchers.eq(TEST_VM_ID), Matchers.eq(SERVICE_OFFERING_ID), mapDetailsCaptor.capture())).thenReturn(true);
+        when(_userVmManager.upgradeVirtualMachine(ArgumentMatchers.eq(TEST_VM_ID), ArgumentMatchers.eq(SERVICE_OFFERING_ID), mapDetailsCaptor.capture())).thenReturn(true);
         _vmSnapshotMgr.changeUserVmServiceOffering(userVm, vmSnapshotVO);
         verify(_vmSnapshotMgr).getVmMapDetails(userVm);
-        verify(_vmSnapshotMgr).upgradeUserVmServiceOffering(Matchers.eq(TEST_VM_ID), Matchers.eq(SERVICE_OFFERING_ID), mapDetailsCaptor.capture());
+        verify(_vmSnapshotMgr).upgradeUserVmServiceOffering(ArgumentMatchers.eq(userVm), ArgumentMatchers.eq(SERVICE_OFFERING_ID), mapDetailsCaptor.capture());
     }
 
     @Test(expected=CloudRuntimeException.class)
     public void testChangeUserVmServiceOfferingFailOnUpgradeVMServiceOffering() throws ConcurrentOperationException, ResourceUnavailableException, ManagementServerException, VirtualMachineMigrationException {
-        when(_userVmManager.upgradeVirtualMachine(Matchers.eq(TEST_VM_ID), Matchers.eq(SERVICE_OFFERING_ID), mapDetailsCaptor.capture())).thenReturn(false);
+        when(_userVmManager.upgradeVirtualMachine(ArgumentMatchers.eq(TEST_VM_ID), ArgumentMatchers.eq(SERVICE_OFFERING_ID), mapDetailsCaptor.capture())).thenReturn(false);
         _vmSnapshotMgr.changeUserVmServiceOffering(userVm, vmSnapshotVO);
         verify(_vmSnapshotMgr).getVmMapDetails(userVm);
-        verify(_vmSnapshotMgr).upgradeUserVmServiceOffering(Matchers.eq(TEST_VM_ID), Matchers.eq(SERVICE_OFFERING_ID), mapDetailsCaptor.capture());
+        verify(_vmSnapshotMgr).upgradeUserVmServiceOffering(ArgumentMatchers.eq(userVm), ArgumentMatchers.eq(SERVICE_OFFERING_ID), mapDetailsCaptor.capture());
     }
 
     @Test
@@ -384,7 +389,7 @@ public class VMSnapshotManagerTest {
                 put(userVmDetailMemory.getName(), userVmDetailMemory.getValue());
         }};
         when(_userVmManager.upgradeVirtualMachine(TEST_VM_ID, SERVICE_OFFERING_ID, details)).thenReturn(true);
-        _vmSnapshotMgr.upgradeUserVmServiceOffering(TEST_VM_ID, SERVICE_OFFERING_ID, details);
+        _vmSnapshotMgr.upgradeUserVmServiceOffering(userVm, SERVICE_OFFERING_ID, details);
 
         verify(_userVmManager).upgradeVirtualMachine(TEST_VM_ID, SERVICE_OFFERING_ID, details);
     }

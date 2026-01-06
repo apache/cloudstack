@@ -57,6 +57,17 @@ public interface DeploymentClusterPlanner extends DeploymentPlanner {
             false,
             ConfigKey.Scope.Global);
 
+    static final ConfigKey<String> VmAllocationAlgorithm = new ConfigKey<>(
+            String.class,
+            "vm.allocation.algorithm",
+            "Advanced",
+            "random",
+            "Order in which hosts within a cluster will be considered for VM/volume allocation. The value can be 'random', 'firstfit', 'userdispersing', 'userconcentratedpod_random', 'userconcentratedpod_firstfit', or 'firstfitleastconsumed'.",
+            true,
+            ConfigKey.Scope.Global, null, null, null, null, null,
+            ConfigKey.Kind.Select,
+            "random,firstfit,userdispersing,userconcentratedpod_random,userconcentratedpod_firstfit,firstfitleastconsumed");
+
     /**
      * This is called to determine list of possible clusters where a virtual
      * machine can be deployed.

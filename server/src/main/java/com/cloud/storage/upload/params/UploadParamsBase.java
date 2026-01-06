@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.storage.upload.params;
 
+import com.cloud.cpu.CPU;
 import com.cloud.hypervisor.Hypervisor;
 
 import java.util.Map;
@@ -45,8 +46,9 @@ public abstract class UploadParamsBase implements UploadParams {
     private boolean isDynamicallyScalable;
     private boolean isRoutingType;
     private boolean deployAsIs;
+    private CPU.CPUArch arch;
 
-    UploadParamsBase(long userId, String name, String displayText,
+    UploadParamsBase(long userId, String name, String displayText, CPU.CPUArch arch,
                                Integer bits, boolean passwordEnabled, boolean requiresHVM,
                                boolean isPublic, boolean featured,
                                boolean isExtractable, String format, Long guestOSId,
@@ -57,6 +59,7 @@ public abstract class UploadParamsBase implements UploadParams {
         this.userId = userId;
         this.name = name;
         this.displayText = displayText;
+        this.arch = arch;
         this.bits = bits;
         this.passwordEnabled = passwordEnabled;
         this.requiresHVM = requiresHVM;
@@ -243,5 +246,14 @@ public abstract class UploadParamsBase implements UploadParams {
 
     void setHypervisorType(Hypervisor.HypervisorType hypervisorType) {
         this.hypervisorType = hypervisorType;
+    }
+
+    @Override
+    public CPU.CPUArch getArch() {
+        return arch;
+    }
+
+    public void setArch(CPU.CPUArch arch) {
+        this.arch = arch;
     }
 }

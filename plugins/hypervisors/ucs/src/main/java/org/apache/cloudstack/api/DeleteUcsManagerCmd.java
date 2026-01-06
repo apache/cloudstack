@@ -18,7 +18,6 @@ package org.apache.cloudstack.api;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UcsManagerResponse;
@@ -35,14 +34,13 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @APICommand(name = "deleteUcsManager", description = "Delete a Ucs manager", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteUcsManagerCmd extends BaseCmd {
-    private static final Logger logger = Logger.getLogger(DeleteUcsManagerCmd.class);
 
     @Inject
     private UcsManager mgr;
 
     @Parameter(name = ApiConstants.UCS_MANAGER_ID,
                type = BaseCmd.CommandType.UUID,
-               description = "ucs manager id",
+               description = "Ucs manager ID",
                entityType = UcsManagerResponse.class,
                required = true)
     private Long ucsManagerId;

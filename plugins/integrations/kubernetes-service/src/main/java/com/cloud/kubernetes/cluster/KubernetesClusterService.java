@@ -35,6 +35,7 @@ import org.apache.cloudstack.api.response.RemoveVirtualMachinesFromKubernetesClu
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
+import com.cloud.network.Network;
 import com.cloud.user.Account;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -55,7 +56,7 @@ public interface KubernetesClusterService extends PluggableService, Configurable
             "cloud.kubernetes.cluster.network.offering",
             "DefaultNetworkOfferingforKubernetesService",
             "Name of the network offering that will be used to create isolated network in which Kubernetes cluster VMs will be launched",
-            false,
+            true,
             KubernetesServiceEnabled.key());
     static final ConfigKey<Long> KubernetesClusterStartTimeout = new ConfigKey<Long>("Advanced", Long.class,
             "cloud.kubernetes.cluster.start.timeout",
@@ -124,6 +125,8 @@ public interface KubernetesClusterService extends PluggableService, Configurable
     boolean addVmsToCluster(AddVirtualMachinesToKubernetesClusterCmd cmd);
 
     List<RemoveVirtualMachinesFromKubernetesClusterResponse> removeVmsFromCluster(RemoveVirtualMachinesFromKubernetesClusterCmd cmd);
+
+    boolean isDirectAccess(Network network);
 
     void cleanupForAccount(Account account);
 }

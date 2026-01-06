@@ -21,7 +21,6 @@ package org.apache.cloudstack.api.command.admin.storage;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -35,28 +34,27 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.storage.ImageStore;
 import com.cloud.user.Account;
 
-@APICommand(name = "createSecondaryStagingStore", description = "create secondary staging store.", responseObject = ImageStoreResponse.class,
+@APICommand(name = "createSecondaryStagingStore", description = "Create secondary staging store.", responseObject = ImageStoreResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateSecondaryStagingStoreCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateSecondaryStagingStoreCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, length = 2048, description = "the URL for the staging store")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, length = 2048, description = "The URL for the staging store")
     private String url;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the Zone ID for the staging store")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The Zone ID for the staging store")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "the details for the staging store")
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "The details for the staging store")
     private Map<String, ? extends Map<String, String>> details;
 
-    @Parameter(name = ApiConstants.SCOPE, type = CommandType.STRING, required = false, description = "the scope of the staging store: zone only for now")
+    @Parameter(name = ApiConstants.SCOPE, type = CommandType.STRING, required = false, description = "The scope of the staging store: zone only for now")
     private String scope;
 
-    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, required = false, description = "the staging store provider name")
+    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, required = false, description = "The staging store provider name")
     private String providerName;
 
     /////////////////////////////////////////////////////
@@ -113,7 +111,7 @@ public class CreateSecondaryStagingStoreCmd extends BaseCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add secondary storage");
             }
         } catch (Exception ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
     }

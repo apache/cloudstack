@@ -21,7 +21,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -46,7 +45,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @APICommand(name = "listCiscoVnmcResources", responseObject = CiscoVnmcResourceResponse.class, description = "Lists Cisco VNMC controllers",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListCiscoVnmcResourcesCmd extends BaseListCmd {
-    private static final Logger s_logger = Logger.getLogger(ListCiscoVnmcResourcesCmd.class.getName());
     private static final String s_name = "listCiscoVnmcResources";
     @Inject
     CiscoVnmcElementService _ciscoVnmcElementService;
@@ -55,7 +53,7 @@ public class ListCiscoVnmcResourcesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "the Physical Network ID")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "The Physical Network ID")
     private Long physicalNetworkId;
 
     @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.UUID, entityType = CiscoVnmcResourceResponse.class, description = "Cisco VNMC resource ID")

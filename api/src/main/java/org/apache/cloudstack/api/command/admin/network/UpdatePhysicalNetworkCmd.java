@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.admin.network;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -34,25 +33,24 @@ import com.cloud.user.Account;
 @APICommand(name = "updatePhysicalNetwork", description = "Updates a physical network", responseObject = PhysicalNetworkResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdatePhysicalNetworkCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, required = true, description = "physical network id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, required = true, description = "Physical Network ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.NETWORK_SPEED, type = CommandType.STRING, description = "the speed for the physical network[1G/10G]")
+    @Parameter(name = ApiConstants.NETWORK_SPEED, type = CommandType.STRING, description = "The speed for the physical Network[1G/10G]")
     private String speed;
 
-    @Parameter(name = ApiConstants.TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "Tag the physical network")
+    @Parameter(name = ApiConstants.TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "Tag the physical Network")
     private List<String> tags;
 
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "Enabled/Disabled")
     private String state;
 
-    @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "the VLAN for the physical network")
+    @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "The VLAN for the physical Network")
     private String vlan;
 
     /////////////////////////////////////////////////////

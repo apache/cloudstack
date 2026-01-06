@@ -36,26 +36,24 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricNicResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
-import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
 
-@APICommand(name = ListTungstenFabricNicCmd.APINAME, description = "list Tungsten-Fabric nic", responseObject =
+@APICommand(name = ListTungstenFabricNicCmd.APINAME, description = "List Tungsten-Fabric nic", responseObject =
     TungstenFabricNicResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListTungstenFabricNicCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListTungstenFabricNicCmd.class.getName());
     public static final String APINAME = "listTungstenFabricNic";
 
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.NIC_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric nic")
+    @Parameter(name = ApiConstants.NIC_UUID, type = CommandType.STRING, description = "The uuid of Tungsten-Fabric nic")
     private String nicUuid;
 
     @Override

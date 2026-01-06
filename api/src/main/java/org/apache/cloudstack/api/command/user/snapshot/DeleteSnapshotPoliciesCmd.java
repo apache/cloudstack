@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.user.snapshot;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -31,24 +30,23 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteSnapshotPolicies", description = "Deletes snapshot policies for the account.", responseObject = SuccessResponse.class,
+@APICommand(name = "deleteSnapshotPolicies", description = "Deletes Snapshot policies for the account.", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteSnapshotPoliciesCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteSnapshotPoliciesCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = SnapshotPolicyResponse.class, description = "the Id of the snapshot policy")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = SnapshotPolicyResponse.class, description = "The ID of the Snapshot policy")
     private Long id;
 
     @Parameter(name = ApiConstants.IDS,
                type = CommandType.LIST,
                collectionType = CommandType.UUID,
                entityType = SnapshotPolicyResponse.class,
-               description = "list of snapshots policy IDs separated by comma")
+               description = "List of Snapshots policy IDs separated by comma")
     private List<Long> ids;
 
     /////////////////////////////////////////////////////
@@ -79,7 +77,7 @@ public class DeleteSnapshotPoliciesCmd extends BaseCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete snapshot policy");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete Snapshot policy");
         }
     }
 }

@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -39,27 +38,26 @@ import com.cloud.user.Account;
 @APICommand(name = "addImageStore", description = "Adds backup image store.", responseObject = ImageStoreResponse.class, since = "4.2.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddImageStoreCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(AddImageStoreCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name for the image store")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name for the image store")
     private String name;
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, length = 2048, description = "the URL for the image store")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, length = 2048, description = "The URL for the image store")
     private String url;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the Zone ID for the image store")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The Zone ID for the image store")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, required = true, description = "the image store provider name")
+    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, required = true, description = "The image store provider name")
     private String providerName;
 
     @Parameter(name = ApiConstants.DETAILS,
                type = CommandType.MAP,
-               description = "the details for the image store. Example: details[0].key=accesskey&details[0].value=s389ddssaa&details[1].key=secretkey&details[1].value=8dshfsss")
+               description = "The details for the image store. Example: details[0].key=accesskey&details[0].value=s389ddssaa&details[1].key=secretkey&details[1].value=8dshfsss")
     private Map details;
 
     /////////////////////////////////////////////////////
@@ -137,7 +135,7 @@ public class AddImageStoreCmd extends BaseCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add secondary storage");
             }
         } catch (DiscoveryException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
     }

@@ -42,7 +42,8 @@ import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
@@ -64,7 +65,7 @@ import java.util.List;
 import static org.apache.cloudstack.backup.NetworkerBackupProvider.BACKUP_IDENTIFIER;
 
 public class NetworkerClient {
-    private static final Logger LOG = Logger.getLogger(NetworkerClient.class);
+    private static final Logger LOG = LogManager.getLogger(NetworkerClient.class);
     private final URI apiURI;
     private final String apiName;
     private final String apiPassword;
@@ -297,7 +298,7 @@ public class NetworkerClient {
     public ArrayList<String> getBackupsForVm(VirtualMachine vm) {
         SimpleDateFormat formatterDateTime = new SimpleDateFormat("yyy-MM-dd'T'HH:mm:ss");
 
-        LOG.debug("Trying to list EMC Networker backups for VM " + vm.getName());
+        LOG.debug(String.format("Trying to list EMC Networker backups for VM %s", vm));
         try {
             final HttpResponse response = get("/global/backups/?q=name:" + vm.getName());
             checkResponseOK(response);
@@ -309,7 +310,7 @@ public class NetworkerClient {
                 return backupsTaken;
             }
             for (final NetworkerBackup backup : networkerBackups.getBackups()) {
-                LOG.debug("Found Backup " + backup.getId());
+                LOG.debug(String.format("Found Backup %s", backup));
                 // Backups that have expired on the EMC Networker but not removed yet will not be added
                 try {
                     Date backupRetentionTime = formatterDateTime.parse(backup.getRetentionTime());
@@ -344,7 +345,7 @@ public class NetworkerClient {
                 return policies;
             }
             for (final ProtectionPolicy protectionPolicy : protectionPolicies.getProtectionPolicies()) {
-                LOG.debug("Found Protection Policy:" + protectionPolicy.getName());
+                LOG.debug(String.format("Found Protection Policy: %s", protectionPolicy));
                 policies.add(new NetworkerBackupOffering(protectionPolicy.getName(), protectionPolicy.getResourceId().getId()));
             }
             return policies;

@@ -18,7 +18,8 @@ package org.apache.cloudstack.storage.datastore;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -58,7 +59,7 @@ import com.cloud.utils.fsm.StateMachine2;
 
 @Component
 public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
-    private static final Logger s_logger = Logger.getLogger(ObjectInDataStoreManagerImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     @Inject
     TemplateDataFactory imageFactory;
     @Inject
@@ -90,27 +91,27 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
         stateMachines.addTransition(State.Allocated, Event.CreateOnlyRequested, State.Creating);
         stateMachines.addTransition(State.Allocated, Event.DestroyRequested, State.Destroying);
         stateMachines.addTransition(State.Allocated, Event.OperationFailed, State.Failed);
-        stateMachines.addTransition(State.Allocated, Event.OperationSuccessed, State.Ready);
+        stateMachines.addTransition(State.Allocated, Event.OperationSucceeded, State.Ready);
         stateMachines.addTransition(State.Creating, Event.OperationFailed, State.Allocated);
-        stateMachines.addTransition(State.Creating, Event.OperationSuccessed, State.Ready);
+        stateMachines.addTransition(State.Creating, Event.OperationSucceeded, State.Ready);
         stateMachines.addTransition(State.Ready, Event.CopyingRequested, State.Copying);
-        stateMachines.addTransition(State.Copying, Event.OperationSuccessed, State.Ready);
+        stateMachines.addTransition(State.Copying, Event.OperationSucceeded, State.Ready);
         stateMachines.addTransition(State.Copying, Event.OperationFailed, State.Ready);
         stateMachines.addTransition(State.Ready, Event.DestroyRequested, State.Destroying);
         stateMachines.addTransition(State.Destroying, Event.DestroyRequested, State.Destroying);
-        stateMachines.addTransition(State.Destroying, Event.OperationSuccessed, State.Destroyed);
+        stateMachines.addTransition(State.Destroying, Event.OperationSucceeded, State.Destroyed);
         stateMachines.addTransition(State.Destroying, Event.OperationFailed, State.Destroying);
         stateMachines.addTransition(State.Failed, Event.DestroyRequested, State.Destroying);
         // TODO: further investigate why an extra event is sent when it is
         // already Ready for DownloadListener
-        stateMachines.addTransition(State.Ready, Event.OperationSuccessed, State.Ready);
+        stateMachines.addTransition(State.Ready, Event.OperationSucceeded, State.Ready);
         // State transitions for data object migration
         stateMachines.addTransition(State.Ready, Event.MigrateDataRequested, State.Migrating);
         stateMachines.addTransition(State.Ready, Event.CopyRequested, State.Copying);
         stateMachines.addTransition(State.Allocated, Event.MigrateDataRequested, State.Migrating);
         stateMachines.addTransition(State.Migrating, Event.MigrationFailed, State.Failed);
         stateMachines.addTransition(State.Migrating, Event.MigrationSucceeded, State.Destroyed);
-        stateMachines.addTransition(State.Migrating, Event.OperationSuccessed, State.Ready);
+        stateMachines.addTransition(State.Migrating, Event.OperationSucceeded, State.Ready);
         stateMachines.addTransition(State.Migrating, Event.OperationFailed, State.Ready);
     }
 
@@ -136,7 +137,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                     if (parentSnap != null) {
                         ss.setParentSnapshotId(snapshotDataStoreVO.getSnapshotId());
                     } else {
-                        s_logger.debug("find inconsistent db for snapshot " + snapshotDataStoreVO.getSnapshotId());
+                        logger.debug("find inconsistent db for snapshot " + snapshotDataStoreVO.getSnapshotId());
                     }
                 }
                 ss.setState(ObjectInDataStoreStateMachine.State.Allocated);
@@ -210,7 +211,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 if (destTmpltPool != null) {
                     return templatePoolDao.remove(destTmpltPool.getId());
                 } else {
-                    s_logger.warn("Template " + objId + " is not found on storage pool " + dataStore.getId() + ", so no need to delete");
+                    logger.warn("Template " + objId + " is not found on storage pool " + dataStore.getId() + ", so no need to delete");
                     return true;
                 }
             }
@@ -222,7 +223,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                     if (destTmpltStore != null) {
                         return templateDataStoreDao.remove(destTmpltStore.getId());
                     } else {
-                        s_logger.warn("Template " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
+                        logger.warn("Template " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
                         return true;
                     }
                 case SNAPSHOT:
@@ -230,7 +231,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                     if (destSnapshotStore != null) {
                         return snapshotDataStoreDao.remove(destSnapshotStore.getId());
                     } else {
-                        s_logger.warn("Snapshot " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
+                        logger.warn("Snapshot " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
                         return true;
                     }
                 case VOLUME:
@@ -238,13 +239,13 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                     if (destVolumeStore != null) {
                         return volumeDataStoreDao.remove(destVolumeStore.getId());
                     } else {
-                        s_logger.warn("Volume " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
+                        logger.warn("Volume " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
                         return true;
                     }
             }
         }
 
-        s_logger.warn("Unsupported data object (" + dataObj.getType() + ", " + dataObj.getDataStore() + ")");
+        logger.warn("Unsupported data object (" + dataObj.getType() + ", " + dataObj.getDataStore() + ")");
         return false;
     }
 
@@ -258,7 +259,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 if (destTmpltPool != null && destTmpltPool.getState() != ObjectInDataStoreStateMachine.State.Ready) {
                     return templatePoolDao.remove(destTmpltPool.getId());
                 } else {
-                    s_logger.warn("Template " + objId + " is not found on storage pool " + dataStore.getId() + ", so no need to delete");
+                    logger.warn("Template " + objId + " is not found on storage pool " + dataStore.getId() + ", so no need to delete");
                     return true;
                 }
             } else if (dataObj.getType() == DataObjectType.SNAPSHOT) {
@@ -278,7 +279,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                     if (destSnapshotStore != null && destSnapshotStore.getState() != ObjectInDataStoreStateMachine.State.Ready) {
                         return snapshotDataStoreDao.remove(destSnapshotStore.getId());
                     } else {
-                        s_logger.warn("Snapshot " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
+                        logger.warn("Snapshot " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
                         return true;
                     }
                 case VOLUME:
@@ -286,13 +287,13 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                     if (destVolumeStore != null && destVolumeStore.getState() != ObjectInDataStoreStateMachine.State.Ready) {
                         return volumeDataStoreDao.remove(destVolumeStore.getId());
                     } else {
-                        s_logger.warn("Volume " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
+                        logger.warn("Volume " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
                         return true;
                     }
             }
         }
 
-        s_logger.warn("Unsupported data object (" + dataObj.getType() + ", " + dataObj.getDataStore() + "), no need to delete from object in store ref table");
+        logger.warn("Unsupported data object (" + dataObj.getType() + ", " + dataObj.getDataStore() + "), no need to delete from object in store ref table");
         return false;
     }
 
@@ -317,9 +318,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                     break;
             }
         } else if (data.getType() == DataObjectType.TEMPLATE && data.getDataStore().getRole() == DataStoreRole.Primary) {
-
             result = this.stateMachines.transitTo(obj, event, null, templatePoolDao);
-
         } else if (data.getType() == DataObjectType.SNAPSHOT && data.getDataStore().getRole() == DataStoreRole.Primary) {
             result = this.stateMachines.transitTo(obj, event, null, snapshotDataStoreDao);
         } else {
@@ -374,12 +373,10 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
         } else if (type == DataObjectType.SNAPSHOT && role == DataStoreRole.Primary) {
             vo = snapshotDataStoreDao.findByStoreSnapshot(role, dataStoreId, objId);
         } else {
-            s_logger.debug("Invalid data or store type: " + type + " " + role);
+            logger.debug("Invalid data or store type: " + type + " " + role);
             throw new CloudRuntimeException("Invalid data or store type: " + type + " " + role);
         }
 
         return vo;
-
     }
-
 }

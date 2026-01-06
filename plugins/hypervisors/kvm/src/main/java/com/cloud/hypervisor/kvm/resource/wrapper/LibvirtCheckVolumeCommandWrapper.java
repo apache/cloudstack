@@ -37,7 +37,6 @@ import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
 
 import java.util.Arrays;
@@ -48,7 +47,6 @@ import java.util.Map;
 @ResourceWrapper(handles = CheckVolumeCommand.class)
 public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<CheckVolumeCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtCheckVolumeCommandWrapper.class);
     private static final List<Storage.StoragePoolType> STORAGE_POOL_TYPES_SUPPORTED = Arrays.asList(Storage.StoragePoolType.Filesystem, Storage.StoragePoolType.NetworkFilesystem);
 
     @Override
@@ -75,7 +73,7 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
                 return new Answer(command, false, "Unsupported Storage Pool");
             }
         } catch (final Exception e) {
-            s_logger.error("Error while checking the disk: " + e.getMessage());
+            logger.error("Error while checking the disk: {}", e.getMessage());
             return new Answer(command, false, result);
         }
     }

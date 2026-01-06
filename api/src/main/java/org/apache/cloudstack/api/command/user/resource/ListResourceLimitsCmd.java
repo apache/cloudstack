@@ -19,22 +19,20 @@ package org.apache.cloudstack.api.command.user.resource;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.cloud.configuration.Resource;
-import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ResourceLimitResponse;
-import org.apache.log4j.Logger;
 
+import com.cloud.configuration.Resource;
 import com.cloud.configuration.ResourceLimit;
+import com.cloud.exception.InvalidParameterValueException;
 
 @APICommand(name = "listResourceLimits", description = "Lists resource limits.", responseObject = ResourceLimitResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListResourceLimitsCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -45,11 +43,11 @@ public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd
     private Long id;
 
     @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.INTEGER, description = "Type of resource. Values are 0, 1, 2, 3, 4, 6, 7, 8, 9, 10 and 11. "
-        + "0 - Instance. Number of instances a user can create. "
+        + "0 - Instance. Number of Instances a user can create. "
         + "1 - IP. Number of public IP addresses an account can own. "
         + "2 - Volume. Number of disk volumes an account can own. "
-        + "3 - Snapshot. Number of snapshots an account can own. "
-        + "4 - Template. Number of templates an account can register/create. "
+        + "3 - Snapshot. Number of Snapshots an account can own. "
+        + "4 - Template. Number of Templates an account can register/create. "
         + "5 - Project. Number of projects an account can own. "
         + "6 - Network. Number of networks an account can own. "
         + "7 - VPC. Number of VPC an account can own. "
@@ -60,11 +58,11 @@ public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd
     private Integer resourceType;
 
     @Parameter(name = ApiConstants.RESOURCE_TYPE_NAME, type = CommandType.STRING, description = "Type of resource (wins over resourceType if both are provided). Values are: "
-            + "user_vm - Instance. Number of instances a user can create. "
+            + "user_vm - Instance. Number of Instances a user can create. "
             + "public_ip - IP. Number of public IP addresses an account can own. "
             + "volume - Volume. Number of disk volumes an account can own. "
-            + "snapshot - Snapshot. Number of snapshots an account can own. "
-            + "template - Template. Number of templates an account can register/create. "
+            + "snapshot - Snapshot. Number of Snapshots an account can own. "
+            + "template - Template. Number of Templates an account can register/create. "
             + "project - Project. Number of projects an account can own. "
             + "network - Network. Number of networks an account can own. "
             + "vpc - VPC. Number of VPC an account can own. "
@@ -73,6 +71,10 @@ public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd
             + "primary_storage - PrimaryStorage. Total primary storage space (in GiB) a user can use. "
             + "secondary_storage - SecondaryStorage. Total secondary storage space (in GiB) a user can use. ")
     private String resourceTypeName;
+
+    @Parameter(name = ApiConstants.TAG, type = CommandType.STRING, description = "Tag for the resource type", since = "4.20.0")
+    private String tag;
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -90,6 +92,10 @@ public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd
         return resourceTypeName;
     }
 
+    public String getTag() {
+        return tag;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -98,7 +104,7 @@ public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd
     public void execute() {
         List<? extends ResourceLimit> result =
                 _resourceLimitService.searchForLimits(id, _accountService.finalyzeAccountId(this.getAccountName(), this.getDomainId(), this.getProjectId(), false), this.getDomainId(),
-                        getResourceTypeEnum(), this.getStartIndex(), this.getPageSizeVal());
+                        getResourceTypeEnum(), getTag(), this.getStartIndex(), this.getPageSizeVal());
         ListResponse<ResourceLimitResponse> response = new ListResponse<ResourceLimitResponse>();
         List<ResourceLimitResponse> limitResponses = new ArrayList<ResourceLimitResponse>();
         for (ResourceLimit limit : result) {

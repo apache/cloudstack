@@ -27,15 +27,13 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.List;
 
-@APICommand(name = "listBaremetalDhcp", description = "list baremetal dhcp servers", responseObject = BaremetalDhcpResponse.class,
+@APICommand(name = "listBaremetalDhcp", description = "List baremetal dhcp servers", responseObject = BaremetalDhcpResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListBaremetalDhcpCmd extends BaseListCmd {
-    private static final Logger s_logger = Logger.getLogger(ListBaremetalDhcpCmd.class);
     @Inject
     BaremetalDhcpManager _dhcpMgr;
 
@@ -52,7 +50,7 @@ public class ListBaremetalDhcpCmd extends BaseListCmd {
             type = CommandType.UUID,
             entityType = PhysicalNetworkResponse.class,
             required = true,
-            description = "the Physical Network ID")
+            description = "The Physical Network ID")
     private Long physicalNetworkId;
 
     public Long getPhysicalNetworkId() {
@@ -90,7 +88,7 @@ public class ListBaremetalDhcpCmd extends BaseListCmd {
             response.setObjectName("baremetaldhcps");
             this.setResponseObject(response);
         } catch (Exception e) {
-            s_logger.debug("Exception happend while executing ListBaremetalDhcpCmd");
+            logger.debug("Exception happend while executing ListBaremetalDhcpCmd");
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
 

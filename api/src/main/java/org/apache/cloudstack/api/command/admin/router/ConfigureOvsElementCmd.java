@@ -29,7 +29,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.OvsProviderResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -42,8 +41,6 @@ import com.cloud.user.Account;
 @APICommand(name = "configureOvsElement", responseObject = OvsProviderResponse.class, description = "Configures an ovs element.",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ConfigureOvsElementCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger
-        .getLogger(ConfigureOvsElementCmd.class.getName());
     @Inject
     private List<VirtualRouterElementService> _service;
 
@@ -51,7 +48,7 @@ public class ConfigureOvsElementCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = OvsProviderResponse.class, required = true, description = "the ID of the ovs provider")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = OvsProviderResponse.class, required = true, description = "The ID of the ovs provider")
     private Long id;
 
     @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, required = true, description = "Enabled/Disabled the service provider")

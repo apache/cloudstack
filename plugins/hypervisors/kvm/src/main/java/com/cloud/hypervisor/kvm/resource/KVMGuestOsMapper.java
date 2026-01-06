@@ -19,10 +19,11 @@ package com.cloud.hypervisor.kvm.resource;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class KVMGuestOsMapper {
-    private static final Logger s_logger = Logger.getLogger(KVMGuestOsMapper.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private static Map<String, String> s_mapper = new HashMap<String, String>();
     static {
         s_mapper.put("CentOS 4.5 (32-bit)", "CentOS 4.5");
@@ -133,10 +134,10 @@ public class KVMGuestOsMapper {
 
     }
 
-    public static String getGuestOsName(String guestOsName) {
+    public String getGuestOsName(String guestOsName) {
         String guestOS = s_mapper.get(guestOsName);
         if (guestOS == null) {
-            s_logger.debug("Can't find the mapping of guest os: " + guestOsName);
+            logger.debug("Can't find the mapping of guest os: " + guestOsName);
             return "Other";
         } else {
             return guestOS;

@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.autoscale;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -35,10 +34,9 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScaleVmProfile;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteAutoScaleVmProfile", description = "Deletes a autoscale vm profile.", responseObject = SuccessResponse.class, entityType = {AutoScaleVmProfile.class},
+@APICommand(name = "deleteAutoScaleVmProfile", description = "Deletes a autoscale Instance profile.", responseObject = SuccessResponse.class, entityType = {AutoScaleVmProfile.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteAutoScaleVmProfileCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteAutoScaleVmProfileCmd.class.getName());
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
@@ -48,7 +46,7 @@ public class DeleteAutoScaleVmProfileCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = AutoScaleVmProfileResponse.class,
                required = true,
-               description = "the ID of the autoscale profile")
+               description = "The ID of the autoscale profile")
     private Long id;
 
     // ///////////////////////////////////////////////////
@@ -81,19 +79,19 @@ public class DeleteAutoScaleVmProfileCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "deleting autoscale vm profile: " + getId();
+        return "Deleting autoscale Instance profile: " + getId();
     }
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("AutoScale VM Profile Id: " + getId());
+        CallContext.current().setEventDetails("AutoScale Instance Profile Id: " + getId());
         boolean result = _autoScaleService.deleteAutoScaleVmProfile(id);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            s_logger.warn("Failed to delete autoscale vm profile " + getId());
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete autoscale vm profile");
+            logger.warn("Failed to delete autoscale Instance profile " + getId());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete autoscale Instance profile");
         }
     }
 

@@ -24,13 +24,14 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.apache.cloudstack.utils.security.ParserUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 public class LibvirtXMLParser extends DefaultHandler {
-    private static final Logger s_logger = Logger.getLogger(LibvirtXMLParser.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     protected static final SAXParserFactory s_spf;
     static {
         s_spf = ParserUtils.getSaferSAXParserFactory();
@@ -43,9 +44,9 @@ public class LibvirtXMLParser extends DefaultHandler {
             _sp = s_spf.newSAXParser();
             _initialized = true;
         } catch (ParserConfigurationException e) {
-            s_logger.trace("Ignoring xml parser error.", e);
+            logger.trace("Ignoring xml parser error.", e);
         } catch (SAXException e) {
-            s_logger.trace("Ignoring xml parser error.", e);
+            logger.trace("Ignoring xml parser error.", e);
         }
     }
 
@@ -57,9 +58,9 @@ public class LibvirtXMLParser extends DefaultHandler {
             _sp.parse(new InputSource(new StringReader(domXML)), this);
             return true;
         } catch (SAXException se) {
-            s_logger.warn(se.getMessage());
+            logger.warn(se.getMessage());
         } catch (IOException ie) {
-            s_logger.error(ie.getMessage());
+            logger.error(ie.getMessage());
         }
         return false;
     }

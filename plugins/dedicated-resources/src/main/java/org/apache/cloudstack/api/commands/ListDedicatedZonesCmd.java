@@ -21,7 +21,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.APICommand;
@@ -43,7 +42,6 @@ import com.cloud.utils.Pair;
 @APICommand(name = "listDedicatedZones", description = "List dedicated zones.", responseObject = DedicateZoneResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListDedicatedZonesCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListDedicatedZonesCmd.class.getName());
 
     @Inject
     DedicatedService _dedicatedservice;
@@ -51,19 +49,19 @@ public class ListDedicatedZonesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of the Zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The ID of the Zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "the ID of the domain associated with the zone")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "The ID of the domain associated with the zone")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the name of the account associated with the zone. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "The name of the account associated with the zone. Must be used with domainId.")
     private String accountName;
 
     @Parameter(name = ApiConstants.AFFINITY_GROUP_ID,
                type = CommandType.UUID,
                entityType = AffinityGroupResponse.class,
-               description = "list dedicated zones by affinity group")
+               description = "List dedicated zones by affinity group")
     private Long affinityGroupId;
 
     /////////////////////////////////////////////////////

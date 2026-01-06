@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.resource;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -28,10 +27,9 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@APICommand(name = "cleanVMReservations", description = "Cleanups VM reservations in the database.", responseObject = SuccessResponse.class,
+@APICommand(name = "cleanVMReservations", description = "Cleanups Instance reservations in the database.", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CleanVMReservationsCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(CleanVMReservationsCmd.class.getName());
 
     private static final String s_name = "cleanvmreservationresponse";
 
@@ -65,7 +63,7 @@ public class CleanVMReservationsCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "cleaning vm reservations in database";
+        return "Cleaning Instance reservations in database";
     }
 
     @Override
@@ -75,7 +73,7 @@ public class CleanVMReservationsCmd extends BaseAsyncCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } catch (Exception ex) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to clean vm reservations");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to clean Instance reservations");
         }
     }
 }

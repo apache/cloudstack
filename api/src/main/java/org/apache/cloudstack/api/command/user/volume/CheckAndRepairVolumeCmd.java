@@ -16,8 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
-import com.cloud.event.EventTypes;
-import com.cloud.exception.InvalidParameterValueException;
+import java.util.Arrays;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -30,21 +30,19 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.EnumUtils;
-import org.apache.log4j.Logger;
 
+import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 
-import java.util.Arrays;
-
 @APICommand(name = "checkVolume", description = "Check the volume for any errors or leaks and also repairs when repair parameter is passed, this is currently supported for KVM only", responseObject = VolumeResponse.class, entityType = {Volume.class},
         since = "4.19.1",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CheckAndRepairVolumeCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(CheckAndRepairVolumeCmd.class.getName());
 
     private static final String s_name = "checkandrepairvolumeresponse";
 

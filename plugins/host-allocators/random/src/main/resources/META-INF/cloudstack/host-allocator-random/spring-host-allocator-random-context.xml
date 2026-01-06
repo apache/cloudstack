@@ -30,5 +30,5 @@
     <bean id="randomAllocator"
         class="com.cloud.agent.manager.allocator.impl.RandomAllocator" />
 
-    
+
 </beans>

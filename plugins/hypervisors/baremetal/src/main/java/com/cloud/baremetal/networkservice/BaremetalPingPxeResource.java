@@ -29,7 +29,6 @@ import java.util.Map;
 import javax.naming.ConfigurationException;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.trilead.ssh2.SCPClient;
 
@@ -46,7 +45,6 @@ import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SSHCmdHelper;
 
 public class BaremetalPingPxeResource extends BaremetalPxeResourceBase {
-    private static final Logger s_logger = Logger.getLogger(BaremetalPingPxeResource.class);
     private static final String Name = "BaremetalPingPxeResource";
     String _storageServer;
     String _pingDir;
@@ -98,11 +96,11 @@ public class BaremetalPingPxeResource extends BaremetalPxeResourceBase {
 
         com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(_ip, 22);
 
-        s_logger.debug(String.format("Trying to connect to PING PXE server(IP=%1$s, username=%2$s, password=%3$s", _ip, _username, "******"));
+        logger.debug(String.format("Trying to connect to PING PXE server(IP=%1$s, username=%2$s, password=%3$s", _ip, _username, "******"));
         try {
             sshConnection.connect(null, 60000, 60000);
             if (!sshConnection.authenticateWithPassword(_username, _password)) {
-                s_logger.debug("SSH Failed to authenticate");
+                logger.debug("SSH Failed to authenticate");
                 throw new ConfigurationException(String.format("Cannot connect to PING PXE server(IP=%1$s, username=%2$s, password=%3$s", _ip, _username, "******"));
             }
 
@@ -152,7 +150,7 @@ public class BaremetalPingPxeResource extends BaremetalPxeResourceBase {
         try {
             sshConnection.connect(null, 60000, 60000);
             if (!sshConnection.authenticateWithPassword(_username, _password)) {
-                s_logger.debug("SSH Failed to authenticate");
+                logger.debug("SSH Failed to authenticate");
                 throw new ConfigurationException(String.format("Cannot connect to PING PXE server(IP=%1$s, username=%2$s, password=%3$s", _ip, _username, _password));
             }
 
@@ -162,11 +160,11 @@ public class BaremetalPingPxeResource extends BaremetalPxeResourceBase {
             if (!SSHCmdHelper.sshExecuteCmd(sshConnection, script)) {
                 return new PreparePxeServerAnswer(cmd, "prepare PING at " + _ip + " failed, command:" + script);
             }
-            s_logger.debug("Prepare Ping PXE server successfully");
+            logger.debug("Prepare Ping PXE server successfully");
 
             return new PreparePxeServerAnswer(cmd);
         } catch (Exception e) {
-            s_logger.debug("Prepare PING pxe server failed", e);
+            logger.debug("Prepare PING pxe server failed", e);
             return new PreparePxeServerAnswer(cmd, e.getMessage());
         } finally {
             if (sshConnection != null) {
@@ -180,7 +178,7 @@ public class BaremetalPingPxeResource extends BaremetalPxeResourceBase {
         try {
             sshConnection.connect(null, 60000, 60000);
             if (!sshConnection.authenticateWithPassword(_username, _password)) {
-                s_logger.debug("SSH Failed to authenticate");
+                logger.debug("SSH Failed to authenticate");
                 throw new ConfigurationException(String.format("Cannot connect to PING PXE server(IP=%1$s, username=%2$s, password=%3$s", _ip, _username, _password));
             }
 
@@ -190,11 +188,11 @@ public class BaremetalPingPxeResource extends BaremetalPxeResourceBase {
             if (!SSHCmdHelper.sshExecuteCmd(sshConnection, script)) {
                 return new Answer(cmd, false, "prepare for creating template failed, command:" + script);
             }
-            s_logger.debug("Prepare for creating template successfully");
+            logger.debug("Prepare for creating template successfully");
 
             return new Answer(cmd, true, "Success");
         } catch (Exception e) {
-            s_logger.debug("Prepare for creating baremetal template failed", e);
+            logger.debug("Prepare for creating baremetal template failed", e);
             return new Answer(cmd, false, e.getMessage());
         } finally {
             if (sshConnection != null) {
@@ -238,7 +236,7 @@ public class BaremetalPingPxeResource extends BaremetalPxeResourceBase {
 
             sshConnection.connect(null, 60000, 60000);
             if (!sshConnection.authenticateWithPassword(_username, _password)) {
-                s_logger.debug("SSH Failed to authenticate");
+                logger.debug("SSH Failed to authenticate");
                 throw new ConfigurationException(String.format("Cannot connect to PING PXE server(IP=%1$s, username=%2$s, password=%3$s", _ip, _username, _password));
             }
 
@@ -249,7 +247,7 @@ public class BaremetalPingPxeResource extends BaremetalPxeResourceBase {
 
             return new Answer(cmd, true, "Success");
         } catch (Exception e) {
-            s_logger.debug("Prepare for creating baremetal template failed", e);
+            logger.debug("Prepare for creating baremetal template failed", e);
             return new Answer(cmd, false, e.getMessage());
         } finally {
             if (sshConnection != null) {

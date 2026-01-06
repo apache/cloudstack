@@ -30,19 +30,17 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 @APICommand(name = "patchSystemVm", description = "Attempts to live patch systemVMs - CPVM, SSVM ",
         responseObject = SuccessResponse.class, requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false, authorized = { RoleType.Admin }, since = "4.17.0")
 public class PatchSystemVMCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(PatchSystemVMCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = SystemVmResponse.class,
-            description = "patches systemVM - CPVM/SSVM with the specified ID")
+            description = "Patches System VM - CPVM/SSVM with the specified ID")
     private Long id;
 
     @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN,

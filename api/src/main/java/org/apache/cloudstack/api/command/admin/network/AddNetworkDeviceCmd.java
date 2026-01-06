@@ -20,7 +20,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -44,7 +43,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
             responseObject = NetworkDeviceResponse.class,
             requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddNetworkDeviceCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(AddNetworkDeviceCmd.class);
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -57,7 +55,7 @@ public class AddNetworkDeviceCmd extends BaseCmd {
                description = "Network device type, now supports ExternalDhcp, PxeServer, NetscalerMPXLoadBalancer, NetscalerVPXLoadBalancer, NetscalerSDXLoadBalancer, F5BigIpLoadBalancer, JuniperSRXFirewall, PaloAltoFirewall")
     private String type;
 
-    @Parameter(name = ApiConstants.NETWORK_DEVICE_PARAMETER_LIST, type = CommandType.MAP, description = "parameters for network device")
+    @Parameter(name = ApiConstants.NETWORK_DEVICE_PARAMETER_LIST, type = CommandType.MAP, description = "Parameters for network device")
     private Map paramList;
 
     public String getDeviceType() {

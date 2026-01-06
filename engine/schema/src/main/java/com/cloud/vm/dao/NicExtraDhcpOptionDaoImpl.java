@@ -16,13 +16,13 @@
 // under the License.
 package com.cloud.vm.dao;
 
-import org.springframework.stereotype.Component;
-
 import java.util.List;
+
+import org.apache.commons.collections.CollectionUtils;
+import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
-
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.NicExtraDhcpOption;
@@ -74,4 +74,15 @@ public class NicExtraDhcpOptionDaoImpl  extends GenericDaoBase<NicExtraDhcpOptio
         expunge(sc);
     }
 
+    @Override
+    public int expungeByNicList(List<Long> nicIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(nicIds)) {
+            return 0;
+        }
+        SearchBuilder<NicExtraDhcpOptionVO> sb = createSearchBuilder();
+        sb.and("nicIds", sb.entity().getNicId(), SearchCriteria.Op.IN);
+        SearchCriteria<NicExtraDhcpOptionVO> sc = sb.create();
+        sc.setParameters("nicIds", nicIds.toArray());
+        return batchExpunge(sc, batchSize);
+    }
 }

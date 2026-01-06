@@ -35,6 +35,7 @@ public class SetupGuestNetworkCommand extends NetworkElementCommand {
     String routerIpv6 = null;
     String routerIpv6Gateway = null;
     String routerIpv6Cidr = null;
+    boolean isVrGuestGateway = false;
 
     public NicTO getNic() {
         return nic;
@@ -113,5 +114,13 @@ public class SetupGuestNetworkCommand extends NetworkElementCommand {
 
     public void setDefaultIp6Dns2(String defaultIp6Dns2) {
         this.defaultIp6Dns2 = defaultIp6Dns2;
+    }
+
+    public boolean isVrGuestGateway() {
+        return isVrGuestGateway;
+    }
+
+    public void setVrGuestGateway(boolean vrGuestGateway) {
+        isVrGuestGateway = vrGuestGateway;
     }
 }

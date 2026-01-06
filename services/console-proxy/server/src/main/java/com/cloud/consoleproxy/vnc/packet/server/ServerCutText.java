@@ -19,11 +19,13 @@ package com.cloud.consoleproxy.vnc.packet.server;
 import java.io.DataInputStream;
 import java.io.IOException;
 
-import com.cloud.consoleproxy.util.Logger;
 import com.cloud.consoleproxy.vnc.RfbConstants;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class ServerCutText {
-    private static final Logger s_logger = Logger.getLogger(ServerCutText.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private String content;
 
@@ -43,7 +45,7 @@ public class ServerCutText {
 
         content = new String(buf, RfbConstants.CHARSET);
 
-        /* LOG */s_logger.info("Clippboard content: " + content);
+        /* logger */logger.info("Clippboard content: " + content);
     }
 
 }

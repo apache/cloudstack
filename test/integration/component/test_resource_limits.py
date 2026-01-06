@@ -1435,7 +1435,7 @@ class TestMaxAccountNetworks(cloudstackTestCase):
 
         # Steps for validation
         # 1. Fetch max.account.networks from configurations
-        # 2. Create an account. Create account more that max.accout.network
+        # 2. Create an account. Create account more that max.account.network
         # 3. Create network should fail
 
         config = Configurations.list(

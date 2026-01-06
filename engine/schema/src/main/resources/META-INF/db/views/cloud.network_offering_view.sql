@@ -60,7 +60,11 @@ SELECT
     `network_offerings`.`supports_vm_autoscaling` AS `supports_vm_autoscaling`,
     `network_offerings`.`for_vpc` AS `for_vpc`,
     `network_offerings`.`for_tungsten` AS `for_tungsten`,
+    `network_offerings`.`for_nsx` AS `for_nsx`,
+    `network_offerings`.`network_mode` AS `network_mode`,
     `network_offerings`.`service_package_id` AS `service_package_id`,
+    `network_offerings`.`routing_mode` AS `routing_mode`,
+    `network_offerings`.`specify_as_number` AS `specify_as_number`,
     GROUP_CONCAT(DISTINCT(domain.id)) AS domain_id,
     GROUP_CONCAT(DISTINCT(domain.uuid)) AS domain_uuid,
     GROUP_CONCAT(DISTINCT(domain.name)) AS domain_name,
@@ -72,13 +76,9 @@ SELECT
 FROM
     `cloud`.`network_offerings`
         LEFT JOIN
-    `cloud`.`network_offering_details` AS `domain_details` ON `domain_details`.`network_offering_id` = `network_offerings`.`id` AND `domain_details`.`name`='domainid'
+    `cloud`.`domain` AS `domain` ON `domain`.id IN (SELECT value from `network_offering_details` where `name` = 'domainid' and `network_offering_id` = `network_offerings`.`id`)
         LEFT JOIN
-    `cloud`.`domain` AS `domain` ON FIND_IN_SET(`domain`.`id`, `domain_details`.`value`)
-        LEFT JOIN
-    `cloud`.`network_offering_details` AS `zone_details` ON `zone_details`.`network_offering_id` = `network_offerings`.`id` AND `zone_details`.`name`='zoneid'
-        LEFT JOIN
-    `cloud`.`data_center` AS `zone` ON FIND_IN_SET(`zone`.`id`, `zone_details`.`value`)
+    `cloud`.`data_center` AS `zone` ON `zone`.`id` IN (SELECT value from `network_offering_details` where `name` = 'zoneid' and `network_offering_id` = `network_offerings`.`id`)
         LEFT JOIN
     `cloud`.`network_offering_details` AS `offering_details` ON `offering_details`.`network_offering_id` = `network_offerings`.`id` AND `offering_details`.`name`='internetProtocol'
 GROUP BY

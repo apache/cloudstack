@@ -32,6 +32,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDetailsDao;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -86,9 +87,11 @@ public class RollingMaintenanceManagerImplTest {
     private static final long podId = 1L;
     private static final long zoneId = 1L;
 
+    private AutoCloseable closeable;
+
     @Before
     public void setup() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         Mockito.when(hostDao.findByClusterId(clusterId1)).thenReturn(Arrays.asList(host1, host2));
         Mockito.when(hostDao.findByClusterId(clusterId2)).thenReturn(Arrays.asList(host3, host4));
         List<HostVO> hosts = Arrays.asList(host1, host2, host3, host4);
@@ -114,6 +117,11 @@ public class RollingMaintenanceManagerImplTest {
         Mockito.when(host2.getStatus()).thenReturn(Status.Up);
         Mockito.when(host1.getResourceState()).thenReturn(ResourceState.Enabled);
         Mockito.when(host2.getResourceState()).thenReturn(ResourceState.Enabled);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     private void checkResults(Map<Long, List<Host>> result) {

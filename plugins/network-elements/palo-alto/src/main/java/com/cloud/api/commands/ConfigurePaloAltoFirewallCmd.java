@@ -18,7 +18,6 @@ package com.cloud.api.commands;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -43,7 +42,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ConfigurePaloAltoFirewallCmd extends BaseAsyncCmd {
 
-    public static final Logger s_logger = Logger.getLogger(ConfigurePaloAltoFirewallCmd.class.getName());
     @Inject
     PaloAltoFirewallElementService _paFwService;
 
@@ -61,7 +59,7 @@ public class ConfigurePaloAltoFirewallCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.FIREWALL_DEVICE_CAPACITY,
                type = CommandType.LONG,
                required = false,
-               description = "capacity of the firewall device, Capacity will be interpreted as number of networks device can handle")
+               description = "Capacity of the firewall device, Capacity will be interpreted as number of networks device can handle")
     private Long capacity;
 
     /////////////////////////////////////////////////////

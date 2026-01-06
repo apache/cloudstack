@@ -20,6 +20,7 @@ package org.apache.cloudstack.network.topology;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.AdvancedVpnRules;
 import com.cloud.network.rules.BasicVpnRules;
+import com.cloud.network.rules.BgpPeersRules;
 import com.cloud.network.rules.DhcpEntryRules;
 import com.cloud.network.rules.DhcpPvlanRules;
 import com.cloud.network.rules.DhcpSubNetRules;
@@ -37,8 +38,12 @@ import com.cloud.network.rules.UserdataPwdRules;
 import com.cloud.network.rules.UserdataToRouterRules;
 import com.cloud.network.rules.VirtualNetworkApplianceFactory;
 import com.cloud.network.rules.VpcIpAssociationRules;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public abstract class NetworkTopologyVisitor {
+
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public abstract VirtualNetworkApplianceFactory getVirtualNetworkApplianceFactory();
 
@@ -60,4 +65,5 @@ public abstract class NetworkTopologyVisitor {
     public abstract boolean visit(DhcpSubNetRules dhcpRules) throws ResourceUnavailableException;
     public abstract boolean visit(NicPlugInOutRules nicPlugInOutRules) throws ResourceUnavailableException;
     public abstract boolean visit(StaticRoutesRules staticRoutesRules) throws ResourceUnavailableException;
+    public abstract boolean visit(BgpPeersRules bgpPeersRules) throws ResourceUnavailableException;
 }

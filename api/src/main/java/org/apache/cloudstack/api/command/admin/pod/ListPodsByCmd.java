@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.admin.pod;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -35,26 +34,25 @@ import com.cloud.utils.Pair;
 @APICommand(name = "listPods", description = "Lists all Pods.", responseObject = PodResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListPodsByCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListPodsByCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = PodResponse.class, description = "list Pods by ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = PodResponse.class, description = "List Pods by ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list Pods by name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "List Pods by name")
     private String podName;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "list Pods by Zone ID")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "List Pods by Zone ID")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.ALLOCATION_STATE, type = CommandType.STRING, description = "list pods by allocation state")
+    @Parameter(name = ApiConstants.ALLOCATION_STATE, type = CommandType.STRING, description = "List pods by allocation state")
     private String allocationState;
 
-    @Parameter(name = ApiConstants.SHOW_CAPACITIES, type = CommandType.BOOLEAN, description = "flag to display the capacity of the pods")
+    @Parameter(name = ApiConstants.SHOW_CAPACITIES, type = CommandType.BOOLEAN, description = "Flag to display the capacity of the pods")
     private Boolean showCapacities;
 
     /////////////////////////////////////////////////////
@@ -88,8 +86,8 @@ public class ListPodsByCmd extends BaseListCmd {
     @Override
     public void execute() {
         Pair<List<? extends Pod>, Integer> result = _mgr.searchForPods(this);
-        ListResponse<PodResponse> response = new ListResponse<PodResponse>();
-        List<PodResponse> podResponses = new ArrayList<PodResponse>();
+        ListResponse<PodResponse> response = new ListResponse<>();
+        List<PodResponse> podResponses = new ArrayList<>();
         for (Pod pod : result.first()) {
             PodResponse podResponse = _responseGenerator.createPodResponse(pod, showCapacities);
             podResponse.setObjectName("pod");

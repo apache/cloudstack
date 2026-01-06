@@ -31,7 +31,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import java.awt.image.BufferedImage;
 
@@ -46,7 +45,6 @@ import java.util.List;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin, RoleType.User})
 public class UploadResourceIconCmd extends BaseCmd {
-    public static final Logger LOGGER = Logger.getLogger(UploadResourceIconCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -57,10 +55,10 @@ public class UploadResourceIconCmd extends BaseCmd {
             type = BaseCmd.CommandType.LIST,
             required = true,
             collectionType = BaseCmd.CommandType.STRING,
-            description = "list of resources to upload the icon/image for")
+            description = "List of resources to upload the icon/image for")
     private List<String> resourceIds;
 
-    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = BaseCmd.CommandType.STRING, required = true, description = "type of the resource")
+    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = BaseCmd.CommandType.STRING, required = true, description = "Type of the resource")
     private String resourceType;
 
     @Parameter(name = ApiConstants.BASE64_IMAGE, type = BaseCmd.CommandType.STRING, required = true,
@@ -120,7 +118,7 @@ public class UploadResourceIconCmd extends BaseCmd {
                 return false;
             }
         } catch (Exception e) {
-            LOGGER.warn("Data uploaded not a valid image");
+            logger.warn("Data uploaded not a valid image");
             return false;
         }
         return true;

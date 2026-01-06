@@ -35,32 +35,30 @@ import org.apache.cloudstack.api.response.LinkDomainToLdapResponse;
 import org.apache.cloudstack.ldap.LdapManager;
 import org.apache.cloudstack.ldap.LdapUser;
 import org.apache.cloudstack.ldap.NoLdapUserMatchingQueryException;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
 import java.util.UUID;
 
-@APICommand(name = "linkDomainToLdap", description = "link an existing cloudstack domain to group or OU in ldap", responseObject = LinkDomainToLdapResponse.class, since = "4.6.0",
+@APICommand(name = "linkDomainToLdap", description = "Link an existing Cloudstack domain to group or OU in ldap", responseObject = LinkDomainToLdapResponse.class, since = "4.6.0",
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class LinkDomainToLdapCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(LinkDomainToLdapCmd.class.getName());
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = true, entityType = DomainResponse.class, description = "The id of the domain which has to be "
             + "linked to LDAP.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true, description = "type of the ldap name. GROUP or OU")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true, description = "Type of the ldap name. GROUP or OU")
     private String type;
 
-    @Parameter(name = ApiConstants.LDAP_DOMAIN, type = CommandType.STRING, required = false, description = "name of the group or OU in LDAP")
+    @Parameter(name = ApiConstants.LDAP_DOMAIN, type = CommandType.STRING, required = false, description = "Name of the group or OU in LDAP")
     private String ldapDomain;
 
     @Deprecated
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = false, description = "name of the group or OU in LDAP")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = false, description = "Name of the group or OU in LDAP")
     private String name;
 
-    @Parameter(name = ApiConstants.ADMIN, type = CommandType.STRING, required = false, description = "domain admin username in LDAP ")
+    @Parameter(name = ApiConstants.ADMIN, type = CommandType.STRING, required = false, description = "Domain admin username in LDAP ")
     private String admin;
 
     @Parameter(name = ApiConstants.ACCOUNT_TYPE, type = CommandType.INTEGER, required = true, description = "Type of the account to auto import. Specify 0 for user and 2 for " +
@@ -100,7 +98,7 @@ public class LinkDomainToLdapCmd extends BaseCmd {
                 try {
                     ldapUser = _ldapManager.getUser(admin, type, getLdapDomain(), domainId);
                 } catch (NoLdapUserMatchingQueryException e) {
-                    s_logger.debug("no ldap user matching username " + admin + " in the given group/ou", e);
+                    logger.debug("no ldap user matching username " + admin + " in the given group/ou", e);
                 }
                 if (ldapUser != null && !ldapUser.isDisabled()) {
                     Account account = _accountService.getActiveAccountByName(admin, domainId);
@@ -109,15 +107,15 @@ public class LinkDomainToLdapCmd extends BaseCmd {
                             UserAccount userAccount = _accountService.createUserAccount(admin, "", ldapUser.getFirstname(), ldapUser.getLastname(), ldapUser.getEmail(), null,
                                     admin, Account.Type.DOMAIN_ADMIN, RoleType.DomainAdmin.getId(), domainId, null, null, UUID.randomUUID().toString(), UUID.randomUUID().toString(), User.Source.LDAP);
                             response.setAdminId(String.valueOf(userAccount.getAccountId()));
-                            s_logger.info("created an account with name " + admin + " in the given domain " + domainId);
+                            logger.info("created an account with name {} in the given domain {} with id {}", admin, _domainService.getDomain(domainId), domainId);
                         } catch (Exception e) {
-                            s_logger.info("an exception occurred while creating account with name " + admin +" in domain " + domainId, e);
+                            logger.info("an exception occurred while creating account with name {} in domain {} with id {}", admin, _domainService.getDomain(domainId), domainId, e);
                         }
                     } else {
-                        s_logger.debug("an account with name " + admin + " already exists in the domain " + domainId);
+                        logger.debug("an account with name {} already exists in the domain {} with id {}", admin, _domainService.getDomain(domainId), domainId);
                     }
                 } else {
-                    s_logger.debug("ldap user with username "+admin+" is disabled in the given group/ou");
+                    logger.debug("ldap user with username "+admin+" is disabled in the given group/ou");
                 }
             }
             response.setObjectName("LinkDomainToLdap");

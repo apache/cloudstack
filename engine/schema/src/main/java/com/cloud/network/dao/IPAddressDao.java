@@ -105,4 +105,6 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, Long> {
     void buildQuarantineSearchCriteria(SearchCriteria<IPAddressVO> sc);
 
     IPAddressVO findBySourceNetworkIdAndDatacenterIdAndState(long sourceNetworkId, long dataCenterId, State state);
+
+    int expungeByVmList(List<Long> vmIds, Long batchSize);
 }

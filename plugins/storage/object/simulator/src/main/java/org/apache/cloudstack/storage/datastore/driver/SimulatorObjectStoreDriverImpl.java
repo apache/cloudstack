@@ -20,6 +20,7 @@ package org.apache.cloudstack.storage.datastore.driver;
 
 import com.amazonaws.services.s3.model.AccessControlList;
 import com.amazonaws.services.s3.model.BucketPolicy;
+import com.cloud.agent.api.to.BucketTO;
 import com.cloud.agent.api.to.DataStoreTO;
 import org.apache.cloudstack.storage.object.Bucket;
 import com.cloud.storage.BucketVO;
@@ -28,7 +29,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.object.BaseObjectStoreDriverImpl;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -37,7 +37,6 @@ import java.util.List;
 import java.util.Map;
 
 public class SimulatorObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
-    private static final Logger s_logger = Logger.getLogger(SimulatorObjectStoreDriverImpl.class);
 
     @Inject
     ObjectStoreDao _storeDao;
@@ -73,32 +72,32 @@ public class SimulatorObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     @Override
-    public boolean deleteBucket(String bucketName, long storeId) {
+    public boolean deleteBucket(BucketTO bucket, long storeId) {
         return true;
     }
 
     @Override
-    public AccessControlList getBucketAcl(String bucketName, long storeId) {
+    public AccessControlList getBucketAcl(BucketTO bucket, long storeId) {
         return null;
     }
 
     @Override
-    public void setBucketAcl(String bucketName, AccessControlList acl, long storeId) {
+    public void setBucketAcl(BucketTO bucket, AccessControlList acl, long storeId) {
 
     }
 
     @Override
-    public void setBucketPolicy(String bucketName, String policy, long storeId) {
+    public void setBucketPolicy(BucketTO bucket, String policy, long storeId) {
 
     }
 
     @Override
-    public BucketPolicy getBucketPolicy(String bucketName, long storeId) {
+    public BucketPolicy getBucketPolicy(BucketTO bucket, long storeId) {
         return null;
     }
 
     @Override
-    public void deleteBucketPolicy(String bucketName, long storeId) {
+    public void deleteBucketPolicy(BucketTO bucket, long storeId) {
 
     }
 
@@ -108,27 +107,27 @@ public class SimulatorObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     @Override
-    public boolean setBucketEncryption(String bucketName, long storeId) {
+    public boolean setBucketEncryption(BucketTO bucket, long storeId) {
         return true;
     }
 
     @Override
-    public boolean deleteBucketEncryption(String bucketName, long storeId) {
+    public boolean deleteBucketEncryption(BucketTO bucket, long storeId) {
         return true;
     }
 
     @Override
-    public boolean setBucketVersioning(String bucketName, long storeId) {
+    public boolean setBucketVersioning(BucketTO bucket, long storeId) {
         return true;
     }
 
     @Override
-    public boolean deleteBucketVersioning(String bucketName, long storeId) {
+    public boolean deleteBucketVersioning(BucketTO bucket, long storeId) {
         return true;
     }
 
     @Override
-    public void setBucketQuota(String bucketName, long storeId, long size) {
+    public void setBucketQuota(BucketTO bucket, long storeId, long size) {
 
     }
 

@@ -26,7 +26,6 @@ import java.util.TimeZone;
 
 
 import com.cloud.exception.CloudException;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageStorageVO;
@@ -38,7 +37,6 @@ import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 public class UsageStorageDaoImpl extends GenericDaoBase<UsageStorageVO, Long> implements UsageStorageDao {
-    public static final Logger s_logger = Logger.getLogger(UsageStorageDaoImpl.class.getName());
 
     protected static final String REMOVE_BY_USERID_STORAGEID = "DELETE FROM usage_storage WHERE account_id = ? AND entity_id = ? AND storage_type = ?";
     protected static final String UPDATE_DELETED = "UPDATE usage_storage SET deleted = ? WHERE account_id = ? AND entity_id = ? AND storage_type = ? AND zone_id = ? and deleted IS NULL";
@@ -108,7 +106,7 @@ public class UsageStorageDaoImpl extends GenericDaoBase<UsageStorageVO, Long> im
             txn.commit();
         } catch (Exception e) {
             txn.rollback();
-            s_logger.error("Error removing usageStorageVO", e);
+            logger.error("Error removing usageStorageVO", e);
         } finally {
             txn.close();
         }
@@ -137,7 +135,7 @@ public class UsageStorageDaoImpl extends GenericDaoBase<UsageStorageVO, Long> im
             txn.commit();
         } catch (Exception e) {
             txn.rollback();
-            s_logger.error("Error updating UsageStorageVO:"+e.getMessage(), e);
+            logger.error("Error updating UsageStorageVO:"+e.getMessage(), e);
         } finally {
             txn.close();
         }
@@ -211,7 +209,7 @@ public class UsageStorageDaoImpl extends GenericDaoBase<UsageStorageVO, Long> im
             }
         }catch (Exception e) {
             txn.rollback();
-            s_logger.error("getUsageRecords:Exception:"+e.getMessage(), e);
+            logger.error("getUsageRecords:Exception:"+e.getMessage(), e);
         } finally {
             txn.close();
         }

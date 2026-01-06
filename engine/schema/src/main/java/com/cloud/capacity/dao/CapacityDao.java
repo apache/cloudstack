@@ -28,6 +28,8 @@ import com.cloud.utils.db.GenericDao;
 public interface CapacityDao extends GenericDao<CapacityVO, Long> {
     CapacityVO findByHostIdType(Long hostId, short capacityType);
 
+    List<CapacityVO> listByHostIdTypes(Long hostId, List<Short> capacityTypes);
+
     List<Long> listClustersInZoneOrPodByHostCapacities(long id, long vmId, int requiredCpu, long requiredRam, short capacityTypeForOrdering, boolean isZone);
 
     List<Long> listHostsWithEnoughCapacity(int requiredCpu, long requiredRam, Long clusterId, String hostType);
@@ -44,6 +46,8 @@ public interface CapacityDao extends GenericDao<CapacityVO, Long> {
 
     List<SummedCapacity> findCapacityBy(Integer capacityType, Long zoneId, Long podId, Long clusterId);
 
+    List<SummedCapacity> findFilteredCapacityBy(Integer capacityType, Long zoneId, Long podId, Long clusterId, List<Long> hostIds, List<Long> poolIds);
+
     List<Long> listPodsByHostCapacities(long zoneId, int requiredCpu, long requiredRam, short capacityType);
 
     Pair<List<Long>, Map<Long, Double>> orderPodsByAggregateCapacity(long zoneId, short capacityType);
@@ -51,7 +55,8 @@ public interface CapacityDao extends GenericDao<CapacityVO, Long> {
     List<SummedCapacity> findCapacityBy(Integer capacityType, Long zoneId,
         Long podId, Long clusterId, String resourceState);
 
-    List<SummedCapacity> listCapacitiesGroupedByLevelAndType(Integer capacityType, Long zoneId, Long podId, Long clusterId, int level, Long limit);
+    List<SummedCapacity> listCapacitiesGroupedByLevelAndType(Integer capacityType, Long zoneId, Long podId,
+         Long clusterId, int level, List<Long> hostIds, List<Long> poolIds, Long limit);
 
     void updateCapacityState(Long dcId, Long podId, Long clusterId, Long hostId, String capacityState, short[] capacityType);
 

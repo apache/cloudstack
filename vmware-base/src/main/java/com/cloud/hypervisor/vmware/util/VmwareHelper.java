@@ -71,7 +71,8 @@ import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
@@ -122,7 +123,7 @@ import com.vmware.vim25.VirtualVmxnet2;
 import com.vmware.vim25.VirtualVmxnet3;
 
 public class VmwareHelper {
-    private static final Logger s_logger = Logger.getLogger(VmwareHelper.class);
+    protected static Logger LOGGER = LogManager.getLogger(VmwareHelper.class);
 
     public static final int MAX_SCSI_CONTROLLER_COUNT = 4;
     public static final int MAX_IDE_CONTROLLER_COUNT = 2;
@@ -250,7 +251,7 @@ public class VmwareHelper {
     // vmdkDatastorePath: [datastore name] vmdkFilePath
     public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, VirtualDisk device, int controllerKey, String vmdkDatastorePathChain[],
                                                   ManagedObjectReference morDs, int deviceNumber, int contextNumber, Long maxIops) throws Exception {
-        s_logger.debug(LogUtils.logGsonWithoutException("Trying to prepare disk device to virtual machine [%s], using the following details: Virtual device [%s], "
+        LOGGER.debug(LogUtils.logGsonWithoutException("Trying to prepare disk device to virtual machine [%s], using the following details: Virtual device [%s], "
                 + "ManagedObjectReference [%s], ControllerKey [%s], VMDK path chain [%s], DeviceNumber [%s], ContextNumber [%s] and max IOPS [%s].",
                 vmMo, device, morDs, controllerKey, vmdkDatastorePathChain, deviceNumber, contextNumber, maxIops));
         assert (vmdkDatastorePathChain != null);
@@ -280,7 +281,7 @@ public class VmwareHelper {
             disk.setUnitNumber(deviceNumber);
 
             if (maxIops != null && maxIops > 0) {
-                s_logger.debug(LogUtils.logGsonWithoutException("Defining [%s] as the max IOPS of disk [%s].", maxIops, disk));
+                LOGGER.debug(LogUtils.logGsonWithoutException("Defining [%s] as the max IOPS of disk [%s].", maxIops, disk));
                 StorageIOAllocationInfo storageIOAllocationInfo = new StorageIOAllocationInfo();
                 storageIOAllocationInfo.setLimit(maxIops);
                 disk.setStorageIOAllocation(storageIOAllocationInfo);
@@ -298,7 +299,7 @@ public class VmwareHelper {
             setParentBackingInfo(backingInfo, morDs, parentDisks);
         }
 
-        s_logger.debug(LogUtils.logGsonWithoutException("Prepared disk device, to attach to virtual machine [%s], has the following details: Virtual device [%s], "
+        LOGGER.debug(LogUtils.logGsonWithoutException("Prepared disk device, to attach to virtual machine [%s], has the following details: Virtual device [%s], "
                 + "ManagedObjectReference [%s], ControllerKey [%s], VMDK path chain [%s], DeviceNumber [%s], ContextNumber [%s] and max IOPS [%s], is: [%s].",
                 vmMo, device, morDs, controllerKey, vmdkDatastorePathChain, deviceNumber, contextNumber, maxIops, disk));
         return disk;
@@ -607,7 +608,7 @@ public class VmwareHelper {
     }
 
     public static VirtualDevice prepareUSBControllerDevice() {
-        s_logger.debug("Preparing USB controller(EHCI+UHCI) device");
+        LOGGER.debug("Preparing USB controller(EHCI+UHCI) device");
         VirtualUSBController usbController = new VirtualUSBController(); //EHCI+UHCI
         usbController.setEhciEnabled(true);
         usbController.setAutoConnectDevices(true);
@@ -689,7 +690,7 @@ public class VmwareHelper {
                 }
             }
         } catch (Exception ex) {
-            s_logger.info("[ignored]"
+            LOGGER.info("[ignored]"
                     + "failed to get message for exception: " + e.getLocalizedMessage());
         }
 
@@ -828,7 +829,7 @@ public class VmwareHelper {
                 ClusterMO clusterMo = new ClusterMO(hyperHost.getContext(), hyperHost.getHyperHostCluster());
                 instance.setClusterName(clusterMo.getName());
             } catch (Exception e) {
-                s_logger.warn("Unable to get unmanaged instance cluster info, due to: " + e.getMessage());
+                LOGGER.warn("Unable to get unmanaged instance cluster info, due to: " + e.getMessage());
             }
 
             instance.setHostName(hyperHost.getHyperHostName());
@@ -860,7 +861,7 @@ public class VmwareHelper {
             instance.setDisks(getUnmanageInstanceDisks(vmMo));
             instance.setNics(getUnmanageInstanceNics(hyperHost, vmMo));
         } catch (Exception e) {
-            s_logger.error("Unable to retrieve unmanaged instance info, due to: " + e.getMessage());
+            LOGGER.error("Unable to retrieve unmanaged instance info, due to: " + e.getMessage());
         }
         return instance;
     }
@@ -871,7 +872,7 @@ public class VmwareHelper {
         try {
             disks = vmMo.getAllDiskDevice();
         } catch (Exception e) {
-            s_logger.info("Unable to retrieve unmanaged instance disks. " + e.getMessage());
+            LOGGER.info("Unable to retrieve unmanaged instance disks. " + e.getMessage());
         }
         if (disks != null) {
             for (VirtualDevice diskDevice : disks) {
@@ -920,11 +921,11 @@ public class VmwareHelper {
                                 instanceDisk.setDatastoreName(info.getName());
                             }
                         }
-                        s_logger.info(vmMo.getName() + " " + disk.getDeviceInfo().getLabel() + " " + disk.getDeviceInfo().getSummary() + " " + disk.getDiskObjectId() + " " + disk.getCapacityInKB() + " " + instanceDisk.getController());
+                        LOGGER.info(vmMo.getName() + " " + disk.getDeviceInfo().getLabel() + " " + disk.getDeviceInfo().getSummary() + " " + disk.getDiskObjectId() + " " + disk.getCapacityInKB() + " " + instanceDisk.getController());
                         instanceDisks.add(instanceDisk);
                     }
                 } catch (Exception e) {
-                    s_logger.info("Unable to retrieve unmanaged instance disk info. " + e.getMessage());
+                    LOGGER.info("Unable to retrieve unmanaged instance disk info. " + e.getMessage());
                 }
             }
             Collections.sort(instanceDisks, new Comparator<UnmanagedInstanceTO.Disk>() {
@@ -962,22 +963,22 @@ public class VmwareHelper {
                     }
                 }
             } else {
-                s_logger.info(String.format("Unable to retrieve guest nics for instance: %s from VMware tools as tools status: %s", vmMo.getName(), guestInfo.getToolsStatus().toString()));
+                LOGGER.info(String.format("Unable to retrieve guest nics for instance: %s from VMware tools as tools status: %s", vmMo.getName(), guestInfo.getToolsStatus().toString()));
             }
         } catch (Exception e) {
-            s_logger.info("Unable to retrieve guest nics for instance from VMware tools. " + e.getMessage());
+            LOGGER.info("Unable to retrieve guest nics for instance from VMware tools. " + e.getMessage());
         }
         VirtualDevice[] nics = null;
         try {
             nics = vmMo.getNicDevices();
         } catch (Exception e) {
-            s_logger.info("Unable to retrieve unmanaged instance nics. " + e.getMessage());
+            LOGGER.info("Unable to retrieve unmanaged instance nics. " + e.getMessage());
         }
         if (nics != null) {
             for (VirtualDevice nic : nics) {
                 try {
                     VirtualEthernetCard ethCardDevice = (VirtualEthernetCard) nic;
-                    s_logger.error(nic.getClass().getCanonicalName() + " " + nic.getBacking().getClass().getCanonicalName() + " " + ethCardDevice.getMacAddress());
+                    LOGGER.error(nic.getClass().getCanonicalName() + " " + nic.getBacking().getClass().getCanonicalName() + " " + ethCardDevice.getMacAddress());
                     UnmanagedInstanceTO.Nic instanceNic = new UnmanagedInstanceTO.Nic();
                     instanceNic.setNicId(ethCardDevice.getDeviceInfo().getLabel());
                     if (ethCardDevice instanceof VirtualPCNet32) {
@@ -1004,7 +1005,7 @@ public class VmwareHelper {
                         String portGroupKey = port.getPortgroupKey();
                         String dvSwitchUuid = port.getSwitchUuid();
 
-                        s_logger.debug("NIC " + nic.toString() + " is connected to dvSwitch " + dvSwitchUuid + " pg " + portGroupKey + " port " + portKey);
+                        LOGGER.debug("NIC " + nic.toString() + " is connected to dvSwitch " + dvSwitchUuid + " pg " + portGroupKey + " port " + portKey);
 
                         ManagedObjectReference dvSwitchManager = vmMo.getContext().getVimClient().getServiceContent().getDvSwitchManager();
                         ManagedObjectReference dvSwitch = vmMo.getContext().getVimClient().getService().queryDvsByUuid(dvSwitchManager, dvSwitchUuid);
@@ -1021,13 +1022,13 @@ public class VmwareHelper {
                                 VMwareDVSPortSetting settings = (VMwareDVSPortSetting) dvPort.getConfig().getSetting();
                                 if (settings.getVlan() instanceof VmwareDistributedVirtualSwitchVlanIdSpec) {
                                     VmwareDistributedVirtualSwitchVlanIdSpec vlanId = (VmwareDistributedVirtualSwitchVlanIdSpec) settings.getVlan();
-                                    s_logger.trace("Found port " + dvPort.getKey() + " with vlan " + vlanId.getVlanId());
+                                    LOGGER.trace("Found port " + dvPort.getKey() + " with vlan " + vlanId.getVlanId());
                                     if (vlanId.getVlanId() > 0 && vlanId.getVlanId() < 4095) {
                                         instanceNic.setVlan(vlanId.getVlanId());
                                     }
                                 } else if (settings.getVlan() instanceof VmwareDistributedVirtualSwitchPvlanSpec) {
                                     VmwareDistributedVirtualSwitchPvlanSpec pvlanSpec = (VmwareDistributedVirtualSwitchPvlanSpec) settings.getVlan();
-                                    s_logger.trace("Found port " + dvPort.getKey() + " with pvlan " + pvlanSpec.getPvlanId());
+                                    LOGGER.trace("Found port " + dvPort.getKey() + " with pvlan " + pvlanSpec.getPvlanId());
                                     if (pvlanSpec.getPvlanId() > 0 && pvlanSpec.getPvlanId() < 4095) {
                                         DistributedVirtualSwitchMO dvSwitchMo = new DistributedVirtualSwitchMO(vmMo.getContext(), dvSwitch);
                                         Pair<Integer, HypervisorHostHelper.PvlanType> vlanDetails = dvSwitchMo.retrieveVlanFromPvlan(pvlanSpec.getPvlanId(), dvSwitch);
@@ -1052,7 +1053,7 @@ public class VmwareHelper {
                     }
                     instanceNics.add(instanceNic);
                 } catch (Exception e) {
-                    s_logger.info("Unable to retrieve unmanaged instance nic info. " + e.getMessage());
+                    LOGGER.info("Unable to retrieve unmanaged instance nic info. " + e.getMessage());
                 }
             }
             Collections.sort(instanceNics, new Comparator<UnmanagedInstanceTO.Nic>() {
@@ -1121,7 +1122,7 @@ public class VmwareHelper {
         }
 
         if (diskControllersShareTheSameBusType(convertedRootDiskController, convertedDataDiskController)) {
-            s_logger.debug("Root and data disk controllers share the same bus type; therefore, we will only use the controllers specified for the root disk.");
+            LOGGER.debug("Root and data disk controllers share the same bus type; therefore, we will only use the controllers specified for the root disk.");
             return new Pair<>(convertedRootDiskController, convertedRootDiskController);
         }
 
@@ -1146,10 +1147,10 @@ public class VmwareHelper {
      */
     public static String getControllerBasedOnDiskType(Pair<String, String> controllerInfo, DiskTO disk) {
         if (disk.getType() == Volume.Type.ROOT || disk.getDiskSeq() == 0) {
-            s_logger.debug(String.format("Choosing disk controller [%s] for the root disk.", controllerInfo.first()));
+            LOGGER.debug(String.format("Choosing disk controller [%s] for the root disk.", controllerInfo.first()));
             return controllerInfo.first();
         }
-        s_logger.debug(String.format("Choosing disk controller [%s] for the data disks.", controllerInfo.second()));
+        LOGGER.debug(String.format("Choosing disk controller [%s] for the data disks.", controllerInfo.second()));
         return controllerInfo.second();
     }
 }

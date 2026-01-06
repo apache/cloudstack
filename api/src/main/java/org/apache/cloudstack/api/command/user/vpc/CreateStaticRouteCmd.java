@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpc;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -42,16 +41,15 @@ import com.cloud.network.vpc.VpcGateway;
 @APICommand(name = "createStaticRoute", description = "Creates a static route", responseObject = StaticRouteResponse.class, entityType = {StaticRoute.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateStaticRouteCmd.class.getName());
 
     @Parameter(name = ApiConstants.GATEWAY_ID,
                type = CommandType.UUID,
                entityType = PrivateGatewayResponse.class,
                required = true,
-               description = "the gateway id we are creating static route for")
+               description = "The gateway ID we are creating static route for")
     private Long gatewayId;
 
-    @Parameter(name = ApiConstants.CIDR, required = true, type = CommandType.STRING, description = "static route cidr")
+    @Parameter(name = ApiConstants.CIDR, required = true, type = CommandType.STRING, description = "Static route CIDR")
     private String cidr;
 
     /////////////////////////////////////////////////////
@@ -75,8 +73,8 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());
         } catch (NetworkRuleConflictException ex) {
-            s_logger.info("Network rule conflict: " + ex.getMessage());
-            s_logger.trace("Network rule conflict: ", ex);
+            logger.info("Network rule conflict: " + ex.getMessage());
+            logger.trace("Network rule conflict: ", ex);
             throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage());
         }
     }
@@ -109,7 +107,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
         } finally {
             if (!success || route == null) {
                 _entityMgr.remove(StaticRoute.class, getEntityId());
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create static route");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create a static route");
             }
         }
     }

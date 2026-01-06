@@ -25,12 +25,11 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.network.Network;
 import com.cloud.user.Account;
 
-@APICommand(name = "resetNetworkPermissions", description = "Resets network permissions.",
+@APICommand(name = "resetNetworkPermissions", description = "Resets Network permissions.",
         responseObject = SuccessResponse.class,
         entityType = {Network.class},
         requestHasSensitiveInfo = false,
@@ -38,14 +37,13 @@ import com.cloud.user.Account;
         since = "4.17.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ResetNetworkPermissionsCmd extends BaseCmd {
-    public static final Logger LOGGER = Logger.getLogger(ResetNetworkPermissionsCmd.class.getName());
 
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, required = true, description = "the network ID")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, required = true, description = "The Network ID")
     private Long networkId;
 
     // ///////////////////////////////////////////////////
@@ -67,7 +65,7 @@ public class ResetNetworkPermissionsCmd extends BaseCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update network permissions");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update Network permissions");
         }
     }
 

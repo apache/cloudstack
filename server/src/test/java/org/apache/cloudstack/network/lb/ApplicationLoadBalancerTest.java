@@ -53,7 +53,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -144,21 +144,21 @@ public class ApplicationLoadBalancerTest extends TestCase {
         ApplicationLoadBalancerRuleVO lbRule =
             new ApplicationLoadBalancerRuleVO("new", "new", 22, 22, "roundrobin", validGuestNetworkId, validAccountId, 1L, new Ip(validRequestedIp), validGuestNetworkId,
                 Scheme.Internal);
-        Mockito.when(_lbDao.persist(Matchers.any(ApplicationLoadBalancerRuleVO.class))).thenReturn(lbRule);
+        Mockito.when(_lbDao.persist(ArgumentMatchers.any(ApplicationLoadBalancerRuleVO.class))).thenReturn(lbRule);
 
-        Mockito.when(_lbMgr.validateLbRule(Matchers.any(LoadBalancingRule.class))).thenReturn(true);
+        Mockito.when(_lbMgr.validateLbRule(ArgumentMatchers.any(LoadBalancingRule.class))).thenReturn(true);
 
-        Mockito.when(_firewallDao.setStateToAdd(Matchers.any(FirewallRuleVO.class))).thenReturn(true);
+        Mockito.when(_firewallDao.setStateToAdd(ArgumentMatchers.any(FirewallRuleVO.class))).thenReturn(true);
 
         Mockito.when(_accountMgr.getSystemUser()).thenReturn(new UserVO(1));
         Mockito.when(_accountMgr.getSystemAccount()).thenReturn(new AccountVO(2));
         CallContext.register(_accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
 
-        Mockito.when(_ntwkModel.areServicesSupportedInNetwork(Matchers.anyLong(), Matchers.any(Network.Service.class))).thenReturn(true);
+        Mockito.when(_ntwkModel.areServicesSupportedInNetwork(ArgumentMatchers.anyLong(), ArgumentMatchers.any(Network.Service.class))).thenReturn(true);
 
         Map<Network.Capability, String> caps = new HashMap<Network.Capability, String>();
         caps.put(Capability.SupportedProtocols, NetUtils.TCP_PROTO);
-        Mockito.when(_ntwkModel.getNetworkServiceCapabilities(Matchers.anyLong(), Matchers.any(Network.Service.class))).thenReturn(caps);
+        Mockito.when(_ntwkModel.getNetworkServiceCapabilities(ArgumentMatchers.anyLong(), ArgumentMatchers.any(Network.Service.class))).thenReturn(caps);
 
         Mockito.when(_lbDao.countBySourceIp(new Ip(validRequestedIp), validGuestNetworkId)).thenReturn(1L);
 

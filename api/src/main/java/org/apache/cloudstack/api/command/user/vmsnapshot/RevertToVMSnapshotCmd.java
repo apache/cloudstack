@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command.user.vmsnapshot;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -42,10 +41,9 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.snapshot.VMSnapshot;
 
-@APICommand(name = "revertToVMSnapshot", description = "Revert VM from a vmsnapshot.", responseObject = UserVmResponse.class, since = "4.2.0", responseView = ResponseView.Restricted,
+@APICommand(name = "revertToVMSnapshot", description = "Revert Instance from a vmsnapshot.", responseObject = UserVmResponse.class, since = "4.2.0", responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class RevertToVMSnapshotCmd extends BaseAsyncCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(RevertToVMSnapshotCmd.class.getName());
     private static final String s_name = "reverttovmsnapshotresponse";
 
     @ACL(accessType = AccessType.OperateEntry, pointerToEntity = "getVmId()")
@@ -53,7 +51,7 @@ public class RevertToVMSnapshotCmd extends BaseAsyncCmd implements UserCmd {
                type = CommandType.UUID,
                required = true,
                entityType = VMSnapshotResponse.class,
-               description = "The ID of the vm snapshot")
+               description = "The ID of the Instance Snapshot")
     private Long vmSnapShotId;
 
     public Long getVmSnapShotId() {
@@ -84,13 +82,13 @@ public class RevertToVMSnapshotCmd extends BaseAsyncCmd implements UserCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to revert VM snapshot");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to revert Instance Snapshot");
         }
     }
 
     @Override
     public String getEventDescription() {
-        return "Revert from VM snapshot: " + this._uuidMgr.getUuid(VMSnapshot.class, getVmSnapShotId());
+        return "Revert from Instance Snapshot: " + this._uuidMgr.getUuid(VMSnapshot.class, getVmSnapShotId());
     }
 
     @Override

@@ -22,7 +22,6 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -35,7 +34,6 @@ import java.util.TimeZone;
 
 @Component
 public class UsageVpcDaoImpl extends GenericDaoBase<UsageVpcVO, Long> implements UsageVpcDao {
-    private static final Logger LOGGER = Logger.getLogger(UsageVpcDaoImpl.class);
     protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, vpc_id, zone_id, account_id, domain_id, state, created, removed FROM usage_vpc WHERE " +
             " account_id = ? AND ((removed IS NULL AND created <= ?) OR (created BETWEEN ? AND ?) OR (removed BETWEEN ? AND ?) " +
             " OR ((created <= ?) AND (removed >= ?)))";
@@ -62,7 +60,7 @@ public class UsageVpcDaoImpl extends GenericDaoBase<UsageVpcVO, Long> implements
                 update(vo.getId(), vo);
             }
         } catch (final Exception e) {
-            LOGGER.error(String.format("Error updating usage of VPC due to [%s].", e.getMessage()), e);
+            logger.error(String.format("Error updating usage of VPC due to [%s].", e.getMessage()), e);
             txn.rollback();
         } finally {
             txn.close();
@@ -83,7 +81,7 @@ public class UsageVpcDaoImpl extends GenericDaoBase<UsageVpcVO, Long> implements
             }
         } catch (final Exception e) {
             txn.rollback();
-            LOGGER.error(String.format("Error updating usage of VPC due to [%s].", e.getMessage()), e);
+            logger.error(String.format("Error updating usage of VPC due to [%s].", e.getMessage()), e);
         } finally {
             txn.close();
         }
@@ -130,7 +128,7 @@ public class UsageVpcDaoImpl extends GenericDaoBase<UsageVpcVO, Long> implements
             }
         } catch (Exception e) {
             txn.rollback();
-            LOGGER.warn("Error getting VPC usage records", e);
+            logger.warn("Error getting VPC usage records", e);
         } finally {
             txn.close();
         }

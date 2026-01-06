@@ -34,7 +34,6 @@ import org.apache.cloudstack.api.command.user.project.CreateProjectCmd;
 import org.apache.cloudstack.api.command.user.project.DeleteProjectCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -89,7 +88,6 @@ import net.juniper.contrail.api.types.VnSubnetsType;
  * Exercise the public API.
  */
 public class NetworkProviderTest extends TestCase {
-    private static final Logger s_logger = Logger.getLogger(NetworkProviderTest.class);
 
     @Inject
     public ContrailManager _contrailMgr;
@@ -122,9 +120,7 @@ public class NetworkProviderTest extends TestCase {
     @BeforeClass
     public static void globalSetUp() throws Exception {
         ApiConnectorFactory.setImplementation(ApiConnectorMock.class);
-        s_logger.info("mysql server is getting launched ");
         s_mysqlSrverPort = TestDbSetup.init(null);
-        s_logger.info("mysql server launched on port " + s_mysqlSrverPort);
 
         s_msId = ManagementServerNode.getManagementServerId();
         s_lockController = Merovingian2.createLockController(s_msId);
@@ -143,7 +139,6 @@ public class NetworkProviderTest extends TestCase {
         }
         ctx.close();
 
-        s_logger.info("destroying mysql server instance running at port <" + s_mysqlSrverPort + ">");
         TestDbSetup.destroy(s_mysqlSrverPort, null);
     }
 
@@ -154,7 +149,6 @@ public class NetworkProviderTest extends TestCase {
             ComponentContext.initComponentsLifeCycle();
         } catch (Exception ex) {
             ex.printStackTrace();
-            s_logger.error(ex.getMessage());
         }
         Account system = _accountMgr.getSystemAccount();
         User user = _accountMgr.getSystemUser();
@@ -177,7 +171,6 @@ public class NetworkProviderTest extends TestCase {
         DataCenter zone = _server.getZone();
         List<? extends Network> list = _networkService.getIsolatedNetworksOwnedByAccountInZone(zone.getId(), system);
         for (Network net : list) {
-            s_logger.debug("Delete network " + net.getName());
             _networkService.deleteNetwork(net.getId(), false);
         }
     }
@@ -264,7 +257,6 @@ public class NetworkProviderTest extends TestCase {
         try {
             proxy.execute();
         } catch (Exception e) {
-            s_logger.debug("DisableStaticNatCmd exception: " + e);
             e.printStackTrace();
             throw e;
         }
@@ -284,7 +276,6 @@ public class NetworkProviderTest extends TestCase {
             ((AssociateIPAddrCmd)cmd).create();
             ((AssociateIPAddrCmd)cmd).execute();
         } catch (Exception e) {
-            s_logger.debug("AssociateIPAddrCmd exception: " + e);
             e.printStackTrace();
             throw e;
         }
@@ -310,7 +301,6 @@ public class NetworkProviderTest extends TestCase {
         try {
             proxy.execute();
         } catch (Exception e) {
-            s_logger.debug("EnableStaticNatCmd exception: " + e);
             e.printStackTrace();
             throw e;
         }
@@ -330,7 +320,6 @@ public class NetworkProviderTest extends TestCase {
             ((CreateProjectCmd)proxy).create();
             ((CreateProjectCmd)proxy).execute();
         } catch (Exception e) {
-            s_logger.debug("CreateProjectCmd exception: " + e);
             e.printStackTrace();
             fail("create project cmd failed");
         }
@@ -465,11 +454,11 @@ public class NetworkProviderTest extends TestCase {
 
         //now db sync
         if (_dbSync.syncAll(DBSyncGeneric.SYNC_MODE_UPDATE) == ServerDBSync.SYNC_STATE_OUT_OF_SYNC) {
-            s_logger.info("# Cloudstack DB & VNC are out of sync - resync done");
+            //# Cloudstack DB & VNC are out of sync - resync done
         }
 
         if (_dbSync.syncAll(DBSyncGeneric.SYNC_MODE_CHECK) == ServerDBSync.SYNC_STATE_OUT_OF_SYNC) {
-            s_logger.info("# Cloudstack DB & VNC are still out of sync");
+            //# Cloudstack DB & VNC are still out of sync
             fail("DB Sync failed");
         }
     }

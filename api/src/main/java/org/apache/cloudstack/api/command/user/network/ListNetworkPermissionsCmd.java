@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -35,21 +34,20 @@ import com.cloud.user.Account;
 import java.util.ArrayList;
 import java.util.List;
 
-@APICommand(name = "listNetworkPermissions", description = "List network visibility and all accounts that have permissions to view this network.",
+@APICommand(name = "listNetworkPermissions", description = "List Network visibility and all Accounts that have permissions to view this Network.",
         responseObject = NetworkPermissionsResponse.class,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         since = "4.17.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListNetworkPermissionsCmd extends BaseCmd implements UserCmd {
-    public static final Logger LOGGER = Logger.getLogger(ListNetworkPermissionsCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, required = true, description = "Lists network permission by network ID")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, required = true, description = "Lists Network permission by Network ID")
     private Long networkId;
 
     /////////////////////////////////////////////////////

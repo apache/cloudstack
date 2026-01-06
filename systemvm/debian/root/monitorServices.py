@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from ConfigParser import SafeConfigParser
+from configparser import ConfigParser
 from subprocess import *
 from datetime import datetime
 import time
@@ -56,7 +56,7 @@ def getServicesConfig( config_file_path = "/etc/monitor.conf" ):
 
     """
     process_dict = {}
-    parser = SafeConfigParser()
+    parser = ConfigParser()
     parser.read( config_file_path )
 
 
@@ -67,7 +67,7 @@ def getServicesConfig( config_file_path = "/etc/monitor.conf" ):
             process_dict[section][name] = value
             printd (" %s = %r" % (name, value))
 
-    return  process_dict
+    return process_dict
 
 def printd (msg):
     """
@@ -81,7 +81,7 @@ def printd (msg):
     f.seek(0, 2)
     f.write(str(msg)+"\n")
     f.close()
-    print str(msg)
+    print(str(msg))
 
 def raisealert(severity, msg, process_name=None):
     """ Writes the alert message"""
@@ -96,7 +96,7 @@ def raisealert(severity, msg, process_name=None):
     logging.info(log)
     msg = 'logger -t monit '+ log
     pout = Popen(msg, shell=True, stdout=PIPE)
-    print "[Alert] " + msg
+    print("[Alert] " + msg)
 
 
 def isPidMatchPidFile(pidfile, pids):
@@ -148,7 +148,7 @@ def checkProcessRunningStatus(process_name, pidFile):
     #cmd = 'service ' + process_name + ' status'
     pout = Popen(cmd, shell=True, stdout=PIPE)
     exitStatus = pout.wait()
-    temp_out = pout.communicate()[0]
+    temp_out = pout.communicate()[0].decode()
 
     #check there is only one pid or not
     if exitStatus == 0:
@@ -258,12 +258,12 @@ def monitProcess( processes_info ):
         printd("No config items provided - means a redundant VR or a VPC Router")
         return service_status, failing_services
 
-    print "[Process Info] " + json.dumps(processes_info)
+    print("[Process Info] " + json.dumps(processes_info))
 
     #time for noting process down time
     csec = repr(time.time()).split('.')[0]
 
-    for process,properties in processes_info.items():
+    for process,properties in list(processes_info.items()):
         printd ("---------------------------\nchecking the service %s\n---------------------------- " %process)
         serviceName = process + ".service"
         processStatus, wasRestarted = checkProcessStatus(properties)
@@ -296,7 +296,7 @@ def execute(script, checkType = "basic"):
 
     pout = Popen(cmd, shell=True, stdout=PIPE)
     exitStatus = pout.wait()
-    output = pout.communicate()[0].strip()
+    output = pout.communicate()[0].decode().strip()
     checkEndTime = time.time()
 
     if exitStatus == 0:

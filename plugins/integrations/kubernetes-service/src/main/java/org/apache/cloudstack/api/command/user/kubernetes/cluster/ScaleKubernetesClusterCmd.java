@@ -35,7 +35,6 @@ import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
@@ -52,7 +51,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
         responseHasSensitiveInfo = true,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
-    public static final Logger LOGGER = Logger.getLogger(ScaleKubernetesClusterCmd.class.getName());
 
     @Inject
     public KubernetesClusterService kubernetesClusterService;
@@ -62,23 +60,23 @@ public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true,
         entityType = KubernetesClusterResponse.class,
-        description = "the ID of the Kubernetes cluster")
+        description = "The ID of the Kubernetes cluster")
     private Long id;
 
     @ACL(accessType = SecurityChecker.AccessType.UseEntry)
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class,
-        description = "the ID of the service offering for the virtual machines in the cluster.")
+        description = "The ID of the service offering for the virtual machines in the cluster.")
     private Long serviceOfferingId;
 
     @Parameter(name=ApiConstants.SIZE, type = CommandType.LONG,
-        description = "number of Kubernetes cluster nodes")
+        description = "Number of Kubernetes cluster nodes")
     private Long clusterSize;
 
     @Parameter(name = ApiConstants.NODE_IDS,
         type = CommandType.LIST,
         collectionType = CommandType.UUID,
         entityType = UserVmResponse.class,
-        description = "the IDs of the nodes to be removed")
+        description = "The IDs of the nodes to be removed")
     private List<Long> nodeIds;
 
     @Parameter(name=ApiConstants.AUTOSCALING_ENABLED, type = CommandType.BOOLEAN,
@@ -160,7 +158,8 @@ public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
     public void execute() throws ServerApiException, ConcurrentOperationException {
         try {
             if (!kubernetesClusterService.scaleKubernetesCluster(this)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to scale Kubernetes cluster ID: %d", getId()));
+                KubernetesCluster cluster = kubernetesClusterService.findById(getId());
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to scale Kubernetes cluster %s with id %d", cluster, getId()));
             }
             final KubernetesClusterResponse response = kubernetesClusterService.createKubernetesClusterResponse(getId());
             response.setResponseName(getCommandName());

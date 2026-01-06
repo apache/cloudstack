@@ -35,7 +35,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 import org.reflections.scanners.TypeAnnotationsScanner;
@@ -47,8 +48,7 @@ import com.google.common.collect.ImmutableSet;
 
 public class ReflectUtil {
 
-    private static final Logger s_logger = Logger.getLogger(ReflectUtil.class);
-    private static final Logger logger = Logger.getLogger(Reflections.class);
+    protected static Logger LOGGER = LogManager.getLogger(ReflectUtil.class);
 
     public static Pair<Class<?>, Field> getAnyField(Class<?> clazz, String fieldName) {
         try {
@@ -183,13 +183,13 @@ public class ReflectUtil {
             return unmodifiableList(serializedProperties);
 
         } catch (IntrospectionException e) {
-            s_logger.warn("Ignored IntrospectionException when serializing class " + target.getClass().getCanonicalName(), e);
+            LOGGER.warn("Ignored IntrospectionException when serializing class " + target.getClass().getCanonicalName(), e);
         } catch (IllegalArgumentException e) {
-            s_logger.warn("Ignored IllegalArgumentException when serializing class " + target.getClass().getCanonicalName(), e);
+            LOGGER.warn("Ignored IllegalArgumentException when serializing class " + target.getClass().getCanonicalName(), e);
         } catch (IllegalAccessException e) {
-            s_logger.warn("Ignored IllegalAccessException when serializing class " + target.getClass().getCanonicalName(), e);
+            LOGGER.warn("Ignored IllegalAccessException when serializing class " + target.getClass().getCanonicalName(), e);
         } catch (InvocationTargetException e) {
-            s_logger.warn("Ignored InvocationTargetException when serializing class " + target.getClass().getCanonicalName(), e);
+            LOGGER.warn("Ignored InvocationTargetException when serializing class " + target.getClass().getCanonicalName(), e);
         }
 
         return emptyList();

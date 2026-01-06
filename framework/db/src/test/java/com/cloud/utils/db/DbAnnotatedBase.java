@@ -21,13 +21,14 @@ import javax.inject.Inject;
 
 import junit.framework.Assert;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 @Component
 @DB
 public class DbAnnotatedBase {
-    private static final Logger s_logger = Logger.getLogger(DbAnnotatedBase.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     DummyComponent _dummy;
@@ -38,7 +39,7 @@ public class DbAnnotatedBase {
     }
 
     public void MethodWithClassDbAnnotated() {
-        s_logger.info("called");
+        logger.info("called");
         _dummy.sayHello();
     }
 }

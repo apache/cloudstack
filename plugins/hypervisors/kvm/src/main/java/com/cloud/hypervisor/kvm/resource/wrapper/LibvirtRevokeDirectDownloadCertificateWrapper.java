@@ -26,7 +26,6 @@ import java.io.IOException;
 import org.apache.cloudstack.agent.directdownload.RevokeDirectDownloadCertificateCommand;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
@@ -39,7 +38,6 @@ import com.cloud.utils.script.Script;
 @ResourceWrapper(handles =  RevokeDirectDownloadCertificateCommand.class)
 public class LibvirtRevokeDirectDownloadCertificateWrapper extends CommandWrapper<RevokeDirectDownloadCertificateCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtRevokeDirectDownloadCertificateWrapper.class);
 
     /**
      * Retrieve agent.properties file
@@ -61,7 +59,7 @@ public class LibvirtRevokeDirectDownloadCertificateWrapper extends CommandWrappe
             try {
                 pass = PropertiesUtil.loadFromFile(agentFile).getProperty(KeyStoreUtils.KS_PASSPHRASE_PROPERTY);
             } catch (IOException e) {
-                s_logger.error("Could not get 'keystore.passphrase' property value due to: " + e.getMessage());
+                logger.error("Could not get 'keystore.passphrase' property value due to: " + e.getMessage());
             }
         }
         return pass;
@@ -90,15 +88,15 @@ public class LibvirtRevokeDirectDownloadCertificateWrapper extends CommandWrappe
                     sanitizeBashCommandArgument(certificateAlias), "-keystore", keyStoreFile, "-storepass",
                     privatePassword);
             if (existsCmdResult == 1) {
-                s_logger.error("Certificate alias " + certificateAlias + " does not exist, no need to revoke it");
+                logger.error("Certificate alias " + certificateAlias + " does not exist, no need to revoke it");
             } else {
-                s_logger.debug("Revoking certificate alias " + certificateAlias + " from keystore " + keyStoreFile);
+                logger.debug("Revoking certificate alias " + certificateAlias + " from keystore " + keyStoreFile);
                 Script.executeCommandForExitValue(keyToolPath, "-delete", "-alias",
                         sanitizeBashCommandArgument(certificateAlias), "-keystore", keyStoreFile, "-storepass",
-                        privatePassword);;
+                        privatePassword);
             }
         } catch (FileNotFoundException | CloudRuntimeException e) {
-            s_logger.error("Error while setting up certificate " + certificateAlias, e);
+            logger.error("Error while setting up certificate " + certificateAlias, e);
             return new Answer(command, false, e.getMessage());
         }
         return new Answer(command);

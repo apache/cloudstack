@@ -33,17 +33,20 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
+import org.apache.commons.io.IOUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SshHelper;
 
 public class FileUtil {
-    private static final Logger s_logger = Logger.getLogger(FileUtil.class);
+    protected static Logger LOGGER = LogManager.getLogger(FileUtil.class);
 
     private static boolean deleteFileOrDirectory(File fileOrDirectory) {
         if (fileOrDirectory.isDirectory()) {
@@ -51,7 +54,7 @@ public class FileUtil {
             if (files != null) {
                 for (File file : files) {
                     if (!deleteFileOrDirectory(file)) {
-                        s_logger.trace(String.format("Failed to delete file: %s", file.getAbsoluteFile()));
+                        LOGGER.trace(String.format("Failed to delete file: %s", file.getAbsoluteFile()));
                         return false;
                     }
                 }
@@ -79,14 +82,14 @@ public class FileUtil {
             } catch (Exception e) {
                 finalErrMsg = String.format("Failed to scp files to system VM due to, %s",
                         e.getCause() != null ? e.getCause().getLocalizedMessage() : e.getLocalizedMessage());
-                s_logger.error(finalErrMsg);
+                LOGGER.error(finalErrMsg);
             }
         }
         throw new CloudRuntimeException(finalErrMsg);
     }
 
     public static List<String> getFilesPathsUnderResourceDirectory(String resourceDirectory) {
-        s_logger.info(String.format("Searching for files under resource directory [%s].", resourceDirectory));
+        LOGGER.info(String.format("Searching for files under resource directory [%s].", resourceDirectory));
 
         URL resourceDirectoryUrl = Thread.currentThread().getContextClassLoader().getResource(resourceDirectory);
         if (resourceDirectoryUrl == null) {
@@ -118,9 +121,9 @@ public class FileUtil {
         }
         boolean result = deleteFileOrDirectory(fileOrDirectory);
         if (result) {
-            s_logger.debug(String.format("Deleted path: %s", path));
+            LOGGER.debug(String.format("Deleted path: %s", path));
         } else  {
-            s_logger.error(String.format("Failed to delete path: %s", path));
+            LOGGER.error(String.format("Failed to delete path: %s", path));
         }
     }
 
@@ -132,13 +135,13 @@ public class FileUtil {
                     .forEach(file -> {
                         try {
                             Files.delete(file);
-                            s_logger.debug(String.format("Deleted file: %s", file));
+                            LOGGER.debug(String.format("Deleted file: %s", file));
                         } catch (IOException e) {
-                            s_logger.error(String.format("Failed to delete file: %s", file), e);
+                            LOGGER.error(String.format("Failed to delete file: %s", file), e);
                         }
                     });
         } catch (IOException e) {
-            s_logger.error(String.format("Error accessing directory: %s", directory), e);
+            LOGGER.error(String.format("Error accessing directory: %s", directory), e);
         }
     }
 
@@ -146,11 +149,15 @@ public class FileUtil {
         Path filePath = Paths.get(fileName);
         try {
             Files.write(filePath, content.getBytes(StandardCharsets.UTF_8));
-            s_logger.debug(String.format("Successfully wrote to the file: %s", fileName));
+            LOGGER.debug(String.format("Successfully wrote to the file: %s", fileName));
             return true;
         } catch (IOException e) {
-            s_logger.error(String.format("Error writing to the file: %s", fileName), e);
+            LOGGER.error(String.format("Error writing to the file: %s", fileName), e);
         }
         return false;
+    }
+
+    public static String readResourceFile(String resource) throws IOException {
+        return IOUtils.toString(Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResourceAsStream(resource)), com.cloud.utils.StringUtils.getPreferredCharset());
     }
 }

@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command.user.vm;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -40,12 +39,11 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "resetPasswordForVirtualMachine", responseObject=UserVmResponse.class, description="Resets the password for virtual machine. " +
-                    "The virtual machine must be in a \"Stopped\" state and the template must already " +
+@APICommand(name = "resetPasswordForVirtualMachine", responseObject=UserVmResponse.class, description = "Resets the password for the Instance. " +
+                    "The Instance must be in a \"Stopped\" state and the Template must already " +
         "support this feature for this command to take effect. [async]", responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class ResetVMPasswordCmd extends BaseAsyncCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(ResetVMPasswordCmd.class.getName());
 
     private static final String s_name = "resetpasswordforvirtualmachineresponse";
 
@@ -54,7 +52,7 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd implements UserCmd {
     /////////////////////////////////////////////////////
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserVmResponse.class,
-            required=true, description="The ID of the virtual machine")
+            required=true, description = "The ID of the Instance")
     private Long id;
 
     @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, description="The new password of the virtual machine. If null, a random password will be generated for the VM.", since="4.19.0")
@@ -103,7 +101,7 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return  "resetting password for vm: " + getId();
+        return  "resetting password for Instance: " + getId();
     }
 
     @Override
@@ -122,9 +120,9 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd implements UserCmd {
         UserVm vm = _responseGenerator.findUserVmById(getId());
         if (StringUtils.isBlank(password)) {
             password = _mgr.generateRandomPassword();
-            s_logger.debug(String.format("Resetting VM [%s] password to a randomly generated password.", vm.getUuid()));
+            logger.debug(String.format("Resetting VM [%s] password to a randomly generated password.", vm.getUuid()));
         } else {
-            s_logger.debug(String.format("Resetting VM [%s] password to password defined by user.", vm.getUuid()));
+            logger.debug(String.format("Resetting VM [%s] password to password defined by user.", vm.getUuid()));
         }
         CallContext.current().setEventDetails("Vm Id: " + getId());
         UserVm result = _userVmService.resetVMPassword(this, password);
@@ -133,7 +131,7 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd implements UserCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to reset vm password");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to reset Instance password");
         }
     }
 }

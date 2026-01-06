@@ -30,19 +30,17 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 @APICommand(name = "getUploadParamsForVolume", description = "Upload a data disk to the cloudstack cloud.", responseObject = GetUploadParamsResponse.class, since = "4.6.0",
     requestHasSensitiveInfo= false, responseHasSensitiveInfo = false)
 public class GetUploadParamsForVolumeCmd extends AbstractGetUploadParamsCmd {
-    public static final Logger s_logger = Logger.getLogger(GetUploadParamsForVolumeCmd.class.getName());
 
     private static final String s_name = "postuploadvolumeresponse";
 
     @Parameter(name = ApiConstants.IMAGE_STORE_UUID, type = CommandType.STRING, description = "Image store uuid")
     private String imageStoreUuid;
 
-    @Parameter(name = ApiConstants.DISK_OFFERING_ID, required = false, type = CommandType.UUID, entityType = DiskOfferingResponse.class, description = "the ID of the disk "
+    @Parameter(name = ApiConstants.DISK_OFFERING_ID, required = false, type = CommandType.UUID, entityType = DiskOfferingResponse.class, description = "The ID of the disk "
             + "offering. This must be a custom sized offering since during upload of volume/template size is unknown.")
     private Long diskOfferingId;
 
@@ -62,7 +60,7 @@ public class GetUploadParamsForVolumeCmd extends AbstractGetUploadParamsCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (MalformedURLException | ResourceAllocationException e) {
-            s_logger.error("exception while uploading volume", e);
+            logger.error("exception while uploading volume", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "exception while uploading a volume: " + e.getMessage());
         }
     }

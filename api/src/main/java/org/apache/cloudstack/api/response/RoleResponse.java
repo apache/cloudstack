@@ -29,12 +29,16 @@ import com.google.gson.annotations.SerializedName;
 public class RoleResponse extends BaseRoleResponse {
 
     @SerializedName(ApiConstants.TYPE)
-    @Param(description = "the type of the role")
+    @Param(description = "The type of the role")
     private String roleType;
 
     @SerializedName(ApiConstants.IS_DEFAULT)
-    @Param(description = "true if role is default, false otherwise")
+    @Param(description = "True if role is default, false otherwise")
     private Boolean isDefault;
+
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "the state of the role")
+    private String state;
 
     public void setRoleType(RoleType roleType) {
         if (roleType != null) {
@@ -44,5 +48,9 @@ public class RoleResponse extends BaseRoleResponse {
 
     public void setIsDefault(Boolean isDefault) {
         this.isDefault = isDefault;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 }

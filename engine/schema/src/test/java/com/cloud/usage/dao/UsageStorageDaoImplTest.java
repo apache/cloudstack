@@ -17,24 +17,25 @@
 
 package com.cloud.usage.dao;
 
-import static org.mockito.Matchers.contains;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.sql.PreparedStatement;
-import com.cloud.utils.DateUtil;
-import com.cloud.utils.db.TransactionLegacy;
 import java.util.Date;
 import java.util.TimeZone;
 
-import com.cloud.usage.UsageStorageVO;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import com.cloud.usage.UsageStorageVO;
+import com.cloud.utils.DateUtil;
+import com.cloud.utils.db.TransactionLegacy;
 
 @RunWith(MockitoJUnitRunner.class)
 public class UsageStorageDaoImplTest {

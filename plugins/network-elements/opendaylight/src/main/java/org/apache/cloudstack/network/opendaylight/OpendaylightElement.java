@@ -27,7 +27,6 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.network.opendaylight.agent.commands.StartupOpenDaylightControllerCommand;
@@ -59,7 +58,6 @@ import com.cloud.vm.VirtualMachineProfile;
 @Component
 public class OpendaylightElement extends AdapterBase implements ConnectivityProvider, ResourceStateAdapter {
 
-    private static final Logger s_logger = Logger.getLogger(OpendaylightElement.class);
     private static final Map<Service, Map<Capability, String>> s_capabilities = setCapabilities();
 
     @Inject

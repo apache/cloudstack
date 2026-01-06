@@ -32,7 +32,6 @@ import org.apache.cloudstack.auth.UserOAuth2Authenticator;
 import org.apache.cloudstack.oauth2.dao.OauthProviderDao;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -40,7 +39,6 @@ import java.util.Arrays;
 import java.util.List;
 
 public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authenticator {
-    private static final Logger s_logger = Logger.getLogger(GoogleOAuth2Provider.class);
 
     protected String accessToken = null;
     protected String refreshToken = null;

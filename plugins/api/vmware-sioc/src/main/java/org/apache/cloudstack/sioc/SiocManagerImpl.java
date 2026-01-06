@@ -30,7 +30,8 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.util.LoginInfo;
 import org.apache.cloudstack.util.vmware.VMwareUtil;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenterVO;
@@ -63,7 +64,7 @@ import com.vmware.vim25.VirtualMachineConfigSpec;
 
 @Component
 public class SiocManagerImpl implements SiocManager {
-    private static final Logger LOGGER = Logger.getLogger(SiocManagerImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private static final int LOCK_TIME_IN_SECONDS = 3;
     private static final int ONE_GB_IN_BYTES = 1000000000;
     private static final int LOWEST_SHARES_PER_VIRTUAL_DISK = 2000; // We want this to be greater than 1,000, which is the VMware default value.
@@ -82,7 +83,7 @@ public class SiocManagerImpl implements SiocManager {
 
     @Override
     public void updateSiocInfo(long zoneId, long storagePoolId, int sharesPerGB, int limitIopsPerGB, int iopsNotifyThreshold) throws Exception {
-        LOGGER.info("'SiocManagerImpl.updateSiocInfo(long, long, int, int, int)' method invoked");
+        logger.info("'SiocManagerImpl.updateSiocInfo(long, long, int, int, int)' method invoked");
 
         DataCenterVO zone = zoneDao.findById(zoneId);
 
@@ -97,11 +98,11 @@ public class SiocManagerImpl implements SiocManager {
         }
 
         if (storagePool.getDataCenterId() != zoneId) {
-            throw new Exception("Error: Storage pool '" + storagePool.getName() + "' is not in zone ID " + zoneId + ".");
+            throw new Exception(String.format("Error: Storage pool %s is not in zone %s.", storagePool, zone));
         }
 
         if (!storagePool.getPoolType().equals(StoragePoolType.VMFS)) {
-            throw new Exception("Error: Storage pool '" + storagePool.getName() + "' does not represent a VMFS datastore.");
+            throw new Exception(String.format("Error: Storage pool %s does not represent a VMFS datastore.", storagePool));
         }
 
         String lockName = zone.getUuid() + "-" + storagePool.getUuid();
@@ -192,7 +193,7 @@ public class SiocManagerImpl implements SiocManager {
         ManagedObjectReference morVm = nameToVm.get(vmName);
 
         if (morVm == null) {
-            String errMsg = "Error: The VM with ID " + instanceId + " could not be located (ManagedObjectReference).";
+            String errMsg = String.format("Error: The VM %s could not be located (ManagedObjectReference).", vmInstance);
 
             throw new Exception(errMsg);
         }
@@ -250,7 +251,7 @@ public class SiocManagerImpl implements SiocManager {
 
                             tasks.add(task);
 
-                            LOGGER.info(getInfoMsg(volumeVO, newShares, newLimitIops));
+                            logger.info(getInfoMsg(volumeVO, newShares, newLimitIops));
                         } catch (Exception ex) {
                             throw new Exception("Error: " + ex.getMessage());
                         }
@@ -321,7 +322,7 @@ public class SiocManagerImpl implements SiocManager {
 
                                 tasks.add(task);
 
-                                LOGGER.info(getInfoMsgForWorkerVm(newLimitIops));
+                                logger.info(getInfoMsgForWorkerVm(newLimitIops));
                             } catch (Exception ex) {
                                 throw new Exception("Error: " + ex.getMessage());
                             }
@@ -335,7 +336,7 @@ public class SiocManagerImpl implements SiocManager {
     }
 
     private String getInfoMsg(Volume volume, Integer newShares, Long newLimitIops) {
-        String msgPrefix = "VMware SIOC: Volume = " + volume.getName();
+        String msgPrefix = String.format("VMware SIOC: Volume %s", volume);
 
         String msgNewShares = newShares != null ? "; New Shares = " + newShares : "";
 
@@ -353,8 +354,7 @@ public class SiocManagerImpl implements SiocManager {
         List<VolumeVO> volumes = volumeDao.findByInstance(vmInstance.getId());
 
         if (volumes == null || volumes.size() == 0) {
-            String errMsg = "Error: The VMware virtual disk '" + disk + "' could not be mapped to a CloudStack volume. " +
-                    "There were no volumes for the VM with the following ID: " + vmInstance.getId() + ".";
+            String errMsg = String.format("Error: The VMware virtual disk '%s' could not be mapped to a CloudStack volume. There were no volumes for the VM: %s.", disk, vmInstance);
 
             throw new Exception(errMsg);
         }

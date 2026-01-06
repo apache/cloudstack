@@ -20,8 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.MDC;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.managed.threadlocal.ManagedThreadLocal;
 
@@ -31,13 +31,14 @@ import com.cloud.user.User;
 import com.cloud.utils.UuidUtils;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.logging.log4j.ThreadContext;
 
 /**
  * LogContext records information about the environment the API call is made.  This
  * class must be always be available in all CloudStack code.
  */
 public class LogContext {
-    private static final Logger s_logger = Logger.getLogger(LogContext.class);
+    protected static Logger LOGGER = LogManager.getLogger(LogContext.class);
     private static ManagedThreadLocal<LogContext> s_currentContext = new ManagedThreadLocal<LogContext>();
 
     private String logContextId;
@@ -134,9 +135,9 @@ public class LogContext {
             callingContext = new LogContext(userId, accountId, contextId);
         }
         s_currentContext.set(callingContext);
-        MDC.put("logcontextid", UuidUtils.first(contextId));
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Registered for log: " + callingContext);
+        ThreadContext.put("logcontextid", UuidUtils.first(contextId));
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("Registered for log: " + callingContext);
         }
         return callingContext;
     }
@@ -160,7 +161,7 @@ public class LogContext {
             assert context.getCallingUserId() == User.UID_SYSTEM : "You are calling a very specific method that registers a one time system context.  This method is meant for background threads that does processing.";
             return context;
         } catch (Exception e) {
-            s_logger.error("Failed to register the system log context.", e);
+            LOGGER.error("Failed to register the system log context.", e);
             throw new CloudRuntimeException("Failed to register system log context", e);
         }
     }
@@ -206,11 +207,11 @@ public class LogContext {
         LogContext context = s_currentContext.get();
         if (context != null) {
             s_currentContext.remove();
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Unregistered: " + context);
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Unregistered: " + context);
             }
         }
-        MDC.clear();
+        ThreadContext.clearMap();
     }
 
     public void setStartEventId(long startEventId) {

@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vm;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -40,10 +39,9 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "expungeVirtualMachine", description = "Expunge a virtual machine. Once expunged, it cannot be recoverd.", responseObject = SuccessResponse.class, entityType = {VirtualMachine.class},
+@APICommand(name = "expungeVirtualMachine", description = "Expunge  an Instance. Once expunged, it cannot be recovered.", responseObject = SuccessResponse.class, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ExpungeVMCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(ExpungeVMCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -51,7 +49,7 @@ public class ExpungeVMCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the virtual machine")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the Instance")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -83,7 +81,7 @@ public class ExpungeVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Expunging vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
+        return "Expunging Instance: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
     }
 
     @Override
@@ -106,7 +104,7 @@ public class ExpungeVMCmd extends BaseAsyncCmd {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to expunge vm");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to expunge Instance");
             }
         } catch (InvalidParameterValueException ipve) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ipve.getMessage());

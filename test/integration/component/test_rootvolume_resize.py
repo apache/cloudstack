@@ -577,7 +577,7 @@ class TestResizeVolume(cloudstackTestCase):
 
         # 1. Deploy a VM without any disk offering (only root disk)
         # 2. Perform(resize)  of the root  volume
-        # 3. Perform VM snapshot on VM
+        # 3. Perform Instance Snapshot on Instance
         """
 
         # deploy a vm
@@ -647,7 +647,7 @@ class TestResizeVolume(cloudstackTestCase):
                     self.assertEqual(virtualmachine_snapshot.id,
                                      virtulmachine_snapshot_list[0].id,
                                      "Virtual Machine Snapshot id do not match")
-                except Exception as  e:
+                except Exception as e:
                     raise Exception("Issue CLOUDSTACK-10080: Exception while performing"
                                     " vmsnapshot: %s" % e)
             else:

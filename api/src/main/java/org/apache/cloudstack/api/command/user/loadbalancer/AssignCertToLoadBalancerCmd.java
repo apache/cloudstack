@@ -17,7 +17,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.loadbalancer;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -42,21 +41,20 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AssignCertToLoadBalancerCmd extends BaseAsyncCmd {
 
-    public static final Logger s_logger = Logger.getLogger(AssignCertToLoadBalancerCmd.class.getName());
 
 
     @Parameter(name = ApiConstants.LBID,
                type = CommandType.UUID,
                entityType = FirewallRuleResponse.class,
                required = true,
-               description = "the ID of the load balancer rule")
+               description = "The ID of the load balancer rule")
     Long lbRuleId;
 
     @Parameter(name = ApiConstants.CERTIFICATE_ID,
                type = CommandType.UUID,
                entityType = SslCertResponse.class,
                required = true,
-               description = "the ID of the certificate")
+               description = "The ID of the certificate")
     Long certId;
 
     @Override

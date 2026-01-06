@@ -38,6 +38,7 @@ import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.veeam.api.RestoreSession;
 import org.apache.http.HttpResponse;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -58,8 +59,6 @@ public class VeeamClientTest {
     private VeeamClient mockClient;
     private static final SimpleDateFormat newDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    private VeeamClient mock = Mockito.mock(VeeamClient.class);
-
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(9399);
 
@@ -72,6 +71,7 @@ public class VeeamClientTest {
                         .withBody("")));
         client = new VeeamClient("http://localhost:9399/api/", 12, adminUsername, adminPassword, true, 60, 600, 5, 120);
         mockClient = Mockito.mock(VeeamClient.class);
+        mockClient.logger = Mockito.mock(Logger.class);
         Mockito.when(mockClient.getRepositoryNameFromJob(Mockito.anyString())).thenCallRealMethod();
         Mockito.when(mockClient.getVeeamServerVersion()).thenCallRealMethod();
     }
@@ -175,35 +175,35 @@ public class VeeamClientTest {
     @Test
     public void getRestoreVmErrorDescriptionTestFindErrorDescription() {
         Pair<Boolean, String> response = new Pair<>(true, "Example of error description found in Veeam.");
-        Mockito.when(mock.getRestoreVmErrorDescription("uuid")).thenCallRealMethod();
-        Mockito.when(mock.executePowerShellCommands(Mockito.any())).thenReturn(response);
-        String result = mock.getRestoreVmErrorDescription("uuid");
+        Mockito.when(mockClient.getRestoreVmErrorDescription("uuid")).thenCallRealMethod();
+        Mockito.when(mockClient.executePowerShellCommands(Mockito.any())).thenReturn(response);
+        String result = mockClient.getRestoreVmErrorDescription("uuid");
         Assert.assertEquals("Example of error description found in Veeam.", result);
     }
 
     @Test
     public void getRestoreVmErrorDescriptionTestNotFindErrorDescription() {
         Pair<Boolean, String> response = new Pair<>(true, "Cannot find restore session with provided uid uuid");
-        Mockito.when(mock.getRestoreVmErrorDescription("uuid")).thenCallRealMethod();
-        Mockito.when(mock.executePowerShellCommands(Mockito.any())).thenReturn(response);
-        String result = mock.getRestoreVmErrorDescription("uuid");
+        Mockito.when(mockClient.getRestoreVmErrorDescription("uuid")).thenCallRealMethod();
+        Mockito.when(mockClient.executePowerShellCommands(Mockito.any())).thenReturn(response);
+        String result = mockClient.getRestoreVmErrorDescription("uuid");
         Assert.assertEquals("Cannot find restore session with provided uid uuid", result);
     }
 
     @Test
     public void getRestoreVmErrorDescriptionTestWhenPowerShellOutputIsNull() {
-        Mockito.when(mock.getRestoreVmErrorDescription("uuid")).thenCallRealMethod();
-        Mockito.when(mock.executePowerShellCommands(Mockito.any())).thenReturn(null);
-        String result = mock.getRestoreVmErrorDescription("uuid");
+        Mockito.when(mockClient.getRestoreVmErrorDescription("uuid")).thenCallRealMethod();
+        Mockito.when(mockClient.executePowerShellCommands(Mockito.any())).thenReturn(null);
+        String result = mockClient.getRestoreVmErrorDescription("uuid");
         Assert.assertEquals("Failed to get the description of the failed restore session [uuid]. Please contact an administrator.", result);
     }
 
     @Test
     public void getRestoreVmErrorDescriptionTestWhenPowerShellOutputIsFalse() {
         Pair<Boolean, String> response = new Pair<>(false, null);
-        Mockito.when(mock.getRestoreVmErrorDescription("uuid")).thenCallRealMethod();
-        Mockito.when(mock.executePowerShellCommands(Mockito.any())).thenReturn(response);
-        String result = mock.getRestoreVmErrorDescription("uuid");
+        Mockito.when(mockClient.getRestoreVmErrorDescription("uuid")).thenCallRealMethod();
+        Mockito.when(mockClient.executePowerShellCommands(Mockito.any())).thenReturn(response);
+        String result = mockClient.getRestoreVmErrorDescription("uuid");
         Assert.assertEquals("Failed to get the description of the failed restore session [uuid]. Please contact an administrator.", result);
     }
 
@@ -475,7 +475,9 @@ public class VeeamClientTest {
                 "  xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"\n" +
                 "  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
                 "  xmlns=\"http://www.veeam.com/ent/v1.0\">\n" +
-                "  <VmRestorePoint Href=\"https://10.0.3.142:9398/api/vmRestorePoints/f6d504cf-eafe-4cd2-8dfc-e9cfe2f1e977?format=Entity\" Type=\"VmRestorePoint\" Name=\"i-2-4-VM@2023-11-03 16:26:12.209913\" UID=\"urn:veeam:VmRestorePoint:f6d504cf-eafe-4cd2-8dfc-e9cfe2f1e977\" VmDisplayName=\"i-2-4-VM\">\n" +
+                "  <VmRestorePoint Href=\"https://10.0.3.142:9398/api/vmRestorePoints/f6d504cf-eafe-4cd2-8dfc-e9cfe2f1e977?format=Entity\"" +
+                "       Type=\"VmRestorePoint\" Name=\"i-2-4-VM@2023-11-03 16:26:12.209913\" UID=\"urn:veeam:VmRestorePoint:f6d504cf-eafe-4cd2-8dfc-e9cfe2f1e977\"" +
+                "       VmDisplayName=\"i-2-4-VM\" SqlInfo=\"SqlInfo\">\n" +
                 "    <Links>\n" +
                 "      <Link Href=\"https://10.0.3.142:9398/api/vmRestorePoints/f6d504cf-eafe-4cd2-8dfc-e9cfe2f1e977?action=restore\" Rel=\"Restore\" />\n" +
                 "      <Link Href=\"https://10.0.3.142:9398/api/backupServers/18cc2a81-1ff0-42cd-8389-62f2bbcc6b7f\" Name=\"10.0.3.142\" Type=\"BackupServerReference\" Rel=\"Up\" />\n" +

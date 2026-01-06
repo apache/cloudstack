@@ -36,7 +36,8 @@ import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.io.File;
 import java.io.InputStream;
@@ -56,7 +57,7 @@ import static java.util.Collections.unmodifiableList;
 
 public final class S3Utils {
 
-    private static final Logger LOGGER = Logger.getLogger(S3Utils.class);
+    protected static Logger LOGGER = LogManager.getLogger(S3Utils.class);
 
     public static final String SEPARATOR = "/";
 

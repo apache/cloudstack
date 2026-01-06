@@ -51,7 +51,6 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.DateraUtil;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -59,8 +58,6 @@ import java.util.List;
 import java.util.Map;
 
 public class DateraPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
-    private static final Logger s_logger = Logger.getLogger(DateraPrimaryDataStoreLifeCycle.class);
-
     @Inject
     private CapacityManager _capacityMgr;
     @Inject
@@ -132,7 +129,7 @@ public class DateraPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCyc
             // uuid = DateraUtil.PROVIDER_NAME + "_" + cluster.getUuid() + "_" + storageVip
             // + "_" + clusterAdminUsername + "_" + numReplicas + "_" + volPlacement;
             uuid = DateraUtil.PROVIDER_NAME + "_" + clusterUuid + "_" + randomString;
-            s_logger.debug("Datera - Setting Datera cluster-wide primary storage uuid to " + uuid);
+            logger.debug("Datera - Setting Datera cluster-wide primary storage uuid to " + uuid);
             parameters.setPodId(podId);
             parameters.setClusterId(clusterId);
 
@@ -152,7 +149,7 @@ public class DateraPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCyc
             // "_" + clusterAdminUsername + "_" + numReplicas + "_" + volPlacement;
             uuid = DateraUtil.PROVIDER_NAME + "_" + zoneUuid + "_" + randomString;
 
-            s_logger.debug("Datera - Setting Datera zone-wide primary storage uuid to " + uuid);
+            logger.debug("Datera - Setting Datera zone-wide primary storage uuid to " + uuid);
         }
         if (capacityBytes == null || capacityBytes <= 0) {
             throw new IllegalArgumentException("'capacityBytes' must be present and greater than 0.");
@@ -164,9 +161,9 @@ public class DateraPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCyc
 
         if (domainName == null) {
             domainName = "ROOT";
-            s_logger.debug("setting the domain to ROOT");
+            logger.debug("setting the domain to ROOT");
         }
-        s_logger.debug("Datera - domainName: " + domainName);
+        logger.debug("Datera - domainName: " + domainName);
 
         parameters.setHost(storageVip);
         parameters.setPort(storagePort);
@@ -203,7 +200,7 @@ public class DateraPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCyc
                 lClusterDefaultMinIops = Long.parseLong(clusterDefaultMinIops);
             }
         } catch (NumberFormatException ex) {
-            s_logger.warn("Cannot parse the setting of " + DateraUtil.CLUSTER_DEFAULT_MIN_IOPS
+            logger.warn("Cannot parse the setting of " + DateraUtil.CLUSTER_DEFAULT_MIN_IOPS
                     + ", using default value: " + lClusterDefaultMinIops + ". Exception: " + ex);
         }
 
@@ -214,7 +211,7 @@ public class DateraPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCyc
                 lClusterDefaultMaxIops = Long.parseLong(clusterDefaultMaxIops);
             }
         } catch (NumberFormatException ex) {
-            s_logger.warn("Cannot parse the setting of " + DateraUtil.CLUSTER_DEFAULT_MAX_IOPS
+            logger.warn("Cannot parse the setting of " + DateraUtil.CLUSTER_DEFAULT_MAX_IOPS
                     + ", using default value: " + lClusterDefaultMaxIops + ". Exception: " + ex);
         }
 
@@ -263,16 +260,16 @@ public class DateraPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCyc
 
         for (HostVO host : allHosts) {
             try {
-                _storageMgr.connectHostToSharedPool(host.getId(), primaryDataStoreInfo.getId());
+                _storageMgr.connectHostToSharedPool(host, primaryDataStoreInfo.getId());
 
                 poolHosts.add(host);
             } catch (Exception e) {
-                s_logger.warn("Unable to establish a connection between " + host + " and " + primaryDataStoreInfo, e);
+                logger.warn("Unable to establish a connection between " + host + " and " + primaryDataStoreInfo, e);
             }
         }
 
         if (poolHosts.isEmpty()) {
-            s_logger.warn("No host can access storage pool '" + primaryDataStoreInfo + "' on cluster '"
+            logger.warn("No host can access storage pool '" + primaryDataStoreInfo + "' on cluster '"
                     + primaryDataStoreInfo.getClusterId() + "'.");
 
             storagePoolDao.expunge(primaryDataStoreInfo.getId());
@@ -305,9 +302,9 @@ public class DateraPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCyc
 
         for (HostVO host : hosts) {
             try {
-                _storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId());
+                _storageMgr.connectHostToSharedPool(host, dataStore.getId());
             } catch (Exception e) {
-                s_logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
+                logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
             }
         }
 

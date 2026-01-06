@@ -24,7 +24,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDaoImpl;
 import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDaoImpl;
 import org.eclipse.jetty.security.IdentityService;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -390,8 +390,8 @@ public class IntegrationTestConfiguration {
                 }
             });
             Mockito.when(
-                mock.createAffinityGroup(Matchers.any(String.class), Matchers.any(Long.class), Matchers.any(Long.class), Matchers.any(String.class), Matchers.any(String.class),
-                    Matchers.any(String.class))).thenReturn(gmock);
+                mock.createAffinityGroup(ArgumentMatchers.any(String.class), ArgumentMatchers.any(Long.class), ArgumentMatchers.any(Long.class), ArgumentMatchers.any(String.class), ArgumentMatchers.any(String.class),
+                    ArgumentMatchers.any(String.class))).thenReturn(gmock);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -482,7 +482,7 @@ public class IntegrationTestConfiguration {
     public DomainChecker domainChecker() {
         DomainChecker mock = Mockito.mock(DomainChecker.class);
         try {
-            Mockito.when(mock.checkAccess(Matchers.any(Account.class), Matchers.any(DataCenter.class))).thenReturn(true);
+            Mockito.when(mock.checkAccess(ArgumentMatchers.any(Account.class), ArgumentMatchers.any(DataCenter.class))).thenReturn(true);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -498,23 +498,23 @@ public class IntegrationTestConfiguration {
     public EntityManager entityManager() {
         EntityManager mock = Mockito.mock(EntityManager.class);
         try {
-            Mockito.when(mock.findById(Matchers.same(Account.class), Matchers.anyLong())).thenReturn(_accountDao.findById(Account.ACCOUNT_ID_SYSTEM));
-            Mockito.when(mock.findById(Matchers.same(User.class), Matchers.anyLong())).thenReturn(_userDao.findById(User.UID_SYSTEM));
-            Mockito.when(mock.findById(Matchers.same(NetworkOffering.class), Matchers.any(Long.class))).thenAnswer(new Answer<NetworkOffering>() {
+            Mockito.when(mock.findById(ArgumentMatchers.same(Account.class), ArgumentMatchers.anyLong())).thenReturn(_accountDao.findById(Account.ACCOUNT_ID_SYSTEM));
+            Mockito.when(mock.findById(ArgumentMatchers.same(User.class), ArgumentMatchers.anyLong())).thenReturn(_userDao.findById(User.UID_SYSTEM));
+            Mockito.when(mock.findById(ArgumentMatchers.same(NetworkOffering.class), ArgumentMatchers.any(Long.class))).thenAnswer(new Answer<NetworkOffering>() {
                 @Override
                 public NetworkOffering answer(final InvocationOnMock invocation) throws Throwable {
                     Long id = (Long)invocation.getArguments()[1];
                     return _networkOfferingDao.findById(id);
                 }
             });
-            Mockito.when(mock.findById(Matchers.same(IpAddress.class), Matchers.any(Long.class))).thenAnswer(new Answer<IpAddress>() {
+            Mockito.when(mock.findById(ArgumentMatchers.same(IpAddress.class), ArgumentMatchers.any(Long.class))).thenAnswer(new Answer<IpAddress>() {
                 @Override
                 public IpAddress answer(final InvocationOnMock invocation) throws Throwable {
                     Long id = (Long)invocation.getArguments()[1];
                     return _ipAddressDao.findById(id);
                 }
             });
-            Mockito.when(mock.findById(Matchers.same(DataCenter.class), Matchers.any(Long.class))).thenAnswer(new Answer<DataCenter>() {
+            Mockito.when(mock.findById(ArgumentMatchers.same(DataCenter.class), ArgumentMatchers.any(Long.class))).thenAnswer(new Answer<DataCenter>() {
                 @Override
                 public DataCenter answer(final InvocationOnMock invocation) throws Throwable {
                     Long id = (Long)invocation.getArguments()[1];

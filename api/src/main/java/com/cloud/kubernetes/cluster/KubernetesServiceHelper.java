@@ -25,6 +25,7 @@ import com.cloud.utils.component.Adapter;
 public interface KubernetesServiceHelper extends Adapter {
 
     ControlledEntity findByUuid(String uuid);
+    ControlledEntity findByVmId(long vmId);
     void checkVmCanBeDestroyed(UserVm userVm);
     void cleanupForAccount(Account account);
 }

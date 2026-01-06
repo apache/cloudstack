@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.usage;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -37,7 +36,6 @@ import com.cloud.user.Account;
 @APICommand(name = "addTrafficType", description = "Adds traffic type to a physical network", responseObject = TrafficTypeResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(AddTrafficTypeCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -48,10 +46,10 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
                type = CommandType.UUID,
                entityType = PhysicalNetworkResponse.class,
                required = true,
-               description = "the Physical Network ID")
+               description = "The Physical Network ID")
     private Long physicalNetworkId;
 
-    @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, required = true, description = "the trafficType to be added to the physical network")
+    @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, required = true, description = "The trafficType to be added to the physical network")
     private String trafficType;
 
     @Parameter(name = ApiConstants.XENSERVER_NETWORK_LABEL,
@@ -82,7 +80,7 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "The VLAN id to be used for Management traffic by VMware host")
     private String vlan;
 
-    @Parameter(name=ApiConstants.ISOLATION_METHOD, type=CommandType.STRING, description="Used if physical network has multiple isolation types and traffic type is public."
+    @Parameter(name=ApiConstants.ISOLATION_METHOD, type=CommandType.STRING, description = "Used if physical network has multiple isolation types and traffic type is public."
         + " Choose which isolation method. Valid options currently 'vlan' or 'vxlan', defaults to 'vlan'.")
     private String isolationMethod;
 

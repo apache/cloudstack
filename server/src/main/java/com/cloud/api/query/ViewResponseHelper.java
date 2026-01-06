@@ -61,7 +61,8 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.AccountJoinVO;
@@ -73,7 +74,6 @@ import com.cloud.api.query.vo.DomainJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
-import com.cloud.api.query.vo.HostTagVO;
 import com.cloud.api.query.vo.ImageStoreJoinVO;
 import com.cloud.api.query.vo.InstanceGroupJoinVO;
 import com.cloud.api.query.vo.ProjectAccountJoinVO;
@@ -90,6 +90,7 @@ import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.configuration.Resource;
 import com.cloud.domain.Domain;
+import com.cloud.host.HostTagVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.storage.VolumeStats;
@@ -101,16 +102,16 @@ import com.cloud.user.Account;
  */
 public class ViewResponseHelper {
 
-    public static final Logger s_logger = Logger.getLogger(ViewResponseHelper.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public static List<UserResponse> createUserResponse(UserAccountJoinVO... users) {
-        return createUserResponse(null, users);
+        return createUserResponse(ResponseView.Restricted, null, users);
     }
 
-    public static List<UserResponse> createUserResponse(Long domainId, UserAccountJoinVO... users) {
+    public static List<UserResponse> createUserResponse(ResponseView responseView, Long domainId, UserAccountJoinVO... users) {
         List<UserResponse> respList = new ArrayList<UserResponse>();
         for (UserAccountJoinVO vt : users) {
-            respList.add(ApiDBUtils.newUserResponse(vt, domainId));
+            respList.add(ApiDBUtils.newUserResponse(responseView, domainId, vt));
         }
         return respList;
     }
@@ -553,12 +554,8 @@ public class ViewResponseHelper {
         return respList;
     }
 
-    public static List<DiskOfferingResponse> createDiskOfferingResponse(DiskOfferingJoinVO... offerings) {
-        List<DiskOfferingResponse> respList = new ArrayList<DiskOfferingResponse>();
-        for (DiskOfferingJoinVO vt : offerings) {
-            respList.add(ApiDBUtils.newDiskOfferingResponse(vt));
-        }
-        return respList;
+    public static List<DiskOfferingResponse> createDiskOfferingResponses(Long vmId, List<DiskOfferingJoinVO> offerings) {
+        return ApiDBUtils.newDiskOfferingResponses(vmId, offerings);
     }
 
     public static List<ServiceOfferingResponse> createServiceOfferingResponse(ServiceOfferingJoinVO... offerings) {

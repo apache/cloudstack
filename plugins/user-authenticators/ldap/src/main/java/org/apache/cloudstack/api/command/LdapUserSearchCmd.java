@@ -21,7 +21,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -38,12 +37,11 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class LdapUserSearchCmd extends BaseListCmd {
 
-    public static final Logger s_logger = Logger.getLogger(LdapUserSearchCmd.class.getName());
     private static final String s_name = "ldapuserresponse";
     @Inject
     private LdapManager _ldapManager;
 
-    @Parameter(name = "query", type = CommandType.STRING, entityType = LdapUserResponse.class, required = true, description = "query to search using")
+    @Parameter(name = "query", type = CommandType.STRING, entityType = LdapUserResponse.class, required = true, description = "Query to search using")
     private String query;
 
     public LdapUserSearchCmd() {
@@ -75,7 +73,7 @@ public class LdapUserSearchCmd extends BaseListCmd {
         try {
             users = _ldapManager.searchUsers(query);
         } catch (final NoLdapUserMatchingQueryException e) {
-            s_logger.debug(e.getMessage());
+            logger.debug(e.getMessage());
         }
 
         final List<LdapUserResponse> ldapUserResponses = createLdapUserResponse(users);

@@ -18,7 +18,6 @@ package com.cloud.api.commands;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -43,7 +42,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @APICommand(name = "addPaloAltoFirewall", responseObject = PaloAltoFirewallResponse.class, description = "Adds a Palo Alto firewall device",
         requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public class AddPaloAltoFirewallCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(AddPaloAltoFirewallCmd.class.getName());
     @Inject
     PaloAltoFirewallElementService _paFwService;
 
@@ -55,7 +53,7 @@ public class AddPaloAltoFirewallCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = PhysicalNetworkResponse.class,
                required = true,
-               description = "the Physical Network ID")
+               description = "The Physical Network ID")
     private Long physicalNetworkId;
 
     @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "URL of the Palo Alto appliance.")
@@ -67,7 +65,7 @@ public class AddPaloAltoFirewallCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = true, description = "Credentials to reach Palo Alto firewall device")
     private String password;
 
-    @Parameter(name = ApiConstants.NETWORK_DEVICE_TYPE, type = CommandType.STRING, required = true, description = "supports only PaloAltoFirewall")
+    @Parameter(name = ApiConstants.NETWORK_DEVICE_TYPE, type = CommandType.STRING, required = true, description = "Supports only PaloAltoFirewall")
     private String deviceType;
 
     /////////////////////////////////////////////////////

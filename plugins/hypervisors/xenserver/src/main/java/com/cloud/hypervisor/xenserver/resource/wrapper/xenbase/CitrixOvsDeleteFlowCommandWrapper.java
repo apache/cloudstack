@@ -19,7 +19,6 @@
 
 package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
-import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
@@ -35,7 +34,6 @@ import com.xensource.xenapi.Types.XenAPIException;
 @ResourceWrapper(handles =  OvsDeleteFlowCommand.class)
 public final class CitrixOvsDeleteFlowCommandWrapper extends CommandWrapper<OvsDeleteFlowCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixOvsDeleteFlowCommandWrapper.class);
 
     @Override
     public Answer execute(final OvsDeleteFlowCommand command, final CitrixResourceBase citrixResourceBase) {
@@ -53,11 +51,11 @@ public final class CitrixOvsDeleteFlowCommandWrapper extends CommandWrapper<OvsD
                 return new Answer(command, false, result);
             }
         } catch (final BadServerResponse e) {
-            s_logger.error("Failed to delete flow", e);
+            logger.error("Failed to delete flow", e);
         } catch (final XenAPIException e) {
-            s_logger.error("Failed to delete flow", e);
+            logger.error("Failed to delete flow", e);
         } catch (final XmlRpcException e) {
-            s_logger.error("Failed to delete flow", e);
+            logger.error("Failed to delete flow", e);
         }
         return new Answer(command, false, "failed to delete flow for " + command.getVmName());
     }

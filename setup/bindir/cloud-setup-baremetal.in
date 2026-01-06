@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -69,15 +69,15 @@ class bash:
         except:
             raise  CloudRuntimeException(formatExceptionInfo())
 
-#        if not self.success: 
+#        if not self.success:
 #            raise  CloudRuntimeException(self.getStderr())
 
     def isSuccess(self):
         return self.success
-    
+
     def getStdout(self):
         return self.stdout.strip("\n")
-    
+
     def getLines(self):
         return self.stdout.split("\n")
 
@@ -88,13 +88,13 @@ class bash:
 def initLoging(logFile=None):
     try:
         if logFile is None:
-            logging.basicConfig(level=logging.DEBUG) 
-        else: 
-            logging.basicConfig(filename=logFile, level=logging.DEBUG) 
+            logging.basicConfig(level=logging.DEBUG)
+        else:
+            logging.basicConfig(filename=logFile, level=logging.DEBUG)
     except:
-        logging.basicConfig(level=logging.DEBUG) 
+        logging.basicConfig(level=logging.DEBUG)
 
-def writeProgressBar(msg, result=None):    
+def writeProgressBar(msg, result=None):
     if msg is not None:
         output = "%-80s"%msg
     elif result is True:
@@ -103,7 +103,7 @@ def writeProgressBar(msg, result=None):
         output = "[ \033[91m%-6s\033[0m ]\n"%"FAILED"
     sys.stdout.write(output)
     sys.stdout.flush()
-    
+
 def printError(msg):
     sys.stderr.write(msg)
     sys.stderr.write("\n")
@@ -123,7 +123,7 @@ def checkRpm(pkgName):
     else:
         writeProgressBar(None, True)
         return True
-      
+
 def checkEnv():
    writeProgressBar("Checking is root")
    ret = bash("whoami")
@@ -133,7 +133,7 @@ def checkEnv():
        return False
    else:
        writeProgressBar(None, True)
-       
+
    pkgList = ['tftp-server', 'syslinux', 'xinetd', 'chkconfig', 'dhcp']
    for pkg in pkgList:
        if not checkRpm(pkg):
@@ -141,8 +141,8 @@ def checkEnv():
    return True
 
 def exitIfFail(ret):
-    if not ret: sys.exit(1) 
-    
+    if not ret: sys.exit(1)
+
 def bashWithResult(cmd):
     writeProgressBar("Executing '%s'"%cmd)
     ret = bash(cmd)
@@ -153,23 +153,23 @@ def bashWithResult(cmd):
     else:
         writeProgressBar(None, True)
         return True
-    
-def configurePxeStuff(): 
+
+def configurePxeStuff():
     stuff = ['tftp', 'xinetd', 'dhcpd']
     cmds = ['chkconfig --level 345 %s on' % i for i in stuff]
     cmds.append('/etc/init.d/xinetd restart')
-    
+
     for cmd in cmds:
         if not bashWithResult(cmd): return False
-        
+
     chkIptable = bash('chkconfig --list iptables')
     if 'on' in chkIptable.getStdout():
         printMsg("Detected iptables is running, need to open tftp port 69")
         if not bashWithResult('iptables -I INPUT 1 -p udp --dport 69 -j ACCEPT'): return False
         if not bashWithResult('/etc/init.d/iptables save'): return False
-        
-    return True  
-    
+
+    return True
+
 def getTftpRootDir(tftpRootDirList):
     tftpRoot = bash("cat /etc/xinetd.d/tftp | grep server_args")
     if not tftpRoot.isSuccess():
@@ -187,16 +187,16 @@ def getTftpRootDir(tftpRootDirList):
 def preparePING(tftpRootDir):
     pingFiles = ['boot.msg', 'initrd.gz', 'kernel', 'pxelinux.0']
     pingDir = "/usr/share/PING"
-    
+
     for f in pingFiles:
         path = join(pingDir, f)
         if not exists(path):
             printError("Cannot find %s, please make sure PING-3.01 is installed"%path)
             return False
         if not bashWithResult("cp -f %s %s"%(path, tftpRootDir)): return False
-     
+
     if not bashWithResult("mkdir -p %s/pxelinux.cfg"%tftpRootDir): return False
-    
+
     return True
 
 def prepareSyslinux(tftpRootDir):
@@ -211,16 +211,16 @@ def prepareSyslinux(tftpRootDir):
 
     return True
 
-            
-        
+
+
 if __name__ == "__main__":
     initLoging("/tmp/cloud-setup-baremetal.log")
     tftpRootDirList = []
-    
+
     exitIfFail(checkEnv())
     exitIfFail(configurePxeStuff())
     exitIfFail(getTftpRootDir(tftpRootDirList))
-    
+
     tftpRootDir = tftpRootDirList[0].strip()
     #exitIfFail(preparePING(tftpRootDir))
     exitIfFail(prepareSyslinux(tftpRootDir))
@@ -228,4 +228,3 @@ if __name__ == "__main__":
     printMsg("Setup BareMetal PXE server successfully")
     printMsg("TFTP root directory is: %s\n"%tftpRootDir)
     sys.exit(0)
-    

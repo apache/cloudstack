@@ -39,7 +39,7 @@
           <a-auto-complete
             class="detail-input"
             ref="keyElm"
-            :filterOption="filterOption"
+            :filterOption="(input, option) => filterOption(input, option, 'key')"
             v-model:value="newKey"
             :options="detailKeys"
             :placeholder="$t('label.name')"
@@ -51,7 +51,7 @@
             disabled />
           <a-auto-complete
             class="detail-input"
-            :filterOption="filterOption"
+            :filterOption="(input, option) => filterOption(input, option, 'value')"
             v-model:value="newValue"
             :options="detailValues"
             :placeholder="$t('label.value')"
@@ -176,7 +176,7 @@ export default {
         if (this.detailOptions[this.newKey]) {
           return { value: this.detailOptions[this.newKey] }
         } else {
-          return ''
+          return []
         }
       }
       return this.detailOptions[this.newKey].map(value => {
@@ -188,7 +188,12 @@ export default {
     this.updateResource(this.resource)
   },
   methods: {
-    filterOption (input, option) {
+    filterOption (input, option, filterType) {
+      if ((filterType === 'key' && !this.newKey) ||
+        (filterType === 'value' && !this.newValue)) {
+        return true
+      }
+
       return (
         option.value.toUpperCase().indexOf(input.toUpperCase()) >= 0
       )

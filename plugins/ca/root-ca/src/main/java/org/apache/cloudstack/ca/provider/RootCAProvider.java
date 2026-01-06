@@ -65,7 +65,6 @@ import org.apache.cloudstack.utils.security.CertUtils;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.bouncycastle.asn1.pkcs.Attribute;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.Extension;
@@ -86,7 +85,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 public final class RootCAProvider extends AdapterBase implements CAProvider, Configurable {
-    private static final Logger LOG = Logger.getLogger(RootCAProvider.class);
 
     public static final Integer caValidityYears = 30;
     public static final String caAlias = "root";
@@ -173,7 +171,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
             final PemReader pemReader = new PemReader(new StringReader(csr));
             pemObject = pemReader.readPemObject();
         } catch (IOException e) {
-            LOG.error("Failed to read provided CSR string as a PEM object", e);
+            logger.error("Failed to read provided CSR string as a PEM object", e);
         }
 
         if (pemObject == null) {
@@ -229,7 +227,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
         try {
             return generateCertificate(domainNames, ipAddresses, validityDays);
         } catch (final CertificateException | IOException | SignatureException | NoSuchAlgorithmException | NoSuchProviderException | InvalidKeyException | OperatorCreationException e) {
-            LOG.error("Failed to create client certificate, due to: ", e);
+            logger.error("Failed to create client certificate, due to: ", e);
             throw new CloudRuntimeException("Failed to generate certificate due to:" + e.getMessage());
         }
     }
@@ -239,7 +237,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
         try {
             return generateCertificateUsingCsr(csr, domainNames, ipAddresses, validityDays);
         } catch (final CertificateException | IOException | SignatureException | NoSuchAlgorithmException | NoSuchProviderException | InvalidKeyException | OperatorCreationException e) {
-            LOG.error("Failed to generate certificate from CSR: ", e);
+            logger.error("Failed to generate certificate from CSR: ", e);
             throw new CloudRuntimeException("Failed to generate certificate using CSR due to:" + e.getMessage());
         }
     }
@@ -310,16 +308,16 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
 
     private boolean saveNewRootCAKeypair() {
         try {
-            LOG.debug("Generating root CA public/private keys");
+            logger.debug("Generating root CA public/private keys");
             final KeyPair keyPair = CertUtils.generateRandomKeyPair(2 * CAManager.CertKeySize.value());
             if (!configDao.update(rootCAPublicKey.key(), rootCAPublicKey.category(), CertUtils.publicKeyToPem(keyPair.getPublic()))) {
-                LOG.error("Failed to save RootCA public key");
+                logger.error("Failed to save RootCA public key");
             }
             if (!configDao.update(rootCAPrivateKey.key(), rootCAPrivateKey.category(), CertUtils.privateKeyToPem(keyPair.getPrivate()))) {
-                LOG.error("Failed to save RootCA private key");
+                logger.error("Failed to save RootCA private key");
             }
         } catch (final NoSuchProviderException | NoSuchAlgorithmException | IOException e) {
-            LOG.error("Failed to generate/save RootCA private/public keys due to exception:", e);
+            logger.error("Failed to generate/save RootCA private/public keys due to exception:", e);
         }
         return loadRootCAKeyPair();
     }
@@ -329,16 +327,16 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
             throw new CloudRuntimeException("Cannot issue self-signed root CA certificate as CA keypair is not initialized");
         }
         try {
-            LOG.debug("Generating root CA certificate");
+            logger.debug("Generating root CA certificate");
             final X509Certificate rootCaCertificate = CertUtils.generateV3Certificate(
                     null, caKeyPair, caKeyPair.getPublic(),
                     rootCAIssuerDN.value(), CAManager.CertSignatureAlgorithm.value(),
                     getCaValidityDays(), null, null);
             if (!configDao.update(rootCACertificate.key(), rootCACertificate.category(), CertUtils.x509CertificateToPem(rootCaCertificate))) {
-                LOG.error("Failed to update RootCA public/x509 certificate");
+                logger.error("Failed to update RootCA public/x509 certificate");
             }
         } catch (final CertificateException | NoSuchAlgorithmException | NoSuchProviderException | SignatureException | InvalidKeyException | OperatorCreationException | IOException e) {
-            LOG.error("Failed to generate RootCA certificate from private/public keys due to exception:", e);
+            logger.error("Failed to generate RootCA certificate from private/public keys due to exception:", e);
             return false;
         }
         return loadRootCACertificate();
@@ -351,7 +349,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
         try {
             caKeyPair = new KeyPair(CertUtils.pemToPublicKey(rootCAPublicKey.value()), CertUtils.pemToPrivateKey(rootCAPrivateKey.value()));
         } catch (InvalidKeySpecException | IOException e) {
-            LOG.error("Failed to load saved RootCA private/public keys due to exception:", e);
+            logger.error("Failed to load saved RootCA private/public keys due to exception:", e);
             return false;
         }
         return caKeyPair.getPrivate() != null && caKeyPair.getPublic() != null;
@@ -365,7 +363,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
             caCertificate = CertUtils.pemToX509Certificate(rootCACertificate.value());
             caCertificate.verify(caKeyPair.getPublic());
         } catch (final IOException | CertificateException | NoSuchAlgorithmException | InvalidKeyException | SignatureException | NoSuchProviderException e) {
-            LOG.error("Failed to load saved RootCA certificate due to exception:", e);
+            logger.error("Failed to load saved RootCA certificate due to exception:", e);
             return false;
         }
         return caCertificate != null;
@@ -387,7 +385,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
         if (serverCertificate == null || serverCertificate.getPrivateKey() == null) {
             throw new CloudRuntimeException("Failed to generate management server certificate and load management server keystore");
         }
-        LOG.info("Creating new management server certificate and keystore");
+        logger.info("Creating new management server certificate and keystore");
         try {
             managementKeyStore = KeyStore.getInstance("JKS");
             managementKeyStore.load(null, null);
@@ -395,7 +393,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
             managementKeyStore.setKeyEntry(managementAlias, serverCertificate.getPrivateKey(), getKeyStorePassphrase(),
                     new X509Certificate[]{serverCertificate.getClientCertificate(), caCertificate});
         } catch (final CertificateException | NoSuchAlgorithmException | KeyStoreException | IOException  e) {
-            LOG.error("Failed to load root CA management-server keystore due to exception: ", e);
+            logger.error("Failed to load root CA management-server keystore due to exception: ", e);
             return false;
         }
         return managementKeyStore != null;
@@ -404,20 +402,20 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
     protected void addConfiguredManagementIp(List<String> ipList) {
         String msNetworkCidr = configDao.getValue(Config.ManagementNetwork.key());
         try {
-            LOG.debug(String.format("Trying to find management IP in CIDR range [%s].", msNetworkCidr));
+            logger.debug(String.format("Trying to find management IP in CIDR range [%s].", msNetworkCidr));
             Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
 
             networkInterfaces.asIterator().forEachRemaining(networkInterface -> {
                 networkInterface.getInetAddresses().asIterator().forEachRemaining(inetAddress -> {
                     if (NetUtils.isIpWithInCidrRange(inetAddress.getHostAddress(), msNetworkCidr)) {
                         ipList.add(inetAddress.getHostAddress());
-                        LOG.debug(String.format("Added IP [%s] to the list of IPs in the management server's certificate.", inetAddress.getHostAddress()));
+                        logger.debug(String.format("Added IP [%s] to the list of IPs in the management server's certificate.", inetAddress.getHostAddress()));
                     }
                 });
             });
         } catch (SocketException e) {
             String msg = "Exception while trying to gather the management server's network interfaces.";
-            LOG.error(msg, e);
+            logger.error(msg, e);
             throw new CloudRuntimeException(msg, e);
         }
     }
@@ -425,15 +423,15 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
 
     private boolean setupCA() {
         if (!loadRootCAKeyPair() && !saveNewRootCAKeypair()) {
-            LOG.error("Failed to save and load root CA keypair");
+            logger.error("Failed to save and load root CA keypair");
             return false;
         }
         if (!loadRootCACertificate() && !saveNewRootCACertificate()) {
-            LOG.error("Failed to save and load root CA certificate");
+            logger.error("Failed to save and load root CA certificate");
             return false;
         }
         if (!loadManagementKeyStore()) {
-            LOG.error("Failed to check and configure management server keystore");
+            logger.error("Failed to check and configure management server keystore");
             return false;
         }
         return true;
@@ -458,7 +456,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
                     caLock.unlock();
                 }
             } else {
-                LOG.error("Failed to grab lock and setup CA, startup method will try to load the CA certificate and keypair.");
+                logger.error("Failed to grab lock and setup CA, startup method will try to load the CA certificate and keypair.");
             }
         } finally {
             caLock.releaseRef();

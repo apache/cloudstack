@@ -26,11 +26,9 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.OvsProviderResponse;
 import org.apache.cloudstack.api.response.ProviderResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -42,20 +40,19 @@ import com.cloud.network.element.VirtualRouterElementService;
 @APICommand(name = "listOvsElements", description = "Lists all available ovs elements.", responseObject = OvsProviderResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListOvsElementsCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger
-        .getLogger(ListNetworkOfferingsCmd.class.getName());
+
     @Inject
     private List<VirtualRouterElementService> _service;
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = OvsProviderResponse.class, description = "list ovs elements by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = OvsProviderResponse.class, description = "List ovs elements by id")
     private Long id;
 
-    @Parameter(name = ApiConstants.NSP_ID, type = CommandType.UUID, entityType = ProviderResponse.class, description = "list ovs elements by network service provider id")
+    @Parameter(name = ApiConstants.NSP_ID, type = CommandType.UUID, entityType = ProviderResponse.class, description = "List ovs elements by network service provider id")
     private Long nspId;
 
-    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, description = "list network offerings by enabled state")
+    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, description = "List network offerings by enabled state")
     private Boolean enabled;
 
     // ///////////////////////////////////////////////////

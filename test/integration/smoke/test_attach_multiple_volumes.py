@@ -211,7 +211,7 @@ class TestMultipleVolumeAttach(cloudstackTestCase):
         clusterid = host.clusterid
         storage_pools = StoragePool.list(self.apiClient, clusterid=clusterid)
         if len(storage_pools) < 2:
-            self.skipTest("at least two accesible primary storage pools needed for the vm to perform this test")
+            self.skipTest("at least two accessible primary storage pools needed for the vm to perform this test")
         return storage_pools
 
 

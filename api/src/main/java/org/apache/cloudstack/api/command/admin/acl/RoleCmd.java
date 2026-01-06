@@ -59,6 +59,7 @@ public abstract class RoleCmd extends BaseCmd {
         response.setRoleType(role.getRoleType());
         response.setDescription(role.getDescription());
         response.setPublicRole(role.isPublicRole());
+        response.setState(role.getState().toString());
         response.setResponseName(getCommandName());
         response.setObjectName("role");
         setResponseObject(response);

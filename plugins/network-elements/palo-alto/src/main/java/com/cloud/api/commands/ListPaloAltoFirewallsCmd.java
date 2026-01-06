@@ -21,7 +21,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -42,11 +41,10 @@ import com.cloud.network.dao.ExternalFirewallDeviceVO;
 import com.cloud.network.element.PaloAltoFirewallElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listPaloAltoFirewalls", responseObject = PaloAltoFirewallResponse.class, description = "lists Palo Alto firewall devices in a physical network",
+@APICommand(name = "listPaloAltoFirewalls", responseObject = PaloAltoFirewallResponse.class, description = "Lists Palo Alto firewall devices in a physical Network",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListPaloAltoFirewallsCmd extends BaseListCmd {
 
-    public static final Logger s_logger = Logger.getLogger(ListPaloAltoFirewallsCmd.class.getName());
     private static final String s_name = "listpaloaltofirewallresponse";
     @Inject
     PaloAltoFirewallElementService _paFwService;
@@ -55,7 +53,7 @@ public class ListPaloAltoFirewallsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "the Physical Network ID")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "The Physical Network ID")
     private Long physicalNetworkId;
 
     @Parameter(name = ApiConstants.FIREWALL_DEVICE_ID, type = CommandType.UUID, entityType = PaloAltoFirewallResponse.class, description = "Palo Alto firewall device ID")

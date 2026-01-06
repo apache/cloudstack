@@ -19,6 +19,7 @@ package com.cloud.vm;
 public interface VmDetailConstants {
     String KEYBOARD = "keyboard";
     String CPU_CORE_PER_SOCKET = "cpu.corespersocket";
+    String CPU_THREAD_PER_CORE = "cpu.threadspercore";
     String ROOT_DISK_SIZE = "rootdisksize";
     String BOOT_MODE = "boot.mode";
     String NAME_ON_HYPERVISOR= "nameonhypervisor";
@@ -100,4 +101,13 @@ public interface VmDetailConstants {
     String VMWARE_HOST_NAME = String.format("%s-host", VMWARE_TO_KVM_PREFIX);
     String VMWARE_DISK = String.format("%s-disk", VMWARE_TO_KVM_PREFIX);
     String VMWARE_MAC_ADDRESSES = String.format("%s-mac-addresses", VMWARE_TO_KVM_PREFIX);
+
+    // TPM
+    String VIRTUAL_TPM_ENABLED = "virtual.tpm.enabled";
+    String VIRTUAL_TPM_MODEL = "virtual.tpm.model";
+    String VIRTUAL_TPM_VERSION = "virtual.tpm.version";
+
+    // CPU mode and model, ADMIN only
+    String GUEST_CPU_MODE = "guest.cpu.mode";
+    String GUEST_CPU_MODEL = "guest.cpu.model";
 }

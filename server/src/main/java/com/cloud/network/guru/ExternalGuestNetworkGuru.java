@@ -24,7 +24,6 @@ import javax.inject.Inject;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -72,7 +71,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
-    private static final Logger s_logger = Logger.getLogger(ExternalGuestNetworkGuru.class);
     @Inject
     NetworkOrchestrationService _networkMgr;
     @Inject
@@ -104,25 +102,28 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
                 && isMyIsolationMethod(physicalNetwork) && !offering.isSystemOnly()) {
             return true;
         } else {
-            s_logger.trace("We only take care of Guest networks of type   " + GuestType.Isolated + " in zone of type " + NetworkType.Advanced);
+            logger.trace("We only take care of Guest networks of type   " + GuestType.Isolated + " in zone of type " + NetworkType.Advanced);
             return false;
         }
     }
 
     @Override
-    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
+    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, String name, Long vpcId, Account owner) {
 
         if (_networkModel.areServicesSupportedByNetworkOffering(offering.getId(), Network.Service.Connectivity)) {
             return null;
         }
 
-        NetworkVO config = (NetworkVO)super.design(offering, plan, userSpecified, owner);
+        NetworkVO config = (NetworkVO)super.design(offering, plan, userSpecified, name, vpcId, owner);
         if (config == null) {
             return null;
         } else if (_networkModel.networkIsConfiguredForExternalNetworking(plan.getDataCenterId(), config.getId())) {
             /* In order to revert userSpecified network setup */
             config.setState(State.Allocated);
         }
+
+        getOrCreateIpv4SubnetForGuestNetwork(offering, config, userSpecified, owner);
+
         return updateNetworkDesignForIPv6IfNeeded(config, userSpecified);
     }
 
@@ -255,7 +256,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         InsufficientAddressCapacityException {
 
         if (_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId()) && nic != null && nic.getRequestedIPv4() != null) {
-            throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);
+            throw new CloudRuntimeException("Does not support custom IP allocation at this time: " + nic);
         }
 
         NicProfile profile = super.allocate(config, nic, vm);
@@ -273,8 +274,8 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             if (!isPublicNetwork) {
                 Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(config, null);
                 if (placeholderNic == null) {
-                    s_logger.debug("Saving placeholder nic with ip4 address " + profile.getIPv4Address() +
-                            " and ipv6 address " + profile.getIPv6Address() + " for the network " + config);
+                    logger.debug("Saving placeholder NIC with IPv4 address " + profile.getIPv4Address() +
+                            " and IPv6 address " + profile.getIPv6Address() + " for the Network " + config);
                     _networkMgr.savePlaceholderNic(config, profile.getIPv4Address(), profile.getIPv6Address(), VirtualMachine.Type.DomainRouter);
                 }
             }
@@ -299,7 +300,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     @Override
     public void reserve(NicProfile nic, Network config, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
         throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
-        assert (nic.getReservationStrategy() == ReservationStrategy.Start) : "What can I do for nics that are not allocated at start? ";
+        assert (nic.getReservationStrategy() == ReservationStrategy.Start) : "What can I do for NICs that are not allocated at start? ";
 
         DataCenter dc = _dcDao.findById(config.getDataCenterId());
 

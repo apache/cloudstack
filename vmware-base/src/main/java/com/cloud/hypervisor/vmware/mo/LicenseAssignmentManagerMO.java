@@ -18,7 +18,6 @@ package com.cloud.hypervisor.vmware.mo;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import com.vmware.vim25.KeyAnyValue;
 import com.vmware.vim25.KeyValue;
@@ -31,7 +30,6 @@ import com.cloud.hypervisor.vmware.util.VmwareContext;
 public class LicenseAssignmentManagerMO extends BaseMO {
 
     @SuppressWarnings("unused")
-    private static final Logger s_logger = Logger.getLogger(LicenseAssignmentManagerMO.class);
     private static final String LICENSE_INFO_FEATURE = "feature";
 
     public LicenseAssignmentManagerMO(VmwareContext context, ManagedObjectReference mor) {

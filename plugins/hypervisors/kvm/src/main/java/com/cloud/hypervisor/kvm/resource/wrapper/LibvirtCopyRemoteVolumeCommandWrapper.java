@@ -37,7 +37,6 @@ import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
 
 import java.util.Arrays;
@@ -47,8 +46,6 @@ import java.util.Map;
 
 @ResourceWrapper(handles = CopyRemoteVolumeCommand.class)
 public final class LibvirtCopyRemoteVolumeCommandWrapper extends CommandWrapper<CopyRemoteVolumeCommand, Answer, LibvirtComputingResource> {
-
-    private static final Logger s_logger = Logger.getLogger(LibvirtCopyRemoteVolumeCommandWrapper.class);
     private static final List<Storage.StoragePoolType> STORAGE_POOL_TYPES_SUPPORTED = Arrays.asList(Storage.StoragePoolType.Filesystem, Storage.StoragePoolType.NetworkFilesystem);
 
     @Override
@@ -67,7 +64,7 @@ public final class LibvirtCopyRemoteVolumeCommandWrapper extends CommandWrapper<
         try {
             if (STORAGE_POOL_TYPES_SUPPORTED.contains(storageFilerTO.getType())) {
                 String filename = libvirtComputingResource.copyVolume(srcIp, username, password, dstPath, srcFile, tmpPath, timeoutInSecs);
-                s_logger.debug("Volume " + srcFile + " copy successful, copied to file: " + filename);
+                logger.debug("Volume " + srcFile + " copy successful, copied to file: " + filename);
                 final KVMPhysicalDisk vol = pool.getPhysicalDisk(filename);
                 final String path = vol.getPath();
                 try {
@@ -83,7 +80,7 @@ public final class LibvirtCopyRemoteVolumeCommandWrapper extends CommandWrapper<
                 return new Answer(command, false, msg);
             }
         } catch (final Exception e) {
-            s_logger.error("Error while copying volume file from remote host: " + e.getMessage(), e);
+            logger.error("Error while copying volume file from remote host: " + e.getMessage(), e);
             String msg = "Failed to copy volume due to: " + e.getMessage();
             return new Answer(command, false, msg);
         }
