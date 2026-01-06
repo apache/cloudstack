@@ -39,7 +39,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -287,12 +286,15 @@ public class ErrorMessageResolver {
 
         if (key == null) {
             Throwable cause = cre.getCause();
-            if (!(cause instanceof InvalidParameterValueException)) {
+            if (!(cause instanceof CloudRuntimeException)) {
                 return;
             }
-            InvalidParameterValueException ipve = (InvalidParameterValueException) cause;
-            key = ipve.getMessageKey();
-            map = ipve.getMetadata();
+            CloudRuntimeException causeEx = (CloudRuntimeException) cause;
+            key = causeEx.getMessageKey();
+            if (key == null) {
+                return;
+            }
+            map = causeEx.getMetadata();
         }
         response.setErrorTextKey(key);
         String template = getTemplateForKey(key);
