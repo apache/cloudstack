@@ -1627,6 +1627,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
 
         Map<String, Long> templateNodeTypeMap = cmd.getTemplateNodeTypeMap();
+        Map<String, Long> affinityGroupNodeTypeMap = cmd.getAffinityGroupNodeTypeMap();
         final VMTemplateVO finalTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, DEFAULT, clusterKubernetesVersion);
         final VMTemplateVO controlNodeTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, CONTROL, clusterKubernetesVersion);
         final VMTemplateVO workerNodeTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, WORKER, clusterKubernetesVersion);
@@ -1667,6 +1668,15 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 }
                 newCluster.setWorkerNodeTemplateId(workerNodeTemplate.getId());
                 newCluster.setControlNodeTemplateId(controlNodeTemplate.getId());
+                if (affinityGroupNodeTypeMap.containsKey(WORKER.name())) {
+                    newCluster.setWorkerNodeAffinityGroupId(affinityGroupNodeTypeMap.get(WORKER.name()));
+                }
+                if (affinityGroupNodeTypeMap.containsKey(CONTROL.name())) {
+                    newCluster.setControlNodeAffinityGroupId(affinityGroupNodeTypeMap.get(CONTROL.name()));
+                }
+                if (etcdNodes > 0 && affinityGroupNodeTypeMap.containsKey(ETCD.name())) {
+                    newCluster.setEtcdNodeAffinityGroupId(affinityGroupNodeTypeMap.get(ETCD.name()));
+                }
                 if (zone.isSecurityGroupEnabled()) {
                     newCluster.setSecurityGroupId(finalSecurityGroup.getId());
                 }
