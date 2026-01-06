@@ -135,7 +135,7 @@ public class ErrorMessageResolverTest {
     public void getCombinedMetadataFromErrorTemplate_shouldReturnEmptyMapWhenContextMetadataIsEmpty() {
         String template = "This template has {{var1}}.";
         Map<String, Object> metadata = Map.of();
-        when(callContextMock.getContextStringKeyParameters()).thenReturn(Map.of());
+        when(callContextMock.getErrorContextParameters()).thenReturn(Map.of());
         Map<String, Object> result = ErrorMessageResolver.getCombinedMetadataFromErrorTemplate(template, metadata);
         Assert.assertTrue("Result should be an empty map", result.isEmpty());
     }
@@ -144,7 +144,7 @@ public class ErrorMessageResolverTest {
     public void getCombinedMetadataFromErrorTemplate_shouldCombineContextAndProvidedMetadata() {
         String template = "This template has {{var1}} and {{var2}}.";
         Map<String, Object> metadata = Map.of("key1", "value1");
-        when(callContextMock.getContextStringKeyParameters()).thenReturn(Map.of("var1", "valueVar1", "var2", "valueVar2"));
+        when(callContextMock.getErrorContextParameters()).thenReturn(Map.of("var1", "valueVar1", "var2", "valueVar2"));
         Map<String, Object> result = ErrorMessageResolver.getCombinedMetadataFromErrorTemplate(template, metadata);
         Assert.assertEquals("Result should contain combined metadata", 3, result.size());
         Assert.assertEquals("Result should contain context metadata for var1", "valueVar1", result.get("var1"));
@@ -156,7 +156,7 @@ public class ErrorMessageResolverTest {
     public void getCombinedMetadataFromErrorTemplate_shouldIgnoreVariablesNotInContextMetadata() {
         String template = "This template has {{var1}} and {{var2}}.";
         Map<String, Object> metadata = Map.of("key1", "value1");
-        when(callContextMock.getContextStringKeyParameters()).thenReturn(Map.of("var1", "valueVar1"));
+        when(callContextMock.getErrorContextParameters()).thenReturn(Map.of("var1", "valueVar1"));
         Map<String, Object> result = ErrorMessageResolver.getCombinedMetadataFromErrorTemplate(template, metadata);
         Assert.assertEquals("Result should contain combined metadata", 2, result.size());
         Assert.assertEquals("Result should contain context metadata for var1", "valueVar1", result.get("var1"));
@@ -332,7 +332,7 @@ public class ErrorMessageResolverTest {
         String template = "Error occurred: {{field}}";
         Map<String, Object> metadata = Map.of("field", "value");
         createTempFileWithTemplate(errorKey, template);
-        when(callContextMock.getContextStringKeyParameters()).thenReturn(Map.of());
+        when(callContextMock.getErrorContextParameters()).thenReturn(Map.of());
         String result = ErrorMessageResolver.getMessage(errorKey, metadata);
         Assert.assertEquals("Error occurred: value", result);
     }
@@ -361,7 +361,7 @@ public class ErrorMessageResolverTest {
         String template = "Error in {{field1}} and {{field2}}.";
         Map<String, Object> metadata = Map.of("field1", "value1");
         createTempFileWithTemplate(errorKey, template);
-        when(callContextMock.getContextStringKeyParameters()).thenReturn(Map.of("field2", "value2"));
+        when(callContextMock.getErrorContextParameters()).thenReturn(Map.of("field2", "value2"));
         String result = ErrorMessageResolver.getMessage(errorKey, metadata);
         Assert.assertEquals("Error in value1 and value2.", result);
     }

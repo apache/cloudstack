@@ -558,7 +558,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
                 if (domainResourceLimit != Resource.RESOURCE_UNLIMITED && requestedDomainResourceCount > domainResourceLimit) {
                     String message = "Maximum" + messageSuffix;
-                    Map<Object, Object> details = new HashMap<>();
+                    Map<String, Object> details = new HashMap<>();
                     details.put("resourceTypeDisplay", StringUtils.isBlank(tag) ? type.getDisplayName() : type.getDisplayName() + " (tag: " + tag + ")");
                     details.put("resourceOwner", ObjectUtils.firstNonNull(project, account));
                     details.put("resourceOwnerDomain", domain);
@@ -567,7 +567,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                     details.put("resourceAmount", convCurrentDomainResourceCount);
                     details.put("resourceReserved", convCurrentResourceReservation);
                     details.put("resourceRequested", convNumResources);
-                    CallContext.current().putContextParameters(details);
+                    CallContext.current().putErrorContextParameters(details);
                     ResourceAllocationException e = new ResourceAllocationException(message, type);
                     logger.error(message, e);
                     throw e;
@@ -607,7 +607,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
         if (accountResourceLimit != Resource.RESOURCE_UNLIMITED && requestedResourceCount > accountResourceLimit) {
             String message = "Maximum" + messageSuffix;
-            Map<Object, Object> details = new HashMap<>();
+            Map<String, Object> details = new HashMap<>();
             details.put("resourceTypeDisplay", StringUtils.isBlank(tag) ? type.getDisplayName() : type.getDisplayName() + " (tag: " + tag + ")");
             details.put("resourceOwner", ObjectUtils.firstNonNull(project, account));
             details.put("resourceOwnerType", project == null ? "Account" : "Project");
@@ -615,7 +615,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             details.put("resourceAmount", convertedCurrentResourceCount);
             details.put("resourceReserved", convertedCurrentResourceReservation);
             details.put("resourceRequested", convertedNumResources);
-            CallContext.current().putContextParameters(details);
+            CallContext.current().putErrorContextParameters(details);
             ResourceAllocationException e = new ResourceAllocationException(message, type);
             logger.error(message, e);
             throw e;

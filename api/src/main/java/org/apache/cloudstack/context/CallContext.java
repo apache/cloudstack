@@ -20,10 +20,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.managed.threadlocal.ManagedThreadLocal;
+import org.apache.commons.collections.MapUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
@@ -68,6 +68,7 @@ public class CallContext {
     private User user;
     private long userId;
     private final Map<Object, Object> context = new HashMap<Object, Object>();
+    private final Map<String, Object> errorContext = new HashMap<String, Object>();
     private Project project;
     private String apiName;
 
@@ -418,17 +419,26 @@ public class CallContext {
         return context;
     }
 
-    public Map<String, Object> getContextStringKeyParameters() {
-            return context.entrySet().stream()
-                .filter(entry -> entry.getKey() instanceof String)
-                .collect(Collectors.toMap(entry -> (String) entry.getKey(), Map.Entry::getValue));
-        }
-
     public void putContextParameters(Map<Object, Object> details){
         if (details == null) return;
         for(Map.Entry<Object,Object>entry : details.entrySet()){
             putContextParameter(entry.getKey(), entry.getValue());
         }
+    }
+
+    public Map<String, Object> getErrorContextParameters() {
+        return errorContext;
+    }
+
+    public void putErrorContextParameter(String key, Object value) {
+        errorContext.put(key, value);
+    }
+
+    public void putErrorContextParameters(Map<String, Object> details) {
+        if (MapUtils.isEmpty(details)) {
+            return;
+        }
+        errorContext.putAll(details);
     }
 
     public static void setActionEventInfo(String eventType, String description) {
