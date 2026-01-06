@@ -6325,7 +6325,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
         if (zone == null) {
-            throw new InvalidParameterValueException("Unable to find zone by id=" + zoneId);
+            throw new InvalidParameterValueException("vm.deploy.zone.not.found", Collections.emptyMap());
         }
 
         Long serviceOfferingId = cmd.getServiceOfferingId();
@@ -6336,7 +6336,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         ServiceOffering serviceOffering = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
         if (serviceOffering == null) {
-            throw new InvalidParameterValueException("Unable to find service offering: " + serviceOffering.getId());
+            throw new InvalidParameterValueException("vm.deploy.serviceoffering.not.found", Collections.emptyMap());
         }
         verifyServiceOffering(cmd, serviceOffering);
 
@@ -6350,14 +6350,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (cmd.getVolumeId() != null) {
             volume = getVolume(cmd.getVolumeId(), templateId, false);
             if (volume == null) {
-                throw new InvalidParameterValueException("Could not find volume with id=" + cmd.getVolumeId());
+                throw new InvalidParameterValueException("vm.deploy.volume.not.found", Collections.emptyMap());
             }
             _accountMgr.checkAccess(caller, null, true, volume);
             templateId = volume.getTemplateId();
         } else if (cmd.getSnapshotId() != null) {
             snapshot = _snapshotDao.findById(cmd.getSnapshotId());
             if (snapshot == null) {
-                throw new InvalidParameterValueException("Could not find snapshot with id=" + cmd.getSnapshotId());
+                throw new InvalidParameterValueException("vm.deploy.snapshot.not.found", Collections.emptyMap());
             }
             _accountMgr.checkAccess(caller, null, true, snapshot);
             VolumeInfo volumeOfSnapshot = getVolume(snapshot.getVolumeId(), templateId, true);
@@ -6367,16 +6367,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         VirtualMachineTemplate template = null;
         if (volume != null || snapshot != null) {
             template = _entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, templateId);
+            if (template == null) {
+                throw new InvalidParameterValueException("vm.deploy.template.associated.not.usable", Collections.emptyMap());
+            }
         } else {
             template = _entityMgr.findById(VirtualMachineTemplate.class, templateId);
+            if (template == null) {
+                throw new InvalidParameterValueException("vm.deploy.template.not.found", Collections.emptyMap());
+            }
         }
         if (cmd.isVolumeOrSnapshotProvided() &&
                 (!(HypervisorType.KVM.equals(template.getHypervisorType()) || HypervisorType.KVM.equals(cmd.getHypervisor())))) {
-            throw new InvalidParameterValueException("Deploying a virtual machine with existing volume/snapshot is supported only from KVM hypervisors");
-        }
-        // Make sure a valid template ID was specified
-        if (template == null) {
-            throw new InvalidParameterValueException("Unable to use template " + templateId);
+            throw new InvalidParameterValueException("vm.deploy.hypervisor.volume.snapshot.not.supported", Collections.emptyMap());
         }
         verifyTemplate(cmd, template, serviceOfferingId);
 
@@ -6385,25 +6387,29 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (diskOfferingId != null) {
             diskOffering = _entityMgr.findById(DiskOffering.class, diskOfferingId);
             if (diskOffering == null) {
-                throw new InvalidParameterValueException("Unable to find disk offering " + diskOfferingId);
+                throw new InvalidParameterValueException("vm.deploy.diskoffering.not.found", Collections.emptyMap());
             }
             if (diskOffering.isComputeOnly()) {
-                throw new InvalidParameterValueException(String.format("The disk offering %s provided is directly mapped to a service offering, please provide an individual disk offering", diskOffering));
+                throw new InvalidParameterValueException("vm.deploy.diskoffering.compute.only",
+                        Map.of("diskOffering", diskOffering));
             }
         }
 
         List<VmDiskInfo> dataDiskInfoList = cmd.getDataDiskInfoList();
         if (dataDiskInfoList != null && diskOfferingId != null) {
-            new InvalidParameterValueException("Cannot specify both disk offering id and data disk offering details");
+            throw new InvalidParameterValueException("vm.deploy.diskoffering.with.diskoffering.details",
+                    Collections.emptyMap());
         }
 
         if (!zone.isLocalStorageEnabled()) {
             DiskOffering diskOfferingMappedInServiceOffering = _entityMgr.findById(DiskOffering.class, serviceOffering.getDiskOfferingId());
             if (diskOfferingMappedInServiceOffering.isUseLocalStorage()) {
-                throw new InvalidParameterValueException("Zone is not configured to use local storage but disk offering " + diskOfferingMappedInServiceOffering.getName() + " mapped in service offering uses it");
+                throw new InvalidParameterValueException("vm.deploy.serviceoffering.local.storage.zone.unsupported",
+                        Map.of("serviceOffering", serviceOffering));
             }
             if (diskOffering != null && diskOffering.isUseLocalStorage()) {
-                throw new InvalidParameterValueException("Zone is not configured to use local storage but disk offering " + diskOffering.getName() + " uses it");
+                throw new InvalidParameterValueException("vm.deploy.diskoffering.local.storage.zone.unsupported",
+                        Map.of("diskOffering", diskOffering));
             }
         }
 

@@ -46,7 +46,7 @@ public class ExceptionResponse extends BaseResponse {
 
     @SerializedName("errortextkey")
     @Param(description = "the key for the text associated with this error")
-    private String errorTextKey = "";
+    private String errorTextKey;
 
     @SerializedName("errormetadata")
     @Param(description = "the metadata associated with this error")
