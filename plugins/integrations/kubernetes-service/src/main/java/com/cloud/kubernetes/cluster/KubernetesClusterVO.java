@@ -139,14 +139,14 @@ public class KubernetesClusterVO implements KubernetesCluster {
     @Column(name = "etcd_node_template_id")
     private Long etcdNodeTemplateId;
 
-    @Column(name = "control_node_affinity_group_id")
-    private Long controlNodeAffinityGroupId;
+    @Column(name = "control_node_affinity_group_ids", length = 1024)
+    private String controlNodeAffinityGroupIds;
 
-    @Column(name = "worker_node_affinity_group_id")
-    private Long workerNodeAffinityGroupId;
+    @Column(name = "worker_node_affinity_group_ids", length = 1024)
+    private String workerNodeAffinityGroupIds;
 
-    @Column(name = "etcd_node_affinity_group_id")
-    private Long etcdNodeAffinityGroupId;
+    @Column(name = "etcd_node_affinity_group_ids", length = 1024)
+    private String etcdNodeAffinityGroupIds;
 
     @Column(name = "cni_config_id", nullable = true)
     private Long cniConfigId = null;
@@ -518,28 +518,28 @@ public class KubernetesClusterVO implements KubernetesCluster {
         this.controlNodeTemplateId = controlNodeTemplateId;
     }
 
-    public Long getControlNodeAffinityGroupId() {
-        return controlNodeAffinityGroupId;
+    public String getControlNodeAffinityGroupIds() {
+        return controlNodeAffinityGroupIds;
     }
 
-    public void setControlNodeAffinityGroupId(Long controlNodeAffinityGroupId) {
-        this.controlNodeAffinityGroupId = controlNodeAffinityGroupId;
+    public void setControlNodeAffinityGroupIds(String controlNodeAffinityGroupIds) {
+        this.controlNodeAffinityGroupIds = controlNodeAffinityGroupIds;
     }
 
-    public Long getWorkerNodeAffinityGroupId() {
-        return workerNodeAffinityGroupId;
+    public String getWorkerNodeAffinityGroupIds() {
+        return workerNodeAffinityGroupIds;
     }
 
-    public void setWorkerNodeAffinityGroupId(Long workerNodeAffinityGroupId) {
-        this.workerNodeAffinityGroupId = workerNodeAffinityGroupId;
+    public void setWorkerNodeAffinityGroupIds(String workerNodeAffinityGroupIds) {
+        this.workerNodeAffinityGroupIds = workerNodeAffinityGroupIds;
     }
 
-    public Long getEtcdNodeAffinityGroupId() {
-        return etcdNodeAffinityGroupId;
+    public String getEtcdNodeAffinityGroupIds() {
+        return etcdNodeAffinityGroupIds;
     }
 
-    public void setEtcdNodeAffinityGroupId(Long etcdNodeAffinityGroupId) {
-        this.etcdNodeAffinityGroupId = etcdNodeAffinityGroupId;
+    public void setEtcdNodeAffinityGroupIds(String etcdNodeAffinityGroupIds) {
+        this.etcdNodeAffinityGroupIds = etcdNodeAffinityGroupIds;
     }
 
     public Long getCniConfigId() {
