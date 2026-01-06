@@ -147,6 +147,11 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item v-if="isAdminOrDomainAdmin() && !samlAllowed" name="passwordChangeRequired" ref="passwordChangeRequired">
+            <a-checkbox v-model:checked="form.passwordChangeRequired">
+              {{ $t('label.change.password.onlogin') }}
+            </a-checkbox>
+        </a-form-item>
         <div v-if="samlAllowed">
           <a-form-item name="samlenable" ref="samlenable" :label="$t('label.samlenable')">
             <a-switch v-model:checked="form.samlenable" />
@@ -383,6 +388,10 @@ export default {
 
       if (this.isValidValueForKey(rawParams, 'timezone') && rawParams.timezone.length > 0) {
         params.timezone = rawParams.timezone
+      }
+      console.log('rawParams.passwordChangeRequired', rawParams.passwordChangeRequired)
+      if (this.isAdminOrDomainAdmin() && rawParams.passwordChangeRequired === true) {
+        params.passwordchangerequired = rawParams.passwordChangeRequired
       }
 
       return postAPI('createUser', params)

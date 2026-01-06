@@ -69,7 +69,7 @@ public class CreateUserCmdTest {
         } catch (ServerApiException e) {
             Assert.assertTrue("Received exception as the mock accountService createUser returns null user", true);
         }
-        Mockito.verify(accountService, Mockito.times(1)).createUser(null, "Test", null, null, null, null, null, null, null);
+        Mockito.verify(accountService, Mockito.times(1)).createUser(null, "Test", null, null, null, null, null, null, null, false);
     }
 
     @Test
@@ -82,7 +82,7 @@ public class CreateUserCmdTest {
             Assert.assertEquals(ApiErrorCode.PARAM_ERROR,e.getErrorCode());
             Assert.assertEquals("Empty passwords are not allowed", e.getMessage());
         }
-        Mockito.verify(accountService, Mockito.never()).createUser(null, null, null, null, null, null, null, null, null);
+        Mockito.verify(accountService, Mockito.never()).createUser(null, null, null, null, null, null, null, null, null, false);
     }
 
     @Test
@@ -95,6 +95,6 @@ public class CreateUserCmdTest {
             Assert.assertEquals(ApiErrorCode.PARAM_ERROR,e.getErrorCode());
             Assert.assertEquals("Empty passwords are not allowed", e.getMessage());
         }
-        Mockito.verify(accountService, Mockito.never()).createUser(null, null, null, null, null, null, null, null, null);
+        Mockito.verify(accountService, Mockito.never()).createUser(null, null, null, null, null, null, null, null, null, true);
     }
 }
