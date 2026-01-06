@@ -1112,4 +1112,41 @@ public class KubernetesClusterActionWorker {
         }
         return null;
     }
+
+    protected List<Long> getAffinityGroupIdsForNodeType(KubernetesClusterNodeType nodeType) {
+        String affinityGroupUuids = null;
+        switch (nodeType) {
+            case CONTROL:
+                affinityGroupUuids = kubernetesCluster.getControlNodeAffinityGroupIds();
+                break;
+            case WORKER:
+                affinityGroupUuids = kubernetesCluster.getWorkerNodeAffinityGroupIds();
+                break;
+            case ETCD:
+                affinityGroupUuids = kubernetesCluster.getEtcdNodeAffinityGroupIds();
+                break;
+            default:
+                return new ArrayList<>();
+        }
+        if (StringUtils.isBlank(affinityGroupUuids)) {
+            return new ArrayList<>();
+        }
+        List<Long> affinityGroupIds = new ArrayList<>();
+        for (String affinityGroupUuid : affinityGroupUuids.split(",")) {
+            AffinityGroupVO affinityGroupVO = affinityGroupDao.findByUuid(affinityGroupUuid.trim());
+            if (affinityGroupVO != null) {
+                affinityGroupIds.add(affinityGroupVO.getId());
+            }
+        }
+        return affinityGroupIds;
+    }
+
+    protected List<Long> getMergedAffinityGroupIds(KubernetesClusterNodeType nodeType, Long domainId, Long accountId) {
+        List<Long> affinityGroupIds = getAffinityGroupIdsForNodeType(nodeType);
+        Long explicitAffinityGroupId = getExplicitAffinityGroup(domainId, accountId);
+        if (explicitAffinityGroupId != null && !affinityGroupIds.contains(explicitAffinityGroupId)) {
+            affinityGroupIds.add(explicitAffinityGroupId);
+        }
+        return affinityGroupIds.isEmpty() ? null : affinityGroupIds;
+    }
 }
