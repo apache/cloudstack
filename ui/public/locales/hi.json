@@ -460,6 +460,5 @@
 "label.yourinstance": "आपका उदाहरण",
 "label.zone": "ज़ोन",
 "label.zoneid": "ज़ोन",
-"label.zonename": "ज़ोन नाम",
-"vm.deploy.serviceoffering.inactive": "इंस्टेंस डिप्लॉय नहीं किया जा सका क्योंकि दी गई सर्विस ऑफ़रिंग {{serviceOffering}} इनएक्टिव है।"
+"label.zonename": "ज़ोन नाम"
 }
