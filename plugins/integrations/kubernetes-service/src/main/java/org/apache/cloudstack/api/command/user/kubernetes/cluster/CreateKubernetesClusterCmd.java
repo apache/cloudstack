@@ -327,7 +327,7 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
         return kubernetesServiceHelper.getTemplateNodeTypeMap(templateNodeTypeMap);
     }
 
-    public Map<String, Long> getAffinityGroupNodeTypeMap() {
+    public Map<String, String> getAffinityGroupNodeTypeMap() {
         return kubernetesServiceHelper.getAffinityGroupNodeTypeMap(affinityGroupNodeTypeMap);
     }
 
