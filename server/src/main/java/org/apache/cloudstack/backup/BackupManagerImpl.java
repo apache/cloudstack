@@ -1795,6 +1795,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         cmdList.add(ListBackupProvidersCmd.class);
         cmdList.add(ListBackupProviderOfferingsCmd.class);
         cmdList.add(ImportBackupOfferingCmd.class);
+        cmdList.add(CloneBackupOfferingCmd.class);
         cmdList.add(ListBackupOfferingsCmd.class);
         cmdList.add(DeleteBackupOfferingCmd.class);
         cmdList.add(UpdateBackupOfferingCmd.class);
