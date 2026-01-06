@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.junit.Assert;
@@ -209,35 +208,86 @@ public class KubernetesServiceHelperImplTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void testCheckNodeTypeAffinityGroupEntryValuesInvalidNodeType() {
-        AffinityGroup affinityGroup = Mockito.mock(AffinityGroup.class);
-        kubernetesServiceHelper.checkNodeTypeAffinityGroupEntryValues("invalid-node-type", affinityGroup, "affinity-group-uuid");
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
-    public void testCheckNodeTypeAffinityGroupEntryValuesNullAffinityGroup() {
-        kubernetesServiceHelper.checkNodeTypeAffinityGroupEntryValues("control", null, "affinity-group-uuid");
+    public void testCheckNodeTypeAffinityGroupEntryNodeTypeInvalid() {
+        kubernetesServiceHelper.checkNodeTypeAffinityGroupEntryNodeType("invalid-node-type");
     }
 
     @Test
-    public void testCheckNodeTypeAffinityGroupEntryValuesValid() {
-        AffinityGroup affinityGroup = Mockito.mock(AffinityGroup.class);
-        kubernetesServiceHelper.checkNodeTypeAffinityGroupEntryValues("control", affinityGroup, "affinity-group-uuid");
+    public void testCheckNodeTypeAffinityGroupEntryNodeTypeValid() {
+        kubernetesServiceHelper.checkNodeTypeAffinityGroupEntryNodeType("control");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateAffinityGroupUuidBlank() {
+        kubernetesServiceHelper.validateAffinityGroupUuid("");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateAffinityGroupUuidNotFound() {
+        Mockito.when(affinityGroupDao.findByUuid("non-existent-uuid")).thenReturn(null);
+        kubernetesServiceHelper.validateAffinityGroupUuid("non-existent-uuid");
+    }
+
+    @Test
+    public void testValidateAffinityGroupUuidValid() {
+        AffinityGroupVO affinityGroup = Mockito.mock(AffinityGroupVO.class);
+        Mockito.when(affinityGroupDao.findByUuid("valid-uuid")).thenReturn(affinityGroup);
+        kubernetesServiceHelper.validateAffinityGroupUuid("valid-uuid");
+    }
+
+    @Test
+    public void testValidateAndNormalizeAffinityGroupUuidsSingleUuid() {
+        AffinityGroupVO affinityGroup = Mockito.mock(AffinityGroupVO.class);
+        Mockito.when(affinityGroupDao.findByUuid("uuid1")).thenReturn(affinityGroup);
+
+        String result = kubernetesServiceHelper.validateAndNormalizeAffinityGroupUuids("uuid1");
+        Assert.assertEquals("uuid1", result);
+    }
+
+    @Test
+    public void testValidateAndNormalizeAffinityGroupUuidsMultipleUuids() {
+        AffinityGroupVO affinityGroup1 = Mockito.mock(AffinityGroupVO.class);
+        AffinityGroupVO affinityGroup2 = Mockito.mock(AffinityGroupVO.class);
+        AffinityGroupVO affinityGroup3 = Mockito.mock(AffinityGroupVO.class);
+        Mockito.when(affinityGroupDao.findByUuid("uuid1")).thenReturn(affinityGroup1);
+        Mockito.when(affinityGroupDao.findByUuid("uuid2")).thenReturn(affinityGroup2);
+        Mockito.when(affinityGroupDao.findByUuid("uuid3")).thenReturn(affinityGroup3);
+
+        String result = kubernetesServiceHelper.validateAndNormalizeAffinityGroupUuids("uuid1,uuid2,uuid3");
+        Assert.assertEquals("uuid1,uuid2,uuid3", result);
+    }
+
+    @Test
+    public void testValidateAndNormalizeAffinityGroupUuidsWithSpaces() {
+        AffinityGroupVO affinityGroup1 = Mockito.mock(AffinityGroupVO.class);
+        AffinityGroupVO affinityGroup2 = Mockito.mock(AffinityGroupVO.class);
+        Mockito.when(affinityGroupDao.findByUuid("uuid1")).thenReturn(affinityGroup1);
+        Mockito.when(affinityGroupDao.findByUuid("uuid2")).thenReturn(affinityGroup2);
+
+        String result = kubernetesServiceHelper.validateAndNormalizeAffinityGroupUuids("  uuid1  ,  uuid2  ");
+        Assert.assertEquals("uuid1,uuid2", result);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateAndNormalizeAffinityGroupUuidsOneInvalid() {
+        AffinityGroupVO affinityGroup1 = Mockito.mock(AffinityGroupVO.class);
+        Mockito.when(affinityGroupDao.findByUuid("uuid1")).thenReturn(affinityGroup1);
+        Mockito.when(affinityGroupDao.findByUuid("invalid-uuid")).thenReturn(null);
+
+        kubernetesServiceHelper.validateAndNormalizeAffinityGroupUuids("uuid1,invalid-uuid");
     }
 
     @Test
     public void testAddNodeTypeAffinityGroupEntry() {
-        AffinityGroup affinityGroup = Mockito.mock(AffinityGroup.class);
-        Mockito.when(affinityGroup.getId()).thenReturn(100L);
-        Map<String, Long> mapping = new HashMap<>();
-        kubernetesServiceHelper.addNodeTypeAffinityGroupEntry("control", "affinity-group-uuid", affinityGroup, mapping);
+        Map<String, String> mapping = new HashMap<>();
+        kubernetesServiceHelper.addNodeTypeAffinityGroupEntry("control", "uuid1,uuid2", mapping);
         Assert.assertEquals(1, mapping.size());
-        Assert.assertEquals(Long.valueOf(100L), mapping.get("CONTROL"));
+        Assert.assertEquals("uuid1,uuid2", mapping.get("CONTROL"));
     }
 
     @Test
     public void testProcessNodeTypeAffinityGroupEntryAndAddToMappingIfValidEmptyEntry() {
-        Map<String, Long> mapping = new HashMap<>();
+        Map<String, String> mapping = new HashMap<>();
         kubernetesServiceHelper.processNodeTypeAffinityGroupEntryAndAddToMappingIfValid(new HashMap<>(), mapping);
         Assert.assertTrue(mapping.isEmpty());
     }
@@ -245,22 +295,38 @@ public class KubernetesServiceHelperImplTest {
     @Test
     public void testProcessNodeTypeAffinityGroupEntryAndAddToMappingIfValidValidEntry() {
         AffinityGroupVO affinityGroup = Mockito.mock(AffinityGroupVO.class);
-        Mockito.when(affinityGroup.getId()).thenReturn(100L);
         Mockito.when(affinityGroupDao.findByUuid("affinity-group-uuid")).thenReturn(affinityGroup);
 
         Map<String, String> entry = new HashMap<>();
         entry.put(VmDetailConstants.CKS_NODE_TYPE, "control");
         entry.put(VmDetailConstants.AFFINITY_GROUP, "affinity-group-uuid");
 
-        Map<String, Long> mapping = new HashMap<>();
+        Map<String, String> mapping = new HashMap<>();
         kubernetesServiceHelper.processNodeTypeAffinityGroupEntryAndAddToMappingIfValid(entry, mapping);
         Assert.assertEquals(1, mapping.size());
-        Assert.assertEquals(Long.valueOf(100L), mapping.get("CONTROL"));
+        Assert.assertEquals("affinity-group-uuid", mapping.get("CONTROL"));
+    }
+
+    @Test
+    public void testProcessNodeTypeAffinityGroupEntryAndAddToMappingIfValidMultipleUuids() {
+        AffinityGroupVO affinityGroup1 = Mockito.mock(AffinityGroupVO.class);
+        AffinityGroupVO affinityGroup2 = Mockito.mock(AffinityGroupVO.class);
+        Mockito.when(affinityGroupDao.findByUuid("uuid1")).thenReturn(affinityGroup1);
+        Mockito.when(affinityGroupDao.findByUuid("uuid2")).thenReturn(affinityGroup2);
+
+        Map<String, String> entry = new HashMap<>();
+        entry.put(VmDetailConstants.CKS_NODE_TYPE, "worker");
+        entry.put(VmDetailConstants.AFFINITY_GROUP, "uuid1,uuid2");
+
+        Map<String, String> mapping = new HashMap<>();
+        kubernetesServiceHelper.processNodeTypeAffinityGroupEntryAndAddToMappingIfValid(entry, mapping);
+        Assert.assertEquals(1, mapping.size());
+        Assert.assertEquals("uuid1,uuid2", mapping.get("WORKER"));
     }
 
     @Test
     public void testGetAffinityGroupNodeTypeMapEmptyMap() {
-        Map<String, Long> result = kubernetesServiceHelper.getAffinityGroupNodeTypeMap(null);
+        Map<String, String> result = kubernetesServiceHelper.getAffinityGroupNodeTypeMap(null);
         Assert.assertTrue(result.isEmpty());
 
         result = kubernetesServiceHelper.getAffinityGroupNodeTypeMap(new HashMap<>());
@@ -270,11 +336,9 @@ public class KubernetesServiceHelperImplTest {
     @Test
     public void testGetAffinityGroupNodeTypeMapValidEntries() {
         AffinityGroupVO controlAffinityGroup = Mockito.mock(AffinityGroupVO.class);
-        Mockito.when(controlAffinityGroup.getId()).thenReturn(100L);
         Mockito.when(affinityGroupDao.findByUuid("control-affinity-uuid")).thenReturn(controlAffinityGroup);
 
         AffinityGroupVO workerAffinityGroup = Mockito.mock(AffinityGroupVO.class);
-        Mockito.when(workerAffinityGroup.getId()).thenReturn(200L);
         Mockito.when(affinityGroupDao.findByUuid("worker-affinity-uuid")).thenReturn(workerAffinityGroup);
 
         Map<String, Map<String, String>> affinityGroupNodeTypeMap = new HashMap<>();
@@ -289,9 +353,30 @@ public class KubernetesServiceHelperImplTest {
         workerEntry.put(VmDetailConstants.AFFINITY_GROUP, "worker-affinity-uuid");
         affinityGroupNodeTypeMap.put("1", workerEntry);
 
-        Map<String, Long> result = kubernetesServiceHelper.getAffinityGroupNodeTypeMap(affinityGroupNodeTypeMap);
+        Map<String, String> result = kubernetesServiceHelper.getAffinityGroupNodeTypeMap(affinityGroupNodeTypeMap);
         Assert.assertEquals(2, result.size());
-        Assert.assertEquals(Long.valueOf(100L), result.get("CONTROL"));
-        Assert.assertEquals(Long.valueOf(200L), result.get("WORKER"));
+        Assert.assertEquals("control-affinity-uuid", result.get("CONTROL"));
+        Assert.assertEquals("worker-affinity-uuid", result.get("WORKER"));
+    }
+
+    @Test
+    public void testGetAffinityGroupNodeTypeMapMultipleUuidsPerNodeType() {
+        AffinityGroupVO ag1 = Mockito.mock(AffinityGroupVO.class);
+        AffinityGroupVO ag2 = Mockito.mock(AffinityGroupVO.class);
+        AffinityGroupVO ag3 = Mockito.mock(AffinityGroupVO.class);
+        Mockito.when(affinityGroupDao.findByUuid("ag1")).thenReturn(ag1);
+        Mockito.when(affinityGroupDao.findByUuid("ag2")).thenReturn(ag2);
+        Mockito.when(affinityGroupDao.findByUuid("ag3")).thenReturn(ag3);
+
+        Map<String, Map<String, String>> affinityGroupNodeTypeMap = new HashMap<>();
+
+        Map<String, String> controlEntry = new HashMap<>();
+        controlEntry.put(VmDetailConstants.CKS_NODE_TYPE, "control");
+        controlEntry.put(VmDetailConstants.AFFINITY_GROUP, "ag1,ag2,ag3");
+        affinityGroupNodeTypeMap.put("0", controlEntry);
+
+        Map<String, String> result = kubernetesServiceHelper.getAffinityGroupNodeTypeMap(affinityGroupNodeTypeMap);
+        Assert.assertEquals(1, result.size());
+        Assert.assertEquals("ag1,ag2,ag3", result.get("CONTROL"));
     }
 }
