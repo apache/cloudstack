@@ -22,17 +22,17 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.RegisterResponse;
+import org.apache.cloudstack.api.response.RegisterUserKeyResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 
 import com.cloud.user.Account;
 import com.cloud.user.User;
 
 @APICommand(name = "registerUserKeys",
-            responseObject = RegisterResponse.class,
+            responseObject = RegisterUserKeyResponse.class,
             description = "This command allows a user to register for the developer API, returning a secret key and an API key. This request is made through the integration API port, so it is a privileged command and must be made on behalf of a user. It is up to the implementer just how the username and password are entered, and then how that translates to an integration API request. Both secret key and API key should be returned to the user",
             requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class RegisterCmd extends BaseCmd {
+public class RegisterUserKeyCmd extends BaseCmd {
 
 
     /////////////////////////////////////////////////////
@@ -81,7 +81,7 @@ public class RegisterCmd extends BaseCmd {
     @Override
     public void execute() {
         String[] keys = _accountService.createApiKeyAndSecretKey(this);
-        RegisterResponse response = new RegisterResponse();
+        RegisterUserKeyResponse response = new RegisterUserKeyResponse();
         if (keys != null) {
             response.setApiKey(keys[0]);
             response.setSecretKey(keys[1]);

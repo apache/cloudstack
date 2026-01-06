@@ -33,7 +33,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "destroySystemVm", responseObject = SystemVmResponse.class, description = "Destroys a system virtual machine.", entityType = {VirtualMachine.class},
+@APICommand(name = "destroySystemVm", responseObject = SystemVmResponse.class, description = "Destroys a System VM.", entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DestroySystemVmCmd extends BaseAsyncCmd {
 
@@ -43,7 +43,7 @@ public class DestroySystemVmCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = SystemVmResponse.class,
                required = true,
-               description = "The ID of the system virtual machine")
+               description = "The ID of the System VM")
     private Long id;
 
     public Long getId() {
@@ -76,7 +76,7 @@ public class DestroySystemVmCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "destroying system vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
+        return "Destroying system Instance: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
     }
 
     @Override

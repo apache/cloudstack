@@ -427,7 +427,7 @@ public class DatabaseConfig {
         try {
             final File configFile = new File(_configFileName);
 
-            SAXParserFactory spfactory = SAXParserFactory.newInstance();
+            SAXParserFactory spfactory = ParserUtils.getSaferSAXParserFactory();
             final SAXParser saxParser = spfactory.newSAXParser();
             final DbConfigXMLHandler handler = new DbConfigXMLHandler();
             handler.setParent(this);

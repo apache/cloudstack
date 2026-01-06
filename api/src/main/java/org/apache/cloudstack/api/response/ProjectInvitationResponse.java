@@ -28,43 +28,43 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class ProjectInvitationResponse extends BaseResponse implements ControlledViewEntityResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the id of the invitation")
+    @Param(description = "The ID of the invitation")
     private String id;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the id of the project")
+    @Param(description = "The ID of the project")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the name of the project")
+    @Param(description = "The name of the project")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain id the project belongs to")
+    @Param(description = "The domain ID the project belongs to")
     private String domainId;
 
     @SerializedName(ApiConstants.USER_ID)
-    @Param(description = "the User ID")
+    @Param(description = "The User ID")
     private String userId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name where the project belongs to")
+    @Param(description = "The domain name where the project belongs to")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the Domain the project belongs to", since = "4.19.2.0")
+    @Param(description = "Path of the Domain the project belongs to", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account name of the project's owner")
+    @Param(description = "The Account name of the project's owner")
     private String accountName;
 
     @SerializedName(ApiConstants.EMAIL)
-    @Param(description = "the email the invitation was sent to")
+    @Param(description = "The email the invitation was sent to")
     private String email;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "the invitation state")
+    @Param(description = "The invitation state")
     private String invitationState;
 
     public void setId(String id) {

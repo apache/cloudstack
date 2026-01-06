@@ -657,7 +657,7 @@ public class NetUtils {
     }
 
     public static String[] getIpRangeFromCidr(final String cidr, final long size) {
-        assert size < MAX_CIDR : "You do know this is not for ipv6 right?  Keep it smaller than 32 but you have " + size;
+        assert size < MAX_CIDR : "You do know this is not for IPv6 right?  Keep it smaller than 32 but you have " + size;
         final String[] result = new String[2];
         final long ip = ip2Long(cidr);
         final long startNetMask = ip2Long(getCidrNetmask(size));
@@ -676,7 +676,7 @@ public class NetUtils {
     }
 
     public static Set<Long> getAllIpsFromCidr(final String cidr, final long size, final Set<Long> usedIps, int maxIps) {
-        assert size < MAX_CIDR : "You do know this is not for ipv6 right?  Keep it smaller than 32 but you have " + size;
+        assert size < MAX_CIDR : "You do know this is not for IPv6 right?  Keep it smaller than 32 but you have " + size;
         final Set<Long> result = new TreeSet<Long>();
         final long ip = ip2Long(cidr);
         final long startNetMask = ip2Long(getCidrNetmask(size));
@@ -722,7 +722,7 @@ public class NetUtils {
      * @return ip that is within the cidr range but not in the avoid set.  -1 if unable to find one.
      */
     public static long getRandomIpFromCidr(final long cidr, final int size, final SortedSet<Long> avoid) {
-        assert size < MAX_CIDR : "You do know this is not for ipv6 right?  Keep it smaller than 32 but you have " + size;
+        assert size < MAX_CIDR : "You do know this is not for IPv6 right?  Keep it smaller than 32 but you have " + size;
 
         final long startNetMask = ip2Long(getCidrNetmask(size));
         final long startIp = (cidr & startNetMask) + 1; //exclude the first ip since it isnt valid, e.g., 192.168.10.0
@@ -908,12 +908,12 @@ public class NetUtils {
         }
         final String[] cidrPair = cidr.split("\\/");
         if (cidrPair.length != 2) {
-            throw new CloudRuntimeException("cidr is not formatted correctly: "+ cidr);
+            throw new CloudRuntimeException("CIDR is not formatted correctly: "+ cidr);
         }
         final String cidrAddress = cidrPair[0];
         final String cidrSize = cidrPair[1];
         if (!isValidIp4(cidrAddress)) {
-            throw new CloudRuntimeException("cidr is not valid in ip space" + cidr);
+            throw new CloudRuntimeException("CIDR is not valid in IP space" + cidr);
         }
         long cidrSizeNum = getCidrSizeFromString(cidrSize);
         final long numericNetmask = netMaskFromCidr(cidrSizeNum);
@@ -1685,7 +1685,7 @@ public class NetUtils {
     }
 
     public static Boolean IsIpEqualToNetworkOrBroadCastIp(final String requestedIp, final String cidr, final long size) {
-        assert size < MAX_CIDR : "You do know this is not for ipv6 right?  Keep it smaller than 32 but you have " + size;
+        assert size < MAX_CIDR : "You do know this is not for IPv6 right?  Keep it smaller than 32 but you have " + size;
 
         final long ip = ip2Long(cidr);
         final long startNetMask = ip2Long(getCidrNetmask(size));
@@ -1765,7 +1765,7 @@ public class NetUtils {
                 isIpv4 = false;
             }
             if (!NetUtils.isValidIp6(ipAddr) && !isIpv4) {
-                throw new IllegalArgumentException("Invalid ip address " + ipAddr);
+                throw new IllegalArgumentException("Invalid IP address " + ipAddr);
             }
         }
         return isIpv4;
