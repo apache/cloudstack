@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vpc;
 
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.vpc.VpcOffering;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -82,9 +83,22 @@ public class CloneVPCOfferingCmd extends CreateVPCOfferingCmd {
     /////////////////////////////////////////////////////
 
     @Override
+    public void create() throws ResourceAllocationException {
+        // Set a temporary entity ID (source offering ID) to prevent NullPointerException
+        // in ApiServer.queueCommand(). This will be updated in execute() with the actual
+        // cloned offering ID.
+        if (sourceOfferingId != null) {
+            setEntityId(sourceOfferingId);
+        }
+    }
+
+    @Override
     public void execute() {
         VpcOffering result = _vpcProvSvc.cloneVPCOffering(this);
         if (result != null) {
+            setEntityId(result.getId());
+            setEntityUuid(result.getUuid());
+
             VpcOfferingResponse response = _responseGenerator.createVpcOfferingResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);

@@ -8332,7 +8332,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         Map<String, List<String>> finalServiceProviderMap = resolveServiceProviderMap(cmd, sourceServiceProviderMap, finalServices);
 
-        // Reconstruct service capability list from source offering
         Map<String, Map<String, String>> sourceServiceCapabilityList = reconstructNetworkServiceCapabilityList(sourceOffering);
 
         Map<String, String> sourceDetailsMap = getSourceOfferingDetails(sourceOfferingId);
@@ -8366,25 +8365,38 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         List<String> finalServices = new ArrayList<>();
         for (Network.Service service : sourceServiceProviderMap.keySet()) {
-            // Gateway service is automatically added by createNetworkOffering if SourceNat is present
-            // It should not be explicitly included in supportedServices list
             if (service != Network.Service.Gateway) {
                 finalServices.add(service.getName());
             }
         }
 
         if (dropServices != null && !dropServices.isEmpty()) {
-            finalServices.removeAll(dropServices);
-            logger.debug("Dropped services from clone: {}", dropServices);
+            List<String> normalizedDropServices = new ArrayList<>();
+            for (String serviceName : dropServices) {
+                Network.Service service = Network.Service.getService(serviceName);
+                if (service == null) {
+                    throw new InvalidParameterValueException("Invalid service name in dropServices: " + serviceName);
+                }
+                normalizedDropServices.add(service.getName());
+            }
+            finalServices.removeAll(normalizedDropServices);
+            logger.debug("Dropped services from clone: {}", normalizedDropServices);
         }
 
         if (addServices != null && !addServices.isEmpty()) {
-            for (String service : addServices) {
-                if (!finalServices.contains(service)) {
-                    finalServices.add(service);
+            List<String> normalizedAddServices = new ArrayList<>();
+            for (String serviceName : addServices) {
+                Network.Service service = Network.Service.getService(serviceName);
+                if (service == null) {
+                    throw new InvalidParameterValueException("Invalid service name in addServices: " + serviceName);
+                }
+                String canonicalName = service.getName();
+                if (!finalServices.contains(canonicalName)) {
+                    finalServices.add(canonicalName);
+                    normalizedAddServices.add(canonicalName);
                 }
             }
-            logger.debug("Added services to clone: {}", addServices);
+            logger.debug("Added services to clone: {}", normalizedAddServices);
         }
 
         return finalServices;
@@ -8423,13 +8435,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 setField(cmd, "supportedServices", finalServices);
             }
             if (cmd.getServiceProviders() == null || cmd.getServiceProviders().isEmpty()) {
-                // Convert to API parameter format: Map with HashMap values containing "service" and "provider" keys
                 Map<String, Map<String, String>> apiFormatMap = convertToApiParameterFormat(finalServiceProviderMap);
                 setField(cmd, "serviceProviderList", apiFormatMap);
             }
 
-            // Apply service capability list if not provided via request parameters
-            // Check if any servicecapabilitylist parameters were passed (e.g., servicecapabilitylist[0].service)
             boolean hasCapabilityParams = requestParams.keySet().stream()
                 .anyMatch(key -> key.startsWith(ApiConstants.SERVICE_CAPABILITY_LIST));
 
@@ -8504,7 +8513,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Map<String, Map<String, String>> capabilityList = new HashMap<>();
         int index = 0;
 
-        // LB service capabilities
         if (sourceOffering.isDedicatedLB()) {
             Map<String, String> cap = new HashMap<>();
             cap.put("service", Network.Service.Lb.getName());
@@ -8544,8 +8552,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             capabilityList.put(String.valueOf(index++), cap);
         }
 
-        // SourceNat service capabilities
-        // Only add SupportedSourceNatTypes if explicitly set to perzone (sharedSourceNat=true)
         if (sourceOffering.isSharedSourceNat()) {
             Map<String, String> cap = new HashMap<>();
             cap.put("service", Network.Service.SourceNat.getName());
@@ -8554,7 +8560,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             capabilityList.put(String.valueOf(index++), cap);
         }
 
-        // Only add RedundantRouter capability when it's true
         if (sourceOffering.isRedundantRouter()) {
             Map<String, String> cap1 = new HashMap<>();
             cap1.put("service", Network.Service.SourceNat.getName());
@@ -8562,7 +8567,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             cap1.put("capabilityvalue", "true");
             capabilityList.put(String.valueOf(index++), cap1);
 
-            // Also add to Gateway service only when redundantRouter is true
             Map<String, String> cap2 = new HashMap<>();
             cap2.put("service", Network.Service.Gateway.getName());
             cap2.put("capabilitytype", Network.Capability.RedundantRouter.getName());
@@ -8570,7 +8574,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             capabilityList.put(String.valueOf(index++), cap2);
         }
 
-        // StaticNat service capabilities
         if (sourceOffering.isElasticIp()) {
             Map<String, String> cap = new HashMap<>();
             cap.put("service", Network.Service.StaticNat.getName());
@@ -8578,7 +8581,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             cap.put("capabilityvalue", "true");
             capabilityList.put(String.valueOf(index++), cap);
         }
-        // AssociatePublicIP can only be set when ElasticIp is true
+
         if (sourceOffering.isElasticIp() && sourceOffering.isAssociatePublicIP()) {
             Map<String, String> cap = new HashMap<>();
             cap.put("service", Network.Service.StaticNat.getName());
@@ -8592,16 +8595,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     public static void applyIfNotProvided(Object cmd, Map<String, String> requestParams, String fieldName,
             String apiConstant, Object currentValue, Object sourceValue) throws Exception {
-        // If parameter was not provided in request and source has a value, use source value
-        if (!requestParams.containsKey(apiConstant) && sourceValue != null) {
+        if ((requestParams == null || !requestParams.containsKey(apiConstant)) && sourceValue != null) {
             setField(cmd, fieldName, sourceValue);
         }
-        // If parameter WAS provided in request, the framework already set it correctly
     }
 
     public static void applyBooleanIfNotProvided(Object cmd, Map<String, String> requestParams,
             String fieldName, String apiConstant, Boolean sourceValue) throws Exception {
-        if (!requestParams.containsKey(apiConstant) && sourceValue != null) {
+        if ((requestParams == null || !requestParams.containsKey(apiConstant)) && sourceValue != null) {
             setField(cmd, fieldName, sourceValue);
         }
     }
