@@ -19,6 +19,12 @@
 -- Schema upgrade from 4.22.1.0 to 4.23.0.0
 --;
 
+
+-- Add affinity group columns to kubernetes_cluster table for CKS affinity group support
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster', 'control_node_affinity_group_id', 'BIGINT(20) UNSIGNED DEFAULT NULL COMMENT "affinity group id for control nodes"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster', 'worker_node_affinity_group_id', 'BIGINT(20) UNSIGNED DEFAULT NULL COMMENT "affinity group id for worker nodes"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster', 'etcd_node_affinity_group_id', 'BIGINT(20) UNSIGNED DEFAULT NULL COMMENT "affinity group id for etcd nodes"');
+
 -- Update value to random for the config 'vm.allocation.algorithm' or 'volume.allocation.algorithm' if configured as userconcentratedpod_random
 -- Update value to firstfit for the config 'vm.allocation.algorithm' or 'volume.allocation.algorithm' if configured as userconcentratedpod_firstfit
 UPDATE `cloud`.`configuration` SET value='random' WHERE name IN ('vm.allocation.algorithm', 'volume.allocation.algorithm') AND value='userconcentratedpod_random';
