@@ -6264,7 +6264,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private void verifyServiceOffering(BaseDeployVMCmd cmd, ServiceOffering serviceOffering) {
-        CallContext.current().putContextParameter("serviceOffering", serviceOffering);
+        CallContext.current().putErrorContextParameter("serviceOffering", serviceOffering);
         if (ServiceOffering.State.Inactive.equals(serviceOffering.getState())) {
             throw new InvalidParameterValueException("vm.deploy.serviceoffering.inactive",
                     Collections.emptyMap());

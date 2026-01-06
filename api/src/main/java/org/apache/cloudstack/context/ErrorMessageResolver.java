@@ -85,7 +85,7 @@ public class ErrorMessageResolver {
         if (variableNames.isEmpty()) {
             return metadata;
         }
-        Map<String, Object> contextMetadata = CallContext.current().getContextStringKeyParameters();
+        Map<String, Object> contextMetadata = CallContext.current().getErrorContextParameters();
         if (MapUtils.isEmpty(contextMetadata)) {
             return metadata;
         }
