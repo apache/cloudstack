@@ -93,6 +93,7 @@ public interface VmDetailConstants {
     String CKS_NODE_TYPE = "node";
     String OFFERING = "offering";
     String TEMPLATE = "template";
+    String AFFINITY_GROUP = "affinitygroup";
 
     // VMware to KVM VM migrations specific
     String VMWARE_TO_KVM_PREFIX = "vmware-to-kvm";

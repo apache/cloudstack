@@ -79,7 +79,7 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     @Inject
     public KubernetesClusterService kubernetesClusterService;
     @Inject
-    protected KubernetesServiceHelper kubernetesClusterHelper;
+    protected KubernetesServiceHelper kubernetesServiceHelper;
     @Inject
     private ConfigurationDao configurationDao;
     @Inject
@@ -320,11 +320,15 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     }
 
     public Map<String, Long> getServiceOfferingNodeTypeMap() {
-        return kubernetesClusterHelper.getServiceOfferingNodeTypeMap(serviceOfferingNodeTypeMap);
+        return kubernetesServiceHelper.getServiceOfferingNodeTypeMap(serviceOfferingNodeTypeMap);
     }
 
     public Map<String, Long> getTemplateNodeTypeMap() {
-        return kubernetesClusterHelper.getTemplateNodeTypeMap(templateNodeTypeMap);
+        return kubernetesServiceHelper.getTemplateNodeTypeMap(templateNodeTypeMap);
+    }
+
+    public Map<String, Long> getAffinityGroupNodeTypeMap() {
+        return kubernetesServiceHelper.getAffinityGroupNodeTypeMap(affinityGroupNodeTypeMap);
     }
 
     public Hypervisor.HypervisorType getHypervisorType() {
