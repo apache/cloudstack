@@ -1235,6 +1235,7 @@ public class ApiConstants {
     public static final String MAX_SIZE = "maxsize";
     public static final String NODE_TYPE_OFFERING_MAP = "nodeofferings";
     public static final String NODE_TYPE_TEMPLATE_MAP = "nodetemplates";
+    public static final String NODE_TYPE_AFFINITY_GROUP_MAP = "nodeaffinitygroups";
 
     public static final String BOOT_TYPE = "boottype";
     public static final String BOOT_MODE = "bootmode";

@@ -126,6 +126,12 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     private Map<String, Map<String, String>> templateNodeTypeMap;
 
     @ACL(accessType = AccessType.UseEntry)
+    @Parameter(name = ApiConstants.NODE_TYPE_AFFINITY_GROUP_MAP, type = CommandType.MAP,
+            description = "(Optional) Node Type to Affinity Group ID mapping. If provided, VMs of each node type will be added to the specified affinity group",
+            since = "4.23.0")
+    private Map<String, Map<String, String>> affinityGroupNodeTypeMap;
+
+    @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.ETCD_NODES, type = CommandType.LONG,
             description = "(Optional) Number of Kubernetes cluster etcd nodes, default is 0." +
                     "In case the number is greater than 0, etcd nodes are separate from master nodes and are provisioned accordingly",
