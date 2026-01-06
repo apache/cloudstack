@@ -8293,6 +8293,34 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return createNetworkOffering(cmd);
     }
 
+    /**
+     * Converts service provider map from internal format to API parameter format.
+     *
+     * Internal format: Map<String, List<String>> where key=serviceName, value=list of provider names
+     * API parameter format: Map where each value is a HashMap with "service" and "provider" keys
+     *
+     * Example: {"Lb": ["VirtualRouter"]} becomes {0: {"service": "Lb", "provider": "VirtualRouter"}}
+     */
+    private Map<String, Map<String, String>> convertToApiParameterFormat(Map<String, List<String>> serviceProviderMap) {
+        Map<String, Map<String, String>> apiFormatMap = new HashMap<>();
+        int index = 0;
+
+        for (Map.Entry<String, List<String>> entry : serviceProviderMap.entrySet()) {
+            String serviceName = entry.getKey();
+            List<String> providers = entry.getValue();
+
+            for (String provider : providers) {
+                Map<String, String> serviceProviderEntry = new HashMap<>();
+                serviceProviderEntry.put("service", serviceName);
+                serviceProviderEntry.put("provider", provider);
+                apiFormatMap.put(String.valueOf(index), serviceProviderEntry);
+                index++;
+            }
+        }
+
+        return apiFormatMap;
+    }
+
     private void applySourceOfferingValuesToCloneCmd(CloneNetworkOfferingCmd cmd, NetworkOfferingVO sourceOffering) {
         Long sourceOfferingId = sourceOffering.getId();
 
@@ -8302,10 +8330,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // Build final services list with add/drop support
         List<String> finalServices = resolveFinalServicesList(cmd, sourceServiceProviderMap);
 
-        Map finalServiceProviderMap = resolveServiceProviderMap(cmd, sourceServiceProviderMap, finalServices);
+        Map<String, List<String>> finalServiceProviderMap = resolveServiceProviderMap(cmd, sourceServiceProviderMap, finalServices);
 
         // Reconstruct service capability list from source offering
-        Map<String, String> sourceServiceCapabilityList = reconstructNetworkServiceCapabilityList(sourceOffering);
+        Map<String, Map<String, String>> sourceServiceCapabilityList = reconstructNetworkServiceCapabilityList(sourceOffering);
 
         Map<String, String> sourceDetailsMap = getSourceOfferingDetails(sourceOfferingId);
 
@@ -8338,7 +8366,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         List<String> finalServices = new ArrayList<>();
         for (Network.Service service : sourceServiceProviderMap.keySet()) {
-            finalServices.add(service.getName());
+            // Gateway service is automatically added by createNetworkOffering if SourceNat is present
+            // It should not be explicitly included in supportedServices list
+            if (service != Network.Service.Gateway) {
+                finalServices.add(service.getName());
+            }
         }
 
         if (dropServices != null && !dropServices.isEmpty()) {
@@ -8381,7 +8413,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     private void applyResolvedValuesToCommand(CloneNetworkOfferingCmd cmd, NetworkOfferingVO sourceOffering,
-            List<String> finalServices, Map finalServiceProviderMap, Map<String, String> sourceServiceCapabilityList,
+            List<String> finalServices, Map<String, List<String>> finalServiceProviderMap, Map<String, Map<String, String>> sourceServiceCapabilityList,
             Map<String, String> sourceDetailsMap, List<Long> sourceDomainIds, List<Long> sourceZoneIds) {
 
         try {
@@ -8391,7 +8423,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 setField(cmd, "supportedServices", finalServices);
             }
             if (cmd.getServiceProviders() == null || cmd.getServiceProviders().isEmpty()) {
-                setField(cmd, "serviceProviderList", finalServiceProviderMap);
+                // Convert to API parameter format: Map with HashMap values containing "service" and "provider" keys
+                Map<String, Map<String, String>> apiFormatMap = convertToApiParameterFormat(finalServiceProviderMap);
+                setField(cmd, "serviceProviderList", apiFormatMap);
             }
 
             // Apply service capability list if not provided via request parameters
@@ -8400,13 +8434,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 .anyMatch(key -> key.startsWith(ApiConstants.SERVICE_CAPABILITY_LIST));
 
             if (!hasCapabilityParams && sourceServiceCapabilityList != null && !sourceServiceCapabilityList.isEmpty()) {
-                setField(cmd, "serviceCapabilitystList", sourceServiceCapabilityList);
+                setField(cmd, "serviceCapabilitiesList", sourceServiceCapabilityList);
             }
 
             applyIfNotProvided(cmd, requestParams, "displayText", ApiConstants.DISPLAY_TEXT, cmd.getDisplayText(), sourceOffering.getDisplayText());
             applyIfNotProvided(cmd, requestParams, "traffictype", ApiConstants.TRAFFIC_TYPE, cmd.getTraffictype(), sourceOffering.getTrafficType().toString());
             applyIfNotProvided(cmd, requestParams, "tags", ApiConstants.TAGS, cmd.getTags(), sourceOffering.getTags());
-            applyIfNotProvided(cmd, requestParams, "availability", ApiConstants.AVAILABILITY, cmd.getAvailability(), sourceOffering.getAvailability().toString());
+            applyIfNotProvided(cmd, requestParams, "availability", ApiConstants.AVAILABILITY, cmd.getAvailability(), Availability.Optional.toString());
             applyIfNotProvided(cmd, requestParams, "networkRate", ApiConstants.NETWORKRATE, cmd.getNetworkRate(), sourceOffering.getRateMbps());
             applyIfNotProvided(cmd, requestParams, "serviceOfferingId", ApiConstants.SERVICE_OFFERING_ID, cmd.getServiceOfferingId(), sourceOffering.getServiceOfferingId());
             applyIfNotProvided(cmd, requestParams, "guestIptype", ApiConstants.GUEST_IP_TYPE, cmd.getGuestIpType(), sourceOffering.getGuestType().toString());
@@ -8464,79 +8498,93 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
      * These capabilities were originally passed during creation and stored as boolean flags in the offering.
      *
      * Returns a Map in the format expected by CreateNetworkOfferingCmd.serviceCapabilitystList:
-     * Map<String, String> with keys like "0.service", "0.capabilitytype", "0.capabilityvalue"
+     * Map where each value is a HashMap with keys: "service", "capabilitytype", "capabilityvalue"
      */
-    private Map<String, String> reconstructNetworkServiceCapabilityList(NetworkOfferingVO sourceOffering) {
-        Map<String, String> capabilityList = new HashMap<>();
+    private Map<String, Map<String, String>> reconstructNetworkServiceCapabilityList(NetworkOfferingVO sourceOffering) {
+        Map<String, Map<String, String>> capabilityList = new HashMap<>();
         int index = 0;
 
         // LB service capabilities
         if (sourceOffering.isDedicatedLB()) {
-            capabilityList.put(index + ".service", Network.Service.Lb.getName());
-            capabilityList.put(index + ".capabilitytype", Network.Capability.SupportedLBIsolation.getName());
-            capabilityList.put(index + ".capabilityvalue", "dedicated");
-            index++;
+            Map<String, String> cap = new HashMap<>();
+            cap.put("service", Network.Service.Lb.getName());
+            cap.put("capabilitytype", Network.Capability.SupportedLBIsolation.getName());
+            cap.put("capabilityvalue", "dedicated");
+            capabilityList.put(String.valueOf(index++), cap);
         }
         if (sourceOffering.isElasticLb()) {
-            capabilityList.put(index + ".service", Network.Service.Lb.getName());
-            capabilityList.put(index + ".capabilitytype", Network.Capability.ElasticLb.getName());
-            capabilityList.put(index + ".capabilityvalue", "true");
-            index++;
+            Map<String, String> cap = new HashMap<>();
+            cap.put("service", Network.Service.Lb.getName());
+            cap.put("capabilitytype", Network.Capability.ElasticLb.getName());
+            cap.put("capabilityvalue", "true");
+            capabilityList.put(String.valueOf(index++), cap);
         }
         if (sourceOffering.isInline()) {
-            capabilityList.put(index + ".service", Network.Service.Lb.getName());
-            capabilityList.put(index + ".capabilitytype", Network.Capability.InlineMode.getName());
-            capabilityList.put(index + ".capabilityvalue", "true");
-            index++;
+            Map<String, String> cap = new HashMap<>();
+            cap.put("service", Network.Service.Lb.getName());
+            cap.put("capabilitytype", Network.Capability.InlineMode.getName());
+            cap.put("capabilityvalue", "true");
+            capabilityList.put(String.valueOf(index++), cap);
         }
         if (sourceOffering.isPublicLb() || sourceOffering.isInternalLb()) {
             List<String> schemes = new ArrayList<>();
             if (sourceOffering.isPublicLb()) schemes.add("public");
             if (sourceOffering.isInternalLb()) schemes.add("internal");
-            capabilityList.put(index + ".service", Network.Service.Lb.getName());
-            capabilityList.put(index + ".capabilitytype", Network.Capability.LbSchemes.getName());
-            capabilityList.put(index + ".capabilityvalue", String.join(",", schemes));
-            index++;
+            Map<String, String> cap = new HashMap<>();
+            cap.put("service", Network.Service.Lb.getName());
+            cap.put("capabilitytype", Network.Capability.LbSchemes.getName());
+            cap.put("capabilityvalue", String.join(",", schemes));
+            capabilityList.put(String.valueOf(index++), cap);
         }
         if (sourceOffering.isSupportsVmAutoScaling()) {
-            capabilityList.put(index + ".service", Network.Service.Lb.getName());
-            capabilityList.put(index + ".capabilitytype", Network.Capability.VmAutoScaling.getName());
-            capabilityList.put(index + ".capabilityvalue", "true");
-            index++;
+            Map<String, String> cap = new HashMap<>();
+            cap.put("service", Network.Service.Lb.getName());
+            cap.put("capabilitytype", Network.Capability.VmAutoScaling.getName());
+            cap.put("capabilityvalue", "true");
+            capabilityList.put(String.valueOf(index++), cap);
         }
 
         // SourceNat service capabilities
-        if (sourceOffering.isSharedSourceNat() || sourceOffering.isRedundantRouter()) {
-            capabilityList.put(index + ".service", Network.Service.SourceNat.getName());
-            capabilityList.put(index + ".capabilitytype", Network.Capability.SupportedSourceNatTypes.getName());
-            capabilityList.put(index + ".capabilityvalue", sourceOffering.isSharedSourceNat() ? "perzone" : "peraccount");
-            index++;
+        // Only add SupportedSourceNatTypes if explicitly set to perzone (sharedSourceNat=true)
+        if (sourceOffering.isSharedSourceNat()) {
+            Map<String, String> cap = new HashMap<>();
+            cap.put("service", Network.Service.SourceNat.getName());
+            cap.put("capabilitytype", Network.Capability.SupportedSourceNatTypes.getName());
+            cap.put("capabilityvalue", "perzone");
+            capabilityList.put(String.valueOf(index++), cap);
         }
-        if (sourceOffering.isRedundantRouter()) {
-            capabilityList.put(index + ".service", Network.Service.SourceNat.getName());
-            capabilityList.put(index + ".capabilitytype", Network.Capability.RedundantRouter.getName());
-            capabilityList.put(index + ".capabilityvalue", "true");
-            index++;
 
-            // Also add to Gateway service
-            capabilityList.put(index + ".service", Network.Service.Gateway.getName());
-            capabilityList.put(index + ".capabilitytype", Network.Capability.RedundantRouter.getName());
-            capabilityList.put(index + ".capabilityvalue", "true");
-            index++;
+        // Only add RedundantRouter capability when it's true
+        if (sourceOffering.isRedundantRouter()) {
+            Map<String, String> cap1 = new HashMap<>();
+            cap1.put("service", Network.Service.SourceNat.getName());
+            cap1.put("capabilitytype", Network.Capability.RedundantRouter.getName());
+            cap1.put("capabilityvalue", "true");
+            capabilityList.put(String.valueOf(index++), cap1);
+
+            // Also add to Gateway service only when redundantRouter is true
+            Map<String, String> cap2 = new HashMap<>();
+            cap2.put("service", Network.Service.Gateway.getName());
+            cap2.put("capabilitytype", Network.Capability.RedundantRouter.getName());
+            cap2.put("capabilityvalue", "true");
+            capabilityList.put(String.valueOf(index++), cap2);
         }
 
         // StaticNat service capabilities
         if (sourceOffering.isElasticIp()) {
-            capabilityList.put(index + ".service", Network.Service.StaticNat.getName());
-            capabilityList.put(index + ".capabilitytype", Network.Capability.ElasticIp.getName());
-            capabilityList.put(index + ".capabilityvalue", "true");
-            index++;
+            Map<String, String> cap = new HashMap<>();
+            cap.put("service", Network.Service.StaticNat.getName());
+            cap.put("capabilitytype", Network.Capability.ElasticIp.getName());
+            cap.put("capabilityvalue", "true");
+            capabilityList.put(String.valueOf(index++), cap);
         }
-        if (sourceOffering.isAssociatePublicIP()) {
-            capabilityList.put(index + ".service", Network.Service.StaticNat.getName());
-            capabilityList.put(index + ".capabilitytype", Network.Capability.AssociatePublicIP.getName());
-            capabilityList.put(index + ".capabilityvalue", "true");
-            index++;
+        // AssociatePublicIP can only be set when ElasticIp is true
+        if (sourceOffering.isElasticIp() && sourceOffering.isAssociatePublicIP()) {
+            Map<String, String> cap = new HashMap<>();
+            cap.put("service", Network.Service.StaticNat.getName());
+            cap.put("capabilitytype", Network.Capability.AssociatePublicIP.getName());
+            cap.put("capabilityvalue", "true");
+            capabilityList.put(String.valueOf(index++), cap);
         }
 
         return capabilityList;
