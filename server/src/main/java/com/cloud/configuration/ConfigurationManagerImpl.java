@@ -8304,13 +8304,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         Map finalServiceProviderMap = resolveServiceProviderMap(cmd, sourceServiceProviderMap, finalServices);
 
+        // Reconstruct service capability list from source offering
+        Map<String, String> sourceServiceCapabilityList = reconstructNetworkServiceCapabilityList(sourceOffering);
+
         Map<String, String> sourceDetailsMap = getSourceOfferingDetails(sourceOfferingId);
 
         List<Long> sourceDomainIds = networkOfferingDetailsDao.findDomainIds(sourceOfferingId);
         List<Long> sourceZoneIds = networkOfferingDetailsDao.findZoneIds(sourceOfferingId);
 
         applyResolvedValuesToCommand(cmd, sourceOffering, finalServices, finalServiceProviderMap,
-            sourceDetailsMap, sourceDomainIds, sourceZoneIds);
+            sourceServiceCapabilityList, sourceDetailsMap, sourceDomainIds, sourceZoneIds);
     }
 
     private Map<String, String> getSourceOfferingDetails(Long sourceOfferingId) {
@@ -8378,8 +8381,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     private void applyResolvedValuesToCommand(CloneNetworkOfferingCmd cmd, NetworkOfferingVO sourceOffering,
-            List<String> finalServices, Map finalServiceProviderMap, Map<String, String> sourceDetailsMap,
-            List<Long> sourceDomainIds, List<Long> sourceZoneIds) {
+            List<String> finalServices, Map finalServiceProviderMap, Map<String, String> sourceServiceCapabilityList,
+            Map<String, String> sourceDetailsMap, List<Long> sourceDomainIds, List<Long> sourceZoneIds) {
 
         try {
             Map<String, String> requestParams = cmd.getFullUrlParams();
@@ -8391,6 +8394,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 setField(cmd, "serviceProviderList", finalServiceProviderMap);
             }
 
+            // Apply service capability list if not provided via request parameters
+            // Check if any servicecapabilitylist parameters were passed (e.g., servicecapabilitylist[0].service)
+            boolean hasCapabilityParams = requestParams.keySet().stream()
+                .anyMatch(key -> key.startsWith(ApiConstants.SERVICE_CAPABILITY_LIST));
+
+            if (!hasCapabilityParams && sourceServiceCapabilityList != null && !sourceServiceCapabilityList.isEmpty()) {
+                setField(cmd, "serviceCapabilitystList", sourceServiceCapabilityList);
+            }
 
             applyIfNotProvided(cmd, requestParams, "displayText", ApiConstants.DISPLAY_TEXT, cmd.getDisplayText(), sourceOffering.getDisplayText());
             applyIfNotProvided(cmd, requestParams, "traffictype", ApiConstants.TRAFFIC_TYPE, cmd.getTraffictype(), sourceOffering.getTrafficType().toString());
@@ -8448,7 +8459,90 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
     }
 
-    private void applyIfNotProvided(Object cmd, Map<String, String> requestParams, String fieldName,
+    /**
+     * Reconstructs the service capability list from the source network offering's stored capability flags.
+     * These capabilities were originally passed during creation and stored as boolean flags in the offering.
+     *
+     * Returns a Map in the format expected by CreateNetworkOfferingCmd.serviceCapabilitystList:
+     * Map<String, String> with keys like "0.service", "0.capabilitytype", "0.capabilityvalue"
+     */
+    private Map<String, String> reconstructNetworkServiceCapabilityList(NetworkOfferingVO sourceOffering) {
+        Map<String, String> capabilityList = new HashMap<>();
+        int index = 0;
+
+        // LB service capabilities
+        if (sourceOffering.isDedicatedLB()) {
+            capabilityList.put(index + ".service", Network.Service.Lb.getName());
+            capabilityList.put(index + ".capabilitytype", Network.Capability.SupportedLBIsolation.getName());
+            capabilityList.put(index + ".capabilityvalue", "dedicated");
+            index++;
+        }
+        if (sourceOffering.isElasticLb()) {
+            capabilityList.put(index + ".service", Network.Service.Lb.getName());
+            capabilityList.put(index + ".capabilitytype", Network.Capability.ElasticLb.getName());
+            capabilityList.put(index + ".capabilityvalue", "true");
+            index++;
+        }
+        if (sourceOffering.isInline()) {
+            capabilityList.put(index + ".service", Network.Service.Lb.getName());
+            capabilityList.put(index + ".capabilitytype", Network.Capability.InlineMode.getName());
+            capabilityList.put(index + ".capabilityvalue", "true");
+            index++;
+        }
+        if (sourceOffering.isPublicLb() || sourceOffering.isInternalLb()) {
+            List<String> schemes = new ArrayList<>();
+            if (sourceOffering.isPublicLb()) schemes.add("public");
+            if (sourceOffering.isInternalLb()) schemes.add("internal");
+            capabilityList.put(index + ".service", Network.Service.Lb.getName());
+            capabilityList.put(index + ".capabilitytype", Network.Capability.LbSchemes.getName());
+            capabilityList.put(index + ".capabilityvalue", String.join(",", schemes));
+            index++;
+        }
+        if (sourceOffering.isSupportsVmAutoScaling()) {
+            capabilityList.put(index + ".service", Network.Service.Lb.getName());
+            capabilityList.put(index + ".capabilitytype", Network.Capability.VmAutoScaling.getName());
+            capabilityList.put(index + ".capabilityvalue", "true");
+            index++;
+        }
+
+        // SourceNat service capabilities
+        if (sourceOffering.isSharedSourceNat() || sourceOffering.isRedundantRouter()) {
+            capabilityList.put(index + ".service", Network.Service.SourceNat.getName());
+            capabilityList.put(index + ".capabilitytype", Network.Capability.SupportedSourceNatTypes.getName());
+            capabilityList.put(index + ".capabilityvalue", sourceOffering.isSharedSourceNat() ? "perzone" : "peraccount");
+            index++;
+        }
+        if (sourceOffering.isRedundantRouter()) {
+            capabilityList.put(index + ".service", Network.Service.SourceNat.getName());
+            capabilityList.put(index + ".capabilitytype", Network.Capability.RedundantRouter.getName());
+            capabilityList.put(index + ".capabilityvalue", "true");
+            index++;
+
+            // Also add to Gateway service
+            capabilityList.put(index + ".service", Network.Service.Gateway.getName());
+            capabilityList.put(index + ".capabilitytype", Network.Capability.RedundantRouter.getName());
+            capabilityList.put(index + ".capabilityvalue", "true");
+            index++;
+        }
+
+        // StaticNat service capabilities
+        if (sourceOffering.isElasticIp()) {
+            capabilityList.put(index + ".service", Network.Service.StaticNat.getName());
+            capabilityList.put(index + ".capabilitytype", Network.Capability.ElasticIp.getName());
+            capabilityList.put(index + ".capabilityvalue", "true");
+            index++;
+        }
+        if (sourceOffering.isAssociatePublicIP()) {
+            capabilityList.put(index + ".service", Network.Service.StaticNat.getName());
+            capabilityList.put(index + ".capabilitytype", Network.Capability.AssociatePublicIP.getName());
+            capabilityList.put(index + ".capabilityvalue", "true");
+            index++;
+        }
+
+        return capabilityList;
+    }
+
+    public static void applyIfNotProvided(Object cmd, Map<String, String> requestParams, String fieldName,
             String apiConstant, Object currentValue, Object sourceValue) throws Exception {
         // If parameter was not provided in request and source has a value, use source value
         if (!requestParams.containsKey(apiConstant) && sourceValue != null) {
@@ -8457,17 +8551,32 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // If parameter WAS provided in request, the framework already set it correctly
     }
 
-    private void applyBooleanIfNotProvided(Object cmd, Map<String, String> requestParams,
+    public static void applyBooleanIfNotProvided(Object cmd, Map<String, String> requestParams,
             String fieldName, String apiConstant, Boolean sourceValue) throws Exception {
         if (!requestParams.containsKey(apiConstant) && sourceValue != null) {
             setField(cmd, fieldName, sourceValue);
         }
     }
 
-    private void setField(Object obj, String fieldName, Object value) throws Exception {
-        java.lang.reflect.Field field = obj.getClass().getDeclaredField(fieldName);
+    public static void setField(Object obj, String fieldName, Object value) throws Exception {
+        java.lang.reflect.Field field = findField(obj.getClass(), fieldName);
+        if (field == null) {
+            throw new NoSuchFieldException("Field '" + fieldName + "' not found in class hierarchy of " + obj.getClass().getName());
+        }
         field.setAccessible(true);
         field.set(obj, value);
+    }
+
+    public static java.lang.reflect.Field findField(Class<?> clazz, String fieldName) {
+        Class<?> currentClass = clazz;
+        while (currentClass != null) {
+            try {
+                return currentClass.getDeclaredField(fieldName);
+            } catch (NoSuchFieldException e) {
+                currentClass = currentClass.getSuperclass();
+            }
+        }
+        return null;
     }
 
     @Override

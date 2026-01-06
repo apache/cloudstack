@@ -14,28 +14,27 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.command.admin.network;
+package org.apache.cloudstack.api.command.admin.vpc;
 
-import java.util.List;
-
+import com.cloud.network.vpc.VpcOffering;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.NetworkOfferingResponse;
+import org.apache.cloudstack.api.response.VpcOfferingResponse;
 
-import com.cloud.offering.NetworkOffering;
+import java.util.List;
 
-@APICommand(name = "cloneNetworkOffering",
-        description = "Clones a network offering. All parameters are copied from the source offering unless explicitly overridden. " +
+@APICommand(name = "cloneVPCOffering",
+        description = "Clones an existing VPC offering. All parameters are copied from the source offering unless explicitly overridden. " +
                 "Use 'addServices' and 'dropServices' to modify the service list without respecifying everything.",
-        responseObject = NetworkOfferingResponse.class,
+        responseObject = VpcOfferingResponse.class,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         since = "4.23.0")
-public class CloneNetworkOfferingCmd extends CreateNetworkOfferingCmd {
+public class CloneVPCOfferingCmd extends CreateVPCOfferingCmd {
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -43,9 +42,9 @@ public class CloneNetworkOfferingCmd extends CreateNetworkOfferingCmd {
 
     @Parameter(name = ApiConstants.SOURCE_OFFERING_ID,
             type = BaseCmd.CommandType.UUID,
-            entityType = NetworkOfferingResponse.class,
+            entityType = VpcOfferingResponse.class,
             required = true,
-            description = "The ID of the network offering to clone")
+            description = "The ID of the VPC offering to clone")
     private Long sourceOfferingId;
 
     @Parameter(name = "addservices",
@@ -61,7 +60,6 @@ public class CloneNetworkOfferingCmd extends CreateNetworkOfferingCmd {
             description = "Services to remove from the cloned offering (that exist in source offering). " +
                     "If specified along with 'supportedservices', this parameter is ignored.")
     private List<String> dropServices;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -79,38 +77,19 @@ public class CloneNetworkOfferingCmd extends CreateNetworkOfferingCmd {
         return dropServices;
     }
 
-    /**
-     * Override to provide placeholder values that will be replaced with source offering values.
-     * This allows API validation to pass even though these are marked as required in the parent class.
-     */
-    @Override
-    public String getGuestIpType() {
-        String value = super.getGuestIpType();
-        // Return placeholder if not provided - will be overwritten from source offering
-        return value != null ? value : "Isolated";
-    }
-
-    @Override
-    public String getTraffictype() {
-        String value = super.getTraffictype();
-        // Return placeholder if not provided - will be overwritten from source offering
-        return value != null ? value : "Guest";
-    }
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
     @Override
     public void execute() {
-        NetworkOffering result = _configService.cloneNetworkOffering(this);
+        VpcOffering result = _vpcProvSvc.cloneVPCOffering(this);
         if (result != null) {
-            NetworkOfferingResponse response = _responseGenerator.createNetworkOfferingResponse(result);
+            VpcOfferingResponse response = _responseGenerator.createVpcOfferingResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to clone network offering");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to clone VPC offering");
         }
     }
 }
-

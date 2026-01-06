@@ -48,7 +48,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class ImportBackupOfferingCmd extends BaseAsyncCmd {
 
     @Inject
-    private BackupManager backupManager;
+    protected BackupManager backupManager;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
