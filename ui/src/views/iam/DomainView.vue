@@ -74,6 +74,11 @@
         :resource="resource"
         :action="action"/>
     </div>
+    <domain-delete-confirm
+    v-if="showDeleteConfirm"
+    :domain="deleteDomainResource"
+    @close="showDeleteConfirm = false"
+    @confirm="confirmDeleteDomain" />
   </div>
 </template>
 
@@ -87,6 +92,7 @@ import ActionButton from '@/components/view/ActionButton'
 import TreeView from '@/components/view/TreeView'
 import DomainActionForm from '@/views/iam/DomainActionForm'
 import ResourceView from '@/components/view/ResourceView'
+import DomainDeleteConfirm from '@/components/view/DomainDeleteConfirm'
 import eventBus from '@/config/eventBus'
 
 export default {
@@ -96,7 +102,8 @@ export default {
     ActionButton,
     TreeView,
     DomainActionForm,
-    ResourceView
+    ResourceView,
+    DomainDeleteConfirm
   },
   mixins: [mixinDevice],
   data () {
@@ -111,7 +118,9 @@ export default {
       action: {},
       dataView: false,
       domainStore: {},
-      treeDeletedKey: null
+      treeDeletedKey: null,
+      showDeleteConfirm: false,
+      deleteDomainResource: null
     }
   },
   computed: {
@@ -205,7 +214,12 @@ export default {
       })
     },
     execAction (action) {
-      this.treeDeletedKey = action.api === 'deleteDomain' ? this.resource.key : null
+      if (action.api === 'deleteDomain') {
+        this.deleteDomainResource = this.resource
+        this.showDeleteConfirm = true
+        return
+      }
+      this.treeDeletedKey = null
       this.actionData = []
       this.action = action
       this.action.params = store.getters.apis[this.action.api].params
@@ -318,6 +332,32 @@ export default {
     },
     closeAction () {
       this.showAction = false
+    },
+    confirmDeleteDomain () {
+      const params = { id: this.deleteDomainResource.id }
+
+      api('deleteDomain', params)
+        .then(() => {
+          this.$notification.success({
+            message: 'Domain Deleted',
+            description: `Domain ${this.deleteDomainResource.name} has been successfully deleted.`
+          })
+          if (this.$route.params.id === this.deleteDomainResource.id) {
+            this.$router.push({ path: '/domain' })
+          }
+          this.fetchData()
+        })
+        .catch(error => {
+          this.$notification.error({
+            message: 'Failed to delete domain',
+            description: error.response?.headers['x-description'] || this.$t('message.request.failed')
+          })
+        })
+        .finally(() => {
+          this.showDeleteConfirm = false
+          this.deleteDomainResource = null
+          this.treeDeletedKey = this.deleteDomainResource?.id || null
+        })
     },
     forceRerender () {
       this.treeViewKey += 1
