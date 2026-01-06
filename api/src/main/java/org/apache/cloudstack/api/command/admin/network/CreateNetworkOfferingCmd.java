@@ -128,7 +128,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     private Map serviceProviderList;
 
     @Parameter(name = ApiConstants.SERVICE_CAPABILITY_LIST, type = CommandType.MAP, description = "Desired service capabilities as part of network offering")
-    private Map serviceCapabilitystList;
+    private Map serviceCapabilitiesList;
 
     @Parameter(name = ApiConstants.SPECIFY_IP_RANGES,
             type = CommandType.BOOLEAN,
@@ -423,9 +423,9 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     public Map<Capability, String> getServiceCapabilities(Service service) {
         Map<Capability, String> capabilityMap = null;
 
-        if (serviceCapabilitystList != null && !serviceCapabilitystList.isEmpty()) {
+        if (serviceCapabilitiesList != null && !serviceCapabilitiesList.isEmpty()) {
             capabilityMap = new HashMap<Capability, String>();
-            Collection serviceCapabilityCollection = serviceCapabilitystList.values();
+            Collection serviceCapabilityCollection = serviceCapabilitiesList.values();
             Iterator iter = serviceCapabilityCollection.iterator();
             while (iter.hasNext()) {
                 HashMap<String, String> svcCapabilityMap = (HashMap<String, String>) iter.next();

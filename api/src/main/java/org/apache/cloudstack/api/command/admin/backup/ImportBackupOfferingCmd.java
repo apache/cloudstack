@@ -54,7 +54,7 @@ import java.util.Set;
 public class ImportBackupOfferingCmd extends BaseAsyncCmd {
 
     @Inject
-    private BackupManager backupManager;
+    protected BackupManager backupManager;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
