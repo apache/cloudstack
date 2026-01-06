@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import java.util.Collections;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -156,7 +157,18 @@ public class DeployVMCmd extends BaseDeployVMCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         } catch (ResourceAllocationException ex) {
             logger.warn("Exception: ", ex);
-            throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
+            handleCreateResourceAllocationException(ex);
         }
+    }
+
+    protected void handleCreateResourceAllocationException(ResourceAllocationException ex) {
+        if (ex.getMessage() != null && ex.getMessage().startsWith("Maximum amount")) {
+            throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR,
+                    "vm.deploy.resourcelimit.exceeded.account", Collections.emptyMap());
+        } else if (ex.getMessage() != null && ex.getMessage().startsWith("Maximum domain resource limits")) {
+            throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR,
+                    "vm.deploy.resourcelimit.exceeded.domain", Collections.emptyMap());
+        }
+        throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
     }
 }
