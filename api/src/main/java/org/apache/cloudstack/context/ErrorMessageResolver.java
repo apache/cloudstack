@@ -22,9 +22,13 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -41,14 +45,15 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public final class ErrorMessageResolver {
-
+public class ErrorMessageResolver {
     private static final Logger LOG =
             LogManager.getLogger(ErrorMessageResolver.class);
 
-    private static final String ERROR_MESSAGES_FILENAME = "error-messages.json";
-    private static final String ERROR_KEY_ADMIN_SUFFIX = ".admin";
-    private static final boolean INCLUDE_METADATA_ID_IN_MESSAGE = false;
+    protected static final String ERROR_MESSAGES_FILENAME = "error-messages.json";
+    protected static final String ERROR_KEY_ADMIN_SUFFIX = ".admin";
+    protected static final boolean INCLUDE_METADATA_ID_IN_MESSAGE = false;
+
+    private static final Pattern VARIABLE_PATTERN = Pattern.compile("\\{\\{\\s*([A-Za-z0-9_]+)\\s*\\}\\}");
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -61,11 +66,43 @@ public final class ErrorMessageResolver {
     private ErrorMessageResolver() {
     }
 
-    public static String getMessage(String errorKey, Map<String, Object> metadata) {
-        return getMessageUsingStringMap(errorKey, getStringMap(metadata));
+    protected static List<String> getVariableNamesInErrorKey(String template) {
+        if (template == null || template.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<String> variables = new ArrayList<>();
+        Matcher matcher = VARIABLE_PATTERN.matcher(template);
+        while (matcher.find()) {
+            String name = matcher.group(1);
+            if (name != null && !name.isEmpty()) {
+                variables.add(name);
+            }
+        }
+        return variables;
     }
 
-    private static String getTemplateForKey(String errorKey) {
+    protected static Map<String, Object> getCombinedMetadataFromErrorTemplate(String template, Map<String, Object> metadata) {
+        List<String> variableNames = getVariableNamesInErrorKey(template);
+        if (variableNames.isEmpty()) {
+            return metadata;
+        }
+        Map<String, Object> contextMetadata = CallContext.current().getContextStringKeyParameters();
+        if (MapUtils.isEmpty(contextMetadata)) {
+            return metadata;
+        }
+        Map<String, Object> combinedMetadata = new LinkedHashMap<>();
+        for (String varName : variableNames) {
+            if (contextMetadata.containsKey(varName)) {
+                combinedMetadata.put(varName, contextMetadata.get(varName));
+            }
+        }
+        if (MapUtils.isNotEmpty(metadata)) {
+            combinedMetadata.putAll(metadata);
+        }
+        return combinedMetadata;
+    }
+
+    protected static String getTemplateForKey(String errorKey) {
         if (errorKey == null) {
             return null;
         }
@@ -79,15 +116,7 @@ public final class ErrorMessageResolver {
         return templates.get(errorKey);
     }
 
-    private static String getMessageUsingStringMap(String errorKey, Map<String, String> metadata) {
-        String template = getTemplateForKey(errorKey);
-        if (template == null) {
-            return errorKey;
-        }
-        return expand(template, metadata);
-    }
-
-    private static Map<String, String> getStringMap(Map<String, Object> metadata) {
+    protected static Map<String, String> getStringMap(Map<String, Object> metadata) {
         Map<String, String> stringMap = new LinkedHashMap<>();
         if (MapUtils.isNotEmpty(metadata)) {
             for (Map.Entry<String, Object> entry : metadata.entrySet()) {
@@ -98,16 +127,35 @@ public final class ErrorMessageResolver {
         return stringMap;
     }
 
-    private static String getMetadataObjectStringValue(Object obj) {
+    /**
+     * Converts a metadata object to a human-readable string for error messages.
+     *
+     * <p>Behavior:
+     * <ul>
+     *   <li>If {@code obj} is {@code null}, returns {@code null}.</li>
+     *   <li>Attempts to obtain a display name by invoking one of the getters
+     *       {@code getDisplayText()}, {@code getDisplayName()}, or {@code getName()} via reflection.
+     *       If a name is found, returns it quoted as {@code 'NAME'}.</li>
+     *   <li>When the current calling account is a root admin, the returned value will include
+     *       an identifier suffix in the form {@code (ID: id, UUID: uuid)} when available.
+     *       The ID is included only if {@code INCLUDE_METADATA_ID_IN_MESSAGE} is {@code true}
+     *       and {@code obj} implements {@link InternalIdentity}. The UUID is included when
+     *       {@code obj} implements {@link org.apache.cloudstack.api.Identity}.</li>
+     *   <li>If no display name is available, returns the UUID (if {@code obj} implements
+     *       {@code Identity}); otherwise returns {@code obj.toString()}.</li>
+     * </ul>
+     *
+     * <p>Reflection is used to call getters; invocation failures are silently ignored and treated as
+     * absence of the corresponding value.
+     *
+     * @param obj metadata object
+     * @return formatted metadata string suitable for inclusion in error messages, or {@code null}
+     *         if {@code obj} is {@code null}
+     */
+    protected static String getMetadataObjectStringValue(Object obj) {
         if (obj == null) {
             return null;
         }
-        // obj is of primitive type
-        // String value structure should be 'NAME' (ID: id, UUID: uuid)
-        // NAME is obtained from obj.getName() or obj.getDisplayText()
-        // ID is obtained from obj.getId() if obj instanceof InternalIdentity and only for root admin
-        // UUID is obtained from obj.getUuid() if obj instanceof Identity
-        // If NAME is not available, fallback to obj.toString() then simply return UUID if available
         String uuid = null;
         if (obj instanceof Identity) {
             uuid = ((Identity) obj).getUuid();
@@ -156,7 +204,7 @@ public final class ErrorMessageResolver {
         return sb.toString();
     }
 
-    private static String invokeStringGetter(Object obj, String methodName) {
+    protected static String invokeStringGetter(Object obj, String methodName) {
         try {
             Class<?> cls = obj.getClass();
             var m = cls.getMethod(methodName);
@@ -167,28 +215,7 @@ public final class ErrorMessageResolver {
         }
     }
 
-    public static void updateExceptionResponse(ExceptionResponse response, CloudRuntimeException cre) {
-        String key = cre.getMessageKey();
-        Map<String, Object> map = cre.getMetadata();
-
-        if (key == null) {
-            if (cre.getCause() instanceof InvalidParameterValueException) {
-                key = ((InvalidParameterValueException) cre.getCause()).getMessageKey();
-                map = ((InvalidParameterValueException) cre.getCause()).getMetadata();
-            } else {
-                return;
-            }
-        }
-        response.setErrorTextKey(key);
-        Map<String, String> stringMap = getStringMap(map);
-        String message = getMessageUsingStringMap(key, stringMap);
-        if (message != null) {
-            response.setErrorText(message);
-        }
-        response.setErrorMetadata(stringMap);
-    }
-
-    private static synchronized void reloadIfRequired() {
+    protected static synchronized void reloadIfRequired() {
         try {
             // log current directory for debugging purposes
             LOG.debug("Current working directory: {}",
@@ -230,12 +257,8 @@ public final class ErrorMessageResolver {
         }
     }
 
-    private static String expand(String template, Map<String, String> metadata) {
-        Map<String, Object> allMetadata = CallContext.current().getContextStringKeyParameters();
-        if (MapUtils.isNotEmpty(allMetadata)) {
-            allMetadata.putAll(metadata);
-        }
-        if (MapUtils.isEmpty(allMetadata)) {
+    protected static String expand(String template, Map<String, String> metadata) {
+        if (MapUtils.isEmpty(metadata)) {
             return template;
         }
         String result = template;
@@ -247,5 +270,40 @@ public final class ErrorMessageResolver {
             }
         }
         return result;
+    }
+
+    public static String getMessage(String errorKey, Map<String, Object> metadata) {
+        String template = getTemplateForKey(errorKey);
+        if (template == null) {
+            return errorKey;
+        }
+        Map<String, Object> combinedMetadata = getCombinedMetadataFromErrorTemplate(template, metadata);
+        return expand(template, getStringMap(combinedMetadata));
+    }
+
+    public static void updateExceptionResponse(ExceptionResponse response, CloudRuntimeException cre) {
+        String key = cre.getMessageKey();
+        Map<String, Object> map = cre.getMetadata();
+
+        if (key == null) {
+            Throwable cause = cre.getCause();
+            if (!(cause instanceof InvalidParameterValueException)) {
+                return;
+            }
+            InvalidParameterValueException ipve = (InvalidParameterValueException) cause;
+            key = ipve.getMessageKey();
+            map = ipve.getMetadata();
+        }
+        response.setErrorTextKey(key);
+        String template = getTemplateForKey(key);
+        if (template == null) {
+            response.setErrorText(key);
+            response.setErrorMetadata(getStringMap(map));
+            return;
+        }
+        Map<String, Object> combinedMetadata = getCombinedMetadataFromErrorTemplate(template, map);
+        Map<String, String> stringMap = getStringMap(combinedMetadata);
+        response.setErrorText(expand(template,  stringMap));
+        response.setErrorMetadata(stringMap);
     }
 }
