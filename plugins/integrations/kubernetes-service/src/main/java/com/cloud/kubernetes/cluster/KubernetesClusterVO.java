@@ -139,6 +139,15 @@ public class KubernetesClusterVO implements KubernetesCluster {
     @Column(name = "etcd_node_template_id")
     private Long etcdNodeTemplateId;
 
+    @Column(name = "control_node_affinity_group_id")
+    private Long controlNodeAffinityGroupId;
+
+    @Column(name = "worker_node_affinity_group_id")
+    private Long workerNodeAffinityGroupId;
+
+    @Column(name = "etcd_node_affinity_group_id")
+    private Long etcdNodeAffinityGroupId;
+
     @Column(name = "cni_config_id", nullable = true)
     private Long cniConfigId = null;
 
@@ -507,6 +516,30 @@ public class KubernetesClusterVO implements KubernetesCluster {
 
     public void setControlNodeTemplateId(Long controlNodeTemplateId) {
         this.controlNodeTemplateId = controlNodeTemplateId;
+    }
+
+    public Long getControlNodeAffinityGroupId() {
+        return controlNodeAffinityGroupId;
+    }
+
+    public void setControlNodeAffinityGroupId(Long controlNodeAffinityGroupId) {
+        this.controlNodeAffinityGroupId = controlNodeAffinityGroupId;
+    }
+
+    public Long getWorkerNodeAffinityGroupId() {
+        return workerNodeAffinityGroupId;
+    }
+
+    public void setWorkerNodeAffinityGroupId(Long workerNodeAffinityGroupId) {
+        this.workerNodeAffinityGroupId = workerNodeAffinityGroupId;
+    }
+
+    public Long getEtcdNodeAffinityGroupId() {
+        return etcdNodeAffinityGroupId;
+    }
+
+    public void setEtcdNodeAffinityGroupId(Long etcdNodeAffinityGroupId) {
+        this.etcdNodeAffinityGroupId = etcdNodeAffinityGroupId;
     }
 
     public Long getCniConfigId() {
