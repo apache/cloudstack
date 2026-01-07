@@ -90,6 +90,7 @@ import com.cloud.kubernetes.cluster.KubernetesClusterDetailsVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
 import com.cloud.kubernetes.cluster.KubernetesClusterVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
+import com.cloud.kubernetes.cluster.dao.KubernetesClusterAffinityGroupMapDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDetailsDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
@@ -217,6 +218,7 @@ public class KubernetesClusterActionWorker {
     protected KubernetesClusterDao kubernetesClusterDao;
     protected KubernetesClusterVmMapDao kubernetesClusterVmMapDao;
     protected KubernetesClusterDetailsDao kubernetesClusterDetailsDao;
+    protected KubernetesClusterAffinityGroupMapDao kubernetesClusterAffinityGroupMapDao;
     protected KubernetesSupportedVersionDao kubernetesSupportedVersionDao;
 
     protected KubernetesCluster kubernetesCluster;
@@ -251,6 +253,7 @@ public class KubernetesClusterActionWorker {
         this.kubernetesClusterDao = clusterManager.kubernetesClusterDao;
         this.kubernetesClusterDetailsDao = clusterManager.kubernetesClusterDetailsDao;
         this.kubernetesClusterVmMapDao = clusterManager.kubernetesClusterVmMapDao;
+        this.kubernetesClusterAffinityGroupMapDao = clusterManager.kubernetesClusterAffinityGroupMapDao;
         this.kubernetesSupportedVersionDao = clusterManager.kubernetesSupportedVersionDao;
         this.manager = clusterManager;
     }
@@ -1114,31 +1117,8 @@ public class KubernetesClusterActionWorker {
     }
 
     protected List<Long> getAffinityGroupIdsForNodeType(KubernetesClusterNodeType nodeType) {
-        String affinityGroupUuids = null;
-        switch (nodeType) {
-            case CONTROL:
-                affinityGroupUuids = kubernetesCluster.getControlNodeAffinityGroupIds();
-                break;
-            case WORKER:
-                affinityGroupUuids = kubernetesCluster.getWorkerNodeAffinityGroupIds();
-                break;
-            case ETCD:
-                affinityGroupUuids = kubernetesCluster.getEtcdNodeAffinityGroupIds();
-                break;
-            default:
-                return new ArrayList<>();
-        }
-        if (StringUtils.isBlank(affinityGroupUuids)) {
-            return new ArrayList<>();
-        }
-        List<Long> affinityGroupIds = new ArrayList<>();
-        for (String affinityGroupUuid : affinityGroupUuids.split(",")) {
-            AffinityGroupVO affinityGroupVO = affinityGroupDao.findByUuid(affinityGroupUuid.trim());
-            if (affinityGroupVO != null) {
-                affinityGroupIds.add(affinityGroupVO.getId());
-            }
-        }
-        return affinityGroupIds;
+        return new ArrayList<>(kubernetesClusterAffinityGroupMapDao.listAffinityGroupIdsByClusterIdAndNodeType(
+            kubernetesCluster.getId(), nodeType.name()));
     }
 
     protected List<Long> getMergedAffinityGroupIds(KubernetesClusterNodeType nodeType, Long domainId, Long accountId) {
