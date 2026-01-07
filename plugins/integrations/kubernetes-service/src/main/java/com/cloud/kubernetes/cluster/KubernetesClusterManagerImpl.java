@@ -908,8 +908,43 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         response.setClusterType(kubernetesCluster.getClusterType());
         response.setCsiEnabled(kubernetesCluster.isCsiEnabled());
         response.setCreated(kubernetesCluster.getCreated());
+        setNodeTypeAffinityGroupResponse(response, kubernetesCluster.getId());
 
         return response;
+    }
+
+    protected void setNodeTypeAffinityGroupResponse(KubernetesClusterResponse response, long clusterId) {
+        setAffinityGroupResponseForNodeType(response, clusterId, CONTROL.name());
+        setAffinityGroupResponseForNodeType(response, clusterId, WORKER.name());
+        setAffinityGroupResponseForNodeType(response, clusterId, ETCD.name());
+    }
+
+    protected void setAffinityGroupResponseForNodeType(KubernetesClusterResponse response, long clusterId, String nodeType) {
+        List<Long> affinityGroupIds = kubernetesClusterAffinityGroupMapDao.listAffinityGroupIdsByClusterIdAndNodeType(clusterId, nodeType);
+        if (affinityGroupIds == null || affinityGroupIds.isEmpty()) {
+            return;
+        }
+        List<String> affinityGroupUuids = new ArrayList<>();
+        List<String> affinityGroupNames = new ArrayList<>();
+        for (Long affinityGroupId : affinityGroupIds) {
+            AffinityGroupVO affinityGroup = affinityGroupDao.findById(affinityGroupId);
+            if (affinityGroup != null) {
+                affinityGroupUuids.add(affinityGroup.getUuid());
+                affinityGroupNames.add(affinityGroup.getName());
+            }
+        }
+        String affinityGroupUuidsCsv = String.join(",", affinityGroupUuids);
+        String affinityGroupNamesCsv = String.join(",", affinityGroupNames);
+        if (CONTROL.name().equals(nodeType)) {
+            response.setControlAffinityGroupIds(affinityGroupUuidsCsv);
+            response.setControlAffinityGroupNames(affinityGroupNamesCsv);
+        } else if (WORKER.name().equals(nodeType)) {
+            response.setWorkerAffinityGroupIds(affinityGroupUuidsCsv);
+            response.setWorkerAffinityGroupNames(affinityGroupNamesCsv);
+        } else if (ETCD.name().equals(nodeType)) {
+            response.setEtcdAffinityGroupIds(affinityGroupUuidsCsv);
+            response.setEtcdAffinityGroupNames(affinityGroupNamesCsv);
+        }
     }
 
     private DataCenter validateAndGetZoneForKubernetesCreateParameters(Long zoneId, Long networkId) {
