@@ -54,24 +54,24 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
                type = CommandType.UUID,
                entityType = IPAddressResponse.class,
                required = true,
-               description = "the public IP address ID of the forwarding rule, already associated via associateIp")
+               description = "The public IP address ID of the forwarding rule, already associated via associateIp")
     private Long ipAddressId;
 
-    @Parameter(name = ApiConstants.START_PORT, type = CommandType.INTEGER, required = true, description = "the start port for the rule")
+    @Parameter(name = ApiConstants.START_PORT, type = CommandType.INTEGER, required = true, description = "The start port for the rule")
     private Integer startPort;
 
-    @Parameter(name = ApiConstants.END_PORT, type = CommandType.INTEGER, description = "the end port for the rule")
+    @Parameter(name = ApiConstants.END_PORT, type = CommandType.INTEGER, description = "The end port for the rule")
     private Integer endPort;
 
-    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, required = true, description = "the protocol for the rule. Valid values are TCP or UDP.")
+    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, required = true, description = "The protocol for the rule. Valid values are TCP or UDP.")
     private String protocol;
 
     @Parameter(name = ApiConstants.OPEN_FIREWALL,
                type = CommandType.BOOLEAN,
-               description = "if true, firewall rule for source/end public port is automatically created; if false - firewall rule has to be created explicitly. Has value true by default")
+               description = "If true, firewall rule for source/end public port is automatically created; if false - firewall rule has to be created explicitly. Has value true by default")
     private Boolean openFirewall;
 
-    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the CIDR list to forward traffic from. Multiple entries must be separated by a single comma character (,). This parameter is deprecated. Do not use.")
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "The CIDR list to forward traffic from. Multiple entries must be separated by a single comma character (,). This parameter is deprecated. Do not use.")
     private List<String> cidrlist;
 
     /////////////////////////////////////////////////////
@@ -148,7 +148,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
             setEntityId(rule.getId());
             setEntityUuid(rule.getUuid());
         } catch (NetworkRuleConflictException e) {
-            logger.info("Unable to create static NAT rule due to ", e);
+            logger.error("Unable to create static NAT rule due to ", e);
             throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
         }
     }
@@ -172,14 +172,14 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     @Override
     public String getEventDescription() {
         IpAddress ip = _networkService.getIp(ipAddressId);
-        return ("Applying an ipforwarding 1:1 NAT rule for IP: " + ip.getAddress() + " with virtual machine:" + getVirtualMachineId());
+        return ("Applying an IP forwarding 1:1 NAT rule for IP: " + ip.getAddress() + " with Instance:" + getVirtualMachineId());
     }
 
     private long getVirtualMachineId() {
         Long vmId = _networkService.getIp(ipAddressId).getAssociatedWithVmId();
 
         if (vmId == null) {
-            throw new InvalidParameterValueException("IP address is not associated with any network, unable to create static NAT rule");
+            throw new InvalidParameterValueException("IP address is not associated with any Network, unable to create static NAT rule");
         }
         return vmId;
     }

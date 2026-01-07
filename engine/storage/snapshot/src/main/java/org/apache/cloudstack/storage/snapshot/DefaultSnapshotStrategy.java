@@ -148,7 +148,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
 
                 CreateObjectAnswer createSnapshotAnswer = new CreateObjectAnswer(snapTO);
 
-                snapshotOnImageStore.processEvent(Event.OperationSuccessed, createSnapshotAnswer);
+                snapshotOnImageStore.processEvent(Event.OperationSucceeded, createSnapshotAnswer);
                 SnapshotObject snapObj = castSnapshotInfoToSnapshotObject(snapshot);
                 try {
                     snapObj.processEvent(Snapshot.Event.OperationNotPerformed);

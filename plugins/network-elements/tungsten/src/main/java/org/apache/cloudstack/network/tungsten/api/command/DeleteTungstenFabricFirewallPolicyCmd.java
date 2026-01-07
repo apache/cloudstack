@@ -36,7 +36,7 @@ import org.apache.cloudstack.network.tungsten.service.TungstenService;
 
 import javax.inject.Inject;
 
-@APICommand(name = DeleteTungstenFabricFirewallPolicyCmd.APINAME, description = "delete Tungsten-Fabric firewall "
+@APICommand(name = DeleteTungstenFabricFirewallPolicyCmd.APINAME, description = "Delete Tungsten-Fabric firewall "
     + "policy", responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo =
     false)
 public class DeleteTungstenFabricFirewallPolicyCmd extends BaseAsyncCmd {
@@ -45,10 +45,10 @@ public class DeleteTungstenFabricFirewallPolicyCmd extends BaseAsyncCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.FIREWALL_POLICY_UUID, type = CommandType.STRING, required = true, description = "the uuid of Tungsten-Fabric firewall policy")
+    @Parameter(name = ApiConstants.FIREWALL_POLICY_UUID, type = CommandType.STRING, required = true, description = "The uuid of Tungsten-Fabric firewall policy")
     private String firewallPolicyUuid;
 
     @Override

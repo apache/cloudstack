@@ -47,7 +47,7 @@ public class ListHypervisorCapabilitiesCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HypervisorCapabilitiesResponse.class, description = "ID of the hypervisor capability")
     private Long id;
 
-    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "the hypervisor for which to restrict the search")
+    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "The hypervisor for which to restrict the search")
     private String hypervisor;
 
     /////////////////////////////////////////////////////

@@ -25,11 +25,11 @@ import com.cloud.serializer.Param;
 
 public class ConfigurationSubGroupResponse extends BaseResponse {
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the configuration subgroup")
+    @Param(description = "The name of the configuration subgroup")
     private String subGroupName;
 
     @SerializedName(ApiConstants.PRECEDENCE)
-    @Param(description = "the precedence of the configuration subgroup")
+    @Param(description = "The precedence of the configuration subgroup")
     private Long precedence;
 
     public String getSubGroupName() {
