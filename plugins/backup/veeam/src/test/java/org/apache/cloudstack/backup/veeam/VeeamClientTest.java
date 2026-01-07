@@ -483,7 +483,9 @@ public class VeeamClientTest {
                 "  xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"\n" +
                 "  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
                 "  xmlns=\"http://www.veeam.com/ent/v1.0\">\n" +
-                "  <VmRestorePoint Href=\"https://10.0.3.142:9398/api/vmRestorePoints/f6d504cf-eafe-4cd2-8dfc-e9cfe2f1e977?format=Entity\" Type=\"VmRestorePoint\" Name=\"i-2-4-VM@2023-11-03 16:26:12.209913\" UID=\"urn:veeam:VmRestorePoint:f6d504cf-eafe-4cd2-8dfc-e9cfe2f1e977\" VmDisplayName=\"i-2-4-VM\">\n" +
+                "  <VmRestorePoint Href=\"https://10.0.3.142:9398/api/vmRestorePoints/f6d504cf-eafe-4cd2-8dfc-e9cfe2f1e977?format=Entity\"" +
+                "       Type=\"VmRestorePoint\" Name=\"i-2-4-VM@2023-11-03 16:26:12.209913\" UID=\"urn:veeam:VmRestorePoint:f6d504cf-eafe-4cd2-8dfc-e9cfe2f1e977\"" +
+                "       VmDisplayName=\"i-2-4-VM\" SqlInfo=\"SqlInfo\">\n" +
                 "    <Links>\n" +
                 "      <Link Href=\"https://10.0.3.142:9398/api/vmRestorePoints/f6d504cf-eafe-4cd2-8dfc-e9cfe2f1e977?action=restore\" Rel=\"Restore\" />\n" +
                 "      <Link Href=\"https://10.0.3.142:9398/api/backupServers/18cc2a81-1ff0-42cd-8389-62f2bbcc6b7f\" Name=\"10.0.3.142\" Type=\"BackupServerReference\" Rel=\"Up\" />\n" +

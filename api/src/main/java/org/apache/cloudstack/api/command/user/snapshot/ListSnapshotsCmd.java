@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.storage.Snapshot;
 
-@APICommand(name = "listSnapshots", description = "Lists all available snapshots for the account.", responseObject = SnapshotResponse.class, entityType = {
+@APICommand(name = "listSnapshots", description = "Lists all available Snapshots for the Account.", responseObject = SnapshotResponse.class, entityType = {
         Snapshot.class }, responseView = ResponseObject.ResponseView.Restricted, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
 
@@ -40,25 +40,25 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = SnapshotResponse.class, description = "lists snapshot by snapshot ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = SnapshotResponse.class, description = "Lists Snapshot by Snapshot ID")
     private Long id;
 
-    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=SnapshotResponse.class, description="the IDs of the snapshots, mutually exclusive with id", since = "4.9")
+    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=SnapshotResponse.class, description = "The IDs of the Snapshots, mutually exclusive with id", since = "4.9")
     private List<Long> ids;
 
-    @Parameter(name = ApiConstants.INTERVAL_TYPE, type = CommandType.STRING, description = "valid values are HOURLY, DAILY, WEEKLY, and MONTHLY.")
+    @Parameter(name = ApiConstants.INTERVAL_TYPE, type = CommandType.STRING, description = "Valid values are HOURLY, DAILY, WEEKLY, and MONTHLY.")
     private String intervalType;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "lists snapshot by snapshot name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Lists Snapshot by Snapshot name")
     private String snapshotName;
 
-    @Parameter(name = ApiConstants.SNAPSHOT_TYPE, type = CommandType.STRING, description = "valid values are MANUAL or RECURRING.")
+    @Parameter(name = ApiConstants.SNAPSHOT_TYPE, type = CommandType.STRING, description = "Valid values are MANUAL or RECURRING.")
     private String snapshotType;
 
-    @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class, description = "the ID of the disk volume")
+    @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class, description = "The ID of the disk volume")
     private Long volumeId;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "list snapshots by zone id")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "List Snapshots by zone id")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.SHOW_UNIQUE, type = CommandType.BOOLEAN, description = "If set to false, list templates across zones and their storages", since = "4.19.0")

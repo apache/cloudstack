@@ -38,16 +38,16 @@
                   v-model:value="form.intervaltype"
                   buttonStyle="solid"
                   @change="handleChangeIntervalType">
-                  <a-radio-button value="hourly" :disabled="handleVisibleInterval(0)">
+                  <a-radio-button value="hourly" :disabled="isIntervalDisabled('hourly')">
                     {{ $t('label.hourly') }}
                   </a-radio-button>
-                  <a-radio-button value="daily" :disabled="handleVisibleInterval(1)">
+                  <a-radio-button value="daily" :disabled="isIntervalDisabled('daily')">
                     {{ $t('label.daily') }}
                   </a-radio-button>
-                  <a-radio-button value="weekly" :disabled="handleVisibleInterval(2)">
+                  <a-radio-button value="weekly" :disabled="isIntervalDisabled('weekly')">
                     {{ $t('label.weekly') }}
                   </a-radio-button>
-                  <a-radio-button value="monthly" :disabled="handleVisibleInterval(3)">
+                  <a-radio-button value="monthly" :disabled="isIntervalDisabled('monthly')">
                     {{ $t('label.monthly') }}
                   </a-radio-button>
                 </a-radio-group>
@@ -60,6 +60,7 @@
                   :title="$t('label.minute.past.hour')">
                   <a-input-number
                     style="width: 100%"
+                    :disabled="isIntervalDisabled(form.intervaltype)"
                     v-model:value="form.time"
                     :min="1"
                     :max="59"
@@ -76,6 +77,7 @@
                 <a-time-picker
                   use12Hours
                   format="h:mm A"
+                  :disabled="isIntervalDisabled(form.intervaltype)"
                   v-model:value="form.timeSelect"
                   style="width: 100%;" />
               </a-form-item>
@@ -85,6 +87,7 @@
                 <a-select
                   v-model:value="form['day-of-week']"
                   showSearch
+                  :disabled="isIntervalDisabled(form.intervaltype)"
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
                     return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -100,6 +103,7 @@
                 <a-select
                   v-model:value="form['day-of-month']"
                   showSearch
+                  :disabled="isIntervalDisabled(form.intervaltype)"
                   optionFilterProp="value"
                   :filterOption="(input, option) => {
                     return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -311,12 +315,35 @@ export default {
     this.volumeId = this.resource.id
     this.fetchTimeZone()
   },
+  mounted () {
+    if (this.form.intervaltype && this.isIntervalDisabled(this.form.intervaltype)) {
+      const nextAvailable = this.getNextAvailableIntervalType(this.form.intervaltype)
+      if (nextAvailable) {
+        this.form.intervaltype = nextAvailable
+        this.handleChangeIntervalType()
+      }
+    }
+  },
   computed: {
     formattedAdditionalZoneMessage () {
       return `${this.$t('message.snapshot.additional.zones').replace('%x', this.resource.zonename)}`
     },
     isAdmin () {
       return isAdmin()
+    }
+  },
+  watch: {
+    dataSource: {
+      handler () {
+        if (this.form.intervaltype && this.getNextAvailableIntervalType && this.isIntervalDisabled(this.form.intervaltype)) {
+          const nextAvailable = this.getNextAvailableIntervalType(this.form.intervaltype)
+          if (nextAvailable) {
+            this.form.intervaltype = nextAvailable
+            this.handleChangeIntervalType()
+          }
+        }
+      },
+      deep: true
     }
   },
   methods: {
@@ -404,28 +431,46 @@ export default {
       }
     },
     handleChangeIntervalType () {
-      switch (this.form.intervaltype) {
+      if (this.form.intervaltype === 'weekly') {
+        this.fetchDayOfWeek()
+      } else if (this.form.intervaltype === 'monthly') {
+        this.fetchDayOfMonth()
+      }
+      this.intervalValue = this.getIntervalValue(this.formintervaltype)
+    },
+    getIntervalValue (intervalType) {
+      switch (intervalType) {
         case 'hourly':
-          this.intervalValue = 0
-          break
+          return 0
         case 'daily':
-          this.intervalValue = 1
-          break
+          return 1
         case 'weekly':
-          this.intervalValue = 2
-          this.fetchDayOfWeek()
-          break
+          return 2
         case 'monthly':
-          this.intervalValue = 3
-          this.fetchDayOfMonth()
-          break
+          return 3
       }
     },
-    handleVisibleInterval (intervalType) {
+    getNextAvailableIntervalType (currentIntervalType) {
+      const intervalTypes = ['hourly', 'daily', 'weekly', 'monthly']
+      const currentIndex = intervalTypes.indexOf(currentIntervalType)
+      const startIndex = currentIndex >= 0 ? currentIndex : -1
+
+      for (let i = 1; i <= intervalTypes.length; i++) {
+        const nextIndex = (startIndex + i) % intervalTypes.length
+        const nextIntervalType = intervalTypes[nextIndex]
+
+        if (!this.isIntervalDisabled(nextIntervalType)) {
+          return nextIntervalType
+        }
+      }
+      return null
+    },
+    isIntervalDisabled (intervalType) {
+      const intervalValue = this.getIntervalValue(intervalType)
       if (this.dataSource.length === 0) {
         return false
       }
-      const dataSource = this.dataSource.filter(item => item.intervaltype === intervalType)
+      const dataSource = this.dataSource.filter(item => item.intervaltype === intervalValue)
       if (dataSource && dataSource.length > 0) {
         return true
       }

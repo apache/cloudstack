@@ -28,15 +28,15 @@ import com.google.gson.annotations.SerializedName;
 
 public class VolumeMetricsStatsResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the volume")
+    @Param(description = "The ID of the volume")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the volume")
+    @Param(description = "The name of the volume")
     private String name;
 
     @SerializedName("stats")
-    @Param(description = "the list of VM stats")
+    @Param(description = "The list of VM stats")
     private List<StatsResponse> stats;
 
     public void setId(String id) {

@@ -22,6 +22,6 @@ import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.command.user.iso.AttachIsoCmd;
 import org.apache.cloudstack.api.response.UserVmResponse;
 
-@APICommand(name = "attachIso", description = "Attaches an ISO to a virtual machine.", responseObject = UserVmResponse.class, responseView = ResponseView.Full,
+@APICommand(name = "attachIso", description = "Attaches an ISO to  an Instance.", responseObject = UserVmResponse.class, responseView = ResponseView.Full,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class AttachIsoCmdByAdmin extends AttachIsoCmd implements AdminCmd { }
