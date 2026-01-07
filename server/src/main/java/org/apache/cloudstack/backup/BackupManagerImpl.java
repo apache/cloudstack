@@ -2234,7 +2234,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             logger.warn(String.format("Couldn't update Backup offering (%s) with [%s].", backupOfferingVO, String.join(", ", fields)));
         }
 
-        if (success) {
+        if (success || fields.isEmpty()) {
             List<Long> existingDomainIds = backupOfferingDetailsDao.findDomainIds(id);
             Collections.sort(existingDomainIds);
             updateBackupOfferingDomainDetails(id, filteredDomainIds, existingDomainIds);
