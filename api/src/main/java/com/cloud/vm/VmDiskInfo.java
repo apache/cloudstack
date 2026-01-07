@@ -33,6 +33,11 @@ public class VmDiskInfo extends DiskOfferingInfo {
         _deviceId = deviceId;
     }
 
+    public VmDiskInfo(DiskOffering diskOffering, Long size, Long minIops, Long maxIops, Long deviceId, Long kmsKeyId) {
+        super(diskOffering, size, minIops, maxIops, kmsKeyId);
+        _deviceId = deviceId;
+    }
+
     public Long getDeviceId() {
         return _deviceId;
     }

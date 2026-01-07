@@ -257,7 +257,7 @@ public class StorageVmSharedFSLifeCycleTest {
                 anyString(), anyLong(), anyLong(), any(), isNull(), any(Hypervisor.HypervisorType.class), any(BaseCmd.HTTPMethod.class), anyString(),
                 isNull(), isNull(), anyList(), isNull(), any(Network.IpAddresses.class), isNull(), isNull(), isNull(),
                 anyMap(), isNull(), isNull(), isNull(), isNull(),
-                anyBoolean(), anyString(), isNull(), isNull(), isNull())).thenReturn(vm);
+                anyBoolean(), anyString(), isNull(), isNull(), isNull(), isNull())).thenReturn(vm);
 
         VolumeVO rootVol = mock(VolumeVO.class);
         when(rootVol.getVolumeType()).thenReturn(Volume.Type.ROOT);

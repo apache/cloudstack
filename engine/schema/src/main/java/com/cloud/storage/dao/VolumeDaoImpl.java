@@ -29,6 +29,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.reservation.ReservationVO;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
+import org.apache.cloudstack.kms.dao.KMSWrappedKeyDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
@@ -85,6 +86,8 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     ReservationDao reservationDao;
     @Inject
     ResourceTagDao tagsDao;
+    @Inject
+    KMSWrappedKeyDao kmsWrappedKeyDao;
 
     // need to account for zone-wide primary storage where storage_pool has
     // null-value pod and cluster, where hypervisor information is stored in
@@ -765,6 +768,17 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         logger.debug(String.format("Removing volume %s from DB", id));
         VolumeVO entry = findById(id);
         if (entry != null) {
+            // Clean up KMS wrapped key if volume was encrypted with KMS
+            if (entry.getKmsWrappedKeyId() != null) {
+                try {
+                    kmsWrappedKeyDao.remove(entry.getKmsWrappedKeyId());
+                    logger.debug("Removed KMS wrapped key [id={}] for volume [id={}, uuid={}]",
+                            entry.getKmsWrappedKeyId(), id, entry.getUuid());
+                } catch (Exception e) {
+                    logger.warn("Failed to remove KMS wrapped key [id={}] for volume [id={}, uuid={}]: {}",
+                            entry.getKmsWrappedKeyId(), id, entry.getUuid(), e.getMessage(), e);
+                }
+            }
             tagsDao.removeByIdAndType(id, ResourceObjectType.Volume);
         }
         boolean result = super.remove(id);
