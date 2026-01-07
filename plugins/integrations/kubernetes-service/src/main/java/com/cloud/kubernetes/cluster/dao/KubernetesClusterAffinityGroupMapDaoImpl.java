@@ -28,12 +28,17 @@ public class KubernetesClusterAffinityGroupMapDaoImpl extends GenericDaoBase<Kub
         implements KubernetesClusterAffinityGroupMapDao {
 
     private final SearchBuilder<KubernetesClusterAffinityGroupMapVO> clusterIdAndNodeTypeSearch;
+    private final SearchBuilder<KubernetesClusterAffinityGroupMapVO> clusterIdSearch;
 
     public KubernetesClusterAffinityGroupMapDaoImpl() {
         clusterIdAndNodeTypeSearch = createSearchBuilder();
         clusterIdAndNodeTypeSearch.and("clusterId", clusterIdAndNodeTypeSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
         clusterIdAndNodeTypeSearch.and("nodeType", clusterIdAndNodeTypeSearch.entity().getNodeType(), SearchCriteria.Op.EQ);
         clusterIdAndNodeTypeSearch.done();
+
+        clusterIdSearch = createSearchBuilder();
+        clusterIdSearch.and("clusterId", clusterIdSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+        clusterIdSearch.done();
     }
 
     @Override
@@ -48,5 +53,12 @@ public class KubernetesClusterAffinityGroupMapDaoImpl extends GenericDaoBase<Kub
     public List<Long> listAffinityGroupIdsByClusterIdAndNodeType(long clusterId, String nodeType) {
         List<KubernetesClusterAffinityGroupMapVO> maps = listByClusterIdAndNodeType(clusterId, nodeType);
         return maps.stream().map(KubernetesClusterAffinityGroupMapVO::getAffinityGroupId).collect(Collectors.toList());
+    }
+
+    @Override
+    public int removeByClusterId(long clusterId) {
+        SearchCriteria<KubernetesClusterAffinityGroupMapVO> sc = clusterIdSearch.create();
+        sc.setParameters("clusterId", clusterId);
+        return remove(sc);
     }
 }
