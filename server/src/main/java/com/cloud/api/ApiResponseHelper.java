@@ -5530,6 +5530,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setAddress(backupRepository.getAddress());
         response.setProviderName(backupRepository.getProvider());
         response.setType(backupRepository.getType());
+        if (StringUtils.isNotBlank(backupRepository.getMountOptions())) {
+            response.setMountOptions(backupRepository.getMountOptions());
+        }
         response.setCapacityBytes(backupRepository.getCapacityBytes());
         response.setCrossZoneInstanceCreation(backupRepository.crossZoneInstanceCreationEnabled());
         response.setObjectName("backuprepository");

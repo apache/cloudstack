@@ -78,6 +78,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch2;
     protected GenericSearchBuilder<VolumeVO, SumCount> secondaryStorageSearch;
     private final SearchBuilder<VolumeVO> poolAndPathSearch;
+    final GenericSearchBuilder<VolumeVO, Integer> CountByOfferingId;
 
     @Inject
     ReservationDao reservationDao;
@@ -506,6 +507,11 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         poolAndPathSearch.and("poolId", poolAndPathSearch.entity().getPoolId(), Op.EQ);
         poolAndPathSearch.and("path", poolAndPathSearch.entity().getPath(), Op.EQ);
         poolAndPathSearch.done();
+
+        CountByOfferingId = createSearchBuilder(Integer.class);
+        CountByOfferingId.select(null, Func.COUNT, CountByOfferingId.entity().getId());
+        CountByOfferingId.and("diskOfferingId", CountByOfferingId.entity().getDiskOfferingId(), Op.EQ);
+        CountByOfferingId.done();
     }
 
     @Override
@@ -912,6 +918,14 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("iScsiName", iScsiName);
         return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public int getVolumeCountByOfferingId(long diskOfferingId) {
+        SearchCriteria<Integer> sc = CountByOfferingId.create();
+        sc.setParameters("diskOfferingId", diskOfferingId);
+        List<Integer> results = customSearch(sc, null);
+        return results.get(0);
     }
 
     @Override
