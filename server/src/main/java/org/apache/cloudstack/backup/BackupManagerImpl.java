@@ -300,9 +300,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_CLONE_OFFERING, eventDescription = "cloning backup offering", create = true)
     public BackupOffering cloneBackupOffering(final CloneBackupOfferingCmd cmd) {
-        final BackupOfferingVO sourceOffering = backupOfferingDao.findById(cmd.getId());
+        final BackupOfferingVO sourceOffering = backupOfferingDao.findById(cmd.getSourceOfferingId());
         if (sourceOffering == null) {
-            throw new InvalidParameterValueException("Unable to find backup offering with ID: " + cmd.getId());
+            throw new InvalidParameterValueException("Unable to find backup offering with ID: " + cmd.getSourceOfferingId());
         }
 
         validateBackupForZone(sourceOffering.getZoneId());
@@ -340,10 +340,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         final BackupOfferingVO savedOffering = backupOfferingDao.persist(clonedOffering);
         if (savedOffering == null) {
-            throw new CloudRuntimeException("Unable to clone backup offering from ID: " + cmd.getId());
+            throw new CloudRuntimeException("Unable to clone backup offering from ID: " + cmd.getSourceOfferingId());
         }
 
-        logger.debug("Successfully cloned backup offering '" + sourceOffering.getName() + "' (ID: " + cmd.getId() + ") to '" + cmd.getName() + "' (ID: " + savedOffering.getId() + ")");
+        logger.debug("Successfully cloned backup offering '" + sourceOffering.getName() + "' (ID: " + cmd.getSourceOfferingId() + ") to '" + cmd.getName() + "' (ID: " + savedOffering.getId() + ")");
         return savedOffering;
     }
 

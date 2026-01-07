@@ -35,7 +35,7 @@ import com.cloud.offering.NetworkOffering;
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         since = "4.23.0")
-public class CloneNetworkOfferingCmd extends CreateNetworkOfferingCmd {
+public class CloneNetworkOfferingCmd extends NetworkOfferingBaseCmd {
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -62,6 +62,14 @@ public class CloneNetworkOfferingCmd extends CreateNetworkOfferingCmd {
                     "If specified along with 'supportedservices', this parameter is ignored.")
     private List<String> dropServices;
 
+    @Parameter(name = ApiConstants.TRAFFIC_TYPE,
+            type = CommandType.STRING,
+            description = "The traffic type for the network offering. Supported type in current release is GUEST only")
+    private String traffictype;
+
+    @Parameter(name = ApiConstants.GUEST_IP_TYPE, type = CommandType.STRING, description = "Guest type of the network offering: Shared or Isolated")
+    private String guestIptype;
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -79,22 +87,12 @@ public class CloneNetworkOfferingCmd extends CreateNetworkOfferingCmd {
         return dropServices;
     }
 
-    /**
-     * Override to provide placeholder values that will be replaced with source offering values.
-     * This allows API validation to pass even though these are marked as required in the parent class.
-     */
-    @Override
     public String getGuestIpType() {
-        String value = super.getGuestIpType();
-        // Return placeholder if not provided - will be overwritten from source offering
-        return value != null ? value : "Isolated";
+        return guestIptype;
     }
 
-    @Override
     public String getTraffictype() {
-        String value = super.getTraffictype();
-        // Return placeholder if not provided - will be overwritten from source offering
-        return value != null ? value : "Guest";
+        return traffictype;
     }
 
     /////////////////////////////////////////////////////
