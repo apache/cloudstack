@@ -2068,7 +2068,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             return Transaction.execute((TransactionCallback<Boolean>) status -> {
                 kubernetesClusterDetailsDao.removeDetails(kubernetesClusterId);
                 kubernetesClusterVmMapDao.removeByClusterId(kubernetesClusterId);
-                kubernetesClusterAffinityGroupMapDao.removeByClusterId(kubernetesClusterId);
                 if (kubernetesClusterDao.remove(kubernetesClusterId)) {
                     deleteProjectKubernetesAccountIfNeeded(cluster);
                     return true;
