@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.kubernetes.cluster;
 
 import java.security.InvalidParameterException;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -327,7 +328,7 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
         return kubernetesServiceHelper.getTemplateNodeTypeMap(templateNodeTypeMap);
     }
 
-    public Map<String, String> getAffinityGroupNodeTypeMap() {
+    public Map<String, List<Long>> getAffinityGroupNodeTypeMap() {
         return kubernetesServiceHelper.getAffinityGroupNodeTypeMap(affinityGroupNodeTypeMap);
     }
 

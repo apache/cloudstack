@@ -18,6 +18,7 @@ package com.cloud.kubernetes.cluster;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 
+import java.util.List;
 import java.util.Map;
 
 import com.cloud.user.Account;
@@ -36,6 +37,6 @@ public interface KubernetesServiceHelper extends Adapter {
     boolean isValidNodeType(String nodeType);
     Map<String, Long> getServiceOfferingNodeTypeMap(Map<String, Map<String, String>> serviceOfferingNodeTypeMap);
     Map<String, Long> getTemplateNodeTypeMap(Map<String, Map<String, String>> templateNodeTypeMap);
-    Map<String, String> getAffinityGroupNodeTypeMap(Map<String, Map<String, String>> affinityGroupNodeTypeMap);
+    Map<String, List<Long>> getAffinityGroupNodeTypeMap(Map<String, Map<String, String>> affinityGroupNodeTypeMap);
     void cleanupForAccount(Account account);
 }
