@@ -27,11 +27,11 @@ import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.network.CloneNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIpv6PrefixCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteGuestNetworkIpv6PrefixCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.ListGuestNetworkIpv6PrefixesCmd;
+import org.apache.cloudstack.api.command.admin.network.NetworkOfferingBaseCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.offering.CloneDiskOfferingCmd;
@@ -312,7 +312,7 @@ public interface ConfigurationService {
 
     boolean releasePublicIpRange(ReleasePublicIpRangeCmd cmd);
 
-    NetworkOffering createNetworkOffering(CreateNetworkOfferingCmd cmd);
+    NetworkOffering createNetworkOffering(NetworkOfferingBaseCmd cmd);
 
     NetworkOffering updateNetworkOffering(UpdateNetworkOfferingCmd cmd);
 
