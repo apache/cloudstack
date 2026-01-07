@@ -1081,7 +1081,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         destFile.setSize(size);
         Map<String, String> options = new HashMap<String, String>();
         if (List.of(StoragePoolType.NetworkFilesystem, StoragePoolType.Filesystem).contains(pool.getType())) {
-            options.put("preallocation", QemuImg.PreallocationType.getPreallocationType(provisioningType).toString());
+            options.put(QemuImg.PREALLOCATION, QemuImg.PreallocationType.getPreallocationType(provisioningType).toString());
         }
 
         try (KeyFile keyFile = new KeyFile(passphrase)) {

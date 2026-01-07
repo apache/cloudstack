@@ -245,13 +245,17 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
 
     @Override
-    public VMTemplateVO findLatestTemplateByName(String name, CPU.CPUArch arch) {
+    public VMTemplateVO findLatestTemplateByName(String name, HypervisorType hypervisorType, CPU.CPUArch arch) {
         SearchBuilder<VMTemplateVO> sb = createSearchBuilder();
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         sb.and("arch", sb.entity().getArch(), SearchCriteria.Op.EQ);
         sb.done();
         SearchCriteria<VMTemplateVO> sc = sb.create();
         sc.setParameters("name", name);
+        if (hypervisorType != null) {
+            sc.setParameters("hypervisorType", hypervisorType);
+        }
         if (arch != null) {
             sc.setParameters("arch", arch);
         }
@@ -314,7 +318,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             consoleProxyTmpltName = "routing";
         }
         if (logger.isDebugEnabled()) {
-            logger.debug("Use console proxy template : " + consoleProxyTmpltName);
+            logger.debug("Use console proxy Template : " + consoleProxyTmpltName);
         }
 
         UniqueNameSearch = createSearchBuilder();
@@ -471,7 +475,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         VMTemplateVO tmplt2 = findById(tmplt.getId());
         if (tmplt2 == null) {
             if (persist(tmplt) == null) {
-                throw new CloudRuntimeException("Failed to persist the template " + tmplt);
+                throw new CloudRuntimeException("Failed to persist the Template " + tmplt);
             }
 
             if (tmplt.getDetails() != null) {
@@ -851,6 +855,37 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
 
     @Override
+    public VMTemplateVO findActiveSystemTemplateByHypervisorArchAndUrlPath(HypervisorType hypervisorType,
+                   CPU.CPUArch arch, String urlPathSuffix) {
+        if (StringUtils.isBlank(urlPathSuffix)) {
+            return null;
+        }
+        SearchBuilder<VMTemplateVO> sb = createSearchBuilder();
+        sb.and("templateType", sb.entity().getTemplateType(), SearchCriteria.Op.EQ);
+        sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        sb.and("arch", sb.entity().getArch(), SearchCriteria.Op.EQ);
+        sb.and("urlPathSuffix", sb.entity().getUrl(), SearchCriteria.Op.LIKE);
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<VMTemplateVO> sc = sb.create();
+        sc.setParameters("templateType", TemplateType.SYSTEM);
+        if (hypervisorType != null) {
+            sc.setParameters("hypervisorType", hypervisorType);
+        }
+        if (arch != null) {
+            sc.setParameters("arch", arch);
+        }
+        sc.setParameters("urlPathSuffix", "%" + urlPathSuffix);
+        sc.setParameters("state", VirtualMachineTemplate.State.Active);
+        Filter filter = new Filter(VMTemplateVO.class, "id", false, null, 1L);
+        List<VMTemplateVO> templates = listBy(sc, filter);
+        if (CollectionUtils.isNotEmpty(templates)) {
+            return templates.get(0);
+        }
+        return null;
+    }
+
+    @Override
     public boolean updateState(
             com.cloud.template.VirtualMachineTemplate.State currentState,
             com.cloud.template.VirtualMachineTemplate.Event event,
@@ -905,7 +940,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
                     .append("; updatedTime=")
                     .append(oldUpdatedTime);
             } else {
-                logger.debug("Unable to update template: id=" + vo.getId() + ", as no such template exists in the database anymore");
+                logger.debug("Unable to update Template: id=" + vo.getId() + ", as no such template exists in the database anymore");
             }
         }
         return rows > 0;

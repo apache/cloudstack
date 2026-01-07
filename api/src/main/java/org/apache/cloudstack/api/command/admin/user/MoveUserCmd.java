@@ -54,7 +54,7 @@ public class MoveUserCmd extends BaseCmd {
             type = CommandType.UUID,
             entityType = UserResponse.class,
             required = true,
-            description = "id of the user to be moved.")
+            description = "ID of the user to be moved.")
     private Long id;
 
     @Parameter(name = ApiConstants.ACCOUNT,
