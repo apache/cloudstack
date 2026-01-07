@@ -870,7 +870,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             return Collections.emptyList();
         }
         GenericSearchBuilder<VMTemplateVO, Long> sb = createSearchBuilder(Long.class);
-        sb.selectFields(userDataSearch.entity().getId());
+        sb.selectFields(sb.entity().getId());
         sb.and("userDataId", sb.entity().getUserDataId(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.NEQ);

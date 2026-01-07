@@ -476,15 +476,16 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     protected void deleteUserDataForAccount(long accountId) {
-        List<UserDataVO> userdataList = userDataDao.listByAccountId(accountId);
-        if (CollectionUtils.isNotEmpty(userdataList)) {
-            List<Long> conflictingTemplateIds = _templateDao.listByUserdataIdsNotAccount(userdataList
-                    .stream()
-                    .map(UserDataVO::getId)
-                    .collect(Collectors.toList()), accountId);
-            if (CollectionUtils.isNotEmpty(conflictingTemplateIds)) {
-                throw new CloudRuntimeException("User data owned by account linked to templates not owned by the account");
-            }
+        List<Long> userdataIdsList = userDataDao.listIdsByAccountId(accountId);
+        if (CollectionUtils.isEmpty(userdataIdsList)) {
+            return;
+        }
+        List<Long> conflictingTemplateIds = _templateDao.listByUserdataIdsNotAccount(userdataIdsList, accountId);
+        if (CollectionUtils.isNotEmpty(conflictingTemplateIds)) {
+            logger.warn("User data IDs {} owned by account ID {} cannot be deleted as some of them are " +
+                    "linked to templates {} not owned by the account.", userdataIdsList, accountId,
+                    conflictingTemplateIds);
+            throw new CloudRuntimeException("User data owned by account linked to templates not owned by the account");
         }
         userDataDao.removeByAccountId(accountId);
     }

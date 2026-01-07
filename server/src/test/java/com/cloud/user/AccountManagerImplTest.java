@@ -23,6 +23,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -198,7 +199,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         sshkeyList.add(sshkey);
         Mockito.when(_sshKeyPairDao.listKeyPairs(Mockito.anyLong(), Mockito.anyLong())).thenReturn(sshkeyList);
         Mockito.when(_sshKeyPairDao.remove(Mockito.anyLong())).thenReturn(true);
-        Mockito.when(userDataDao.removeByAccountId(Mockito.anyLong())).thenReturn(222);
+        Mockito.doNothing().when(accountManagerImpl).deleteUserDataForAccount(Mockito.anyLong());
         Mockito.doNothing().when(accountManagerImpl).deleteWebhooksForAccount(Mockito.anyLong());
         Mockito.doNothing().when(accountManagerImpl).verifyCallerPrivilegeForUserOrAccountOperations((Account) any());
 
@@ -1588,5 +1589,42 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.lenient().doThrow(PermissionDeniedException.class).when(accountManagerImpl).checkRoleEscalation(callingAccount, accountMock);
 
         accountManagerImpl.checkCallerApiPermissionsForUserOrAccountOperations(accountMock);
+    }
+
+    @Test
+    public void deleteUserDataForAccountWhenNoUserDataExists() {
+        long accountId = 1L;
+        Mockito.when(userDataDao.listIdsByAccountId(accountId)).thenReturn(Collections.emptyList());
+
+        accountManagerImpl.deleteUserDataForAccount(accountId);
+
+        Mockito.verify(userDataDao, Mockito.times(1)).listIdsByAccountId(accountId);
+        Mockito.verify(userDataDao, Mockito.times(0)).removeByAccountId(accountId);
+        Mockito.verifyNoInteractions(_templateDao);
+    }
+
+    @Test
+    public void deleteUserDataForAccountWhenNoConflictingTemplatesExist() {
+        long accountId = 1L;
+        List<Long> userdataIds = List.of(101L, 102L);
+        Mockito.when(userDataDao.listIdsByAccountId(accountId)).thenReturn(userdataIds);
+        Mockito.when(_templateDao.listByUserdataIdsNotAccount(userdataIds, accountId)).thenReturn(Collections.emptyList());
+
+        accountManagerImpl.deleteUserDataForAccount(accountId);
+
+        Mockito.verify(userDataDao, Mockito.times(1)).listIdsByAccountId(accountId);
+        Mockito.verify(_templateDao, Mockito.times(1)).listByUserdataIdsNotAccount(userdataIds, accountId);
+        Mockito.verify(userDataDao, Mockito.times(1)).removeByAccountId(accountId);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void deleteUserDataForAccountWhenConflictingTemplatesExist() {
+        long accountId = 1L;
+        List<Long> userdataIds = List.of(101L, 102L);
+        List<Long> conflictingTemplateIds = List.of(201L, 202L);
+        Mockito.when(userDataDao.listIdsByAccountId(accountId)).thenReturn(userdataIds);
+        Mockito.when(_templateDao.listByUserdataIdsNotAccount(userdataIds, accountId)).thenReturn(conflictingTemplateIds);
+
+        accountManagerImpl.deleteUserDataForAccount(accountId);
     }
 }

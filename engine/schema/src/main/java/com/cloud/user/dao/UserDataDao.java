@@ -27,7 +27,8 @@ public interface UserDataDao extends GenericDao<UserDataVO, Long> {
 
     public UserDataVO findByName(long accountId, long domainId, String name);
 
-    List<UserDataVO> listByAccountId(long accountId);
+    List<Long> listIdsByAccountId(long accountId);
+
     int removeByAccountId(long accountId);
 
 }
