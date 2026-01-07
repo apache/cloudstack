@@ -2187,7 +2187,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     throw new CloudRuntimeException("Change offering for the volume failed.");
                 }
             } catch (Exception e) {
-                logger.error("Volume change offering operation failed for volume ID: {} migration failed to storage pool {} due to {}", volumeUuid, suitableStoragePools.get(0).getId(), e.getMessage());
+                logger.error("Volume change offering operation failed for volume ID: {} migration failed to storage pool {} due to {}", volumeUuid, suitableStoragePoolsWithEnoughSpace.get(0).getId(), e.getMessage());
                 throw new CloudRuntimeException("Change offering for the volume failed.", e);
             }
         }
