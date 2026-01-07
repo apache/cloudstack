@@ -997,7 +997,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
 
             if (!allTemplatesDeleted) {
-                logger.warn("Failed to delete templates while removing account {}", account);
+                logger.warn("Failed to delete Templates while removing Account {}", account);
                 accountCleanupNeeded = true;
             }
 
@@ -1007,7 +1007,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 try {
                     _vmSnapshotMgr.deleteVMSnapshot(vmSnapshot.getId());
                 } catch (Exception e) {
-                    logger.debug("Failed to cleanup vm snapshot {} due to {}", vmSnapshot, e.toString());
+                    logger.debug("Failed to cleanup Instance Snapshot {} due to {}", vmSnapshot, e.toString());
                 }
             }
 
@@ -1016,7 +1016,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // Destroy the account's VMs
             List<UserVmVO> vms = _userVmDao.listByAccountId(accountId);
             if (logger.isDebugEnabled()) {
-                logger.debug("Expunging # of vms (account={}): {}", account, vms.size());
+                logger.debug("Expunging # of Instances (Account={}): {}", account, vms.size());
             }
 
             for (UserVmVO vm : vms) {
@@ -1412,6 +1412,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
      - New role should not be of type Admin with domain other than ROOT domain
      */
     protected void validateRoleChange(Account account, Role role, Account caller) {
+        if (account.getRoleId() != null && account.getRoleId().equals(role.getId())) {
+            return;
+        }
         Role currentRole = roleService.findRole(account.getRoleId());
         Role callerRole = roleService.findRole(caller.getRoleId());
         String errorMsg = String.format("Unable to update account role to %s, ", role.getName());
@@ -1426,6 +1429,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                         currentRole.getRoleType().ordinal() < callerRole.getRoleType().ordinal())) {
             throw new PermissionDeniedException(String.format("%s as either current or new role has higher " +
                     "privileges than the caller", errorMsg));
+        }
+        if (account.isDefault()) {
+            throw new PermissionDeniedException(String.format("%s as the account is a default account", errorMsg));
         }
         if (role.getRoleType().equals(RoleType.Admin) && account.getDomainId() != Domain.ROOT_DOMAIN) {
             throw new PermissionDeniedException(String.format("%s as the user does not belong to the ROOT domain",

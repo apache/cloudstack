@@ -201,7 +201,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
                     if (parent.getPath() != null && parent.getPath().equalsIgnoreCase(snapshot.getPath())) {
                         logger.debug("for empty delta snapshot, only mark it as destroyed in db");
                         snapshot.processEvent(Event.DestroyRequested);
-                        snapshot.processEvent(Event.OperationSuccessed);
+                        snapshot.processEvent(Event.OperationSucceeded);
                         deleted = true;
                         if (!resultIsSet) {
                             result = true;
