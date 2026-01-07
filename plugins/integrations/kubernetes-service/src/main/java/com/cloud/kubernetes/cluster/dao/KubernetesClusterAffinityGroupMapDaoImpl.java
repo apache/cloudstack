@@ -19,11 +19,14 @@ package com.cloud.kubernetes.cluster.dao;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.kubernetes.cluster.KubernetesClusterAffinityGroupMapVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
+@Component
 public class KubernetesClusterAffinityGroupMapDaoImpl extends GenericDaoBase<KubernetesClusterAffinityGroupMapVO, Long>
         implements KubernetesClusterAffinityGroupMapDao {
 
