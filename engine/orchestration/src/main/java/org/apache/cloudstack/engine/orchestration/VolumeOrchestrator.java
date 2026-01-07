@@ -879,7 +879,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating volume", create = true)
     @Override
     public DiskProfile allocateRawVolume(Type type, String name, DiskOffering offering, Long size, Long minIops, Long maxIops, VirtualMachine vm, VirtualMachineTemplate template, Account owner,
-                                         Long deviceId) {
+                                         Long deviceId, Long kmsKeyId) {
         if (size == null) {
             size = offering.getDiskSize();
         } else {
@@ -912,6 +912,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             vol.setDisplayVolume(userVm.isDisplayVm());
         }
 
+        // Set KMS key ID if provided
+        if (kmsKeyId != null) {
+            vol.setKmsKeyId(kmsKeyId);
+        }
+
         vol.setFormat(getSupportedImageFormatForCluster(vm.getHypervisorType()));
         vol = _volsDao.persist(vol);
 
@@ -931,7 +936,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     private DiskProfile allocateTemplatedVolume(Type type, String name, DiskOffering offering, Long rootDisksize, Long minIops, Long maxIops, VirtualMachineTemplate template, VirtualMachine vm,
-                                                Account owner, long deviceId, String configurationId, Volume volume, Snapshot snapshot) {
+                                                Account owner, long deviceId, String configurationId, Long kmsKeyId, Volume volume, Snapshot snapshot) {
         assert (template.getFormat() != ImageFormat.ISO) : "ISO is not a template.";
 
         if (volume != null) {
@@ -979,6 +984,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         if (vm.getType() == VirtualMachine.Type.User) {
             UserVmVO userVm = _userVmDao.findById(vm.getId());
             vol.setDisplayVolume(userVm.isDisplayVm());
+        }
+
+        // Set KMS key ID if provided
+        if (kmsKeyId != null) {
+            vol.setKmsKeyId(kmsKeyId);
         }
 
         vol = _volsDao.persist(vol);
@@ -1070,7 +1080,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating ROOT volume", create = true)
     @Override
     public List<DiskProfile> allocateTemplatedVolumes(Type type, String name, DiskOffering offering, Long rootDisksize, Long minIops, Long maxIops, VirtualMachineTemplate template, VirtualMachine vm,
-                                                      Account owner, Volume volume, Snapshot snapshot) {
+                                                      Account owner, Long kmsKeyId, Volume volume, Snapshot snapshot) {
         String templateToString = getReflectOnlySelectedFields(template);
 
         int volumesNumber = 1;
@@ -1117,7 +1127,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             }
             logger.info("Adding disk object [{}] to VM [{}]", volumeName, vm);
             DiskProfile diskProfile = allocateTemplatedVolume(type, volumeName, offering, volumeSize, minIops, maxIops,
-                    template, vm, owner, deviceId, configurationId, volume, snapshot);
+                    template, vm, owner, deviceId, configurationId, kmsKeyId, volume, snapshot);
             profiles.add(diskProfile);
         }
 

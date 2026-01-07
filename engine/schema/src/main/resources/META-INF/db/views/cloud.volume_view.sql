@@ -40,6 +40,8 @@ SELECT
     `volumes`.`chain_info` AS `chain_info`,
     `volumes`.`external_uuid` AS `external_uuid`,
     `volumes`.`encrypt_format` AS `encrypt_format`,
+    `volumes`.`kms_key_id` AS `kms_key_id`,
+    `volumes`.`kms_wrapped_key_id` AS `kms_wrapped_key_id`,
     `volumes`.`delete_protection` AS `delete_protection`,
     `account`.`id` AS `account_id`,
     `account`.`uuid` AS `account_uuid`,

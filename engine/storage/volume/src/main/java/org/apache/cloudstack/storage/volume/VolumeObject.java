@@ -956,13 +956,21 @@ public class VolumeObject implements VolumeInfo {
     /**
      * Looks up passphrase from underlying volume.
      * Supports both legacy passphrase-based encryption and KMS-based encryption.
-     * @return passphrase/DEK as bytes
+     * @return passphrase/DEK as base64-encoded bytes (UTF-8 bytes of base64 string)
      */
     public byte[] getPassphrase() {
         // First check for KMS-encrypted volume
         if (volumeVO.getKmsWrappedKeyId() != null) {
             try {
-                return kmsManager.unwrapKey(volumeVO.getKmsWrappedKeyId());
+                // Unwrap the DEK from KMS (returns raw binary bytes)
+                byte[] dekBytes = kmsManager.unwrapKey(volumeVO.getKmsWrappedKeyId());
+                // Base64-encode the DEK for consistency with legacy passphrases
+                // and for use with qemu-img which expects base64 format
+                String base64Dek = java.util.Base64.getEncoder().encodeToString(dekBytes);
+                // Zeroize the raw DEK bytes
+                java.util.Arrays.fill(dekBytes, (byte) 0);
+                // Return UTF-8 bytes of the base64 string
+                return base64Dek.getBytes(java.nio.charset.StandardCharsets.UTF_8);
             } catch (org.apache.cloudstack.framework.kms.KMSException e) {
                 logger.error("Failed to unwrap KMS key for volume {}: {}", volumeVO.getId(), e.getMessage());
                 return new byte[0];

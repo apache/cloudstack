@@ -194,6 +194,7 @@ public class ApiConstants {
     public static final String UTILIZATION = "utilization";
     public static final String DRIVER = "driver";
     public static final String ROOT_DISK_SIZE = "rootdisksize";
+    public static final String ROOT_DISK_KMS_KEY_ID = "rootdiskkmskeyid";
     public static final String DHCP_OPTIONS_NETWORK_LIST = "dhcpoptionsnetworklist";
     public static final String DHCP_OPTIONS = "dhcpoptions";
     public static final String DHCP_PREFIX = "dhcp:";
@@ -863,6 +864,7 @@ public class ApiConstants {
     public static final String CHANGE_CIDR = "changecidr";
     public static final String PURPOSE = "purpose";
     public static final String KMS_KEY_ID = "kmskeyid";
+    public static final String KMS_KEY_VERSION = "kmskeyversion";
     public static final String KEK_LABEL = "keklabel";
     public static final String KEY_BITS = "keybits";
     public static final String IS_TAGGED = "istagged";
