@@ -143,6 +143,14 @@ export default {
         },
         show: (record) => { return record.state === 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Inactive' } }) }
+      }, {
+        api: 'cloneServiceOffering',
+        icon: 'copy-outlined',
+        label: 'label.clone.compute.offering',
+        docHelp: 'adminguide/service_offerings.html#creating-a-new-compute-offering',
+        dataView: true,
+        popup: true,
+        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/CloneComputeOffering.vue')))
       }]
     },
     {
@@ -225,6 +233,15 @@ export default {
         },
         show: (record) => { return record.state === 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Inactive' } }) }
+      }, {
+        api: 'cloneServiceOffering',
+        icon: 'copy-outlined',
+        label: 'label.clone.system.service.offering',
+        docHelp: 'adminguide/service_offerings.html#creating-a-new-system-service-offering',
+        dataView: true,
+        params: { issystem: 'true' },
+        popup: true,
+        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/CloneComputeOffering.vue')))
       }]
     },
     {
