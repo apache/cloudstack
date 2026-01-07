@@ -169,6 +169,7 @@ import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterScaleWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterStartWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterStopWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterUpgradeWorker;
+import com.cloud.kubernetes.cluster.dao.KubernetesClusterAffinityGroupMapDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDetailsDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
@@ -314,6 +315,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     public KubernetesClusterVmMapDao kubernetesClusterVmMapDao;
     @Inject
     public KubernetesClusterDetailsDao kubernetesClusterDetailsDao;
+    @Inject
+    public KubernetesClusterAffinityGroupMapDao kubernetesClusterAffinityGroupMapDao;
     @Inject
     public KubernetesSupportedVersionDao kubernetesSupportedVersionDao;
     @Inject
@@ -1187,6 +1190,20 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return network;
     }
 
+    private void persistAffinityGroupMappings(long clusterId, Map<String, List<Long>> affinityGroupNodeTypeMap) {
+        if (MapUtils.isEmpty(affinityGroupNodeTypeMap)) {
+            return;
+        }
+        for (Map.Entry<String, List<Long>> nodeTypeAffinityGroupEntry : affinityGroupNodeTypeMap.entrySet()) {
+            String nodeType = nodeTypeAffinityGroupEntry.getKey();
+            List<Long> affinityGroupIds = nodeTypeAffinityGroupEntry.getValue();
+            for (Long affinityGroupId : affinityGroupIds) {
+                kubernetesClusterAffinityGroupMapDao.persist(
+                    new KubernetesClusterAffinityGroupMapVO(clusterId, nodeType, affinityGroupId));
+            }
+        }
+    }
+
     private void addKubernetesClusterDetails(final KubernetesCluster kubernetesCluster, final Network network, final CreateKubernetesClusterCmd cmd) {
         final String externalLoadBalancerIpAddress = cmd.getExternalLoadBalancerIpAddress();
         final String dockerRegistryUserName = cmd.getDockerRegistryUserName();
@@ -1627,7 +1644,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
 
         Map<String, Long> templateNodeTypeMap = cmd.getTemplateNodeTypeMap();
-        Map<String, String> affinityGroupNodeTypeMap = cmd.getAffinityGroupNodeTypeMap();
+        Map<String, List<Long>> affinityGroupNodeTypeMap = cmd.getAffinityGroupNodeTypeMap();
         final VMTemplateVO finalTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, DEFAULT, clusterKubernetesVersion);
         final VMTemplateVO controlNodeTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, CONTROL, clusterKubernetesVersion);
         final VMTemplateVO workerNodeTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, WORKER, clusterKubernetesVersion);
@@ -1668,20 +1685,12 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 }
                 newCluster.setWorkerNodeTemplateId(workerNodeTemplate.getId());
                 newCluster.setControlNodeTemplateId(controlNodeTemplate.getId());
-                if (affinityGroupNodeTypeMap.containsKey(WORKER.name())) {
-                    newCluster.setWorkerNodeAffinityGroupIds(affinityGroupNodeTypeMap.get(WORKER.name()));
-                }
-                if (affinityGroupNodeTypeMap.containsKey(CONTROL.name())) {
-                    newCluster.setControlNodeAffinityGroupIds(affinityGroupNodeTypeMap.get(CONTROL.name()));
-                }
-                if (etcdNodes > 0 && affinityGroupNodeTypeMap.containsKey(ETCD.name())) {
-                    newCluster.setEtcdNodeAffinityGroupIds(affinityGroupNodeTypeMap.get(ETCD.name()));
-                }
                 if (zone.isSecurityGroupEnabled()) {
                     newCluster.setSecurityGroupId(finalSecurityGroup.getId());
                 }
                 newCluster.setCsiEnabled(cmd.getEnableCsi());
                 kubernetesClusterDao.persist(newCluster);
+                persistAffinityGroupMappings(newCluster.getId(), affinityGroupNodeTypeMap);
                 addKubernetesClusterDetails(newCluster, defaultNetwork, cmd);
                 return newCluster;
             }
