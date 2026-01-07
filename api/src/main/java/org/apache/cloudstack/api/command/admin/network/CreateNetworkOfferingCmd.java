@@ -73,76 +73,76 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the network offering")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "The name of the network offering")
     private String networkOfferingName;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the network offering, defaults to the value of 'name'.")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "The display text of the network offering, defaults to the value of 'name'.")
     private String displayText;
 
     @Parameter(name = ApiConstants.TRAFFIC_TYPE,
             type = CommandType.STRING,
             required = true,
-            description = "the traffic type for the network offering. Supported type in current release is GUEST only")
+            description = "The traffic type for the network offering. Supported type in current release is GUEST only")
     private String traffictype;
 
-    @Parameter(name = ApiConstants.TAGS, type = CommandType.STRING, description = "the tags for the network offering.", length = 4096)
+    @Parameter(name = ApiConstants.TAGS, type = CommandType.STRING, description = "The tags for the network offering.", length = 4096)
     private String tags;
 
-    @Parameter(name = ApiConstants.SPECIFY_VLAN, type = CommandType.BOOLEAN, description = "true if network offering supports vlans")
+    @Parameter(name = ApiConstants.SPECIFY_VLAN, type = CommandType.BOOLEAN, description = "True if network offering supports VLANs")
     private Boolean specifyVlan;
 
-    @Parameter(name = ApiConstants.AVAILABILITY, type = CommandType.STRING, description = "the availability of network offering. The default value is Optional. "
+    @Parameter(name = ApiConstants.AVAILABILITY, type = CommandType.STRING, description = "The availability of network offering. The default value is Optional. "
             + " Another value is Required, which will make it as the default network offering for new networks ")
     private String availability;
 
-    @Parameter(name = ApiConstants.NETWORKRATE, type = CommandType.INTEGER, description = "data transfer rate in megabits per second allowed")
+    @Parameter(name = ApiConstants.NETWORKRATE, type = CommandType.INTEGER, description = "Data transfer rate in megabits per second allowed")
     private Integer networkRate;
 
-    @Parameter(name = ApiConstants.CONSERVE_MODE, type = CommandType.BOOLEAN, description = "true if the network offering is IP conserve mode enabled")
+    @Parameter(name = ApiConstants.CONSERVE_MODE, type = CommandType.BOOLEAN, description = "True if the network offering is IP conserve mode enabled")
     private Boolean conserveMode;
 
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
             type = CommandType.UUID,
             entityType = ServiceOfferingResponse.class,
-            description = "the service offering ID used by virtual router provider")
+            description = "The service offering ID used by virtual router provider")
     private Long serviceOfferingId;
 
-    @Parameter(name = ApiConstants.GUEST_IP_TYPE, type = CommandType.STRING, required = true, description = "guest type of the network offering: Shared or Isolated")
+    @Parameter(name = ApiConstants.GUEST_IP_TYPE, type = CommandType.STRING, required = true, description = "Guest type of the network offering: Shared or Isolated")
     private String guestIptype;
 
     @Parameter(name = ApiConstants.INTERNET_PROTOCOL,
             type = CommandType.STRING,
-            description = "The internet protocol of network offering. Options are ipv4 and dualstack. Default is ipv4. dualstack will create a network offering that supports both IPv4 and IPv6",
+            description = "The internet protocol of network offering. Options are IPv4 and dualstack. Default is IPv4. dualstack will create a network offering that supports both IPv4 and IPv6",
             since = "4.17.0")
     private String internetProtocol;
 
     @Parameter(name = ApiConstants.SUPPORTED_SERVICES,
             type = CommandType.LIST,
             collectionType = CommandType.STRING,
-            description = "services supported by the network offering")
+            description = "Services supported by the network offering")
     private List<String> supportedServices;
 
     @Parameter(name = ApiConstants.SERVICE_PROVIDER_LIST,
             type = CommandType.MAP,
-            description = "provider to service mapping. If not specified, the provider for the service will be mapped to the default provider on the physical network")
+            description = "Provider to service mapping. If not specified, the provider for the service will be mapped to the default provider on the physical network")
     private Map serviceProviderList;
 
-    @Parameter(name = ApiConstants.SERVICE_CAPABILITY_LIST, type = CommandType.MAP, description = "desired service capabilities as part of network offering")
+    @Parameter(name = ApiConstants.SERVICE_CAPABILITY_LIST, type = CommandType.MAP, description = "Desired service capabilities as part of network offering")
     private Map serviceCapabilitystList;
 
     @Parameter(name = ApiConstants.SPECIFY_IP_RANGES,
             type = CommandType.BOOLEAN,
-            description = "true if network offering supports specifying ip ranges; defaulted to false if not specified")
+            description = "True if network offering supports specifying ip ranges; defaulted to false if not specified")
     private Boolean specifyIpRanges;
 
     @Parameter(name = ApiConstants.IS_PERSISTENT,
             type = CommandType.BOOLEAN,
-            description = "true if network offering supports persistent networks; defaulted to false if not specified")
+            description = "True if network offering supports persistent networks; defaulted to false if not specified")
     private Boolean isPersistent;
 
     @Parameter(name = ApiConstants.FOR_VPC,
             type = CommandType.BOOLEAN,
-            description = "true if network offering is meant to be used for VPC, false otherwise.")
+            description = "True if network offering is meant to be used for VPC, false otherwise.")
     private Boolean forVpc;
 
     @Deprecated
@@ -160,13 +160,13 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.NSX_SUPPORT_LB,
             type = CommandType.BOOLEAN,
-            description = "true if network offering for NSX network offering supports Load balancer service.",
+            description = "True if network offering for NSX network offering supports Load balancer service.",
             since = "4.20.0")
     private Boolean nsxSupportsLbService;
 
     @Parameter(name = ApiConstants.NSX_SUPPORTS_INTERNAL_LB,
             type = CommandType.BOOLEAN,
-            description = "true if network offering for NSX network offering supports Internal Load balancer service.",
+            description = "True if network offering for NSX network offering supports Internal Load balancer service.",
             since = "4.20.0")
     private Boolean nsxSupportsInternalLbService;
 
@@ -178,7 +178,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.FOR_TUNGSTEN,
             type = CommandType.BOOLEAN,
-            description = "true if network offering is meant to be used for Tungsten-Fabric, false otherwise.")
+            description = "True if network offering is meant to be used for Tungsten-Fabric, false otherwise.")
     private Boolean forTungsten;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, since = "4.2.0", description = "Network offering details in key/value pairs."
@@ -188,38 +188,38 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.EGRESS_DEFAULT_POLICY,
             type = CommandType.BOOLEAN,
-            description = "true if guest network default egress policy is allow; false if default egress policy is deny")
+            description = "True if guest network default egress policy is allow; false if default egress policy is deny")
     private Boolean egressDefaultPolicy;
 
     @Parameter(name = ApiConstants.KEEPALIVE_ENABLED,
             type = CommandType.BOOLEAN,
             required = false,
-            description = "if true keepalive will be turned on in the loadbalancer. At the time of writing this has only an effect on haproxy; the mode http and httpclose options are unset in the haproxy conf file.")
+            description = "If true keepalive will be turned on in the loadbalancer. At the time of writing this has only an effect on haproxy; the mode http and httpclose options are unset in the haproxy conf file.")
     private Boolean keepAliveEnabled;
 
     @Parameter(name = ApiConstants.MAX_CONNECTIONS,
             type = CommandType.INTEGER,
-            description = "maximum number of concurrent connections supported by the network offering")
+            description = "Maximum number of concurrent connections supported by the Network offering")
     private Integer maxConnections;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.LIST,
             collectionType = CommandType.UUID,
             entityType = DomainResponse.class,
-            description = "the ID of the containing domain(s), null for public offerings")
+            description = "The ID of the containing domain(s), null for public offerings")
     private List<Long> domainIds;
 
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.LIST,
             collectionType = CommandType.UUID,
             entityType = ZoneResponse.class,
-            description = "the ID of the containing zone(s), null for public offerings",
+            description = "The ID of the containing zone(s), null for public offerings",
             since = "4.13")
     private List<Long> zoneIds;
 
     @Parameter(name = ApiConstants.ENABLE,
             type = CommandType.BOOLEAN,
-            description = "set to true if the offering is to be enabled during creation. Default is false",
+            description = "Set to true if the offering is to be enabled during creation. Default is false",
             since = "4.16")
     private Boolean enable;
 

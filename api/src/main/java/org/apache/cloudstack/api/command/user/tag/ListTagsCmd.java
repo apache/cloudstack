@@ -30,19 +30,19 @@ import com.cloud.server.ResourceTag;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListTagsCmd extends BaseListProjectAndAccountResourcesCmd {
 
-    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, description = "list by resource type")
+    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, description = "List by resource type")
     private String resourceType;
 
-    @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING, description = "list by resource id")
+    @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING, description = "List by resource ID")
     private String resourceId;
 
-    @Parameter(name = ApiConstants.KEY, type = CommandType.STRING, description = "list by key")
+    @Parameter(name = ApiConstants.KEY, type = CommandType.STRING, description = "List by key")
     private String key;
 
-    @Parameter(name = ApiConstants.VALUE, type = CommandType.STRING, description = "list by value")
+    @Parameter(name = ApiConstants.VALUE, type = CommandType.STRING, description = "List by value")
     private String value;
 
-    @Parameter(name = ApiConstants.CUSTOMER, type = CommandType.STRING, description = "list by customer name")
+    @Parameter(name = ApiConstants.CUSTOMER, type = CommandType.STRING, description = "List by customer name")
     private String customer;
 
     /////////////////////////////////////////////////////

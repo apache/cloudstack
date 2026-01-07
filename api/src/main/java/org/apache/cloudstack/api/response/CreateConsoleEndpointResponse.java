@@ -27,19 +27,19 @@ public class CreateConsoleEndpointResponse extends BaseResponse {
     }
 
     @SerializedName(ApiConstants.SUCCESS)
-    @Param(description = "true if the console endpoint is generated properly")
+    @Param(description = "True if the console endpoint is generated properly")
     private Boolean result;
 
     @SerializedName(ApiConstants.DETAILS)
-    @Param(description = "details in case of an error")
+    @Param(description = "Details in case of an error")
     private String details;
 
     @SerializedName(ApiConstants.URL)
-    @Param(description = "the console url")
+    @Param(description = "The console url")
     private String url;
 
     @SerializedName("websocket")
-    @Param(description = "the console websocket options")
+    @Param(description = "The console websocket options")
     private ConsoleEndpointWebsocketResponse websocketResponse;
 
     public Boolean getResult() {

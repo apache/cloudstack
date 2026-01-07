@@ -140,7 +140,7 @@ public class KVMHostInfo {
         long speed = 0L;
         LOGGER.info("Fetching CPU speed from command \"lscpu\".");
         try {
-            String command = "lscpu | grep -i 'Model name' | head -n 1 | egrep -o '[[:digit:]].[[:digit:]]+GHz' | sed 's/GHz//g'";
+            String command = "lscpu | grep -i 'Model name' | head -n 1 | grep -E -o '[[:digit:]].[[:digit:]]+GHz' | sed 's/GHz//g'";
             if(isHostS390x()) {
                 command = "lscpu | grep 'CPU dynamic MHz' | cut -d ':' -f 2 | tr -d ' ' | awk '{printf \"%.1f\\n\", $1 / 1000}'";
             }
