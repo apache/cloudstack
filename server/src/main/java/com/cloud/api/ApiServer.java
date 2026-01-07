@@ -1230,8 +1230,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 if (ApiConstants.MANAGEMENT_SERVER_ID.equalsIgnoreCase(attrName)) {
                     response.setManagementServerId(attrObj.toString());
                 }
-                if (PASSWORD_CHANGE_REQUIRED.equalsIgnoreCase(attrName)) {
-                    response.setPasswordChangeRequired(attrObj.toString());
+                if (PASSWORD_CHANGE_REQUIRED.equalsIgnoreCase(attrName) && attrObj instanceof Boolean) {
+                    response.setPasswordChangeRequired((Boolean) attrObj);
                 }
             }
         }

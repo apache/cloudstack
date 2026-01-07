@@ -389,7 +389,6 @@ export default {
       if (this.isValidValueForKey(rawParams, 'timezone') && rawParams.timezone.length > 0) {
         params.timezone = rawParams.timezone
       }
-      console.log('rawParams.passwordChangeRequired', rawParams.passwordChangeRequired)
       if (this.isAdminOrDomainAdmin() && rawParams.passwordChangeRequired === true) {
         params.passwordchangerequired = rawParams.passwordChangeRequired
       }

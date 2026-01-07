@@ -232,7 +232,7 @@ public class LoginCmdResponse extends AuthenticationCmdResponse {
         return passwordChangeRequired;
     }
 
-    public void setPasswordChangeRequired(String passwordChangeRequired) {
-        this.passwordChangeRequired = Boolean.parseBoolean(passwordChangeRequired);
+    public void setPasswordChangeRequired(Boolean passwordChangeRequired) {
+        this.passwordChangeRequired = passwordChangeRequired;
     }
 }

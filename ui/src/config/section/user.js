@@ -85,7 +85,8 @@ export default {
     {
       api: 'updateUser',
       icon: 'redo-outlined',
-      label: 'label.change.password.enforce',
+      label: 'label.change.password.reset',
+      message: 'message.change.password.reset',
       dataView: true,
       args: ['passwordchangerequired'],
       mapping: {

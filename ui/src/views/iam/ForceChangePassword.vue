@@ -166,9 +166,9 @@ export default {
           password: values.password,
           currentpassword: values.currentpassword
         }
-        postAPI('updateUser', params).then(() => {
+        postAPI('updateUser', params).then(async () => {
           this.$localStorage.remove(PASSWORD_CHANGE_REQUIRED)
-          this.handleLogout()
+          await this.handleLogout()
           this.isSubmitted = true
         }).catch(error => {
           console.error(error)
