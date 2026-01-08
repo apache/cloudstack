@@ -42,7 +42,6 @@ import static org.apache.cloudstack.api.command.utils.OfferingUtils.isNetrisRout
 
 public abstract class NetworkOfferingBaseCmd extends BaseCmd {
 
-    // Abstract methods that subclasses must implement
     public abstract String getGuestIpType();
     public abstract String getTraffictype();
 
@@ -466,13 +465,6 @@ public abstract class NetworkOfferingBaseCmd extends BaseCmd {
 
     public String getRoutingMode() {
         return routingMode;
-    }
-
-    /**
-     * Compatibility method for camelCase variant - delegates to getTraffictype()
-     */
-    public String getTrafficType() {
-        return getTraffictype();
     }
 
     /////////////////////////////////////////////////////
