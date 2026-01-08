@@ -905,7 +905,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
         if (caller.getType().equals(Account.Type.NORMAL)) {
             logger.info("Throwing exception because only root admins and domain admins are allowed to update resource limits.");
-            throw new PermissionDeniedException("Your account does not have the right access level to update resource limits.");
+            throw new PermissionDeniedException("Your account does not have the permission to update resource limits.");
         }
 
         if (max == null) {
