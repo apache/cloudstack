@@ -111,4 +111,3 @@ public class CloneNetworkOfferingCmd extends NetworkOfferingBaseCmd {
         }
     }
 }
-

@@ -69,4 +69,3 @@ public class CloneServiceOfferingCmd extends CreateServiceOfferingCmd {
         }
     }
 }
-
