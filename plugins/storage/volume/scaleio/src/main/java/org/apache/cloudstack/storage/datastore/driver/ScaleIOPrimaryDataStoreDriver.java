@@ -153,15 +153,15 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         sdcManager = new ScaleIOSDCManagerImpl();
     }
 
-    ScaleIOGatewayClient getScaleIOClient(final StoragePool storagePool) throws Exception {
+    ScaleIOGatewayClient getScaleIOClient(final StoragePool storagePool) {
         return ScaleIOGatewayClientConnectionPool.getInstance().getClient(storagePool, storagePoolDetailsDao);
     }
 
-    ScaleIOGatewayClient getScaleIOClient(final DataStore dataStore) throws Exception {
+    ScaleIOGatewayClient getScaleIOClient(final DataStore dataStore) {
         return ScaleIOGatewayClientConnectionPool.getInstance().getClient(dataStore, storagePoolDetailsDao);
     }
 
-    private boolean setVolumeLimitsOnSDC(VolumeVO volume, Host host, DataStore dataStore, Long iopsLimit, Long bandwidthLimitInKbps) throws Exception {
+    private boolean setVolumeLimitsOnSDC(VolumeVO volume, Host host, DataStore dataStore, Long iopsLimit, Long bandwidthLimitInKbps) {
         sdcManager = ComponentContext.inject(sdcManager);
         final String sdcId = sdcManager.prepareSDC(host, dataStore);
         if (StringUtils.isBlank(sdcId)) {
@@ -173,7 +173,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         return client.mapVolumeToSdcWithLimits(ScaleIOUtil.getVolumePath(volume.getPath()), sdcId, iopsLimit, bandwidthLimitInKbps);
     }
 
-    private boolean setVolumeLimitsFromDetails(VolumeVO volume, Host host, DataStore dataStore) throws Exception {
+    private boolean setVolumeLimitsFromDetails(VolumeVO volume, Host host, DataStore dataStore) {
         Long bandwidthLimitInKbps = 0L; // Unlimited
         // Check Bandwidth Limit parameter in volume details
         final VolumeDetailVO bandwidthVolumeDetail = volumeDetailsDao.findDetail(volume.getId(), Volume.BANDWIDTH_LIMIT_IN_MBPS);
@@ -997,7 +997,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         return host;
     }
 
-    public void updateSnapshotsAfterCopyVolume(DataObject srcData, DataObject destData) throws Exception {
+    public void updateSnapshotsAfterCopyVolume(DataObject srcData, DataObject destData) {
         final long srcVolumeId = srcData.getId();
         DataStore srcStore = srcData.getDataStore();
         final ScaleIOGatewayClient client = getScaleIOClient(srcStore);

@@ -361,14 +361,13 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
             return false;
         }
 
-        try {
-            if (logger.isDebugEnabled()) {
-                List<StoragePoolHostVO> poolHostVOsBySdc = storagePoolHostDao.findByLocalPath(sdcId);
-                if (CollectionUtils.isNotEmpty(poolHostVOsBySdc) && poolHostVOsBySdc.size() > 1) {
-                    logger.debug(String.format("There are other connected pools with the same SDC of the host %s", host));
-                }
-            }
+        List<StoragePoolHostVO> poolHostVOsBySdc = storagePoolHostDao.findByLocalPath(sdcId);
+        if (CollectionUtils.isNotEmpty(poolHostVOsBySdc) && poolHostVOsBySdc.size() > 1) {
+            logger.debug(String.format("There are other connected pools with the same SDC of the host %s", host));
+            return false;
+        }
 
+        try {
             return !areVolumesMappedToPoolSdc(dataStore.getId(), sdcId);
         } catch (Exception e) {
             logger.warn("Unable to check whether the SDC of the pool: " + dataStore.getId() + " can be unprepared on the host: " + host.getId() + ", due to " + e.getMessage(), e);
@@ -425,20 +424,26 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
     @Override
     public boolean isHostSdcConnected(String sdcId, DataStore dataStore, int waitTimeInSecs) {
         long poolId = dataStore.getId();
-        logger.debug(String.format("Waiting (for %d secs) for the SDC %s of the pool %s to connect",
-                waitTimeInSecs, sdcId, dataStore));
+        logger.debug("Waiting (for {} secs) for the SDC {} of the pool {} to connect", waitTimeInSecs, sdcId, dataStore);
         int timeBetweenTries = 1000; // Try more frequently (every sec) and return early if connected
-        while (waitTimeInSecs > 0) {
+        for (int i = 0; i < waitTimeInSecs; i++) {
+            logger.debug("Attempt {} of {} for the SDC {} of the pool {} to connect", i + 1, waitTimeInSecs, sdcId, dataStore);
             if (isHostSdcConnected(sdcId, poolId)) {
+                logger.debug("Attempt {} of {} successful for the SDC {} of the pool {} to connect", i + 1, waitTimeInSecs, sdcId, dataStore);
                 return true;
             }
-            waitTimeInSecs--;
             try {
                 Thread.sleep(timeBetweenTries);
             } catch (Exception ignore) {
             }
         }
-        return isHostSdcConnected(sdcId, poolId);
+        boolean isConnected = isHostSdcConnected(sdcId, poolId);
+        if (isConnected) {
+            logger.debug("Final attempt succeeded the SDC {} of the pool {} to connect", sdcId, dataStore);
+        } else {
+            logger.debug("Final attempt failed the SDC {} of the pool {} to connect", sdcId, dataStore);
+        }
+        return isConnected;
     }
 
     @Override
@@ -470,6 +475,7 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
     private boolean isHostSdcConnected(String sdcId, long poolId) {
         try {
             final ScaleIOGatewayClient client = getScaleIOClient(poolId);
+            logger.debug("Checking whether SDC {} connected or not", sdcId);
             return client.isSdcConnected(sdcId);
         } catch (Exception e) {
             logger.error("Failed to check host SDC connection", e);
@@ -477,7 +483,7 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
         }
     }
 
-    private ScaleIOGatewayClient getScaleIOClient(final Long storagePoolId) throws Exception {
+    private ScaleIOGatewayClient getScaleIOClient(Long storagePoolId) {
         StoragePoolVO storagePool = storagePoolDao.findById(storagePoolId);
         if (storagePool == null) {
             throw new CloudRuntimeException("Unable to find the storage pool with id " + storagePoolId);
