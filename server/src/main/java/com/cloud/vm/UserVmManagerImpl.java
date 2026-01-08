@@ -7189,9 +7189,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException("Unable to find suitable destination to migrate VM " + vm.getInstanceName());
         }
 
-        if (logger.isInfoEnabled()) {
-            logger.info("Starting migration of VM {} from host {} to host {} ", vm.getInstanceName(), srcHostId, dest.getHost().getId());
-        }
+        logger.info("Starting migration of VM {} from host {} to host {} ", vm.getInstanceName(), srcHostId, dest.getHost().getId());
         collectVmDiskAndNetworkStatistics(vmId, State.Running);
         _itMgr.migrate(vm.getUuid(), srcHostId, dest);
         return findMigratedVm(vm.getId(), vm.getType());
