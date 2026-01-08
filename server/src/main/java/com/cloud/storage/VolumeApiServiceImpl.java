@@ -2179,14 +2179,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
             Collections.shuffle(suitableStoragePoolsWithEnoughSpace);
             MigrateVolumeCmd migrateVolumeCmd = new MigrateVolumeCmd(volume.getId(), suitableStoragePoolsWithEnoughSpace.get(0).getId(), newDiskOffering.getId(), true);
+            String volumeUuid = volume.getUuid();
             try {
                 Volume result = migrateVolume(migrateVolumeCmd);
                 volume = (result != null) ? _volsDao.findById(result.getId()) : null;
                 if (volume == null) {
-                    throw new CloudRuntimeException(String.format("Volume change offering operation failed for volume: %s migration failed to storage pool %s", volume, suitableStoragePools.get(0)));
+                    throw new CloudRuntimeException("Change offering for the volume failed.");
                 }
             } catch (Exception e) {
-                throw new CloudRuntimeException(String.format("Volume change offering operation failed for volume: %s migration failed to storage pool %s due to %s", volume, suitableStoragePools.get(0), e.getMessage()));
+                logger.error("Volume change offering operation failed for volume ID: {} migration failed to storage pool {} due to {}", volumeUuid, suitableStoragePoolsWithEnoughSpace.get(0).getId(), e.getMessage());
+                throw new CloudRuntimeException("Change offering for the volume failed.", e);
             }
         }
 
@@ -2199,7 +2201,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (volumeMigrateRequired) {
                     logger.warn(String.format("Volume change offering operation succeeded for volume ID: %s but volume resize operation failed, so please try resize volume operation separately", volume.getUuid()));
                 } else {
-                    throw new CloudRuntimeException(String.format("Volume change offering operation failed for volume ID: %s due to resize volume operation failed", volume.getUuid()));
+                    throw new CloudRuntimeException(String.format("Volume disk offering change operation failed for volume ID [%s] because the volume resize operation failed.", volume.getUuid()));
                 }
             }
         }
