@@ -349,6 +349,14 @@ export default {
         },
         show: (record) => { return record.state === 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Inactive' } }) }
+      }, {
+        api: 'cloneDiskOffering',
+        icon: 'copy-outlined',
+        label: 'label.clone.disk.offering',
+        docHelp: 'adminguide/service_offerings.html#creating-a-new-disk-offering',
+        dataView: true,
+        popup: true,
+        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/CloneDiskOffering.vue')))
       }]
     },
     {
@@ -504,6 +512,14 @@ export default {
         dataView: true,
         popup: true,
         component: shallowRef(defineAsyncComponent(() => import('@/views/offering/UpdateOfferingAccess.vue')))
+      }, {
+        api: 'cloneNetworkOffering',
+        icon: 'copy-outlined',
+        label: 'label.clone.network.offering',
+        docHelp: 'adminguide/networking.html#creating-a-new-network-offering',
+        dataView: true,
+        popup: true,
+        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/CloneNetworkOffering.vue')))
       }, {
         api: 'deleteNetworkOffering',
         icon: 'delete-outlined',
