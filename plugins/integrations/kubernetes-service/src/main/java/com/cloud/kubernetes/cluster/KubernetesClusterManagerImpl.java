@@ -861,24 +861,38 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
         List<KubernetesUserVmResponse> vmResponses = new ArrayList<>();
         List<KubernetesClusterVmMapVO> vmList = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
-        ResponseView respView = ResponseView.Restricted;
+        ResponseView userVmResponseView = ResponseView.Restricted;
         Account caller = CallContext.current().getCallingAccount();
         if (accountService.isRootAdmin(caller.getId())) {
-            respView = ResponseView.Full;
+            userVmResponseView = ResponseView.Full;
         }
         final String responseName = "virtualmachine";
         if (vmList != null && !vmList.isEmpty()) {
-            for (KubernetesClusterVmMapVO vmMapVO : vmList) {
-                UserVmJoinVO userVM = userVmJoinDao.findById(vmMapVO.getVmId());
-                if (userVM != null) {
-                    UserVmResponse vmResponse = ApiDBUtils.newUserVmResponse(respView, responseName, userVM,
-                        EnumSet.of(VMDetails.nics, VMDetails.affgrp), caller);
+            Map<Long, KubernetesClusterVmMapVO> vmMapById = vmList.stream()
+                    .collect(Collectors.toMap(KubernetesClusterVmMapVO::getVmId, vm -> vm));
+            Long[] vmIds = vmMapById.keySet().toArray(new Long[0]);
+            List<UserVmJoinVO> userVmJoinVOs = userVmJoinDao.searchByIds(vmIds);
+            if (userVmJoinVOs != null && !userVmJoinVOs.isEmpty()) {
+                Map<Long, UserVmResponse> vmResponseMap = new HashMap<>();
+                for (UserVmJoinVO userVM : userVmJoinVOs) {
+                    Long vmId = userVM.getId();
+                    UserVmResponse vmResponse = vmResponseMap.get(vmId);
+                    if (vmResponse == null) {
+                        vmResponse = ApiDBUtils.newUserVmResponse(userVmResponseView, responseName, userVM,
+                                EnumSet.of(VMDetails.nics, VMDetails.affgrp), caller);
+                        vmResponseMap.put(vmId, vmResponse);
+                    } else {
+                        ApiDBUtils.fillVmDetails(userVmResponseView, vmResponse, userVM);
+                    }
+                }
+                for (Map.Entry<Long, UserVmResponse> vmIdResponseEntry : vmResponseMap.entrySet()) {
                     KubernetesUserVmResponse kubernetesUserVmResponse = new KubernetesUserVmResponse();
                     try {
-                        BeanUtils.copyProperties(kubernetesUserVmResponse, vmResponse);
+                        BeanUtils.copyProperties(kubernetesUserVmResponse, vmIdResponseEntry.getValue());
                     } catch (IllegalAccessException | InvocationTargetException e) {
                         throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to generate zone metrics response");
                     }
+                    KubernetesClusterVmMapVO vmMapVO = vmMapById.get(vmIdResponseEntry.getKey());
                     kubernetesUserVmResponse.setExternalNode(vmMapVO.isExternalNode());
                     kubernetesUserVmResponse.setEtcdNode(vmMapVO.isEtcdNode());
                     kubernetesUserVmResponse.setNodeVersion(vmMapVO.getNodeVersion());
