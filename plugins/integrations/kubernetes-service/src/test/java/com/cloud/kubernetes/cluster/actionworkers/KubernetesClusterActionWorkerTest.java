@@ -16,8 +16,14 @@
 // under the License.
 package com.cloud.kubernetes.cluster.actionworkers;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
+import org.apache.cloudstack.affinity.AffinityGroupVO;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.junit.Assert;
 import org.junit.Before;
@@ -30,6 +36,8 @@ import org.mockito.junit.MockitoJUnitRunner;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterDetailsVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
+import com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType;
+import com.cloud.kubernetes.cluster.dao.KubernetesClusterAffinityGroupMapDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDetailsDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
@@ -60,6 +68,12 @@ public class KubernetesClusterActionWorkerTest {
     @Mock
     IPAddressDao ipAddressDao;
 
+    @Mock
+    KubernetesClusterAffinityGroupMapDao kubernetesClusterAffinityGroupMapDao;
+
+    @Mock
+    AffinityGroupDao affinityGroupDao;
+
     KubernetesClusterActionWorker actionWorker = null;
 
     final static Long DEFAULT_ID = 1L;
@@ -70,10 +84,12 @@ public class KubernetesClusterActionWorkerTest {
         kubernetesClusterManager.kubernetesSupportedVersionDao = kubernetesSupportedVersionDao;
         kubernetesClusterManager.kubernetesClusterDetailsDao = kubernetesClusterDetailsDao;
         kubernetesClusterManager.kubernetesClusterVmMapDao = kubernetesClusterVmMapDao;
+        kubernetesClusterManager.kubernetesClusterAffinityGroupMapDao = kubernetesClusterAffinityGroupMapDao;
         KubernetesCluster kubernetesCluster = Mockito.mock(KubernetesCluster.class);
         Mockito.when(kubernetesCluster.getId()).thenReturn(DEFAULT_ID);
         actionWorker = new KubernetesClusterActionWorker(kubernetesCluster, kubernetesClusterManager);
         actionWorker.ipAddressDao = ipAddressDao;
+        actionWorker.affinityGroupDao = affinityGroupDao;
     }
 
     @Test
@@ -129,5 +145,88 @@ public class KubernetesClusterActionWorkerTest {
         Mockito.when(ipAddressDao.findByUuid(uuid)).thenReturn(address);
         IpAddress result = actionWorker.getVpcTierKubernetesPublicIp(mockNetworkForGetVpcTierKubernetesPublicIpTest());
         Assert.assertNotNull(result);
+    }
+
+    @Test
+    public void testGetAffinityGroupIdsForNodeTypeReturnsIds() {
+        Mockito.when(kubernetesClusterAffinityGroupMapDao.listAffinityGroupIdsByClusterIdAndNodeType(DEFAULT_ID, "CONTROL"))
+            .thenReturn(Arrays.asList(1L, 2L));
+
+        List<Long> result = actionWorker.getAffinityGroupIdsForNodeType(KubernetesClusterNodeType.CONTROL);
+
+        Assert.assertEquals(2, result.size());
+        Assert.assertTrue(result.containsAll(Arrays.asList(1L, 2L)));
+    }
+
+    @Test
+    public void testGetAffinityGroupIdsForNodeTypeReturnsEmptyList() {
+        Mockito.when(kubernetesClusterAffinityGroupMapDao.listAffinityGroupIdsByClusterIdAndNodeType(DEFAULT_ID, "WORKER"))
+            .thenReturn(Collections.emptyList());
+
+        List<Long> result = actionWorker.getAffinityGroupIdsForNodeType(KubernetesClusterNodeType.WORKER);
+
+        Assert.assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testGetMergedAffinityGroupIdsWithExplicitDedication() {
+        Mockito.when(kubernetesClusterAffinityGroupMapDao.listAffinityGroupIdsByClusterIdAndNodeType(DEFAULT_ID, "CONTROL"))
+            .thenReturn(new ArrayList<>(Arrays.asList(1L)));
+
+        AffinityGroupVO explicitGroup = Mockito.mock(AffinityGroupVO.class);
+        Mockito.when(explicitGroup.getId()).thenReturn(99L);
+        Mockito.when(affinityGroupDao.findByAccountAndType(Mockito.anyLong(), Mockito.eq("ExplicitDedication")))
+            .thenReturn(explicitGroup);
+
+        List<Long> result = actionWorker.getMergedAffinityGroupIds(KubernetesClusterNodeType.CONTROL, 1L, 1L);
+
+        Assert.assertEquals(2, result.size());
+        Assert.assertTrue(result.contains(1L));
+        Assert.assertTrue(result.contains(99L));
+    }
+
+    @Test
+    public void testGetMergedAffinityGroupIdsNoExplicitDedication() {
+        Mockito.when(kubernetesClusterAffinityGroupMapDao.listAffinityGroupIdsByClusterIdAndNodeType(DEFAULT_ID, "WORKER"))
+            .thenReturn(new ArrayList<>(Arrays.asList(1L, 2L)));
+        Mockito.when(affinityGroupDao.findByAccountAndType(Mockito.anyLong(), Mockito.eq("ExplicitDedication")))
+            .thenReturn(null);
+        Mockito.when(affinityGroupDao.findDomainLevelGroupByType(Mockito.anyLong(), Mockito.eq("ExplicitDedication")))
+            .thenReturn(null);
+
+        List<Long> result = actionWorker.getMergedAffinityGroupIds(KubernetesClusterNodeType.WORKER, 1L, 1L);
+
+        Assert.assertEquals(2, result.size());
+    }
+
+    @Test
+    public void testGetMergedAffinityGroupIdsReturnsNullWhenEmpty() {
+        Mockito.when(kubernetesClusterAffinityGroupMapDao.listAffinityGroupIdsByClusterIdAndNodeType(DEFAULT_ID, "ETCD"))
+            .thenReturn(new ArrayList<>());
+        Mockito.when(affinityGroupDao.findByAccountAndType(Mockito.anyLong(), Mockito.anyString()))
+            .thenReturn(null);
+        Mockito.when(affinityGroupDao.findDomainLevelGroupByType(Mockito.anyLong(), Mockito.anyString()))
+            .thenReturn(null);
+
+        List<Long> result = actionWorker.getMergedAffinityGroupIds(KubernetesClusterNodeType.ETCD, 1L, 1L);
+
+        Assert.assertNull(result);
+    }
+
+    @Test
+    public void testGetMergedAffinityGroupIdsExplicitDedicationAlreadyInList() {
+        Mockito.when(kubernetesClusterAffinityGroupMapDao.listAffinityGroupIdsByClusterIdAndNodeType(DEFAULT_ID, "CONTROL"))
+            .thenReturn(new ArrayList<>(Arrays.asList(99L, 2L)));
+
+        AffinityGroupVO explicitGroup = Mockito.mock(AffinityGroupVO.class);
+        Mockito.when(explicitGroup.getId()).thenReturn(99L);
+        Mockito.when(affinityGroupDao.findByAccountAndType(Mockito.anyLong(), Mockito.eq("ExplicitDedication")))
+            .thenReturn(explicitGroup);
+
+        List<Long> result = actionWorker.getMergedAffinityGroupIds(KubernetesClusterNodeType.CONTROL, 1L, 1L);
+
+        Assert.assertEquals(2, result.size());
+        Assert.assertTrue(result.contains(99L));
+        Assert.assertTrue(result.contains(2L));
     }
 }

@@ -26,6 +26,7 @@ import com.cloud.dc.DataCenter;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterActionWorker;
+import com.cloud.kubernetes.cluster.dao.KubernetesClusterAffinityGroupMapDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import com.cloud.kubernetes.version.KubernetesSupportedVersion;
@@ -46,9 +47,12 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.affinity.AffinityGroupVO;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVirtualMachinesToKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVirtualMachinesFromKubernetesClusterCmd;
+import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.commons.collections.MapUtils;
@@ -102,6 +106,12 @@ public class KubernetesClusterManagerImplTest {
 
     @Mock
     private ServiceOfferingDao serviceOfferingDao;
+
+    @Mock
+    private KubernetesClusterAffinityGroupMapDao kubernetesClusterAffinityGroupMapDao;
+
+    @Mock
+    private AffinityGroupDao affinityGroupDao;
 
     @Spy
     @InjectMocks
@@ -441,4 +451,128 @@ public class KubernetesClusterManagerImplTest {
         String cksClusterPreferredArch = kubernetesClusterManager.getCksClusterPreferredArch(systemVMArch, cksIso);
         Assert.assertEquals(CPU.CPUArch.amd64.getType(), cksClusterPreferredArch);
     }
+
+    @Test
+    public void testSetAffinityGroupResponseForNodeTypeControl() {
+        KubernetesClusterResponse response = new KubernetesClusterResponse();
+        long clusterId = 1L;
+
+        AffinityGroupVO ag1 = Mockito.mock(AffinityGroupVO.class);
+        AffinityGroupVO ag2 = Mockito.mock(AffinityGroupVO.class);
+        Mockito.when(ag1.getUuid()).thenReturn("uuid-1");
+        Mockito.when(ag1.getName()).thenReturn("affinity-group-1");
+        Mockito.when(ag2.getUuid()).thenReturn("uuid-2");
+        Mockito.when(ag2.getName()).thenReturn("affinity-group-2");
+
+        Mockito.when(kubernetesClusterAffinityGroupMapDao.listAffinityGroupIdsByClusterIdAndNodeType(clusterId, CONTROL.name()))
+            .thenReturn(Arrays.asList(1L, 2L));
+        Mockito.when(affinityGroupDao.findById(1L)).thenReturn(ag1);
+        Mockito.when(affinityGroupDao.findById(2L)).thenReturn(ag2);
+
+        kubernetesClusterManager.setAffinityGroupResponseForNodeType(response, clusterId, CONTROL.name());
+
+        Mockito.verify(kubernetesClusterAffinityGroupMapDao).listAffinityGroupIdsByClusterIdAndNodeType(clusterId, CONTROL.name());
+        Mockito.verify(affinityGroupDao).findById(1L);
+        Mockito.verify(affinityGroupDao).findById(2L);
+    }
+
+    @Test
+    public void testSetAffinityGroupResponseForNodeTypeWorker() {
+        KubernetesClusterResponse response = new KubernetesClusterResponse();
+        long clusterId = 1L;
+
+        AffinityGroupVO ag = Mockito.mock(AffinityGroupVO.class);
+        Mockito.when(ag.getUuid()).thenReturn("worker-uuid");
+        Mockito.when(ag.getName()).thenReturn("worker-affinity");
+
+        Mockito.when(kubernetesClusterAffinityGroupMapDao.listAffinityGroupIdsByClusterIdAndNodeType(clusterId, WORKER.name()))
+            .thenReturn(Arrays.asList(10L));
+        Mockito.when(affinityGroupDao.findById(10L)).thenReturn(ag);
+
+        kubernetesClusterManager.setAffinityGroupResponseForNodeType(response, clusterId, WORKER.name());
+
+        Mockito.verify(kubernetesClusterAffinityGroupMapDao).listAffinityGroupIdsByClusterIdAndNodeType(clusterId, WORKER.name());
+        Mockito.verify(affinityGroupDao).findById(10L);
+    }
+
+    @Test
+    public void testSetAffinityGroupResponseForNodeTypeEtcd() {
+        KubernetesClusterResponse response = new KubernetesClusterResponse();
+        long clusterId = 1L;
+
+        AffinityGroupVO ag = Mockito.mock(AffinityGroupVO.class);
+        Mockito.when(ag.getUuid()).thenReturn("etcd-uuid");
+        Mockito.when(ag.getName()).thenReturn("etcd-affinity");
+
+        Mockito.when(kubernetesClusterAffinityGroupMapDao.listAffinityGroupIdsByClusterIdAndNodeType(clusterId, ETCD.name()))
+            .thenReturn(Arrays.asList(20L));
+        Mockito.when(affinityGroupDao.findById(20L)).thenReturn(ag);
+
+        kubernetesClusterManager.setAffinityGroupResponseForNodeType(response, clusterId, ETCD.name());
+
+        Mockito.verify(kubernetesClusterAffinityGroupMapDao).listAffinityGroupIdsByClusterIdAndNodeType(clusterId, ETCD.name());
+        Mockito.verify(affinityGroupDao).findById(20L);
+    }
+
+    @Test
+    public void testSetAffinityGroupResponseForNodeTypeEmptyList() {
+        KubernetesClusterResponse response = new KubernetesClusterResponse();
+        long clusterId = 1L;
+
+        Mockito.when(kubernetesClusterAffinityGroupMapDao.listAffinityGroupIdsByClusterIdAndNodeType(clusterId, CONTROL.name()))
+            .thenReturn(Collections.emptyList());
+
+        kubernetesClusterManager.setAffinityGroupResponseForNodeType(response, clusterId, CONTROL.name());
+
+        Mockito.verify(affinityGroupDao, Mockito.never()).findById(Mockito.anyLong());
+    }
+
+    @Test
+    public void testSetAffinityGroupResponseForNodeTypeNullList() {
+        KubernetesClusterResponse response = new KubernetesClusterResponse();
+        long clusterId = 1L;
+
+        Mockito.when(kubernetesClusterAffinityGroupMapDao.listAffinityGroupIdsByClusterIdAndNodeType(clusterId, ETCD.name()))
+            .thenReturn(null);
+
+        kubernetesClusterManager.setAffinityGroupResponseForNodeType(response, clusterId, ETCD.name());
+
+        Mockito.verify(affinityGroupDao, Mockito.never()).findById(Mockito.anyLong());
+    }
+
+    @Test
+    public void testSetAffinityGroupResponseForNodeTypeNullAffinityGroup() {
+        KubernetesClusterResponse response = new KubernetesClusterResponse();
+        long clusterId = 1L;
+
+        AffinityGroupVO ag1 = Mockito.mock(AffinityGroupVO.class);
+        Mockito.when(ag1.getUuid()).thenReturn("uuid-1");
+        Mockito.when(ag1.getName()).thenReturn("affinity-group-1");
+
+        Mockito.when(kubernetesClusterAffinityGroupMapDao.listAffinityGroupIdsByClusterIdAndNodeType(clusterId, CONTROL.name()))
+            .thenReturn(Arrays.asList(1L, 2L));
+        Mockito.when(affinityGroupDao.findById(1L)).thenReturn(ag1);
+        Mockito.when(affinityGroupDao.findById(2L)).thenReturn(null);
+
+        kubernetesClusterManager.setAffinityGroupResponseForNodeType(response, clusterId, CONTROL.name());
+
+        Mockito.verify(affinityGroupDao).findById(1L);
+        Mockito.verify(affinityGroupDao).findById(2L);
+    }
+
+    @Test
+    public void testSetNodeTypeAffinityGroupResponse() {
+        KubernetesClusterResponse response = new KubernetesClusterResponse();
+        long clusterId = 1L;
+
+        Mockito.when(kubernetesClusterAffinityGroupMapDao.listAffinityGroupIdsByClusterIdAndNodeType(Mockito.eq(clusterId), Mockito.anyString()))
+            .thenReturn(Collections.emptyList());
+
+        kubernetesClusterManager.setNodeTypeAffinityGroupResponse(response, clusterId);
+
+        Mockito.verify(kubernetesClusterAffinityGroupMapDao).listAffinityGroupIdsByClusterIdAndNodeType(clusterId, CONTROL.name());
+        Mockito.verify(kubernetesClusterAffinityGroupMapDao).listAffinityGroupIdsByClusterIdAndNodeType(clusterId, WORKER.name());
+        Mockito.verify(kubernetesClusterAffinityGroupMapDao).listAffinityGroupIdsByClusterIdAndNodeType(clusterId, ETCD.name());
+    }
+
 }
