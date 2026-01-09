@@ -297,4 +297,3 @@ public class CloneVpcOfferingCmdTest {
         assertEquals("NATTED", cloneVpcOfferingCmd.getNetworkMode());
     }
 }
-

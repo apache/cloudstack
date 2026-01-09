@@ -322,4 +322,3 @@ public class CloneNetworkOfferingCmdTest {
         assertEquals(dropServices, cloneNetworkOfferingCmd.getDropServices());
     }
 }
-
