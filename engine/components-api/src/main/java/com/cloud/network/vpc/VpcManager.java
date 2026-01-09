@@ -23,6 +23,7 @@ import java.util.Set;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -38,9 +39,10 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
-import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface VpcManager {
+    ConfigKey<Integer> VpcMaxNetworks = new ConfigKey<>("Advanced", Integer.class, "vpc.max.networks", "3",
+            "Maximum number of networks per VPC.", true, ConfigKey.Scope.Account);
     ConfigKey<Boolean> VpcTierNamePrepend = new ConfigKey<>(Boolean.class,
             "vpc.tier.name.prepend",
             ConfigKey.CATEGORY_NETWORK,
