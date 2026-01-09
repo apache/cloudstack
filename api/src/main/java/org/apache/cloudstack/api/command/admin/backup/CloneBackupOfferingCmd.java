@@ -41,11 +41,11 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "importBackupOffering",
-        description = "Imports a backup offering using a backup provider",
+@APICommand(name = "cloneBackupOffering",
+        description = "Clones a backup offering from an existing offering",
         responseObject = BackupOfferingResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin})
-public class ImportBackupOfferingCmd extends BaseAsyncCmd {
+public class CloneBackupOfferingCmd extends BaseAsyncCmd {
 
     @Inject
     protected BackupManager backupManager;
@@ -54,31 +54,37 @@ public class ImportBackupOfferingCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     ////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true,
-            description = "The name of the backup offering")
+    @Parameter(name = ApiConstants.SOURCE_OFFERING_ID, type = BaseCmd.CommandType.UUID,
+            required = true, description = "The ID of the source backup offering to clone from")
+    private Long sourceOfferingId;
+
+    @Parameter(name = ApiConstants.NAME, type = BaseCmd.CommandType.STRING, required = false,
+            description = "The name of the cloned offering")
     private String name;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, required = true,
-            description = "The description of the backup offering")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = BaseCmd.CommandType.STRING, required = false,
+            description = "The description of the cloned offering")
     private String description;
 
-    @Parameter(name = ApiConstants.EXTERNAL_ID,
-            type = CommandType.STRING,
-            required = true,
+    @Parameter(name = ApiConstants.EXTERNAL_ID, type = BaseCmd.CommandType.STRING, required = false,
             description = "The backup offering ID (from backup provider side)")
     private String externalId;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = BaseCmd.CommandType.UUID, entityType = ZoneResponse.class,
-            description = "The zone ID", required = true)
+            description = "The zone ID", required = false)
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.ALLOW_USER_DRIVEN_BACKUPS, type = CommandType.BOOLEAN,
-            description = "Whether users are allowed to create adhoc backups and backup schedules", required = true)
+    @Parameter(name = ApiConstants.ALLOW_USER_DRIVEN_BACKUPS, type = BaseCmd.CommandType.BOOLEAN,
+            description = "Whether users are allowed to create adhoc backups and backup schedules", required = false)
     private Boolean userDrivenBackups;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
+
+    public Long getSourceOfferingId() {
+        return sourceOfferingId;
+    }
 
     public String getName() {
         return name;
@@ -97,7 +103,7 @@ public class ImportBackupOfferingCmd extends BaseAsyncCmd {
     }
 
     public Boolean getUserDrivenBackups() {
-        return userDrivenBackups == null ? false : userDrivenBackups;
+        return userDrivenBackups;
     }
 
     /////////////////////////////////////////////////////
@@ -107,14 +113,13 @@ public class ImportBackupOfferingCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            BackupOffering policy = backupManager.importBackupOffering(this);
-            if (policy != null) {
-                BackupOfferingResponse response = _responseGenerator.createBackupOfferingResponse(policy);
-                response.setResponseName(getCommandName());
-                setResponseObject(response);
-            } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add a backup offering");
+            BackupOffering policy = backupManager.cloneBackupOffering(this);
+            if (policy == null) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to clone backup offering");
             }
+            BackupOfferingResponse response = _responseGenerator.createBackupOfferingResponse(policy);
+            response.setResponseName(getCommandName());
+            setResponseObject(response);
         } catch (InvalidParameterValueException e) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.getMessage());
         } catch (CloudRuntimeException e) {
@@ -129,11 +134,11 @@ public class ImportBackupOfferingCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_VM_BACKUP_IMPORT_OFFERING;
+        return EventTypes.EVENT_VM_BACKUP_CLONE_OFFERING;
     }
 
     @Override
     public String getEventDescription() {
-        return "Importing backup offering: " + name + " (external ID: " + externalId + ") on zone ID " + zoneId ;
+        return "Cloning backup offering: " + name + " from source offering: " + (sourceOfferingId == null ? "" : sourceOfferingId.toString());
     }
 }
