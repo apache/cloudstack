@@ -147,6 +147,7 @@ public class ResourceLimitManagerImplTest {
         overrideDefaultConfigValue(ResourceLimitService.ResourceLimitStorageTags, "_defaultValue", StringUtils.join(storageTags, ","));
 
         Account account = mock(Account.class);
+        when(account.getType()).thenReturn(Account.Type.ADMIN);
         User user = mock(User.class);
         CallContext.register(user, account);
     }
