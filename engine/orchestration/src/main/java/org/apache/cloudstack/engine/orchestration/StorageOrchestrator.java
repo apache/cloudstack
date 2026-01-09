@@ -36,11 +36,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.StorageUnavailableException;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.template.TemplateManager;
 import org.apache.cloudstack.api.response.MigrationResponse;
@@ -318,11 +314,6 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         }
 
         return handleResponse(futures, null, message, success);
-    }
-
-    @Override
-    public Future<TemplateApiResult> orchestrateTemplateCopyToImageStore(TemplateInfo source, DataStore destStore) {
-        return submit(destStore.getScope().getScopeId(), new CopyTemplateTask(source, destStore));
     }
 
     @Override
