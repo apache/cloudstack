@@ -38,7 +38,7 @@
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'zonename'">
           <span v-if="record.datastoreid">
-            <router-link :to="{ path: (record.datastoretype === 'Primary' ? '/storagepool/' : '/imagestore/') + record.datastoreid }">
+            <router-link :to="{ path: (record.datastoretype === 'Primary' ? '/storagepool/' : '/imagestore/') + encodeURIComponent(record.datastoreid) }">
               <span v-if="fetchZoneIcon(record.zoneid)">
                 <resource-icon :image="zoneIcon" size="1x" style="margin-right: 5px"/>
               </span>

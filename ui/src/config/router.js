@@ -90,7 +90,7 @@ function generateRouterMap (section) {
         hideChildrenInMenu: true,
         children: [
           {
-            path: '/' + child.name + '/:id',
+            path: '/' + child.name + '/:id(.*)',
             hidden: child.hidden,
             meta: {
               title: child.title,
@@ -145,7 +145,7 @@ function generateRouterMap (section) {
     map.meta.tabs = section.tabs
 
     map.children = [{
-      path: '/' + section.name + '/:id',
+      path: '/' + section.name + '/:id(.*)',
       actions: section.actions ? section.actions : [],
       meta: {
         title: section.title,
