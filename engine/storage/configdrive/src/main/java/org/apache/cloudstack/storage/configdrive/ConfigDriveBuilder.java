@@ -231,9 +231,9 @@ public class ConfigDriveBuilder {
             throw new CloudRuntimeException("Cannot create ISO for config drive using any know tool. Known paths [/usr/bin/genisoimage, /usr/bin/mkisofs, /usr/local/bin/mkisofs]");
         }
         if (!isoCreator.canExecute()) {
-            throw new CloudRuntimeException("Cannot create ISO for config drive using: " + isoCreator.getCanonicalPath());
+            throw new CloudRuntimeException("Cannot create ISO for config drive using: " + isoCreator.getAbsolutePath());
         }
-        return isoCreator.getCanonicalPath();
+        return isoCreator.getAbsolutePath();
     }
 
     /**
