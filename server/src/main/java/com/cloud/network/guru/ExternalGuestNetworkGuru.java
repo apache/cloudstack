@@ -27,7 +27,6 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
-import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.event.ActionEventUtils;
@@ -75,8 +74,6 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     NetworkOrchestrationService _networkMgr;
     @Inject
     NetworkDao _networkDao;
-    @Inject
-    DataCenterDao _zoneDao;
     @Inject
     PortForwardingRulesDao _pfRulesDao;
     @Inject
@@ -303,7 +300,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         assert (nic.getReservationStrategy() == ReservationStrategy.Start) : "What can I do for NICs that are not allocated at start? ";
 
-        DataCenter dc = _dcDao.findById(config.getDataCenterId());
+        DataCenter dc = findDataCenter(config.getDataCenterId());
 
         if (_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
             nic.setBroadcastUri(config.getBroadcastUri());
