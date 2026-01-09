@@ -1801,14 +1801,18 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     protected String getStoragePoolNonDestroyedVolumesLog(long storagePoolId) {
         StringBuilder sb = new StringBuilder();
-        List<VolumeVO> nonDestroyedVols = volumeDao.findByPoolId(storagePoolId, null).stream().filter(vol -> vol.getState() != Volume.State.Destroy).collect(Collectors.toList());
+        List<VolumeVO> nonDestroyedVols = volumeDao.findByPoolId(storagePoolId, null);
         VMInstanceVO volInstance;
         List<String> logMessageInfo = new ArrayList<>();
 
         sb.append("[");
         for (VolumeVO vol : nonDestroyedVols) {
             volInstance = _vmInstanceDao.findById(vol.getInstanceId());
-            logMessageInfo.add(String.format("Volume [%s] (attached to VM [%s])", vol.getUuid(), volInstance.getUuid()));
+            if (volInstance != null) {
+                logMessageInfo.add(String.format("Volume [%s] (attached to VM [%s])", vol.getUuid(), volInstance.getUuid()));
+            } else {
+                logMessageInfo.add(String.format("Volume [%s]", vol.getUuid()));
+            }
         }
         sb.append(String.join(", ", logMessageInfo));
         sb.append("]");
