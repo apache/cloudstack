@@ -20,13 +20,18 @@ package org.apache.cloudstack.storage.image;
 
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.StorageUnavailableException;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.template.TemplateManager;
+import com.cloud.user.Account;
+import com.cloud.user.User;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.StorageOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
-import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
@@ -47,6 +52,8 @@ import com.cloud.storage.VMTemplateVO;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.mockito.Mockito.mock;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TemplateServiceImplTest {
@@ -92,6 +99,9 @@ public class TemplateServiceImplTest {
     TemplateManager templateManagerMock;
 
     @Mock
+    VMTemplateDao templateDao;
+
+    @Mock
     DataCenterDao _dcDao;
 
     Map<String, TemplateProp> templatesInSourceStore = new HashMap<>();
@@ -106,7 +116,6 @@ public class TemplateServiceImplTest {
         Mockito.doReturn(List.of(sourceStoreMock, destStoreMock)).when(dataStoreManagerMock).getImageStoresByZoneIds(zoneId);
         Mockito.doReturn(templatesInSourceStore).when(templateService).listTemplate(sourceStoreMock);
         Mockito.doReturn(null).when(templateService).listTemplate(destStoreMock);
-        Mockito.doReturn("install-path").when(templateInfoMock).getInstallPath();
         Mockito.doReturn(templateInfoMock).when(templateDataFactoryMock).getTemplate(2L, sourceStoreMock);
         Mockito.doReturn(3L).when(dataStoreMock).getId();
         Mockito.doReturn(zoneScopeMock).when(dataStoreMock).getScope();
@@ -171,7 +180,7 @@ public class TemplateServiceImplTest {
         boolean result = templateService.tryCopyingTemplateToImageStore(tmpltMock, destStoreMock);
 
         Assert.assertFalse(result);
-        Mockito.verify(storageOrchestrator, Mockito.never()).orchestrateTemplateCopyToImageStore(Mockito.any(), Mockito.any());
+        Mockito.verify(storageOrchestrator, Mockito.never()).orchestrateTemplateCopyFromSecondaryStores(Mockito.anyLong(), Mockito.any());
     }
 
     @Test
@@ -187,22 +196,11 @@ public class TemplateServiceImplTest {
         boolean result = templateService.tryCopyingTemplateToImageStore(tmpltMock, destStoreMock);
 
         Assert.assertFalse(result);
-        Mockito.verify(storageOrchestrator, Mockito.never()).orchestrateTemplateCopyToImageStore(Mockito.any(), Mockito.any());
+        Mockito.verify(storageOrchestrator, Mockito.never()).orchestrateTemplateCopyFromSecondaryStores(Mockito.anyLong(), Mockito.any());
     }
 
     @Test
-    public void tryCopyingTemplateToImageStoreTestReturnsTrueWhenTemplateExistsInAnotherStorageAndTaskWasScheduled() {
-        templatesInSourceStore.put(tmpltMock.getUniqueName(), tmpltPropMock);
-        Mockito.doReturn(new AsyncCallFuture<>()).when(storageOrchestrator).orchestrateTemplateCopyToImageStore(Mockito.any(), Mockito.any());
-
-        boolean result = templateService.tryCopyingTemplateToImageStore(tmpltMock, destStoreMock);
-
-        Assert.assertTrue(result);
-        Mockito.verify(storageOrchestrator).orchestrateTemplateCopyToImageStore(Mockito.any(), Mockito.any());
-    }
-
-    @Test
-    public void tryCopyingTemplateToImageStoreTestReturnsTrueWhenTemplateExistsInAnotherZone() {
+    public void tryCopyingTemplateToImageStoreTestReturnsTrueWhenTemplateExistsInAnotherZone() throws StorageUnavailableException, ResourceAllocationException {
         Scope scopeMock = Mockito.mock(Scope.class);
         Mockito.doReturn(scopeMock).when(destStoreMock).getScope();
         Mockito.doReturn(1L).when(scopeMock).getScopeId();
@@ -225,6 +223,7 @@ public class TemplateServiceImplTest {
 
         DataCenterVO dstZoneMock = Mockito.mock(DataCenterVO.class);
         Mockito.doReturn(dstZoneMock).when(_dcDao).findById(1L);
+        Mockito.doReturn(true).when(_tmpltMgr).copy(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
 
         boolean result = templateService.tryCopyingTemplateToImageStore(tmpltMock, destStoreMock);
 
@@ -259,7 +258,7 @@ public class TemplateServiceImplTest {
     }
 
     @Test
-    public void tryCopyingTemplateToImageStoreTestReturnsTrueWhenCrossZoneCopyTaskIsScheduled() {
+    public void tryCopyingTemplateToImageStoreTestReturnsTrueWhenCrossZoneCopyTaskIsScheduled() throws StorageUnavailableException, ResourceAllocationException {
         Scope scopeMock = Mockito.mock(Scope.class);
         Mockito.doReturn(scopeMock).when(destStoreMock).getScope();
         Mockito.doReturn(1L).when(scopeMock).getScopeId();
@@ -273,15 +272,27 @@ public class TemplateServiceImplTest {
 
         Map<String, TemplateProp> templates = new HashMap<>();
         templates.put("unique-name", tmpltPropMock);
-
         Mockito.doReturn(templates).when(templateService).listTemplate(otherZoneStoreMock);
 
         TemplateObject sourceTmplMock = Mockito.mock(TemplateObject.class);
         Mockito.doReturn(sourceTmplMock).when(templateDataFactoryMock).getTemplate(100L, otherZoneStoreMock);
         Mockito.doReturn("/mnt/secondary/template.qcow2").when(sourceTmplMock).getInstallPath();
+        Mockito.doReturn(100L).when(sourceTmplMock).getId();
+
+        DataStore sourceStoreMock = Mockito.mock(DataStore.class);
+        Scope sourceScopeMock = Mockito.mock(Scope.class);
+        Mockito.doReturn(sourceStoreMock).when(sourceTmplMock).getDataStore();
 
         DataCenterVO dstZoneMock = Mockito.mock(DataCenterVO.class);
         Mockito.doReturn(dstZoneMock).when(_dcDao).findById(1L);
+        VMTemplateVO templateVoMock = Mockito.mock(VMTemplateVO.class);
+        Mockito.doReturn(templateVoMock).when(templateDao).findById(100L);
+
+        Mockito.doReturn(true).when(_tmpltMgr).copy(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
+
+        Account account = mock(Account.class);
+        User user = mock(User.class);
+        CallContext callContext = mock(CallContext.class);
 
         boolean result = templateService.tryCopyingTemplateToImageStore(tmpltMock, destStoreMock);
 

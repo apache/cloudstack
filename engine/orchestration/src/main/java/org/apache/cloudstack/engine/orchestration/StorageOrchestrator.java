@@ -44,7 +44,6 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.template.TemplateManager;
 import org.apache.cloudstack.api.response.MigrationResponse;
-import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.StorageOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -53,6 +52,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SecondaryStorageServic
 import org.apache.cloudstack.engine.subsystem.api.storage.SecondaryStorageService.DataObjectResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.TemplateApiResult;
@@ -115,6 +115,8 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
     TemplateManager templateManager;
     @Inject
     VMTemplateDao templateDao;
+    @Inject
+    TemplateDataFactory templateDataFactory;
     @Inject
     DataCenterDao dcDao;
 
@@ -324,11 +326,9 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
     }
 
     @Override
-    public Future<TemplateApiResult> orchestrateTemplateCopyAcrossZones(TemplateInfo templateInfo, DataStore destStore) {
+    public Future<TemplateApiResult> orchestrateTemplateCopyFromSecondaryStores(long srcTemplateId, DataStore destStore) {
         Long dstZoneId = destStore.getScope().getScopeId();
-        DataCenterVO dstZone = dcDao.findById(dstZoneId);
-        long userId = CallContext.current().getCallingUserId();
-        return submit(dstZoneId, new CrossZoneCopyTemplateTask(userId, templateInfo, dstZone));
+        return submit(dstZoneId, new CopyTemplateFromSecondaryStorageTask(srcTemplateId, destStore));
     }
 
     protected Pair<String, Boolean> migrateCompleted(Long destDatastoreId, DataStore srcDatastore, List<DataObject> files, MigrationPolicy migrationPolicy, int skipped) {
@@ -677,16 +677,14 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         }
     }
 
-    private class CrossZoneCopyTemplateTask implements Callable<TemplateApiResult> {
-        private final long userId;
-        private final TemplateInfo sourceTmpl;
-        private final DataCenterVO dstZone;
+    private class CopyTemplateFromSecondaryStorageTask implements Callable<TemplateApiResult> {
+        private final long srcTemplateId;
+        private final DataStore destStore;
         private final String logid;
 
-        CrossZoneCopyTemplateTask(long userId, TemplateInfo sourceTmpl, DataCenterVO dstZone) {
-            this.userId = userId;
-            this.sourceTmpl = sourceTmpl;
-            this.dstZone = dstZone;
+        CopyTemplateFromSecondaryStorageTask(long srcTemplateId, DataStore destStore) {
+            this.srcTemplateId = srcTemplateId;
+            this.destStore = destStore;
             this.logid = ThreadContext.get(LOGCONTEXTID);
         }
 
@@ -694,25 +692,13 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         public TemplateApiResult call() {
             ThreadContext.put(LOGCONTEXTID, logid);
             TemplateApiResult result;
-            VMTemplateVO template = templateDao.findById(sourceTmpl.getId());
+            long destZoneId = destStore.getScope().getScopeId();
+            TemplateInfo sourceTmpl = templateDataFactory.getTemplate(srcTemplateId, DataStoreRole.Image);
             try {
-                DataStore sourceStore = sourceTmpl.getDataStore();
-                boolean success = templateManager.copy(userId, template, sourceStore, dstZone);
-
+                templateService.handleTemplateCopyFromSecondaryStores(srcTemplateId, destStore);
                 result = new TemplateApiResult(sourceTmpl);
-                if (!success) {
-                    result.setResult("Cross-zone template copy failed");
-                }
-            } catch (StorageUnavailableException | ResourceAllocationException e) {
-                logger.error("Exception while copying template [{}] from zone [{}] to zone [{}]",
-                        template,
-                        sourceTmpl.getDataStore().getScope().getScopeId(),
-                        dstZone.getId(),
-                        e);
-                result = new TemplateApiResult(sourceTmpl);
-                result.setResult(e.getMessage());
             } finally {
-                tryCleaningUpExecutor(dstZone.getId());
+                tryCleaningUpExecutor(destZoneId);
                 ThreadContext.clearAll();
             }
 
