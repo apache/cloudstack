@@ -99,8 +99,6 @@ public class ScaleIOGatewayClientImplTest {
     @Test
     public void testClientAuthSuccess() {
         Assert.assertNotNull(client);
-        wireMockRule.verify(getRequestedFor(urlEqualTo("/api/login"))
-                .withBasicAuth(new BasicCredentials(username, password)));
 
         wireMockRule.stubFor(get("/api/types/StoragePool/instances")
                 .willReturn(aResponse()
@@ -110,25 +108,31 @@ public class ScaleIOGatewayClientImplTest {
 
         client.listStoragePools();
 
+        wireMockRule.verify(getRequestedFor(urlEqualTo("/api/login"))
+                .withBasicAuth(new BasicCredentials(username, password)));
+
         wireMockRule.verify(getRequestedFor(urlEqualTo("/api/types/StoragePool/instances"))
                 .withBasicAuth(new BasicCredentials(username, sessionKey)));
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void testClientAuthFailure() throws Exception {
+        Assert.assertNotNull(client);
+
         wireMockRule.stubFor(get("/api/login")
                 .willReturn(unauthorized()
                         .withHeader("content-type", "application/json;charset=UTF-8")
                         .withBody("")));
 
-        new ScaleIOGatewayClientImpl("https://localhost/api", username, password, false, timeout, maxConnections);
+        client.listStoragePools();
+
+        wireMockRule.verify(getRequestedFor(urlEqualTo("/api/login"))
+                .withBasicAuth(new BasicCredentials(username, password)));
     }
 
     @Test(expected = ServerApiException.class)
     public void testRequestTimeout() {
         Assert.assertNotNull(client);
-        wireMockRule.verify(getRequestedFor(urlEqualTo("/api/login"))
-                .withBasicAuth(new BasicCredentials(username, password)));
 
         wireMockRule.stubFor(get("/api/types/StoragePool/instances")
                 .willReturn(aResponse()
@@ -138,18 +142,22 @@ public class ScaleIOGatewayClientImplTest {
                         .withBody("")));
 
         client.listStoragePools();
+
+        wireMockRule.verify(getRequestedFor(urlEqualTo("/api/login"))
+                .withBasicAuth(new BasicCredentials(username, password)));
     }
 
     @Test
     public void testCreateSingleVolume() {
         Assert.assertNotNull(client);
-        wireMockRule.verify(getRequestedFor(urlEqualTo("/api/login"))
-                .withBasicAuth(new BasicCredentials(username, password)));
 
         final String volumeName = "testvolume";
         final String scaleIOStoragePoolId = "4daaa55e00000000";
         final int sizeInGb = 8;
         Volume scaleIOVolume = client.createVolume(volumeName, scaleIOStoragePoolId, sizeInGb, Storage.ProvisioningType.THIN);
+
+        wireMockRule.verify(getRequestedFor(urlEqualTo("/api/login"))
+                .withBasicAuth(new BasicCredentials(username, password)));
 
         wireMockRule.verify(postRequestedFor(urlEqualTo("/api/types/Volume/instances"))
                 .withBasicAuth(new BasicCredentials(username, sessionKey))
@@ -169,8 +177,6 @@ public class ScaleIOGatewayClientImplTest {
     @Test
     public void testCreateMultipleVolumes() {
         Assert.assertNotNull(client);
-        wireMockRule.verify(getRequestedFor(urlEqualTo("/api/login"))
-                .withBasicAuth(new BasicCredentials(username, password)));
 
         final String volumeNamePrefix = "testvolume_";
         final String scaleIOStoragePoolId = "4daaa55e00000000";
@@ -187,6 +193,9 @@ public class ScaleIOGatewayClientImplTest {
             Assert.assertEquals(scaleIOVolume.getSizeInKb(), Long.valueOf(sizeInGb * 1024 * 1024));
             Assert.assertEquals(scaleIOVolume.getVolumeType(), Volume.VolumeType.ThinProvisioned);
         }
+
+        wireMockRule.verify(getRequestedFor(urlEqualTo("/api/login"))
+                .withBasicAuth(new BasicCredentials(username, password)));
 
         wireMockRule.verify(volumesCount, postRequestedFor(urlEqualTo("/api/types/Volume/instances"))
                 .withBasicAuth(new BasicCredentials(username, sessionKey))
