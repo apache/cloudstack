@@ -169,6 +169,7 @@ import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterScaleWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterStartWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterStopWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterUpgradeWorker;
+import com.cloud.kubernetes.cluster.dao.KubernetesClusterAffinityGroupMapDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDetailsDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
@@ -314,6 +315,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     public KubernetesClusterVmMapDao kubernetesClusterVmMapDao;
     @Inject
     public KubernetesClusterDetailsDao kubernetesClusterDetailsDao;
+    @Inject
+    public KubernetesClusterAffinityGroupMapDao kubernetesClusterAffinityGroupMapDao;
     @Inject
     public KubernetesSupportedVersionDao kubernetesSupportedVersionDao;
     @Inject
@@ -858,24 +861,38 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
         List<KubernetesUserVmResponse> vmResponses = new ArrayList<>();
         List<KubernetesClusterVmMapVO> vmList = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
-        ResponseView respView = ResponseView.Restricted;
+        ResponseView userVmResponseView = ResponseView.Restricted;
         Account caller = CallContext.current().getCallingAccount();
         if (accountService.isRootAdmin(caller.getId())) {
-            respView = ResponseView.Full;
+            userVmResponseView = ResponseView.Full;
         }
         final String responseName = "virtualmachine";
         if (vmList != null && !vmList.isEmpty()) {
-            for (KubernetesClusterVmMapVO vmMapVO : vmList) {
-                UserVmJoinVO userVM = userVmJoinDao.findById(vmMapVO.getVmId());
-                if (userVM != null) {
-                    UserVmResponse vmResponse = ApiDBUtils.newUserVmResponse(respView, responseName, userVM,
-                        EnumSet.of(VMDetails.nics), caller);
+            Map<Long, KubernetesClusterVmMapVO> vmMapById = vmList.stream()
+                    .collect(Collectors.toMap(KubernetesClusterVmMapVO::getVmId, vm -> vm));
+            Long[] vmIds = vmMapById.keySet().toArray(new Long[0]);
+            List<UserVmJoinVO> userVmJoinVOs = userVmJoinDao.searchByIds(vmIds);
+            if (userVmJoinVOs != null && !userVmJoinVOs.isEmpty()) {
+                Map<Long, UserVmResponse> vmResponseMap = new HashMap<>();
+                for (UserVmJoinVO userVM : userVmJoinVOs) {
+                    Long vmId = userVM.getId();
+                    UserVmResponse vmResponse = vmResponseMap.get(vmId);
+                    if (vmResponse == null) {
+                        vmResponse = ApiDBUtils.newUserVmResponse(userVmResponseView, responseName, userVM,
+                                EnumSet.of(VMDetails.nics, VMDetails.affgrp), caller);
+                        vmResponseMap.put(vmId, vmResponse);
+                    } else {
+                        ApiDBUtils.fillVmDetails(userVmResponseView, vmResponse, userVM);
+                    }
+                }
+                for (Map.Entry<Long, UserVmResponse> vmIdResponseEntry : vmResponseMap.entrySet()) {
                     KubernetesUserVmResponse kubernetesUserVmResponse = new KubernetesUserVmResponse();
                     try {
-                        BeanUtils.copyProperties(kubernetesUserVmResponse, vmResponse);
+                        BeanUtils.copyProperties(kubernetesUserVmResponse, vmIdResponseEntry.getValue());
                     } catch (IllegalAccessException | InvocationTargetException e) {
                         throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to generate zone metrics response");
                     }
+                    KubernetesClusterVmMapVO vmMapVO = vmMapById.get(vmIdResponseEntry.getKey());
                     kubernetesUserVmResponse.setExternalNode(vmMapVO.isExternalNode());
                     kubernetesUserVmResponse.setEtcdNode(vmMapVO.isEtcdNode());
                     kubernetesUserVmResponse.setNodeVersion(vmMapVO.getNodeVersion());
@@ -905,8 +922,43 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         response.setClusterType(kubernetesCluster.getClusterType());
         response.setCsiEnabled(kubernetesCluster.isCsiEnabled());
         response.setCreated(kubernetesCluster.getCreated());
+        setNodeTypeAffinityGroupResponse(response, kubernetesCluster.getId());
 
         return response;
+    }
+
+    protected void setNodeTypeAffinityGroupResponse(KubernetesClusterResponse response, long clusterId) {
+        setAffinityGroupResponseForNodeType(response, clusterId, CONTROL.name());
+        setAffinityGroupResponseForNodeType(response, clusterId, WORKER.name());
+        setAffinityGroupResponseForNodeType(response, clusterId, ETCD.name());
+    }
+
+    protected void setAffinityGroupResponseForNodeType(KubernetesClusterResponse response, long clusterId, String nodeType) {
+        List<Long> affinityGroupIds = kubernetesClusterAffinityGroupMapDao.listAffinityGroupIdsByClusterIdAndNodeType(clusterId, nodeType);
+        if (affinityGroupIds == null || affinityGroupIds.isEmpty()) {
+            return;
+        }
+        List<String> affinityGroupUuids = new ArrayList<>();
+        List<String> affinityGroupNames = new ArrayList<>();
+        for (Long affinityGroupId : affinityGroupIds) {
+            AffinityGroupVO affinityGroup = affinityGroupDao.findById(affinityGroupId);
+            if (affinityGroup != null) {
+                affinityGroupUuids.add(affinityGroup.getUuid());
+                affinityGroupNames.add(affinityGroup.getName());
+            }
+        }
+        String affinityGroupUuidsCsv = String.join(",", affinityGroupUuids);
+        String affinityGroupNamesCsv = String.join(",", affinityGroupNames);
+        if (CONTROL.name().equals(nodeType)) {
+            response.setControlAffinityGroupIds(affinityGroupUuidsCsv);
+            response.setControlAffinityGroupNames(affinityGroupNamesCsv);
+        } else if (WORKER.name().equals(nodeType)) {
+            response.setWorkerAffinityGroupIds(affinityGroupUuidsCsv);
+            response.setWorkerAffinityGroupNames(affinityGroupNamesCsv);
+        } else if (ETCD.name().equals(nodeType)) {
+            response.setEtcdAffinityGroupIds(affinityGroupUuidsCsv);
+            response.setEtcdAffinityGroupNames(affinityGroupNamesCsv);
+        }
     }
 
     private DataCenter validateAndGetZoneForKubernetesCreateParameters(Long zoneId, Long networkId) {
@@ -1185,6 +1237,20 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             }
         }
         return network;
+    }
+
+    private void persistAffinityGroupMappings(long clusterId, Map<String, List<Long>> affinityGroupNodeTypeMap) {
+        if (MapUtils.isEmpty(affinityGroupNodeTypeMap)) {
+            return;
+        }
+        for (Map.Entry<String, List<Long>> nodeTypeAffinityGroupEntry : affinityGroupNodeTypeMap.entrySet()) {
+            String nodeType = nodeTypeAffinityGroupEntry.getKey();
+            List<Long> affinityGroupIds = nodeTypeAffinityGroupEntry.getValue();
+            for (Long affinityGroupId : affinityGroupIds) {
+                kubernetesClusterAffinityGroupMapDao.persist(
+                    new KubernetesClusterAffinityGroupMapVO(clusterId, nodeType, affinityGroupId));
+            }
+        }
     }
 
     private void addKubernetesClusterDetails(final KubernetesCluster kubernetesCluster, final Network network, final CreateKubernetesClusterCmd cmd) {
@@ -1627,6 +1693,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
 
         Map<String, Long> templateNodeTypeMap = cmd.getTemplateNodeTypeMap();
+        Map<String, List<Long>> affinityGroupNodeTypeMap = cmd.getAffinityGroupNodeTypeMap();
         final VMTemplateVO finalTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, DEFAULT, clusterKubernetesVersion);
         final VMTemplateVO controlNodeTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, CONTROL, clusterKubernetesVersion);
         final VMTemplateVO workerNodeTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, WORKER, clusterKubernetesVersion);
@@ -1672,6 +1739,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 }
                 newCluster.setCsiEnabled(cmd.getEnableCsi());
                 kubernetesClusterDao.persist(newCluster);
+                persistAffinityGroupMappings(newCluster.getId(), affinityGroupNodeTypeMap);
                 addKubernetesClusterDetails(newCluster, defaultNetwork, cmd);
                 return newCluster;
             }
