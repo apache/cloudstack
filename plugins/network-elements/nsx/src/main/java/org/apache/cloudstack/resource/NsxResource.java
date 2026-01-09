@@ -415,10 +415,10 @@ public class NsxResource implements ServerResource {
 
     private NsxAnswer executeRequest(DeleteNsxNatRuleCommand cmd) {
         String ruleName = null;
-        if (cmd.getService() == Network.Service.StaticNat) {
+        if (Network.Service.StaticNat.getName().equals(cmd.getNetworkServiceName())) {
             ruleName = NsxControllerUtils.getStaticNatRuleName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
                     cmd.getNetworkResourceId(), cmd.isResourceVpc());
-        } else if (cmd.getService() == Network.Service.PortForwarding) {
+        } else if (Network.Service.PortForwarding.getName().equals(cmd.getNetworkServiceName())) {
             ruleName = NsxControllerUtils.getPortForwardRuleName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
                     cmd.getNetworkResourceId(), cmd.getRuleId(), cmd.isResourceVpc());
         }
