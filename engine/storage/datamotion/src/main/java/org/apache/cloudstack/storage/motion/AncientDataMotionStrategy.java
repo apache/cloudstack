@@ -45,10 +45,12 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
+import org.apache.cloudstack.storage.heuristics.HeuristicRuleHelper;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.logging.log4j.Logger;
@@ -103,6 +105,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     StorageManager storageManager;
     @Inject
     SnapshotDao snapshotDao;
+
+    @Inject
+    HeuristicRuleHelper heuristicRuleHelper;
 
     @Override
     public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
@@ -374,7 +379,13 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             }
             // need to find a nfs or cifs image store, assuming that can't copy volume
             // directly to s3
-            ImageStoreEntity imageStore = (ImageStoreEntity)dataStoreMgr.getImageStoreWithFreeCapacity(destScope.getScopeId());
+            Long zoneId = destScope.getScopeId();
+            ImageStoreEntity imageStore = (ImageStoreEntity) heuristicRuleHelper.getImageStoreIfThereIsHeuristicRule(zoneId, HeuristicType.VOLUME, destData);
+            if (imageStore == null) {
+                logger.debug("Secondary storage selector did not direct volume migration to a specific secondary storage; using secondary storage with the most free capacity.");
+                imageStore = (ImageStoreEntity) dataStoreMgr.getImageStoreWithFreeCapacity(zoneId);
+            }
+
             if (imageStore == null || !imageStore.getProtocol().equalsIgnoreCase("nfs") && !imageStore.getProtocol().equalsIgnoreCase("cifs")) {
                 String errMsg = "can't find a nfs (or cifs) image store to satisfy the need for a staging store";
                 Answer answer = new Answer(null, false, errMsg);
