@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.backup.dao;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 
@@ -24,14 +26,13 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import com.cloud.utils.DateUtil;
-import org.apache.cloudstack.api.response.BackupScheduleResponse;
-import org.apache.cloudstack.backup.BackupSchedule;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.TransactionLegacy;
 import org.apache.cloudstack.backup.BackupScheduleVO;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class BackupScheduleDaoImpl extends GenericDaoBase<BackupScheduleVO, Long> implements BackupScheduleDao {
@@ -60,13 +61,6 @@ public class BackupScheduleDaoImpl extends GenericDaoBase<BackupScheduleVO, Long
     }
 
     @Override
-    public BackupScheduleVO findByVM(Long vmId) {
-        SearchCriteria<BackupScheduleVO> sc = backupScheduleSearch.create();
-        sc.setParameters("vm_id", vmId);
-        return findOneBy(sc);
-    }
-
-    @Override
     public List<BackupScheduleVO> listByVM(Long vmId) {
         SearchCriteria<BackupScheduleVO> sc = backupScheduleSearch.create();
         sc.setParameters("vm_id", vmId);
@@ -88,21 +82,18 @@ public class BackupScheduleDaoImpl extends GenericDaoBase<BackupScheduleVO, Long
         return listBy(sc);
     }
 
+    @DB
     @Override
-    public BackupScheduleResponse newBackupScheduleResponse(BackupSchedule schedule) {
-        VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(schedule.getVmId());
-        BackupScheduleResponse response = new BackupScheduleResponse();
-        response.setId(schedule.getUuid());
-        response.setVmId(vm.getUuid());
-        response.setVmName(vm.getHostName());
-        response.setIntervalType(schedule.getScheduleType());
-        response.setSchedule(schedule.getSchedule());
-        response.setTimezone(schedule.getTimezone());
-        response.setMaxBackups(schedule.getMaxBackups());
-        if (schedule.getQuiesceVM() != null) {
-            response.setQuiesceVM(schedule.getQuiesceVM());
+    public boolean remove(Long id) {
+        String sql = "UPDATE backups SET backup_schedule_id = NULL WHERE backup_schedule_id = ?";
+        TransactionLegacy transaction = TransactionLegacy.currentTxn();
+        try {
+            PreparedStatement preparedStatement = transaction.prepareAutoCloseStatement(sql);
+            preparedStatement.setLong(1, id);
+            preparedStatement.executeUpdate();
+            return super.remove(id);
+        } catch (SQLException e) {
+            return false;
         }
-        response.setObjectName("backupschedule");
-        return response;
     }
 }
