@@ -203,7 +203,7 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         }
 
         offeringResponse.setHasAnnotation(annotationDao.hasAnnotations(offering.getUuid(), AnnotationService.EntityType.SERVICE_OFFERING.name(),
-                accountManager.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+                CallContext.current().isCallingAccountRootAdmin()));
 
         return offeringResponse;
     }

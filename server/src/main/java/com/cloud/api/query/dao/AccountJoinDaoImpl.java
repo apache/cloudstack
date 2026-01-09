@@ -22,6 +22,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.springframework.stereotype.Component;
 
@@ -90,7 +91,7 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         accountResponse.setBytesSent(account.getBytesSent());
 
         if (details.contains(DomainDetails.all) || details.contains(DomainDetails.resource)) {
-            boolean fullView = (view == ResponseView.Full && _acctMgr.isRootAdmin(account.getId()));
+            boolean fullView = (view == ResponseView.Full && CallContext.current().isCallingAccountRootAdmin());
             setResourceLimits(account, fullView, accountResponse);
 
             //get resource limits for projects
