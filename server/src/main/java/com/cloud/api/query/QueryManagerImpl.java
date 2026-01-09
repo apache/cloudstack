@@ -920,7 +920,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         searchFilter.addOrderBy(EventVO.class, "id", false);
 
         SearchBuilder<EventVO> eventSearchBuilder = eventDao.createSearchBuilder();
-        eventSearchBuilder.select(null, Func.DISTINCT, eventSearchBuilder.entity().getId());
+        eventSearchBuilder.select(null, Func.NATIVE, eventSearchBuilder.entity().getId());
         accountMgr.buildACLSearchBuilder(eventSearchBuilder, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         eventSearchBuilder.and("id", eventSearchBuilder.entity().getId(), SearchCriteria.Op.EQ);
