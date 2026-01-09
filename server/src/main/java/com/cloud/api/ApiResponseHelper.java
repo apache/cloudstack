@@ -5039,7 +5039,25 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public BackupScheduleResponse createBackupScheduleResponse(BackupSchedule schedule) {
-        return ApiDBUtils.newBackupScheduleResponse(schedule);
+        BackupScheduleResponse response = new BackupScheduleResponse();
+        response.setId(schedule.getUuid());
+        response.setIntervalType(schedule.getScheduleType());
+        response.setSchedule(schedule.getSchedule());
+        response.setTimezone(schedule.getTimezone());
+        response.setMaxBackups(schedule.getMaxBackups());
+
+        if (schedule.getQuiesceVM() != null) {
+            response.setQuiesceVM(schedule.getQuiesceVM());
+        }
+
+        VMInstanceVO vm = ApiDBUtils.findVMInstanceById(schedule.getVmId());
+        if (vm != null) {
+            response.setVmId(vm.getUuid());
+            response.setVmName(vm.getHostName());
+        }
+
+        response.setObjectName("backupschedule");
+        return response;
     }
 
     @Override
