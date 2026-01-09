@@ -221,8 +221,8 @@ public interface StorageManager extends StorageService {
             "Number of worker threads to be used to connect hosts to a primary storage", true);
 
     ConfigKey<Boolean> COPY_TEMPLATES_FROM_OTHER_SECONDARY_STORAGES = new ConfigKey<>(Boolean.class, "copy.templates.from.other.secondary.storages",
-            "Storage", "true", "Allow templates to be copied from existing Secondary Storage servers (within the same zone or across zones) " +
-            "when adding a new Secondary Storage, instead of downloading them from the source URL.",
+            "Storage", "true", "When enabled, this feature allows templates to be copied from existing Secondary Storage servers (within the same zone or across zones) " +
+            "while adding a new Secondary Storage. If the copy operation fails, the system falls back to downloading the template from the source URL.",
             true, ConfigKey.Scope.Zone, null);
 
     /**
