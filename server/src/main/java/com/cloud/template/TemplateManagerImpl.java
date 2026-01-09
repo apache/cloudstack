@@ -838,6 +838,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         // Copy will just find one eligible image store for the destination zone
         // and copy template there, not propagate to all image stores
         // for that zone
+
+        boolean copied = false;
+
         for (DataStore dstSecStore : dstSecStores) {
             TemplateDataStoreVO dstTmpltStore = _tmplStoreDao.findByStoreTemplate(dstSecStore.getId(), tmpltId);
             if (dstTmpltStore != null && dstTmpltStore.getDownloadState() == Status.DOWNLOADED) {
@@ -852,8 +855,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 TemplateApiResult result = future.get();
                 if (result.isFailed()) {
                     logger.debug("Copy Template failed for image store {}: {}", dstSecStore, result.getResult());
+                    _tmplStoreDao.removeByTemplateStore(tmpltId, dstSecStore.getId());
                     continue; // try next image store
                 }
+
+                copied = true;
 
                 _tmpltDao.addTemplateToZone(template, dstZoneId);
 
@@ -882,12 +888,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                         }
                     }
                 }
+
+                return true;
+
             } catch (Exception ex) {
-                logger.debug("Failed to copy Template to image store:{} ,will try next one", dstSecStore);
+                logger.debug("Failed to copy Template to image store:{} ,will try next one", dstSecStore, ex);
             }
         }
-        return true;
-
+        return copied;
     }
 
     @Override
