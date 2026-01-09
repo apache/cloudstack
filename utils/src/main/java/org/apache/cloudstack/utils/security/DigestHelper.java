@@ -16,12 +16,6 @@
 // under the License.
 package org.apache.cloudstack.utils.security;
 
-import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,6 +26,13 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class DigestHelper {
     protected static Logger LOGGER = LogManager.getLogger(DigestHelper.class);
@@ -141,5 +142,14 @@ public class DigestHelper {
             LOGGER.error(errMsg);
             throw new CloudRuntimeException(errMsg, e);
         }
+    }
+
+    public static String deduceAlgorithmFromChecksumLength(int length) {
+        for (Map.Entry<String, Integer> entry : getChecksumLengthsMap().entrySet()) {
+            if (entry.getValue() == length) {
+                return entry.getKey();
+            }
+        }
+        return null;
     }
 }

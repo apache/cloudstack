@@ -24,23 +24,23 @@ import static org.junit.Assert.fail;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class DeleteCustomActionCmdTest {
 
-    private DeleteCustomActionCmd cmd;
+    @Mock
     private ExtensionsManager extensionsManager;
 
-    @Before
-    public void setUp() throws Exception {
-        cmd = Mockito.spy(new DeleteCustomActionCmd());
-        extensionsManager = Mockito.mock(ExtensionsManager.class);
-        java.lang.reflect.Field field = DeleteCustomActionCmd.class.getDeclaredField("extensionsManager");
-        field.setAccessible(true);
-        field.set(cmd, extensionsManager);
-    }
+    @Spy
+    @InjectMocks
+    private DeleteCustomActionCmd cmd;
 
     @Test
     public void getIdReturnsNullWhenUnset() throws Exception {
