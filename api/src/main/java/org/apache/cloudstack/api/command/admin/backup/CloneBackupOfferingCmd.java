@@ -115,7 +115,7 @@ public class CloneBackupOfferingCmd extends BaseAsyncCmd {
         try {
             BackupOffering policy = backupManager.cloneBackupOffering(this);
             if (policy == null) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to clone a backup offering");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to clone backup offering");
             }
             BackupOfferingResponse response = _responseGenerator.createBackupOfferingResponse(policy);
             response.setResponseName(getCommandName());
