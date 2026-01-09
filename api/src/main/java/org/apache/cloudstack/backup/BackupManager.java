@@ -136,6 +136,8 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
      */
     BackupOffering importBackupOffering(final ImportBackupOfferingCmd cmd);
 
+    List<Long> getBackupOfferingDomains(final Long offeringId);
+
     /**
      * List backup offerings
      * @param ListBackupOfferingsCmd API cmd
