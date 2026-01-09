@@ -1383,8 +1383,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
 
         totalAdditionalVms += additional;
-        long effectiveCpu = (long) so.getCpu() * so.getSpeed();
-        totalAdditionalCpuUnits += effectiveCpu * additional;
+        totalAdditionalCpuUnits += so.getCpu() * additional;
         totalAdditionalRamMb += so.getRamSize() * additional;
 
         try {
