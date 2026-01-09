@@ -131,17 +131,17 @@ public class NetUtils {
         }
     }
 
-    public static long createSequenceBasedMacAddress(final long macAddress, long globalConfig) {
+    public static long createSequenceBasedMacAddress(final long macAddress, long macIdentifier) {
         /*
             Logic for generating MAC address:
             Mac = B1:B2:B3:B4:B5:B6 (Bx is a byte).
             B1 -> Presently controlled by prefix variable. The value should be such that the MAC is local and unicast.
-            B2 -> This will be configurable for each deployment/installation. Controlled by the global config MACIdentifier
+            B2 -> This will be configurable for each deployment/installation. Controlled by the 'mac.identifier' zone-level config
             B3 -> A randomly generated number between 0 - 255
             B4,5,6 -> These bytes are based on the unique DB identifier associated with the IP address for which MAC is generated (refer to mac_address field in user_ip_address table).
          */
 
-        return macAddress | prefix<<40 | globalConfig << 32 & 0x00ff00000000l | (long)s_rand.nextInt(255) << 24;
+        return macAddress | prefix << 40 | macIdentifier << 32 & 0x00ff00000000L | (long)s_rand.nextInt(255) << 24;
     }
 
     public static String getHostName() {
