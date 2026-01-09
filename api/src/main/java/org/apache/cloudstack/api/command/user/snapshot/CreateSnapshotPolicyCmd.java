@@ -94,7 +94,11 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
             since = "4.21.0")
     protected List<Long> storagePoolIds;
 
-    @Parameter (name = ApiConstants.USE_STORAGE_REPLICATION, type=CommandType.BOOLEAN, required = false, since = "4.21.0", description = "This parameter enables the option the snapshot to be copied to supported primary storage")
+    @Parameter (name = ApiConstants.USE_STORAGE_REPLICATION,
+            type=CommandType.BOOLEAN,
+            since = "4.21.0",
+            description = "Enables the snapshot to be copied to the supported primary storages when the config 'use.storage.replication' is set to true for the storage or globally. " +
+                    "This is supported only for StorPool storage for now.")
     protected Boolean useStorageReplication;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
