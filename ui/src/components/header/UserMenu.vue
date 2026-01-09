@@ -59,6 +59,10 @@
             <QuestionCircleOutlined class="user-menu-item-icon" />
             <span class="user-menu-item-name">{{ $t('label.help') }}</span>
           </a-menu-item>
+          <a-menu-item class="user-menu-item" key="logs">
+            <FileTextOutlined class="user-menu-item-icon" />
+            <span class="user-menu-item-name">{{ $t('label.logs') }}</span>
+          </a-menu-item>
           <a-menu-divider/>
           <a-menu-item class="user-menu-item" key="logout">
             <LogoutOutlined class="user-menu-item-icon" />
@@ -176,6 +180,9 @@ export default {
           break
         case 'logout':
           this.handleLogout()
+          break
+        case 'logs':
+          eventBus.emit('view-logs', ['websocket', 'account'])
           break
       }
     },
