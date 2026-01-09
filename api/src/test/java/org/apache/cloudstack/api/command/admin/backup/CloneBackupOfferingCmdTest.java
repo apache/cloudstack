@@ -299,5 +299,3 @@ public class CloneBackupOfferingCmdTest {
         assertEquals(Boolean.FALSE, cloneBackupOfferingCmd.getUserDrivenBackups());
     }
 }
-
-
