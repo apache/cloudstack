@@ -313,6 +313,11 @@ export const constantRouterMap = [
         path: 'resetPassword',
         name: 'resetPassword',
         component: () => import(/* webpackChunkName: "auth" */ '@/views/auth/ResetPassword')
+      },
+      {
+        path: 'forceChangePassword',
+        name: 'forceChangePassword',
+        component: () => import(/* webpackChunkName: "auth" */ '@/views/iam/ForceChangePassword')
       }
     ]
   },
