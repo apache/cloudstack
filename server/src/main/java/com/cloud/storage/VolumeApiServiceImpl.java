@@ -2459,7 +2459,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     }
                 }
 
-                if (volume != null && ImageFormat.QCOW2.equals(volume.getFormat()) && !Volume.State.Allocated.equals(volume.getState()) && !StoragePoolType.StorPool.equals(volume.getPoolType())) {
+                if (volume != null && ImageFormat.QCOW2.equals(volume.getFormat()) && !Volume.State.Allocated.equals(volume.getState()) &&
+                        !Arrays.asList(StoragePoolType.StorPool, StoragePoolType.Linstor).contains(volume.getPoolType())) {
                     String message = "Unable to shrink volumes of type QCOW2";
                     logger.warn(message);
                     throw new InvalidParameterValueException(message);
