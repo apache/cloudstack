@@ -402,6 +402,14 @@ export default {
         groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
         args: ['name', 'description', 'allowuserdrivenbackups']
       }, {
+        api: 'cloneBackupOffering',
+        icon: 'copy-outlined',
+        label: 'label.clone.backup.offering',
+        docHelp: 'adminguide/virtual_machines.html#importing-backup-offerings',
+        dataView: true,
+        popup: true,
+        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/ImportBackupOffering.vue')))
+      }, {
         api: 'deleteBackupOffering',
         icon: 'delete-outlined',
         label: 'label.action.delete.backup.offering',
@@ -612,6 +620,14 @@ export default {
         dataView: true,
         popup: true,
         component: shallowRef(defineAsyncComponent(() => import('@/views/offering/UpdateOfferingAccess.vue')))
+      }, {
+        api: 'cloneVPCOffering',
+        icon: 'copy-outlined',
+        docHelp: 'plugins/nuage-plugin.html?#optional-create-and-enable-vpc-offering',
+        label: 'label.clone.vpc.offering',
+        dataView: true,
+        popup: true,
+        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/CloneVpcOffering.vue')))
       }, {
         api: 'deleteVPCOffering',
         icon: 'delete-outlined',
