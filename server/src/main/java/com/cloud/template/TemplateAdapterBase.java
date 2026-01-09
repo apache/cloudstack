@@ -234,9 +234,10 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 throw new CloudRuntimeException(errMsg);
             }
 
-            TemplateOrVolumePostUploadCommand payload = new TemplateOrVolumePostUploadCommand(template.getId(), template.getUuid(), tmpl.getInstallPath(), tmpl
-                    .getChecksum(), tmpl.getType().toString(), template.getUniqueName(), template.getFormat().toString(), templateOnStore.getDataStore().getUri(),
-                    templateOnStore.getDataStore().getRole().toString());
+            TemplateOrVolumePostUploadCommand payload = new TemplateOrVolumePostUploadCommand(template.getId(),
+                    template.getUuid(), tmpl.getInstallPath(), tmpl.getChecksum(), tmpl.getType().toString(),
+                    template.getUniqueName(), template.getFormat().toString(), templateOnStore.getDataStore().getUri(),
+                    templateOnStore.getDataStore().getRole().toString(), zoneId_is);
             //using the existing max template size configuration
             payload.setMaxUploadSize(_configDao.getValue(Config.MaxTemplateAndIsoSize.key()));
 
