@@ -1364,6 +1364,10 @@ public class ApiConstants {
 
     public static final String RECURSIVE_DOMAINS = "recursivedomains";
 
+    public static final String VPN_CUSTOMER_GATEWAY_PARAMETERS = "vpncustomergatewayparameters";
+    public static final String OBSOLETE_PARAMETERS = "obsoleteparameters";
+    public static final String EXCLUDED_PARAMETERS = "excludedparameters";
+
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.
      * Qemu guests support "threads" and "native" options Since 0.8.8 ; "io_uring" is supported Since 6.3.0 (QEMU 5.0).

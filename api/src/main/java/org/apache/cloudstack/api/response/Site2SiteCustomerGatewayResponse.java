@@ -114,6 +114,14 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponseWithAnnotation
     @Param(description = "Which IKE Version to use, one of ike (autoselect), IKEv1, or IKEv2. Defaults to ike")
     private String ikeVersion;
 
+    @SerializedName(ApiConstants.OBSOLETE_PARAMETERS)
+    @Param(description = "Contains the list of obsolete/insecure cryptographic parameters that the vpn customer gateway is using.", since = "4.23.0")
+    private String obsoleteParameters;
+
+    @SerializedName(ApiConstants.EXCLUDED_PARAMETERS)
+    @Param(description = "Contains the list of excluded/not allowed cryptographic parameters that the vpn customer gateway is using.", since = "4.23.0")
+    private String excludedParameters;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -200,6 +208,14 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponseWithAnnotation
     @Override
     public void setDomainPath(String domainPath) {
         this.domainPath = domainPath;
+    }
+
+    public void setContainsObsoleteParameters(String obsoleteParameters) {
+        this.obsoleteParameters = obsoleteParameters;
+    }
+
+    public void setContainsExcludedParameters(String excludedParameters) {
+        this.excludedParameters = excludedParameters;
     }
 
 }
