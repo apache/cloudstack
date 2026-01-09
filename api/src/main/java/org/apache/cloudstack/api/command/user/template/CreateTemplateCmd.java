@@ -354,7 +354,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
     private Long findAccountIdToUse(Account callingAccount) {
         Long accountIdToUse = null;
         try {
-            accountIdToUse = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+            accountIdToUse = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
         } catch (InvalidParameterValueException | PermissionDeniedException ex) {
             logger.error("Unable to find accountId associated with accountName={} and domainId={} or projectId={}" +
                     ", using callingAccountId={}", accountName, domainId, projectId, callingAccount.getUuid());
