@@ -59,13 +59,19 @@ public class CloneServiceOfferingCmd extends CreateServiceOfferingCmd {
 
     @Override
     public void execute() {
-        ServiceOffering result = _configService.cloneServiceOffering(this);
-        if (result != null) {
-            ServiceOfferingResponse response = _responseGenerator.createServiceOfferingResponse(result);
-            response.setResponseName(getCommandName());
-            this.setResponseObject(response);
-        } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to clone service offering");
+        try {
+            ServiceOffering result = _configService.cloneServiceOffering(this);
+            if (result != null) {
+                ServiceOfferingResponse response = _responseGenerator.createServiceOfferingResponse(result);
+                response.setResponseName(getCommandName());
+                this.setResponseObject(response);
+            } else {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to clone service offering");
+            }
+        } catch (com.cloud.exception.InvalidParameterValueException e) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.getMessage());
+        } catch (com.cloud.utils.exception.CloudRuntimeException e) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }
 }
