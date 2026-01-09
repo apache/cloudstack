@@ -721,7 +721,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
     protected Pair<List<SnapshotDataStoreVO>, List<Long>> getStoreRefsAndZonesForSnapshotDelete(long snapshotId, Long zoneId) {
         List<SnapshotDataStoreVO> snapshotStoreRefs = new ArrayList<>();
-        List<SnapshotDataStoreVO> allSnapshotStoreRefs = _snapshotStoreDao.findBySnapshotId(snapshotId);
+        List<SnapshotDataStoreVO> allSnapshotStoreRefs = _snapshotStoreDao.findBySnapshotIdWithNonDestroyedState(snapshotId);
         List<Long> zoneIds = new ArrayList<>();
         if (zoneId != null) {
             DataCenterVO zone = dataCenterDao.findById(zoneId);
@@ -1503,22 +1503,22 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         if (asyncBackup) {
             backupSnapshotExecutor.schedule(new BackupSnapshotTask(snapshotOnPrimary, snapshotBackupRetries - 1, snapshotStrategy, zoneIds), 0, TimeUnit.SECONDS);
         } else {
-            SnapshotInfo backupedSnapshot = snapshotStrategy.backupSnapshot(snapshotOnPrimary);
-            if (backupedSnapshot != null) {
+            SnapshotInfo backedUpSnapshot = snapshotStrategy.backupSnapshot(snapshotOnPrimary);
+            if (backedUpSnapshot != null) {
                 snapshotStrategy.postSnapshotCreation(snapshotOnPrimary);
             }
         }
     }
 
     protected class BackupSnapshotTask extends ManagedContextRunnable {
-        SnapshotInfo snapshot;
+        SnapshotInfo snapshotOnPrimary;
         int attempts;
         SnapshotStrategy snapshotStrategy;
 
         List<Long> zoneIds;
 
-        public BackupSnapshotTask(SnapshotInfo snap, int maxRetries, SnapshotStrategy strategy, List<Long> zoneIds) {
-            snapshot = snap;
+        public BackupSnapshotTask(SnapshotInfo snapshot, int maxRetries, SnapshotStrategy strategy, List<Long> zoneIds) {
+            snapshotOnPrimary = snapshot;
             attempts = maxRetries;
             snapshotStrategy = strategy;
             this.zoneIds = zoneIds;
@@ -1529,19 +1529,18 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             try {
                 logger.debug("Value of attempts is " + (snapshotBackupRetries - attempts));
 
-                SnapshotInfo backupedSnapshot = snapshotStrategy.backupSnapshot(snapshot);
-
-                if (backupedSnapshot != null) {
-                    snapshotStrategy.postSnapshotCreation(snapshot);
-                    copyNewSnapshotToZones(snapshot.getId(), snapshot.getDataCenterId(), zoneIds);
+                SnapshotInfo backedUpSnapshot = snapshotStrategy.backupSnapshot(snapshotOnPrimary);
+                if (backedUpSnapshot != null) {
+                    snapshotStrategy.postSnapshotCreation(snapshotOnPrimary);
+                    copyNewSnapshotToZones(snapshotOnPrimary.getId(), snapshotOnPrimary.getDataCenterId(), zoneIds);
                 }
             } catch (final Exception e) {
                 if (attempts >= 0) {
-                    logger.debug("Backing up of snapshot failed, for snapshot {}, left with {} more attempts", snapshot, attempts);
-                    backupSnapshotExecutor.schedule(new BackupSnapshotTask(snapshot, --attempts, snapshotStrategy, zoneIds), snapshotBackupRetryInterval, TimeUnit.SECONDS);
+                    logger.debug("Backing up of snapshot failed, for snapshot {}, left with {} more attempts", snapshotOnPrimary, attempts);
+                    backupSnapshotExecutor.schedule(new BackupSnapshotTask(snapshotOnPrimary, --attempts, snapshotStrategy, zoneIds), snapshotBackupRetryInterval, TimeUnit.SECONDS);
                 } else {
-                    logger.debug("Done with {} attempts in  backing up of snapshot {}", snapshotBackupRetries, snapshot.getSnapshotVO());
-                    snapshotSrv.cleanupOnSnapshotBackupFailure(snapshot);
+                    logger.debug("Done with {} attempts in  backing up of snapshot {}", snapshotBackupRetries, snapshotOnPrimary.getSnapshotVO());
+                    snapshotSrv.cleanupOnSnapshotBackupFailure(snapshotOnPrimary);
                 }
             }
         }
@@ -1762,7 +1761,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     public void markVolumeSnapshotsAsDestroyed(Volume volume) {
         List<SnapshotVO> snapshots = _snapshotDao.listByVolumeId(volume.getId());
         for (SnapshotVO snapshot: snapshots) {
-            List<SnapshotDataStoreVO> snapshotDataStoreVOs = _snapshotStoreDao.findBySnapshotId(snapshot.getId());
+            List<SnapshotDataStoreVO> snapshotDataStoreVOs = _snapshotStoreDao.findBySnapshotIdWithNonDestroyedState(snapshot.getId());
             if (CollectionUtils.isEmpty(snapshotDataStoreVOs)) {
                 snapshot.setState(Snapshot.State.Destroyed);
                 _snapshotDao.update(snapshot.getId(), snapshot);
