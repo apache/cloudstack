@@ -296,6 +296,27 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
         return null;
     }
 
+    public boolean doesConfigKeyAndValueExistInScope(String key, String value, ConfigKey.Scope scope) {
+        if (!ConfigKey.Scope.Global.equals(scope)) {
+            ScopedConfigStorage scopedConfigStorage = null;
+            for (ScopedConfigStorage storage : _scopedStorages) {
+                if (storage.getScope() == scope) {
+                    scopedConfigStorage = storage;
+                }
+            }
+            if (scopedConfigStorage == null) {
+                logger.warn("Unable to check existence of config key {} and value {} in scope: {}, couldn't find config storage for this scope", key, value, scope);
+                return false;
+            }
+            return scopedConfigStorage.doesConfigKeyAndValueExist(key, value);
+        }
+        ConfigurationVO configurationVO = _configDao.findByName(key);
+        if (configurationVO != null) {
+            return configurationVO.getValue().equalsIgnoreCase(value);
+        }
+        return false;
+    }
+
     protected Ternary<String, ConfigKey.Scope, Long> getConfigCacheKey(String key, ConfigKey.Scope scope, Long scopeId) {
         return new Ternary<>(key, scope, scopeId);
     }
