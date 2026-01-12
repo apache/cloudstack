@@ -85,6 +85,9 @@ public class KMSKeyVO implements KMSKey {
     @Enumerated(EnumType.STRING)
     private State state;
 
+    @Column(name = "hsm_profile_id")
+    private Long hsmProfileId;
+
     @Column(name = GenericDao.CREATED_COLUMN, nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date created;
@@ -247,6 +250,14 @@ public class KMSKeyVO implements KMSKey {
 
     public void setState(State state) {
         this.state = state;
+    }
+
+    public Long getHsmProfileId() {
+        return hsmProfileId;
+    }
+
+    public void setHsmProfileId(Long hsmProfileId) {
+        this.hsmProfileId = hsmProfileId;
     }
 
     public void setCreated(Date created) {

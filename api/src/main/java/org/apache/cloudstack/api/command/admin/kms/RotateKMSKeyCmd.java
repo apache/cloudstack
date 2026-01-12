@@ -61,6 +61,11 @@ public class RotateKMSKeyCmd extends BaseAsyncCmd {
                description = "Key size for new KEK (default: same as current)")
     private Integer keyBits;
 
+    @Parameter(name = ApiConstants.HSM_PROFILE,
+               type = CommandType.STRING,
+               description = "The target HSM profile name for the new KEK version. If provided, migrates the key to this HSM.")
+    private String hsmProfile;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -71,6 +76,10 @@ public class RotateKMSKeyCmd extends BaseAsyncCmd {
 
     public Integer getKeyBits() {
         return keyBits;
+    }
+
+    public String getHsmProfile() {
+        return hsmProfile;
     }
 
     /////////////////////////////////////////////////////

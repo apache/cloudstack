@@ -99,6 +99,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.kms.KMSManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
@@ -348,7 +349,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Inject
     private SslCertDao sslCertDao;
     @Inject
-    private org.apache.cloudstack.kms.KMSManager kmsManager;
+    private KMSManager kmsManager;
 
     private List<QuerySelector> _querySelectors;
 

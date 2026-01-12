@@ -35,5 +35,6 @@
 
     <modules>
         <module>database</module>
+        <module>pkcs11</module>
     </modules>
 </project>

@@ -49,7 +49,20 @@ public interface KMSProvider extends Configurable, Adapter {
     // ==================== KEK Management ====================
 
     /**
-     * Create a new Key Encryption Key (KEK) in the secure backend
+     * Create a new Key Encryption Key (KEK) in the secure backend with explicit HSM profile.
+     *
+     * @param purpose the purpose/scope for this KEK
+     * @param label   human-readable label for the KEK (must be unique within purpose)
+     * @param keyBits key size in bits (typically 128, 192, or 256)
+     * @param hsmProfileId optional HSM profile ID to create the KEK in (null for auto-resolution/default)
+     * @return the KEK identifier (label or handle) for later reference
+     * @throws KMSException if KEK creation fails
+     */
+    String createKek(KeyPurpose purpose, String label, int keyBits, Long hsmProfileId) throws KMSException;
+
+    /**
+     * Create a new Key Encryption Key (KEK) in the secure backend.
+     * Delegates to {@link #createKek(KeyPurpose, String, int, Long)} with null profile ID.
      *
      * @param purpose the purpose/scope for this KEK
      * @param label   human-readable label for the KEK (must be unique within purpose)
@@ -57,7 +70,9 @@ public interface KMSProvider extends Configurable, Adapter {
      * @return the KEK identifier (label or handle) for later reference
      * @throws KMSException if KEK creation fails
      */
-    String createKek(KeyPurpose purpose, String label, int keyBits) throws KMSException;
+    default String createKek(KeyPurpose purpose, String label, int keyBits) throws KMSException {
+        return createKek(purpose, label, keyBits, null);
+    }
 
     /**
      * Delete a KEK from the secure backend.
@@ -89,7 +104,20 @@ public interface KMSProvider extends Configurable, Adapter {
     // ==================== DEK Operations ====================
 
     /**
-     * Wrap (encrypt) a plaintext Data Encryption Key with a KEK
+     * Wrap (encrypt) a plaintext Data Encryption Key with a KEK using explicit HSM profile.
+     *
+     * @param plainDek the plaintext DEK to wrap (caller must zeroize after call)
+     * @param purpose  the intended purpose of this DEK
+     * @param kekLabel the label of the KEK to use for wrapping
+     * @param hsmProfileId optional HSM profile ID to use (null for auto-resolution/default)
+     * @return WrappedKey containing the encrypted DEK and metadata
+     * @throws KMSException if wrapping fails or KEK not found
+     */
+    WrappedKey wrapKey(byte[] plainDek, KeyPurpose purpose, String kekLabel, Long hsmProfileId) throws KMSException;
+
+    /**
+     * Wrap (encrypt) a plaintext Data Encryption Key with a KEK.
+     * Delegates to {@link #wrapKey(byte[], KeyPurpose, String, Long)} with null profile ID.
      *
      * @param plainDek the plaintext DEK to wrap (caller must zeroize after call)
      * @param purpose  the intended purpose of this DEK
@@ -97,10 +125,25 @@ public interface KMSProvider extends Configurable, Adapter {
      * @return WrappedKey containing the encrypted DEK and metadata
      * @throws KMSException if wrapping fails or KEK not found
      */
-    WrappedKey wrapKey(byte[] plainDek, KeyPurpose purpose, String kekLabel) throws KMSException;
+    default WrappedKey wrapKey(byte[] plainDek, KeyPurpose purpose, String kekLabel) throws KMSException {
+        return wrapKey(plainDek, purpose, kekLabel, null);
+    }
 
     /**
-     * Unwrap (decrypt) a wrapped DEK to obtain the plaintext key
+     * Unwrap (decrypt) a wrapped DEK to obtain the plaintext key using explicit HSM profile.
+     * <p>
+     * SECURITY: Caller MUST zeroize the returned byte array after use
+     *
+     * @param wrappedKey the wrapped key to decrypt
+     * @param hsmProfileId optional HSM profile ID to use (null for auto-resolution/default)
+     * @return plaintext DEK (caller must zeroize!)
+     * @throws KMSException if unwrapping fails or KEK not found
+     */
+    byte[] unwrapKey(WrappedKey wrappedKey, Long hsmProfileId) throws KMSException;
+
+    /**
+     * Unwrap (decrypt) a wrapped DEK to obtain the plaintext key.
+     * Delegates to {@link #unwrapKey(WrappedKey, Long)} with null profile ID.
      * <p>
      * SECURITY: Caller MUST zeroize the returned byte array after use
      *
@@ -108,10 +151,26 @@ public interface KMSProvider extends Configurable, Adapter {
      * @return plaintext DEK (caller must zeroize!)
      * @throws KMSException if unwrapping fails or KEK not found
      */
-    byte[] unwrapKey(WrappedKey wrappedKey) throws KMSException;
+    default byte[] unwrapKey(WrappedKey wrappedKey) throws KMSException {
+        return unwrapKey(wrappedKey, null);
+    }
 
     /**
-     * Generate a new random DEK and immediately wrap it with a KEK
+     * Generate a new random DEK and immediately wrap it with a KEK using explicit HSM profile.
+     * (convenience method combining generation + wrapping)
+     *
+     * @param purpose  the intended purpose of the new DEK
+     * @param kekLabel the label of the KEK to use for wrapping
+     * @param keyBits  DEK size in bits (typically 128, 192, or 256)
+     * @param hsmProfileId optional HSM profile ID to use (null for auto-resolution/default)
+     * @return WrappedKey containing the newly generated and wrapped DEK
+     * @throws KMSException if generation or wrapping fails
+     */
+    WrappedKey generateAndWrapDek(KeyPurpose purpose, String kekLabel, int keyBits, Long hsmProfileId) throws KMSException;
+
+    /**
+     * Generate a new random DEK and immediately wrap it with a KEK.
+     * Delegates to {@link #generateAndWrapDek(KeyPurpose, String, int, Long)} with null profile ID.
      * (convenience method combining generation + wrapping)
      *
      * @param purpose  the intended purpose of the new DEK
@@ -120,10 +179,25 @@ public interface KMSProvider extends Configurable, Adapter {
      * @return WrappedKey containing the newly generated and wrapped DEK
      * @throws KMSException if generation or wrapping fails
      */
-    WrappedKey generateAndWrapDek(KeyPurpose purpose, String kekLabel, int keyBits) throws KMSException;
+    default WrappedKey generateAndWrapDek(KeyPurpose purpose, String kekLabel, int keyBits) throws KMSException {
+        return generateAndWrapDek(purpose, kekLabel, keyBits, null);
+    }
+
+    /**
+     * Rewrap a DEK with a different KEK (used during key rotation) using explicit target HSM profile.
+     * This unwraps with the old KEK and wraps with the new KEK without exposing the plaintext DEK.
+     *
+     * @param oldWrappedKey the currently wrapped key
+     * @param newKekLabel   the label of the new KEK to wrap with
+     * @param targetHsmProfileId optional target HSM profile ID to wrap with (null for auto-resolution/default)
+     * @return new WrappedKey encrypted with the new KEK
+     * @throws KMSException if rewrapping fails
+     */
+    WrappedKey rewrapKey(WrappedKey oldWrappedKey, String newKekLabel, Long targetHsmProfileId) throws KMSException;
 
     /**
      * Rewrap a DEK with a different KEK (used during key rotation).
+     * Delegates to {@link #rewrapKey(WrappedKey, String, Long)} with null profile ID.
      * This unwraps with the old KEK and wraps with the new KEK without exposing the plaintext DEK.
      *
      * @param oldWrappedKey the currently wrapped key
@@ -131,7 +205,9 @@ public interface KMSProvider extends Configurable, Adapter {
      * @return new WrappedKey encrypted with the new KEK
      * @throws KMSException if rewrapping fails
      */
-    WrappedKey rewrapKey(WrappedKey oldWrappedKey, String newKekLabel) throws KMSException;
+    default WrappedKey rewrapKey(WrappedKey oldWrappedKey, String newKekLabel) throws KMSException {
+        return rewrapKey(oldWrappedKey, newKekLabel, null);
+    }
 
     // ==================== Health & Status ====================
 
