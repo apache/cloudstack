@@ -2992,7 +2992,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
         if (makeRedundant && !_accountMgr.isRootAdmin(callerUser.getAccountId()) && !AllowUsersToMakeNetworksRedundant.value() ) {
             throw new InvalidParameterValueException("Could not make the network redundant. Please contact administrator.");
-                    AllowUsersToMakeNetworksRedundant.key()));
         }
 
         boolean livePatch = cmd.getLivePatch();
