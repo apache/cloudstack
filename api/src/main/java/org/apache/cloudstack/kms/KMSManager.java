@@ -26,6 +26,11 @@ import org.apache.cloudstack.api.command.user.kms.CreateKMSKeyCmd;
 import org.apache.cloudstack.api.command.user.kms.DeleteKMSKeyCmd;
 import org.apache.cloudstack.api.command.user.kms.ListKMSKeysCmd;
 import org.apache.cloudstack.api.command.user.kms.UpdateKMSKeyCmd;
+import org.apache.cloudstack.api.command.user.kms.hsm.AddHSMProfileCmd;
+import org.apache.cloudstack.api.command.user.kms.hsm.DeleteHSMProfileCmd;
+import org.apache.cloudstack.api.command.user.kms.hsm.ListHSMProfilesCmd;
+import org.apache.cloudstack.api.command.user.kms.hsm.UpdateHSMProfileCmd;
+import org.apache.cloudstack.api.response.HSMProfileResponse;
 import org.apache.cloudstack.api.response.KMSKeyResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
@@ -331,4 +336,49 @@ public interface KMSManager extends Manager, Configurable {
      * @return true if all keys were successfully deleted
      */
     boolean deleteKMSKeysByAccountId(Long accountId);
+
+    // ==================== HSM Profile Management ====================
+
+    /**
+     * Add a new HSM profile
+     * 
+     * @param cmd the add command
+     * @return the created HSM profile
+     * @throws KMSException if addition fails
+     */
+    HSMProfile addHSMProfile(AddHSMProfileCmd cmd) throws KMSException;
+
+    /**
+     * List HSM profiles
+     * 
+     * @param cmd the list command
+     * @return list of HSM profiles
+     */
+    List<HSMProfile> listHSMProfiles(ListHSMProfilesCmd cmd);
+
+    /**
+     * Delete an HSM profile
+     * 
+     * @param cmd the delete command
+     * @return true if deletion was successful
+     * @throws KMSException if deletion fails
+     */
+    boolean deleteHSMProfile(DeleteHSMProfileCmd cmd) throws KMSException;
+
+    /**
+     * Update an HSM profile
+     * 
+     * @param cmd the update command
+     * @return the updated HSM profile
+     * @throws KMSException if update fails
+     */
+    HSMProfile updateHSMProfile(UpdateHSMProfileCmd cmd) throws KMSException;
+
+    /**
+     * Create a response object for an HSM profile
+     * 
+     * @param profile the HSM profile
+     * @return the response object
+     */
+    HSMProfileResponse createHSMProfileResponse(HSMProfile profile);
 }

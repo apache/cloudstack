@@ -82,6 +82,12 @@ public class DatabaseKMSProvider extends AdapterBase implements KMSProvider {
     }
 
     @Override
+    public String createKek(KeyPurpose purpose, String label, int keyBits, Long hsmProfileId) throws KMSException {
+        // Database provider ignores hsmProfileId
+        return createKek(purpose, label, keyBits);
+    }
+
+    @Override
     public String createKek(KeyPurpose purpose, String label, int keyBits) throws KMSException {
         if (keyBits != 128 && keyBits != 192 && keyBits != 256) {
             throw KMSException.invalidParameter("Key size must be 128, 192, or 256 bits");
@@ -214,6 +220,12 @@ public class DatabaseKMSProvider extends AdapterBase implements KMSProvider {
     }
 
     @Override
+    public WrappedKey wrapKey(byte[] plainKey, KeyPurpose purpose, String kekLabel, Long hsmProfileId) throws KMSException {
+        // Database provider ignores hsmProfileId
+        return wrapKey(plainKey, purpose, kekLabel);
+    }
+
+    @Override
     public WrappedKey wrapKey(byte[] plainKey, KeyPurpose purpose, String kekLabel) throws KMSException {
         if (plainKey == null || plainKey.length == 0) {
             throw KMSException.invalidParameter("Plain key cannot be null or empty");
@@ -239,6 +251,12 @@ public class DatabaseKMSProvider extends AdapterBase implements KMSProvider {
             // Zeroize KEK
             Arrays.fill(kekBytes, (byte) 0);
         }
+    }
+
+    @Override
+    public byte[] unwrapKey(WrappedKey wrappedKey, Long hsmProfileId) throws KMSException {
+        // Database provider ignores hsmProfileId
+        return unwrapKey(wrappedKey);
     }
 
     @Override
@@ -277,6 +295,12 @@ public class DatabaseKMSProvider extends AdapterBase implements KMSProvider {
     }
 
     @Override
+    public WrappedKey generateAndWrapDek(KeyPurpose purpose, String kekLabel, int keyBits, Long hsmProfileId) throws KMSException {
+        // Database provider ignores hsmProfileId
+        return generateAndWrapDek(purpose, kekLabel, keyBits);
+    }
+
+    @Override
     public WrappedKey generateAndWrapDek(KeyPurpose purpose, String kekLabel, int keyBits) throws KMSException {
         if (keyBits != 128 && keyBits != 192 && keyBits != 256) {
             throw KMSException.invalidParameter("DEK size must be 128, 192, or 256 bits");
@@ -292,6 +316,12 @@ public class DatabaseKMSProvider extends AdapterBase implements KMSProvider {
             // Zeroize DEK (wrapped version is in WrappedKey)
             Arrays.fill(dekBytes, (byte) 0);
         }
+    }
+
+    @Override
+    public WrappedKey rewrapKey(WrappedKey oldWrappedKey, String newKekLabel, Long targetHsmProfileId) throws KMSException {
+        // Database provider ignores targetHsmProfileId
+        return rewrapKey(oldWrappedKey, newKekLabel);
     }
 
     @Override

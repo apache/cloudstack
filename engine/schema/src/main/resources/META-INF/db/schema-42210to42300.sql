@@ -50,6 +50,46 @@ CREATE TABLE IF NOT EXISTS `cloud`.`webhook_filter` (
     CONSTRAINT `fk_webhook_filter__webhook_id` FOREIGN KEY(`webhook_id`) REFERENCES `webhook`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- KMS HSM Profiles (Generic table for PKCS#11, KMIP, etc.)
+-- Scoped to account (user-provided) or global/zone (admin-provided)
+CREATE TABLE IF NOT EXISTS `cloud`.`kms_hsm_profiles` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `uuid` VARCHAR(40) NOT NULL,
+    `name` VARCHAR(255) NOT NULL,
+    `protocol` VARCHAR(32) NOT NULL COMMENT 'PKCS11, KMIP, AWS_KMS, etc.',
+    
+    -- Scoping
+    `account_id` BIGINT UNSIGNED COMMENT 'null = admin-provided (available to all accounts)',
+    `domain_id` BIGINT UNSIGNED COMMENT 'null = zone/global scope',
+    `zone_id` BIGINT UNSIGNED COMMENT 'null = global scope',
+    
+    -- Metadata
+    `vendor_name` VARCHAR(64) COMMENT 'HSM vendor (Thales, AWS, SoftHSM, etc.)',
+    `enabled` BOOLEAN NOT NULL DEFAULT TRUE,
+    `created` DATETIME NOT NULL,
+    `removed` DATETIME,
+    
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_uuid` (`uuid`),
+    UNIQUE KEY `uk_account_name` (`account_id`, `name`, `removed`),
+    INDEX `idx_protocol_enabled` (`protocol`, `enabled`, `removed`),
+    INDEX `idx_scoping` (`account_id`, `domain_id`, `zone_id`, `removed`),
+    CONSTRAINT `fk_kms_hsm_profiles__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_kms_hsm_profiles__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_kms_hsm_profiles__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='HSM profiles for KMS providers';
+
+-- KMS HSM Profile Details (Protocol-specific configuration)
+CREATE TABLE IF NOT EXISTS `cloud`.`kms_hsm_profile_details` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `profile_id` BIGINT UNSIGNED NOT NULL COMMENT 'HSM profile ID',
+    `name` VARCHAR(255) NOT NULL COMMENT 'Config key (e.g. library_path, endpoint, pin, cert_content)',
+    `value` TEXT NOT NULL COMMENT 'Config value (encrypted if sensitive)',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_profile_name` (`profile_id`, `name`),
+    CONSTRAINT `fk_kms_hsm_profile_details__profile_id` FOREIGN KEY (`profile_id`) REFERENCES `kms_hsm_profiles`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Details for HSM profiles (key-value configuration)';
+
 -- KMS Keys (Key Encryption Key Metadata)
 -- Account-scoped KEKs for envelope encryption
 CREATE TABLE IF NOT EXISTS `cloud`.`kms_keys` (
@@ -66,6 +106,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kms_keys` (
     `algorithm` VARCHAR(64) NOT NULL DEFAULT 'AES/GCM/NoPadding' COMMENT 'Encryption algorithm',
     `key_bits` INT NOT NULL DEFAULT 256 COMMENT 'Key size in bits',
     `state` VARCHAR(32) NOT NULL DEFAULT 'Enabled' COMMENT 'Enabled, Disabled, or Deleted',
+    `hsm_profile_id` BIGINT UNSIGNED COMMENT 'Current HSM profile ID for this key',
     `created` DATETIME NOT NULL COMMENT 'Creation timestamp',
     `removed` DATETIME COMMENT 'Removal timestamp for soft delete',
     PRIMARY KEY (`id`),
@@ -76,7 +117,8 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kms_keys` (
     INDEX `idx_kek_label_provider` (`kek_label`, `provider_name`),
     CONSTRAINT `fk_kms_keys__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_kms_keys__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
-    CONSTRAINT `fk_kms_keys__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE
+    CONSTRAINT `fk_kms_keys__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_kms_keys__hsm_profile_id` FOREIGN KEY (`hsm_profile_id`) REFERENCES `kms_hsm_profiles`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='KMS Key (KEK) metadata - account-scoped keys for envelope encryption';
 
 -- KMS KEK Versions (multiple KEKs per KMS key for gradual rotation)
@@ -88,6 +130,8 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kms_kek_versions` (
     `version_number` INT NOT NULL COMMENT 'Version number (1, 2, 3, ...)',
     `kek_label` VARCHAR(255) NOT NULL COMMENT 'Provider-specific KEK label/ID for this version',
     `status` VARCHAR(32) NOT NULL DEFAULT 'Active' COMMENT 'Active, Previous, Archived',
+    `hsm_profile_id` BIGINT UNSIGNED COMMENT 'HSM profile where this KEK version is stored',
+    `hsm_key_label` VARCHAR(255) COMMENT 'Optional HSM-specific key label/alias',
     `created` DATETIME NOT NULL COMMENT 'Creation timestamp',
     `removed` DATETIME COMMENT 'Removal timestamp for soft delete',
     PRIMARY KEY (`id`),
@@ -95,7 +139,8 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kms_kek_versions` (
     UNIQUE KEY `uk_kms_key_version` (`kms_key_id`, `version_number`, `removed`),
     INDEX `idx_kms_key_status` (`kms_key_id`, `status`, `removed`),
     INDEX `idx_kek_label` (`kek_label`),
-    CONSTRAINT `fk_kms_kek_versions__kms_key_id` FOREIGN KEY (`kms_key_id`) REFERENCES `kms_keys`(`id`) ON DELETE CASCADE
+    CONSTRAINT `fk_kms_kek_versions__kms_key_id` FOREIGN KEY (`kms_key_id`) REFERENCES `kms_keys`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_kms_kek_versions__hsm_profile_id` FOREIGN KEY (`hsm_profile_id`) REFERENCES `kms_hsm_profiles`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='KEK versions for a KMS key - supports gradual rotation';
 
 -- KMS Wrapped Keys (Data Encryption Keys)

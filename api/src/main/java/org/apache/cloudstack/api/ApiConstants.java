@@ -862,6 +862,7 @@ public class ApiConstants {
     public static final String ITERATIONS = "iterations";
     public static final String SORT_BY = "sortby";
     public static final String CHANGE_CIDR = "changecidr";
+    public static final String HSM_PROFILE = "hsmprofile";
     public static final String PURPOSE = "purpose";
     public static final String KMS_KEY_ID = "kmskeyid";
     public static final String KMS_KEY_VERSION = "kmskeyversion";

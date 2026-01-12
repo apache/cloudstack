@@ -95,6 +95,11 @@ public class CreateKMSKeyCmd extends BaseCmd implements UserCmd {
                description = "Key size in bits: 128, 192, or 256 (default: 256)")
     private Integer keyBits;
 
+    @Parameter(name = ApiConstants.HSM_PROFILE,
+               type = CommandType.STRING,
+               description = "Name of HSM profile to create key in")
+    private String hsmProfile;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -125,6 +130,10 @@ public class CreateKMSKeyCmd extends BaseCmd implements UserCmd {
 
     public Integer getKeyBits() {
         return keyBits != null ? keyBits : 256; // Default to 256 bits
+    }
+
+    public String getHsmProfile() {
+        return hsmProfile;
     }
 
     /////////////////////////////////////////////////////

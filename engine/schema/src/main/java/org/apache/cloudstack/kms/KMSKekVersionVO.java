@@ -64,6 +64,12 @@ public class KMSKekVersionVO {
     @Enumerated(EnumType.STRING)
     private Status status;
 
+    @Column(name = "hsm_profile_id")
+    private Long hsmProfileId;
+
+    @Column(name = "hsm_key_label")
+    private String hsmKeyLabel;
+
     @Column(name = GenericDao.CREATED_COLUMN, nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date created;
@@ -158,6 +164,22 @@ public class KMSKekVersionVO {
 
     public void setStatus(Status status) {
         this.status = status;
+    }
+
+    public Long getHsmProfileId() {
+        return hsmProfileId;
+    }
+
+    public void setHsmProfileId(Long hsmProfileId) {
+        this.hsmProfileId = hsmProfileId;
+    }
+
+    public String getHsmKeyLabel() {
+        return hsmKeyLabel;
+    }
+
+    public void setHsmKeyLabel(String hsmKeyLabel) {
+        this.hsmKeyLabel = hsmKeyLabel;
     }
 
     public Date getCreated() {
