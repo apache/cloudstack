@@ -913,7 +913,6 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
 
     public static String maskSensitiveInfoInXML(String xmlDesc) {
         if (xmlDesc == null) return null;
-        // Mask VNC password in XML for logging
         return xmlDesc.replaceAll("(graphics\\s+[^>]*type=['\"]vnc['\"][^>]*passwd=['\"])([^'\"]*)(['\"])",
                 "$1*****$3");
     }
