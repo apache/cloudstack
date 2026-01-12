@@ -351,6 +351,15 @@ public enum Config {
             ConfigKey.Kind.CSV,
             null),
 
+    DhcpLeaseTimeout(
+            "Network",
+            ManagementServer.class,
+            Integer.class,
+            "dhcp.lease.timeout",
+            "0",
+            "DHCP lease time in seconds for VMs. Use 0 for infinite lease time (default). A non-zero value sets the lease duration in seconds.",
+            null),
+
     //VPN
     RemoteAccessVpnPskLength(
             "Network",

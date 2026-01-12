@@ -29,6 +29,7 @@ public class VmDhcpConfig extends ConfigBase {
     private String defaultGateway;
     private String staticRoutes;
     private boolean defaultEntry;
+    private Long leaseTime;
 
     // Indicate if the entry should be removed when set to true
     private boolean remove;
@@ -39,6 +40,11 @@ public class VmDhcpConfig extends ConfigBase {
 
     public VmDhcpConfig(String hostName, String macAddress, String ipv4Address, String ipv6Address, String ipv6Duid, String dnsAddresses, String defaultGateway,
             String staticRoutes, boolean defaultEntry, boolean remove) {
+        this(hostName, macAddress, ipv4Address, ipv6Address, ipv6Duid, dnsAddresses, defaultGateway, staticRoutes, defaultEntry, remove, null);
+    }
+
+    public VmDhcpConfig(String hostName, String macAddress, String ipv4Address, String ipv6Address, String ipv6Duid, String dnsAddresses, String defaultGateway,
+            String staticRoutes, boolean defaultEntry, boolean remove, Long leaseTime) {
         super(VM_DHCP);
         this.hostName = hostName;
         this.macAddress = macAddress;
@@ -50,6 +56,7 @@ public class VmDhcpConfig extends ConfigBase {
         this.staticRoutes = staticRoutes;
         this.defaultEntry = defaultEntry;
         this.remove = remove;
+        this.leaseTime = leaseTime;
     }
 
     public String getHostName() {
@@ -130,6 +137,14 @@ public class VmDhcpConfig extends ConfigBase {
 
     public void setDefaultEntry(boolean defaultEntry) {
         this.defaultEntry = defaultEntry;
+    }
+
+    public Long getLeaseTime() {
+        return leaseTime;
+    }
+
+    public void setLeaseTime(Long leaseTime) {
+        this.leaseTime = leaseTime;
     }
 
 }

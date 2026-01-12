@@ -36,6 +36,7 @@ public class DhcpEntryCommand extends NetworkElementCommand {
     private boolean isDefault;
     boolean executeInSequence = false;
     boolean remove;
+    Long leaseTime;
 
     public boolean isRemove() {
         return remove;
@@ -151,5 +152,13 @@ public class DhcpEntryCommand extends NetworkElementCommand {
 
     public void setDefault(boolean isDefault) {
         this.isDefault = isDefault;
+    }
+
+    public Long getLeaseTime() {
+        return leaseTime;
+    }
+
+    public void setLeaseTime(Long leaseTime) {
+        this.leaseTime = leaseTime;
     }
 }
