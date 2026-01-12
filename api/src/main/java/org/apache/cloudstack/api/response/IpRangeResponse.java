@@ -26,27 +26,27 @@ import com.google.gson.annotations.SerializedName;
 public class IpRangeResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.GATEWAY)
-    @Param(description = "the gateway for the range")
+    @Param(description = "The gateway for the range")
     private String gateway;
 
     @SerializedName(ApiConstants.CIDR)
-    @Param(description = "the CIDR for the range")
+    @Param(description = "The CIDR for the range")
     private String cidr;
 
     @SerializedName(ApiConstants.START_IP)
-    @Param(description = "the starting IP for the range")
+    @Param(description = "The starting IP for the range")
     private String startIp;
 
     @SerializedName(ApiConstants.END_IP)
-    @Param(description = "the ending IP for the range")
+    @Param(description = "The ending IP for the range")
     private String endIp;
 
     @SerializedName(ApiConstants.FOR_SYSTEM_VMS)
-    @Param(description = "indicates if range is dedicated for CPVM and SSVM")
+    @Param(description = "Indicates if range is dedicated for CPVM and SSVM")
     private String forSystemVms;
 
     @SerializedName(ApiConstants.VLAN_ID)
-    @Param(description = "indicates Vlan ID for the range")
+    @Param(description = "Indicates VLAN ID for the range")
     private String vlanId;
 
     public String getGateway() {

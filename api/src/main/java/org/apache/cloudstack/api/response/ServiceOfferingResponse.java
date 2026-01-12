@@ -30,178 +30,178 @@ import com.google.gson.annotations.SerializedName;
 @EntityReference(value = ServiceOffering.class)
 public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     @SerializedName("id")
-    @Param(description = "the id of the service offering")
+    @Param(description = "The ID of the service offering")
     private String id;
 
     @SerializedName("name")
-    @Param(description = "the name of the service offering")
+    @Param(description = "The name of the service offering")
     private String name;
 
     @SerializedName("state")
-    @Param(description = "state of the service offering")
+    @Param(description = "State of the service offering")
     private String state;
 
     @SerializedName("displaytext")
-    @Param(description = "an alternate display text of the service offering.")
+    @Param(description = "An alternate display text of the service offering.")
     private String displayText;
 
     @SerializedName("cpunumber")
-    @Param(description = "the number of CPU")
+    @Param(description = "The number of CPU")
     private Integer cpuNumber;
 
     @SerializedName("cpuspeed")
-    @Param(description = "the clock rate CPU speed in Mhz")
+    @Param(description = "The clock rate CPU speed in Mhz")
     private Integer cpuSpeed;
 
     @SerializedName("memory")
-    @Param(description = "the memory in MB")
+    @Param(description = "The memory in MB")
     private Integer memory;
 
     @SerializedName("created")
-    @Param(description = "the date this service offering was created")
+    @Param(description = "The date this service offering was created")
     private Date created;
 
     @SerializedName("storagetype")
-    @Param(description = "the storage type for this service offering")
+    @Param(description = "The storage type for this service offering")
     private String storageType;
 
-    @SerializedName("provisioningtype") @Param(description="provisioning type used to create volumes. Valid values are thin, sparse, fat.", since = "4.4.0")
+    @SerializedName("provisioningtype") @Param(description = "Provisioning type used to create volumes. Valid values are thin, sparse, fat.", since = "4.4.0")
     private String provisioningType;
 
     @SerializedName("offerha")
-    @Param(description = "the ha support in the service offering")
+    @Param(description = "The HA support in the service offering")
     private Boolean offerHa;
 
     @SerializedName("limitcpuuse")
-    @Param(description = "restrict the CPU usage to committed service offering")
+    @Param(description = "Restrict the CPU usage to committed service offering")
     private Boolean limitCpuUse;
 
     @SerializedName("isvolatile")
-    @Param(description = "true if the vm needs to be volatile, i.e., on every reboot of vm from API root disk is discarded and creates a new root disk")
+    @Param(description = "True if the Instance needs to be volatile, i.e., on every reboot of Instance from API root disk is discarded and creates a new root disk")
     private Boolean isVolatile;
 
     @SerializedName(ApiConstants.STORAGE_TAGS)
-    @Param(description = "the tags for the service offering")
+    @Param(description = "The tags for the service offering")
     private String tags;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID(s) this disk offering belongs to. Ignore this information as it is not currently applicable.")
+    @Param(description = "The domain ID(s) this disk offering belongs to. Ignore this information as it is not currently applicable.")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name(s) this disk offering belongs to. Ignore this information as it is not currently applicable.")
+    @Param(description = "The domain name(s) this disk offering belongs to. Ignore this information as it is not currently applicable.")
     private String domain;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the zone ID(s) this disk offering belongs to. Ignore this information as it is not currently applicable.", since = "4.13.0")
+    @Param(description = "The zone ID(s) this disk offering belongs to. Ignore this information as it is not currently applicable.", since = "4.13.0")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE)
-    @Param(description = "the zone name(s) this disk offering belongs to. Ignore this information as it is not currently applicable.", since = "4.13.0")
+    @Param(description = "The zone name(s) this disk offering belongs to. Ignore this information as it is not currently applicable.", since = "4.13.0")
     private String zone;
 
     @SerializedName(ApiConstants.HOST_TAGS)
-    @Param(description = "the host tag for the service offering")
+    @Param(description = "The host tag for the service offering")
     private String hostTag;
 
     @SerializedName(ApiConstants.IS_SYSTEM_OFFERING)
-    @Param(description = "is this a system vm offering")
+    @Param(description = "Is this a System VM offering")
     private Boolean isSystem;
 
     @SerializedName(ApiConstants.IS_DEFAULT_USE)
-    @Param(description = "is this a  default system vm offering")
+    @Param(description = "Is this a default System VM offering")
     private Boolean defaultUse;
 
     @SerializedName(ApiConstants.SYSTEM_VM_TYPE)
-    @Param(description = "is this a the systemvm type for system vm offering")
+    @Param(description = "Is this a the System VM type for System VM offering")
     private String vmType;
 
     @SerializedName(ApiConstants.NETWORKRATE)
-    @Param(description = "data transfer rate in megabits per second allowed.")
+    @Param(description = "Data transfer rate in megabits per second allowed.")
     private Integer networkRate;
 
     @SerializedName("iscustomizediops")
-    @Param(description = "true if disk offering uses custom iops, false otherwise", since = "4.4")
+    @Param(description = "True if disk offering uses custom IOPS, false otherwise", since = "4.4")
     private Boolean customizedIops;
 
     @SerializedName(ApiConstants.MIN_IOPS)
-    @Param(description = "the min iops of the disk offering", since = "4.4")
+    @Param(description = "The min IOPS of the disk offering", since = "4.4")
     private Long minIops;
 
     @SerializedName(ApiConstants.MAX_IOPS)
-    @Param(description = "the max iops of the disk offering", since = "4.4")
+    @Param(description = "The max IOPS of the disk offering", since = "4.4")
     private Long maxIops;
 
     @SerializedName(ApiConstants.HYPERVISOR_SNAPSHOT_RESERVE)
-    @Param(description = "Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware)", since = "4.4")
+    @Param(description = "Hypervisor Snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware)", since = "4.4")
     private Integer hypervisorSnapshotReserve;
 
     @SerializedName("diskBytesReadRate")
-    @Param(description = "bytes read rate of the service offering")
+    @Param(description = "Bytes read rate of the service offering")
     private Long bytesReadRate;
 
     @SerializedName("diskBytesReadRateMax")
-    @Param(description = "burst bytes read rate of the disk offering")
+    @Param(description = "Burst bytes read rate of the disk offering")
     private Long bytesReadRateMax;
 
     @SerializedName("diskBytesReadRateMaxLength")
-    @Param(description = "length (in seconds) of the burst")
+    @Param(description = "Length (in seconds) of the burst")
     private Long bytesReadRateMaxLength;
 
     @SerializedName("diskBytesWriteRate")
-    @Param(description = "bytes write rate of the service offering")
+    @Param(description = "Bytes write rate of the service offering")
     private Long bytesWriteRate;
 
     @SerializedName("diskBytesWriteRateMax")
-    @Param(description = "burst bytes write rate of the disk offering")
+    @Param(description = "Burst bytes write rate of the disk offering")
     private Long bytesWriteRateMax;
 
     @SerializedName("diskBytesWriteRateMaxLength")
-    @Param(description = "length (in seconds) of the burst")
+    @Param(description = "Length (in seconds) of the burst")
     private Long bytesWriteRateMaxLength;
 
     @SerializedName("diskIopsReadRate")
-    @Param(description = "io requests read rate of the service offering")
+    @Param(description = "I/O requests read rate of the service offering")
     private Long iopsReadRate;
 
     @SerializedName("diskIopsReadRateMax")
-    @Param(description = "burst io requests read rate of the disk offering")
+    @Param(description = "Burst io requests read rate of the disk offering")
     private Long iopsReadRateMax;
 
     @SerializedName("diskIopsReadRateMaxLength")
-    @Param(description = "length (in second) of the burst")
+    @Param(description = "Length (in second) of the burst")
     private Long iopsReadRateMaxLength;
 
     @SerializedName("diskIopsWriteRate")
-    @Param(description = "io requests write rate of the service offering")
+    @Param(description = "I/O requests write rate of the service offering")
     private Long iopsWriteRate;
 
     @SerializedName("diskIopsWriteRateMax")
-    @Param(description = "burst io requests write rate of the disk offering")
+    @Param(description = "Burst I/O requests write rate of the disk offering")
     private Long iopsWriteRateMax;
 
     @SerializedName("diskIopsWriteRateMaxLength")
-    @Param(description = "length (in seconds) of the burst")
+    @Param(description = "Length (in seconds) of the burst")
     private Long iopsWriteRateMaxLength;
 
     @SerializedName(ApiConstants.DEPLOYMENT_PLANNER)
-    @Param(description = "deployment strategy used to deploy VM.")
+    @Param(description = "Deployment strategy used to deploy Instance.")
     private String deploymentPlanner;
 
     @SerializedName(ApiConstants.SERVICE_OFFERING_DETAILS)
-    @Param(description = "additional key/value details tied with this service offering", since = "4.2.0")
+    @Param(description = "Additional key/value details tied with this service offering", since = "4.2.0")
     private Map<String, String> details;
 
     @SerializedName("iscustomized")
-    @Param(description = "is true if the offering is customized", since = "4.3.0")
+    @Param(description = "Is true if the offering is customized", since = "4.3.0")
     private Boolean isCustomized;
 
     @SerializedName("cacheMode")
-    @Param(description = "the cache mode to use for this disk offering. none, writeback or writethrough", since = "4.14")
+    @Param(description = "The cache mode to use for this disk offering. none, writeback, writethrough or hypervisor default", since = "4.14")
     private String cacheMode;
 
     @SerializedName("vspherestoragepolicy")
-    @Param(description = "the vsphere storage policy tagged to the service offering in case of VMware", since = "4.15")
+    @Param(description = "The vsphere storage policy tagged to the service offering in case of VMware", since = "4.15")
     private String vsphereStoragePolicy;
 
     @SerializedName(ApiConstants.ROOT_DISK_SIZE)
@@ -209,29 +209,29 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     private Long rootDiskSize;
 
     @SerializedName(ApiConstants.DYNAMIC_SCALING_ENABLED)
-    @Param(description = "true if virtual machine needs to be dynamically scalable of cpu or memory", since = "4.16")
+    @Param(description = "True if Instance needs to be dynamically scalable of CPU or memory", since = "4.16")
     private Boolean dynamicScalingEnabled;
 
     @SerializedName(ApiConstants.DISK_OFFERING_STRICTNESS)
     @Param(description = "True/False to indicate the strictness of the disk offering association with the compute offering. " +
-            "When set to true, override of disk offering is not allowed when VM is deployed and " +
-            "change disk offering is not allowed for the ROOT disk after the VM is deployed", since = "4.17")
+            "When set to true, override of disk offering is not allowed when Instance is deployed and " +
+            "change disk offering is not allowed for the ROOT disk after the Instance is deployed", since = "4.17")
     private Boolean diskOfferingStrictness;
 
     @SerializedName(ApiConstants.DISK_OFFERING_ID)
-    @Param(description = "the ID of the disk offering to which service offering is linked", since = "4.17")
+    @Param(description = "The ID of the disk offering to which service offering is linked", since = "4.17")
     private String diskOfferingId;
 
     @SerializedName("diskofferingname")
-    @Param(description = "name of the disk offering", since = "4.17")
+    @Param(description = "Name of the disk offering", since = "4.17")
     private String diskOfferingName;
 
     @SerializedName("diskofferingdisplaytext")
-    @Param(description = "the display text of the disk offering", since = "4.17")
+    @Param(description = "The display text of the disk offering", since = "4.17")
     private String diskOfferingDisplayText;
 
     @SerializedName(ApiConstants.ENCRYPT_ROOT)
-    @Param(description = "true if virtual machine root disk will be encrypted on storage", since = "4.18")
+    @Param(description = "True if Instance root disk will be encrypted on storage", since = "4.18")
     private Boolean encryptRoot;
 
     @SerializedName(ApiConstants.GPU_CARD_ID)

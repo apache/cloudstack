@@ -298,7 +298,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {BackupRetryAttempts, BackupRetryInterval, SnapshotHourlyMax, SnapshotDailyMax, SnapshotMonthlyMax, SnapshotWeeklyMax, usageSnapshotSelection,
-                SnapshotInfo.BackupSnapshotAfterTakingSnapshot, VmStorageSnapshotKvm, kvmIncrementalSnapshot, snapshotDeltaMax, snapshotShowChainSize, UseStorageReplication};
+                SnapshotInfo.BackupSnapshotAfterTakingSnapshot, VmStorageSnapshotKvm, kvmIncrementalSnapshot, snapshotDeltaMax, snapshotShowChainSize, UseStorageReplication, KVMSnapshotEnabled};
     }
 
     @Override
@@ -377,12 +377,12 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         if (instanceId != null) {
             UserVmVO vm = _vmDao.findById(instanceId);
             if (vm.getState() != State.Stopped && vm.getState() != State.Shutdown) {
-                throw new InvalidParameterValueException("The VM the specified disk is attached to is not in the shutdown state.");
+                throw new InvalidParameterValueException("The Instance the specified disk is attached to is not in the shutdown state.");
             }
             // If target VM has associated VM snapshots then don't allow to revert from snapshot
             List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(instanceId);
             if (vmSnapshots.size() > 0 && !Type.GROUP.name().equals(snapshot.getTypeDescription())) {
-                throw new InvalidParameterValueException("Unable to revert snapshot for VM, please remove VM snapshots before reverting VM from snapshot");
+                throw new InvalidParameterValueException("Unable to revert Snapshot for Instance, please remove Instance Snapshots before reverting Instance from Snapshot");
             }
         }
 
@@ -661,7 +661,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             //Double check the snapshot is removed or not
             SnapshotVO parentSnap = _snapshotDao.findById(parentSnapshotDataStoreVO.getSnapshotId());
             if (parentSnap != null && parentSnapshotDataStoreVO.getInstallPath() != null && parentSnapshotDataStoreVO.getInstallPath().equals(vmSnapshot.getName())) {
-                throw new InvalidParameterValueException("Creating snapshot failed due to snapshot : " + parentSnap.getUuid() + " is created from the same vm snapshot");
+                throw new InvalidParameterValueException("Creating Snapshot failed due to Snapshot : " + parentSnap.getUuid() + " is created from the same Instance Snapshot");
             }
         }
         SnapshotInfo snapshotInfo = this.snapshotFactory.getSnapshot(snapshotId, store);
@@ -680,15 +680,15 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         try {
             SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.BACKUP);
             if (snapshotStrategy == null) {
-                throw new CloudRuntimeException(String.format("Unable to find snapshot strategy to handle snapshot [%s]", snapshot));
+                throw new CloudRuntimeException(String.format("Unable to find Snapshot strategy to handle Snapshot [%s]", snapshot));
             }
             snapshotInfo = snapshotStrategy.backupSnapshot(snapshotInfo);
 
         } catch (Exception e) {
-            logger.debug("Failed to backup snapshot from vm snapshot", e);
+            logger.debug("Failed to backup Snapshot from Instance Snapshot", e);
             _resourceLimitMgr.decrementResourceCount(snapshotOwnerId, ResourceType.snapshot);
             _resourceLimitMgr.decrementResourceCount(snapshotOwnerId, ResourceType.secondary_storage, new Long(volume.getSize()));
-            throw new CloudRuntimeException("Failed to backup snapshot from vm snapshot", e);
+            throw new CloudRuntimeException("Failed to backup Snapshot from Instance Snapshot", e);
         } finally {
             if (snapshotOnPrimaryStore != null) {
                 _snapshotStoreDao.remove(snapshotOnPrimaryStore.getId());
@@ -1303,7 +1303,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     }
 
     protected SnapshotPolicyVO createSnapshotPolicy(long volumeId, String schedule, String timezone, IntervalType intervalType, int maxSnaps, boolean display, List<Long> zoneIds, List<Long> poolIds) {
-        SnapshotPolicyVO policy = new SnapshotPolicyVO(volumeId, schedule, timezone, intervalType, maxSnaps, display);
+        VolumeVO volume = _volsDao.findById(volumeId);
+        SnapshotPolicyVO policy = new SnapshotPolicyVO(volumeId, schedule, timezone, intervalType, maxSnaps, volume.getAccountId(), volume.getDomainId(), display);
         policy = _snapshotPolicyDao.persist(policy);
         if (CollectionUtils.isNotEmpty(zoneIds)) {
             List<SnapshotPolicyDetailVO> details = new ArrayList<>();
@@ -1388,28 +1389,54 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     }
 
     @Override
-    public Pair<List<? extends SnapshotPolicy>, Integer> listPoliciesforVolume(ListSnapshotPoliciesCmd cmd) {
+    public Pair<List<? extends SnapshotPolicy>, Integer> listSnapshotPolicies(ListSnapshotPoliciesCmd cmd) {
         Long volumeId = cmd.getVolumeId();
-        boolean display = cmd.isDisplay();
         Long id = cmd.getId();
-        Pair<List<SnapshotPolicyVO>, Integer> result = null;
-        // TODO - Have a better way of doing this.
-        if (id != null) {
-            result = _snapshotPolicyDao.listAndCountById(id, display, null);
-            if (result != null && result.first() != null && !result.first().isEmpty()) {
-                SnapshotPolicyVO snapshotPolicy = result.first().get(0);
-                volumeId = snapshotPolicy.getVolumeId();
+        Account caller = CallContext.current().getCallingAccount();
+        List<Long> permittedAccounts = new ArrayList<>();
+        String keyword = cmd.getKeyword();
+
+        // Verify parameters
+        if (volumeId != null) {
+            VolumeVO volume = _volsDao.findById(volumeId);
+            if (volume != null) {
+                _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
             }
         }
-        VolumeVO volume = _volsDao.findById(volumeId);
-        if (volume == null) {
-            throw new InvalidParameterValueException("Unable to find a volume with id " + volumeId);
+
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
+                new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
+        Long domainId = domainIdRecursiveListProject.first();
+        Boolean isRecursive = domainIdRecursiveListProject.second();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+
+        Filter searchFilter = new Filter(SnapshotPolicyVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchBuilder<SnapshotPolicyVO> policySearch = _snapshotPolicyDao.createSearchBuilder();
+        _accountMgr.buildACLSearchBuilder(policySearch, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
+        policySearch.and("id", policySearch.entity().getId(), SearchCriteria.Op.EQ);
+        policySearch.and("volumeId", policySearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+
+        SearchBuilder<VolumeVO> volumeSearch = _volsDao.createSearchBuilder();
+        volumeSearch.and("name", volumeSearch.entity().getName(), SearchCriteria.Op.LIKE);
+        policySearch.join("volumeJoin", volumeSearch, policySearch.entity().getVolumeId(), volumeSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+
+        SearchCriteria<SnapshotPolicyVO> sc = policySearch.create();
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
+        if (volumeId != null) {
+            sc.setParameters("volumeId", volumeId);
         }
-        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
-        if (result != null)
-            return new Pair<List<? extends SnapshotPolicy>, Integer>(result.first(), result.second());
-        result = _snapshotPolicyDao.listAndCountByVolumeId(volumeId, display);
-        return new Pair<List<? extends SnapshotPolicy>, Integer>(result.first(), result.second());
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+        if (keyword != null) {
+            sc.setJoinParameters("volumeJoin", "name", "%" + keyword + "%");
+        }
+
+        Pair<List<SnapshotPolicyVO>, Integer> result = _snapshotPolicyDao.searchAndCount(sc, searchFilter);
+        return new Pair<>(result.first(), result.second());
     }
 
     private List<SnapshotPolicyVO> listPoliciesforVolume(long volumeId) {
@@ -1510,7 +1537,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         if (vmId != null) {
             VMInstanceVO vm = _vmDao.findById(vmId);
             if (vm.getState() != VirtualMachine.State.Stopped && vm.getState() != VirtualMachine.State.Destroyed) {
-                boolean snapshotEnabled = Boolean.parseBoolean(_configDao.getValue("kvm.snapshot.enabled"));
+                boolean snapshotEnabled = KVMSnapshotEnabled.value();
                 if (!snapshotEnabled && !isFromVmSnapshot) {
                     logger.debug("Snapshot is not supported on host " + host + " for the volume " + volume + " attached to the vm " + vm);
                     return false;
@@ -1582,7 +1609,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 List<VMSnapshotVO> activeVMSnapshots = _vmSnapshotDao.listByInstanceId(userVm.getId(), VMSnapshot.State.Creating, VMSnapshot.State.Reverting,
                         VMSnapshot.State.Expunging);
                 if (activeVMSnapshots.size() > 0) {
-                    throw new CloudRuntimeException("There is other active vm snapshot tasks on the instance to which the volume is attached, please try again later");
+                    throw new CloudRuntimeException("There is other active Instance Snapshot tasks on the Instance to which the volume is attached, please try again later");
                 }
             }
         }

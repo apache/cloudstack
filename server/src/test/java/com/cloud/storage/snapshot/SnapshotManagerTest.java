@@ -209,6 +209,8 @@ public class SnapshotManagerTest {
     private static final String TEST_SNAPSHOT_POLICY_TIMEZONE = "";
     private static final IntervalType TEST_SNAPSHOT_POLICY_INTERVAL = IntervalType.MONTHLY;
     private static final int TEST_SNAPSHOT_POLICY_MAX_SNAPS = 1;
+    private static final long TEST_SNAPSHOT_POLICY_ACCOUNT_ID = 1;
+    private static final long TEST_SNAPSHOT_POLICY_DOMAIN_ID = 1;
     private static final boolean TEST_SNAPSHOT_POLICY_DISPLAY = true;
     private static final boolean TEST_SNAPSHOT_POLICY_ACTIVE = true;
     private static final long TEST_ZONE_ID = 7L;
@@ -251,7 +253,7 @@ public class SnapshotManagerTest {
         when(_resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(any(HypervisorType.class), anyLong())).thenReturn(null);
 
         snapshotPolicyVoInstance = new SnapshotPolicyVO(TEST_VOLUME_ID, TEST_SNAPSHOT_POLICY_SCHEDULE, TEST_SNAPSHOT_POLICY_TIMEZONE, TEST_SNAPSHOT_POLICY_INTERVAL,
-          TEST_SNAPSHOT_POLICY_MAX_SNAPS, TEST_SNAPSHOT_POLICY_DISPLAY);
+          TEST_SNAPSHOT_POLICY_MAX_SNAPS, TEST_SNAPSHOT_POLICY_ACCOUNT_ID, TEST_SNAPSHOT_POLICY_DOMAIN_ID, TEST_SNAPSHOT_POLICY_DISPLAY);
 
         apiDBUtilsMock = Mockito.mockStatic(ApiDBUtils.class);
     }
@@ -442,7 +444,7 @@ public class SnapshotManagerTest {
         Mockito.doReturn(true).when(taggedResourceServiceMock).deleteTags(any(), any(), any());
 
         SnapshotPolicyVO snapshotPolicyVo = new SnapshotPolicyVO(TEST_VOLUME_ID, TEST_SNAPSHOT_POLICY_SCHEDULE, TEST_SNAPSHOT_POLICY_TIMEZONE, TEST_SNAPSHOT_POLICY_INTERVAL,
-          TEST_SNAPSHOT_POLICY_MAX_SNAPS, TEST_SNAPSHOT_POLICY_DISPLAY);
+          TEST_SNAPSHOT_POLICY_MAX_SNAPS, TEST_SNAPSHOT_POLICY_ACCOUNT_ID, TEST_SNAPSHOT_POLICY_DOMAIN_ID, TEST_SNAPSHOT_POLICY_DISPLAY);
 
         _snapshotMgr.updateSnapshotPolicy(snapshotPolicyVo, TEST_SNAPSHOT_POLICY_SCHEDULE, TEST_SNAPSHOT_POLICY_TIMEZONE,
           TEST_SNAPSHOT_POLICY_INTERVAL, TEST_SNAPSHOT_POLICY_MAX_SNAPS, TEST_SNAPSHOT_POLICY_DISPLAY, TEST_SNAPSHOT_POLICY_ACTIVE, null, null);

@@ -50,7 +50,7 @@ public class LdapListConfigurationCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.PORT, type = CommandType.INTEGER, required = false, description = "Port")
     private int port;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = false, entityType = DomainResponse.class, description = "linked domain")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = false, entityType = DomainResponse.class, description = "Linked domain")
     private Long domainId;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = LdapConfigurationResponse.class, description = "list ldap configuration by ID; when passed, all other parameters are ignored")

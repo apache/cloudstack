@@ -512,7 +512,6 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
         String apiKey = user.getApiKey();
         String secretKey = user.getSecretKey();
-        String csUrl = ApiServiceConfiguration.ApiServletPath.value();
 
         if (apiKey == null) {
             throw new InvalidParameterValueException("apiKey for user: " + user.getUsername() + " is empty. Please generate it");
@@ -522,9 +521,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             throw new InvalidParameterValueException("secretKey for user: " + user.getUsername() + " is empty. Please generate it");
         }
 
-        if (csUrl == null || csUrl.contains("localhost")) {
-            throw new InvalidParameterValueException(String.format("Global setting %s has to be set to the Management Server's API end point", ApiServiceConfiguration.ApiServletPath.key()));
-        }
+        ApiServiceConfiguration.validateEndpointUrl();
     }
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEVMPROFILE_CREATE, eventDescription = "creating autoscale vm profile", create = true)
@@ -1457,6 +1454,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     public Counter createCounter(CreateCounterCmd cmd) {
         String source = cmd.getSource().toUpperCase();
         String name = cmd.getName();
+        String value = cmd.getValue();
         Counter.Source src;
         // Validate Source
         try {
@@ -1473,11 +1471,21 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
         CounterVO counter = null;
 
+        CounterVO existingCounter = counterDao.findByNameProviderValue(name, value, provider.getName());
+        if (existingCounter != null) {
+            throw new InvalidParameterValueException(String.format("Counter with name %s and value %s already exists. ", name,value));
+        }
         logger.debug("Adding Counter " + name);
-        counter = counterDao.persist(new CounterVO(src, name, cmd.getValue(), provider));
+        counter = counterDao.persist(new CounterVO(src, name, value, provider));
 
         CallContext.current().setEventDetails(" Id: " + counter.getId() + " Name: " + name);
         return counter;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_COUNTER_CREATE, eventDescription = "Creating a counter", async = true)
+    public Counter getCounter(long counterId) {
+        return counterDao.findById(counterId);
     }
 
     @Override
@@ -1919,7 +1927,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 if (s != null) {
                     sshKeyPairs.add(s.getName());
                 } else {
-                    logger.warn("Cannot find ssh keypair by name in sshkeypairs from otherdeployparams in AutoScale Vm profile");
+                    logger.warn("Cannot find SSH keypair by name in sshkeypairs from otherdeployparams in AutoScale Instance profile");
                 }
             }
         }

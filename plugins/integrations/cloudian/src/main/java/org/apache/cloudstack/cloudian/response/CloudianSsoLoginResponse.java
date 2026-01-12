@@ -25,7 +25,7 @@ import com.google.gson.annotations.SerializedName;
 
 public class CloudianSsoLoginResponse extends BaseResponse {
     @SerializedName(ApiConstants.URL)
-    @Param(description = "the sso redirect url")
+    @Param(description = "The SSO redirect URL")
     private String ssoRedirectUrl;
 
     public void setSsoRedirectUrl(final String ssoRedirectUrl) {
