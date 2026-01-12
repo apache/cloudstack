@@ -191,6 +191,23 @@ export default {
       }
       // When a valid value is selected, show all options
       return this.options
+    },
+    apiOptionsCount () {
+      if (this.defaultOption) {
+        const defaultOptionValue = this.defaultOption[this.optionValueKey]
+        return this.options.filter(option => option[this.optionValueKey] !== defaultOptionValue).length
+      }
+      return this.options.length
+    },
+    preselectedMatchValue () {
+      // Extract the first value from preselectedOptionValue if it's an array, otherwise return the value itself
+      if (!this.preselectedOptionValue) return null
+      return Array.isArray(this.preselectedOptionValue) ? this.preselectedOptionValue[0] : this.preselectedOptionValue
+    },
+    preselectedMatch () {
+      // Find the matching option for the preselected value
+      if (!this.preselectedMatchValue) return null
+      return this.options.find(entry => entry[this.optionValueKey] === this.preselectedMatchValue) || null
     }
   },
   watch: {
@@ -246,13 +263,10 @@ export default {
         this.resetPreselectedOptionValue()
         return
       }
-      const matchValue = Array.isArray(this.preselectedOptionValue) ? this.preselectedOptionValue[0] : this.preselectedOptionValue
-      const match = this.options.find(entry => entry[this.optionValueKey] === matchValue)
-      if (!match) {
+      if (!this.preselectedMatch) {
         this.successiveFetches++
         // Exclude defaultOption from count when comparing with totalCount
-        const apiOptionsCount = this.getApiOptionsCount()
-        if (apiOptionsCount < this.totalCount) {
+        if (this.apiOptionsCount < this.totalCount) {
           this.fetchItems()
         } else {
           this.resetPreselectedOptionValue()
@@ -273,14 +287,6 @@ export default {
     resetPreselectedOptionValue () {
       this.preselectedOptionValue = null
       this.successiveFetches = 0
-    },
-    getApiOptionsCount () {
-      // Return count of options excluding the locally added defaultOption
-      if (this.defaultOption) {
-        const defaultOptionValue = this.defaultOption[this.optionValueKey]
-        return this.options.filter(option => option[this.optionValueKey] !== defaultOptionValue).length
-      }
-      return this.options.length
     },
     autoSelectFirstOptionIfNeeded () {
       if (!this.selectFirstOption || this.hasAutoSelectedFirst) {
@@ -331,8 +337,7 @@ export default {
     onScroll (e) {
       const nearBottom = e.target.scrollTop + e.target.clientHeight >= e.target.scrollHeight - 10
       // Exclude defaultOption from count when comparing with totalCount
-      const apiOptionsCount = this.getApiOptionsCount()
-      const hasMore = apiOptionsCount < this.totalCount
+      const hasMore = this.apiOptionsCount < this.totalCount
       if (nearBottom && hasMore && !this.loading) {
         this.fetchItems()
       }

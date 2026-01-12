@@ -102,7 +102,6 @@ export default {
       this.selectedAccount = null
       this.$emit('domainChange', domainId)
       this.domainError = false
-      // InfiniteScrollSelect will auto-reload accounts when apiParams changes
     },
     handleChangeAccount (accountName) {
       this.selectedAccount = accountName

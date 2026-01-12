@@ -292,14 +292,11 @@ export default {
       }, 1)
     },
     handleScopeChange (e) {
-      // Reset domain and account when scope changes
       this.form.domainid = null
       this.form.account = null
     },
     handleDomainChanged (domainid) {
-      // Reset account when domain changes
       this.form.account = null
-      // InfiniteScrollSelect will auto-reload accounts when apiParams changes
     }
   }
 }

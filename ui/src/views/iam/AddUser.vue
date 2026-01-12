@@ -249,7 +249,6 @@ export default {
     handleDomainChange (domainId) {
       this.form.domainid = domainId
       this.form.account = null
-      // InfiniteScrollSelect will auto-reload accounts when apiParams changes
     },
     fetchTimeZone (value) {
       this.timeZoneMap = []

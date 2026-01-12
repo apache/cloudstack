@@ -314,7 +314,6 @@ export default {
       this.domainid = domainId
       this.form.account = null
       this.account = null
-      // InfiniteScrollSelect will auto-reload accounts when apiParams changes
     },
     handleAccountChange (accountName) {
       if (accountName) {

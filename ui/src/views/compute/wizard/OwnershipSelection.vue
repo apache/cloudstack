@@ -132,7 +132,6 @@ export default {
     }
   },
   created () {
-    // Set initial domain selection
     const ownerDomainId = this.$store.getters.project?.domainid || this.$store.getters.userInfo.domainid
     if (ownerDomainId) {
       this.selectedDomain = ownerDomainId
@@ -140,16 +139,13 @@ export default {
   },
   methods: {
     changeAccountType () {
-      // Reset account/project selection when switching types
       this.selectedAccount = null
       this.selectedProject = null
 
-      // Trigger initial selection based on type
       this.handleDomainChange(this.selectedDomain)
     },
     handleDomainChange (domainId) {
       this.selectedDomain = domainId
-      // Reset child selections
       this.selectedAccount = null
       this.selectedProject = null
 
