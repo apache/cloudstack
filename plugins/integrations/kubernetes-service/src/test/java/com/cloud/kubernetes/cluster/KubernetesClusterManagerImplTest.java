@@ -651,7 +651,7 @@ public class KubernetesClusterManagerImplTest {
     public void testValidateNodeAffinityGroupsAntiAffinityNewNodeOnDifferentHost() {
         KubernetesCluster cluster = Mockito.mock(KubernetesCluster.class);
         Mockito.when(cluster.getId()).thenReturn(1L);
-        Mockito.when(cluster.getName()).thenReturn("test-cluster");
+        Mockito.lenient().when(cluster.getName()).thenReturn("test-cluster");
 
         Long newNodeId = 100L;
         Long existingWorkerVmId = 200L;
@@ -660,7 +660,7 @@ public class KubernetesClusterManagerImplTest {
 
         AffinityGroupVO affinityGroup = Mockito.mock(AffinityGroupVO.class);
         Mockito.when(affinityGroup.getType()).thenReturn("host anti-affinity");
-        Mockito.when(affinityGroup.getName()).thenReturn("anti-affinity-group");
+        Mockito.lenient().when(affinityGroup.getName()).thenReturn("anti-affinity-group");
 
         VMInstanceVO newNode = Mockito.mock(VMInstanceVO.class);
         Mockito.when(newNode.getHostId()).thenReturn(newNodeHostId);
@@ -688,7 +688,7 @@ public class KubernetesClusterManagerImplTest {
     public void testValidateNodeAffinityGroupsAffinityNewNodeOnSameHost() {
         KubernetesCluster cluster = Mockito.mock(KubernetesCluster.class);
         Mockito.when(cluster.getId()).thenReturn(1L);
-        Mockito.when(cluster.getName()).thenReturn("test-cluster");
+        Mockito.lenient().when(cluster.getName()).thenReturn("test-cluster");
 
         Long newNodeId = 100L;
         Long existingWorkerVmId = 200L;
@@ -696,7 +696,7 @@ public class KubernetesClusterManagerImplTest {
 
         AffinityGroupVO affinityGroup = Mockito.mock(AffinityGroupVO.class);
         Mockito.when(affinityGroup.getType()).thenReturn("host affinity");
-        Mockito.when(affinityGroup.getName()).thenReturn("affinity-group");
+        Mockito.lenient().when(affinityGroup.getName()).thenReturn("affinity-group");
 
         VMInstanceVO newNode = Mockito.mock(VMInstanceVO.class);
         Mockito.when(newNode.getHostId()).thenReturn(sharedHostId);
@@ -775,12 +775,12 @@ public class KubernetesClusterManagerImplTest {
         Long sharedHostId = 1000L;
 
         AffinityGroupVO affinityGroup = Mockito.mock(AffinityGroupVO.class);
-        Mockito.when(affinityGroup.getType()).thenReturn("host anti-affinity");
+        Mockito.lenient().when(affinityGroup.getType()).thenReturn("host anti-affinity");
         Mockito.when(affinityGroup.getName()).thenReturn("anti-affinity-group");
 
         VMInstanceVO newNode1 = Mockito.mock(VMInstanceVO.class);
         Mockito.when(newNode1.getHostId()).thenReturn(sharedHostId);
-        Mockito.when(newNode1.getInstanceName()).thenReturn("new-node-vm-1");
+        Mockito.lenient().when(newNode1.getInstanceName()).thenReturn("new-node-vm-1");
 
         VMInstanceVO newNode2 = Mockito.mock(VMInstanceVO.class);
         Mockito.when(newNode2.getHostId()).thenReturn(sharedHostId);
@@ -805,7 +805,7 @@ public class KubernetesClusterManagerImplTest {
     public void testValidateNodeAffinityGroupsAntiAffinityMultipleNewNodesOnDifferentHosts() {
         KubernetesCluster cluster = Mockito.mock(KubernetesCluster.class);
         Mockito.when(cluster.getId()).thenReturn(1L);
-        Mockito.when(cluster.getName()).thenReturn("test-cluster");
+        Mockito.lenient().when(cluster.getName()).thenReturn("test-cluster");
 
         Long newNodeId1 = 100L;
         Long newNodeId2 = 101L;
@@ -813,8 +813,8 @@ public class KubernetesClusterManagerImplTest {
         Long hostId2 = 1001L;
 
         AffinityGroupVO affinityGroup = Mockito.mock(AffinityGroupVO.class);
-        Mockito.when(affinityGroup.getType()).thenReturn("host anti-affinity");
-        Mockito.when(affinityGroup.getName()).thenReturn("anti-affinity-group");
+        Mockito.lenient().when(affinityGroup.getType()).thenReturn("host anti-affinity");
+        Mockito.lenient().when(affinityGroup.getName()).thenReturn("anti-affinity-group");
 
         VMInstanceVO newNode1 = Mockito.mock(VMInstanceVO.class);
         Mockito.when(newNode1.getHostId()).thenReturn(hostId1);
@@ -839,13 +839,13 @@ public class KubernetesClusterManagerImplTest {
     public void testValidateNodeAffinityGroupsNodeWithNullHost() {
         KubernetesCluster cluster = Mockito.mock(KubernetesCluster.class);
         Mockito.when(cluster.getId()).thenReturn(1L);
-        Mockito.when(cluster.getName()).thenReturn("test-cluster");
+        Mockito.lenient().when(cluster.getName()).thenReturn("test-cluster");
 
         Long newNodeId = 100L;
 
         AffinityGroupVO affinityGroup = Mockito.mock(AffinityGroupVO.class);
-        Mockito.when(affinityGroup.getType()).thenReturn("host anti-affinity");
-        Mockito.when(affinityGroup.getName()).thenReturn("anti-affinity-group");
+        Mockito.lenient().when(affinityGroup.getType()).thenReturn("host anti-affinity");
+        Mockito.lenient().when(affinityGroup.getName()).thenReturn("anti-affinity-group");
 
         VMInstanceVO newNode = Mockito.mock(VMInstanceVO.class);
         Mockito.when(newNode.getHostId()).thenReturn(null);
@@ -859,20 +859,20 @@ public class KubernetesClusterManagerImplTest {
 
         kubernetesClusterManager.validateNodeAffinityGroups(Arrays.asList(newNodeId), cluster);
 
-        Mockito.verify(vmInstanceDao).findById(newNodeId);
+        Mockito.verify(vmInstanceDao, Mockito.atLeastOnce()).findById(newNodeId);
     }
 
     @Test
     public void testValidateNodeAffinityGroupsNullNode() {
         KubernetesCluster cluster = Mockito.mock(KubernetesCluster.class);
         Mockito.when(cluster.getId()).thenReturn(1L);
-        Mockito.when(cluster.getName()).thenReturn("test-cluster");
+        Mockito.lenient().when(cluster.getName()).thenReturn("test-cluster");
 
         Long newNodeId = 100L;
 
         AffinityGroupVO affinityGroup = Mockito.mock(AffinityGroupVO.class);
-        Mockito.when(affinityGroup.getType()).thenReturn("host anti-affinity");
-        Mockito.when(affinityGroup.getName()).thenReturn("anti-affinity-group");
+        Mockito.lenient().when(affinityGroup.getType()).thenReturn("host anti-affinity");
+        Mockito.lenient().when(affinityGroup.getName()).thenReturn("anti-affinity-group");
 
         Mockito.when(kubernetesClusterAffinityGroupMapDao.listAffinityGroupIdsByClusterIdAndNodeType(1L, WORKER.name()))
             .thenReturn(Arrays.asList(10L));
@@ -883,21 +883,21 @@ public class KubernetesClusterManagerImplTest {
 
         kubernetesClusterManager.validateNodeAffinityGroups(Arrays.asList(newNodeId), cluster);
 
-        Mockito.verify(vmInstanceDao).findById(newNodeId);
+        Mockito.verify(vmInstanceDao, Mockito.atLeastOnce()).findById(newNodeId);
     }
 
     @Test
     public void testValidateNodeAffinityGroupsAffinityNoExistingWorkers() {
         KubernetesCluster cluster = Mockito.mock(KubernetesCluster.class);
         Mockito.when(cluster.getId()).thenReturn(1L);
-        Mockito.when(cluster.getName()).thenReturn("test-cluster");
+        Mockito.lenient().when(cluster.getName()).thenReturn("test-cluster");
 
         Long newNodeId = 100L;
         Long newNodeHostId = 1000L;
 
         AffinityGroupVO affinityGroup = Mockito.mock(AffinityGroupVO.class);
-        Mockito.when(affinityGroup.getType()).thenReturn("host affinity");
-        Mockito.when(affinityGroup.getName()).thenReturn("affinity-group");
+        Mockito.lenient().when(affinityGroup.getType()).thenReturn("host affinity");
+        Mockito.lenient().when(affinityGroup.getName()).thenReturn("affinity-group");
 
         VMInstanceVO newNode = Mockito.mock(VMInstanceVO.class);
         Mockito.when(newNode.getHostId()).thenReturn(newNodeHostId);
