@@ -646,6 +646,9 @@ export default {
       })
     },
     fetchCustomHypervisorName () {
+      if (!('listConfigurations' in this.$store.getters.apis)) {
+        return
+      }
       const params = {
         name: 'hypervisor.custom.display.name'
       }
