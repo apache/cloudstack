@@ -161,17 +161,9 @@
             >{{ $t(text.toLowerCase()) }}</router-link>
           </span>
           <span v-else>
-            <router-link
-              :to="{ path: $route.path + '/' + record.id }"
-              v-if="record.id"
-            >{{ text }}</router-link>
-            <router-link
-              :to="{ path: $route.path + '/' + record.name }"
-              v-else
-            >{{ text }}</router-link>
-            <span
-              v-if="['guestnetwork','vpc'].includes($route.path.split('/')[1]) && record.restartrequired && !record.vpcid"
-            >
+            <router-link :to="{ path: $route.path + '/' + encodeURIComponent(record.id) }" v-if="record.id">{{ text }}</router-link>
+            <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>
+            <span v-if="['guestnetwork','vpc'].includes($route.path.split('/')[1]) && record.restartrequired && !record.vpcid">
               &nbsp;
               <a-tooltip>
                 <template #title>{{ $t('label.restartrequired') }}</template>
@@ -616,10 +608,7 @@
         <span v-else>{{ text }}</span>
       </template>
       <template v-if="column.key === 'storage'">
-        <router-link
-          v-if="record.storageid"
-          :to="{ path: '/storagepool/' + record.storageid }"
-        >{{ text }}</router-link>
+        <router-link v-if="record.storageid" :to="{ path: '/storagepool/' + encodeURIComponent(record.storageid) }">{{ text }}</router-link>
         <span v-else>{{ text }}</span>
       </template>
       <template
