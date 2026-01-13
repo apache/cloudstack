@@ -500,7 +500,7 @@ public abstract class AgentAttache {
 
     @Override
     public int hashCode() {
-        return Objects.hash(logger, _id, _uuid, _name, _waitForList, _requests, _currentSequence, _status, _maintenance, _nextSequence, _agentMgr);
+        return Objects.hash(_id, _uuid, _name);
     }
 
     protected class Alarm extends ManagedContextRunnable {

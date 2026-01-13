@@ -151,7 +151,7 @@ public class DirectAgentAttache extends AgentAttache {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _HostPingRetryCount, _HostPingRetryTimer, _resource, _futures, _seq, tasks, _outstandingTaskCount, _outstandingCronTaskCount);
+        return super.hashCode();
     }
 
     protected class PingTask extends ManagedContextRunnable {
