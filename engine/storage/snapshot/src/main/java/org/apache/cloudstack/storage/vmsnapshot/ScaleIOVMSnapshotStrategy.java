@@ -139,7 +139,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         for (VolumeObjectTO volumeTO : volumeTOs) {
             Long poolId = volumeTO.getPoolId();
             Storage.StoragePoolType poolType = vmSnapshotHelper.getStoragePoolType(poolId);
-            if (poolType != Storage.StoragePoolType.PowerFlex || volumeTO.getFormat() != ImageFormat.RAW || poolId != rootPoolId) {
+            if (poolType != Storage.StoragePoolType.PowerFlex || volumeTO.getFormat() != ImageFormat.RAW || !poolId.equals(rootPoolId)) {
                 return StrategyPriority.CANT_HANDLE;
             }
         }

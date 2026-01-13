@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -496,6 +497,11 @@ public abstract class AgentAttache {
      * @return true if unable to reach agent or false if reachable.
      */
     protected abstract boolean isClosed();
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(logger, _id, _uuid, _name, _waitForList, _requests, _currentSequence, _status, _maintenance, _nextSequence, _agentMgr);
+    }
 
     protected class Alarm extends ManagedContextRunnable {
         long _seq;

@@ -19,7 +19,7 @@ package com.cloud.api.doc;
 import java.io.Serializable;
 import java.util.List;
 
-public class Argument implements Comparable<Object>, Serializable {
+public class Argument implements Comparable<Argument>, Serializable {
     private static final long serialVersionUID = 2L;
     private String name;
     private String description;
@@ -101,11 +101,11 @@ public class Argument implements Comparable<Object>, Serializable {
     }
 
     @Override
-    public int compareTo(Object anotherAgrument) throws ClassCastException {
-        if (!(anotherAgrument instanceof Argument))
-            throw new ClassCastException("An Argument object expected.");
-        Argument argument = (Argument)anotherAgrument;
-        return this.getName().compareToIgnoreCase(argument.getName());
+    public int compareTo(Argument anotherArgument) {
+        if (anotherArgument == null) {
+            throw new NullPointerException("Cannot compare to null Argument");
+        }
+        return this.getName().compareToIgnoreCase(anotherArgument.getName());
     }
 
     public boolean hasArguments() {
