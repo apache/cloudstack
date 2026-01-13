@@ -46,6 +46,8 @@ import com.cloud.utils.net.Ip;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.NicDao;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.network.BgpPeerVO;
 import org.apache.cloudstack.network.dao.BgpPeerDetailsDao;
 import org.junit.Assert;
@@ -270,5 +272,53 @@ public class CommandSetupHelperTest {
         Command cmd = cmds.toCommands()[0];
         Assert.assertTrue(cmd instanceof SetBgpPeersCommand);
         Assert.assertEquals(4, ((SetBgpPeersCommand) cmd).getBpgPeers().length);
+    }
+
+    @Test
+    public void testDhcpLeaseTimeoutDefaultValue() {
+        // Test that the default value is 0 (infinite)
+        Integer defaultValue = NetworkOrchestrationService.DhcpLeaseTimeout.value();
+        Assert.assertEquals("Default DHCP lease timeout should be 0 (infinite)", 0, defaultValue.intValue());
+    }
+
+    @Test
+    public void testDhcpLeaseTimeoutAcceptsZero() {
+        // Test that 0 value is accepted (infinite lease)
+        ConfigKey<Integer> configKey = NetworkOrchestrationService.DhcpLeaseTimeout;
+        Assert.assertNotNull("ConfigKey should not be null", configKey);
+        Assert.assertEquals("ConfigKey default should be 0", "0", configKey.defaultValue());
+    }
+
+    @Test
+    public void testDhcpLeaseTimeoutAcceptsPositiveValues() {
+        // Test that positive values are accepted
+        ConfigKey<Integer> configKey = NetworkOrchestrationService.DhcpLeaseTimeout;
+        Assert.assertNotNull("ConfigKey should not be null", configKey);
+        // Verify the validator allows positive values
+        String validator = configKey.range();
+        Assert.assertNotNull("Validator should not be null", validator);
+        Assert.assertEquals("Validator should be '0-' (>= 0)", "0-", validator);
+    }
+
+    @Test
+    public void testDhcpLeaseTimeoutValidatorRejectsNegative() {
+        // Test that the validator is configured to reject negative values
+        ConfigKey<Integer> configKey = NetworkOrchestrationService.DhcpLeaseTimeout;
+        String validator = configKey.range();
+        Assert.assertEquals("Validator should enforce minimum of 0", "0-", validator);
+    }
+
+    @Test
+    public void testDhcpLeaseTimeoutHasZoneScope() {
+        // Test that the ConfigKey has Zone scope
+        ConfigKey<Integer> configKey = NetworkOrchestrationService.DhcpLeaseTimeout;
+        Assert.assertEquals("ConfigKey should have Zone scope", ConfigKey.Scope.Zone, configKey.scope());
+    }
+
+    @Test
+    public void testDhcpLeaseTimeoutIsDynamic() {
+        // Test that the ConfigKey is dynamic (can be updated at runtime)
+        ConfigKey<Integer> configKey = NetworkOrchestrationService.DhcpLeaseTimeout;
+        Assert.assertTrue("ConfigKey should be dynamic", configKey.isDynamic());
     }
 }
