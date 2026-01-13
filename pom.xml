@@ -188,6 +188,7 @@
         <org.springframework.version>5.3.26</org.springframework.version>
         <cs.ini.version>0.5.4</cs.ini.version>
         <cs.caffeine.version>3.1.7</cs.caffeine.version>
+        <cs.protobuf.version>3.25.5</cs.protobuf.version>
     </properties>
 
     <distributionManagement>
@@ -729,6 +730,17 @@
                 <groupId>xml-apis</groupId>
                 <artifactId>xml-apis</artifactId>
                 <version>2.0.2</version>
+            </dependency>
+            <!-- enforced protobuf version here as mysql-connector-java is pulling older version (3.19.3) -->
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>${cs.protobuf.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java-util</artifactId>
+                <version>${cs.protobuf.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.linbit.linstor.api</groupId>
