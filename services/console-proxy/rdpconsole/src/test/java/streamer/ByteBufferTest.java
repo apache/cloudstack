@@ -62,9 +62,10 @@ public class ByteBufferTest {
     // and was used to remove these cases from the production code.
     // Don't try to fix it
     @Test
+    @SuppressWarnings("BadShiftAmount")
     public void testShiftByteBy32BitsDoesNothing() throws Exception {
         for (byte b : data) {
-            assertEquals(b, (long) b << 32);
+            assertEquals(b, b << 32);
         }
     }
 
