@@ -1,0 +1,184 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+package org.apache.cloudstack.veeam.api;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Set;
+
+import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.cloudstack.veeam.RouteHandler;
+import org.apache.cloudstack.veeam.VeeamControlServlet;
+import org.apache.cloudstack.veeam.api.converter.UserVmJoinVOToVmConverter;
+import org.apache.cloudstack.veeam.api.dto.Vm;
+import org.apache.cloudstack.veeam.api.request.VmListQuery;
+import org.apache.cloudstack.veeam.api.request.VmSearchExpr;
+import org.apache.cloudstack.veeam.api.request.VmSearchFilters;
+import org.apache.cloudstack.veeam.api.request.VmSearchParser;
+import org.apache.cloudstack.veeam.api.response.VmCollectionResponse;
+import org.apache.cloudstack.veeam.api.response.VmEntityResponse;
+import org.apache.cloudstack.veeam.utils.Negotiation;
+
+import com.cloud.api.query.dao.UserVmJoinDao;
+import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.utils.component.ManagerBase;
+
+public class VmsRouteHandler extends ManagerBase implements RouteHandler {
+    public static final String BASE_ROUTE = "/api/vms";
+    private static final int DEFAULT_MAX = 50;
+    private static final int HARD_CAP_MAX = 1000;
+    private static final int DEFAULT_PAGE = 1;
+
+    @Inject
+    UserVmJoinDao userVmJoinDao;
+
+    private VmSearchParser searchParser;
+
+    @Override
+    public boolean start() {
+
+        this.searchParser = new VmSearchParser(Set.of(
+                "id", "name", "status", "cluster", "host", "template"
+        ));
+        return true;
+    }
+
+    @Override
+    public int priority() {
+        return 5;
+    }
+
+    @Override
+    public boolean canHandle(String method, String path) {
+        return path.startsWith(BASE_ROUTE);
+    }
+
+    @Override
+    public void handle(HttpServletRequest req, HttpServletResponse resp, String path, Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
+        final String method = req.getMethod();
+        if (path.equals(BASE_ROUTE)) {
+            if (!"GET".equalsIgnoreCase(method)) {
+                io.methodNotAllowed(resp, "GET", outFormat);
+                return;
+            }
+            handleGet(req, resp, outFormat, io);
+            return;
+        }
+
+        // /api/vms/{id}
+        final String vmId = matchSinglePathParam(path, BASE_ROUTE + "/");
+        if (vmId != null) {
+            if (!"GET".equalsIgnoreCase(method)) {
+                io.methodNotAllowed(resp, "GET", outFormat);
+                return;
+            }
+            handleGetById(vmId, resp, outFormat, io);
+            return;
+        }
+
+        resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Not found");
+    }
+
+    /**
+     * Matches /api/vms/{id} where {id} is a single path segment (no extra '/').
+     * Returns id or null.
+     */
+    private static String matchSinglePathParam(final String path, final String prefix) {
+        if (!path.startsWith(prefix)) return null;
+        final String rest = path.substring(prefix.length()); // after "/api/vms/"
+        if (rest.isEmpty()) return null;
+        if (rest.contains("/")) return null; // ensure only 1 segment
+        return rest;
+    }
+
+    public void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
+          Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
+        final VmListQuery q = fromRequest(req);
+
+        // Validate max/page early (optional strictness)
+        if (q.getMax() != null && q.getMax() <= 0) {
+            io.notFound(resp, "Invalid 'max' (must be > 0)", outFormat);
+            return;
+        }
+        if (q.getPage() != null && q.getPage() <= 0) {
+            io.notFound(resp, "Invalid 'page' (must be > 0)", outFormat);
+            return;
+        }
+
+        final int limit = q.resolvedMax(DEFAULT_MAX, HARD_CAP_MAX);
+        final int offset = q.offset(DEFAULT_MAX, HARD_CAP_MAX, DEFAULT_PAGE);
+
+        final VmSearchExpr expr;
+        try {
+            expr = searchParser.parse(q.getSearch());
+        } catch (VmSearchParser.VmSearchParseException e) {
+            io.notFound(resp, "Invalid search: " + e.getMessage(), outFormat);
+            return;
+        }
+
+        final VmSearchFilters filters;
+        try {
+            filters = VmSearchFilters.fromAndOnly(expr); // AND-only v1
+        } catch (VmSearchParser.VmSearchParseException e) {
+            io.notFound(resp, "Unsupported search: " + e.getMessage(), outFormat);
+            return;
+        }
+
+        final List<Vm> result = UserVmJoinVOToVmConverter.toVmList(listUserVms());
+        final VmCollectionResponse response = new VmCollectionResponse(result);
+
+        io.getWriter().write(resp, 200, response, outFormat);
+    }
+
+    private static VmListQuery fromRequest(final HttpServletRequest req) {
+        final VmListQuery q = new VmListQuery();
+        q.setSearch(req.getParameter("search"));
+        q.setMax(parseIntOrNull(req.getParameter("max")));
+        q.setPage(parseIntOrNull(req.getParameter("page")));
+        return q;
+    }
+
+    private static Integer parseIntOrNull(final String s) {
+        if (s == null || s.trim().isEmpty()) return null;
+        try {
+            return Integer.parseInt(s.trim());
+        } catch (NumberFormatException e) {
+            return Integer.valueOf(-1); // will be rejected by validation above
+        }
+    }
+
+    protected List<UserVmJoinVO> listUserVms() {
+        // Todo: add filtering, pagination
+        return userVmJoinDao.listAll();
+    }
+
+    public void handleGetById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
+          final VeeamControlServlet io) throws IOException {
+        final UserVmJoinVO userVmJoinVO = userVmJoinDao.findByUuid(id);
+        if (userVmJoinVO == null) {
+            io.notFound(resp, "VM not found: " + id, outFormat);
+            return;
+        }
+        VmEntityResponse response = new VmEntityResponse(UserVmJoinVOToVmConverter.toVm(userVmJoinVO));
+
+        io.getWriter().write(resp, 200, response, outFormat);
+    }
+}
