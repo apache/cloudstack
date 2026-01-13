@@ -64,7 +64,7 @@ public class ByteBufferTest {
     @Test
     public void testShiftByteBy32BitsDoesNothing() throws Exception {
         for (byte b : data) {
-            assertEquals(b, b << 32);
+            assertEquals(b, (long) b << 32);
         }
     }
 
