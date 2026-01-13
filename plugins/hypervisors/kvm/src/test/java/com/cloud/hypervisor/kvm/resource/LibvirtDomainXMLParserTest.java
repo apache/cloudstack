@@ -196,7 +196,7 @@ public class LibvirtDomainXMLParserTest extends TestCase {
                      "<alias name='video0'/>" +
                      "<address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x0'/>" +
                      "</video>" +
-                     "<memballoon model='virtio'>" +
+                     "<memballoon model='virtio' autodeflate='on' freePageReporting='on'>" +
                      "<stats period='60'/>" +
                      "<alias name='balloon0'/>" +
                      "<address type='pci' domain='0x0000' bus='0x00' slot='0x09' function='0x0'/>" +
@@ -379,7 +379,7 @@ public class LibvirtDomainXMLParserTest extends TestCase {
                 "    <redirdev bus='usb' type='spicevmc'>\n" +
                 "      <address type='usb' bus='0' port='3'/>\n" +
                 "    </redirdev>\n" +
-                "    <memballoon model='virtio'>\n" +
+                "    <memballoon model='virtio' autodeflate='on' freePageReporting='on'>\n" +
                 "      <address type='pci' domain='0x0000' bus='0x00' slot='0x09' function='0x0'/>\n" +
                 "    </memballoon>\n" +
                 "  </devices>\n" +

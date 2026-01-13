@@ -255,7 +255,7 @@ export default {
       this.fetchZoneDetails()
       this.fetchSecurityGroups()
       this.fetchOsTypes()
-      this.fetchInstaceGroups()
+      this.fetchInstanceGroups()
       this.fetchServiceOfferingData()
       this.fetchTemplateData()
       this.fetchUserData()
@@ -335,7 +335,7 @@ export default {
         this.$notifyError(error)
       }).finally(() => { this.osTypes.loading = false })
     },
-    fetchInstaceGroups () {
+    fetchInstanceGroups () {
       this.groups.loading = true
       this.groups.opts = []
       const params = {

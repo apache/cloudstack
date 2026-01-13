@@ -603,7 +603,7 @@ class CsIP:
                     if item == "id":
                         continue
                     static_route = static_routes.get_bag()[item]
-                    if static_route['ip_address'] == self.address['public_ip'] and not static_route['revoke']:
+                    if 'ip_address' in static_route and static_route['ip_address'] == self.address['public_ip'] and not static_route['revoke']:
                         self.fw.append(["mangle", "",
                                         "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s/32 -j ACL_OUTBOUND_%s" %
                                         (self.dev, static_route['network'], static_route['ip_address'], self.dev)])
