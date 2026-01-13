@@ -1,0 +1,52 @@
+services:
+  mysql:
+    image: mysql:8.0
+    restart: always
+    networks:
+      cloudstack-docker_mynetwork:
+        aliases:
+          - mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: cloud
+      MYSQL_USER: cloud
+      MYSQL_PASSWORD: cloud
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: [
+      "--default-authentication-plugin=mysql_native_password",
+      "--bind-address=0.0.0.0"
+    ]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 5  
+
+  cloudstack:
+    build: .
+    restart: no
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_USER: cloud
+      DB_PASSWORD: cloud
+    volumes:
+      - ./docker-entrypoint.sh:/cloudstack/docker-entrypoint.sh
+      - ./init-mysql.sh:/cloudstack/init-mysql.sh
+    command: "/bin/bash /cloudstack/docker-entrypoint.sh"
+    networks:
+      cloudstack-docker_mynetwork:
+        aliases:
+          - cloudstack
+
+volumes:
+  mysql_data:
+
+networks:
+  cloudstack-docker_mynetwork:
+    driver: bridge
