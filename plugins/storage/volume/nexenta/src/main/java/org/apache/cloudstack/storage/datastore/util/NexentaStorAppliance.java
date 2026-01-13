@@ -20,6 +20,7 @@ package org.apache.cloudstack.storage.datastore.util;
 
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Objects;
 
 import org.apache.cloudstack.storage.datastore.util.NexentaNmsClient.NmsResponse;
 import org.apache.logging.log4j.Logger;
@@ -131,6 +132,11 @@ public class NexentaStorAppliance {
         @Override
         public boolean equals(Object other) {
             return other instanceof CreateIscsiTargetRequestParams && targetName.equals(((CreateIscsiTargetRequestParams) other).targetName);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(targetName);
         }
     }
 
@@ -248,6 +254,11 @@ public class NexentaStorAppliance {
         public boolean equals(Object other) {
             return other instanceof LuParams;
         }
+
+        @Override
+        public int hashCode() {
+            return 1;
+        }
     }
 
     /**
@@ -308,6 +319,11 @@ public class NexentaStorAppliance {
                         isEquals(hostGroup, o.hostGroup) && isEquals(entryNumber, o.entryNumber);
             }
             return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(targetGroup, lun, zvol, hostGroup, entryNumber);
         }
     }
 

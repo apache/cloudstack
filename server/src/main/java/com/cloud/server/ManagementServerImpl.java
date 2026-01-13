@@ -1443,7 +1443,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     protected boolean zoneWideVolumeRequiresStorageMotion(PrimaryDataStore volumeDataStore,
                final Host sourceHost, final Host destinationHost) {
-        if (volumeDataStore.isManaged() && sourceHost.getClusterId() != destinationHost.getClusterId()) {
+        if (volumeDataStore.isManaged() && !sourceHost.getClusterId().equals(destinationHost.getClusterId())) {
             PrimaryDataStoreDriver driver = (PrimaryDataStoreDriver)volumeDataStore.getDriver();
             // Depends on the storage driver. For some storages simply
             // changing volume access to host should work: grant access on destination
