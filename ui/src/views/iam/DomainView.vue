@@ -334,30 +334,36 @@ export default {
       this.showAction = false
     },
     confirmDeleteDomain () {
-      const params = { id: this.deleteDomainResource.id }
+      const domain = this.deleteDomainResource
+      const params = { id: domain.id }
 
-      api('deleteDomain', params)
-        .then(() => {
-          this.$notification.success({
-            message: 'Domain Deleted',
-            description: `Domain ${this.deleteDomainResource.name} has been successfully deleted.`
-          })
-          if (this.$route.params.id === this.deleteDomainResource.id) {
-            this.$router.push({ path: '/domain' })
+      api('deleteDomain', params).then(json => {
+        const jobId = json.deletedomainresponse.jobid
+
+        this.$pollJob({
+          jobId,
+          title: this.$t('label.action.delete.domain'),
+          description: domain.name,
+          loadingMessage: `${this.$t('label.action.delete.domain')} ${domain.name}`,
+          successMessage: `${this.$t('label.action.delete.domain')} ${domain.name}`,
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          successMethod: () => {
+            if (this.$route.params.id === domain.id) {
+              this.$router.push({ path: '/domain' })
+            }
+            this.fetchData()
           }
-          this.fetchData()
         })
-        .catch(error => {
-          this.$notification.error({
-            message: 'Failed to delete domain',
-            description: error.response?.headers['x-description'] || this.$t('message.request.failed')
-          })
+      }).catch(error => {
+        this.$notification.error({
+          message: this.$t('message.request.failed'),
+          description: error.response?.headers['x-description'] || this.$t('message.request.failed')
         })
-        .finally(() => {
-          this.showDeleteConfirm = false
-          this.deleteDomainResource = null
-          this.treeDeletedKey = this.deleteDomainResource?.id || null
-        })
+      }).finally(() => {
+        this.showDeleteConfirm = false
+        this.deleteDomainResource = null
+        this.treeDeletedKey = null
+      })
     },
     forceRerender () {
       this.treeViewKey += 1
