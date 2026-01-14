@@ -117,7 +117,7 @@ public class EcsObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
         // Ensure per-account credentials exist (single-key policy with adopt-if-exists)
         ensureAccountUserAndSecret(accountId, ownerUser, cfg.mgmtUrl, cfg.saUser, cfg.saPass, cfg.ns, cfg.insecure);
-        
+
         // Quota (INT GB)
         Integer quotaGb = bucket.getQuota();
 
