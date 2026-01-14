@@ -91,7 +91,7 @@
           :rowKey="record => record.datastoreId">
           <template #bodyCell="{ text, record, column }">
             <template v-if="column.dataIndex === 'datastore' && record.datastoreId">
-                <router-link :to="{ path: '/storagepool/' + record.datastoreId }">
+                <router-link :to="{ path: '/storagepool/' + encodeURIComponent(record.datastoreId) }">
                 {{ text }}
               </router-link>
             </template>
