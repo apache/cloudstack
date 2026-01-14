@@ -80,6 +80,7 @@
         <cs.surefire-plugin.version>2.22.2</cs.surefire-plugin.version>
         <cs.clover-maven-plugin.version>4.4.1</cs.clover-maven-plugin.version>
         <cs.exec-maven-plugin.version>3.2.0</cs.exec-maven-plugin.version>
+        <cs.errorprone.version>2.24.1</cs.errorprone.version>
 
         <!-- Logging versions -->
         <cs.log4j.version>2.19.0</cs.log4j.version>
@@ -1094,15 +1095,25 @@
                     <configuration>
                         <source>${cs.jdk.version}</source>
                         <target>${cs.jdk.version}</target>
-                        <fork>true</fork>
-                        <meminitial>128m</meminitial>
-                        <maxmem>512m</maxmem>
+                        <encoding>UTF-8</encoding>
                         <compilerArgs>
                             <arg>-XDignore.symbol.file=true</arg>
                             <arg>--add-opens=java.base/java.lang=ALL-UNNAMED</arg>
                             <arg>--add-exports=java.base/sun.security.x509=ALL-UNNAMED</arg>
                             <arg>--add-exports=java.base/sun.security.provider=ALL-UNNAMED</arg>
+                            <arg>-XDcompilePolicy=simple</arg>
+                            <arg>-Xplugin:ErrorProne -XepAllErrorsAsWarnings</arg>
                         </compilerArgs>
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>com.google.errorprone</groupId>
+                                <artifactId>error_prone_core</artifactId>
+                                <version>${cs.errorprone.version}</version>
+                            </path>
+                        </annotationProcessorPaths>
+                        <fork>true</fork>
+                        <meminitial>128m</meminitial>
+                        <maxmem>512m</maxmem>
                     </configuration>
                 </plugin>
                 <plugin>
