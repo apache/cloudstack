@@ -1249,6 +1249,10 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     protected void addSecondaryStorageServerAddressToBuffer(StringBuilder buffer, List<DataStore> dataStores, String vmName) {
         List<String> addresses = new ArrayList<>();
         for (DataStore dataStore: dataStores) {
+            // S3 and other object stores may not have a URL, so better to skip them
+            if (dataStore == null || dataStore.getTO() == null || dataStore.getTO().getUrl() == null) {
+                continue;
+            }
             String url = dataStore.getTO().getUrl();
             String[] urlArray = url.split("/");
 
