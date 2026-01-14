@@ -54,7 +54,8 @@ jobs:
           set -o pipefail
 
           # Use -fae (fail-at-end) to build all modules and report failures at the end
-          mvn -fae clean test-compile -T$(nproc) 2>&1 | tee errorprone.log
+          # Run 'test' phase to compile and test all modules
+          mvn -fae clean test -T$(nproc) 2>&1 | tee errorprone.log
           MVN_EXIT=${PIPESTATUS[0]}
 
           echo "mvn_exit=${MVN_EXIT}" >> $GITHUB_OUTPUT
