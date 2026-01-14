@@ -417,10 +417,10 @@ public class AutoScaleManagerImplTest {
 
         when(asPolicyDao.persist(any(AutoScalePolicyVO.class))).thenReturn(asScaleUpPolicyMock);
 
-        HashMap<String, String> userDataMap = new HashMap<>();
-        userDataMap.put("key1", "value1");
-        userDataMap.put("key2", "value2");
-        userDataDetails.put("0", userDataMap);
+        HashMap<String, String> mapValues = new HashMap<>();
+        mapValues.put("key1", "value1");
+        mapValues.put("key2", "value2");
+        userDataDetails.put("0", mapValues);
         Mockito.doReturn(userDataFinal).when(userVmMgr).finalizeUserData(any(), any(), any());
         Mockito.doReturn(userDataFinal).when(userDataMgr).validateUserData(eq(userDataFinal), nullable(BaseCmd.HTTPMethod.class));
     }
