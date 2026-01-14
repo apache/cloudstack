@@ -248,16 +248,11 @@ public class NexentaStorAppliance {
         return response!= null && response.getResult() > 0;
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "EqualsHashCode", "EqualsAndHashCode", "java:S2160", "errorprone"})
     static final class LuParams {
         @Override
         public boolean equals(Object other) {
             return other instanceof LuParams;
-        }
-
-        @Override
-        public int hashCode() {
-            return 1;
         }
     }
 
