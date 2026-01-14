@@ -58,6 +58,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -255,6 +256,7 @@ public class HypervisorTemplateAdapterTest {
     }
 
     //@Test
+    @Ignore
     public void testEmitDeleteEventUuid() throws InterruptedException, ExecutionException {
         //All the mocks required for this test to work.
         ImageStoreEntity store = mock(ImageStoreEntity.class);

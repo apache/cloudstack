@@ -182,36 +182,36 @@ public class ServerResourceBaseTest {
     @Test
     public void defineResourceNetworkInterfacesTestUseXenbr0WhenPrivateNetworkInterfaceNotConfigured() {
         Map<String, Object> params = createParamsMap(null, "cloudbr1", "cloudbr2", "cloudbr3");
-        try (MockedStatic<NetUtils> ignored = Mockito.mockStatic(NetUtils.class)) {
-            Mockito.when(NetUtils.getNetworkInterface(Mockito.anyString())).thenReturn(networkInterfaceMock1, networkInterfaceMock2, networkInterfaceMock3, networkInterfaceMock4);
+        try (MockedStatic<NetUtils> mockedNetUtils = Mockito.mockStatic(NetUtils.class)) {
+            mockedNetUtils.when(() -> NetUtils.getNetworkInterface(Mockito.anyString())).thenReturn(networkInterfaceMock1, networkInterfaceMock2, networkInterfaceMock3, networkInterfaceMock4);
 
             serverResourceBaseSpy.defineResourceNetworkInterfaces(params);
 
-            verifyAndAssertNetworkInterfaces("xenbr0", "cloudbr1", "cloudbr2", "cloudbr3");
+            verifyAndAssertNetworkInterfaces(mockedNetUtils, "xenbr0", "cloudbr1", "cloudbr2", "cloudbr3");
         }
     }
 
     @Test
     public void defineResourceNetworkInterfacesTestUseXenbr1WhenPublicNetworkInterfaceNotConfigured() {
         Map<String, Object> params = createParamsMap("cloudbr0", null, "cloudbr2", "cloudbr3");
-        try (MockedStatic<NetUtils> ignored = Mockito.mockStatic(NetUtils.class)) {
-            Mockito.when(NetUtils.getNetworkInterface(Mockito.anyString())).thenReturn(networkInterfaceMock1, networkInterfaceMock2, networkInterfaceMock3, networkInterfaceMock4);
+        try (MockedStatic<NetUtils> mockedNetUtils = Mockito.mockStatic(NetUtils.class)) {
+            mockedNetUtils.when(() -> NetUtils.getNetworkInterface(Mockito.anyString())).thenReturn(networkInterfaceMock1, networkInterfaceMock2, networkInterfaceMock3, networkInterfaceMock4);
 
             serverResourceBaseSpy.defineResourceNetworkInterfaces(params);
 
-            verifyAndAssertNetworkInterfaces("cloudbr0", "xenbr1", "cloudbr2", "cloudbr3");
+            verifyAndAssertNetworkInterfaces(mockedNetUtils, "cloudbr0", "xenbr1", "cloudbr2", "cloudbr3");
         }
     }
 
     @Test
     public void defineResourceNetworkInterfacesTestUseConfiguredNetworkInterfaces() {
         Map<String, Object> params = createParamsMap("cloudbr0", "cloudbr1", "cloudbr2", "cloudbr3");
-        try (MockedStatic<NetUtils> ignored = Mockito.mockStatic(NetUtils.class)) {
-            Mockito.when(NetUtils.getNetworkInterface(Mockito.anyString())).thenReturn(networkInterfaceMock1, networkInterfaceMock2, networkInterfaceMock3, networkInterfaceMock4);
+        try (MockedStatic<NetUtils> mockedNetUtils = Mockito.mockStatic(NetUtils.class)) {
+            mockedNetUtils.when(() -> NetUtils.getNetworkInterface(Mockito.anyString())).thenReturn(networkInterfaceMock1, networkInterfaceMock2, networkInterfaceMock3, networkInterfaceMock4);
 
             serverResourceBaseSpy.defineResourceNetworkInterfaces(params);
 
-            verifyAndAssertNetworkInterfaces("cloudbr0", "cloudbr1", "cloudbr2", "cloudbr3");
+            verifyAndAssertNetworkInterfaces(mockedNetUtils, "cloudbr0", "cloudbr1", "cloudbr2", "cloudbr3");
         }
     }
 
@@ -224,9 +224,8 @@ public class ServerResourceBaseTest {
         return result;
     }
 
-    private void verifyAndAssertNetworkInterfaces(String... expectedResults) {
-        Mockito.verify(NetUtils.class, Mockito.times(4));
-        NetUtils.getNetworkInterface(keyCaptor.capture());
+    private void verifyAndAssertNetworkInterfaces(MockedStatic<NetUtils> mockedNetUtils, String... expectedResults) {
+        mockedNetUtils.verify(() -> NetUtils.getNetworkInterface(keyCaptor.capture()), Mockito.times(4));
         List<String> keys = keyCaptor.getAllValues();
 
         for (int i = 0; i < expectedResults.length; i++) {

@@ -81,6 +81,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -348,6 +349,7 @@ public class UserVmManagerTest {
 
     // Test scaleVm for Stopped vm.
     //@Test(expected=InvalidParameterValueException.class)
+    @Ignore
     public void testScaleVMF3() throws Exception {
 
         ScaleVMCmd cmd = new ScaleVMCmd();
@@ -389,6 +391,7 @@ public class UserVmManagerTest {
     }
 
     // Test scaleVm for Running vm. Full positive test.
+    @Ignore
     public void testScaleVMF4() throws Exception {
 
         ScaleVMCmd cmd = new ScaleVMCmd();
