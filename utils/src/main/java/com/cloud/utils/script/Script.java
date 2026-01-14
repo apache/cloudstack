@@ -30,6 +30,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -42,8 +43,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.joda.time.Duration;
@@ -240,11 +241,11 @@ public class Script implements Callable<String> {
         return execute(interpreter, null);
     }
 
-    public String execute(OutputInterpreter interpreter, String[] environment) {
+    public String execute(OutputInterpreter interpreter, Map<String, String> environment) {
         return executeInternal(interpreter, environment);
     }
 
-    public String executeInternal(OutputInterpreter interpreter, String[] environment) {
+    private String executeInternal(OutputInterpreter interpreter, Map<String, String> environment) {
         String[] command = _command.toArray(new String[_command.size()]);
         String commandLine = buildCommandLine(command);
         if (_logger.isDebugEnabled() && !avoidLoggingCommand) {
@@ -254,22 +255,20 @@ public class Script implements Callable<String> {
         try {
             _logger.trace(String.format("Creating process for command [%s].", commandLine));
 
-            if (ArrayUtils.isEmpty(environment)) {
-                ProcessBuilder pb = new ProcessBuilder(command);
-                pb.redirectErrorStream(true);
-                if (_workDir != null)
-                    pb.directory(new File(_workDir));
+            ProcessBuilder pb = new ProcessBuilder(command);
+            pb.redirectErrorStream(true);
 
-                _logger.trace(String.format("Starting process for command [%s].", commandLine));
-                _process = pb.start();
-            } else {
-                // Since Runtime.exec() does not support redirecting the error stream, then append 2>&1 to the command
-                String[] commands = new String[] {"sh", "-c", String.format("%s 2>&1", commandLine)};
-                // The PATH variable must be added for indirect calls within the running command
-                // Example: virt-v2v invokes qemu-img, which cannot be found if PATH is not set
-                String[] env = ArrayUtils.add(environment, String.format("PATH=%s", System.getenv("PATH")));
-                _process = Runtime.getRuntime().exec(commands, env, _workDir != null ? new File(_workDir) : null);
+            if (MapUtils.isNotEmpty(environment)) {
+                Map<String, String> processEnvironment = pb.environment();
+                processEnvironment.putAll(environment);
             }
+
+            if (_workDir != null) {
+                pb.directory(new File(_workDir));
+            }
+
+            _logger.trace(String.format("Starting process for command [%s].", commandLine));
+            _process = pb.start();
 
             if (_process == null) {
                 _logger.warn(String.format("Unable to execute command [%s] because no process was created.", commandLine));

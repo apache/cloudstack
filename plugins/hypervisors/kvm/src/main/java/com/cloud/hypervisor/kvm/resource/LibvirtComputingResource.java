@@ -882,7 +882,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected StorageSubsystemCommandHandler storageHandler;
 
     private boolean convertInstanceVerboseMode = false;
-    private String[] convertInstanceEnv = null;
+    private Map<String, String> convertInstanceEnv = null;
     protected boolean dpdkSupport = false;
     protected String dpdkOvsPath;
     protected String directDownloadTemporaryDownloadPath;
@@ -947,7 +947,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return convertInstanceVerboseMode;
     }
 
-    public String[] getConvertInstanceEnv() {
+    public Map<String, String> getConvertInstanceEnv() {
         return convertInstanceEnv;
     }
 
@@ -1437,14 +1437,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return;
         }
         if (StringUtils.isNotBlank(convertEnvTmpDir) && StringUtils.isNotBlank(convertEnvVirtv2vTmpDir)) {
-            convertInstanceEnv = new String[2];
-            convertInstanceEnv[0] = String.format("%s=%s", "TMPDIR", convertEnvTmpDir);
-            convertInstanceEnv[1] = String.format("%s=%s", "VIRT_V2V_TMPDIR", convertEnvVirtv2vTmpDir);
+            convertInstanceEnv = new HashMap<>(2);
+            convertInstanceEnv.put("TMPDIR", convertEnvTmpDir);
+            convertInstanceEnv.put("VIRT_V2V_TMPDIR", convertEnvVirtv2vTmpDir);
         } else {
-            convertInstanceEnv = new String[1];
+            convertInstanceEnv = new HashMap<>(1);
             String key = StringUtils.isNotBlank(convertEnvTmpDir) ? "TMPDIR" : "VIRT_V2V_TMPDIR";
             String value = StringUtils.isNotBlank(convertEnvTmpDir) ? convertEnvTmpDir : convertEnvVirtv2vTmpDir;
-            convertInstanceEnv[0] = String.format("%s=%s", key, value);
+            convertInstanceEnv.put(key, value);
         }
     }
 
