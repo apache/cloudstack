@@ -19,9 +19,9 @@ name: Error Prone Analysis
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, add-errorprone ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, '4.20' ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
