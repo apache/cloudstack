@@ -52,7 +52,7 @@ jobs:
           sed -i 's/-Xplugin:ErrorProne -XepAllErrorsAsWarnings/-Xplugin:ErrorProne/g' pom.xml
 
           set -o pipefail
-          
+
           # Use -fae (fail-at-end) to build all modules and report failures at the end
           mvn -fae clean test-compile -T$(nproc) 2>&1 | tee errorprone.log
           MVN_EXIT=${PIPESTATUS[0]}
@@ -80,7 +80,7 @@ jobs:
           if grep -q "^\[ERROR\]" errorprone.log; then
             HAS_ERRORS=true
           fi
-          
+
           if [ "$HAS_ERRORS" = "true" ]; then
             echo "has_errors=true" >> $GITHUB_OUTPUT
             echo "::error::Error Prone and/or compilation issues found in the code"
@@ -119,4 +119,3 @@ jobs:
       - name: Fail if errors found
         if: steps.check-errors.outputs.has_errors == 'true'
         run: exit 1
-
