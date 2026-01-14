@@ -117,23 +117,9 @@ public class EcsObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
         // Ensure per-account credentials exist (single-key policy with adopt-if-exists)
         ensureAccountUserAndSecret(accountId, ownerUser, cfg.mgmtUrl, cfg.saUser, cfg.saPass, cfg.ns, cfg.insecure);
-
-        // Quota from UI (INT GB). Bucket.getQuota may be Integer; Bucket.getSize may be Long.
-        Integer quotaGb = null;
-        try {
-            quotaGb = bucket.getQuota();
-        } catch (Throwable ignored) {
-        }
-
-        if (quotaGb == null) {
-            try {
-                final Long sz = bucket.getSize();
-                if (sz != null) {
-                    quotaGb = sz.intValue();
-                }
-            } catch (Throwable ignored) {
-            }
-        }
+        
+        // Quota (INT GB)
+        Integer quotaGb = bucket.getQuota();
 
         final int blockSizeGb;
         final int notifSizeGb;
@@ -150,10 +136,7 @@ public class EcsObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
         // Fallback to persisted value if request did not explicitly enable it.
         if (!encryptionEnabled) {
-            try {
-                encryptionEnabled = vo.isEncryption();
-            } catch (Throwable ignored) {
-            }
+            encryptionEnabled = vo.isEncryption();
         }
 
         logger.info("ECS createBucket flags for '{}': encryptionEnabled={}", name, encryptionEnabled);
