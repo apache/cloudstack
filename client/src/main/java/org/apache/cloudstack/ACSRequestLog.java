@@ -54,7 +54,7 @@ public class ACSRequestLog extends NCSARequestLog {
             sb.setLength(0);
 
             InetAddress remoteAddress = ApiServlet.getClientAddress(request);
-            sb.append(remoteAddress)
+            sb.append(remoteAddress.getHostAddress())
                     .append(" - - [")
                     .append(dateCache.format(request.getTimeStamp()))
                     .append("] \"")
