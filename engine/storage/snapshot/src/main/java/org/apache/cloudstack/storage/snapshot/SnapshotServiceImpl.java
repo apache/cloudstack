@@ -227,7 +227,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         }
 
         try {
-            snapshot.processEvent(Event.OperationSuccessed, result.getAnswer());
+            snapshot.processEvent(Event.OperationSucceeded, result.getAnswer());
             snapshot.processEvent(Snapshot.Event.OperationSucceeded);
         } catch (Exception e) {
             logger.debug("Failed to create snapshot: ", e);
@@ -515,7 +515,7 @@ public class SnapshotServiceImpl implements SnapshotService {
 
         try {
             CopyCmdAnswer copyCmdAnswer = (CopyCmdAnswer)result.getAnswer();
-            destSnapshot.processEvent(Event.OperationSuccessed, copyCmdAnswer);
+            destSnapshot.processEvent(Event.OperationSucceeded, copyCmdAnswer);
             srcSnapshot.processEvent(Snapshot.Event.OperationSucceeded);
             snapResult = new SnapshotResult(_snapshotFactory.getSnapshot(destSnapshot.getId(), destSnapshot.getDataStore()), copyCmdAnswer);
             future.complete(snapResult);
@@ -540,7 +540,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         }
         try {
             Answer answer = result.getAnswer();
-            destSnapshot.processEvent(Event.OperationSuccessed);
+            destSnapshot.processEvent(Event.OperationSucceeded);
             snapResult = new SnapshotResult(_snapshotFactory.getSnapshot(destSnapshot.getId(), destSnapshot.getDataStore()), answer);
             future.complete(snapResult);
         } catch (Exception e) {
@@ -583,7 +583,7 @@ public class SnapshotServiceImpl implements SnapshotService {
                 res = new SnapshotResult(context.snapshot, null);
                 res.setResult(result.getResult());
             } else {
-                snapshot.processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed);
+                snapshot.processEvent(ObjectInDataStoreStateMachine.Event.OperationSucceeded);
                 res = new SnapshotResult(context.snapshot, null);
             }
         } catch (Exception e) {
@@ -803,7 +803,7 @@ public class SnapshotServiceImpl implements SnapshotService {
                 // no change to existing snapshot_store_ref, will try to re-sync later if other call triggers this sync operation
             } else {
                 // this will update install path properly, next time it will not sync anymore.
-                destSnapshot.processEvent(Event.OperationSuccessed, result.getAnswer());
+                destSnapshot.processEvent(Event.OperationSucceeded, result.getAnswer());
             }
             future.complete(res);
         } catch (Exception e) {
@@ -833,7 +833,7 @@ public class SnapshotServiceImpl implements SnapshotService {
                 try {
                     SnapshotObject srcSnapshot = (SnapshotObject)snapshot;
                     srcSnapshot.processEvent(Event.DestroyRequested);
-                    srcSnapshot.processEvent(Event.OperationSuccessed);
+                    srcSnapshot.processEvent(Event.OperationSucceeded);
 
                     srcSnapshot.processEvent(Snapshot.Event.OperationFailed);
 

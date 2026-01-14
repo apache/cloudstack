@@ -788,11 +788,8 @@ public class VirtualMachineMO extends BaseMO {
         cloneSpec.setMemory(false);
         cloneSpec.setConfig(vmConfigSpec);
 
-        ManagedObjectReference morTask = _context.getService().cloneVMTask(_mor, morFolder, cloneName, cloneSpec);
-
-        boolean result = _context.getVimClient().waitForTask(morTask);
+        boolean result = cloneVM(cloneName, morFolder, cloneSpec);
         if (result) {
-            _context.waitForTaskProgressDone(morTask);
             VirtualMachineMO clonedVm = dcMo.findVm(cloneName);
             if (clonedVm == null) {
                 logger.error(String.format("Failed to clone Instance %s", cloneName));
@@ -802,10 +799,9 @@ public class VirtualMachineMO extends BaseMO {
             clonedVm.tagAsWorkerVM();
             makeSureVMHasOnlyRequiredDisk(clonedVm, requiredDisk, dsMo, dcMo);
             return clonedVm;
-        } else {
-            logger.error("VMware cloneVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
-            return null;
         }
+
+        return null;
     }
 
     private void makeSureVMHasOnlyRequiredDisk(VirtualMachineMO clonedVm, VirtualDisk requiredDisk, DatastoreMO dsMo, DatacenterMO dcMo) throws Exception {
@@ -852,16 +848,42 @@ public class VirtualMachineMO extends BaseMO {
 
         setDiskProvisioningType(relocSpec, morDs, diskProvisioningType);
 
-        ManagedObjectReference morTask = _context.getService().cloneVMTask(_mor, morFolder, cloneName, cloneSpec);
+        return cloneVM(cloneName, morFolder, cloneSpec);
+    }
 
+    private boolean cloneVMTask(String cloneName, ManagedObjectReference morFolder, VirtualMachineCloneSpec cloneSpec) throws Exception {
+        ManagedObjectReference morTask = _context.getService().cloneVMTask(_mor, morFolder, cloneName, cloneSpec);
         boolean result = _context.getVimClient().waitForTask(morTask);
         if (result) {
             _context.waitForTaskProgressDone(morTask);
             return true;
-        } else {
-            logger.error("VMware cloneVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
         }
 
+        logger.error("VMware cloneVM_Task failed due to {}", TaskMO.getTaskFailureInfo(_context, morTask));
+        return false;
+    }
+
+    private boolean cloneVM(final String cloneName, final ManagedObjectReference morFolder, final VirtualMachineCloneSpec cloneSpec) throws Exception {
+        final int retry = 20;
+        int retryAttempt = 0;
+        while (++retryAttempt <= retry) {
+            try {
+                logger.debug("Cloning VM {}, attempt #{}", cloneName, retryAttempt);
+                return cloneVMTask(cloneName, morFolder, cloneSpec);
+            } catch (Exception e) {
+                logger.info("Got exception while cloning VM {}", cloneName, e);
+                if (e.getMessage() != null && e.getMessage().contains("Unable to access file")) {
+                    logger.debug("Failed to clone VM {}. Retrying", cloneName);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ie) {
+                        logger.debug("Waiting to clone VM {} been interrupted: ", cloneName);
+                    }
+                } else {
+                    throw e;
+                }
+            }
+        }
         return false;
     }
 
@@ -925,17 +947,7 @@ public class VirtualMachineMO extends BaseMO {
         cloneSpec.setLocation(rSpec);
         cloneSpec.setSnapshot(morBaseSnapshot);
 
-        ManagedObjectReference morTask = _context.getService().cloneVMTask(_mor, morFolder, cloneName, cloneSpec);
-
-        boolean result = _context.getVimClient().waitForTask(morTask);
-        if (result) {
-            _context.waitForTaskProgressDone(morTask);
-            return true;
-        } else {
-            logger.error("VMware cloneVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
-        }
-
-        return false;
+        return cloneVM(cloneName, morFolder, cloneSpec);
     }
 
     public VirtualMachineRuntimeInfo getRuntimeInfo() throws Exception {
