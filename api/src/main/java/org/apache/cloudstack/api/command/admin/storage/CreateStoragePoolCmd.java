@@ -46,50 +46,50 @@ public class CreateStoragePoolCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "the cluster ID for the storage pool")
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "The cluster ID for the storage pool")
     private Long clusterId;
 
-    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "the details for the storage pool")
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "The details for the storage pool")
     private Map details;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name for the storage pool")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "The name for the storage pool")
     private String storagePoolName;
 
-    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "the Pod ID for the storage pool")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "The Pod ID for the storage pool")
     private Long podId;
 
-    @Parameter(name = ApiConstants.TAGS, type = CommandType.STRING, description = "the tags for the storage pool")
+    @Parameter(name = ApiConstants.TAGS, type = CommandType.STRING, description = "The tags for the storage pool")
     private String tags;
 
     @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUPS, type = CommandType.STRING,
             description = "comma separated list of storage access groups for connecting to hosts having those specific groups", since = "4.21.0")
     private String storageAccessGroups;
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "the URL of the storage pool")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "The URL of the storage pool")
     private String url;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the Zone ID for the storage pool")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The Zone ID for the storage pool")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, required = false, description = "the storage provider name")
+    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, required = false, description = "The storage provider name")
     private String storageProviderName;
 
-    @Parameter(name = ApiConstants.SCOPE, type = CommandType.STRING, required = false, description = "the scope of the storage: cluster or zone")
+    @Parameter(name = ApiConstants.SCOPE, type = CommandType.STRING, required = false, description = "The scope of the storage: cluster or zone")
     private String scope;
 
-    @Parameter(name = ApiConstants.MANAGED, type = CommandType.BOOLEAN, required = false, description = "whether the storage should be managed by CloudStack")
+    @Parameter(name = ApiConstants.MANAGED, type = CommandType.BOOLEAN, required = false, description = "Whether the storage should be managed by CloudStack")
     private Boolean managed;
 
     @Parameter(name = ApiConstants.CAPACITY_IOPS, type = CommandType.LONG, required = false, description = "IOPS CloudStack can provision from this storage pool")
     private Long capacityIops;
 
-    @Parameter(name = ApiConstants.CAPACITY_BYTES, type = CommandType.LONG, required = false, description = "bytes CloudStack can provision from this storage pool")
+    @Parameter(name = ApiConstants.CAPACITY_BYTES, type = CommandType.LONG, required = false, description = "Bytes CloudStack can provision from this storage pool")
     private Long capacityBytes;
 
     @Parameter(name = ApiConstants.HYPERVISOR,
                type = CommandType.STRING,
                required = false,
-               description = "hypervisor type of the hosts in zone that will be attached to this storage pool. KVM, VMware supported as of now.")
+               description = "Hypervisor type of the hosts in zone that will be attached to this storage pool. KVM, VMware supported as of now.")
     private String hypervisor;
 
     @Parameter(name = ApiConstants.IS_TAG_A_RULE, type = CommandType.BOOLEAN, description = ApiConstants.PARAMETER_DESCRIPTION_IS_TAG_A_RULE)

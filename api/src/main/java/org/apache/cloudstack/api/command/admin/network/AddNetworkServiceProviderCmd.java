@@ -52,22 +52,22 @@ public class AddNetworkServiceProviderCmd extends BaseAsyncCreateCmd {
                type = CommandType.UUID,
                entityType = PhysicalNetworkResponse.class,
                required = true,
-               description = "the Physical Network ID to add the provider to")
+               description = "The Physical Network ID to add the provider to")
     private Long physicalNetworkId;
 
     @Parameter(name = ApiConstants.DEST_PHYSICAL_NETWORK_ID,
                type = CommandType.UUID,
                entityType = PhysicalNetworkResponse.class,
-               description = "the destination Physical Network ID to bridge to")
+               description = "The destination Physical Network ID to bridge to")
     private Long destinationPhysicalNetworkId;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name for the physical network service provider")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "The name for the physical network service provider")
     private String name;
 
     @Parameter(name = ApiConstants.SERVICE_LIST,
                type = CommandType.LIST,
                collectionType = CommandType.STRING,
-               description = "the list of services to be enabled for this physical network service provider")
+               description = "The list of services to be enabled for this physical network service provider")
     private List<String> enabledServices;
 
     /////////////////////////////////////////////////////

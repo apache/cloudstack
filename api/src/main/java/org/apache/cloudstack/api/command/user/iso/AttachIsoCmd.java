@@ -35,7 +35,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "attachIso", description = "Attaches an ISO to a virtual machine.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted,
+@APICommand(name = "attachIso", description = "Attaches an ISO to  an Instance.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class AttachIsoCmd extends BaseAsyncCmd implements UserCmd {
 
@@ -46,11 +46,11 @@ public class AttachIsoCmd extends BaseAsyncCmd implements UserCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class,
-            required = true, description = "the ID of the ISO file")
+            required = true, description = "The ID of the ISO file")
     protected Long id;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class,
-            required = true, description = "the ID of the virtual machine")
+            required = true, description = "The ID of the  Instance")
     protected Long virtualMachineId;
 
     @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN,
@@ -86,7 +86,7 @@ public class AttachIsoCmd extends BaseAsyncCmd implements UserCmd {
     public long getEntityOwnerId() {
         UserVm vm = _entityMgr.findById(UserVm.class, getVirtualMachineId());
         if (vm == null) {
-            throw new InvalidParameterValueException("Unable to find virtual machine by ID " + getVirtualMachineId());
+            throw new InvalidParameterValueException("Unable to find  Instance by ID " + getVirtualMachineId());
         }
 
         return vm.getAccountId();
@@ -99,7 +99,7 @@ public class AttachIsoCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return  "attaching ISO: " + getId() + " to VM: " + getVirtualMachineId();
+        return  "attaching ISO: " + getId() + " to Instance: " + getVirtualMachineId();
     }
 
     @Override

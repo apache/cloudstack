@@ -373,14 +373,14 @@ public class SystemVmTemplateRegistration {
                 Pair<Long, Long> templateSizes = readTemplatePropertiesSizes(templatePath + "/template.properties");
                 updateSeededTemplateDetails(templDataStoreVO.getTemplateId(), templDataStoreVO.getDataStoreId(),
                         templateSizes.first(), templateSizes.second());
-                LOGGER.info("SystemVM template already seeded, skipping registration");
+                LOGGER.info("SystemVM Template already seeded, skipping registration");
                 return true;
             }
-            LOGGER.info("SystemVM template not seeded");
+            LOGGER.info("SystemVM Template not seeded");
             return false;
         } catch (Exception e) {
-            LOGGER.error("Failed to verify if the template is seeded", e);
-            throw new CloudRuntimeException("Failed to verify if the template is seeded", e);
+            LOGGER.error("Failed to verify if the Template is seeded", e);
+            throw new CloudRuntimeException("Failed to verify if the Template is seeded", e);
         } finally {
             unmountStore(filePath);
             try {
@@ -474,7 +474,7 @@ public class SystemVmTemplateRegistration {
     protected Pair<String, Long> getNfsStoreInZone(Long zoneId) {
         ImageStoreVO storeVO = imageStoreDao.findOneByZoneAndProtocol(zoneId, "nfs");
         if (storeVO == null) {
-            String errMsg = String.format("Failed to fetch NFS store in zone = %s for SystemVM template registration",
+            String errMsg = String.format("Failed to fetch NFS store in zone = %s for SystemVM Template registration",
                     zoneId);
             LOGGER.error(errMsg);
             throw new CloudRuntimeException(errMsg);
@@ -546,7 +546,7 @@ public class SystemVmTemplateRegistration {
         for (DataCenterVO dc : dcs) {
             VMTemplateZoneVO templateZoneVO = createOrUpdateTemplateZoneEntry(dc.getId(), templateId);
             if (templateZoneVO == null) {
-                throw new CloudRuntimeException(String.format("Failed to create template_zone_ref record for the systemVM template (id: %s) and zone: %s", templateId, dc));
+                throw new CloudRuntimeException(String.format("Failed to create template_zone_ref record for the systemVM Template (id: %s) and zone: %s", templateId, dc));
             }
         }
     }
@@ -557,7 +557,7 @@ public class SystemVmTemplateRegistration {
         templateDataStoreVO.setDataStoreRole(DataStoreRole.Image);
         templateDataStoreVO = templateDataStoreDao.persist(templateDataStoreVO);
         if (templateDataStoreVO == null) {
-            throw new CloudRuntimeException(String.format("Failed to create template_store_ref record for the systemVM template for hypervisor: %s", details.getHypervisorType().name()));
+            throw new CloudRuntimeException(String.format("Failed to create template_store_ref record for the systemVM Template for hypervisor: %s", details.getHypervisorType().name()));
         }
     }
 
@@ -576,7 +576,7 @@ public class SystemVmTemplateRegistration {
         templateDataStoreVO.setState(ObjectInDataStoreStateMachine.State.Ready);
         boolean updated = templateDataStoreDao.update(templateDataStoreVO.getId(), templateDataStoreVO);
         if (!updated) {
-            throw new CloudRuntimeException("Failed to update template_store_ref entry for registered systemVM template");
+            throw new CloudRuntimeException("Failed to update template_store_ref entry for registered systemVM Template");
         }
     }
 
@@ -696,7 +696,7 @@ public class SystemVmTemplateRegistration {
         scr.add("-d", destTempFolder);
         String result = scr.execute();
         if (result != null) {
-            String errMsg = String.format("failed to create template: %s ", result);
+            String errMsg = String.format("Failed to create Template: %s ", result);
             LOGGER.error(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
@@ -712,7 +712,7 @@ public class SystemVmTemplateRegistration {
         if (templateId == null) {
             VMTemplateVO template = createTemplateObjectInDB(details);
             if (template == null) {
-                throw new CloudRuntimeException(String.format("Failed to register template for hypervisor: %s", hypervisor.name()));
+                throw new CloudRuntimeException(String.format("Failed to register Template for hypervisor: %s", hypervisor.name()));
             }
             templateId = template.getId();
         }
@@ -739,7 +739,7 @@ public class SystemVmTemplateRegistration {
                     templateVO.getChecksum(), templateVO.getFormat(), templateVO.getGuestOSId(), storeId,
                     templateVO.getId(), filePath, templateDataStoreVO);
         } catch (Exception e) {
-            String errMsg = String.format("Failed to register template for hypervisor: %s", hypervisor);
+            String errMsg = String.format("Failed to register Template for hypervisor: %s", hypervisor);
             LOGGER.error(errMsg, e);
             updateTemplateTablesOnFailure(templateVO.getId());
             cleanupStore(templateVO.getId(), filePath);
@@ -762,7 +762,7 @@ public class SystemVmTemplateRegistration {
             updateConfigurationParams(configParams);
             updateSystemVMEntries(templateId, hypervisor);
         } catch (Exception e) {
-            String errMsg = String.format("Failed to register template for hypervisor: %s", hypervisor);
+            String errMsg = String.format("Failed to register Template for hypervisor: %s", hypervisor);
             LOGGER.error(errMsg, e);
             if (templateId != null) {
                 updateTemplateTablesOnFailure(templateId);
@@ -807,7 +807,7 @@ public class SystemVmTemplateRegistration {
      */
     public static String parseMetadataFile() {
         String metadataFilePath = getMetadataFilePath();
-        String errMsg = String.format("Failed to parse systemVM template metadata file: %s", metadataFilePath);
+        String errMsg = String.format("Failed to parse systemVM Template metadata file: %s", metadataFilePath);
         final Ini ini = new Ini();
         try (FileReader reader = new FileReader(metadataFilePath)) {
             ini.load(reader);
@@ -906,7 +906,7 @@ public class SystemVmTemplateRegistration {
             }
         }
         if (!templatesFound) {
-            String errMsg = "SystemVm template not found. Cannot upgrade system Vms";
+            String errMsg = "SystemVM Template not found. Cannot upgrade system VMs";
             LOGGER.error(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
@@ -948,9 +948,9 @@ public class SystemVmTemplateRegistration {
     public void registerTemplates(List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> hypervisorsArchInUse) {
         GlobalLock lock = GlobalLock.getInternLock("UpgradeDatabase-Lock");
         try {
-            LOGGER.info("Grabbing lock to register templates.");
+            LOGGER.info("Grabbing lock to register Templates.");
             if (!lock.lock(LOCK_WAIT_TIMEOUT)) {
-                throw new CloudRuntimeException("Unable to acquire lock to register SystemVM template.");
+                throw new CloudRuntimeException("Unable to acquire lock to register SystemVM Template.");
             }
             try {
                 validateTemplates(hypervisorsArchInUse);
@@ -970,13 +970,13 @@ public class SystemVmTemplateRegistration {
                                 unmountStore(filePath);
                             } catch (Exception e) {
                                 unmountStore(filePath);
-                                throw new CloudRuntimeException("Failed to register systemVM template. Upgrade Failed");
+                                throw new CloudRuntimeException("Failed to register SystemVM Template. Upgrade failed");
                             }
                         }
                     }
                 });
             } catch (Exception e) {
-                throw new CloudRuntimeException("Failed to register systemVM template. Upgrade Failed");
+                throw new CloudRuntimeException("Failed to register SystemVM Template. Upgrade failed");
             }
         } finally {
             lock.unlock();
@@ -993,7 +993,7 @@ public class SystemVmTemplateRegistration {
         }
         boolean updated = vmTemplateDao.update(templateVO.getId(), templateVO);
         if (!updated) {
-            String errMsg = String.format("updateSystemVmTemplates:Exception while updating template with id %s to be marked as 'system'", templateId);
+            String errMsg = String.format("updateSystemVmTemplates:Exception while updating Template with id %s to be marked as 'system'", templateId);
             LOGGER.error(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
@@ -1076,7 +1076,7 @@ public class SystemVmTemplateRegistration {
                             break;
                         }
                     } catch (final Exception e) {
-                        String errMsg = "Exception while registering/updating system VM templates for hypervisors in metadata";
+                        String errMsg = "Exception while registering/updating system VM Templates for hypervisors in metadata";
                         LOGGER.error(errMsg, e);
                         throw new CloudRuntimeException(errMsg, e);
                     }
