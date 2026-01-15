@@ -356,7 +356,10 @@ export default {
       permission: ['listVnfAppliances'],
       resourceType: 'UserVm',
       params: () => {
-        return { details: 'servoff,tmpl,nics', isvnf: true }
+        return {
+          details: 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp,backoff',
+          isvnf: true
+        }
       },
       columns: () => {
         const fields = ['name', 'state', 'ipaddress']
