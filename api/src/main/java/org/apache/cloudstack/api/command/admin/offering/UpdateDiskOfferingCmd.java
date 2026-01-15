@@ -47,80 +47,80 @@ public class UpdateDiskOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT,
             type = CommandType.STRING,
-            description = "updates alternate display text of the disk offering with this value",
+            description = "Updates alternate display text of the disk offering with this value",
             length = 4096)
     private String displayText;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DiskOfferingResponse.class, required = true, description = "ID of the disk offering")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "updates name of the disk offering with this value")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Updates name of the disk offering with this value")
     private String diskOfferingName;
 
-    @Parameter(name = ApiConstants.SORT_KEY, type = CommandType.INTEGER, description = "sort key of the disk offering, integer")
+    @Parameter(name = ApiConstants.SORT_KEY, type = CommandType.INTEGER, description = "Sort key of the disk offering, integer")
     private Integer sortKey;
 
     @Parameter(name = ApiConstants.DISPLAY_OFFERING,
             type = CommandType.BOOLEAN,
-            description = "an optional field, whether to display the offering to the end user or not.")
+            description = "An optional field, whether to display the offering to the end user or not.")
     private Boolean displayOffering;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.STRING,
-            description = "the ID of the containing domain(s) as comma separated string, public for public offerings",
+            description = "The ID of the containing domain(s) as comma separated string, public for public offerings",
             since = "4.13",
             length = 4096)
     private String domainIds;
 
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.STRING,
-            description = "the ID of the containing zone(s) as comma separated string, all for all zones offerings",
+            description = "The ID of the containing zone(s) as comma separated string, all for all zones offerings",
             since = "4.13")
     private String zoneIds;
 
     @Parameter(name = ApiConstants.TAGS,
             type = CommandType.STRING,
-            description = "comma-separated list of tags for the disk offering, tags should match with existing storage pool tags",
+            description = "Comma-separated list of tags for the disk offering, tags should match with existing storage pool tags",
             since = "4.15")
     private String tags;
 
-    @Parameter(name = ApiConstants.BYTES_READ_RATE, type = CommandType.LONG, description = "bytes read rate of the disk offering", since = "4.15")
+    @Parameter(name = ApiConstants.BYTES_READ_RATE, type = CommandType.LONG, description = "Bytes read rate of the disk offering", since = "4.15")
     private Long bytesReadRate;
 
-    @Parameter(name = ApiConstants.BYTES_READ_RATE_MAX, type = CommandType.LONG, description = "burst bytes read rate of the disk offering", since = "4.15")
+    @Parameter(name = ApiConstants.BYTES_READ_RATE_MAX, type = CommandType.LONG, description = "Burst bytes read rate of the disk offering", since = "4.15")
     private Long bytesReadRateMax;
 
-    @Parameter(name = ApiConstants.BYTES_READ_RATE_MAX_LENGTH, type = CommandType.LONG, description = "length (in seconds) of the burst", since = "4.15")
+    @Parameter(name = ApiConstants.BYTES_READ_RATE_MAX_LENGTH, type = CommandType.LONG, description = "Length (in seconds) of the burst", since = "4.15")
     private Long bytesReadRateMaxLength;
 
-    @Parameter(name = ApiConstants.BYTES_WRITE_RATE, type = CommandType.LONG, description = "bytes write rate of the disk offering", since = "4.15")
+    @Parameter(name = ApiConstants.BYTES_WRITE_RATE, type = CommandType.LONG, description = "Bytes write rate of the disk offering", since = "4.15")
     private Long bytesWriteRate;
 
-    @Parameter(name = ApiConstants.BYTES_WRITE_RATE_MAX, type = CommandType.LONG, description = "burst bytes write rate of the disk offering", since = "4.15")
+    @Parameter(name = ApiConstants.BYTES_WRITE_RATE_MAX, type = CommandType.LONG, description = "Burst bytes write rate of the disk offering", since = "4.15")
     private Long bytesWriteRateMax;
 
-    @Parameter(name = ApiConstants.BYTES_WRITE_RATE_MAX_LENGTH,  type = CommandType.LONG, description = "length (in seconds) of the burst", since = "4.15")
+    @Parameter(name = ApiConstants.BYTES_WRITE_RATE_MAX_LENGTH,  type = CommandType.LONG, description = "Length (in seconds) of the burst", since = "4.15")
     private Long bytesWriteRateMaxLength;
 
-    @Parameter(name = ApiConstants.IOPS_READ_RATE, type = CommandType.LONG, description = "io requests read rate of the disk offering", since = "4.15")
+    @Parameter(name = ApiConstants.IOPS_READ_RATE, type = CommandType.LONG, description = "I/O requests read rate of the disk offering", since = "4.15")
     private Long iopsReadRate;
 
-    @Parameter(name = ApiConstants.IOPS_READ_RATE_MAX, type = CommandType.LONG, description = "burst requests read rate of the disk offering", since = "4.15")
+    @Parameter(name = ApiConstants.IOPS_READ_RATE_MAX, type = CommandType.LONG, description = "Burst requests read rate of the disk offering", since = "4.15")
     private Long iopsReadRateMax;
 
-    @Parameter(name = ApiConstants.IOPS_READ_RATE_MAX_LENGTH, type = CommandType.LONG, description = "length (in seconds) of the burst", since = "4.15")
+    @Parameter(name = ApiConstants.IOPS_READ_RATE_MAX_LENGTH, type = CommandType.LONG, description = "Length (in seconds) of the burst", since = "4.15")
     private Long iopsReadRateMaxLength;
 
-    @Parameter(name = ApiConstants.IOPS_WRITE_RATE, type = CommandType.LONG, description = "io requests write rate of the disk offering", since = "4.15")
+    @Parameter(name = ApiConstants.IOPS_WRITE_RATE, type = CommandType.LONG, description = "I/O requests write rate of the disk offering", since = "4.15")
     private Long iopsWriteRate;
 
-    @Parameter(name = ApiConstants.IOPS_WRITE_RATE_MAX, type = CommandType.LONG, description = "burst io requests write rate of the disk offering", since = "4.15")
+    @Parameter(name = ApiConstants.IOPS_WRITE_RATE_MAX, type = CommandType.LONG, description = "Burst io requests write rate of the disk offering", since = "4.15")
     private Long iopsWriteRateMax;
 
-    @Parameter(name = ApiConstants.IOPS_WRITE_RATE_MAX_LENGTH, type = CommandType.LONG, description = "length (in seconds) of the burst", since = "4.15")
+    @Parameter(name = ApiConstants.IOPS_WRITE_RATE_MAX_LENGTH, type = CommandType.LONG, description = "Length (in seconds) of the burst", since = "4.15")
     private Long iopsWriteRateMaxLength;
 
-    @Parameter(name = ApiConstants.CACHE_MODE, type = CommandType.STRING, description = "the cache mode to use for this disk offering", since = "4.15")
+    @Parameter(name = ApiConstants.CACHE_MODE, type = CommandType.STRING, description = "The cache mode to use for this disk offering", since = "4.15")
     private String cacheMode;
 
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "state of the disk offering")
