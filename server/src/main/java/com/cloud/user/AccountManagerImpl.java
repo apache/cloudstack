@@ -1200,7 +1200,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
 
             // Delete registered UserData
-            userDataDao.removeByAccountId(accountId);
+            cleanupAccountUserData(account);
 
             // Delete Webhooks
             deleteWebhooksForAccount(accountId);
@@ -1219,6 +1219,30 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 _accountDao.update(accountId, account);
             }
         }
+    }
+
+    private void cleanupAccountUserData(AccountVO account) {
+        long accountId = account.getId();
+        List<UserDataVO> userData = userDataDao.listByAccountId(accountId);
+        if (CollectionUtils.isEmpty(userData)) {
+            return;
+        }
+        logger.info("Deleting {} registered UserData for Account {}", userData.size(), account);
+        for (UserDataVO userdata : userData) {
+            List<VMTemplateVO> templatesLinkedToUserdata = _templateDao.findTemplatesLinkedToUserdata(userdata.getId());
+            if (CollectionUtils.isEmpty(templatesLinkedToUserdata)) {
+                continue;
+            }
+            for (VMTemplateVO template : templatesLinkedToUserdata) {
+                logger.debug("Unregistering UserData {} from Template {}", userdata, template);
+                template.setUserDataId(null);
+                template.setUserDataLinkPolicy(null);
+                _templateDao.update(template.getId(), template);
+            }
+            userDataDao.remove(userdata.getId());
+        }
+        int userDataRemoved = userDataDao.removeByAccountId(accountId);
+        logger.info("Deleted {} registered UserData for Account {}", userDataRemoved, account);
     }
 
     @Override

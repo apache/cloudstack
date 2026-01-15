@@ -19,6 +19,8 @@ package com.cloud.user.dao;
 import com.cloud.user.UserDataVO;
 import com.cloud.utils.db.GenericDao;
 
+import java.util.List;
+
 public interface UserDataDao extends GenericDao<UserDataVO, Long> {
 
     public UserDataVO findByUserData(long accountId, long domainId, String userData);
@@ -26,5 +28,7 @@ public interface UserDataDao extends GenericDao<UserDataVO, Long> {
     public UserDataVO findByName(long accountId, long domainId, String name);
 
     int removeByAccountId(long accountId);
+
+    List<UserDataVO> listByAccountId(long accountId);
 
 }

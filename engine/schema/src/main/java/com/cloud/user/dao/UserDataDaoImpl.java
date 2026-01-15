@@ -22,6 +22,8 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 public class UserDataDaoImpl extends GenericDaoBase<UserDataVO, Long> implements UserDataDao  {
 
@@ -69,5 +71,12 @@ public class UserDataDaoImpl extends GenericDaoBase<UserDataVO, Long> implements
         SearchCriteria<UserDataVO> sc = userdataSearch.create();
         sc.setParameters("accountId", accountId);
         return remove(sc);
+    }
+
+    @Override
+    public List<UserDataVO> listByAccountId(long accountId) {
+        SearchCriteria<UserDataVO> sc = userdataSearch.create();
+        sc.setParameters("accountId", accountId);
+        return listBy(sc);
     }
 }
