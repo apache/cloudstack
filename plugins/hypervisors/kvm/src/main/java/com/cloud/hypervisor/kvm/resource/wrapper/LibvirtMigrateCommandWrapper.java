@@ -243,20 +243,21 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             final Future<Domain> migrateThread = executor.submit(worker);
             executor.shutdown();
             long sleeptime = 0;
+            final int migrateDowntime = libvirtComputingResource.getMigrateDowntime();
+            boolean isMigrateDowntimeSet = false;
+
             while (!executor.isTerminated()) {
                 Thread.sleep(100);
                 sleeptime += 100;
-                if (sleeptime >= 1000) { // wait 1s before attempting to set downtime on migration, since I don't know of a VIR_DOMAIN_MIGRATING state
-                    final int migrateDowntime = libvirtComputingResource.getMigrateDowntime();
-                    if (migrateDowntime > 0 ) {
-                        try {
-                            final int setDowntime = dm.migrateSetMaxDowntime(migrateDowntime);
-                            if (setDowntime == 0 ) {
-                                logger.debug("Set max downtime for migration of " + vmName + " to " + String.valueOf(migrateDowntime) + "ms");
-                            }
-                        } catch (final LibvirtException e) {
-                            logger.debug("Failed to set max downtime for migration, perhaps migration completed? Error: " + e.getMessage());
+                if (!isMigrateDowntimeSet && migrateDowntime > 0 && sleeptime >= 1000) { // wait 1s before attempting to set downtime on migration, since I don't know of a VIR_DOMAIN_MIGRATING state
+                    try {
+                        final int setDowntime = dm.migrateSetMaxDowntime(migrateDowntime);
+                        if (setDowntime == 0 ) {
+                            isMigrateDowntimeSet = true;
+                            logger.debug("Set max downtime for migration of " + vmName + " to " + String.valueOf(migrateDowntime) + "ms");
                         }
+                    } catch (final LibvirtException e) {
+                        logger.debug("Failed to set max downtime for migration, perhaps migration completed? Error: " + e.getMessage());
                     }
                 }
                 if (sleeptime % 1000 == 0) {
