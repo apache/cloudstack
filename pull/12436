@@ -1,0 +1,35 @@
+Thanks for the changes — overall these look reasonable, but I have a few comments and suggestions:
+
+1) Bug in DeployVnfAppliance.vue
+- The new check uses .filter(...) in a boolean context:
+  (this.vnfNicNetworks[deviceId].service.filter(svc => svc.name === 'SecurityGroupProvider'))
+- In JavaScript, an array (including an empty array) is truthy, so this condition will always evaluate to true even when there are no matching services. This is likely a functional bug.
+- Suggested fix: use .some or check length:
+  this.vnfNicNetworks[deviceId].service && this.vnfNicNetworks[deviceId].service.some(svc => svc.name === 'SecurityGroupProvider')
+  or
+  Array.isArray(this.vnfNicNetworks[deviceId].service) && this.vnfNicNetworks[deviceId].service.filter(...).length > 0
+
+2) Expanded details in network.js and VnfAppliancesTab.vue — performance and consistency
+- You expanded the API "details" from 'servoff,tmpl,nics' to 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp,backoff'. That will return many more fields and could affect performance (more data transferred / processed). Please confirm all newly requested details are required for the UI use-cases in these views.
+- Also note an inconsistency in parameter casing:
+  - ui/src/config/section/network.js uses isvnf: true (lowercase 'v')
+  - ui/src/views/network/VnfAppliancesTab.vue uses isVnf: true (camelCase)
+  Verify which exact param the backend expects (case-sensitive). Recommend standardizing to the correct form across files.
+
+3) Logic change in DeployVnfAppliance.vue — intent clarification
+- Previously the code checked zone.securitygroupsenabled for Shared networks. The new code checks whether the network has the SecurityGroupProvider service. Please confirm this is the intended semantic change (i.e., switching from a zone-level setting to checking per-network provider capability). If both checks are relevant, combine them appropriately.
+
+4) Localization text change
+- The new label "Configure network rules for VNF's management interfaces" is fine and shorter. Minor nit: consider removing the possessive and using "Configure network rules for VNF management interfaces" to match other labels' style, but this is optional.
+
+5) Safety / defensive coding
+- In places where you access this.vnfNicNetworks[deviceId].service, add defensive checks (Array.isArray(...)) before calling array methods to avoid runtime errors if service is undefined.
+
+6) Testing suggestions
+- Please test deploy flows in zones/networks:
+  - Shared network with SecurityGroupProvider present
+  - Shared network without SecurityGroupProvider
+  - Isolated networks and VPC cases
+  - Confirm that expanding "details" doesn't degrade list performance in views that call the API frequently.
+
+If you'd like, I can re-run these checks or suggest a patch for the .some change. Thanks!
