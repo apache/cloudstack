@@ -148,6 +148,7 @@ public class DigestHelper {
             return checksum;
         }
         int checksumLength = checksum.length();
+        Map<String, Integer> paddingLengths = getChecksumLengthsMap();
         for (Map.Entry<String, Integer> entry : paddingLengths.entrySet()) {
             if (entry.getValue().equals(checksumLength)) {
                 String algorithm = entry.getKey();
