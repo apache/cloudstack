@@ -315,21 +315,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 if (logger.isDebugEnabled()) {
                     logger.debug(String.format("Cleaning the disks of VM [%s] in the source pool after VM migration finished.", vmName));
                 }
-                DomainState dmState = null;
-                try {
-                    dmState = destDomain.getInfo().state;
-                } catch (final LibvirtException e) {
-                    logger.info("Failed to get domain state for VM: " + vmName + " due to: " + e.getMessage());
-                }
-
-                if (dmState == DomainState.VIR_DOMAIN_PAUSED) {
-                    logger.info("Resuming VM " + vmName + " on destination after migration");
-                    try {
-                        destDomain.resume();
-                    } catch (final Exception e) {
-                        logger.error("Failed to resume vm " + vmName + " on destination after migration due to : " + e.getMessage());
-                    }
-                }
+                resumeDomainIfPaused(destDomain, vmName);
                 deleteOrDisconnectDisksOnSourcePool(libvirtComputingResource, migrateDiskInfoList, disks);
                 libvirtComputingResource.cleanOldSecretsByDiskDef(conn, disks);
             }
@@ -392,6 +378,28 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         }
 
         return new MigrateAnswer(command, result == null, result, null);
+    }
+
+    private DomainState getDestDomainState(Domain destDomain, String vmName) {
+        DomainState dmState = null;
+        try {
+            dmState = destDomain.getInfo().state;
+        } catch (final LibvirtException e) {
+            logger.info("Failed to get domain state for VM: " + vmName + " due to: " + e.getMessage());
+        }
+        return dmState;
+    }
+
+    private void resumeDomainIfPaused(Domain destDomain, String vmName) {
+        DomainState dmState = getDestDomainState(destDomain, vmName);
+        if (dmState == DomainState.VIR_DOMAIN_PAUSED) {
+            logger.info("Resuming VM " + vmName + " on destination after migration");
+            try {
+                destDomain.resume();
+            } catch (final Exception e) {
+                logger.error("Failed to resume vm " + vmName + " on destination after migration due to : " + e.getMessage());
+            }
+        }
     }
 
     /**
