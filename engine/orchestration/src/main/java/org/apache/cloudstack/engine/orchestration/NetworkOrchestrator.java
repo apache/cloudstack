@@ -1283,7 +1283,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         nicProfile.setIPv4Gateway(ipv4Gateway);
         nicProfile.setIPv4Netmask(ipv4Netmask);
 
-        if (nicProfile.getMacAddress() == null) {
+        if (nicProfile.getMacAddress() == null || !_networkModel.isMACUnique(nicProfile.getMacAddress(), network.getId())) {
             try {
                 String macAddress = _networkModel.getNextAvailableMacAddressInNetwork(network.getId());
                 nicProfile.setMacAddress(macAddress);
