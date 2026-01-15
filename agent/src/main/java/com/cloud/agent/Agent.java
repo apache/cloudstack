@@ -1332,13 +1332,14 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                 }
             } else if (task.getType() == Task.Type.DISCONNECT) {
                 try {
-                    // an issue has been found if reconnect immediately after disconnecting. please refer to https://github.com/apache/cloudstack/issues/8517
+                    // an issue has been found if reconnect immediately after disconnecting.
                     // wait 5 seconds before reconnecting
+                    logger.debug("Wait for 5 secs before reconnecting, disconnect task - {}", () -> getLinkLog(task.getLink()));
                     Thread.sleep(5000);
                 } catch (InterruptedException e) {
                 }
                 shell.setConnectionTransfer(false);
-                logger.debug("Executing disconnect task - {}", () -> getLinkLog(task.getLink()));
+                logger.debug("Executing disconnect task - {} and reconnecting", () -> getLinkLog(task.getLink()));
                 reconnect(task.getLink());
             } else if (task.getType() == Task.Type.OTHER) {
                 processOtherTask(task);

@@ -3776,7 +3776,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         }
                     }
                 } else {
-                    throw new UnableDeleteHostException("Unable to delete the host as there are vms in " + vms.get(0).getState() +
+                    throw new UnableDeleteHostException("Unable to delete the host as there are Instances in " + vms.get(0).getState() +
                             " state using this host and isForced=false specified");
                 }
             }

@@ -16,131 +16,153 @@
 // under the License.
 
 <template>
-  <div v-if="remoteAccessVpn">
-    <div>
-      <p>{{ $t('message.enabled.vpn') }} <strong>{{ remoteAccessVpn.publicip }}</strong></p>
-      <p>{{ $t('message.enabled.vpn.ip.sec') }} <strong>{{ remoteAccessVpn.presharedkey }}</strong></p>
-      <a-divider/>
+  <div class="vpn-details">
+    <div v-if="remoteAccessVpn">
+      <div>
+        <p>{{ $t('message.enabled.vpn') }} <strong>{{ remoteAccessVpn.publicip }}</strong></p>
+        <p>{{ $t('message.enabled.vpn.ip.sec') }} <strong>{{ remoteAccessVpn.presharedkey }}</strong></p>
+        <p>{{ $t('message.enabled.vpn.ip.range') }} <strong>{{ remoteAccessVpn.iprange }}</strong></p>
+        <a-divider/>
+        <a-button><router-link :to="{ path: '/vpnuser'}">{{ $t('label.manage.vpn.user') }}</router-link></a-button>
+        <a-button
+          style="margin-left: 10px"
+          type="primary"
+          danger
+          @click="disableVpn = true"
+          :disabled="!('deleteRemoteAccessVpn' in $store.getters.apis)">
+          {{ $t('label.disable.vpn') }}
+        </a-button>
+      </div>
+
+      <a-modal
+        :visible="disableVpn"
+        :footer="null"
+        :title="$t('label.disable.vpn')"
+        :closable="true"
+        :maskClosable="false"
+        @cancel="disableVpn = false">
+        <div v-ctrl-enter="handleDisableVpn">
+          <p>{{ $t('message.disable.vpn') }}</p>
+
+          <a-divider />
+
+          <div class="actions">
+            <a-button @click="() => disableVpn = false">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" @click="handleDisableVpn">{{ $t('label.yes') }}</a-button>
+          </div>
+        </div>
+      </a-modal>
+
+    </div>
+    <div v-else>
       <a-button
-        style="margin-left: 10px"
+        :disabled="!('createRemoteAccessVpn' in $store.getters.apis)"
         type="primary"
-        danger
-        @click="disableVpn = true"
-        :disabled="!('deleteRemoteAccessVpn' in $store.getters.apis)">
-        {{ $t('label.disable.vpn') }}
+        style="margin-left: 10px"
+        @click="enableVpn = true">
+        {{ $t('label.enable.vpn') }}
       </a-button>
-      <a-button><router-link :to="{ path: '/vpnuser'}">{{ $t('label.manage.vpn.user') }}</router-link></a-button>
+
+      <a-modal
+        :visible="enableVpn"
+        :footer="null"
+        :title="$t('label.enable.vpn')"
+        :maskClosable="false"
+        :closable="true"
+        @cancel="enableVpn = false">
+        <div v-ctrl-enter="handleCreateVpn">
+          <p>{{ $t('message.enable.vpn') }}</p>
+          <a-form-item>
+            <a-checkbox v-model:checked="specifyIpRange">
+              {{ $t('label.remote.access.vpn.specify.iprange') }}
+            </a-checkbox>
+          </a-form-item>
+          <a-form-item
+            v-if="specifyIpRange"
+            name="iprange"
+            :colon="false"
+            ref="iprange">
+            <template #label>
+              <tooltip-label :title="$t('label.ip.range')" :tooltip="$t('message.remote.access.vpn.iprange.description')"/>
+            </template>
+            <a-input
+              v-model:value="vpnIpRange"
+              :placeholder="'10.1.2.1-10.1.2.8'"
+            />
+          </a-form-item>
+
+          <a-divider />
+
+          <div class="actions">
+            <a-button @click="() => enableVpn = false">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" ref="submit" @click="handleCreateVpn">{{ $t('label.yes') }}</a-button>
+          </div>
+        </div>
+      </a-modal>
+
     </div>
 
-    <a-modal
-      :visible="disableVpn"
-      :footer="null"
-      :title="$t('label.disable.vpn')"
-      :closable="true"
-      :maskClosable="false"
-      @cancel="disableVpn = false">
-      <div v-ctrl-enter="handleDisableVpn">
-        <p>{{ $t('message.disable.vpn') }}</p>
-
-        <a-divider />
-
-        <div class="actions">
-          <a-button @click="() => disableVpn = false">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" @click="handleDisableVpn">{{ $t('label.yes') }}</a-button>
-        </div>
+    <br>
+    <div v-if="vpnGateway">
+      <div>
+        <a-button
+          :disabled="!('deleteVpnGateway' in $store.getters.apis)"
+          style="margin-left: 10px"
+          danger
+          type="primary"
+          @click="deleteVpnGateway = true">
+          {{ $t('label.delete.vpn.gateway') }}
+        </a-button>
       </div>
-    </a-modal>
-
-  </div>
-  <div v-else>
-    <a-button
-      :disabled="!('createRemoteAccessVpn' in $store.getters.apis)"
-      type="primary"
-      style="margin-left: 10px"
-      @click="enableVpn = true">
-      {{ $t('label.enable.vpn') }}
-    </a-button>
-
-    <a-modal
-      :visible="enableVpn"
-      :footer="null"
-      :title="$t('label.enable.vpn')"
-      :maskClosable="false"
-      :closable="true"
-      @cancel="enableVpn = false">
-      <div v-ctrl-enter="handleCreateVpn">
-        <p>{{ $t('message.enable.vpn') }}</p>
-
-        <a-divider />
-
-        <div class="actions">
-          <a-button @click="() => enableVpn = false">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" ref="submit" @click="handleCreateVpn">{{ $t('label.yes') }}</a-button>
+      <a-modal
+        :visible="deleteVpnGateway"
+        :footer="null"
+        :title="$t('label.enable.vpn')"
+        :maskClosable="false"
+        :closable="true"
+        @cancel="deleteVpnGateway = false">
+        <div v-ctrl-enter="handleDeleteVpnGateway">
+          <p>{{ $t('message.delete.vpn.gateway') }}</p>
+          <div :span="24" class="action-button">
+            <a-button @click="deleteVpnGateway = false">{{ $t('label.cancel') }}</a-button>
+            <a-button :loading="loading" type="primary" @click="handleDeleteVpnGateway" ref="submit">{{ $t('label.ok') }}</a-button>
+          </div>
         </div>
-      </div>
-    </a-modal>
-
-  </div>
-
-  <br>
-  <div v-if="vpnGateway">
-    <div>
-      <a-button
-        :disabled="!('deleteVpnGateway' in $store.getters.apis)"
-        style="margin-left: 10px"
-        danger
-        type="primary"
-        @click="deleteVpnGateway = true">
-        {{ $t('label.delete.vpn.gateway') }}
-      </a-button>
+      </a-modal>
     </div>
-    <a-modal
-      :visible="deleteVpnGateway"
-      :footer="null"
-      :title="$t('label.enable.vpn')"
-      :maskClosable="false"
-      :closable="true"
-      @cancel="deleteVpnGateway = false">
-      <div v-ctrl-enter="handleDeleteVpnGateway">
-        <p>{{ $t('message.delete.vpn.gateway') }}</p>
-        <div :span="24" class="action-button">
-          <a-button @click="deleteVpnGateway = false">{{ $t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleDeleteVpnGateway" ref="submit">{{ $t('label.ok') }}</a-button>
-        </div>
+    <div v-else-if="vpnGatewayEnabled">
+      <div>
+        <a-button
+          :disabled="!('createVpnGateway' in $store.getters.apis)"
+          style="margin-left: 10px"
+          type="primary"
+          @click="createVpnGateway = true">
+          {{ $t('label.add.vpn.gateway') }}
+        </a-button>
       </div>
-    </a-modal>
-  </div>
-  <div v-else-if="vpnGatewayEnabled">
-    <div>
-      <a-button
-        :disabled="!('createVpnGateway' in $store.getters.apis)"
-        style="margin-left: 10px"
-        type="primary"
-        @click="createVpnGateway = true">
-        {{ $t('label.add.vpn.gateway') }}
-      </a-button>
+      <a-modal
+        :visible="createVpnGateway"
+        :footer="null"
+        :title="$t('label.add.vpn.gateway')"
+        :maskClosable="false"
+        :closable="true"
+        @cancel="createVpnGateway = false">
+        <div v-ctrl-enter="handleCreateVpnGateway">
+          <p>{{ $t('message.add.vpn.gateway') }}</p>
+          <div :span="24" class="action-button">
+            <a-button @click="createVpnGateway = false">{{ $t('label.cancel') }}</a-button>
+            <a-button :loading="loading" type="primary" @click="handleCreateVpnGateway" ref="submit">{{ $t('label.ok') }}</a-button>
+          </div>
+        </div>
+      </a-modal>
     </div>
-    <a-modal
-      :visible="createVpnGateway"
-      :footer="null"
-      :title="$t('label.add.vpn.gateway')"
-      :maskClosable="false"
-      :closable="true"
-      @cancel="createVpnGateway = false">
-      <div v-ctrl-enter="handleCreateVpnGateway">
-        <p>{{ $t('message.add.vpn.gateway') }}</p>
-        <div :span="24" class="action-button">
-          <a-button @click="createVpnGateway = false">{{ $t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleCreateVpnGateway" ref="submit">{{ $t('label.ok') }}</a-button>
-        </div>
-      </div>
-    </a-modal>
   </div>
 
 </template>
 
 <script>
 import { getAPI, postAPI } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   props: {
@@ -148,6 +170,9 @@ export default {
       type: Object,
       required: true
     }
+  },
+  components: {
+    TooltipLabel
   },
   data () {
     return {
@@ -158,7 +183,9 @@ export default {
       vpnGatewayEnabled: false,
       createVpnGateway: false,
       deleteVpnGateway: false,
-      isSubmitted: false
+      isSubmitted: false,
+      specifyIpRange: false,
+      vpnIpRange: ''
     }
   },
   inject: ['parentFetchData', 'parentToggleLoading'],
@@ -211,11 +238,15 @@ export default {
       this.isSubmitted = true
       this.parentToggleLoading()
       this.enableVpn = false
-      postAPI('createRemoteAccessVpn', {
+      const params = {
         publicipid: this.resource.id,
         domainid: this.resource.domainid,
         account: this.resource.account
-      }).then(response => {
+      }
+      if (this.specifyIpRange && this.vpnIpRange?.trim()) {
+        params.iprange = this.vpnIpRange.trim()
+      }
+      postAPI('createRemoteAccessVpn', params).then(response => {
         this.$pollJob({
           jobId: response.createremoteaccessvpnresponse.jobid,
           successMethod: result => {
@@ -386,5 +417,8 @@ export default {
         margin-right: 20px;
       }
     }
+  }
+  .vpn-details {
+    padding: 8px 0;
   }
 </style>

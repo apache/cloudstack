@@ -31,7 +31,7 @@ import com.cloud.serializer.Param;
 @SuppressWarnings("unused")
 public class AlertResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the id of the alert")
+    @Param(description = "The ID of the alert")
     private String id;
 
     @SerializedName(ApiConstants.TYPE)
@@ -46,15 +46,15 @@ public class AlertResponse extends BaseResponse {
     private Short alertType;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the alert", since = "4.3")
+    @Param(description = "The name of the alert", since = "4.3")
     private String alertName;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "description of the alert")
+    @Param(description = "Description of the alert")
     private String description;
 
     @SerializedName(ApiConstants.SENT)
-    @Param(description = "the date and time the alert was sent")
+    @Param(description = "The date and time the alert was sent")
     private Date lastSent;
 
     public void setId(String id) {

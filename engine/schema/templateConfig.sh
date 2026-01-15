@@ -62,8 +62,8 @@ function getChecksum() {
 }
 
 function createMetadataFile() {
-  local fileData=$(cat $SOURCEFILE)
-  echo -e "["default"]\nversion = $VERSION.${securityversion}\n" >> $METADATAFILE
+  local fileData=$(cat "$SOURCEFILE")
+  echo -e "["default"]\nversion = $VERSION.${securityversion}\n" >> "$METADATAFILE"
   for template in "${templates[@]}"
   do
     section="${template%%:*}"
@@ -76,7 +76,7 @@ function createMetadataFile() {
     templatename="systemvm-${sectionHv%.*}-${VERSION}-${arch}"
     checksum=$(getChecksum "$fileData" "$VERSION-${arch}-$hvName")
     filename=$(echo ${downloadurl##*'/'})
-    echo -e "["$section"]\ntemplatename = $templatename\nchecksum = $checksum\ndownloadurl = $downloadurl\nfilename = $filename\narch = $arch\nguestos = $guestos\n" >> $METADATAFILE
+    echo -e "["$section"]\ntemplatename = $templatename\nchecksum = $checksum\ndownloadurl = $downloadurl\nfilename = $filename\narch = $arch\nguestos = $guestos\n" >> "$METADATAFILE"
   done
 }
 
@@ -91,8 +91,8 @@ templates=( "kvm-x86_64:https://download.cloudstack.org/systemvm/${CS_VERSION}/s
             "ovm3:https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$VERSION-x86_64-ovm.raw.bz2" )
 
 PARENTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )/dist/systemvm-templates/"
-mkdir -p $PARENTPATH
-METADATAFILE=${PARENTPATH}"metadata.ini"
-echo > $METADATAFILE
-SOURCEFILE=${PARENTPATH}'sha512sum.txt'
+mkdir -p "$PARENTPATH"
+METADATAFILE="${PARENTPATH}metadata.ini"
+echo > "$METADATAFILE"
+SOURCEFILE="${PARENTPATH}sha512sum.txt"
 createMetadataFile

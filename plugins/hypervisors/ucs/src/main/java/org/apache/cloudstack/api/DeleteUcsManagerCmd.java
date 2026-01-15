@@ -40,7 +40,7 @@ public class DeleteUcsManagerCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.UCS_MANAGER_ID,
                type = BaseCmd.CommandType.UUID,
-               description = "ucs manager id",
+               description = "Ucs manager ID",
                entityType = UcsManagerResponse.class,
                required = true)
     private Long ucsManagerId;
