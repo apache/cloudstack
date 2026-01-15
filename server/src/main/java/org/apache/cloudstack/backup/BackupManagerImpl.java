@@ -2430,6 +2430,13 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             response.setVmDetails(vmDetails);
         }
 
+        if (backup.getFromCheckpointId() != null) {
+            response.setFromCheckpointId(backup.getFromCheckpointId());
+        }
+        if (backup.getToCheckpointId() != null) {
+            response.setToCheckpointId(backup.getToCheckpointId());
+        }
+
         response.setObjectName("backup");
         return response;
     }

@@ -30,6 +30,16 @@ import com.cloud.storage.Volume;
 
 public interface Backup extends ControlledEntity, InternalIdentity, Identity {
 
+    String getFromCheckpointId();
+
+    String getToCheckpointId();
+
+    Long getCheckpointCreateTime();
+
+    Long getHostId();
+
+    Integer getNbdPort();
+
     enum Status {
         Allocated, Queued, BackingUp, BackedUp, Error, Failed, Restoring, Removed, Expunged
     }
