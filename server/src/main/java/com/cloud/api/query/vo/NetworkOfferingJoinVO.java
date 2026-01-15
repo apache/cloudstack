@@ -167,16 +167,16 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
     @Column(name = "service_package_id")
     private String servicePackageUuid = null;
 
-    @Column(name = "domain_id", length = 4096)
+    @Column(name = "domain_id")
     private String domainId = null;
 
-    @Column(name = "domain_uuid", length = 4096)
+    @Column(name = "domain_uuid")
     private String domainUuid = null;
 
-    @Column(name = "domain_name", length = 4096)
+    @Column(name = "domain_name")
     private String domainName = null;
 
-    @Column(name = "domain_path", length = 4096)
+    @Column(name = "domain_path")
     private String domainPath = null;
 
     @Column(name = "zone_id")
