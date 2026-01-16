@@ -1566,7 +1566,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         for (VolumeVO vol : nonDestroyedVols) {
             if (vol.getInstanceId() != null) {
                 volInstance = _vmInstanceDao.findById(vol.getInstanceId());
-                logMessageInfo.add(String.format("Volume [%s] (attached to VM [%s])", vol.getUuid(), volInstance.getUuid()));
+                if (volInstance != null) {
+                    logMessageInfo.add(String.format("Volume [%s] (attached to VM [%s])", vol.getUuid(), volInstance.getUuid()));
+                }
             }
         }
         sb.append(String.join(", ", logMessageInfo));
