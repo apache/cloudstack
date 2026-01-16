@@ -130,6 +130,24 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
     /* (non-Javadoc)
+     * @see com.cloud.network.NetworkModel#getUniqueMacAddress(long, long, long)
+     */
+    @Override
+    public String getUniqueMacAddress(long macAddress, long networkId, long datacenterId) throws InsufficientAddressCapacityException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkModel#isMACUnique(String, long)
+     */
+    @Override
+    public boolean isMACUnique(String mac, long networkId) {
+        // TODO Auto-generated method stub
+        return true;
+    }
+
+    /* (non-Javadoc)
      * @see com.cloud.network.NetworkModel#getPublicIpAddress(long)
      */
     @Override
