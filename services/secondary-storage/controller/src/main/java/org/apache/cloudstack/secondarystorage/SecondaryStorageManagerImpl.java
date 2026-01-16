@@ -1225,7 +1225,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             buf.append(" dns2=").append(dc.getDns2());
         }
         String nfsVersion = imageStoreDetailsUtil != null ? imageStoreDetailsUtil.getNfsVersion(secStores.get(0).getId()) : null;
-        if (nfsVersion != null) {
+        if (StringUtils.isNotBlank(nfsVersion)) {
             buf.append(" nfsVersion=").append(nfsVersion);
         }
         buf.append(" keystore_password=").append(VirtualMachineGuru.getEncodedString(PasswordGenerator.generateRandomPassword(16)));
