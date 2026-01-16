@@ -25,11 +25,11 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -663,7 +663,6 @@ import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.StoragePoolJoinDao;
-import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
@@ -768,7 +767,6 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiServiceImpl;
@@ -1991,23 +1989,51 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private List<StoragePool> findAllSuitableStoragePoolsForDetachedVolume(Volume volume, Long diskOfferingId, List<? extends StoragePool> allPools) {
         List<StoragePool> suitablePools = new ArrayList<>();
         if (CollectionUtils.isEmpty(allPools)) {
-            return  suitablePools;
+            return suitablePools;
         }
+
+        StoragePoolVO srcPool = _poolDao.findById(volume.getPoolId());
+        if (srcPool == null) {
+            logger.warn("Source pool not found for volume {}: {}", volume.getName(), volume.getUuid());
+            return suitablePools;
+        }
+
+        HypervisorType hypervisorType = getHypervisorType(null, srcPool);
+        List<ClusterVO> clusters = _clusterDao.listByDcHyType(srcPool.getDataCenterId(), hypervisorType.toString());
+
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
-        List<String> tags = new ArrayList<>();
-        String[] tagsArray = diskOffering.getTagsArray();
-        if (tagsArray != null && tagsArray.length > 0) {
-            tags = Arrays.asList(tagsArray);
-        }
-        Long[] poolIds = allPools.stream().map(StoragePool::getId).toArray(Long[]::new);
-        List<StoragePoolJoinVO> pools = _poolJoinDao.searchByIds(poolIds);
-        for (StoragePoolJoinVO storagePool : pools) {
-            if (StoragePoolStatus.Up.equals(storagePool.getStatus()) &&
-                    (CollectionUtils.isEmpty(tags) || tags.contains(storagePool.getTag()))) {
-                Optional<? extends StoragePool> match = allPools.stream().filter(x -> x.getId() == storagePool.getId()).findFirst();
-                match.ifPresent(suitablePools::add);
+        DiskProfile diskProfile = new DiskProfile(volume, diskOffering, hypervisorType);
+
+        ExcludeList avoid = new ExcludeList();
+
+        Set<Long> allPoolIds = allPools.stream()
+            .map(StoragePool::getId)
+            .collect(Collectors.toSet());
+        Set<Long> addedPoolIds = new HashSet<>();
+
+        for (Cluster cluster : clusters) {
+            DataCenterDeployment plan = new DataCenterDeployment(srcPool.getDataCenterId(), cluster.getPodId(), cluster.getId(),
+                null, null, null, null);
+
+            for (StoragePoolAllocator allocator : _storagePoolAllocators) {
+                try {
+                    List<StoragePool> pools = allocator.allocateToPool(diskProfile, null, plan, avoid, StoragePoolAllocator.RETURN_UPTO_ALL,
+                        false, null);
+                    if (CollectionUtils.isNotEmpty(pools)) {
+                        for (StoragePool pool : pools) {
+                            if (allPoolIds.contains(pool.getId()) && !addedPoolIds.contains(pool.getId())) {
+                                suitablePools.add(pool);
+                                addedPoolIds.add(pool.getId());
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    logger.warn("Allocator {} failed to find storage pools for detached volume {} due to {}",
+                            allocator.getClass().getSimpleName(), volume.getId(), e.getMessage());
+                }
             }
         }
+
         return suitablePools;
     }
 
