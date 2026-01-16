@@ -2009,60 +2009,53 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         logger.debug("Finding suitable pools for detached volume {} with offering tags: {}, hypervisor: {}",
                 volume.getUuid(), tags, hypervisorType);
 
-        // Create a map for quick lookup and deduplication
-        Map<Long, StoragePool> allPoolsMap = allPools.stream()
-            .collect(Collectors.toMap(StoragePool::getId, pool -> pool));
         Set<Long> matchingPoolIds = new HashSet<>();
 
-        List<StoragePoolVO> zonePoolsLiteral = _poolDao.findZoneWideStoragePoolsByTags(dcId,
+        List<StoragePoolVO> zonePoolsStandard = _poolDao.findZoneWideStoragePoolsByTags(dcId,
                 tags.isEmpty() ? null : tags.toArray(new String[0]), true);
-        for (StoragePoolVO pool : zonePoolsLiteral) {
+        for (StoragePoolVO pool : zonePoolsStandard) {
             if (pool.getHypervisor() == null || pool.getHypervisor().equals(HypervisorType.Any) ||
                     pool.getHypervisor().equals(hypervisorType)) {
                 matchingPoolIds.add(pool.getId());
-                logger.debug("Found zone-wide pool with literal tags: {} ({})", pool.getName(), pool.getId());
+                logger.debug("Found zone-wide pool with standard tags: {} ({})", pool.getName(), pool.getId());
             }
         }
 
-        List<StoragePoolVO> zonePoolsRules = _poolJoinDao.findStoragePoolByScopeAndRuleTags(dcId, null, null,
+        List<StoragePoolVO> zonePoolsFlexible = _poolJoinDao.findStoragePoolByScopeAndRuleTags(dcId, null, null,
                 ScopeType.ZONE, tags);
-        for (StoragePoolVO pool : zonePoolsRules) {
+        for (StoragePoolVO pool : zonePoolsFlexible) {
             StoragePoolVO poolVO = _poolDao.findById(pool.getId());
             if (poolVO != null && (poolVO.getHypervisor() == null || poolVO.getHypervisor().equals(HypervisorType.Any) ||
                     poolVO.getHypervisor().equals(hypervisorType))) {
                 matchingPoolIds.add(pool.getId());
-                logger.debug("Found zone-wide pool with rule-based tags: {} ({})", pool.getName(), pool.getId());
+                logger.debug("Found zone-wide pool with flexible tags: {} ({})", pool.getName(), pool.getId());
             }
         }
 
         List<ClusterVO> clusters = _clusterDao.listByDcHyType(dcId, hypervisorType.toString());
         for (ClusterVO cluster : clusters) {
-            List<StoragePoolVO> clusterPoolsLiteral = _poolDao.findPoolsByTags(dcId, cluster.getPodId(),
+            List<StoragePoolVO> clusterPoolsStandard = _poolDao.findPoolsByTags(dcId, cluster.getPodId(),
                     cluster.getId(), tags.isEmpty() ? null : tags.toArray(new String[0]), true,
                     VolumeApiServiceImpl.storageTagRuleExecutionTimeout.value());
-            for (StoragePoolVO pool : clusterPoolsLiteral) {
+            for (StoragePoolVO pool : clusterPoolsStandard) {
                 matchingPoolIds.add(pool.getId());
-                logger.debug("Found cluster-scoped pool with literal tags: {} ({}) in cluster {}",
+                logger.debug("Found cluster-scoped pool with standard tags: {} ({}) in cluster {}",
                         pool.getName(), pool.getId(), cluster.getName());
             }
-            List<StoragePoolVO> clusterPoolsRules = _poolJoinDao.findStoragePoolByScopeAndRuleTags(dcId,
+
+            List<StoragePoolVO> clusterPoolsFlexible = _poolJoinDao.findStoragePoolByScopeAndRuleTags(dcId,
                     cluster.getPodId(), cluster.getId(), ScopeType.CLUSTER, tags);
-            for (StoragePoolVO pool : clusterPoolsRules) {
+            for (StoragePoolVO pool : clusterPoolsFlexible) {
                 matchingPoolIds.add(pool.getId());
-                logger.debug("Found cluster-scoped pool with rule-based tags: {} ({}) in cluster {}",
+                logger.debug("Found cluster-scoped pool with flexible tags: {} ({}) in cluster {}",
                         pool.getName(), pool.getId(), cluster.getName());
             }
         }
 
-        for (Long poolId : matchingPoolIds) {
-            if (allPoolsMap.containsKey(poolId)) {
-                StoragePool pool = allPoolsMap.get(poolId);
-                if (StoragePoolStatus.Up.equals(pool.getStatus())) {
-                    suitablePools.add(pool);
-                    logger.debug("Added pool {} to suitable pools", pool.getName());
-                } else {
-                    logger.debug("Skipping pool {} - status is {}, not Up", pool.getName(), pool.getStatus());
-                }
+        for (StoragePool pool : allPools) {
+            if (matchingPoolIds.contains(pool.getId()) && StoragePoolStatus.Up.equals(pool.getStatus())) {
+                suitablePools.add(pool);
+                logger.debug("Added pool {} to suitable pools", pool.getName());
             }
         }
 
