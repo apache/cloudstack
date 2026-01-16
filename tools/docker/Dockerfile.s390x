@@ -40,6 +40,7 @@ RUN apt-get -y update && apt-get install -y \
     python3-setuptools \
     python3-pip \
     python3-mysql.connector \
+    # Required on s390x as pre-built wheels for bcrypt, cryptography, and cffi are unavailable, necessitating source builds.
     python3-bcrypt \
     python3-cryptography \
     python3-cffi \
@@ -66,20 +67,20 @@ RUN find /var/lib/mysql -type f -exec touch {} \; && \
     mvn -Pdeveloper -pl developer -Ddeploydb-simulator; \
     MARVIN_FILE=`find /root/tools/marvin/dist/ -name "Marvin*.tar.gz"`; \
     rm -rf /usr/bin/s390x-linux-gnu-gcc && \
-    ln -s /usr/bin/gcc-10 /usr/bin/s390x-linux-gnu-gcc; \
+    ln -s /usr/bin/gcc-10 /usr/bin/s390x-linux-gnu-gcc && \
+    pip3 install maturin && \
     pip3 install $MARVIN_FILE
 
-RUN apt-get install -y nodejs npm build-essential python3 g++ make && \
-    bash 
+RUN apt-get install -y nodejs npm build-essential python3 g++ make
 
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash && \
     . /root/.nvm/nvm.sh && \
-    nvm install 10 && \
-    nvm use 10 && \
+    nvm install 16 && \
+    nvm use 16 && \
     NVM_BIN="$(dirname "$(nvm which node)")" && \
     ln -sf "$NVM_BIN/node" /usr/local/bin/node && \
     ln -sf "$NVM_BIN/npm" /usr/local/bin/npm && \
-    cd ui && npm install && npm rebuild node-sass
+    cd ui && npm rebuild node-sass && npm install
 
 
 VOLUME /var/lib/mysql
