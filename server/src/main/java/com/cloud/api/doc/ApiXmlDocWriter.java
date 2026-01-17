@@ -97,10 +97,8 @@ public class ApiXmlDocWriter {
                 if (curCmd.isAssignableFrom(cmdClass)) {
                     // api_cmd map always keep the admin cmd class to get full response and parameters
                     s_apiNameCmdClassMap.put(apiName, cmdClass);
-                } else if (cmdClass.isAssignableFrom(curCmd)) {
-                    System.out.println("Info: API Cmd class " + cmdClass.getName() + " is assignable from " + curCmd.getName() + ", skip this one");
-                } else {
-                    System.out.println("Warning: API Cmd class " + cmdClass.getName() + " has non-unique apiname " + apiName);
+                } else if (!cmdClass.isAssignableFrom(curCmd)) {
+                    System.out.println("Warning: API Cmd class " + cmdClass.getName() + " has non-unique api name " + apiName);
                 }
             } else {
                 s_apiNameCmdClassMap.put(apiName, cmdClass);

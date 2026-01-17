@@ -46,9 +46,7 @@ dirname_to_dirname = {
 
 
 known_categories = {
-    # Use the category definition formats below:
-    # keyword or api: category - to choose category based on keyword or api in the api call
-    # api: (category, True|False) - True - use the category defined (i.e. direct api to category mapping), False - choose category same as above
+    # Category definition format: api keyword or api name: category
     'Cisco' : 'External Device',
     'SystemVm': 'System VM',
     'VirtualMachine': 'Virtual Machine',
@@ -129,8 +127,6 @@ known_categories = {
     'saml': 'Authentication',
     'getSPMetadata': 'Authentication',
     'listIdps': 'Authentication',
-    # 'authorizeSamlSso': 'Authentication',
-    # 'listSamlAuthorization': 'Authentication',
     'oauthlogin': 'Authentication',
     'OauthProvider': 'OAuth',
     'quota': 'Quota',
@@ -206,8 +202,8 @@ known_categories = {
     'UnmanagedInstance': 'Virtual Machine',
     'Kubernetes': 'Kubernetes Service',
     'Rolling': 'Rolling Maintenance',
-    'vsphereStoragePolicy' : 'vSphere storage policies',
-    'vsphereStoragePolicies' : 'vSphere storage policies',
+    'vsphereStoragePolicy' : 'vSphere Storage Policies',
+    'vsphereStoragePolicies' : 'vSphere Storage Policies',
     'createConsoleEndpoint': 'Console Session',
     'listConsoleSessions': 'Console Session',
     'importVm': 'Virtual Machine',
@@ -238,23 +234,12 @@ known_categories = {
     'CustomAction' : 'Extension'
 }
 
-
 categories = {}
 
-choosing_category = 1
-
-
 def choose_category(fn):
-    global choosing_category
-    print("choosing_category - " + str(choosing_category) + " , for fn: " + fn)
-    choosing_category = choosing_category + 1
     possible_known_categories = []
-    i = 1
     for k, v in known_categories.items():
-        print(str(i) + " - k:" + k + ", v:" + v + " fn: " + fn + "\n")
-        i = i + 1
         if k.lower() in fn.lower():
-            print("add to possible_known_categories - " + k + "\n")
             possible_known_categories.append(k)
 
     if len(possible_known_categories) > 0:
