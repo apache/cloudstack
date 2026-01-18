@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command.user.iso;
 
 
-import com.cloud.dc.DataCenter;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;

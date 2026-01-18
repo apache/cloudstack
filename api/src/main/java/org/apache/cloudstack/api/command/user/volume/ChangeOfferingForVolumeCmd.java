@@ -22,7 +22,6 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.offering.DiskOffering;
 import com.cloud.storage.Volume;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;

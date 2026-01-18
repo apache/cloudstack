@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.admin.systemvm;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
-import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;

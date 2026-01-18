@@ -30,7 +30,6 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 
 import com.cloud.event.EventTypes;
-import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 

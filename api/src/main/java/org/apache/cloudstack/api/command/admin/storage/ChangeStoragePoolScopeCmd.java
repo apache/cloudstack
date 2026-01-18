@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
-import com.cloud.storage.StoragePool;
 
 @APICommand(name = "changeStoragePoolScope", description = "Changes the scope of a storage pool when the pool is in Disabled state." +
         "This feature is officially tested and supported for Hypervisors: KVM and VMware, Protocols: NFS and Ceph, and Storage Provider: DefaultPrimary. " +
