@@ -532,6 +532,11 @@ public class ParamProcessWorker implements DispatchWorker {
                 // Populate CallContext for each of the entity.
                 for (final Class<?> entity : entities) {
                     CallContext.current().putContextParameter(entity, internalId);
+                    final Object objVO = _entityMgr.findByUuidIncludingRemoved(entity, uuid);
+                    if (objVO == null) {
+                        continue;
+                    }
+                    CallContext.current().putApiResourceUuid(annotation.name(), uuid);
                 }
                 validateNaturalNumber(internalId, annotation.name());
                 return internalId;
@@ -556,6 +561,7 @@ public class ParamProcessWorker implements DispatchWorker {
             }
             // Return on first non-null Id for the uuid entity
             if (internalId != null){
+                CallContext.current().putApiResourceUuid(annotation.name(), uuid);
                 CallContext.current().putContextParameter(entity, uuid);
                 break;
             }

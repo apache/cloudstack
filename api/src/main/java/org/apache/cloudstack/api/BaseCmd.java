@@ -501,7 +501,7 @@ public abstract class BaseCmd {
     }
 
     public String getResourceUuid(String parameterName) {
-        String resourceUuid = fullUrlParams.get(parameterName);
+        String resourceUuid = CallContext.current().getApiResourceUuid(parameterName);
 
         if (UuidUtils.isUuid(resourceUuid)) {
             return resourceUuid;
