@@ -266,6 +266,13 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     }
 
     @Override
+    public List<SnapshotVO> listAllByStatusIncludingRemoved(Snapshot.State... status) {
+        SearchCriteria<SnapshotVO> sc = StatusSearch.create();
+        sc.setParameters("status", (Object[])status);
+        return listIncludingRemovedBy(sc, null);
+    }
+
+    @Override
     public List<SnapshotVO> listByIds(Object... ids) {
         SearchCriteria<SnapshotVO> sc = snapshotIdsSearch.create();
         sc.setParameters("id", ids);
