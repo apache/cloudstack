@@ -43,6 +43,7 @@ import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.EntityReference;
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -532,11 +533,11 @@ public class ParamProcessWorker implements DispatchWorker {
                 // Populate CallContext for each of the entity.
                 for (final Class<?> entity : entities) {
                     CallContext.current().putContextParameter(entity, internalId);
-                    final Object objVO = _entityMgr.findByUuidIncludingRemoved(entity, uuid);
+                    final Object objVO = _entityMgr.findByIdIncludingRemoved(entity, internalId);
                     if (objVO == null) {
                         continue;
                     }
-                    CallContext.current().putApiResourceUuid(annotation.name(), uuid);
+                    CallContext.current().putApiResourceUuid(annotation.name(), ((Identity) objVO).getUuid());
                 }
                 validateNaturalNumber(internalId, annotation.name());
                 return internalId;
