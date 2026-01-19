@@ -30,11 +30,11 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <dependencies>
-<!--        <dependency>-->
-<!--            <groupId>io.netris</groupId>-->
-<!--            <artifactId>netris-java-sdk</artifactId>-->
-<!--            <version>1.0.0</version>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>io.netris</groupId>
+            <artifactId>netris-java-sdk</artifactId>
+            <version>1.0.0</version>
+        </dependency>
         <dependency>
             <groupId>com.github.seancfoley</groupId>
             <artifactId>ipaddress</artifactId>
