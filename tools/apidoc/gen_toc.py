@@ -57,6 +57,7 @@ known_categories = {
     'Domain': 'Domain',
     'Template': 'Template',
     'KMS': 'KMS',
+    'HSM': 'KMS',
     'Iso': 'ISO',
     'Volume': 'Volume',
     'Vlan': 'VLAN',

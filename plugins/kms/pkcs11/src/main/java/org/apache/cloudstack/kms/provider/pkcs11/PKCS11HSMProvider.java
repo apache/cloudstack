@@ -54,19 +54,19 @@ import com.cloud.utils.crypt.DBEncryptionUtil;
 public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
     private static final Logger logger = LogManager.getLogger(PKCS11HSMProvider.class);
     private static final String PROVIDER_NAME = "pkcs11";
-    
+
     @Inject
     private HSMProfileDao hsmProfileDao;
-    
+
     @Inject
     private HSMProfileDetailsDao hsmProfileDetailsDao;
-    
+
     @Inject
     private KMSKekVersionDao kmsKekVersionDao;
 
     // Session pool per HSM profile
     private final Map<Long, HSMSessionPool> sessionPools = new ConcurrentHashMap<>();
-    
+
     // Profile configuration caching
     private final Map<Long, Map<String, String>> profileConfigCache = new ConcurrentHashMap<>();
 
@@ -80,6 +80,16 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         return PROVIDER_NAME;
     }
 
+    /**
+     * @return The name of the component that provided this configuration
+     * variable.  This value is saved in the database so someone can easily
+     * identify who provides this variable.
+     **/
+    @Override
+    public String getConfigComponentName() {
+        return PKCS11HSMProvider.class.getSimpleName();
+    }
+
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[0];
@@ -90,7 +100,7 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         if (hsmProfileId == null) {
             throw KMSException.invalidParameter("HSM Profile ID is required for PKCS#11 provider");
         }
-        
+
         if (StringUtils.isEmpty(label)) {
             label = generateKekLabel(purpose);
         }
@@ -142,14 +152,14 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
     public WrappedKey rewrapKey(WrappedKey oldWrappedKey, String newKekLabel, Long targetHsmProfileId) throws KMSException {
         // 1. Unwrap with old KEK
         byte[] plainKey = unwrapKey(oldWrappedKey, null); // Auto-resolve old profile
-        
+
         try {
             // 2. Wrap with new KEK
             Long profileId = targetHsmProfileId;
             if (profileId == null) {
                 profileId = resolveProfileId(newKekLabel);
             }
-            
+
             return wrapKey(plainKey, oldWrappedKey.getPurpose(), newKekLabel, profileId);
         } finally {
             // Zeroize plaintext key
@@ -184,15 +194,10 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
     }
 
     @Override
-    public List<String> listKeks(KeyPurpose purpose) throws KMSException {
-        throw new KMSException(KMSException.ErrorType.OPERATION_FAILED, "Listing KEKs directly from HSMs not supported, use DB");
-    }
-
-    @Override
     public boolean isKekAvailable(String kekId) throws KMSException {
         Long hsmProfileId = resolveProfileId(kekId);
         if (hsmProfileId == null) return false;
-        
+
         HSMSessionPool pool = getSessionPool(hsmProfileId);
         PKCS11Session session = null;
         try {
@@ -210,7 +215,7 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         return true;
     }
 
-    private Long resolveProfileId(String kekLabel) throws KMSException {
+    Long resolveProfileId(String kekLabel) throws KMSException {
         KMSKekVersionVO version = kmsKekVersionDao.findByKekLabel(kekLabel);
         if (version != null && version.getHsmProfileId() != null) {
             return version.getHsmProfileId();
@@ -218,12 +223,12 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         throw new KMSException(KMSException.ErrorType.KEK_NOT_FOUND, "Could not resolve HSM profile for KEK: " + kekLabel);
     }
 
-    private HSMSessionPool getSessionPool(Long profileId) {
-        return sessionPools.computeIfAbsent(profileId, 
+    HSMSessionPool getSessionPool(Long profileId) {
+        return sessionPools.computeIfAbsent(profileId,
             id -> new HSMSessionPool(id, loadProfileConfig(id)));
     }
 
-    private Map<String, String> loadProfileConfig(Long profileId) {
+    Map<String, String> loadProfileConfig(Long profileId) {
         return profileConfigCache.computeIfAbsent(profileId, id -> {
             List<HSMProfileDetailsVO> details = hsmProfileDetailsDao.listByProfileId(id);
             Map<String, String> config = new HashMap<>();
@@ -238,14 +243,14 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         });
     }
 
-    private boolean isSensitiveKey(String key) {
-        return key.equalsIgnoreCase("pin") || 
-               key.equalsIgnoreCase("password") || 
+    boolean isSensitiveKey(String key) {
+        return key.equalsIgnoreCase("pin") ||
+               key.equalsIgnoreCase("password") ||
                key.toLowerCase().contains("secret") ||
                key.equalsIgnoreCase("private_key");
     }
 
-    private String generateKekLabel(KeyPurpose purpose) {
+    String generateKekLabel(KeyPurpose purpose) {
         return purpose.getName() + "-kek-" + UUID.randomUUID().toString().substring(0, 8);
     }
 
@@ -256,14 +261,14 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         private final Map<String, String> config;
         private final int maxSessions;
         private final int minIdleSessions;
-        
+
         HSMSessionPool(Long profileId, Map<String, String> config) {
             this.profileId = profileId;
             this.config = config;
             this.maxSessions = Integer.parseInt(config.getOrDefault("max_sessions", "10"));
             this.minIdleSessions = Integer.parseInt(config.getOrDefault("min_idle_sessions", "2"));
             this.availableSessions = new ArrayBlockingQueue<>(maxSessions);
-            
+
             // Pre-warm
             for (int i = 0; i < minIdleSessions; i++) {
                 try {
@@ -273,7 +278,7 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                 }
             }
         }
-        
+
         PKCS11Session acquireSession(long timeoutMs) throws KMSException {
             try {
                 PKCS11Session session = availableSessions.poll();
@@ -288,7 +293,7 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                 throw new KMSException(KMSException.ErrorType.CONNECTION_FAILED, "Failed to acquire HSM session", e);
             }
         }
-        
+
         void releaseSession(PKCS11Session session) {
             if (session != null && session.isValid()) {
                 if (!availableSessions.offer(session)) {
@@ -296,7 +301,7 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                 }
             }
         }
-        
+
         private PKCS11Session createNewSession() throws KMSException {
             return new PKCS11Session(config);
         }
@@ -307,12 +312,12 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         private final Map<String, String> config;
         private KeyStore keyStore;
         private Provider provider;
-        
+
         PKCS11Session(Map<String, String> config) throws KMSException {
             this.config = config;
             connect();
         }
-        
+
         private void connect() throws KMSException {
             try {
                 String libraryPath = config.get("library_path");
@@ -324,33 +329,33 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                 throw new KMSException(KMSException.ErrorType.CONNECTION_FAILED, "Failed to connect to HSM: " + e.getMessage(), e);
             }
         }
-        
+
         boolean isValid() {
             return true;
         }
-        
+
         void close() {
             if (provider != null) {
                 Security.removeProvider(provider.getName());
             }
         }
-        
+
         String generateKey(String label, int keyBits, KeyPurpose purpose) throws KMSException {
             return label;
         }
-        
+
         byte[] wrapKey(byte[] plainDek, String kekLabel) throws KMSException {
             return "wrapped_blob".getBytes();
         }
-        
+
         byte[] unwrapKey(byte[] wrappedBlob, String kekLabel) throws KMSException {
             return new byte[32]; // 256 bits
         }
-        
+
         void deleteKey(String label) throws KMSException {
             // Stub
         }
-        
+
         boolean checkKeyExists(String label) throws KMSException {
             return true;
         }

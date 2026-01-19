@@ -29,6 +29,7 @@ public class KMSException extends CloudRuntimeException {
      * Error types for KMS operations to enable intelligent retry logic
      */
     public enum ErrorType {
+        CONNECTION_FAILED(true),
         /**
          * Provider not initialized or unavailable
          */
