@@ -76,8 +76,11 @@ public class LibvirtMigrateSnapshotsBetweenSecondaryStoragesCommandWrapper exten
         boolean parentSnapshotWasMigrated = false;
         Set<Long> snapshotsIdToMigrate = command.getSnapshotsIdToMigrate();
 
+        DataTO currentSnapshot = null;
+
         try {
             for (DataTO snapshot : command.getSnapshotChain()) {
+                currentSnapshot = snapshot;
                 imagePoolUrl = snapshot.getDataStore().getUrl();
                 imagePool = storagePoolManager.getStoragePoolByURI(imagePoolUrl);
                 imagePools.add(imagePool);
@@ -85,20 +88,25 @@ public class LibvirtMigrateSnapshotsBetweenSecondaryStoragesCommandWrapper exten
                 String resourceCurrentPath = imagePool.getLocalPathFor(snapshot.getPath());
 
                 if (imagePoolUrl.equals(srcDataStore.getUrl()) && snapshotsIdToMigrate.contains(snapshot.getId())) {
+                    logger.debug("Migrating snapshot [{}] to destination storage pool [{}].", snapshot.getId(), destImagePool.getUuid());
                     parentSnapshotPath = copyResourceToDestDataStore(snapshot, resourceCurrentPath, destImagePool, parentSnapshotPath);
                     parentSnapshotWasMigrated = true;
+                    logger.debug("Snapshot [{}] migrated successfully. New parent path: [{}]", snapshot.getId(), parentSnapshotPath);
                 } else {
                     if (parentSnapshotWasMigrated) {
+                        logger.debug("Rebasing snapshot [{}] to new parent path: [{}]", snapshot.getId(), parentSnapshotPath);
                         parentSnapshotPath = rebaseResourceToNewParentPath(resourceCurrentPath, parentSnapshotPath);
                     } else {
+                        logger.debug("Skipping migration/rebase for snapshot [{}]. Keeping current path.", snapshot.getId());
                         parentSnapshotPath = resourceCurrentPath;
                     }
                     parentSnapshotWasMigrated = false;
                 }
             }
+            logger.info("Successfully completed migrating snapshot chain [{}].", command.getSnapshotChain());
         }  catch (LibvirtException | QemuImgException e) {
             logger.error("Exception while migrating snapshots [{}] to secondary storage [{}] due to: [{}].", command.getSnapshotChain(), imagePool, e.getMessage(), e);
-            return new MigrateBetweenSecondaryStoragesCommandAnswer(command, false, "Migration of snapshots between secondary storages failed", resourcesToUpdate);
+            return new MigrateBetweenSecondaryStoragesCommandAnswer(command, false, String.format("Unable to migrate snapshot with ID [%s].", currentSnapshot.getId()), resourcesToUpdate);
         } finally {
             for (String file : filesToRemove) {
                 removeResourceFromSourceDataStore(file);

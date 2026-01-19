@@ -417,8 +417,10 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                 migrateBetweenSecondaryStoragesCmd.setWait(StorageManager.AgentMaxDataMigrationWaitTime.valueIn(host.getClusterId()));
                 answer = (MigrateBetweenSecondaryStoragesCommandAnswer) agentManager.send(host.getId(), migrateBetweenSecondaryStoragesCmd);
                 if (answer == null || !answer.getResult()) {
-                    logger.warn("Unable to migrate snapshots [{}].", snapshotChain);
-                    throw new CloudRuntimeException("Unable to migrate KVM incremental snapshots to another secondary storage");
+                    if (answer != null) {
+                        logger.warn(answer.getDetails());
+                    }
+                    throw new CloudRuntimeException("Unable to migrate KVM incremental snapshots to another secondary storage.");
                 }
             } catch (final OperationTimedoutException | AgentUnavailableException e) {
                 throw new CloudRuntimeException("Error while migrating KVM incremental snapshot chain. Check the logs for more information.", e);
