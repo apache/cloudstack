@@ -184,31 +184,6 @@ public class DatabaseKMSProvider extends AdapterBase implements KMSProvider {
     }
 
     @Override
-    public List<String> listKeks(KeyPurpose purpose) throws KMSException {
-        try {
-            List<String> keks = new ArrayList<>();
-
-            List<KMSDatabaseKekObjectVO> kekObjects;
-            if (purpose != null) {
-                kekObjects = kekObjectDao.listByPurpose(purpose);
-            } else {
-                kekObjects = kekObjectDao.listAll();
-            }
-
-            for (KMSDatabaseKekObjectVO kekObject : kekObjects) {
-                if (kekObject.getRemoved() == null) {
-                    keks.add(kekObject.getLabel());
-                }
-            }
-
-            logger.debug("listKeks called for purpose: {}. Found {} KEKs.", purpose, keks.size());
-            return keks;
-        } catch (Exception e) {
-            throw KMSException.kekOperationFailed("Failed to list KEKs: " + e.getMessage(), e);
-        }
-    }
-
-    @Override
     public boolean isKekAvailable(String kekId) throws KMSException {
         try {
             KMSDatabaseKekObjectVO kekObject = kekObjectDao.findByLabel(kekId);

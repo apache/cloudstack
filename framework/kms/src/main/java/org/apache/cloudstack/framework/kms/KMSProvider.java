@@ -21,8 +21,6 @@ import org.apache.cloudstack.framework.config.Configurable;
 
 import com.cloud.utils.component.Adapter;
 
-import java.util.List;
-
 /**
  * Abstract provider contract for Key Management Service operations.
  * <p>
@@ -83,14 +81,6 @@ public interface KMSProvider extends Configurable, Adapter {
      */
     void deleteKek(String kekId) throws KMSException;
 
-    /**
-     * List all KEK identifiers for a given purpose
-     *
-     * @param purpose the key purpose to filter by (null = all purposes)
-     * @return list of KEK identifiers
-     * @throws KMSException if listing fails
-     */
-    List<String> listKeks(KeyPurpose purpose) throws KMSException;
 
     /**
      * Check if a KEK exists and is accessible

@@ -81,7 +81,6 @@ import java.util.stream.Collectors;
 public class KMSManagerImpl extends ManagerBase implements KMSManager, PluggableService {
     private static final Logger logger = LogManager.getLogger(KMSManagerImpl.class);
     private static final Map<String, KMSProvider> kmsProviderMap = new HashMap<>();
-    private static KMSProvider configuredKmsProvider;
     @Inject
     private KMSWrappedKeyDao kmsWrappedKeyDao;
     @Inject
@@ -147,7 +146,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     /**
      * Internal method to rotate a KEK (create new version and update KMS key state)
      */
-    private String rotateKek(Long zoneId, KeyPurpose purpose, String oldKekLabel,
+    String rotateKek(Long zoneId, KeyPurpose purpose, String oldKekLabel,
             String newKekLabel, int keyBits, Long newProfileId) throws KMSException {
         validateKmsEnabled(zoneId);
 
@@ -235,7 +234,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         return createUserKMSKey(accountId, domainId, zoneId, name, description, purpose, keyBits, null);
     }
 
-    private KMSKey createUserKMSKey(Long accountId, Long domainId, Long zoneId,
+    KMSKey createUserKMSKey(Long accountId, Long domainId, Long zoneId,
             String name, String description, KeyPurpose purpose,
             Integer keyBits, String hsmProfileName) throws KMSException {
         validateKmsEnabled(zoneId);
@@ -291,7 +290,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         return kmsKey;
     }
 
-    private Long resolveHSMProfile(Long accountId, Long zoneId, String providerName) {
+    Long resolveHSMProfile(Long accountId, Long zoneId, String providerName) {
         // Only applicable for providers that use profiles (pkcs11, kmip)
         if ("database".equalsIgnoreCase(providerName)) {
             return null;
@@ -326,7 +325,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         throw new CloudRuntimeException("No suitable HSM profile found for provider " + providerName + " for account " + accountId);
     }
 
-    private boolean isProviderMatch(HSMProfileVO profile, String providerName) {
+    boolean isProviderMatch(HSMProfileVO profile, String providerName) {
         // Simple mapping: PKCS11 -> pkcs11, KMIP -> kmip
         return profile.getProtocol().equalsIgnoreCase(providerName);
     }
@@ -790,7 +789,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
      * @param newVersion the new KEK version to wrap with
      * @param provider the KMS provider
      */
-    private void rewrapSingleKey(KMSWrappedKeyVO wrappedKeyVO, KMSKeyVO kmsKey,
+    void rewrapSingleKey(KMSWrappedKeyVO wrappedKeyVO, KMSKeyVO kmsKey,
                                   KMSKekVersionVO newVersion, KMSProvider provider) {
         byte[] dek = null;
         try {
@@ -1013,15 +1012,10 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     }
 
     private KMSProvider getConfiguredKmsProvider() {
-        if (configuredKmsProvider != null) {
-            return configuredKmsProvider;
-        }
-
         String providerName = KMSProviderPlugin.value();
         String providerKey = providerName != null ? providerName.toLowerCase() : null;
         if (providerKey != null && kmsProviderMap.containsKey(providerKey) && kmsProviderMap.get(providerKey) != null) {
-            configuredKmsProvider = kmsProviderMap.get(providerKey);
-            return configuredKmsProvider;
+            return kmsProviderMap.get(providerKey);
         }
 
         throw new CloudRuntimeException("Failed to find default configured KMS provider plugin: " + providerName);
@@ -1063,12 +1057,13 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
 
         String configuredProviderName = KMSProviderPlugin.value();
         String providerKey = configuredProviderName != null ? configuredProviderName.toLowerCase() : null;
+        KMSProvider provider = null;
         if (providerKey != null && kmsProviderMap.containsKey(providerKey)) {
-            configuredKmsProvider = kmsProviderMap.get(providerKey);
-            logger.info("Configured KMS provider: {}", configuredKmsProvider.getProviderName());
+            provider = kmsProviderMap.get(providerKey);
+            logger.info("Configured KMS provider: {}", provider.getProviderName());
         }
 
-        if (configuredKmsProvider == null) {
+        if (provider == null) {
             logger.warn("No valid configured KMS provider found. KMS functionality will be unavailable.");
             // Don't fail - KMS is optional
             return true;
@@ -1076,11 +1071,11 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
 
         // Run health check on startup
         try {
-            boolean healthy = configuredKmsProvider.healthCheck();
+            boolean healthy = provider.healthCheck();
             if (healthy) {
-                logger.info("KMS provider {} health check passed", configuredKmsProvider.getProviderName());
+                logger.info("KMS provider {} health check passed", provider.getProviderName());
             } else {
-                logger.warn("KMS provider {} health check failed", configuredKmsProvider.getProviderName());
+                logger.warn("KMS provider {} health check failed", provider.getProviderName());
             }
         } catch (Exception e) {
             logger.warn("KMS provider health check error: {}", e.getMessage());
@@ -1301,6 +1296,11 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         cmdList.add(DeleteKMSKeyCmd.class);
         cmdList.add(RotateKMSKeyCmd.class);
         cmdList.add(MigrateVolumesToKMSCmd.class);
+        cmdList.add(MigrateVolumesToKMSCmd.class);
+        cmdList.add(AddHSMProfileCmd.class);
+        cmdList.add(ListHSMProfilesCmd.class);
+        cmdList.add(UpdateHSMProfileCmd.class);
+        cmdList.add(DeleteHSMProfileCmd.class);
 
         return cmdList;
     }
@@ -1314,7 +1314,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         if (StringUtils.isEmpty(protocol)) {
             throw KMSException.invalidParameter("Protocol cannot be empty");
         }
-        
+
         // Ensure provider exists for protocol
         try {
             getKMSProvider(protocol);
@@ -1330,25 +1330,25 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                 cmd.getZoneId(),
                 cmd.getVendorName()
         );
-        
+
         // Persist profile
         profile = hsmProfileDao.persist(profile);
-        
+
         // Persist details
         if (cmd.getDetails() != null) {
             for (Map.Entry<String, String> entry : cmd.getDetails().entrySet()) {
                 String key = entry.getKey();
                 String value = entry.getValue();
-                
+
                 // Encrypt sensitive values
                 if (isSensitiveKey(key)) {
                     value = DBEncryptionUtil.encrypt(value);
                 }
-                
+
                 hsmProfileDetailsDao.persist(profile.getId(), key, value);
             }
         }
-        
+
         return profile;
     }
 
@@ -1356,12 +1356,12 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     public List<HSMProfile> listHSMProfiles(ListHSMProfilesCmd cmd) {
         Long accountId = CallContext.current().getCallingAccount().getId();
         boolean isAdmin = accountManager.isAdmin(accountId);
-        
+
         List<HSMProfile> result = new ArrayList<>();
-        
+
         // 1. User's own profiles
         result.addAll(hsmProfileDao.listByAccountId(accountId));
-        
+
         // 2. Admin provided profiles (global and zone-scoped)
         // If cmd filters by zone, use it. Else return all relevant ones.
         if (cmd.getZoneId() != null) {
@@ -1373,7 +1373,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             // How to list all zone-specific ones? listAdminProfiles() only gets globals?
             // Need a way to get all. For now simplified.
         }
-        
+
         // Apply memory filtering for protocol and enabled status
         return result.stream()
                 .filter(p -> cmd.getProtocol() == null || p.getProtocol().equalsIgnoreCase(cmd.getProtocol()))
@@ -1387,19 +1387,19 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         if (profile == null) {
             throw KMSException.invalidParameter("HSM Profile not found");
         }
-        
+
         // Check permissions (handled by BaseCmd entity owner usually, but double check)
         Account caller = CallContext.current().getCallingAccount();
         // Permission check logic here...
-        
+
         // Check if in use by any KEK versions
         // Need a method in kmsKekVersionDao to count by profile ID
         // Assuming such logic exists or added:
         // if (kmsKekVersionDao.countByProfileId(profile.getId()) > 0) { ... }
-        
+
         // Delete details
         hsmProfileDetailsDao.deleteDetails(profile.getId());
-        
+
         // Delete profile
         return hsmProfileDao.remove(profile.getId());
     }
@@ -1410,31 +1410,31 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         if (profile == null) {
             throw KMSException.invalidParameter("HSM Profile not found");
         }
-        
+
         if (cmd.getName() != null) {
             profile.setName(cmd.getName());
         }
         if (cmd.getEnabled() != null) {
             profile.setEnabled(cmd.getEnabled());
         }
-        
+
         hsmProfileDao.update(profile.getId(), profile);
-        
+
         if (cmd.getDetails() != null) {
             for (Map.Entry<String, String> entry : cmd.getDetails().entrySet()) {
                 String key = entry.getKey();
                 String value = entry.getValue();
-                
+
                 // If sensitive, check if it's already encrypted (starts with ENC()) or needs encryption
-                // Assuming client sends plaintext for updates usually. 
+                // Assuming client sends plaintext for updates usually.
                 // Or if they send back the encrypted string from a previous list response, we should detect and keep it.
                 // Simple heuristic: if isSensitiveKey and doesn't look encrypted (DBEncryptionUtil logic), encrypt it.
-                // For now, simpler: always encrypt new sensitive values. 
-                
+                // For now, simpler: always encrypt new sensitive values.
+
                 if (isSensitiveKey(key)) {
                     value = DBEncryptionUtil.encrypt(value);
                 }
-                
+
                 HSMProfileDetailsVO detail = hsmProfileDetailsDao.findDetail(profile.getId(), key);
                 if (detail != null) {
                     detail.setValue(value);
@@ -1444,7 +1444,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                 }
             }
         }
-        
+
         return profile;
     }
 
@@ -1457,7 +1457,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         response.setVendorName(profile.getVendorName());
         response.setEnabled(profile.isEnabled());
         response.setCreated(profile.getCreated());
-        
+
         if (profile.getAccountId() != null) {
             Account account = accountManager.getAccount(profile.getAccountId());
             if (account != null) {
@@ -1465,7 +1465,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                 response.setAccountName(account.getAccountName());
             }
         }
-        
+
         // Populate details
         List<HSMProfileDetailsVO> details = hsmProfileDetailsDao.listByProfileId(profile.getId());
         Map<String, String> detailsMap = new HashMap<>();
@@ -1473,14 +1473,14 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             detailsMap.put(detail.getName(), detail.getValue()); // Return encrypted values as-is
         }
         response.setDetails(detailsMap);
-        
+
         return response;
     }
 
-    private boolean isSensitiveKey(String key) {
+    boolean isSensitiveKey(String key) {
         // List of keys known to be sensitive
-        return key.equalsIgnoreCase("pin") || 
-               key.equalsIgnoreCase("password") || 
+        return key.equalsIgnoreCase("pin") ||
+               key.equalsIgnoreCase("password") ||
                key.toLowerCase().contains("secret") ||
                key.equalsIgnoreCase("private_key");
     }
