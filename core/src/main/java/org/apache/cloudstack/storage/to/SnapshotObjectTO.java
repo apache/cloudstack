@@ -44,9 +44,7 @@ public class SnapshotObjectTO extends DownloadableObjectTO implements DataTO {
     private Long physicalSize = (long) 0;
     private long accountId;
 
-
     public SnapshotObjectTO() {
-
     }
 
     public SnapshotObjectTO(SnapshotInfo snapshot) {
