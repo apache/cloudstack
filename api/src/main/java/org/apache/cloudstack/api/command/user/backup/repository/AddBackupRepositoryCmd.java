@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.api.command.user.backup.repository;
 
+import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -100,7 +101,7 @@ public class AddBackupRepositoryCmd extends BaseCmd {
     }
 
     public String getMountOptions() {
-        return mountOptions == null ? "" : mountOptions;
+        return StringUtils.isBlank(mountOptions) ? "" : mountOptions;
     }
 
     public Long getZoneId() {

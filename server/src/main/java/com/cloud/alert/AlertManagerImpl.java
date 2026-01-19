@@ -112,7 +112,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             , AlertType.ALERT_TYPE_OOBM_AUTH_ERROR
             , AlertType.ALERT_TYPE_HA_ACTION
             , AlertType.ALERT_TYPE_CA_CERT
-            , AlertType.ALERT_TYPE_EXTENSION_PATH_NOT_READY);
+            , AlertType.ALERT_TYPE_EXTENSION_PATH_NOT_READY
+            , AlertType.ALERT_TYPE_VPN_GATEWAY_OBSOLETE_PARAMETERS);
 
     private static final long INITIAL_CAPACITY_CHECK_DELAY = 30L * 1000L; // Thirty seconds expressed in milliseconds.
 
@@ -313,13 +314,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 Math.min(CapacityManager.CapacityCalculateWorkers.value(), hostIds.size())));
         for (Long hostId : hostIds) {
             futures.put(hostId, executorService.submit(() -> {
-                Transaction.execute(new TransactionCallbackNoReturn() {
-                    @Override
-                    public void doInTransactionWithoutResult(TransactionStatus status) {
-                        final HostVO host = hostDao.findById(hostId);
-                        _capacityMgr.updateCapacityForHost(host);
-                    }
-                });
+                final HostVO host = hostDao.findById(hostId);
+                _capacityMgr.updateCapacityForHost(host);
                 return null;
             }));
         }

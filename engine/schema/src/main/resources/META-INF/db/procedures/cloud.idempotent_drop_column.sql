@@ -15,6 +15,14 @@
 -- specific language governing permissions and limitations
 -- under the License.
 
---;
--- Schema upgrade from 4.22.0.0 to 4.23.0.0
---;
+-- in cloud
+DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_DROP_COLUMN`;
+
+-- Error 1091: Can't DROP column; check that column/key exists
+CREATE PROCEDURE `cloud`.`IDEMPOTENT_DROP_COLUMN` (
+    IN in_table_name VARCHAR(200),
+    IN in_column_name VARCHAR(200)
+)
+BEGIN
+
+    DECLARE CONTINUE HANDLER FOR 1091 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name, ' DROP COLUMN ', in_column_name); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;

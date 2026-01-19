@@ -24,22 +24,24 @@ All notable changes to Linstor CloudStack plugin will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2025-12-18]
+
+### Changed
+- Provide /dev/drbd/by-res/ resource paths to CloudStack for usage.
+
 ## [2025-10-03]
 
 ### Changed
-
 - Revert qcow2 snapshot now use sparse/discard options to convert on thin devices.
 
 ## [2025-08-05]
 
 ### Fixed
-
 - getVolumeStats wasn't correctly working if multiple Linstor clusters/primary storages are used.
 
 ## [2025-07-01]
 
 ### Fixed
-
 - Regression in 4.19.3 and 4.21.0 with templates from snapshots
 
 ## [2025-05-07]
@@ -50,25 +52,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2025-03-13]
 
 ### Fixed
-
 - Implemented missing delete datastore, to correctly cleanup on datastore removal
 
 ## [2025-02-21]
 
 ### Fixed
-
 - Always try to delete cs-...-rst resource before doing a snapshot backup
 
 ## [2025-01-27]
 
 ### Fixed
-
 - Use of multiple primary storages on the same linstor controller
 
 ## [2025-01-20]
 
 ### Fixed
-
 - Volume snapshots on zfs used the wrong dataset path to hide/unhide snapdev
 
 ## [2024-12-19]
@@ -79,13 +77,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2024-12-13]
 
 ### Fixed
-
 - Linstor heartbeat check now also ask linstor-controller if there is no connection between nodes
 
 ## [2024-12-11]
 
 ### Fixed
-
 - Only set allow-two-primaries if a live migration is performed
 
 ## [2024-10-28]
@@ -98,17 +94,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2024-10-14]
 
 ### Added
-
 - Support for ISO direct download to primary storage
 
 ## [2024-10-04]
 
 ### Added
-
 - Enable qemu discard="unmap" for Linstor block disks
 
 ## [2024-08-27]
 
 ### Changed
-
 - Allow two primaries(+protocol c) is now set on resource-connection level instead of rd

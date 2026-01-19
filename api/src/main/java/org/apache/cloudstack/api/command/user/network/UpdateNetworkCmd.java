@@ -39,7 +39,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
 import com.cloud.offering.NetworkOffering;
 
-@APICommand(name = "updateNetwork", description = "Updates a network", responseObject = NetworkResponse.class, responseView = ResponseView.Restricted, entityType = {Network.class},
+@APICommand(name = "updateNetwork", description = "Updates a Network", responseObject = NetworkResponse.class, responseView = ResponseView.Restricted, entityType = {Network.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd implements UserCmd {
 
@@ -50,33 +50,33 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd implements UserCmd {
     /////////////////////////////////////////////////////
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = NetworkResponse.class,
-            required=true, description="the ID of the network")
+            required=true, description = "The ID of the network")
     protected Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the new name for the network")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The new name for the network")
     private String name;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the new display text for the network")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "The new display text for the network")
     private String displayText;
 
-    @Parameter(name = ApiConstants.NETWORK_DOMAIN, type = CommandType.STRING, description = "network domain")
+    @Parameter(name = ApiConstants.NETWORK_DOMAIN, type = CommandType.STRING, description = "Network domain")
     private String networkDomain;
 
     @Parameter(name = ApiConstants.CHANGE_CIDR, type = CommandType.BOOLEAN, description = "Force update even if CIDR type is different")
     private Boolean changeCidr;
 
-    @Parameter(name = ApiConstants.NETWORK_OFFERING_ID, type = CommandType.UUID, entityType = NetworkOfferingResponse.class, description = "network offering ID")
+    @Parameter(name = ApiConstants.NETWORK_OFFERING_ID, type = CommandType.UUID, entityType = NetworkOfferingResponse.class, description = "Network offering ID")
     private Long networkOfferingId;
 
     @Parameter(name = ApiConstants.GUEST_VM_CIDR, type = CommandType.STRING, description = "CIDR for guest VMs, CloudStack allocates IPs to guest VMs only from this CIDR")
     private String guestVmCidr;
 
-    @Parameter(name =ApiConstants.UPDATE_IN_SEQUENCE, type=CommandType.BOOLEAN, description = "if true, we will update the routers one after the other. applicable only for redundant router based networks using virtual router as provider")
+    @Parameter(name =ApiConstants.UPDATE_IN_SEQUENCE, type=CommandType.BOOLEAN, description = "If true, we will update the routers one after the other. applicable only for redundant router based networks using virtual router as provider")
     private Boolean updateInSequence;
 
     @Parameter(name = ApiConstants.DISPLAY_NETWORK,
                type = CommandType.BOOLEAN,
-               description = "an optional field, whether to the display the network to the end user or not.", authorized = {RoleType.Admin})
+               description = "An optional field, whether to the display the network to the end User or not.", authorized = {RoleType.Admin})
     private Boolean displayNetwork;
 
     @Parameter(name= ApiConstants.FORCED, type = CommandType.BOOLEAN, description = "Setting this to true will cause a forced network update,", authorized = {RoleType.Admin})
@@ -90,16 +90,16 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd implements UserCmd {
             description = "MTU to be configured on the network VR's public facing interfaces", since = "4.18.0")
     private Integer privateMtu;
 
-    @Parameter(name = ApiConstants.DNS1, type = CommandType.STRING, description = "the first IPv4 DNS for the network. Empty string will update the first IPv4 DNS with the value from the zone", since = "4.18.0")
+    @Parameter(name = ApiConstants.DNS1, type = CommandType.STRING, description = "The first IPv4 DNS for the network. Empty string will update the first IPv4 DNS with the value from the zone", since = "4.18.0")
     private String ip4Dns1;
 
-    @Parameter(name = ApiConstants.DNS2, type = CommandType.STRING, description = "the second IPv4 DNS for the network. Empty string will update the second IPv4 DNS with the value from the zone", since = "4.18.0")
+    @Parameter(name = ApiConstants.DNS2, type = CommandType.STRING, description = "The second IPv4 DNS for the network. Empty string will update the second IPv4 DNS with the value from the zone", since = "4.18.0")
     private String ip4Dns2;
 
-    @Parameter(name = ApiConstants.IP6_DNS1, type = CommandType.STRING, description = "the first IPv6 DNS for the network. Empty string will update the first IPv6 DNS with the value from the zone", since = "4.18.0")
+    @Parameter(name = ApiConstants.IP6_DNS1, type = CommandType.STRING, description = "The first IPv6 DNS for the network. Empty string will update the first IPv6 DNS with the value from the zone", since = "4.18.0")
     private String ip6Dns1;
 
-    @Parameter(name = ApiConstants.IP6_DNS2, type = CommandType.STRING, description = "the second IPv6 DNS for the network. Empty string will update the second IPv6 DNS with the value from the zone", since = "4.18.0")
+    @Parameter(name = ApiConstants.IP6_DNS2, type = CommandType.STRING, description = "The second IPv6 DNS for the network. Empty string will update the second IPv6 DNS with the value from the zone", since = "4.18.0")
     private String ip6Dns2;
 
     @Parameter(name = ApiConstants.SOURCE_NAT_IP, type = CommandType.STRING, description = "IPV4 address to be assigned to the public interface of the network router. This address must already be acquired for this network", since = "4.19")

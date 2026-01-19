@@ -14,17 +14,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.upgrade.dao;
+package org.apache.cloudstack.backup.dao;
 
-public class Upgrade42200to42300 extends DbUpgradeAbstractImpl implements DbUpgrade, DbUpgradeSystemVmTemplate {
+import java.util.List;
 
-    @Override
-    public String[] getUpgradableVersionRange() {
-        return new String[]{"4.22.0.0", "4.23.0.0"};
-    }
+import org.apache.cloudstack.backup.BackupOfferingDetailsVO;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
-    @Override
-    public String getUpgradedVersion() {
-        return "4.23.0.0";
-    }
+import com.cloud.utils.db.GenericDao;
+
+public interface BackupOfferingDetailsDao extends GenericDao<BackupOfferingDetailsVO, Long>, ResourceDetailsDao<BackupOfferingDetailsVO> {
+    List<Long> findDomainIds(final long resourceId);
+    List<Long> findZoneIds(final long resourceId);
+    String getDetail(Long backupOfferingId, String key);
+    List<Long> findOfferingIdsByDomainIds(List<Long> domainIds);
+    void updateBackupOfferingDomainIdsDetail(long backupOfferingId, List<Long> filteredDomainIds);
 }
