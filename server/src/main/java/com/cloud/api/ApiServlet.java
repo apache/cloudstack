@@ -345,7 +345,7 @@ public class ApiServlet extends HttpServlet {
                     return;
                 }
             } else {
-                LOGGER.trace("no command available");
+                LOGGER.trace("No command available.");
             }
             auditTrailSb.append(cleanQueryString);
             final boolean isNew = ((session == null) ? true : session.isNew());
@@ -355,7 +355,7 @@ public class ApiServlet extends HttpServlet {
             // if a API key exists
 
             if (isNew && LOGGER.isTraceEnabled()) {
-                LOGGER.trace(String.format("new session: %s", session));
+                LOGGER.trace(String.format("New session: %s.", session));
             }
 
             if (!isNew && (command.equalsIgnoreCase(ValidateUserTwoFactorAuthenticationCodeCmd.APINAME) || (!skip2FAcheckForAPIs(command) && !skip2FAcheckForUser(session)))) {

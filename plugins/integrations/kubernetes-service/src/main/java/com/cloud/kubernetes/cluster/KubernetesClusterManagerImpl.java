@@ -49,6 +49,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.configuration.Resource;
 import com.cloud.user.ResourceLimitService;
+import org.apache.cloudstack.acl.ApiKeyPairVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RolePermissionEntity;
@@ -1888,12 +1889,12 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     KUBEADMIN_ACCOUNT_NAME, "kubeadmin", null, UUID.randomUUID().toString(), User.Source.UNKNOWN));
             keys = createUserApiKeyAndSecretKey(kube.getId());
         } else {
-            String apiKey = kubeadmin.getApiKey();
-            String secretKey = kubeadmin.getSecretKey();
-            if (StringUtils.isAnyEmpty(apiKey, secretKey)) {
+            ApiKeyPairVO latestKeypair = ApiDBUtils.searchForLatestUserKeyPair(kubeadmin.getId());
+
+            if (latestKeypair == null) {
                 keys = createUserApiKeyAndSecretKey(kubeadmin.getId());
             } else {
-                keys = new String[]{apiKey, secretKey};
+                keys = new String[]{latestKeypair.getApiKey(), latestKeypair.getSecretKey()};
             }
         }
         return keys;

@@ -30,6 +30,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
@@ -38,13 +39,16 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
+import org.apache.cloudstack.acl.ApiKeyPairVO;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements AccountDao {
-    private static final String FIND_USER_ACCOUNT_BY_API_KEY = "SELECT u.id, u.username, u.account_id, u.secret_key, u.state, u.api_key_access, "
-        + "a.id, a.account_name, a.type, a.role_id, a.domain_id, a.state, a.api_key_access " + "FROM `cloud`.`user` u, `cloud`.`account` a "
-        + "WHERE u.account_id = a.id AND u.api_key = ? and u.removed IS NULL";
+    private static final String FIND_USER_ACCOUNT_BY_API_KEY = "SELECT u.id, u.username, u.account_id, u.state, u.api_key_access, " +
+            "a.id, a.account_name, a.type, a.role_id, a.domain_id, a.state, a.api_key_access, ak.id, ak.start_date, ak.end_date, ak.secret_key, " +
+            "ak.removed FROM `cloud`.`user` u INNER JOIN `cloud`.`account` a ON u.account_id = a.id INNER JOIN `cloud`.`api_keypair` ak " +
+            "ON ak.user_id = u.id WHERE ak.api_key = ? AND u.removed IS NULL";
 
     protected final SearchBuilder<AccountVO> AllFieldsSearch;
     protected final SearchBuilder<AccountVO> AccountTypeSearch;
@@ -133,48 +137,53 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
     }
 
     @Override
-    public Pair<User, Account> findUserAccountByApiKey(String apiKey) {
+    public Ternary<User, Account, ApiKeyPair> findUserAccountByApiKey(String apiKey) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        PreparedStatement pstmt = null;
-        Pair<User, Account> userAcctPair = null;
+        PreparedStatement pstmt;
+        Ternary<User, Account, ApiKeyPair> userAcctTernary = null;
         try {
-            String sql = FIND_USER_ACCOUNT_BY_API_KEY;
-            pstmt = txn.prepareAutoCloseStatement(sql);
+            pstmt = txn.prepareAutoCloseStatement(FIND_USER_ACCOUNT_BY_API_KEY);
             pstmt.setString(1, apiKey);
             ResultSet rs = pstmt.executeQuery();
             // TODO:  make sure we don't have more than 1 result?  ApiKey had better be unique
             if (rs.next()) {
-                User u = new UserVO(rs.getLong(1));
-                u.setUsername(rs.getString(2));
-                u.setAccountId(rs.getLong(3));
-                u.setSecretKey(DBEncryptionUtil.decrypt(rs.getString(4)));
-                u.setState(State.getValueOf(rs.getString(5)));
-                boolean apiKeyAccess = rs.getBoolean(6);
+                User user = new UserVO(rs.getLong(1));
+                user.setUsername(rs.getString(2));
+                user.setAccountId(rs.getLong(3));
+                user.setState(State.getValueOf(rs.getString(4)));
+                boolean apiKeyAccess = rs.getBoolean(5);
                 if (rs.wasNull()) {
-                    u.setApiKeyAccess(null);
+                    user.setApiKeyAccess(null);
                 } else {
-                    u.setApiKeyAccess(apiKeyAccess);
+                    user.setApiKeyAccess(apiKeyAccess);
                 }
 
-                AccountVO a = new AccountVO(rs.getLong(7));
-                a.setAccountName(rs.getString(8));
-                a.setType(Account.Type.getFromValue(rs.getInt(9)));
-                a.setRoleId(rs.getLong(10));
-                a.setDomainId(rs.getLong(11));
-                a.setState(State.getValueOf(rs.getString(12)));
-                apiKeyAccess = rs.getBoolean(13);
+                AccountVO account = new AccountVO(rs.getLong(6));
+                account.setAccountName(rs.getString(7));
+                account.setType(Account.Type.getFromValue(rs.getInt(8)));
+                account.setRoleId(rs.getLong(9));
+                account.setDomainId(rs.getLong(10));
+                account.setState(State.getValueOf(rs.getString(11)));
+                apiKeyAccess = rs.getBoolean(12);
                 if (rs.wasNull()) {
-                    a.setApiKeyAccess(null);
+                    account.setApiKeyAccess(null);
                 } else {
-                    a.setApiKeyAccess(apiKeyAccess);
+                    account.setApiKeyAccess(apiKeyAccess);
                 }
 
-                userAcctPair = new Pair<User, Account>(u, a);
+                ApiKeyPairVO keyPair = new ApiKeyPairVO(rs.getLong(13));
+                keyPair.setStartDate(rs.getTimestamp(14));
+                keyPair.setEndDate(rs.getTimestamp(15));
+                keyPair.setSecretKey(DBEncryptionUtil.decrypt(rs.getString(16)));
+                keyPair.setRemoved(rs.getTimestamp(17));
+                keyPair.setApiKey(apiKey);
+
+                userAcctTernary = new Ternary<>(user, account, keyPair);
             }
         } catch (Exception e) {
-            logger.warn("Exception finding user/acct by api key: " + apiKey, e);
+            logger.warn("Exception finding user/acct by api key: {}", apiKey, e);
         }
-        return userAcctPair;
+        return userAcctTernary;
     }
 
     @Override
