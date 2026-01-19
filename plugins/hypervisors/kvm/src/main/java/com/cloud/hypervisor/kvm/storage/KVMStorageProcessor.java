@@ -1839,26 +1839,10 @@ public class KVMStorageProcessor implements StorageProcessor {
                         logger.debug("Attempting to create RBD snapshot " + disk.getName() + "@" + snapshotName);
                         image.snapCreate(snapshotName);
 
-                        RbdImageInfo imageInfo = image.stat();
-                        logger.debug("RBD image " + image.getName() + " info - size: " + imageInfo.size + ", obj_size: " + imageInfo.obj_size + ", num_objs: " + imageInfo.num_objs);
-
                         long rbdSnapshotSize = getRdbSnapshotSize(primaryPool.getSourceDir(), disk.getName(), snapshotName, primaryPool.getSourceHost(), primaryPool.getAuthUserName(), primaryPool.getAuthSecret());
                         if (rbdSnapshotSize > 0) {
                             snapshotSize = rbdSnapshotSize;
                         }
-
-                        List<RbdSnapInfo> snapInfo = image.snapList();
-                        for (RbdSnapInfo snap : snapInfo) {
-                            logger.debug("RBD snap info - id: " + snap.id + ", name:" + snap.name + ", size: " + snap.size);
-                        }
-
-                        final RbdImage imageSnap = rbd.open(disk.getName(), snapshotName);
-                        imageSnap.stat();
-                        logger.debug("RBD image snapshot " + image.getName() + " info - size: " + imageInfo.size + ", obj_size: " + imageInfo.obj_size + ", num_objs: " + imageInfo.num_objs);
-
-                        final RbdImage snap = rbd.open(disk.getName() + "@" + snapshotName);
-                        snap.stat();
-                        logger.debug("RBD snapshot " + image.getName() + " info - size: " + imageInfo.size + ", obj_size: " + imageInfo.obj_size + ", num_objs: " + imageInfo.num_objs);
 
                         rbd.close(image);
                         r.ioCtxDestroy(io);
@@ -1900,11 +1884,9 @@ public class KVMStorageProcessor implements StorageProcessor {
 
     private long getRdbSnapshotSize(String poolPath, String diskName, String snapshotName, String rbdMonitor, String authUser, String authSecret) {
         logger.debug("Get RBD snapshot size for {}/{}@{}", poolPath, diskName, snapshotName);
-        //rbd du cloudstack/e29110ce-ffab-4a27-b2ad-6d87905039d8@d2e2d6d5-ff66-46f1-be7b-76e0504e965d --format json --pretty-format
-        //rbd du cloudstack/e29110ce-ffab-4a27-b2ad-6d87905039d8@d2e2d6d5-ff66-46f1-be7b-76e0504e965d --format json --mon-host 10.0.33.201 --id cloudstack --key AQApZshoQKVHCxAA42Bb8kBoUyLH2cEcFbd2jQ== 2>/dev/null
+        //cmd: rbd du <pool>/<disk-name>@<snapshot-name> --format json --mon-host <monitor-host> --id <user> --key <key> 2>/dev/null
         String snapshotDetailsInJson = Script.runSimpleBashScript(String.format("rbd du %s/%s@%s --format json --mon-host %s --id %s --key %s 2>/dev/null", poolPath, diskName, snapshotName, rbdMonitor, authUser, authSecret));
         if (StringUtils.isNotBlank(snapshotDetailsInJson)) {
-            logger.debug("RBD snapshot size for {}/{}@{} cmd output: ", poolPath, diskName, snapshotName, snapshotDetailsInJson);
             ObjectMapper mapper = new ObjectMapper();
             try {
                 JsonNode root = mapper.readTree(snapshotDetailsInJson);
