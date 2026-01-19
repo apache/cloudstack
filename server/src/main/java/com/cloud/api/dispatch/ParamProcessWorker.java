@@ -534,7 +534,7 @@ public class ParamProcessWorker implements DispatchWorker {
                 for (final Class<?> entity : entities) {
                     CallContext.current().putContextParameter(entity, internalId);
                     final Object objVO = _entityMgr.findByIdIncludingRemoved(entity, internalId);
-                    if (objVO == null) {
+                    if (!(objVO instanceof Identity)) {
                         continue;
                     }
                     CallContext.current().putApiResourceUuid(annotation.name(), ((Identity) objVO).getUuid());
