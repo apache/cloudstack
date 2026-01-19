@@ -76,7 +76,7 @@ public class DeleteVPCOfferingCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting VPC offering with id: " + getResourceUuid(ApiConstants.ID);
+        return "Deleting VPC offering with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

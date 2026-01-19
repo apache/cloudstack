@@ -93,7 +93,7 @@ public class EnableOutOfBandManagementForClusterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Enable out-of-band management password for cluster with ID: " + getResourceUuid(ApiConstants.CLUSTER_ID);
+        return "Enabling out-of-band management password for cluster with ID: " + getResourceUuid(ApiConstants.CLUSTER_ID);
     }
 
     @Override

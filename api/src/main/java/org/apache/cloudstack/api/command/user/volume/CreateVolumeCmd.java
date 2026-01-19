@@ -203,7 +203,11 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
 
     @Override
     public String getEventDescription() {
-        String description = "Creating volume: " + getVolumeName();
+        String description = "Creating volume ";
+
+        if (getVolumeName() != null) {
+            description += getVolumeName();
+        }
 
         if (getSnapshotId() != null) {
             description += " from Snapshot: " + getResourceUuid(ApiConstants.SNAPSHOT_ID);

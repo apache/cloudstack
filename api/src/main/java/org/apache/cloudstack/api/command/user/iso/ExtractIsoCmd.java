@@ -101,14 +101,13 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        String baseDescription = "Extracting ISO: " +  getResourceUuid(ApiConstants.ID);
+        String description = "Extracting ISO: " +  getResourceUuid(ApiConstants.ID);
 
-        Long zoneId = getZoneId();
-        if (zoneId == null) {
-            return baseDescription;
+        if (getZoneId() == null) {
+            description += "from zone: " + getResourceUuid(ApiConstants.ZONE_ID);
         }
 
-        return String.format("%s from zone: %s", baseDescription, getResourceUuid(ApiConstants.ZONE_ID));
+        return description;
     }
 
     @Override

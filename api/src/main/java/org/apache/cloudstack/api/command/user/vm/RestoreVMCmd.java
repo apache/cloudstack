@@ -90,7 +90,7 @@ public class RestoreVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return "Restore Instance with ID: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID) + " to original Template or specific Snapshot";
+        return "Restoring Instance with ID: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID) + " to original Template or specific Snapshot";
     }
 
     @Override

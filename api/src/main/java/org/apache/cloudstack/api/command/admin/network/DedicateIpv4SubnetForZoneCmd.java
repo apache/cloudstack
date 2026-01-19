@@ -82,7 +82,7 @@ public class DedicateIpv4SubnetForZoneCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Dedicating zone IPv4 subnet " + getResourceUuid(ApiConstants.ID);
+        return "Dedicating zone's IPv4 subnet with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

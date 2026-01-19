@@ -168,7 +168,7 @@ public class UploadVolumeCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Uploading volume: " + getVolumeName() + " in the zone with ID: " + getResourceUuid(ApiConstants.ZONE_ID);
+        return  "Uploading volume: " + getVolumeName() + " to zone with ID: " + getResourceUuid(ApiConstants.ZONE_ID);
     }
 
     @Override

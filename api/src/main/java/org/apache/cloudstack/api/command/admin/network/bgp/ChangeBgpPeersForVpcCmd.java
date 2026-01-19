@@ -80,7 +80,7 @@ public class ChangeBgpPeersForVpcCmd extends BaseAsyncCmd implements AdminCmd {
 
     @Override
     public String getEventDescription() {
-        return "Changing bgp Peers for VPC with ID: " + getResourceUuid(ApiConstants.VPC_ID);
+        return "Changing BGP Peers for VPC with ID: " + getResourceUuid(ApiConstants.VPC_ID);
     }
 
     @Override

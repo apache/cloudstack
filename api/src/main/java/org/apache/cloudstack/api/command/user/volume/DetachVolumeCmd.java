@@ -126,15 +126,17 @@ public class DetachVolumeCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder("Detaching volume");
+
         if (id != null) {
-            sb.append(": " + getResourceUuid(ApiConstants.ID));
+            sb.append(": ").append(getResourceUuid(ApiConstants.ID));
         } else if ((deviceId != null) && (virtualMachineId != null)) {
             sb.append(" with device id: " + deviceId + " from Instance: " + ((getVirtualMachineId() != null) ? getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID) : ""));
         } else {
             sb.append(" <error:  either volume id or deviceId/vmId need to be specified>");
         }
-        return  "detaching volume" + sb.toString();
+
+        return  sb.toString();
     }
 
     @Override
