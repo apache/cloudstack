@@ -31,7 +31,7 @@ get_interface() {
   for i in `seq 1 $(($timeout))`
   do
     #inf=$(ip route list ${1}/${2} | awk '{print $3}')
-    inf=$(ip addr show|egrep '^ *inet'|grep ${1}/${2} |grep brd|awk -- '{ print $NF; }')
+    inf=$(ip addr show|grep -E '^ *inet'|grep ${1}/${2} |grep brd|awk -- '{ print $NF; }')
     if [ ! -z $inf ]; then
       echo $inf
       break

@@ -104,6 +104,8 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> LastHostAndStatesSearch;
     protected SearchBuilder<VMInstanceVO> VmsNotInClusterUsingPool;
     protected SearchBuilder<VMInstanceVO> IdsPowerStateSelectSearch;
+    GenericSearchBuilder<VMInstanceVO, Integer> CountByOfferingId;
+    GenericSearchBuilder<VMInstanceVO, Integer> CountUserVmNotInDomain;
 
     @Inject
     ResourceTagDao tagsDao;
@@ -354,6 +356,18 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
                 IdsPowerStateSelectSearch.entity().getPowerStateUpdateCount(),
                 IdsPowerStateSelectSearch.entity().getPowerStateUpdateTime());
         IdsPowerStateSelectSearch.done();
+
+        CountByOfferingId = createSearchBuilder(Integer.class);
+        CountByOfferingId.select(null, Func.COUNT, CountByOfferingId.entity().getId());
+        CountByOfferingId.and("serviceOfferingId", CountByOfferingId.entity().getServiceOfferingId(), Op.EQ);
+        CountByOfferingId.done();
+
+        CountUserVmNotInDomain = createSearchBuilder(Integer.class);
+        CountUserVmNotInDomain.select(null, Func.COUNT, CountUserVmNotInDomain.entity().getId());
+        CountUserVmNotInDomain.and("serviceOfferingId", CountUserVmNotInDomain.entity().getServiceOfferingId(), Op.EQ);
+        CountUserVmNotInDomain.and("domainIdsNotIn", CountUserVmNotInDomain.entity().getDomainId(), Op.NIN);
+        CountUserVmNotInDomain.done();
+
     }
 
     @Override
@@ -886,7 +900,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
                 return rs.getLong(1);
             }
         } catch (Exception e) {
-            logger.warn(String.format("Error counting vms by host tag for dcId = %s, hostTag = %s", dcId, hostTag), e);
+            logger.warn("Error counting Instances by host tag for dcId = {}, hostTag = {}", dcId, hostTag, e);
         }
         return 0L;
     }
@@ -1245,6 +1259,29 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         List<VMInstanceVO> vms = customSearch(sc, null);
         return vms.stream()
                 .collect(Collectors.toMap(VMInstanceVO::getInstanceName, VMInstanceVO::getId));
+    }
+
+    @Override
+    public int getVmCountByOfferingId(Long serviceOfferingId) {
+        if (serviceOfferingId == null) {
+            return 0;
+        }
+        SearchCriteria<Integer> sc = CountByOfferingId.create();
+        sc.setParameters("serviceOfferingId", serviceOfferingId);
+        List<Integer> count = customSearch(sc, null);
+        return count.get(0);
+    }
+
+    @Override
+    public int getVmCountByOfferingNotInDomain(Long serviceOfferingId, List<Long> domainIds) {
+        if (serviceOfferingId == null || CollectionUtils.isEmpty(domainIds)) {
+            return 0;
+        }
+        SearchCriteria<Integer> sc = CountUserVmNotInDomain.create();
+        sc.setParameters("serviceOfferingId", serviceOfferingId);
+        sc.setParameters("domainIdsNotIn", domainIds.toArray());
+        List<Integer> count = customSearch(sc, null);
+        return count.get(0);
     }
 
     @Override

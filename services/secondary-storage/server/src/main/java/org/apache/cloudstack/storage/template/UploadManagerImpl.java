@@ -415,7 +415,6 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         if (inSystemVM != null && "true".equalsIgnoreCase(inSystemVM)) {
             logger.info("UploadManager: starting additional services since we are inside system vm");
             startAdditionalServices();
-            //blockOutgoingOnPrivate();
         }
 
         value = (String)params.get("install.numthreads");

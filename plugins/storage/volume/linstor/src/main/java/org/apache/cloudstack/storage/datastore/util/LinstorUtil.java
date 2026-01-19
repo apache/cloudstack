@@ -265,6 +265,16 @@ public class LinstorUtil {
     }
 
     /**
+     * Format the device path for DRBD resources.
+     * @param rscName
+     * @return
+     */
+    public static String formatDrbdByResDevicePath(String rscName)
+    {
+        return String.format("/dev/drbd/by-res/%s/0", rscName);
+    }
+
+    /**
      * Try to get the device path for the given resource name.
      * This could be made a bit more direct after java-linstor api is fixed for layer data subtypes.
      * @param api developer api object to use
@@ -283,18 +293,31 @@ public class LinstorUtil {
                 null);
         for (ResourceWithVolumes rsc : resources) {
             if (!rsc.getVolumes().isEmpty()) {
-                // CloudStack resource always only have 1 volume
-                String devicePath = rsc.getVolumes().get(0).getDevicePath();
-                if (devicePath != null && !devicePath.isEmpty()) {
-                    LOGGER.debug("getDevicePath: {} -> {}", rscName, devicePath);
-                    return devicePath;
-                }
+                return LinstorUtil.getDevicePathFromResource(rsc);
             }
         }
 
         final String errMsg = "viewResources didn't return resources or volumes for " + rscName;
         LOGGER.error(errMsg);
         throw new CloudRuntimeException("Linstor: " + errMsg);
+    }
+
+    /**
+     * Check if the resource has DRBD or not and deliver the correct device path.
+     * @param rsc
+     * @return
+     */
+    public static String getDevicePathFromResource(ResourceWithVolumes rsc) {
+        if (!rsc.getVolumes().isEmpty()) {
+            // CloudStack resource always only have 1 volume
+            if (rsc.getLayerObject().getDrbd() != null) {
+                return formatDrbdByResDevicePath(rsc.getName());
+            } else {
+                return rsc.getVolumes().get(0).getDevicePath();
+            }
+        }
+        throw new CloudRuntimeException(
+                String.format("getDevicePath: Resource %s/%s doesn't have volumes", rsc.getNodeName(), rsc.getName()));
     }
 
     public static ApiCallRcList applyAuxProps(DevelopersApi api, String rscName, String dispName, String vmName)

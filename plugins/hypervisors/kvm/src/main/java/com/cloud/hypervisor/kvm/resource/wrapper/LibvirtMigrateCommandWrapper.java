@@ -175,10 +175,10 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             String oldIsoVolumePath = getOldVolumePath(disks, vmName);
             String newIsoVolumePath = getNewVolumePathIfDatastoreHasChanged(libvirtComputingResource, conn, to);
             if (newIsoVolumePath != null && !newIsoVolumePath.equals(oldIsoVolumePath)) {
-                logger.debug(String.format("Editing mount path of iso from %s to %s", oldIsoVolumePath, newIsoVolumePath));
+                logger.debug(String.format("Editing mount path of ISO from %s to %s", oldIsoVolumePath, newIsoVolumePath));
                 xmlDesc = replaceDiskSourceFile(xmlDesc, newIsoVolumePath, vmName);
                 if (logger.isDebugEnabled()) {
-                    logger.debug(String.format("Replaced disk mount point [%s] with [%s] in VM [%s] XML configuration. New XML configuration is [%s].", oldIsoVolumePath, newIsoVolumePath, vmName, xmlDesc));
+                    logger.debug(String.format("Replaced disk mount point [%s] with [%s] in Instance [%s] XML configuration. New XML configuration is [%s].", oldIsoVolumePath, newIsoVolumePath, vmName, xmlDesc));
                 }
             }
 
@@ -278,17 +278,20 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
 
                 // abort the vm migration if the job is executed more than vm.migrate.wait
                 final int migrateWait = libvirtComputingResource.getMigrateWait();
+                logger.info("vm.migrate.wait value set to: {}for VM: {}", migrateWait, vmName);
                 if (migrateWait > 0 && sleeptime > migrateWait * 1000) {
                     DomainState state = null;
                     try {
                         state = dm.getInfo().state;
+                        logger.info("VM domain state when trying to abort migration : {}", state);
                     } catch (final LibvirtException e) {
                         logger.info("Couldn't get VM domain state after " + sleeptime + "ms: " + e.getMessage());
                     }
                     if (state != null && state == DomainState.VIR_DOMAIN_RUNNING) {
                         try {
                             DomainJobInfo job = dm.getJobInfo();
-                            logger.info(String.format("Aborting migration of VM [%s] with domain job [%s] due to time out after %d seconds.", vmName, job, migrateWait));
+                            logger.warn("Aborting migration of VM {} with domain job [{}] due to timeout after {} seconds. " +
+                                    "Job stats: data processed={} bytes, data remaining={} bytes", vmName, job, migrateWait, job.getDataProcessed(), job.getDataRemaining());
                             dm.abortJob();
                             result = String.format("Migration of VM [%s] was cancelled by CloudStack due to time out after %d seconds.", vmName, migrateWait);
                             commandState = Command.State.FAILED;
@@ -303,10 +306,12 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
 
                 // pause vm if we meet the vm.migrate.pauseafter threshold and not already paused
                 final int migratePauseAfter = libvirtComputingResource.getMigratePauseAfter();
+                logger.info("vm.migrate.pauseafter value set to: {} for VM: {}", migratePauseAfter, vmName);
                 if (migratePauseAfter > 0 && sleeptime > migratePauseAfter) {
                     DomainState state = null;
                     try {
                         state = dm.getInfo().state;
+                        logger.info("VM domain state when trying to pause VM for migration: {}", state);
                     } catch (final LibvirtException e) {
                         logger.info("Couldn't get VM domain state after " + sleeptime + "ms: " + e.getMessage());
                     }
@@ -381,6 +386,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         }
 
         if (result == null) {
+            logger.info("Post-migration cleanup for VM {}: ", vmName);
             libvirtComputingResource.destroyNetworkRulesForVM(conn, vmName);
             for (final InterfaceDef iface : ifaces) {
                 String vlanId = libvirtComputingResource.getVlanIdFromBridgeName(iface.getBrName());
@@ -394,6 +400,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             commandState = Command.State.COMPLETED;
             libvirtComputingResource.createOrUpdateLogFileForCommand(command, commandState);
         } else if (commandState == null) {
+            logger.error("Migration of VM {} failed with result: {}", vmName, result);
             commandState = Command.State.FAILED;
             libvirtComputingResource.createOrUpdateLogFileForCommand(command, commandState);
         }
