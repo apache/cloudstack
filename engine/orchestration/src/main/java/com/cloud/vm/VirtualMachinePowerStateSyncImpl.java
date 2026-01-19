@@ -158,7 +158,7 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
                 // an update might have occurred that we should not override in case of out of band migration
                 instancePowerStates.put(instance.getId(), VirtualMachine.PowerState.PowerReportMissing);
             } else {
-                logger.debug("vm id: {} - time since last state update({} ms) has not passed graceful period (%d ms) yet",
+                logger.debug("vm id: {} - time since last state update({} ms) has not passed graceful period ({} ms) yet",
                         instance.getId(), milliSecondsSinceLastStateUpdate, milliSecondsGracefulPeriod);
             }
         }
