@@ -311,7 +311,12 @@ export default {
       permission: ['listSnapshots'],
       resourceType: 'Snapshot',
       columns: () => {
-        var fields = ['name', 'state', 'volumename', 'intervaltype', 'physicalsize', 'created']
+        var fields = ['name', 'state', 'volumename', 'intervaltype', 'physicalsize']
+        if (store.getters.features.snapshotshowchainsize) {
+          fields.push('chainsize')
+          fields.push('parentname')
+        }
+        fields.push('created')
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
           if (store.getters.listAllProjects) {
@@ -324,7 +329,7 @@ export default {
         fields.push('zonename')
         return fields
       },
-      details: ['name', 'id', 'volumename', 'volumetype', 'snapshottype', 'intervaltype', 'physicalsize', 'virtualsize', 'chainsize', 'account', 'domain', 'created'],
+      details: ['name', 'id', 'volumename', 'volumetype', 'snapshottype', 'intervaltype', 'physicalsize', 'virtualsize', 'chainsize', 'parentname', 'account', 'domain', 'created'],
       tabs: [
         {
           name: 'details',
