@@ -43,7 +43,6 @@ import java.util.stream.Collectors;
 
 import javax.naming.ConfigurationException;
 
-import com.ceph.rbd.jna.RbdImageInfo;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -1839,7 +1838,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                         logger.debug("Attempting to create RBD snapshot " + disk.getName() + "@" + snapshotName);
                         image.snapCreate(snapshotName);
 
-                        long rbdSnapshotSize = getRdbSnapshotSize(primaryPool.getSourceDir(), disk.getName(), snapshotName, primaryPool.getSourceHost(), primaryPool.getAuthUserName(), primaryPool.getAuthSecret());
+                        long rbdSnapshotSize = getRbdSnapshotSize(primaryPool.getSourceDir(), disk.getName(), snapshotName, primaryPool.getSourceHost(), primaryPool.getAuthUserName(), primaryPool.getAuthSecret());
                         if (rbdSnapshotSize > 0) {
                             snapshotSize = rbdSnapshotSize;
                         }
@@ -1882,7 +1881,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
     }
 
-    private long getRdbSnapshotSize(String poolPath, String diskName, String snapshotName, String rbdMonitor, String authUser, String authSecret) {
+    private long getRbdSnapshotSize(String poolPath, String diskName, String snapshotName, String rbdMonitor, String authUser, String authSecret) {
         logger.debug("Get RBD snapshot size for {}/{}@{}", poolPath, diskName, snapshotName);
         //cmd: rbd du <pool>/<disk-name>@<snapshot-name> --format json --mon-host <monitor-host> --id <user> --key <key> 2>/dev/null
         String snapshotDetailsInJson = Script.runSimpleBashScript(String.format("rbd du %s/%s@%s --format json --mon-host %s --id %s --key %s 2>/dev/null", poolPath, diskName, snapshotName, rbdMonitor, authUser, authSecret));
@@ -1893,15 +1892,15 @@ public class KVMStorageProcessor implements StorageProcessor {
                 for (JsonNode image : root.path("images")) {
                     if (snapshotName.equals(image.path("snapshot").asText())) {
                         long usedSizeInBytes = image.path("used_size").asLong();
-                        if (usedSizeInBytes > 0) {
-                            logger.debug("RBD snapshot {}/{}@{} used size in bytes: {}", poolPath, diskName, snapshotName, usedSizeInBytes);
-                            return usedSizeInBytes;
-                        }
+                        logger.debug("RBD snapshot {}/{}@{} used size in bytes: {}", poolPath, diskName, snapshotName, usedSizeInBytes);
+                        return usedSizeInBytes;
                     }
                 }
             } catch (JsonProcessingException e) {
-                logger.error("Unable to get the RBD snapshot size", e);
+                logger.error("Unable to get the RBD snapshot size, RBD snapshot cmd output: {}", snapshotDetailsInJson, e);
             }
+        } else {
+                logger.warn("Failed to get RBD snapshot size for {}/{}@{} - no output for RBD snapshot cmd", poolPath, diskName, snapshotName);
         }
 
         return 0;
