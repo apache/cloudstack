@@ -1046,6 +1046,31 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return true;
     }
 
+    private VolumeVO allocateVolumeOnStorage(Long volumeId, Long storageId) {
+        DataStore destStore = dataStoreMgr.getDataStore(storageId, DataStoreRole.Primary);
+        VolumeInfo destVolume = volFactory.getVolume(volumeId, destStore);
+        try {
+            AsyncCallFuture<VolumeApiResult> createVolumeFuture = volService.createVolumeAsync(destVolume, destStore);
+            VolumeApiResult createVolumeResult = createVolumeFuture.get();
+            if (createVolumeResult.isFailed()) {
+                logger.debug("Failed to create dest volume {}, volume can be removed", destVolume);
+                destroyVolume(destVolume.getId());
+                destVolume.processEvent(ObjectInDataStoreStateMachine.Event.ExpungeRequested);
+                destVolume.processEvent(ObjectInDataStoreStateMachine.Event.OperationSucceeded);
+                _volsDao.remove(destVolume.getId());
+                throw new CloudRuntimeException("Creation of a dest volume failed: " + createVolumeResult.getResult());
+            } else {
+                destVolume = volFactory.getVolume(destVolume.getId(), destStore);
+                destVolume.processEvent(ObjectInDataStoreStateMachine.Event.CreateRequested);
+                destVolume.processEvent(ObjectInDataStoreStateMachine.Event.OperationSucceeded);
+            }
+        } catch (Exception e) {
+            logger.debug("Failed to create dest volume {}", destVolume, e);
+            throw new CloudRuntimeException("Creation of a dest volume failed: volume needs cleanup");
+        }
+        return null;
+    }
+
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating volume", async = true)
@@ -1077,6 +1102,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                         throw new CloudRuntimeException(message.toString());
                     }
                 }
+            } else if (cmd.getStorageId() != null) {
+                allocateVolumeOnStorage(cmd.getEntityId(), cmd.getStorageId());
             }
             return volume;
         } catch (Exception e) {
