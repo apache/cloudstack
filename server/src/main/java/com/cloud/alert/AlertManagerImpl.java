@@ -112,7 +112,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             , AlertType.ALERT_TYPE_OOBM_AUTH_ERROR
             , AlertType.ALERT_TYPE_HA_ACTION
             , AlertType.ALERT_TYPE_CA_CERT
-            , AlertType.ALERT_TYPE_EXTENSION_PATH_NOT_READY);
+            , AlertType.ALERT_TYPE_EXTENSION_PATH_NOT_READY
+            , AlertType.ALERT_TYPE_VPN_GATEWAY_OBSOLETE_PARAMETERS);
 
     private static final long INITIAL_CAPACITY_CHECK_DELAY = 30L * 1000L; // Thirty seconds expressed in milliseconds.
 
