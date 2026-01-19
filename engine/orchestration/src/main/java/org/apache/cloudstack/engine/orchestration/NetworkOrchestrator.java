@@ -1245,19 +1245,22 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     protected Integer getVirtualMachineMaxNicsValueFromCluster(ClusterVO cluster) {
         HypervisorType clusterHypervisor = cluster.getHypervisorType();
 
-        switch (clusterHypervisor) {
-            case KVM:
-                logger.debug("The cluster {} where the VM is deployed uses the {} hypervisor. Therefore, the {} setting value [{}] will be used.", cluster.getName(), clusterHypervisor, VirtualMachineMaxNicsKvm, VirtualMachineMaxNicsKvm.valueIn(cluster.getId()));
-                return VirtualMachineMaxNicsKvm.valueIn(cluster.getId());
-            case VMware:
-                logger.debug("The cluster {} where the VM is deployed uses the {} hypervisor. Therefore, the {} setting value [{}] will be used.", cluster.getName(), clusterHypervisor, VirtualMachineMaxNicsKvm, VirtualMachineMaxNicsVmware.valueIn(cluster.getId()));
-                return VirtualMachineMaxNicsVmware.valueIn(cluster.getId());
-            case XenServer:
-                logger.debug("The cluster {} where the VM is deployed uses the {} hypervisor. Therefore, the {} setting value [{}] will be used.", cluster.getName(), clusterHypervisor, VirtualMachineMaxNicsXenserver, VirtualMachineMaxNicsXenserver.valueIn(cluster.getId()));
-                return VirtualMachineMaxNicsXenserver.valueIn(cluster.getId());
-            default:
-                return null;
+        if (clusterHypervisor.equals(HypervisorType.KVM)) {
+            logger.debug("The cluster {} where the VM is deployed uses the {} hypervisor. Therefore, the {} setting value [{}] will be used.", cluster.getName(), clusterHypervisor, VirtualMachineMaxNicsKvm, VirtualMachineMaxNicsKvm.valueIn(cluster.getId()));
+            return VirtualMachineMaxNicsKvm.valueIn(cluster.getId());
         }
+
+        if (clusterHypervisor.equals(HypervisorType.VMware)) {
+            logger.debug("The cluster {} where the VM is deployed uses the {} hypervisor. Therefore, the {} setting value [{}] will be used.", cluster.getName(), clusterHypervisor, VirtualMachineMaxNicsKvm, VirtualMachineMaxNicsVmware.valueIn(cluster.getId()));
+            return VirtualMachineMaxNicsVmware.valueIn(cluster.getId());
+        }
+
+        if (clusterHypervisor.equals(HypervisorType.XenServer)) {
+            logger.debug("The cluster {} where the VM is deployed uses the {} hypervisor. Therefore, the {} setting value [{}] will be used.", cluster.getName(), clusterHypervisor, VirtualMachineMaxNicsXenserver, VirtualMachineMaxNicsXenserver.valueIn(cluster.getId()));
+            return VirtualMachineMaxNicsXenserver.valueIn(cluster.getId());
+        }
+
+        return null;
     }
 
     /**
@@ -1269,20 +1272,23 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     protected Integer getVirtualMachineMaxNicsValueFromVmHypervisorType(VirtualMachine virtualMachine) {
         HypervisorType virtualMachineHypervisorType = virtualMachine.getHypervisorType();
 
-        switch (virtualMachineHypervisorType) {
-            case KVM:
-                logger.debug("Using the {} setting global value {} as the VM {} has the {} hypervisor type and is not deployed on either a host or a cluster.", VirtualMachineMaxNicsKvm, VirtualMachineMaxNicsKvm.value(), virtualMachine.getUuid(), virtualMachineHypervisorType);
-                return VirtualMachineMaxNicsKvm.value();
-            case VMware:
-                logger.debug("Using the {} setting global value {} as the VM {} has the {} hypervisor type and is not deployed on either a host or a cluster.", VirtualMachineMaxNicsVmware, VirtualMachineMaxNicsVmware.value(), virtualMachine.getUuid(), virtualMachineHypervisorType);
-                return VirtualMachineMaxNicsVmware.value();
-            case XenServer:
-                logger.debug("Using the {} setting global value {} as the VM {} has the {} hypervisor type and is not deployed on either a host or a cluster.", VirtualMachineMaxNicsXenserver, VirtualMachineMaxNicsXenserver.value(), virtualMachine.getUuid(), virtualMachineHypervisorType);
-                return VirtualMachineMaxNicsXenserver.value();
-            default:
-                logger.debug("Not considering the hypervisor maximum limits as we were unable to find a compatible hypervisor on the VM and VM cluster for virtual machine maximum NICs configurations.");
-                return null;
+        if (virtualMachineHypervisorType.equals(HypervisorType.KVM)) {
+            logger.debug("Using the {} setting global value {} as the VM {} has the {} hypervisor type and is not deployed on either a host or a cluster.", VirtualMachineMaxNicsKvm, VirtualMachineMaxNicsKvm.value(), virtualMachine.getUuid(), virtualMachineHypervisorType);
+            return VirtualMachineMaxNicsKvm.value();
         }
+
+        if (virtualMachineHypervisorType.equals(HypervisorType.VMware)) {
+            logger.debug("Using the {} setting global value {} as the VM {} has the {} hypervisor type and is not deployed on either a host or a cluster.", VirtualMachineMaxNicsVmware, VirtualMachineMaxNicsVmware.value(), virtualMachine.getUuid(), virtualMachineHypervisorType);
+            return VirtualMachineMaxNicsVmware.value();
+        }
+
+        if (virtualMachineHypervisorType.equals(HypervisorType.XenServer)) {
+            logger.debug("Using the {} setting global value {} as the VM {} has the {} hypervisor type and is not deployed on either a host or a cluster.", VirtualMachineMaxNicsXenserver, VirtualMachineMaxNicsXenserver.value(), virtualMachine.getUuid(), virtualMachineHypervisorType);
+            return VirtualMachineMaxNicsXenserver.value();
+        }
+
+        logger.debug("Not considering the hypervisor maximum limits as we were unable to find a compatible hypervisor on the VM and VM cluster for virtual machine maximum NICs configurations.");
+        return null;
     }
 
     private void setMtuDetailsInVRNic(final Pair<NetworkVO, VpcVO> networks, Network network, NicVO vo) {

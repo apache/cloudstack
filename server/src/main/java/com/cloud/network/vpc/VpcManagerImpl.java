@@ -39,15 +39,11 @@ import java.util.concurrent.TimeUnit;
 
 import com.cloud.event.UsageEventUtils;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
-import com.cloud.api.query.vo.DomainRouterJoinVO;
-import com.cloud.dc.ClusterVO;
-import com.cloud.dc.dao.ClusterDao;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.bgp.BGPService;
