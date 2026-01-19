@@ -23,6 +23,8 @@ import com.cloud.vm.VirtualMachine;
 
 public interface BackupProvider {
 
+    Boolean crossZoneInstanceCreationEnabled(BackupOffering backupOffering);
+
     /**
      * Returns the unique name of the provider
      * @return returns provider name
@@ -85,7 +87,7 @@ public interface BackupProvider {
      */
     boolean deleteBackup(Backup backup, boolean forced);
 
-    boolean restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid);
+    Pair<Boolean, String> restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid);
 
     /**
      * Restore VM from backup
@@ -121,6 +123,10 @@ public interface BackupProvider {
      * Returns if the backup provider supports creating new instance from backup
      */
     boolean supportsInstanceFromBackup();
+
+    default boolean supportsMemoryVmSnapshot() {
+        return true;
+    }
 
     /**
      * Returns the backup storage usage (Used, Total) for a backup provider

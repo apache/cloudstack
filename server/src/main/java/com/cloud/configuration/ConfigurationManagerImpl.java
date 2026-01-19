@@ -50,6 +50,10 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.consoleproxy.ConsoleProxyManager;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
+import com.cloud.utils.DomainHelper;
+import com.cloud.vm.VirtualMachineManager;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -201,6 +205,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.gpu.GPU;
 import com.cloud.gpu.VgpuProfileVO;
 import com.cloud.gpu.dao.VgpuProfileDao;
@@ -395,6 +400,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     ClusterDao _clusterDao;
     @Inject
     AlertManager _alertMgr;
+    @Inject
+    DomainHelper domainHelper;
     List<SecurityChecker> _secChecker;
     List<ExternalProvisioner> externalProvisioners;
 
@@ -511,22 +518,22 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             "Indicates whether the host will be added back to cloudstack after restarting agent service on host. If false it won't be added back even after service restart",
             true, ConfigKey.Scope.Global, null);
     public static final ConfigKey<Boolean> SET_HOST_DOWN_TO_MAINTENANCE = new ConfigKey<>(Boolean.class, "set.host.down.to.maintenance", "Advanced", "false",
-            "Indicates whether the host in down state can be put into maintenance state so thats its not enabled after it comes back.",
+            "Indicates whether the host in down state can be put into maintenance state so that it's not enabled after it comes back.",
             true, ConfigKey.Scope.Zone, null);
     public static final ConfigKey<Boolean> ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN = new ConfigKey<>(Boolean.class, "enable.account.settings.for.domain", "Advanced", "false",
-            "Indicates whether to add account settings for domain. If true, account settings will be added to domain settings, all accounts in the domain will inherit the domain setting if account setting is not set.", true, ConfigKey.Scope.Global, null);
+            "Indicates whether to add Account settings for domain. If True, Account settings will be added to domain settings, all Accounts in the domain will inherit the domain setting if Account setting is not set.", true, ConfigKey.Scope.Global, null);
     public static final ConfigKey<Boolean> ENABLE_DOMAIN_SETTINGS_FOR_CHILD_DOMAIN = new ConfigKey<>(Boolean.class, "enable.domain.settings.for.child.domain", "Advanced", "false",
             "Indicates whether the settings of parent domain should be applied for child domain. If true, the child domain will get value from parent domain if its not configured in child domain else global value is taken.",
             true, ConfigKey.Scope.Global, null);
 
     public static ConfigKey<Integer> VM_SERVICE_OFFERING_MAX_CPU_CORES = new ConfigKey<>("Advanced", Integer.class, "vm.serviceoffering.cpu.cores.max", "0", "Maximum CPU cores "
-            + "for vm service offering. If 0 - no limitation", true);
+            + "for Instance service offering. If 0 - no limitation", true);
 
     public static ConfigKey<Integer> VM_SERVICE_OFFERING_MAX_RAM_SIZE = new ConfigKey<>("Advanced", Integer.class, "vm.serviceoffering.ram.size.max", "0", "Maximum RAM size in "
-            + "MB for vm service offering. If 0 - no limitation", true);
+            + "MB for Instance service offering. If 0 - no limitation", true);
 
     public static final ConfigKey<Boolean> MIGRATE_VM_ACROSS_CLUSTERS = new ConfigKey<>(Boolean.class, "migrate.vm.across.clusters", "Advanced", "false",
-            "Indicates whether the VM can be migrated to different cluster if no host is found in same cluster", true, ConfigKey.Scope.Zone, null);
+            "Indicates whether the Instance can be migrated to different cluster if no host is found in same cluster",true, ConfigKey.Scope.Zone, null);
 
     public static final ConfigKey<Boolean> ALLOW_DOMAIN_ADMINS_TO_CREATE_TAGGED_OFFERINGS = new ConfigKey<>(Boolean.class, "allow.domain.admins.to.create.tagged.offerings", "Advanced",
             "false", "Allow domain admins to create offerings with tags.", true, ConfigKey.Scope.Account, null);
@@ -638,6 +645,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     protected void populateConfigKeysAllowedOnlyForDefaultAdmin() {
         configKeysAllowedOnlyForDefaultAdmin.add(AccountManagerImpl.listOfRoleTypesAllowedForOperationsOfSameRoleType.key());
         configKeysAllowedOnlyForDefaultAdmin.add(AccountManagerImpl.allowOperationsOnUsersInSameAccount.key());
+
+        configKeysAllowedOnlyForDefaultAdmin.add(VirtualMachineManager.SystemVmEnableUserData.key());
+        configKeysAllowedOnlyForDefaultAdmin.add(ConsoleProxyManager.ConsoleProxyVmUserData.key());
+        configKeysAllowedOnlyForDefaultAdmin.add(SecondaryStorageVmManager.SecondaryStorageVmUserData.key());
+        configKeysAllowedOnlyForDefaultAdmin.add(VirtualNetworkApplianceManager.VirtualRouterUserData.key());
     }
 
     private void initMessageBusListener() {
@@ -820,7 +832,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             case Account:
                 final AccountVO account = _accountDao.findById(resourceId);
                 if (account == null) {
-                    throw new InvalidParameterValueException("unable to find account by id " + resourceId);
+                    throw new InvalidParameterValueException("Unable to find Account by id " + resourceId);
                 }
                 resourceType = ApiCommandResourceType.Account;
                 AccountDetailVO accountDetailVO = _accountDetailsDao.findDetail(resourceId, name);
@@ -982,6 +994,19 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
     }
 
+    protected String getNormalizedEmptyValueForConfig(final String name, final String inputValue,
+                          final Long configStorageId) {
+        String value = inputValue.trim();
+        if (!value.isEmpty() && !value.equals("null")) {
+            return value;
+        }
+        if (configStorageId != null) {
+            return "";
+        }
+        ConfigKey<?> key = _configDepot.get(name);
+        return (key != null && key.type() == String.class) ? "" : null;
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, eventDescription = "updating configuration")
     public Configuration updateConfiguration(final UpdateCfgCmd cmd) throws InvalidParameterValueException {
@@ -1022,16 +1047,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             category = config.getCategory();
         }
 
+        if (value == null) {
+            throw new InvalidParameterValueException(String.format("The new value for the [%s] configuration must be given.", name));
+        }
+
         validateIpAddressRelatedConfigValues(name, value);
         validateConflictingConfigValue(name, value);
 
         if (CATEGORY_SYSTEM.equals(category) && !_accountMgr.isRootAdmin(caller.getId())) {
             logger.warn("Only Root Admin is allowed to edit the configuration {}", name);
             throw new CloudRuntimeException("Only Root Admin is allowed to edit this configuration.");
-        }
-
-        if (value == null) {
-            return _configDao.findByName(name);
         }
 
         ConfigKey.Scope scope = null;
@@ -1076,11 +1101,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("cannot handle multiple IDs, provide only one ID corresponding to the scope");
         }
 
-        value = value.trim();
-
-        if (value.isEmpty() || value.equals("null")) {
-            value = (id == null) ? null : "";
-        }
+        value = getNormalizedEmptyValueForConfig(name, value, id);
 
         String currentValueInScope = getConfigurationValueInScope(config, name, scope, id);
         final String updatedValue = updateConfiguration(userId, name, category, value, scope, id);
@@ -1236,7 +1257,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             case Account:
                 final AccountVO account = _accountDao.findById(id);
                 if (account == null) {
-                    throw new InvalidParameterValueException("unable to find account by id " + id);
+                    throw new InvalidParameterValueException("Unable to find Account by id " + id);
                 }
                 AccountDetailVO accountDetailVO = _accountDetailsDao.findDetail(id, name);
                 if (accountDetailVO != null) {
@@ -1745,7 +1766,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Check if there are any non-removed vms in the pod.
         if (!_vmInstanceDao.listByPodId(podId).isEmpty()) {
-            throw new CloudRuntimeException(errorMsg + "there are virtual machines in this pod.");
+            throw new CloudRuntimeException(errorMsg + "there are Instances in this pod.");
         }
 
         // Check if there are any non-removed clusters in the pod.
@@ -1789,7 +1810,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // Don't allow gateway to overlap with start/endIp
         if (!skipGatewayOverlapCheck) {
             if (NetUtils.ipRangesOverlap(startIp, endIp, gateway, gateway)) {
-                throw new InvalidParameterValueException("The gateway shouldn't overlap start/end ip addresses");
+                throw new InvalidParameterValueException("The gateway shouldn't overlap start/end IP addresses");
             }
         }
 
@@ -1843,7 +1864,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 final List<DataCenterIpAddressVO> privateIps = _privateIpAddressDao.listByPodIdDcId(podId, pod.getDataCenterId());
                 if (!privateIps.isEmpty()) {
                     if (!_privateIpAddressDao.deleteIpAddressByPod(podId)) {
-                        throw new CloudRuntimeException(String.format("Failed to cleanup private ip addresses for pod %s", pod));
+                        throw new CloudRuntimeException(String.format("Failed to cleanup private IP addresses for pod %s", pod));
                     }
                 }
 
@@ -1851,7 +1872,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 final List<DataCenterLinkLocalIpAddressVO> localIps = _linkLocalIpAllocDao.listByPodIdDcId(podId, pod.getDataCenterId());
                 if (!localIps.isEmpty()) {
                     if (!_linkLocalIpAllocDao.deleteIpAddressByPod(podId)) {
-                        throw new CloudRuntimeException(String.format("Failed to cleanup private ip addresses for pod %s", pod));
+                        throw new CloudRuntimeException(String.format("Failed to cleanup private IP addresses for pod %s", pod));
                     }
                 }
 
@@ -1913,7 +1934,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Account account = CallContext.current().getCallingAccount();
 
         if(!_accountMgr.isRootAdmin(account.getId())) {
-            throw new PermissionDeniedException(String.format("Cannot perform this operation, Calling account is not root admin: %s", account));
+            throw new PermissionDeniedException(String.format("Cannot perform this operation, Calling Account is not root admin: %s", account));
         }
 
         final long podId = cmd.getPodId();
@@ -1980,7 +2001,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if (NetUtils.ipRangesOverlap(startIp, endIp, gateway, gateway)) {
-            throw new InvalidParameterValueException("The gateway shouldn't overlap start/end ip addresses");
+            throw new InvalidParameterValueException("The gateway shouldn't overlap start/end IP addresses");
         }
 
         final String[] existingPodIpRanges = pod.getDescription().split(",");
@@ -2024,7 +2045,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         lock = _podDao.acquireInLockTable(podId);
 
                         if (lock == null) {
-                            String msg = String.format("Unable to acquire lock on table to update the ip range of POD: %s, Creation failed.", pod);
+                            String msg = String.format("Unable to acquire lock on table to update the IP range of POD: %s, Creation failed.", pod);
                             logger.warn(msg);
                             throw new CloudRuntimeException(msg);
                         }
@@ -2137,7 +2158,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         lock = _podDao.acquireInLockTable(podId);
 
                         if (lock == null) {
-                            String msg = String.format("Unable to acquire lock on table to update the ip range of POD: %s, Deletion failed.", pod);
+                            String msg = String.format("Unable to acquire lock on table to update the IP range of POD: %s, Deletion failed.", pod);
                             logger.warn(msg);
                             throw new CloudRuntimeException(msg);
                         }
@@ -2151,7 +2172,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
                     for(long ipAddr = NetUtils.ip2Long(startIp); ipAddr <= NetUtils.ip2Long(endIp); ipAddr++) {
                         if (!_privateIpAddressDao.deleteIpAddressByPodDc(NetUtils.long2Ip(ipAddr), podId, pod.getDataCenterId())) {
-                            throw new CloudRuntimeException(String.format("Failed to cleanup private ip address: %s of Pod: %s DC: %s", NetUtils.long2Ip(ipAddr), pod, _zoneDao.findById(pod.getDataCenterId())));
+                            throw new CloudRuntimeException(String.format("Failed to cleanup private IP address: %s of Pod: %s DC: %s", NetUtils.long2Ip(ipAddr), pod, _zoneDao.findById(pod.getDataCenterId())));
                         }
                     }
                 }
@@ -2258,7 +2279,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         try {
             lock = _podDao.acquireInLockTable(podId);
             if (lock == null) {
-                String msg = String.format("Unable to acquire lock on table to update the ip range of POD: %s, Update failed.", pod);
+                String msg = String.format("Unable to acquire lock on table to update the IP range of POD: %s, Update failed.", pod);
                 logger.warn(msg);
                 throw new CloudRuntimeException(msg);
             }
@@ -2273,7 +2294,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (currentIpRange.size() > 0) {
                     for (Long startIP: currentIpRange) {
                         if (!_privateIpAddressDao.deleteIpAddressByPodDc(NetUtils.long2Ip(startIP),podId,zoneId)) {
-                            throw new CloudRuntimeException(String.format("Failed to remove private ip address: %s of Pod: %s DC: %s", NetUtils.long2Ip(startIP), pod, _zoneDao.findById(pod.getDataCenterId())));
+                            throw new CloudRuntimeException(String.format("Failed to remove private IP address: %s of Pod: %s DC: %s", NetUtils.long2Ip(startIP), pod, _zoneDao.findById(pod.getDataCenterId())));
                         }
                     }
                 }
@@ -2491,7 +2512,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
 
                 if (NetUtils.ipRangesOverlap(existingPodIpRange[0], existingPodIpRange[1], gateway, gateway)) {
-                    throw new InvalidParameterValueException("The gateway shouldn't overlap some start/end ip addresses");
+                    throw new InvalidParameterValueException("The gateway shouldn't overlap some start/end IP addresses");
                 }
             }
         }
@@ -3026,7 +3047,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                             mgmtPhyNetwork = _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Management);
                             if (NetworkType.Advanced == zone.getNetworkType() && !zone.isSecurityGroupEnabled()) {
                                 // advanced zone without SG should have a physical
-                                // network with public Thpe
+                                // network with public Type
                                 _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Public);
                             }
 
@@ -3411,7 +3432,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             isCustomizedIops = false;
 
             if (cmd.getHypervisorSnapshotReserve() != null) {
-                throw new InvalidParameterValueException("Hypervisor snapshot reserve is not a valid parameter for a system VM.");
+                throw new InvalidParameterValueException("Hypervisor Snapshot reserve is not a valid parameter for a system VM.");
             }
         } else {
             allowNetworkRate = true;
@@ -3501,7 +3522,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                       final boolean isCustomized, final boolean encryptRoot, Long vgpuProfileId, Integer gpuCount, Boolean gpuDisplay, final boolean purgeResources, Integer leaseDuration, VMLeaseManager.ExpiryAction leaseExpiryAction) {
 
         // Filter child domains when both parent and child domains are present
-        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        List<Long> filteredDomainIds = domainHelper.filterChildSubDomains(domainIds);
 
         // Check if user exists in the system
         final User user = _userDao.findById(userId);
@@ -3799,14 +3820,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     protected boolean serviceOfferingExternalDetailsNeedUpdate(final Map<String, String> offeringDetails,
-               final Map<String, String> externalDetails) {
-        if (MapUtils.isEmpty(externalDetails)) {
+               final Map<String, String> externalDetails, final boolean cleanupExternalDetails) {
+        if (MapUtils.isEmpty(externalDetails) && !cleanupExternalDetails) {
             return false;
         }
 
         Map<String, String> existingExternalDetails = offeringDetails.entrySet().stream()
                 .filter(detail -> detail.getKey().startsWith(VmDetailConstants.EXTERNAL_DETAIL_PREFIX))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+       if (cleanupExternalDetails) {
+           return !MapUtils.isEmpty(existingExternalDetails);
+       }
 
         if (MapUtils.isEmpty(existingExternalDetails) || existingExternalDetails.size() != externalDetails.size()) {
             return true;
@@ -3837,6 +3862,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         ServiceOffering.State state = cmd.getState();
         boolean purgeResources = cmd.isPurgeResources();
         final Map<String, String> externalDetails = cmd.getExternalDetails();
+        final boolean cleanupExternalDetails = cmd.isCleanupExternalDetails();
 
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
@@ -3885,8 +3911,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Account account = _accountDao.findById(user.getAccountId());
 
         // Filter child domains when both parent and child domains are present
-        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        List<Long> filteredDomainIds = domainHelper.filterChildSubDomains(domainIds);
         Collections.sort(filteredDomainIds);
+
+        // avoid domain update of service offering if any instance is associated to it
+        int instanceCount = _vmInstanceDao.getVmCountByOfferingNotInDomain(offeringHandle.getId(), filteredDomainIds);
+        if (instanceCount > 0) {
+            throw new UnsupportedServiceException("There are Instances associated to this service offering outside of the specified domains.");
+        }
 
         List<Long> filteredZoneIds = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(zoneIds)) {
@@ -3930,7 +3962,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         final boolean updateNeeded = name != null || displayText != null || sortKey != null || storageTags != null || hostTags != null || state != null;
         final boolean serviceOfferingExternalDetailsNeedUpdate =
-                serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
+                serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, cleanupExternalDetails);
         final boolean detailsUpdateNeeded = !filteredDomainIds.equals(existingDomainIds) ||
                 !filteredZoneIds.equals(existingZoneIds) || purgeResources != existingPurgeResources ||
                 serviceOfferingExternalDetailsNeedUpdate;
@@ -4005,8 +4037,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 SearchCriteria<ServiceOfferingDetailsVO> externalDetailsRemoveSC = sb.create();
                 externalDetailsRemoveSC.setParameters("detailNameLike", VmDetailConstants.EXTERNAL_DETAIL_PREFIX + "%");
                 _serviceOfferingDetailsDao.remove(externalDetailsRemoveSC);
-                for (Map.Entry<String, String> entry : externalDetails.entrySet()) {
-                    detailsVO.add(new ServiceOfferingDetailsVO(id, entry.getKey(), entry.getValue(), true));
+                if (!cleanupExternalDetails) {
+                    for (Map.Entry<String, String> entry : externalDetails.entrySet()) {
+                        detailsVO.add(new ServiceOfferingDetailsVO(id, entry.getKey(), entry.getValue(), true));
+                    }
                 }
             }
         }
@@ -4087,7 +4121,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         // Filter child domains when both parent and child domains are present
-        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        List<Long> filteredDomainIds = domainHelper.filterChildSubDomains(domainIds);
 
         // Check if user exists in the system
         final User user = _userDao.findById(userId);
@@ -4363,7 +4397,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Account account = _accountDao.findById(user.getAccountId());
 
         // Filter child domains when both parent and child domains are present
-        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        List<Long> filteredDomainIds = domainHelper.filterChildSubDomains(domainIds);
         Collections.sort(filteredDomainIds);
 
         List<Long> filteredZoneIds = new ArrayList<>();
@@ -4779,7 +4813,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     @DB
-    @ActionEvent(eventType = EventTypes.EVENT_VLAN_IP_RANGE_CREATE, eventDescription = "creating vlan ip range", async = false)
+    @ActionEvent(eventType = EventTypes.EVENT_VLAN_IP_RANGE_CREATE, eventDescription = "Creating VLAN IP range", async = false)
     public Vlan createVlanAndPublicIpRange(final CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException,
     ResourceAllocationException {
         Long zoneId = cmd.getZoneId();
@@ -4942,7 +4976,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if (zone.isSecurityGroupEnabled() && zone.getNetworkType() != DataCenter.NetworkType.Basic && forVirtualNetwork) {
-            throw new InvalidParameterValueException("Can't add virtual ip range into a zone with security group enabled");
+            throw new InvalidParameterValueException("Can't add virtual IP range into a zone with security group enabled");
         }
 
         // If networkId is not specified, and vlan is Virtual or Direct
@@ -4978,13 +5012,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Pair<Boolean, Pair<String, String>> sameSubnet = null;
         // Can add vlan range only to the network which allows it
         if (!network.getSpecifyIpRanges()) {
-            throw new InvalidParameterValueException("Network " + network + " doesn't support adding ip ranges");
+            throw new InvalidParameterValueException("Network " + network + " doesn't support adding IP ranges");
         }
 
         if (zone.getNetworkType() == DataCenter.NetworkType.Advanced) {
             if (network.getTrafficType() == TrafficType.Guest) {
                 if (network.getGuestType() != GuestType.Shared) {
-                    throw new InvalidParameterValueException(String.format("Can execute createVLANIpRanges on shared guest network, but type of this guest network %s is %s", network, network.getGuestType()));
+                    throw new InvalidParameterValueException(String.format("Can execute createVLANIpRanges on shared guest Network, but type of this guest Network %s is %s", network, network.getGuestType()));
                 }
 
                 final List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(network.getId());
@@ -5122,10 +5156,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     "either both netmask and gateway should be passed or both should me omited.");
         } else {
             if (!NetUtils.sameSubnet(newStartIP, newVlanGateway, newVlanNetmask)) {
-                throw new InvalidParameterValueException("The start ip and gateway do not belong to the same subnet");
+                throw new InvalidParameterValueException("The start IP and gateway do not belong to the same subnet");
             }
             if (!NetUtils.sameSubnet(newEndIP, newVlanGateway, newVlanNetmask)) {
-                throw new InvalidParameterValueException("The end ip and gateway do not belong to the same subnet");
+                throw new InvalidParameterValueException("The end IP and gateway do not belong to the same subnet");
             }
         }
         final String cidrnew = NetUtils.getCidrFromGatewayAndNetmask(newVlanGateway, newVlanNetmask);
@@ -5154,7 +5188,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     ipv6, ip6Gateway, ip6Cidr, startIPv6, endIPv6, network);
         }
         if (newVlanGateway == null && newVlanNetmask == null && !sameSubnet) {
-            throw new InvalidParameterValueException("The ip range dose not belong to any of the existing subnets, Provide the netmask and gateway if you want to add new subnet");
+            throw new InvalidParameterValueException("The IP range dose not belong to any of the existing subnets, Provide the netmask and gateway if you want to add new subnet");
         }
         Pair<String, String> vlanDetails = null;
 
@@ -5723,10 +5757,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final List<UserIpv6AddressVO> listAllocatedIPs = _ipv6Dao.listByVlanIdAndState(id, IpAddress.State.Allocated);
 
         if (ip6Gateway != null && !ip6Gateway.equals(vlanRange.getIp6Gateway()) && (CollectionUtils.isNotEmpty(listAllocatedIPs) || CollectionUtils.isNotEmpty(ipv6Service.getAllocatedIpv6FromVlanRange(vlanRange)))) {
-            throw new InvalidParameterValueException(String.format("Unable to change ipv6 gateway to %s because some IPs are in use", ip6Gateway));
+            throw new InvalidParameterValueException(String.format("Unable to change IPv6 gateway to %s because some IPs are in use", ip6Gateway));
         }
         if (ip6Cidr != null && !ip6Cidr.equals(vlanRange.getIp6Cidr()) && (CollectionUtils.isNotEmpty(listAllocatedIPs) || CollectionUtils.isNotEmpty(ipv6Service.getAllocatedIpv6FromVlanRange(vlanRange)))) {
-            throw new InvalidParameterValueException(String.format("Unable to change ipv6 cidr to %s because some IPs are in use", ip6Cidr));
+            throw new InvalidParameterValueException(String.format("Unable to change IPv6 CIDR to %s because some IPs are in use", ip6Cidr));
         }
         ip6Gateway = MoreObjects.firstNonNull(ip6Gateway, vlanRange.getIp6Gateway());
         ip6Cidr = MoreObjects.firstNonNull(ip6Cidr, vlanRange.getIp6Cidr());
@@ -6810,7 +6844,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (lbServiceCapabilityMap != null && !lbServiceCapabilityMap.isEmpty()) {
             maxconn = cmd.getMaxconnections();
             if (maxconn == null) {
-                maxconn = Integer.parseInt(_configDao.getValue(Config.NetworkLBHaproxyMaxConn.key()));
+                maxconn = NetworkOrchestrationService.NETWORK_LB_HAPROXY_MAX_CONN.value();
             }
         }
         if (cmd.getKeepAliveEnabled() != null && cmd.getKeepAliveEnabled()) {
@@ -7370,7 +7404,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
                     if (offering != null) {
                         // Filter child domains when both parent and child domains are present
-                        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+                        List<Long> filteredDomainIds = domainHelper.filterChildSubDomains(domainIds);
                         List<NetworkOfferingDetailsVO> detailsVO = new ArrayList<>();
                         for (Long domainId : filteredDomainIds) {
                             detailsVO.add(new NetworkOfferingDetailsVO(offering.getId(), Detail.domainid, String.valueOf(domainId), false));
@@ -7836,7 +7870,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         // Filter child domains when both parent and child domains are present
-        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        List<Long> filteredDomainIds = domainHelper.filterChildSubDomains(domainIds);
         Collections.sort(filteredDomainIds);
 
         List<Long> filteredZoneIds = new ArrayList<>();
@@ -8403,36 +8437,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return false;
     }
 
-    private List<Long> filterChildSubDomains(final List<Long> domainIds) {
-        List<Long> filteredDomainIds = new ArrayList<>();
-        if (domainIds != null) {
-            filteredDomainIds.addAll(domainIds);
-        }
-        if (filteredDomainIds.size() > 1) {
-            for (int i = filteredDomainIds.size() - 1; i >= 1; i--) {
-                long first = filteredDomainIds.get(i);
-                for (int j = i - 1; j >= 0; j--) {
-                    long second = filteredDomainIds.get(j);
-                    if (_domainDao.isChildDomain(filteredDomainIds.get(i), filteredDomainIds.get(j))) {
-                        filteredDomainIds.remove(j);
-                        i--;
-                    }
-                    if (_domainDao.isChildDomain(filteredDomainIds.get(j), filteredDomainIds.get(i))) {
-                        filteredDomainIds.remove(i);
-                        break;
-                    }
-                }
-            }
-        }
-        return filteredDomainIds;
-    }
-
     protected void validateCacheMode(String cacheMode){
         if(cacheMode != null &&
                 !Enums.getIfPresent(DiskOffering.DiskCacheMode.class,
                         cacheMode.toUpperCase()).isPresent()) {
             throw new InvalidParameterValueException(String.format("Invalid cache mode (%s). Please specify one of the following " +
-                    "valid cache mode parameters: none, writeback or writethrough", cacheMode));
+                    "valid cache mode parameters: none, writeback, writethrough or hypervisor_default.", cacheMode));
         }
     }
 

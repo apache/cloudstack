@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.22.0.0-SNAPSHOT</version>
+        <version>4.23.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <dependencies>
@@ -194,6 +194,11 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
+            <version>${cs.jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-cbor</artifactId>
             <version>${cs.jackson.version}</version>
         </dependency>
         <dependency>

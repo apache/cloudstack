@@ -35,16 +35,16 @@
                   v-model:value="form.intervaltype"
                   button-style="solid"
                   @change="handleChangeIntervalType">
-                  <a-radio-button value="hourly">
+                  <a-radio-button value="hourly" :disabled="isIntervalDisabled('hourly')">
                     {{ $t('label.hourly') }}
                   </a-radio-button>
-                  <a-radio-button value="daily">
+                  <a-radio-button value="daily" :disabled="isIntervalDisabled('daily')">
                     {{ $t('label.daily') }}
                   </a-radio-button>
-                  <a-radio-button value="weekly">
+                  <a-radio-button value="weekly" :disabled="isIntervalDisabled('weekly')">
                     {{ $t('label.weekly') }}
                   </a-radio-button>
-                  <a-radio-button value="monthly">
+                  <a-radio-button value="monthly" :disabled="isIntervalDisabled('monthly')">
                     {{ $t('label.monthly') }}
                   </a-radio-button>
                 </a-radio-group>
@@ -54,6 +54,7 @@
               <a-form-item :label="$t('label.time')" ref="time" name="time">
                 <a-input-number
                   style="width: 100%"
+                  :disabled="isIntervalDisabled(form.intervaltype)"
                   v-model:value="form.time"
                   :placeholder="$t('label.minute.past.hour')"
                   :min="1"
@@ -70,6 +71,7 @@
                 <a-time-picker
                   use12Hours
                   format="h:mm A"
+                  :disabled="isIntervalDisabled(form.intervaltype)"
                   v-model:value="form.timeSelect"
                   style="width: 100%;" />
               </a-form-item>
@@ -79,6 +81,7 @@
                 <a-select
                   v-model:value="form['day-of-week']"
                   showSearch
+                  :disabled="isIntervalDisabled(form.intervaltype)"
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
                     return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -94,6 +97,7 @@
                 <a-select
                   v-model:value="form['day-of-month']"
                   showSearch
+                  :disabled="isIntervalDisabled(form.intervaltype)"
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
                     return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -133,7 +137,7 @@
               </a-form-item>
             </a-col>
             <a-col :md="24" :lg="12">
-              <a-form-item v-if="backupProvider === 'nas'" name="quiescevm" ref="quiescevm">
+              <a-form-item v-if="isQuiesceVmSupported" name="quiescevm" ref="quiescevm">
                 <a-switch v-model:checked="form.quiescevm"/>
                 <template #label>
                   <tooltip-label :title="$t('label.quiescevm')" :tooltip="apiParams.quiescevm.description"/>
@@ -181,12 +185,16 @@ export default {
       default: false
     },
     dataSource: {
-      type: Object,
+      type: Array,
       required: true
     },
     resource: {
       type: Object,
       required: true
+    },
+    submitFn: {
+      type: Function,
+      default: null
     }
   },
   data () {
@@ -210,7 +218,44 @@ export default {
     this.fetchTimeZone()
     this.fetchBackupOffering()
   },
+  mounted () {
+    if (this.form.intervaltype && this.isIntervalDisabled(this.form.intervaltype)) {
+      const nextAvailable = this.getNextAvailableIntervalType(this.form.intervaltype)
+      if (nextAvailable) {
+        this.form.intervaltype = nextAvailable
+        this.handleChangeIntervalType()
+      }
+    }
+  },
+  watch: {
+    dataSource: {
+      handler () {
+        if (this.form.intervaltype && this.getNextAvailableIntervalType && this.isIntervalDisabled(this.form.intervaltype)) {
+          const nextAvailable = this.getNextAvailableIntervalType(this.form.intervaltype)
+          if (nextAvailable) {
+            this.form.intervaltype = nextAvailable
+            this.handleChangeIntervalType()
+          }
+        }
+      },
+      deep: true
+    },
+    'form.intervaltype' (newVal) {
+      if (newVal && this.getNextAvailableIntervalType && this.isIntervalDisabled(newVal)) {
+        const nextAvailable = this.getNextAvailableIntervalType(newVal)
+        if (nextAvailable) {
+          this.form.intervaltype = nextAvailable
+          this.handleChangeIntervalType()
+        }
+      }
+    }
+  },
   inject: ['refreshSchedule', 'closeSchedule'],
+  computed: {
+    isQuiesceVmSupported () {
+      return this.$isBackupProviderSupportsQuiesceVm(this.backupProvider)
+    }
+  },
   methods: {
     initForm () {
       this.formRef = ref()
@@ -226,6 +271,10 @@ export default {
       })
     },
     fetchBackupOffering () {
+      if ('backupoffering' in this.resource) {
+        this.backupProvider = this.resource.backupoffering.provider
+        return
+      }
       getAPI('listBackupOfferings', { id: this.resource.backupofferingid }).then(json => {
         if (json.listbackupofferingsresponse && json.listbackupofferingsresponse.backupoffering) {
           const backupoffering = json.listbackupofferingsresponse.backupoffering[0]
@@ -265,18 +314,38 @@ export default {
         })
       }
     },
-    handleChangeIntervalType (e) {
-      switch (this.form.intervaltype) {
-        case 'weekly':
-          this.fetchDayOfWeek()
-          break
-        case 'monthly':
-          this.intervalValue = 'MONTHLY'
-          this.fetchDayOfMonth()
-          break
-        default:
-          break
+    handleChangeIntervalType () {
+      if (this.form.intervaltype === 'weekly') {
+        this.fetchDayOfWeek()
+      } else if (this.form.intervaltype === 'monthly') {
+        this.fetchDayOfMonth()
       }
+    },
+    getNextAvailableIntervalType (currentIntervalType) {
+      const intervalTypes = ['hourly', 'daily', 'weekly', 'monthly']
+      const currentIndex = intervalTypes.indexOf(currentIntervalType ? currentIntervalType.toLowerCase() : '')
+      const startIndex = currentIndex >= 0 ? currentIndex : -1
+
+      for (let i = 1; i <= intervalTypes.length; i++) {
+        const nextIndex = (startIndex + i) % intervalTypes.length
+        const nextIntervalType = intervalTypes[nextIndex]
+
+        if (!this.isIntervalDisabled(nextIntervalType)) {
+          return nextIntervalType
+        }
+      }
+      return null
+    },
+    isIntervalDisabled (intervalType) {
+      intervalType = intervalType.toUpperCase()
+      if (this.dataSource?.length === 0) {
+        return false
+      }
+      const dataSource = this.dataSource.filter(item => item.intervaltype === intervalType)
+      if (dataSource && dataSource.length > 0) {
+        return true
+      }
+      return false
     },
     handleSubmit (e) {
       if (this.actionLoading) return
@@ -285,7 +354,7 @@ export default {
         const values = this.handleRemoveFields(formRaw)
         const params = {}
         params.virtualmachineid = this.resource.id
-        params.intervaltype = values.intervaltype
+        params.intervaltype = values.intervaltype.toUpperCase()
         params.maxbackups = values.maxbackups
         params.timezone = values.timezone
         if (values.quiescevm) {
@@ -304,6 +373,11 @@ export default {
           case 'monthly':
             params.schedule = [values.timeSelect.format('mm:HH'), values['day-of-month']].join(':')
             break
+        }
+        if (this.submitFn) {
+          this.submitFn(params)
+          this.resetForm()
+          return
         }
         this.actionLoading = true
         postAPI('createBackupSchedule', params).then(json => {

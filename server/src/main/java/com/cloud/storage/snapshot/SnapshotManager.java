@@ -53,7 +53,10 @@ public interface SnapshotManager extends Configurable {
     public static final ConfigKey<Integer> BackupRetryInterval = new ConfigKey<Integer>(Integer.class, "backup.retry.interval", "Advanced", "300",
             "Time in seconds between retries in backing up snapshot to secondary", false, ConfigKey.Scope.Global, null);
 
-    public static final ConfigKey<Boolean> VmStorageSnapshotKvm = new ConfigKey<>(Boolean.class, "kvm.vmstoragesnapshot.enabled", "Snapshots", "false", "For live snapshot of virtual machine instance on KVM hypervisor without memory. Requires qemu version 1.6+ (on NFS or Local file system) and qemu-guest-agent installed on guest VM", true, ConfigKey.Scope.Global, null);
+    public static final ConfigKey<Boolean> VmStorageSnapshotKvm = new ConfigKey<>(Boolean.class, "kvm.vmstoragesnapshot.enabled", "Snapshots", "true", "For live snapshot of virtual machine instance on KVM hypervisor without memory. Requires qemu version 1.6+ (on NFS or Local file system) and qemu-guest-agent installed on guest VM", true, ConfigKey.Scope.Global, null);
+
+    ConfigKey<Boolean> KVMSnapshotEnabled = new ConfigKey<>(Boolean.class, "kvm.snapshot.enabled", "Snapshots", "true", "Whether volume snapshot is enabled on running instances " +
+            "on a KVM hosts", false, ConfigKey.Scope.Global, null);
 
     ConfigKey<Boolean> kvmIncrementalSnapshot = new ConfigKey<>(Boolean.class, "kvm.incremental.snapshot", "Snapshots", "false", "Whether differential snapshots are enabled for" +
             " KVM or not. When this is enabled, all KVM snapshots will be incremental. Bear in mind that it will generate a new full snapshot when the snapshot chain reaches the limit defined in snapshot.delta.max.", true, ConfigKey.Scope.Cluster, null);
@@ -65,7 +68,9 @@ public interface SnapshotManager extends Configurable {
             "Whether to show chain size (sum of physical size of snapshot and all its parents) for incremental snapshots in the snapshot response",
             true, ConfigKey.Scope.Global, null);
 
-    public static final ConfigKey<Boolean> UseStorageReplication = new ConfigKey<Boolean>(Boolean.class, "use.storage.replication", "Snapshots", "false", "For snapshot copy to another primary storage in a different zone. Supports only StorPool storage for now", true, ConfigKey.Scope.StoragePool, null);
+    ConfigKey<Boolean> UseStorageReplication = new ConfigKey<>(Boolean.class, "use.storage.replication", "Snapshots", "false",
+            "For snapshot copy to another primary storage in a different zone. This is supported only for StorPool storage for now.",
+            true, ConfigKey.Scope.StoragePool, null);
 
     void deletePoliciesForVolume(Long volumeId);
 

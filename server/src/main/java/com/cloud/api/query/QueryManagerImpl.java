@@ -2106,7 +2106,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
 
             if (domainId != null && !domainId.equals(caller.getDomainId())) {
-                throw new PermissionDeniedException("Can't list domain id= " + domainId + " projects; unauthorized");
+                throw new PermissionDeniedException("Can't list domain ID = " + domainId + " projects; unauthorized");
             }
 
             if (StringUtils.isNotEmpty(username) && !username.equals(user.getUsername())) {
@@ -3675,6 +3675,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 String[] offeringTagsArray = (offeringTags == null || offeringTags.isEmpty()) ? new String[0] : offeringTags.split(",");
                 if (!CollectionUtils.isSubCollection(Arrays.asList(requiredTagsArray), Arrays.asList(offeringTagsArray))) {
                     iteratorForTagsChecking.remove();
+                    count--;
                 }
             }
         }
@@ -5378,6 +5379,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             options.put(VmDetailConstants.CPU_THREAD_PER_CORE, Collections.emptyList());
             options.put(VmDetailConstants.NIC_ADAPTER, Arrays.asList("e1000", "virtio", "rtl8139", "vmxnet3", "ne2k_pci"));
             options.put(VmDetailConstants.ROOT_DISK_CONTROLLER, Arrays.asList("osdefault", "ide", "scsi", "virtio", "virtio-blk"));
+            options.put(VmDetailConstants.DATA_DISK_CONTROLLER, Arrays.asList("osdefault", "ide", "scsi", "virtio", "virtio-blk"));
             options.put(VmDetailConstants.VIDEO_HARDWARE, Arrays.asList("cirrus", "vga", "qxl", "virtio"));
             options.put(VmDetailConstants.VIDEO_RAM, Collections.emptyList());
             options.put(VmDetailConstants.IO_POLICY, Arrays.asList("threads", "native", "io_uring", "storage_specific"));
@@ -5388,6 +5390,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             options.put(VmDetailConstants.VIRTUAL_TPM_VERSION, Arrays.asList("1.2", "2.0"));
             options.put(VmDetailConstants.GUEST_CPU_MODE, Arrays.asList("custom", "host-model", "host-passthrough"));
             options.put(VmDetailConstants.GUEST_CPU_MODEL, Collections.emptyList());
+            options.put(VmDetailConstants.KVM_SKIP_FORCE_DISK_CONTROLLER, Arrays.asList("true", "false"));
         }
 
         if (HypervisorType.VMware.equals(hypervisorType)) {
@@ -5652,7 +5655,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         //Validation - 1.3
         if (resourceIdStr != null) {
-            resourceId = resourceManagerUtil.getResourceId(resourceIdStr, resourceType);
+            resourceId = resourceManagerUtil.getResourceId(resourceIdStr, resourceType, true);
         }
 
         List<? extends ResourceDetail> detailList = new ArrayList<>();

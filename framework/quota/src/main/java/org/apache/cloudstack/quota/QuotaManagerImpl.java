@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.user.Account;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.quota.activationrule.presetvariables.Configuration;
 import org.apache.cloudstack.quota.activationrule.presetvariables.GenericPresetVariable;
@@ -63,6 +62,7 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.UsageDao;
+import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
@@ -473,7 +473,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             jsInterpreter.injectVariable("configuration", configuration.toString());
         }
 
-        jsInterpreter.injectStringVariable("resourceType", presetVariables.getResourceType());
+        jsInterpreter.injectVariable("resourceType", presetVariables.getResourceType());
         jsInterpreter.injectVariable("value", presetVariables.getValue().toString());
         jsInterpreter.injectVariable("zone", presetVariables.getZone().toString());
     }
