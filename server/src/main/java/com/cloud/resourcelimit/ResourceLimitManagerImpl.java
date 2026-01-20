@@ -811,7 +811,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         return limits;
     }
 
-    private List<ResourceLimitVO> getConsolidatedResourceLimitsForAllResourceTypes(Long accountId, Long domainId,
+    protected List<ResourceLimitVO> getConsolidatedResourceLimitsForAllResourceTypes(Long accountId, Long domainId,
                       List<ResourceLimitVO> foundLimits, boolean isAccount) {
         List<ResourceLimitVO> limits = new ArrayList<>(foundLimits);
 
