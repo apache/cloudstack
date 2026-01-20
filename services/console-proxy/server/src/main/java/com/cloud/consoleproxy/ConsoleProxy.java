@@ -36,15 +36,14 @@ import java.util.concurrent.Executor;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.eclipse.jetty.websocket.api.Session;
 
 import com.cloud.utils.PropertiesUtil;
 import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpServer;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  *
@@ -598,6 +597,8 @@ public class ConsoleProxy {
             Session session) throws AuthenticationException {
         boolean reportLoadChange = false;
         String clientKey = param.getClientMapKey();
+        LOGGER.debug("Getting NoVNC viewer for {}. Session requires new viewer: {}, client tag: {}. session UUID: {}",
+                clientKey, param.isSessionRequiresNewViewer(), param.getClientTag(), param.getSessionUuid());
         synchronized (connectionMap) {
             ConsoleProxyClient viewer = connectionMap.get(clientKey);
             if (viewer == null || viewer.getClass() != ConsoleProxyNoVncClient.class) {

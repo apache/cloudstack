@@ -27,6 +27,7 @@ public class ApiConstants {
     public static final String ACTIVATION_RULE = "activationrule";
     public static final String ACTIVITY = "activity";
     public static final String ADAPTER_TYPE = "adaptertype";
+    public static final String ADDITONAL_CONFIG_ENABLED = "additionalconfigenabled";
     public static final String ADDRESS = "address";
     public static final String ALGORITHM = "algorithm";
     public static final String ALIAS = "alias";
@@ -63,6 +64,7 @@ public class ApiConstants {
     public static final String BACKUP_STORAGE_LIMIT = "backupstoragelimit";
     public static final String BACKUP_STORAGE_TOTAL = "backupstoragetotal";
     public static final String BACKUP_VM_OFFERING_REMOVED = "vmbackupofferingremoved";
+    public static final String IS_BACKUP_VM_EXPUNGED = "isbackupvmexpunged";
     public static final String BACKUP_TOTAL = "backuptotal";
     public static final String BASE64_IMAGE = "base64image";
     public static final String BGP_PEERS = "bgppeers";
@@ -80,6 +82,7 @@ public class ApiConstants {
     public static final String BYTES_WRITE_RATE_MAX = "byteswriteratemax";
     public static final String BYTES_WRITE_RATE_MAX_LENGTH = "byteswriteratemaxlength";
     public static final String BYPASS_VLAN_OVERLAP_CHECK = "bypassvlanoverlapcheck";
+    public static final String CALLER = "caller";
     public static final String CAPACITY = "capacity";
     public static final String CATEGORY = "category";
     public static final String CAN_REVERT = "canrevert";
@@ -132,6 +135,7 @@ public class ApiConstants {
     public static final String CNI_CONFIG_ID = "cniconfigurationid";
     public static final String CNI_CONFIG_DETAILS = "cniconfigdetails";
     public static final String CNI_CONFIG_NAME = "cniconfigname";
+    public static final String CSI_ENABLED = "csienabled";
     public static final String COMPONENT = "component";
     public static final String CPU = "CPU";
     public static final String CPU_CORE_PER_SOCKET = "cpucorepersocket";
@@ -139,6 +143,7 @@ public class ApiConstants {
     public static final String CPU_SPEED = "cpuspeed";
     public static final String CPU_LOAD_AVERAGE = "cpuloadaverage";
     public static final String CREATED = "created";
+    public static final String CROSS_ZONE_INSTANCE_CREATION = "crosszoneinstancecreation";
     public static final String CTX_ACCOUNT_ID = "ctxaccountid";
     public static final String CTX_DETAILS = "ctxDetails";
     public static final String CTX_USER_ID = "ctxuserid";
@@ -211,6 +216,7 @@ public class ApiConstants {
     public static final String DURATION = "duration";
     public static final String ELIGIBLE = "eligible";
     public static final String EMAIL = "email";
+    public static final String ENABLE_CSI = "enablecsi";
     public static final String END_ASN = "endasn";
     public static final String END_DATE = "enddate";
     public static final String END_IP = "endip";
@@ -222,6 +228,7 @@ public class ApiConstants {
     public static final String EVENT_TYPE = "eventtype";
     public static final String EXPIRES = "expires";
     public static final String EXTRA_CONFIG = "extraconfig";
+    public static final String EXTRA_PARAMS = "extraparams";
     public static final String EXTRA_DHCP_OPTION = "extradhcpoption";
     public static final String EXTRA_DHCP_OPTION_NAME = "extradhcpoptionname";
     public static final String EXTRA_DHCP_OPTION_CODE = "extradhcpoptioncode";
@@ -240,6 +247,8 @@ public class ApiConstants {
     public static final String FIRSTNAME = "firstname";
     public static final String FORCED = "forced";
     public static final String FORCED_DESTROY_LOCAL_STORAGE = "forcedestroylocalstorage";
+    public static final String FORCE_CONVERT_TO_POOL = "forceconverttopool";
+
     public static final String FORCE_DELETE_HOST = "forcedeletehost";
     public static final String FORCE_MS_TO_IMPORT_VM_FILES = "forcemstoimportvmfiles";
     public static final String FORCE_UPDATE_OS_TYPE = "forceupdateostype";
@@ -575,6 +584,7 @@ public class ApiConstants {
     public static final String SUITABLE_FOR_VM = "suitableforvirtualmachine";
     public static final String SUPPORTS_STORAGE_SNAPSHOT = "supportsstoragesnapshot";
     public static final String TARGET_IQN = "targetiqn";
+    public static final String TASKS_FILTER = "tasksfilter";
     public static final String TEMPLATE_FILTER = "templatefilter";
     public static final String TEMPLATE_ID = "templateid";
     public static final String TEMPLATE_IDS = "templateids";
@@ -1154,6 +1164,7 @@ public class ApiConstants {
     public static final String OVM3_CLUSTER = "ovm3cluster";
     public static final String OVM3_VIP = "ovm3vip";
     public static final String CLEAN_UP_DETAILS = "cleanupdetails";
+    public static final String CLEAN_UP_EXTERNAL_DETAILS = "cleanupexternaldetails";
     public static final String CLEAN_UP_PARAMETERS = "cleanupparameters";
     public static final String VIRTUAL_SIZE = "virtualsize";
     public static final String NETSCALER_CONTROLCENTER_ID = "netscalercontrolcenterid";

@@ -357,7 +357,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     @Override
     public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback) {
         CreateCmdResult result = null;
-        logger.debug("Taking snapshot of "+ snapshot);
+        logger.debug("Taking Snapshot of "+ snapshot);
         try {
             SnapshotObjectTO snapshotTO = getAndUpdateSnapshotObjectTO(snapshot);
 
@@ -366,7 +366,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
             EndPoint ep = epSelector.select(snapshot, StorageAction.TAKESNAPSHOT, encryptionRequired);
             Answer answer;
 
-            logger.debug("Taking snapshot of "+ snapshot + " and encryption required is " + encryptionRequired);
+            logger.debug("Taking Snapshot of "+ snapshot + " and encryption required is " + encryptionRequired);
 
             if (ep == null) {
                 String errMsg = "No remote endpoint to send createObjectCommand, check if host or ssvm is down?";
@@ -384,7 +384,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
             callback.complete(result);
             return;
         } catch (Exception e) {
-            logger.debug("Failed to take snapshot: {}", snapshot, e);
+            logger.debug("Failed to take Snapshot: {}", snapshot, e);
             result = new CreateCmdResult(null, null);
             result.setResult(e.toString());
         }
@@ -439,7 +439,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
                 }
             }
         } catch (Exception ex) {
-            logger.debug("Unable to revert snapshot {}", snapshot, ex);
+            logger.debug("Unable to revert Snapshot {}", snapshot, ex);
             result.setResult(ex.toString());
         }
         callback.complete(result);
@@ -505,6 +505,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
             StoragePoolVO storagePoolVO = primaryStoreDao.findByUuid(datastoreUUID);
             if (storagePoolVO != null) {
                 volumeVO.setPoolId(storagePoolVO.getId());
+                volumeVO.setPoolType(storagePoolVO.getPoolType());
             } else {
                 logger.warn("Unable to find datastore {} while updating the new datastore of the volume {}", datastoreUUID, vol);
             }

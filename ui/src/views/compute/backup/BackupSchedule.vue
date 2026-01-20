@@ -99,12 +99,12 @@ export default {
       default: false
     },
     dataSource: {
-      type: Object,
+      type: Array,
       required: true
     },
-    resource: {
-      type: Object,
-      required: true
+    deleteFn: {
+      type: Function,
+      default: null
     }
   },
   data () {
@@ -128,6 +128,7 @@ export default {
           dataIndex: 'intervaltype'
         },
         {
+          key: 'time',
           title: this.$t('label.time'),
           dataIndex: 'schedule'
         },
@@ -183,6 +184,10 @@ export default {
   },
   methods: {
     handleClickDelete (record) {
+      if (this.deleteFn) {
+        this.deleteFn(record)
+        return
+      }
       const params = {}
       params.id = record.id
       this.actionLoading = true

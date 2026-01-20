@@ -34,11 +34,11 @@ public class BackupOfferingResponse extends BaseResponse {
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "name for the backup offering")
+    @Param(description = "Name for the backup offering")
     private String name;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "description for the backup offering")
+    @Param(description = "Description for the backup offering")
     private String description;
 
     @SerializedName(ApiConstants.PROVIDER)
@@ -46,23 +46,27 @@ public class BackupOfferingResponse extends BaseResponse {
     private String provider;
 
     @SerializedName(ApiConstants.EXTERNAL_ID)
-    @Param(description = "external ID on the provider side")
+    @Param(description = "External ID on the provider side")
     private String externalId;
 
     @SerializedName(ApiConstants.ALLOW_USER_DRIVEN_BACKUPS)
-    @Param(description = "whether offering allows user driven ad-hoc/scheduled backups")
+    @Param(description = "Whether the offering allows User driven ad-hoc/scheduled backups")
     private Boolean userDrivenBackups;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "zone ID")
+    @Param(description = "Zone ID")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "zone name")
+    @Param(description = "Zone name")
     private String zoneName;
 
+    @SerializedName(ApiConstants.CROSS_ZONE_INSTANCE_CREATION)
+    @Param(description = "the backups with this offering can be used to create Instances on all Zones", since = "4.22.0")
+    private Boolean crossZoneInstanceCreation;
+
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "the date this backup offering was created")
+    @Param(description = "The date this backup offering was created")
     private Date created;
 
     public void setId(String id) {
@@ -95,6 +99,10 @@ public class BackupOfferingResponse extends BaseResponse {
 
     public void setZoneName(String zoneName) {
         this.zoneName = zoneName;
+    }
+
+    public void setCrossZoneInstanceCreation(Boolean crossZoneInstanceCreation) {
+        this.crossZoneInstanceCreation = crossZoneInstanceCreation;
     }
 
     public void setCreated(Date created) {

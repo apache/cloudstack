@@ -50,7 +50,7 @@ public class BackupOfferingDaoImpl extends GenericDaoBase<BackupOfferingVO, Long
     }
 
     @Override
-    public BackupOfferingResponse newBackupOfferingResponse(BackupOffering offering) {
+    public BackupOfferingResponse newBackupOfferingResponse(BackupOffering offering, Boolean crossZoneInstanceCreation) {
         DataCenterVO zone = dataCenterDao.findById(offering.getZoneId());
 
         BackupOfferingResponse response = new BackupOfferingResponse();
@@ -63,6 +63,9 @@ public class BackupOfferingDaoImpl extends GenericDaoBase<BackupOfferingVO, Long
         if (zone != null) {
             response.setZoneId(zone.getUuid());
             response.setZoneName(zone.getName());
+        }
+        if (crossZoneInstanceCreation) {
+            response.setCrossZoneInstanceCreation(true);
         }
         response.setCreated(offering.getCreated());
         response.setObjectName("backupoffering");

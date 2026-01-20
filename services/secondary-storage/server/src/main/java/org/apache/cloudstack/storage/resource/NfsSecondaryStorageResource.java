@@ -85,9 +85,11 @@ import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -455,7 +457,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 logger.info(String.format("Trying to decompress OVA file [%s] using command [%s].", srcOVAFileName, command.toString()));
                 String result = command.execute();
                 if (result != null) {
-                    String msg = String.format("Unable to unpack snapshot OVA file [%s] due to [%s].", srcOVAFileName, result);
+                    String msg = String.format("Unable to unpack Snapshot OVA file [%s] due to [%s].", srcOVAFileName, result);
                     logger.error(msg);
                     throw new Exception(msg);
                 }
@@ -531,7 +533,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     command.add(newTmplDirAbsolute);
                     String result = command.execute();
                     if (result != null) {
-                        String msg = "Unable to prepare template directory: " + newTmplDir + ", storage: " + secondaryStorageUrl + ", error msg: " + result;
+                        String msg = "Unable to prepare Template directory: " + newTmplDir + ", storage: " + secondaryStorageUrl + ", error msg: " + result;
                         logger.error(msg);
                         throw new Exception(msg);
                     }
@@ -543,7 +545,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     command.add(newTmplDirAbsolute);
                     String result = command.execute();
                     if (result != null) {
-                        String msg = "Unable to copy VMDK from parent template folder to datadisk template folder" + ", error msg: " + result;
+                        String msg = "Unable to copy VMDK from parent Template folder to datadisk Template folder" + ", error msg: " + result;
                         logger.error(msg);
                         throw new Exception(msg);
                     }
@@ -552,7 +554,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     command.add(newTmplDirAbsolute);
                     result = command.execute();
                     if (result != null) {
-                        String msg = "Unable to copy VMDK from parent template folder to datadisk template folder" + ", error msg: " + result;
+                        String msg = "Unable to copy VMDK from parent Template folder to datadisk Template folder" + ", error msg: " + result;
                         logger.error(msg);
                         throw new Exception(msg);
                     }
@@ -577,7 +579,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             diskTemplate.setSize(virtualSize);
             diskTemplate.setPhysicalSize(physicalSize);
         } catch (Exception e) {
-            String msg = "Create Datadisk template failed due to " + e.getMessage();
+            String msg = "Create Datadisk Template failed due to " + e.getMessage();
             logger.error(msg, e);
             return new CreateDatadiskTemplateAnswer(msg);
         }
@@ -944,13 +946,13 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             newTemplate.setName(templateUuid);
             return new CopyCmdAnswer(newTemplate);
         } catch (ConfigurationException e) {
-            logger.debug("Failed to create template from snapshot: " + e.toString());
+            logger.debug("Failed to create Template from Snapshot: " + e.toString());
             errMsg = e.toString();
         } catch (InternalErrorException e) {
-            logger.debug("Failed to create template from snapshot: " + e.toString());
+            logger.debug("Failed to create Template from Snapshot: " + e.toString());
             errMsg = e.toString();
         } catch (IOException e) {
-            logger.debug("Failed to create template from snapshot: " + e.toString());
+            logger.debug("Failed to create Template from Snapshot: " + e.toString());
             errMsg = e.toString();
         }
 
@@ -979,7 +981,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             // add kvm file extension for copied template name
             String fileName = templateName + "." + srcFormat.getFileExtension();
             String destFileFullPath = destFile.getAbsolutePath() + File.separator + fileName;
-            logger.debug("copy snapshot " + srcFile.getAbsolutePath() + " to template " + destFileFullPath);
+            logger.debug("Copy Snapshot " + srcFile.getAbsolutePath() + " to Template " + destFileFullPath);
             Script.runSimpleBashScript("cp " + srcFile.getAbsolutePath() + " " + destFileFullPath);
             removeConvertedSnapshotIfNeeded(srcFile.getAbsolutePath());
             String metaFileName = destFile.getAbsolutePath() + File.separator + _tmpltpp;
@@ -1029,14 +1031,14 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     newTemplate.setPhysicalSize(prop.getPhysicalSize());
                     return new CopyCmdAnswer(newTemplate);
                 } catch (ConfigurationException e) {
-                    logger.debug("Failed to create template:" + e.toString());
+                    logger.debug("Failed to create Template:" + e.toString());
                     return new CopyCmdAnswer(e.toString());
                 } catch (InternalErrorException e) {
-                    logger.debug("Failed to create template:" + e.toString());
+                    logger.debug("Failed to create Template:" + e.toString());
                     return new CopyCmdAnswer(e.toString());
                 }
             } catch (IOException e) {
-                logger.debug("Failed to create template:" + e.toString());
+                logger.debug("Failed to create Template:" + e.toString());
                 return new CopyCmdAnswer(e.toString());
             }
         }
@@ -1070,7 +1072,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         DataStoreTO destDataStore = destData.getDataStore();
         if (srcDataStore.getRole() == DataStoreRole.Image || srcDataStore.getRole() == DataStoreRole.ImageCache || srcDataStore.getRole() == DataStoreRole.Primary) {
             if (!(srcDataStore instanceof NfsTO)) {
-                logger.debug("only support nfs storage as src, when create template from snapshot");
+                logger.debug("Only support NFS storage as src, when create Template from Snapshot");
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }
 
@@ -1083,7 +1085,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 if (!answer.getResult()) {
                     return answer;
                 }
-                logger.debug("starting copy template to swift");
+                logger.debug("Starting copy Template to swift");
                 TemplateObjectTO newTemplate = (TemplateObjectTO)answer.getNewData();
                 newTemplate.setDataStore(srcDataStore);
                 CopyCommand newCpyCmd = new CopyCommand(newTemplate, destData, cmd.getWait(), cmd.executeInSequence());
@@ -1109,7 +1111,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 return result;
             }
         }
-        logger.debug("Failed to create template from snapshot");
+        logger.debug("Failed to create Template from Snapshot");
         return new CopyCmdAnswer("Unsupported protocol");
     }
 
@@ -1276,7 +1278,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             DownloadAnswer answer = new DownloadAnswer(null, 100, null, VMTemplateStorageResourceAssoc.Status.DOWNLOADED, swiftPath, swiftPath, virtualSize, file.length(), md5sum);
             return answer;
         } catch (IOException e) {
-            logger.debug("Failed to register template into swift", e);
+            logger.debug("Failed to register Template into swift", e);
             return new DownloadAnswer(e.toString(), VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
         } finally {
             if (file != null) {
@@ -1812,13 +1814,13 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             String lPath = absoluteSnapshotPath + "/*";
             String result = deleteLocalFile(lPath);
             if (result != null) {
-                String errMsg = "failed to delete all snapshots " + lPath + " , err=" + result;
+                String errMsg = "Failed to delete all Snapshots " + lPath + " , err=" + result;
                 logger.warn(errMsg);
                 return new Answer(cmd, false, errMsg);
             }
             // delete the directory
             if (!snapshotDir.delete()) {
-                details = "Unable to delete directory " + snapshotDir.getName() + " under snapshot path " + relativeSnapshotPath;
+                details = "Unable to delete directory " + snapshotDir.getName() + " under Snapshot path " + relativeSnapshotPath;
                 logger.debug(details);
                 return new Answer(cmd, false, details);
             }
@@ -1829,9 +1831,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             final String bucket = s3.getBucketName();
             try {
                 S3Utils.deleteDirectory(s3, bucket, path);
-                return new Answer(cmd, true, String.format("Deleted snapshot %1%s from bucket %2$s.", path, bucket));
+                return new Answer(cmd, true, String.format("Deleted Snapshot %1%s from bucket %2$s.", path, bucket));
             } catch (Exception e) {
-                final String errorMessage = String.format("Failed to delete snapshot %1$s from bucket %2$s due to the following error: %3$s", path, bucket, e.getMessage());
+                final String errorMessage = String.format("Failed to delete Snapshot %1$s from bucket %2$s due to the following error: %3$s", path, bucket, e.getMessage());
                 logger.error(errorMessage, e);
                 return new Answer(cmd, false, errorMessage);
             }
@@ -1850,11 +1852,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             // path
             String result = swiftDelete((SwiftTO)dstore, "V-" + volumeId.toString(), "");
             if (result != null) {
-                String errMsg = "failed to delete snapshot for volume " + volumeId + " , err=" + result;
+                String errMsg = "Failed to delete Snapshot for volume " + volumeId + " , err=" + result;
                 logger.warn(errMsg);
                 return new Answer(cmd, false, errMsg);
             }
-            return new Answer(cmd, true, "Deleted snapshot " + path + " from swift");
+            return new Answer(cmd, true, "Deleted Snapshot " + path + " from swift");
         } else {
             return new Answer(cmd, false, "Unsupported image data store: " + dstore);
         }
@@ -1881,7 +1883,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         String algorithm = cmd.getAlgorithm();
         File f = new File(absoluteTemplatePath);
         if (logger.isDebugEnabled()) {
-            logger.debug("parent path " + parent + " relative template path " + relativeTemplatePath);
+            logger.debug("Parent path " + parent + " relative Template path " + relativeTemplatePath);
         }
         String checksum = null;
 
@@ -2081,7 +2083,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             String fullSnapPath = parent + snapshotPath;
             File snapshotFile = new File(fullSnapPath);
             if (snapshotFile.exists() && snapshotFile.isDirectory()) {
-                logger.debug("snapshot path " + snapshotPath + " is a directory, already deleted during backup snapshot, so no need to delete");
+                logger.debug("Snapshot path {} is a directory, already deleted during backup Snapshot, so no need to delete", snapshotPath);
                 return new Answer(cmd, true, null);
             }
             // check if snapshot directory exists
@@ -2102,7 +2104,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             }
 
             if (snapshotDeleteResult != null || checkpointDeleteResult != null) {
-                details = String.format("Failed to delete snapshot [%s]. Snapshot delete result = [%s], Checkpoint delete result = [%s].", lPath, snapshotDeleteResult, checkpointDeleteResult);
+                details = String.format("Failed to delete Snapshot [%s]. Snapshot delete result = [%s], Checkpoint delete result = [%s].", lPath, snapshotDeleteResult, checkpointDeleteResult);
                 logger.warn(details);
                 return new Answer(cmd, false, details);
             }
@@ -2120,9 +2122,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             final String bucket = s3.getBucketName();
             try {
                 S3Utils.deleteObject(s3, bucket, path);
-                return new Answer(cmd, true, String.format("Deleted snapshot %1%s from bucket %2$s.", path, bucket));
+                return new Answer(cmd, true, String.format("Deleted Snapshot %1%s from bucket %2$s.", path, bucket));
             } catch (Exception e) {
-                final String errorMessage = String.format("Failed to delete snapshot %1$s from bucket %2$s due to the following error: %3$s", path, bucket, e.getMessage());
+                final String errorMessage = String.format("Failed to delete Snapshot %1$s from bucket %2$s due to the following error: %3$s", path, bucket, e.getMessage());
                 logger.error(errorMessage, e);
                 return new Answer(cmd, false, errorMessage);
             }
@@ -2131,7 +2133,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             String path = obj.getPath();
             SwiftUtil.deleteObject(swiftTO, path);
 
-            return new Answer(cmd, true, "Deleted snapshot " + path + " from swift");
+            return new Answer(cmd, true, "Deleted Snapshot " + path + " from swift");
         } else {
             return new Answer(cmd, false, "Unsupported image data store: " + dstore);
         }
@@ -2492,7 +2494,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             }
             File[] tmpltFiles = tmpltParent.listFiles();
             if (tmpltFiles == null || tmpltFiles.length == 0) {
-                details = "No files under template parent directory " + tmpltParent.getName();
+                details = "No files under Template parent directory " + tmpltParent.getName();
                 logger.debug(details);
             } else {
                 boolean found = false;
@@ -2505,7 +2507,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     // heartbeat tests
                     // Don't let this stop us from cleaning up the template
                     if (f.isDirectory() && f.getName().equals("KVMHA")) {
-                        logger.debug("Deleting KVMHA directory contents from template location");
+                        logger.debug("Deleting KVMHA directory contents from Template location");
                         File[] haFiles = f.listFiles();
                         for (File haFile : haFiles) {
                             haFile.delete();
@@ -2534,9 +2536,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             final String bucket = s3.getBucketName();
             try {
                 S3Utils.deleteDirectory(s3, bucket, path);
-                return new Answer(cmd, true, String.format("Deleted template %1$s from bucket %2$s.", path, bucket));
+                return new Answer(cmd, true, String.format("Deleted Template %1$s from bucket %2$s.", path, bucket));
             } catch (Exception e) {
-                final String errorMessage = String.format("Failed to delete template %1$s from bucket %2$s due to the following error: %3$s", path, bucket, e.getMessage());
+                final String errorMessage = String.format("Failed to delete Template %1$s from bucket %2$s due to the following error: %3$s", path, bucket, e.getMessage());
                 logger.error(errorMessage, e);
                 return new Answer(cmd, false, errorMessage);
             }
@@ -2612,7 +2614,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     // heartbeat tests
                     // Don't let this stop us from cleaning up the template
                     if (f.isDirectory() && f.getName().equals("KVMHA")) {
-                        logger.debug("Deleting KVMHA directory contents from template location");
+                        logger.debug("Deleting KVMHA directory contents from Template location");
                         File[] haFiles = f.listFiles();
                         for (File haFile : haFiles) {
                             haFile.delete();
@@ -2742,6 +2744,20 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return new PingStorageCommand(Host.Type.Storage, id, new HashMap<String, Boolean>());
     }
 
+    protected void configureStorageNetwork(Map<String, Object> params) {
+        _storageIp = MapUtils.getString(params, "storageip");
+        _storageNetmask = (String) params.get("storagenetmask");
+        _storageGateway = (String) params.get("storagegateway");
+        if (_storageIp == null && _inSystemVM && _eth1ip != null) {
+            String eth1Gateway = ObjectUtils.firstNonNull(_localgw, MapUtils.getString(params, "localgw"));
+            logger.info("Storage network not configured, using management network[ip: {}, netmask: {}, gateway: {}] for storage traffic",
+                    _eth1ip, _eth1mask, eth1Gateway);
+            _storageIp = _eth1ip;
+            _storageNetmask = _eth1mask;
+            _storageGateway = eth1Gateway;
+        }
+    }
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _eth1ip = (String)params.get("eth1ip");
@@ -2764,12 +2780,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             _inSystemVM = true;
         }
 
-        _storageIp = (String)params.get("storageip");
+        configureStorageNetwork(params);
         if (_storageIp == null && _inSystemVM) {
-            logger.warn("There is no storageip in /proc/cmdline, something wrong!");
+            logger.warn("No storageip in /proc/cmdline, something wrong! Even fallback to management network did not resolve storage IP.");
         }
-        _storageNetmask = (String)params.get("storagenetmask");
-        _storageGateway = (String)params.get("storagegateway");
         super.configure(name, params);
 
         _params = params;
@@ -2901,7 +2915,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             logger.warn("Error in starting sshd service err=" + result);
         }
         String rule = "-i eth1 -p tcp -m state --state NEW -m tcp --dport 3922 -j ACCEPT";
-        IpTablesHelper.addConditionally(IpTablesHelper.INPUT_CHAIN, true, rule, "Error in opening up ssh port");
+        IpTablesHelper.addConditionally(IpTablesHelper.INPUT_CHAIN, true, rule, "Error in opening up SSH port");
     }
 
     private void addRouteToInternalIpOrCidr(String localgw, String eth1ip, String eth1mask, String destIpOrCidr) {
@@ -2914,7 +2928,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return;
         }
         if (!NetUtils.isValidIp4(destIpOrCidr) && !NetUtils.isValidIp4Cidr(destIpOrCidr)) {
-            logger.warn(" destIp is not a valid ip address or cidr destIp=" + destIpOrCidr);
+            logger.warn(" destIp is not a valid IP address or CIDR destIp=" + destIpOrCidr);
             return;
         }
         boolean inSameSubnet = false;
@@ -2928,7 +2942,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             inSameSubnet = NetUtils.isNetworkAWithinNetworkB(destIpOrCidr, NetUtils.ipAndNetMaskToCidr(eth1ip, eth1mask));
         }
         if (inSameSubnet) {
-            logger.debug("addRouteToInternalIp: dest ip " + destIpOrCidr + " is in the same subnet as eth1 ip " + eth1ip);
+            logger.debug("addRouteToInternalIp: dest IP " + destIpOrCidr + " is in the same subnet as eth1 IP " + eth1ip);
             return;
         }
         Script command = new Script("/bin/bash", logger);
@@ -2940,9 +2954,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         command.add("ip route add " + destIpOrCidr + " via " + localgw);
         String result = command.execute();
         if (result != null) {
-            logger.warn("Error in configuring route to internal ip err=" + result);
+            logger.warn("Error in configuring route to internal IP err=" + result);
         } else {
-            logger.debug("addRouteToInternalIp: added route to internal ip=" + destIpOrCidr + " via " + localgw);
+            logger.debug("addRouteToInternalIp: added route to internal IP=" + destIpOrCidr + " via " + localgw);
         }
     }
 
@@ -3537,7 +3551,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         try {
             loc.create(uploadEntity.getEntityId(), true, uploadEntity.getFilename());
         } catch (IOException e) {
-            logger.warn("Something is wrong with template location " + resourcePath, e);
+            logger.warn("Something is wrong with Template location " + resourcePath, e);
             loc.purge();
             return "Unable to upload due to " + e.getMessage();
         }

@@ -36,7 +36,7 @@ import java.util.UUID;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
-import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplianceCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
@@ -221,8 +221,8 @@ public class XenServerStorageProcessor implements StorageProcessor {
     }
 
     @Override
-    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplainceCommand cmd) {
-        logger.info("'CheckDataStoreStoragePolicyComplainceCommand' not applicable used for XenServerStorageProcessor");
+    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplianceCommand cmd) {
+        logger.info("'CheckDataStoreStoragePolicyComplianceCommand' not applicable used for XenServerStorageProcessor");
         return new Answer(cmd,false,"Not applicable used for XenServerStorageProcessor");
     }
 
@@ -244,8 +244,8 @@ public class XenServerStorageProcessor implements StorageProcessor {
             isoURL = iso.getName();
         } else {
             if (!(store instanceof NfsTO)) {
-                logger.debug("Can't attach a iso which is not created on nfs: ");
-                return new AttachAnswer("Can't attach a iso which is not created on nfs: ");
+                logger.debug("Can't attach an ISO which is not created on NFS: ");
+                return new AttachAnswer("Can't attach an ISO which is not created on NFS: ");
             }
             final NfsTO nfsStore = (NfsTO) store;
             isoURL = nfsStore.getUrl() + nfsStore.getPathSeparator() + data.getPath();
@@ -289,10 +289,10 @@ public class XenServerStorageProcessor implements StorageProcessor {
             return new AttachAnswer(disk);
 
         } catch (final XenAPIException e) {
-            logger.warn("Failed to attach iso" + ": " + e.toString(), e);
+            logger.warn("Failed to attach ISO" + ": " + e.toString(), e);
             return new AttachAnswer(e.toString());
         } catch (final Exception e) {
-            logger.warn("Failed to attach iso" + ": " + e.toString(), e);
+            logger.warn("Failed to attach ISO" + ": " + e.toString(), e);
             return new AttachAnswer(e.toString());
         }
     }
@@ -867,10 +867,10 @@ public class XenServerStorageProcessor implements StorageProcessor {
             vdi = tmpltvdi.createClone(conn, new HashMap<String, String>());
             Long virtualSize  = vdi.getVirtualSize(conn);
             if (volume.getSize() > virtualSize) {
-                logger.debug("Overriding provided template's size with new size " + toHumanReadableSize(volume.getSize()) + " for volume: " + volume.getName());
+                logger.debug("Overriding provided Template's size with new size " + toHumanReadableSize(volume.getSize()) + " for volume: " + volume.getName());
                 vdi.resize(conn, volume.getSize());
             } else {
-                logger.debug("Using templates disk size of " + toHumanReadableSize(virtualSize) + " for volume: " + volume.getName() + " since size passed was " + toHumanReadableSize(volume.getSize()));
+                logger.debug("Using Templates disk size of " + toHumanReadableSize(virtualSize) + " for volume: " + volume.getName() + " since size passed was " + toHumanReadableSize(volume.getSize()));
             }
             vdi.setNameLabel(conn, volume.getName());
 

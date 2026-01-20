@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
+import com.cloud.network.VirtualNetworkApplianceService.RouterHealthStatus;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
@@ -27,23 +28,27 @@ import com.google.gson.annotations.SerializedName;
 
 public class RouterHealthCheckResultResponse extends BaseResponse {
     @SerializedName(ApiConstants.ROUTER_CHECK_NAME)
-    @Param(description = "the name of the health check on the router")
+    @Param(description = "The name of the health check on the router")
     private String checkName;
 
     @SerializedName(ApiConstants.ROUTER_CHECK_TYPE)
-    @Param(description = "the type of the health check - basic or advanced")
+    @Param(description = "The type of the health check - basic or advanced")
     private String checkType;
 
     @SerializedName(ApiConstants.SUCCESS)
-    @Param(description = "result of the health check")
+    @Param(description = "The result of the health check if available")
     private boolean result;
 
+    @SerializedName(ApiConstants.STATUS)
+    @Param(description = "the result of the health check in enum form: {SUCCESS, FAILURE, WARNING, UNKNOWN}")
+    private RouterHealthStatus state;
+
     @SerializedName(ApiConstants.LAST_UPDATED)
-    @Param(description = "the date this VPC was created")
+    @Param(description = "The date this VPC was created")
     private Date lastUpdated;
 
     @SerializedName(ApiConstants.DETAILS)
-    @Param(description = "detailed response generated on running health check")
+    @Param(description = "Detailed response generated on running health check")
     private String details;
 
     public String getCheckName() {
@@ -54,8 +59,12 @@ public class RouterHealthCheckResultResponse extends BaseResponse {
         return checkType;
     }
 
-    public boolean getResult() {
+    public Boolean getResult() {
         return result;
+    }
+
+    public RouterHealthStatus getState() {
+        return state;
     }
 
     public Date getLastUpdated() {
@@ -74,8 +83,12 @@ public class RouterHealthCheckResultResponse extends BaseResponse {
         this.checkType = checkType;
     }
 
-    public void setResult(boolean result) {
+    public void setResult(Boolean result) {
         this.result = result;
+    }
+
+    public void setState(RouterHealthStatus state) {
+        this.state = state;
     }
 
     public void setLastUpdated(Date lastUpdated) {
