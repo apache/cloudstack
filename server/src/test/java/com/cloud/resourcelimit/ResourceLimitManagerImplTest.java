@@ -1407,8 +1407,8 @@ public class ResourceLimitManagerImplTest {
 
         List<ResourceLimitVO> result = resourceLimitManager.getConsolidatedResourceLimitsForAllResourceTypes(accountId, domainId, foundLimits, true);
 
-        Assert.assertEquals(1, result.size());
-        Assert.assertEquals(limit, result.get(0));
+        Assert.assertEquals(EnumSet.allOf(Resource.ResourceType.class).size(), result.size());
+        Assert.assertTrue(result.contains(limit));
     }
 
     @Test
