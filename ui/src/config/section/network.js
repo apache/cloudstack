@@ -357,7 +357,7 @@ export default {
       resourceType: 'UserVm',
       params: () => {
         return {
-          details: 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp,backoff',
+          details: 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp,backoff,vnfnics',
           isvnf: true
         }
       },
