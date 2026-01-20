@@ -33,6 +33,9 @@ import org.apache.cloudstack.api.command.user.kubernetes.version.ListKubernetesS
 import org.apache.cloudstack.api.response.KubernetesSupportedVersionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.api.query.dao.TemplateJoinDao;
@@ -80,6 +83,8 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
     private VMTemplateZoneDao templateZoneDao;
     @Inject
     private DataCenterDao dataCenterDao;
+    @Inject
+    private ImageStoreDao imageStoreDao;
     @Inject
     private TemplateApiService templateService;
 
@@ -323,6 +328,32 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         return createKubernetesSupportedVersionListResponse(versions, versionsAndCount.second());
     }
 
+    private void validateImageStoreForZone(Long zoneId, boolean directDownload) {
+        if (directDownload) {
+            return;
+        }
+        if (zoneId != null) {
+            List<ImageStoreVO> imageStores = imageStoreDao.listStoresByZoneId(zoneId);
+            if (CollectionUtils.isEmpty(imageStores)) {
+                DataCenterVO zone = dataCenterDao.findById(zoneId);
+                String zoneName = zone != null ? zone.getName() : String.valueOf(zoneId);
+                throw new InvalidParameterValueException(String.format("Unable to register Kubernetes version ISO. No image store available in zone: %s", zoneName));
+            }
+        } else {
+            List<DataCenterVO> zones = dataCenterDao.listAllZones();
+            List<String> zonesWithoutStorage = new ArrayList<>();
+            for (DataCenterVO zone : zones) {
+                List<ImageStoreVO> imageStores = imageStoreDao.listStoresByZoneId(zone.getId());
+                if (CollectionUtils.isEmpty(imageStores)) {
+                    zonesWithoutStorage.add(zone.getName());
+                }
+            }
+            if (!zonesWithoutStorage.isEmpty()) {
+                throw new InvalidParameterValueException(String.format("Unable to register Kubernetes version ISO for all zones. The following zones have no image store: %s", String.join(", ", zonesWithoutStorage)));
+            }
+        }
+    }
+
     @Override
     @ActionEvent(eventType = KubernetesVersionEventTypes.EVENT_KUBERNETES_VERSION_ADD,
             eventDescription = "Adding Kubernetes supported version")
@@ -367,6 +398,8 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
                 name = String.format("%s-%s", name, dataCenterDao.findById(zoneId).getName());
             }
         }
+
+        validateImageStoreForZone(zoneId, isDirectDownload);
 
         VMTemplateVO template = null;
         try {

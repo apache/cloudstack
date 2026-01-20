@@ -78,6 +78,9 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+
 @RunWith(MockitoJUnitRunner.class)
 public class KubernetesVersionServiceTest {
 
@@ -96,6 +99,8 @@ public class KubernetesVersionServiceTest {
     private TemplateJoinDao templateJoinDao;
     @Mock
     private DataCenterDao dataCenterDao;
+    @Mock
+    private ImageStoreDao imageStoreDao;
     @Mock
     private TemplateApiService templateService;
     @Mock
@@ -127,6 +132,10 @@ public class KubernetesVersionServiceTest {
 
         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
         when(dataCenterDao.findById(Mockito.anyLong())).thenReturn(zone);
+
+        List<ImageStoreVO> imageStores = new ArrayList<>();
+        imageStores.add(Mockito.mock(ImageStoreVO.class));
+        when(imageStoreDao.listStoresByZoneId(Mockito.anyLong())).thenReturn(imageStores);
 
         TemplateJoinVO templateJoinVO = Mockito.mock(TemplateJoinVO.class);
         when(templateJoinVO.getUrl()).thenReturn("https://download.cloudstack.com");

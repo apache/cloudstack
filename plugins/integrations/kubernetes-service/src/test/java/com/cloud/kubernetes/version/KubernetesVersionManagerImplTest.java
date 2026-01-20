@@ -16,10 +16,15 @@
 // under the License.
 package com.cloud.kubernetes.version;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 import org.apache.cloudstack.api.response.KubernetesSupportedVersionResponse;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,12 +37,21 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.cpu.CPU;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.exception.InvalidParameterValueException;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KubernetesVersionManagerImplTest {
 
     @Mock
     TemplateJoinDao templateJoinDao;
+
+    @Mock
+    ImageStoreDao imageStoreDao;
+
+    @Mock
+    DataCenterDao dataCenterDao;
 
     @InjectMocks
     KubernetesVersionManagerImpl kubernetesVersionManager = new KubernetesVersionManagerImpl();
@@ -71,5 +85,63 @@ public class KubernetesVersionManagerImplTest {
         kubernetesVersionManager.updateTemplateDetailsInKubernetesSupportedVersionResponse(kubernetesSupportedVersion,
                 response, true);
         Assert.assertEquals(state.toString(), ReflectionTestUtils.getField(response, "isoState"));
+    }
+
+    @Test
+    public void testValidateImageStoreForZoneWithDirectDownload() {
+        ReflectionTestUtils.invokeMethod(kubernetesVersionManager, "validateImageStoreForZone", 1L, true);
+    }
+
+    @Test
+    public void testValidateImageStoreForZoneWithValidZone() {
+        Long zoneId = 1L;
+        List<ImageStoreVO> imageStores = Collections.singletonList(Mockito.mock(ImageStoreVO.class));
+        Mockito.when(imageStoreDao.listStoresByZoneId(zoneId)).thenReturn(imageStores);
+
+        ReflectionTestUtils.invokeMethod(kubernetesVersionManager, "validateImageStoreForZone", zoneId, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateImageStoreForZoneWithNoImageStore() {
+        Long zoneId = 1L;
+        DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+        Mockito.when(zone.getName()).thenReturn("test-zone");
+        Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(zone);
+        Mockito.when(imageStoreDao.listStoresByZoneId(zoneId)).thenReturn(Collections.emptyList());
+
+        ReflectionTestUtils.invokeMethod(kubernetesVersionManager, "validateImageStoreForZone", zoneId, false);
+    }
+
+    @Test
+    public void testValidateImageStoreForAllZonesWithAllValid() {
+        DataCenterVO zone1 = Mockito.mock(DataCenterVO.class);
+        Mockito.when(zone1.getId()).thenReturn(1L);
+        DataCenterVO zone2 = Mockito.mock(DataCenterVO.class);
+        Mockito.when(zone2.getId()).thenReturn(2L);
+        List<DataCenterVO> zones = Arrays.asList(zone1, zone2);
+        Mockito.when(dataCenterDao.listAllZones()).thenReturn(zones);
+
+        List<ImageStoreVO> imageStores = Collections.singletonList(Mockito.mock(ImageStoreVO.class));
+        Mockito.when(imageStoreDao.listStoresByZoneId(1L)).thenReturn(imageStores);
+        Mockito.when(imageStoreDao.listStoresByZoneId(2L)).thenReturn(imageStores);
+
+        ReflectionTestUtils.invokeMethod(kubernetesVersionManager, "validateImageStoreForZone", (Long) null, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateImageStoreForAllZonesWithSomeMissingStorage() {
+        DataCenterVO zone1 = Mockito.mock(DataCenterVO.class);
+        Mockito.when(zone1.getId()).thenReturn(1L);
+        DataCenterVO zone2 = Mockito.mock(DataCenterVO.class);
+        Mockito.when(zone2.getId()).thenReturn(2L);
+        Mockito.when(zone2.getName()).thenReturn("zone-without-storage");
+        List<DataCenterVO> zones = Arrays.asList(zone1, zone2);
+        Mockito.when(dataCenterDao.listAllZones()).thenReturn(zones);
+
+        List<ImageStoreVO> imageStores = Collections.singletonList(Mockito.mock(ImageStoreVO.class));
+        Mockito.when(imageStoreDao.listStoresByZoneId(1L)).thenReturn(imageStores);
+        Mockito.when(imageStoreDao.listStoresByZoneId(2L)).thenReturn(Collections.emptyList());
+
+        ReflectionTestUtils.invokeMethod(kubernetesVersionManager, "validateImageStoreForZone", (Long) null, false);
     }
 }
