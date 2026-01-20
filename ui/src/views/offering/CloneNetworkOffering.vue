@@ -117,7 +117,7 @@
               </template>
               <a-select
                 v-model:value="form.provider"
-                @change="handleProviderChange"
+                disabled
                 showSearch
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
@@ -131,12 +131,33 @@
             </a-form-item>
           </a-col>
         </a-row>
+        <!-- NSX specific toggles (mirror AddNetworkOffering.vue) -->
+        <a-row :gutter="12" v-if="form.provider === 'NSX'">
+          <a-col :md="12" :lg="12">
+            <a-form-item name="nsxsupportlb" ref="nsxsupportlb" v-if="guestType === 'isolated'">
+              <template #label>
+                <tooltip-label :title="$t('label.nsx.supports.lb')" :tooltip="apiParams.nsxsupportlb.description"/>
+              </template>
+              <a-switch v-model:checked="form.nsxsupportlb" @change="val => { handleNsxLbService(val) }" />
+            </a-form-item>
+          </a-col>
+          <a-col :md="12" :lg="12" v-if="form.nsxsupportlb && form.forvpc">
+            <a-form-item name="nsxsupportsinternallb" ref="nsxsupportsinternallb" v-if="guestType === 'isolated'">
+              <template #label>
+                <tooltip-label :title="$t('label.nsx.supports.internal.lb')" :tooltip="apiParams.nsxsupportsinternallb.description"/>
+              </template>
+              <a-switch v-model:checked="form.nsxsupportsinternallb"/>
+            </a-form-item>
+          </a-col>
+        </a-row>
         <a-form-item name="networkmode" ref="networkmode" v-if="guestType === 'isolated' && form.provider">
           <template #label>
             <tooltip-label :title="$t('label.networkmode')" :tooltip="apiParams.networkmode.description"/>
           </template>
           <a-select
             v-model:value="form.networkmode"
+            @change="val => { handleForNetworkModeChange(val) }"
+            :disabled="provider === 'NSX' || provider === 'Netris'"
             optionFilterProp="label"
             :filterOption="(input, option) => {
               return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -287,9 +308,10 @@
               <template #renderItem="{item}">
                 <a-list-item>
                   <CheckBoxSelectPair
-                    :key="`${item.name}-${item.selectedProvider || 'none'}`"
+                    :key="`${item.name}-${item.selectedProvider || 'none'}-${item.defaultChecked}`"
                     :resourceKey="item.name"
                     :checkBoxLabel="item.description"
+                    :forExternalNetProvider="form.provider === 'NSX' || form.provider === 'Netris'"
                     :defaultCheckBoxValue="item.defaultChecked"
                     :defaultSelectValue="item.selectedProvider"
                     :selectOptions="item.provider"
@@ -577,6 +599,30 @@ export default {
   data () {
     return {
       loading: false,
+      VPCVR: {
+        name: 'VPCVirtualRouter',
+        description: 'VPCVirtualRouter',
+        enabled: true
+      },
+      VR: {
+        name: 'VirtualRouter',
+        description: 'VirtualRouter',
+        enabled: true
+      },
+      NSX: {
+        name: 'Nsx',
+        description: 'Nsx',
+        enabled: true
+      },
+      Netris: {
+        name: 'Netris',
+        description: 'Netris',
+        enabled: true
+      },
+      nsxSupportedServicesMap: {},
+      netrisSupportedServicesMap: {},
+      // supported services backup
+      supportedSvcs: [],
       guestType: 'isolated',
       forVpc: false,
       provider: '',
@@ -682,7 +728,9 @@ export default {
         supportsstrechedl2subnet: false,
         isolation: 'dedicated',
         netscalerservicepackages: null,
-        netscalerservicepackagesdescription: ''
+        netscalerservicepackagesdescription: '',
+        nsxsupportlb: true,
+        nsxsupportsinternallb: false
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
@@ -737,7 +785,9 @@ export default {
           this.supportedServices[i].description = serviceDisplayName
         }
 
+        this.supportedSvcs = this.supportedServices.slice()
         this.populateFormFromResource()
+        this.updateSupportedServices()
       }).finally(() => {
         this.supportedServiceLoading = false
       })
@@ -767,15 +817,51 @@ export default {
       }
 
       if (r.service && Array.isArray(r.service)) {
+        // Prefer provider from NetworkACL service if present (for NSX/Netris), else scan other services
+        let detectedProvider = null
         const networkAclService = r.service.find(svc => svc.name === 'NetworkACL')
         if (networkAclService && networkAclService.provider && networkAclService.provider.length > 0) {
-          const providerName = networkAclService.provider[0].name
-          if (providerName === 'Nsx') {
-            this.provider = 'NSX'
-            this.form.provider = 'NSX'
-          } else if (providerName === 'Netris') {
-            this.provider = 'Netris'
-            this.form.provider = 'Netris'
+          const provName = (networkAclService.provider[0].name || '').toLowerCase()
+          if (provName === 'nsx') detectedProvider = 'NSX'
+          else if (provName === 'netris') detectedProvider = 'Netris'
+        }
+
+        if (!detectedProvider) {
+          // fallback: detect provider (Nsx/Netris) from any service provider in the source offering
+          for (const svc of r.service) {
+            if (svc.provider && Array.isArray(svc.provider) && svc.provider.length > 0) {
+              const provName = (svc.provider[0].name || '').toLowerCase()
+              if (provName === 'nsx') {
+                detectedProvider = 'NSX'
+                break
+              } else if (provName === 'netris') {
+                detectedProvider = 'Netris'
+                break
+              }
+            }
+          }
+        }
+
+        if (detectedProvider) {
+          this.provider = detectedProvider
+          this.form.provider = detectedProvider
+          if (detectedProvider === 'NSX') {
+            this.nsxSupportedServicesMap = {}
+            for (const svc of r.service) {
+              if (svc.provider && svc.provider.length > 0) {
+                const provName = svc.provider[0].name
+                if (provName && provName.toLowerCase() === 'nsx') {
+                  this.nsxSupportedServicesMap[svc.name] = this.NSX
+                } else if (svc.name === 'Dhcp' || svc.name === 'Dns' || svc.name === 'UserData') {
+                  this.nsxSupportedServicesMap[svc.name] = this.forVpc ? this.VPCVR : this.VR
+                }
+              }
+            }
+            if (this.forVpc) {
+              this.nsxSupportedServicesMap.NetworkACL = this.NSX
+            } else {
+              this.nsxSupportedServicesMap.Firewall = this.NSX
+            }
           }
         }
       }
@@ -851,6 +937,8 @@ export default {
         })
 
         this.supportedServices = updatedServices
+        this.supportedSvcs = updatedServices.map(svc => ({ ...svc }))
+
         this.sourceNatServiceChecked = !!this.selectedServiceProviderMap.SourceNat
         this.lbServiceChecked = !!this.selectedServiceProviderMap.Lb
         this.lbServiceProvider = this.selectedServiceProviderMap.Lb || ''
@@ -866,6 +954,78 @@ export default {
             this.checkVirtualRouterForServices()
           })
         })
+      }
+      if (this.provider === 'NSX') {
+        this.form.nsxsupportlb = Boolean(this.serviceProviderMap.Lb)
+        this.form.nsxsupportsinternallb = Boolean(r.nsxsupportsinternallb)
+        this.handleNsxLbService(this.form.nsxsupportlb)
+      }
+    },
+    updateSupportedServices () {
+      const supportedServices = this.supportedServices || []
+      if (!this.supportedSvcs || this.supportedSvcs.length === 0) {
+        this.supportedSvcs = supportedServices.slice()
+      }
+
+      if (this.provider !== 'NSX' && this.provider !== 'Netris') {
+        const filtered = supportedServices.map(svc => {
+          if (svc.name !== 'Connectivity') {
+            const providers = svc.provider.map(provider => {
+              if (this.forVpc) {
+                const enabledProviders = ['VpcVirtualRouter', 'Netscaler', 'BigSwitchBcf', 'ConfigDrive']
+                provider.enabled = enabledProviders.includes(provider.name)
+              } else {
+                provider.enabled = !['InternalLbVm', 'VpcVirtualRouter', 'Nsx', 'Netris'].includes(provider.name)
+              }
+              return provider
+            })
+            return { ...svc, provider: providers }
+          }
+          return svc
+        })
+        this.supportedServices = filtered
+      } else {
+        let svcMap = this.provider === 'NSX' ? this.nsxSupportedServicesMap : this.netrisSupportedServicesMap
+        if (!svcMap || Object.keys(svcMap).length === 0) {
+          svcMap = {}
+          const forVpc = this.forVpc
+          const baseProvider = this.provider === 'NSX' ? this.NSX : this.Netris
+          const vrProvider = forVpc ? this.VPCVR : this.VR
+          svcMap.Dhcp = vrProvider
+          svcMap.Dns = vrProvider
+          svcMap.UserData = vrProvider
+          if (this.networkmode === 'NATTED') {
+            svcMap.SourceNat = baseProvider
+            svcMap.StaticNat = baseProvider
+            svcMap.PortForwarding = baseProvider
+            svcMap.Lb = baseProvider
+          }
+          if (forVpc) {
+            svcMap.NetworkACL = baseProvider
+          } else {
+            svcMap.Firewall = baseProvider
+          }
+        }
+
+        const filtered = this.supportedSvcs.filter(svc => Object.keys(svcMap).includes(svc.name))
+          .map(svc => {
+            const preserveSelected = svc.selectedProvider !== undefined ? { defaultChecked: svc.defaultChecked, selectedProvider: svc.selectedProvider } : {}
+            const mappedProvider = svcMap[svc.name]
+            if (!['Dhcp', 'Dns', 'UserData'].includes(svc.name)) {
+              return { ...svc, provider: [mappedProvider], ...preserveSelected }
+            }
+            return { ...svc, provider: [mappedProvider], ...preserveSelected }
+          })
+        this.supportedServices = filtered
+        const newSelectedMap = {}
+        for (const svc of filtered) {
+          const mappedProvider = svc.provider && svc.provider[0]
+          const providerName = svc.selectedProvider || (mappedProvider && mappedProvider.name) || null
+          if (providerName) {
+            newSelectedMap[svc.name] = providerName
+          }
+        }
+        this.selectedServiceProviderMap = newSelectedMap
       }
     },
     checkVirtualRouterForServices () {
@@ -886,9 +1046,75 @@ export default {
     },
     handleForVpcChange (val) {
       this.forVpc = val
+      this.updateSupportedServices()
     },
-    handleProviderChange (val) {
-      this.provider = val
+    handleNsxLbService (supportLb) {
+      const forVpc = this.forVpc
+      const baseProvider = this.NSX
+      const vrProvider = forVpc ? this.VPCVR : this.VR
+
+      const map = {
+        Dhcp: vrProvider,
+        Dns: vrProvider,
+        UserData: vrProvider
+      }
+      const wantSourceNat = this.networkmode === 'NATTED' || !!this.serviceProviderMap.SourceNat
+      const wantStaticNat = this.networkmode === 'NATTED' || !!this.serviceProviderMap.StaticNat
+      const wantPortForwarding = this.networkmode === 'NATTED' || !!this.serviceProviderMap.PortForwarding
+      const wantLb = supportLb || !!this.serviceProviderMap.Lb
+
+      if (wantSourceNat) map.SourceNat = baseProvider
+      if (wantStaticNat) map.StaticNat = baseProvider
+      if (wantPortForwarding) map.PortForwarding = baseProvider
+      if (wantLb) map.Lb = baseProvider
+
+      if (forVpc) map.NetworkACL = baseProvider
+      else map.Firewall = baseProvider
+
+      this.nsxSupportedServicesMap = map
+      this.updateSupportedServices()
+    },
+    handleForNetworkModeChange (val) {
+      this.networkmode = val
+
+      const routedExcludedServices = ['SourceNat', 'StaticNat', 'Lb', 'PortForwarding', 'Vpn']
+
+      if (val === 'ROUTED' && this.guestType === 'isolated') {
+        routedExcludedServices.forEach(service => {
+          if (this.selectedServiceProviderMap[service]) {
+            this.handleSupportedServiceChange(service, false, null)
+          }
+        })
+
+        this.supportedServices = this.supportedServices.map(svc => {
+          if (routedExcludedServices.includes(svc.name)) {
+            return {
+              ...svc,
+              defaultChecked: false,
+              selectedProvider: null
+            }
+          }
+          return svc
+        })
+      } else if (val === 'NATTED') {
+        routedExcludedServices.forEach(service => {
+          if (!this.selectedServiceProviderMap[service] && this.serviceProviderMap[service]) {
+            const provider = this.serviceProviderMap[service]
+            this.handleSupportedServiceChange(service, true, provider)
+          }
+        })
+
+        this.supportedServices = this.supportedServices.map(svc => {
+          if (routedExcludedServices.includes(svc.name) && this.serviceProviderMap[svc.name]) {
+            return {
+              ...svc,
+              defaultChecked: true,
+              selectedProvider: this.serviceProviderMap[svc.name]
+            }
+          }
+          return svc
+        })
+      }
     },
     isAdmin () {
       return isAdmin()
@@ -1002,10 +1228,26 @@ export default {
           params.displaytext = values.displaytext
         }
 
+        const forNsx = values.provider === 'NSX'
+        if (forNsx) {
+          params.provider = 'NSX'
+          params.nsxsupportlb = values.nsxsupportlb
+          if ('nsxsupportsinternallb' in values) {
+            params.nsxsupportsinternallb = values.nsxsupportsinternallb
+          }
+        }
+        const forNetris = values.provider === 'Netris'
+        if (forNetris) {
+          params.provider = 'Netris'
+        }
+
         if (values.guestiptype) {
           params.guestiptype = values.guestiptype
         }
 
+        // MUST send supportedservices explicitly for ALL providers (including NSX/Netris)
+        // because backend's cloneNetworkOffering copies services from source offering if not provided
+        // When network mode changes, we need to send the updated service list
         if (this.selectedServiceProviderMap != null) {
           const supportedServices = Object.keys(this.selectedServiceProviderMap)
           params.supportedservices = supportedServices.join(',')
@@ -1148,6 +1390,9 @@ export default {
           if (domainId) {
             params.domainid = domainId
           }
+        }
+        if (values.networkmode) {
+          params.networkmode = values.networkmode
         }
 
         const zoneIndexes = values.zoneid

@@ -22,7 +22,6 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
-import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
@@ -680,10 +679,9 @@ public class ConfigurationManagerCloneIntegrationTest {
         when(sourceOffering.getAvailability()).thenReturn(NetworkOffering.Availability.Optional);
         when(sourceOffering.getState()).thenReturn(NetworkOffering.State.Enabled);
         when(sourceOffering.isDefault()).thenReturn(false);
-        when(sourceOffering.getConserveMode()).thenReturn(true);
+        when(sourceOffering.isConserveMode()).thenReturn(true);
         when(sourceOffering.isEgressDefaultPolicy()).thenReturn(false);
         when(sourceOffering.isPersistent()).thenReturn(false);
-        when(sourceOffering.getInternetProtocol()).thenReturn("ipv4");
 
         CloneNetworkOfferingCmd cmd = mock(CloneNetworkOfferingCmd.class);
         when(cmd.getSourceOfferingId()).thenReturn(sourceId);

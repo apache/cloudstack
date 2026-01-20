@@ -40,11 +40,9 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.element.NsxProviderVO;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
@@ -1184,7 +1182,7 @@ public class ConfigurationManagerImplTest {
         Long sourceOfferingId = 1L;
         ServiceOfferingVO sourceOffering = Mockito.mock(ServiceOfferingVO.class);
         DiskOfferingVO sourceDiskOffering = Mockito.mock(DiskOfferingVO.class);
-        
+
         when(sourceOffering.getId()).thenReturn(sourceOfferingId);
         when(sourceOffering.getDisplayText()).thenReturn("Source Display Text");
         when(sourceOffering.getCpu()).thenReturn(2);
@@ -1216,7 +1214,7 @@ public class ConfigurationManagerImplTest {
     @Test
     public void testCloneServiceOfferingValidatesSourceOfferingExists() {
         Long sourceOfferingId = 999L;
-        
+
         try (MockedStatic<CallContext> callContextMock = Mockito.mockStatic(CallContext.class)) {
             CallContext callContext = Mockito.mock(CallContext.class);
             callContextMock.when(CallContext::current).thenReturn(callContext);
@@ -1230,7 +1228,7 @@ public class ConfigurationManagerImplTest {
     public void testCloneDiskOfferingWithAllParameters() {
         Long sourceOfferingId = 1L;
         DiskOfferingVO sourceOffering = Mockito.mock(DiskOfferingVO.class);
-        
+
         when(sourceOffering.getId()).thenReturn(sourceOfferingId);
         when(sourceOffering.getDisplayText()).thenReturn("Source Disk Display Text");
         when(sourceOffering.getProvisioningType()).thenReturn(Storage.ProvisioningType.THIN);
@@ -1255,7 +1253,7 @@ public class ConfigurationManagerImplTest {
     @Test
     public void testCloneDiskOfferingValidatesSourceOfferingExists() {
         Long sourceOfferingId = 999L;
-        
+
         try (MockedStatic<CallContext> callContextMock = Mockito.mockStatic(CallContext.class)) {
             CallContext callContext = Mockito.mock(CallContext.class);
             callContextMock.when(CallContext::current).thenReturn(callContext);
@@ -1266,17 +1264,10 @@ public class ConfigurationManagerImplTest {
     }
 
     @Test
-    public void testCloneNetworkOfferingValidatesSourceOfferingExists() {
-        Long sourceOfferingId = 999L;
-        
-        Assert.assertNotNull(sourceOfferingId);
-    }
-
-    @Test
     public void testCloneNetworkOfferingRequiresName() {
         Long sourceOfferingId = 1L;
         NetworkOfferingVO sourceOffering = Mockito.mock(NetworkOfferingVO.class);
-        
+
         when(sourceOffering.getId()).thenReturn(sourceOfferingId);
         when(sourceOffering.getName()).thenReturn("Source Network Offering");
 
@@ -1287,9 +1278,9 @@ public class ConfigurationManagerImplTest {
     public void testGetOrDefaultReturnsCommandValueWhenNotNull() {
         String cmdValue = "command-value";
         String defaultValue = "default-value";
-        
+
         String result = configurationManagerImplSpy.getOrDefault(cmdValue, defaultValue);
-        
+
         Assert.assertEquals(cmdValue, result);
     }
 
@@ -1297,9 +1288,9 @@ public class ConfigurationManagerImplTest {
     public void testGetOrDefaultReturnsDefaultWhenCommandValueIsNull() {
         String cmdValue = null;
         String defaultValue = "default-value";
-        
+
         String result = configurationManagerImplSpy.getOrDefault(cmdValue, defaultValue);
-        
+
         Assert.assertEquals(defaultValue, result);
     }
 
@@ -1307,22 +1298,22 @@ public class ConfigurationManagerImplTest {
     public void testResolveBooleanParamUsesCommandValueWhenInRequestParams() {
         Map<String, String> requestParams = new HashMap<>();
         requestParams.put("offerha", "true");
-        
+
         Boolean result = configurationManagerImplSpy.resolveBooleanParam(
             requestParams, "offerha", () -> true, false
         );
-        
+
         Assert.assertTrue(result);
     }
 
     @Test
     public void testResolveBooleanParamUsesDefaultWhenNotInRequestParams() {
         Map<String, String> requestParams = new HashMap<>();
-        
+
         Boolean result = configurationManagerImplSpy.resolveBooleanParam(
             requestParams, "offerha", () -> true, false
         );
-        
+
         Assert.assertFalse(result);
     }
 
@@ -1331,7 +1322,7 @@ public class ConfigurationManagerImplTest {
         Boolean result = configurationManagerImplSpy.resolveBooleanParam(
             null, "offerha", () -> true, false
         );
-        
+
         Assert.assertFalse(result);
     }
 }
