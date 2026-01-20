@@ -82,7 +82,7 @@ public class DedicateBgpPeerCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Dedicating BGP Peer with ID" + getResourceUuid(ApiConstants.ID);
+        return "Dedicating BGP Peer with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

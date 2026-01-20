@@ -59,7 +59,7 @@ public class ReleaseDedicatedIpv4SubnetForZoneCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Releasing dedicated zone IPv4 subnet with ID:" + getResourceUuid(ApiConstants.ID);
+        return "Releasing dedicated zone IPv4 subnet with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

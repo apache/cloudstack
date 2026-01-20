@@ -80,7 +80,7 @@ public class ChangeBgpPeersForNetworkCmd extends BaseAsyncCmd implements AdminCm
 
     @Override
     public String getEventDescription() {
-        return "Changing BGP Peers for network with ID:" + getResourceUuid(ApiConstants.NETWORK_ID);
+        return "Changing BGP Peers for network with ID: " + getResourceUuid(ApiConstants.NETWORK_ID);
     }
 
     @Override
