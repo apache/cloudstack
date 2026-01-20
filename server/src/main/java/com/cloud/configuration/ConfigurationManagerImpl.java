@@ -3929,11 +3929,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return sourceDiskOfferingId != null ? _diskOfferingDao.findById(sourceDiskOfferingId) : null;
     }
 
-    private <T> T getOrDefault(T cmdValue, T defaultValue) {
+    public <T> T getOrDefault(T cmdValue, T defaultValue) {
         return cmdValue != null ? cmdValue : defaultValue;
     }
 
-    private Boolean resolveBooleanParam(Map<String, String> requestParams, String paramKey,
+    public Boolean resolveBooleanParam(Map<String, String> requestParams, String paramKey,
                                        java.util.function.Supplier<Boolean> cmdValueSupplier, Boolean defaultValue) {
         return requestParams != null && requestParams.containsKey(paramKey) ? cmdValueSupplier.get() : defaultValue;
     }
@@ -8287,7 +8287,39 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         logger.info("Cloning network offering {} (id: {}) to new offering with name: {}",
                     sourceOffering.getName(), sourceOfferingId, name);
 
-        // Resolve parameters from source offering and apply add/drop logic
+        String detectedProvider = cmd.getProvider();
+
+        if (detectedProvider == null || detectedProvider.isEmpty()) {
+            Map<Network.Service, Set<Network.Provider>> sourceServiceProviderMap =
+                _networkModel.getNetworkOfferingServiceProvidersMap(sourceOfferingId);
+
+            if (sourceServiceProviderMap.containsKey(Network.Service.NetworkACL)) {
+                Set<Network.Provider> networkAclProviders = sourceServiceProviderMap.get(Network.Service.NetworkACL);
+                if (networkAclProviders != null && !networkAclProviders.isEmpty()) {
+                    Network.Provider provider = networkAclProviders.iterator().next();
+                    if (provider == Network.Provider.Nsx) {
+                        detectedProvider = "NSX";
+                    } else if (provider == Network.Provider.Netris) {
+                        detectedProvider = "Netris";
+                    }
+                }
+            }
+        }
+
+        // If this is an NSX/Netris offering, prevent network mode changes
+        if (detectedProvider != null && (detectedProvider.equals("NSX") || detectedProvider.equals("Netris"))) {
+            String cmdNetworkMode = cmd.getNetworkMode();
+            if (cmdNetworkMode != null && sourceOffering.getNetworkMode() != null) {
+                if (!cmdNetworkMode.equalsIgnoreCase(sourceOffering.getNetworkMode().toString())) {
+                    throw new InvalidParameterValueException(
+                        String.format("Cannot change network mode when cloning %s provider network offerings. " +
+                            "Source offering has network mode '%s', but '%s' was specified. " +
+                            "The network mode is determined by the provider configuration and cannot be modified.",
+                            detectedProvider, sourceOffering.getNetworkMode(), cmdNetworkMode));
+                }
+            }
+        }
+
         applySourceOfferingValuesToCloneCmd(cmd, sourceOffering);
 
         return createNetworkOffering(cmd);
@@ -8443,7 +8475,20 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 .anyMatch(key -> key.startsWith(ApiConstants.SERVICE_CAPABILITY_LIST));
 
             if (!hasCapabilityParams && sourceServiceCapabilityList != null && !sourceServiceCapabilityList.isEmpty()) {
-                setField(cmd, "serviceCapabilitiesList", sourceServiceCapabilityList);
+                // Filter capabilities to only include those for services in the final service list
+                // This ensures that if services are dropped, their capabilities are also removed
+                Map<String, Map<String, String>> filteredCapabilities = new HashMap<>();
+                for (Map.Entry<String, Map<String, String>> entry : sourceServiceCapabilityList.entrySet()) {
+                    Map<String, String> capabilityMap = entry.getValue();
+                    String serviceName = capabilityMap.get("service");
+                    if (serviceName != null && finalServices.contains(serviceName)) {
+                        filteredCapabilities.put(entry.getKey(), capabilityMap);
+                    }
+                }
+
+                if (!filteredCapabilities.isEmpty()) {
+                    setField(cmd, "serviceCapabilitiesList", filteredCapabilities);
+                }
             }
 
             applyIfNotProvided(cmd, requestParams, "displayText", ApiConstants.DISPLAY_TEXT, cmd.getDisplayText(), sourceOffering.getDisplayText());

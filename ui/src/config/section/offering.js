@@ -408,7 +408,7 @@ export default {
         docHelp: 'adminguide/virtual_machines.html#importing-backup-offerings',
         dataView: true,
         popup: true,
-        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/ImportBackupOffering.vue')))
+        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/CloneBackupOffering.vue')))
       }, {
         api: 'deleteBackupOffering',
         icon: 'delete-outlined',

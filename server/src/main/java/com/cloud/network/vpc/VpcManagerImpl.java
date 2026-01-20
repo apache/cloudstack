@@ -1024,7 +1024,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
             if ((cmd.getServiceCapabilityList() == null || cmd.getServiceCapabilityList().isEmpty())
                     && sourceServiceCapabilityList != null && !sourceServiceCapabilityList.isEmpty()) {
-                ConfigurationManagerImpl.setField(cmd, "serviceCapabilityList", sourceServiceCapabilityList);
+                Map<String, String> filteredCapabilities = filterServiceCapabilities(sourceServiceCapabilityList, finalServices);
+                if (!filteredCapabilities.isEmpty()) {
+                    ConfigurationManagerImpl.setField(cmd, "serviceCapabilityList", filteredCapabilities);
+                }
             }
 
             if (cmd.getDisplayText() == null && sourceOffering.getDisplayText() != null) {
@@ -1093,6 +1096,47 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             logger.debug("Could not get raw field value for {}: {}", fieldName, e.getMessage());
         }
         return null;
+    }
+
+    /**
+     * Filters service capabilities to only include those for services present in the final services list.
+     * This ensures that when services are dropped during cloning, their associated capabilities are also removed.
+     *
+     * @param sourceServiceCapabilityList The original capability list from the source VPC offering
+     *                                     in format: Map with keys like "0.service", "0.capabilitytype", "0.capabilityvalue"
+     * @param finalServices The list of service names that should be retained in the cloned offering
+     * @return Filtered map containing only capabilities for services in finalServices
+     */
+    private Map<String, String> filterServiceCapabilities(Map<String, String> sourceServiceCapabilityList,
+                                                          List<String> finalServices) {
+        Map<String, String> filteredCapabilities = new HashMap<>();
+
+        for (Map.Entry<String, String> entry : sourceServiceCapabilityList.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+
+            // Check if this is a service key (e.g., "0.service", "1.service")
+            if (key.endsWith(".service")) {
+                String serviceName = value;
+                if (finalServices.contains(serviceName)) {
+                    // Include this service and its associated capability entries
+                    String prefix = key.substring(0, key.lastIndexOf('.'));
+                    filteredCapabilities.put(key, value);
+
+                    // Also include the capability type and value for this service
+                    String capabilityTypeKey = prefix + ".capabilitytype";
+                    String capabilityValueKey = prefix + ".capabilityvalue";
+                    if (sourceServiceCapabilityList.containsKey(capabilityTypeKey)) {
+                        filteredCapabilities.put(capabilityTypeKey, sourceServiceCapabilityList.get(capabilityTypeKey));
+                    }
+                    if (sourceServiceCapabilityList.containsKey(capabilityValueKey)) {
+                        filteredCapabilities.put(capabilityValueKey, sourceServiceCapabilityList.get(capabilityValueKey));
+                    }
+                }
+            }
+        }
+
+        return filteredCapabilities;
     }
 
     private void validateConnectivtyServiceCapabilities(final Set<Provider> providers, final Map serviceCapabilitystList) {
