@@ -76,6 +76,8 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
 
     List<SnapshotDataStoreVO> findBySnapshotId(long snapshotId);
 
+    List<SnapshotDataStoreVO> findBySnapshotIdWithNonDestroyedState(long snapshotId);
+
     void duplicateCacheRecordsOnRegionStore(long storeId);
 
     // delete the snapshot entry on primary data store to make sure that next snapshot will be full snapshot

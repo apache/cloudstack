@@ -1263,15 +1263,11 @@ export default {
         {
           api: 'updateVpnCustomerGateway',
           icon: 'edit-outlined',
-          label: 'label.edit',
+          label: 'label.update.vpn.customer.gateway',
           docHelp: 'adminguide/networking_and_traffic.html#updating-and-removing-a-vpn-customer-gateway',
           dataView: true,
-          args: ['name', 'gateway', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'ikelifetime', 'ikeversion', 'esppolicy', 'esplifetime', 'dpd', 'splitconnections', 'forceencap'],
-          mapping: {
-            ikeversion: {
-              options: ['ike', 'ikev1', 'ikev2']
-            }
-          }
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/UpdateVpnCustomerGateway.vue')))
         },
         {
           api: 'deleteVpnCustomerGateway',

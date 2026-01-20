@@ -18,6 +18,9 @@ package com.cloud.acl;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.backup.BackupOfferingVO;
+import org.apache.cloudstack.backup.dao.BackupOfferingDetailsDao;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -35,6 +38,8 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Ternary;
 
+import java.util.Collections;
+
 @RunWith(MockitoJUnitRunner.class)
 public class DomainCheckerTest {
 
@@ -46,6 +51,8 @@ public class DomainCheckerTest {
     DomainDao _domainDao;
     @Mock
     ProjectManager _projectMgr;
+    @Mock
+    BackupOfferingDetailsDao backupOfferingDetailsDao;
 
     @Spy
     @InjectMocks
@@ -161,6 +168,44 @@ public class DomainCheckerTest {
         Mockito.when(_projectMgr.canAccessProjectAccount(caller, projectAccount.getId())).thenReturn(false);
 
         domainChecker.validateCallerHasAccessToEntityOwner(caller, entity, SecurityChecker.AccessType.ListEntry);
+    }
+
+    @Test
+    public void testBackupOfferingAccessRootAdmin() {
+        Account rootAdmin = Mockito.mock(Account.class);
+        Mockito.when(rootAdmin.getId()).thenReturn(1L);
+        BackupOfferingVO backupOfferingVO = Mockito.mock(BackupOfferingVO.class);
+        Mockito.when(_accountService.isRootAdmin(rootAdmin.getId())).thenReturn(true);
+
+        boolean hasAccess = domainChecker.checkAccess(rootAdmin, backupOfferingVO);
+        Assert.assertTrue(hasAccess);
+    }
+
+    @Test
+    public void testBackupOfferingAccessDomainAdmin() {
+        Account domainAdmin = Mockito.mock(Account.class);
+        Mockito.when(domainAdmin.getId()).thenReturn(2L);
+        BackupOfferingVO backupOfferingVO = Mockito.mock(BackupOfferingVO.class);
+        AccountVO owner = Mockito.mock(AccountVO.class);
+        Mockito.when(_accountService.isDomainAdmin(domainAdmin.getId())).thenReturn(true);
+        Mockito.when(domainAdmin.getDomainId()).thenReturn(10L);
+        Mockito.when(_domainDao.isChildDomain(100L, 10L)).thenReturn(true);
+        Mockito.when(backupOfferingDetailsDao.findDomainIds(backupOfferingVO.getId())).thenReturn(Collections.singletonList(100L));
+
+        boolean hasAccess = domainChecker.checkAccess(domainAdmin, backupOfferingVO);
+        Assert.assertTrue(hasAccess);
+    }
+
+    @Test
+    public void testBackupOfferingAccessNoAccess() {
+        Account normalUser = Mockito.mock(Account.class);
+        Mockito.when(normalUser.getId()).thenReturn(3L);
+        BackupOfferingVO backupOfferingVO = Mockito.mock(BackupOfferingVO.class);
+        Mockito.when(_accountService.isRootAdmin(normalUser.getId())).thenReturn(false);
+        Mockito.when(_accountService.isDomainAdmin(normalUser.getId())).thenReturn(false);
+
+        boolean hasAccess = domainChecker.checkAccess(normalUser, backupOfferingVO);
+        Assert.assertFalse(hasAccess);
     }
 
 }
