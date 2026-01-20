@@ -1359,7 +1359,6 @@ public class KVMStorageProcessor implements StorageProcessor {
     /**
      *
      * Attaches or detaches a disk to an instance.
-     *
      * @param conn                    libvirt connection
      * @param attach                  boolean that determines whether the device will be attached or detached
      * @param vmName                  instance name
