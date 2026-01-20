@@ -1925,7 +1925,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             if (snapshotPolicyVO == null) {
                 throw new InvalidParameterValueException("Policy id given: " + policy + " does not exist");
             }
-            VolumeVO volume = _volsDao.findById(snapshotPolicyVO.getVolumeId());
+            VolumeVO volume = _volsDao.findByIdIncludingRemoved(snapshotPolicyVO.getVolumeId());
             if (volume == null) {
                 throw new InvalidParameterValueException("Policy id given: " + policy + " does not belong to a valid volume");
             }
