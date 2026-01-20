@@ -2309,6 +2309,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long pageSize = cmd.getPageSizeVal();
         Hypervisor.HypervisorType hypervisorType = cmd.getHypervisor();
         final CPU.CPUArch arch = cmd.getArch();
+        String version = cmd.getVersion();
 
         Filter searchFilter = new Filter(HostVO.class, "id", Boolean.TRUE, startIndex, pageSize);
 
@@ -2325,6 +2326,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         hostSearchBuilder.and("resourceState", hostSearchBuilder.entity().getResourceState(), SearchCriteria.Op.EQ);
         hostSearchBuilder.and("hypervisor_type", hostSearchBuilder.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         hostSearchBuilder.and("arch", hostSearchBuilder.entity().getArch(), SearchCriteria.Op.EQ);
+        hostSearchBuilder.and("version", hostSearchBuilder.entity().getVersion(), SearchCriteria.Op.EQ);
 
         if (keyword != null) {
             hostSearchBuilder.and().op("keywordName", hostSearchBuilder.entity().getName(), SearchCriteria.Op.LIKE);
@@ -2407,6 +2409,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (arch != null) {
             sc.setParameters("arch", arch);
+        }
+
+        if (version != null) {
+            sc.setParameters("version", version);
         }
 
         Pair<List<HostVO>, Integer> uniqueHostPair = hostDao.searchAndCount(sc, searchFilter);
@@ -5397,6 +5403,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     protected Pair<List<ManagementServerJoinVO>, Integer> listManagementServersInternal(ListMgmtsCmd cmd) {
         Long id = cmd.getId();
         String name = cmd.getHostName();
+        String version = cmd.getVersion();
 
         SearchBuilder<ManagementServerJoinVO> sb = managementServerJoinDao.createSearchBuilder();
         SearchCriteria<ManagementServerJoinVO> sc = sb.create();
@@ -5405,6 +5412,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.EQ, name);
+        }
+        if (version != null) {
+            sc.addAnd("version", SearchCriteria.Op.EQ, version);
         }
         return managementServerJoinDao.searchAndCount(sc, null);
     }
