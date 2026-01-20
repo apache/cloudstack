@@ -243,20 +243,21 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             final Future<Domain> migrateThread = executor.submit(worker);
             executor.shutdown();
             long sleeptime = 0;
+            final int migrateDowntime = libvirtComputingResource.getMigrateDowntime();
+            boolean isMigrateDowntimeSet = false;
+
             while (!executor.isTerminated()) {
                 Thread.sleep(100);
                 sleeptime += 100;
-                if (sleeptime == 1000) { // wait 1s before attempting to set downtime on migration, since I don't know of a VIR_DOMAIN_MIGRATING state
-                    final int migrateDowntime = libvirtComputingResource.getMigrateDowntime();
-                    if (migrateDowntime > 0 ) {
-                        try {
-                            final int setDowntime = dm.migrateSetMaxDowntime(migrateDowntime);
-                            if (setDowntime == 0 ) {
-                                logger.debug("Set max downtime for migration of " + vmName + " to " + String.valueOf(migrateDowntime) + "ms");
-                            }
-                        } catch (final LibvirtException e) {
-                            logger.debug("Failed to set max downtime for migration, perhaps migration completed? Error: " + e.getMessage());
+                if (!isMigrateDowntimeSet && migrateDowntime > 0 && sleeptime >= 1000) { // wait 1s before attempting to set downtime on migration, since I don't know of a VIR_DOMAIN_MIGRATING state
+                    try {
+                        final int setDowntime = dm.migrateSetMaxDowntime(migrateDowntime);
+                        if (setDowntime == 0 ) {
+                            isMigrateDowntimeSet = true;
+                            logger.debug("Set max downtime for migration of " + vmName + " to " + String.valueOf(migrateDowntime) + "ms");
                         }
+                    } catch (final LibvirtException e) {
+                        logger.debug("Failed to set max downtime for migration, perhaps migration completed? Error: " + e.getMessage());
                     }
                 }
                 if (sleeptime % 1000 == 0) {
@@ -272,7 +273,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                     } catch (final LibvirtException e) {
                         logger.info("Couldn't get VM domain state after " + sleeptime + "ms: " + e.getMessage());
                     }
-                    if (state != null && state == DomainState.VIR_DOMAIN_RUNNING) {
+                    if (state != null && (state == DomainState.VIR_DOMAIN_RUNNING || state == DomainState.VIR_DOMAIN_PAUSED)) {
                         try {
                             DomainJobInfo job = dm.getJobInfo();
                             logger.info(String.format("Aborting migration of VM [%s] with domain job [%s] due to time out after %d seconds.", vmName, job, migrateWait));
@@ -314,6 +315,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 if (logger.isDebugEnabled()) {
                     logger.debug(String.format("Cleaning the disks of VM [%s] in the source pool after VM migration finished.", vmName));
                 }
+                resumeDomainIfPaused(destDomain, vmName);
                 deleteOrDisconnectDisksOnSourcePool(libvirtComputingResource, migrateDiskInfoList, disks);
                 libvirtComputingResource.cleanOldSecretsByDiskDef(conn, disks);
             }
@@ -376,6 +378,28 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         }
 
         return new MigrateAnswer(command, result == null, result, null);
+    }
+
+    private DomainState getDestDomainState(Domain destDomain, String vmName) {
+        DomainState dmState = null;
+        try {
+            dmState = destDomain.getInfo().state;
+        } catch (final LibvirtException e) {
+            logger.info("Failed to get domain state for VM: " + vmName + " due to: " + e.getMessage());
+        }
+        return dmState;
+    }
+
+    private void resumeDomainIfPaused(Domain destDomain, String vmName) {
+        DomainState dmState = getDestDomainState(destDomain, vmName);
+        if (dmState == DomainState.VIR_DOMAIN_PAUSED) {
+            logger.info("Resuming VM " + vmName + " on destination after migration");
+            try {
+                destDomain.resume();
+            } catch (final Exception e) {
+                logger.error("Failed to resume vm " + vmName + " on destination after migration due to : " + e.getMessage());
+            }
+        }
     }
 
     /**
