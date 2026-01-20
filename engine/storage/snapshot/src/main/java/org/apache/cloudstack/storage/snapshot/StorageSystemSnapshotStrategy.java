@@ -541,7 +541,6 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
                 logger.warn("Failed to clean up snapshot '" + snapshot.getId() + "' on primary storage: " + e.getMessage());
             }
         }
-
     }
 
     private VMSnapshot takeHypervisorSnapshot(VolumeInfo volumeInfo) {

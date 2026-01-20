@@ -720,6 +720,7 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.deploy.DeploymentPlanningManager;
+import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -761,6 +762,7 @@ import com.cloud.network.IpAddressManagerImpl;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
+import com.cloud.network.vpn.Site2SiteVpnManagerImpl;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -4776,6 +4778,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Map<String, Object> capabilities = new HashMap<>();
 
         final Account caller = getCaller();
+        Long domainId = cmd.getDomainId();
+        if (domainId == null) {
+            domainId = caller.getDomainId();
+        } else {
+            Domain domain = _domainDao.findById(domainId);
+            _accountService.checkAccess(caller, domain);
+        }
+
         final boolean isCallerRootAdmin = CallContext.current().isCallingAccountRootAdmin();
         final boolean isCallerAdmin = isCallerRootAdmin || _accountService.isAdmin(caller.getId());
         boolean securityGroupsEnabled = false;
@@ -4810,7 +4820,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final boolean allowUserExpungeRecoverVolume = (VolumeApiServiceImpl.AllowUserExpungeRecoverVolume.valueIn(caller.getId()) | isCallerAdmin);
         final boolean allowUserForceStopVM = (UserVmManager.AllowUserForceStopVm.valueIn(caller.getId()) | isCallerAdmin);
 
-        final boolean allowUserViewAllDomainAccounts = (QueryService.AllowUserViewAllDomainAccounts.valueIn(caller.getDomainId()));
+        final boolean allowUserViewAllDomainAccounts = (QueryService.AllowUserViewAllDomainAccounts.valueIn(domainId));
 
         final boolean kubernetesServiceEnabled = Boolean.parseBoolean(_configDao.getValue("cloud.kubernetes.service.enabled"));
         final boolean kubernetesClusterExperimentalFeaturesEnabled = Boolean.parseBoolean(_configDao.getValue("cloud.kubernetes.cluster.experimental.features.enabled"));
@@ -4863,7 +4873,51 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
         capabilities.put(ApiConstants.ADDITONAL_CONFIG_ENABLED, UserVmManager.EnableAdditionalVmConfig.valueIn(caller.getId()));
 
+        Map<String, Object> vpnParams = getVpnCustomerGatewayParameters(domainId);
+        if (!vpnParams.isEmpty()) {
+            capabilities.put(ApiConstants.VPN_CUSTOMER_GATEWAY_PARAMETERS, vpnParams);
+        }
+
         return capabilities;
+    }
+
+    private Map<String, Object> getVpnCustomerGatewayParameters(Long domainId) {
+        Map<String, Object> vpnParams = new HashMap<>();
+
+        String excludedEncryption = Site2SiteVpnManagerImpl.VpnCustomerGatewayExcludedEncryptionAlgorithms.valueIn(domainId);
+        String excludedHashing = Site2SiteVpnManagerImpl.VpnCustomerGatewayExcludedHashingAlgorithms.valueIn(domainId);
+        String excludedIkeVersions = Site2SiteVpnManagerImpl.VpnCustomerGatewayExcludedIkeVersions.valueIn(domainId);
+        String excludedDhGroup = Site2SiteVpnManagerImpl.VpnCustomerGatewayExcludedDhGroup.valueIn(domainId);
+        String obsoleteEncryption = Site2SiteVpnManagerImpl.VpnCustomerGatewayObsoleteEncryptionAlgorithms.valueIn(domainId);
+        String obsoleteHashing = Site2SiteVpnManagerImpl.VpnCustomerGatewayObsoleteHashingAlgorithms.valueIn(domainId);
+        String obsoleteIkeVersions = Site2SiteVpnManagerImpl.VpnCustomerGatewayObsoleteIkeVersions.valueIn(domainId);
+        String obsoleteDhGroup = Site2SiteVpnManagerImpl.VpnCustomerGatewayObsoleteDhGroup.valueIn(domainId);
+
+        if (!excludedEncryption.isEmpty()) {
+            vpnParams.put("excludedencryptionalgorithms", excludedEncryption);
+        }
+        if (!obsoleteEncryption.isEmpty()) {
+            vpnParams.put("obsoleteencryptionalgorithms", obsoleteEncryption);
+        }
+        if (!excludedHashing.isEmpty()) {
+            vpnParams.put("excludedhashingalgorithms", excludedHashing);
+        }
+        if (!obsoleteHashing.isEmpty()) {
+            vpnParams.put("obsoletehashingalgorithms", obsoleteHashing);
+        }
+        if (!excludedIkeVersions.isEmpty()) {
+            vpnParams.put("excludedikeversions", excludedIkeVersions);
+        }
+        if (!obsoleteIkeVersions.isEmpty()) {
+            vpnParams.put("obsoleteikeversions", obsoleteIkeVersions);
+        }
+        if (!excludedDhGroup.isEmpty()) {
+            vpnParams.put("excludeddhgroups", excludedDhGroup);
+        }
+        if (!obsoleteDhGroup.isEmpty()) {
+            vpnParams.put("obsoletedhgroups", obsoleteDhGroup);
+        }
+        return vpnParams;
     }
 
     @Override
