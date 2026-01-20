@@ -120,7 +120,7 @@ export default {
   methods: {
     fetchData () {
       var params = {
-        details: 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp,backoff',
+        details: 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp,backoff,vnfnics',
         isVnf: true,
         listAll: true
       }
