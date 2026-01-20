@@ -43,7 +43,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.BooleanUtils;
 
-@APICommand(name = "createSnapshotPolicy", description = "Creates a snapshot policy for the account.", responseObject = SnapshotPolicyResponse.class,
+@APICommand(name = "createSnapshotPolicy", description = "Creates a Snapshot policy for the account.", responseObject = SnapshotPolicyResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateSnapshotPolicyCmd extends BaseCmd {
 
@@ -52,13 +52,13 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.INTERVAL_TYPE, type = CommandType.STRING, required = true, description = "valid values are HOURLY, DAILY, WEEKLY, and MONTHLY")
+    @Parameter(name = ApiConstants.INTERVAL_TYPE, type = CommandType.STRING, required = true, description = "Valid values are HOURLY, DAILY, WEEKLY, and MONTHLY")
     private String intervalType;
 
-    @Parameter(name = ApiConstants.MAX_SNAPS, type = CommandType.INTEGER, required = true, description = "maximum number of snapshots to retain")
+    @Parameter(name = ApiConstants.MAX_SNAPS, type = CommandType.INTEGER, required = true, description = "Maximum number of Snapshots to retain")
     private Integer maxSnaps;
 
-    @Parameter(name = ApiConstants.SCHEDULE, type = CommandType.STRING, required = true, description = "time the snapshot is scheduled to be taken. " + "Format is:"
+    @Parameter(name = ApiConstants.SCHEDULE, type = CommandType.STRING, required = true, description = "Time the Snapshot is scheduled to be taken. " + "Format is:"
         + "* if HOURLY, MM" + "* if DAILY, MM:HH" + "* if WEEKLY, MM:HH:DD (1-7)" + "* if MONTHLY, MM:HH:DD (1-28)")
     private String schedule;
 
@@ -68,10 +68,10 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
                description = "Specifies a timezone for this command. For more information on the timezone parameter, see Time Zone Format.")
     private String timezone;
 
-    @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "the ID of the disk volume")
+    @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "The ID of the disk volume")
     private Long volumeId;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the policy to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the policy to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     @Parameter(name = ApiConstants.TAGS, type = CommandType.MAP, description = "Map of tags (key/value pairs)")
@@ -94,7 +94,11 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
             since = "4.21.0")
     protected List<Long> storagePoolIds;
 
-    @Parameter (name = ApiConstants.USE_STORAGE_REPLICATION, type=CommandType.BOOLEAN, required = false, since = "4.21.0", description = "This parameter enables the option the snapshot to be copied to supported primary storage")
+    @Parameter (name = ApiConstants.USE_STORAGE_REPLICATION,
+            type=CommandType.BOOLEAN,
+            since = "4.21.0",
+            description = "Enables the snapshot to be copied to the supported primary storages when the config 'use.storage.replication' is set to true for the storage or globally. " +
+                    "This is supported only for StorPool storage for now.")
     protected Boolean useStorageReplication;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -162,7 +166,7 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
                 throw ex;
             }
         } else if (account.getState() == Account.State.DISABLED) {
-            throw new PermissionDeniedException("The owner of template is disabled: " + account);
+            throw new PermissionDeniedException("The owner of Template is disabled: " + account);
         }
 
         return volume.getAccountId();
@@ -188,7 +192,7 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot policy");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Snapshot policy");
         }
     }
 

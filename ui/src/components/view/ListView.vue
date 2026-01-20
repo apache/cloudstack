@@ -161,21 +161,21 @@
             >{{ $t(text.toLowerCase()) }}</router-link>
           </span>
           <span v-else>
-            <router-link
-              :to="{ path: $route.path + '/' + record.id }"
-              v-if="record.id"
-            >{{ text }}</router-link>
-            <router-link
-              :to="{ path: $route.path + '/' + record.name }"
-              v-else
-            >{{ text }}</router-link>
-            <span
-              v-if="['guestnetwork','vpc'].includes($route.path.split('/')[1]) && record.restartrequired && !record.vpcid"
-            >
+            <router-link :to="{ path: $route.path + '/' + encodeURIComponent(record.id) }" v-if="record.id">{{ text }}</router-link>
+            <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>
+            <span v-if="['guestnetwork','vpc'].includes($route.path.split('/')[1]) && record.restartrequired && !record.vpcid">
               &nbsp;
               <a-tooltip>
                 <template #title>{{ $t('label.restartrequired') }}</template>
                 <warning-outlined style="color: #f5222d" />
+              </a-tooltip>
+            </span>
+            <span v-else-if="$route.path.startsWith('/vpncustomergateway')">
+              &nbsp;
+              <a-tooltip
+                v-if="record.excludedparameters || record.obsoleteparameters"
+                :title="$t('message.vpn.customer.gateway.contains.excluded.obsolete.parameters')">
+                <warning-outlined :style="{ color: $config.theme['@warning-color'] }" />
               </a-tooltip>
             </span>
           </span>
@@ -607,10 +607,7 @@
         <span v-else>{{ text }}</span>
       </template>
       <template v-if="column.key === 'storage'">
-        <router-link
-          v-if="record.storageid"
-          :to="{ path: '/storagepool/' + record.storageid }"
-        >{{ text }}</router-link>
+        <router-link v-if="record.storageid" :to="{ path: '/storagepool/' + encodeURIComponent(record.storageid) }">{{ text }}</router-link>
         <span v-else>{{ text }}</span>
       </template>
       <template
@@ -924,6 +921,16 @@
           @pressEnter="saveValue(record)"
         >
         </a-input>
+        <template v-else-if="['webhook'].includes($route.path.split('/')[1])">
+          <span style="word-break: break-all">{{ text }}</span>
+          <QuickView
+            style="margin-left: 5px"
+            :actions="actions"
+            :resource="record"
+            :enabled="quickViewEnabled() && actions.length > 0"
+            @exec-action="$parent.execAction"
+          />
+        </template>
         <div
           v-else
           style="width: 200px; word-break: break-all"
@@ -1187,7 +1194,7 @@ export default {
         '/project', '/account', 'buckets', 'objectstore',
         '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
         '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
-        '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook', 'webhookdeliveries', '/quotatariff', '/sharedfs',
+        '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook', 'webhookdeliveries', 'webhookfilters', '/quotatariff', '/sharedfs',
         '/ipv4subnets', '/managementserver', '/gpucard', '/gpudevices', '/vgpuprofile', '/extension', '/snapshotpolicy', '/backupschedule'].join('|'))
         .test(this.$route.path)
     },

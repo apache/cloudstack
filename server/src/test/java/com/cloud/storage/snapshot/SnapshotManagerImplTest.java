@@ -164,7 +164,7 @@ public class SnapshotManagerImplTest {
         Mockito.when(ref1.getDataStoreId()).thenReturn(2L);
         Mockito.when(ref1.getRole()).thenReturn(DataStoreRole.Image);
         List<SnapshotDataStoreVO> snapshotStoreList = List.of(ref, ref1);
-        Mockito.when(snapshotStoreDao.findBySnapshotId(snapshotId)).thenReturn(snapshotStoreList);
+        Mockito.when(snapshotStoreDao.findBySnapshotIdWithNonDestroyedState(snapshotId)).thenReturn(snapshotStoreList);
         Mockito.when(dataStoreManager.getStoreZoneId(1L, DataStoreRole.Image)).thenReturn(100L);
         Mockito.when(dataStoreManager.getStoreZoneId(2L, DataStoreRole.Image)).thenReturn(101L);
         Pair<List<SnapshotDataStoreVO>, List<Long>> pair = snapshotManager.getStoreRefsAndZonesForSnapshotDelete(snapshotId, null);
@@ -189,7 +189,7 @@ public class SnapshotManagerImplTest {
         Mockito.when(ref2.getDataStoreId()).thenReturn(3L);
         Mockito.when(ref2.getRole()).thenReturn(DataStoreRole.Image);
         List<SnapshotDataStoreVO> snapshotStoreList = List.of(ref, ref1, ref2);
-        Mockito.when(snapshotStoreDao.findBySnapshotId(snapshotId)).thenReturn(snapshotStoreList);
+        Mockito.when(snapshotStoreDao.findBySnapshotIdWithNonDestroyedState(snapshotId)).thenReturn(snapshotStoreList);
         Mockito.when(dataStoreManager.getStoreZoneId(1L, DataStoreRole.Image)).thenReturn(zoneId);
         Mockito.when(dataStoreManager.getStoreZoneId(2L, DataStoreRole.Primary)).thenReturn(zoneId);
         Mockito.when(dataStoreManager.getStoreZoneId(3L, DataStoreRole.Image)).thenReturn(2L);

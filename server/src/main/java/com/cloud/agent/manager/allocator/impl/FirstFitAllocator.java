@@ -298,7 +298,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     protected List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, ServiceOffering offering, VMTemplateVO template, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo,
         boolean considerReservedCapacity, Account account) {
         String vmAllocationAlgorithm = DeploymentClusterPlanner.VmAllocationAlgorithm.value();
-        if (vmAllocationAlgorithm.equals("random") || vmAllocationAlgorithm.equals("userconcentratedpod_random")) {
+        if (vmAllocationAlgorithm.equals("random")) {
             // Shuffle this so that we don't check the hosts in the same order.
             Collections.shuffle(hosts);
         } else if (vmAllocationAlgorithm.equals("userdispersing")) {

@@ -127,8 +127,12 @@ import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.ScriptRunner;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+
 import com.google.common.annotations.VisibleForTesting;
 
 public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
@@ -255,7 +259,6 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             LOGGER.error("Unable to execute upgrade script", e);
             throw new CloudRuntimeException("Unable to execute upgrade script", e);
         }
-
     }
 
     @VisibleForTesting
@@ -459,43 +462,101 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 throw new CloudRuntimeException("Unable to acquire lock to check for database integrity.");
             }
 
-            try {
-                initializeDatabaseEncryptors();
-
-                final CloudStackVersion dbVersion = CloudStackVersion.parse(_dao.getCurrentVersion());
-                final String currentVersionValue = this.getClass().getPackage().getImplementationVersion();
-
-                if (StringUtils.isBlank(currentVersionValue)) {
-                    return;
-                }
-
-                String csVersion = SystemVmTemplateRegistration.parseMetadataFile();
-                final CloudStackVersion sysVmVersion = CloudStackVersion.parse(csVersion);
-                final  CloudStackVersion currentVersion = CloudStackVersion.parse(currentVersionValue);
-                SystemVmTemplateRegistration.CS_MAJOR_VERSION  = sysVmVersion.getMajorRelease() + "." + sysVmVersion.getMinorRelease();
-                SystemVmTemplateRegistration.CS_TINY_VERSION = String.valueOf(sysVmVersion.getPatchRelease());
-
-                LOGGER.info("DB version = {} Code Version = {}", dbVersion, currentVersion);
-
-                if (dbVersion.compareTo(currentVersion) > 0) {
-                    throw new CloudRuntimeException("Database version " + dbVersion + " is higher than management software version " + currentVersionValue);
-                }
-
-                if (dbVersion.compareTo(currentVersion) == 0) {
-                    LOGGER.info("DB version and code version matches so no upgrade needed.");
-                    return;
-                }
-
-                upgrade(dbVersion, currentVersion);
-            } finally {
-                lock.unlock();
-            }
+            doUpgrades(lock);
         } finally {
             lock.releaseRef();
         }
     }
 
-    private void initializeDatabaseEncryptors() {
+    boolean isStandalone() throws CloudRuntimeException {
+        return Transaction.execute(new TransactionCallback<>() {
+            @Override
+            public Boolean doInTransaction(TransactionStatus status) {
+                String sql = "SELECT COUNT(*) FROM `cloud`.`mshost` WHERE `state` = 'UP'";
+                try (Connection conn = TransactionLegacy.getStandaloneConnection();
+                     PreparedStatement pstmt = conn.prepareStatement(sql);
+                     ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        int count = rs.getInt(1);
+                        return count == 0;
+                    }
+                } catch (SQLException e) {
+                    String errorMessage = "Unable to check if the management server is running in standalone mode.";
+                    LOGGER.error(errorMessage, e);
+                    return false;
+                } catch (NullPointerException npe) {
+                    String errorMessage = "Unable to check if the management server is running in standalone mode. Not able to get a Database connection.";
+                    LOGGER.error(errorMessage, npe);
+                    return false;
+                }
+                return true;
+            }
+        });
+    }
+
+    @VisibleForTesting
+    protected void doUpgrades(GlobalLock lock) {
+        try {
+            initializeDatabaseEncryptors();
+
+            final CloudStackVersion dbVersion = CloudStackVersion.parse(_dao.getCurrentVersion());
+            final String currentVersionValue = getImplementationVersion();
+
+            if (StringUtils.isBlank(currentVersionValue)) {
+                return;
+            }
+
+            String csVersion = parseSystemVmMetadata();
+            final CloudStackVersion sysVmVersion = CloudStackVersion.parse(csVersion);
+            final  CloudStackVersion currentVersion = CloudStackVersion.parse(currentVersionValue);
+            SystemVmTemplateRegistration.CS_MAJOR_VERSION  = sysVmVersion.getMajorRelease() + "." + sysVmVersion.getMinorRelease();
+            SystemVmTemplateRegistration.CS_TINY_VERSION = String.valueOf(sysVmVersion.getPatchRelease());
+
+            LOGGER.info("DB version = {} Code Version = {}", dbVersion, currentVersion);
+
+            if (dbVersion.compareTo(currentVersion) > 0) {
+                throw new CloudRuntimeException("Database version " + dbVersion + " is higher than management software version " + currentVersionValue);
+            }
+
+            if (dbVersion.compareTo(currentVersion) == 0) {
+                LOGGER.info("DB version and code version matches so no upgrade needed.");
+                return;
+            }
+
+            if (isStandalone()) {
+                upgrade(dbVersion, currentVersion);
+            } else {
+                String errorMessage = "Database upgrade is required but the management server is running in a clustered environment. " +
+                        "Please perform the database upgrade when the management server is not running in a clustered environment.";
+                LOGGER.error(errorMessage);
+                handleClusteredUpgradeRequired(); // allow tests to override behavior
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Hook that is called when an upgrade is required but the management server is clustered.
+     * Default behavior is to exit the JVM, tests can override to throw instead.
+     */
+    @VisibleForTesting
+    protected void handleClusteredUpgradeRequired() {
+        System.exit(5); // I would prefer ServerDaemon.abort(errorMessage) but that would create a dependency hell
+    }
+
+    @VisibleForTesting
+    protected String getImplementationVersion() {
+        return this.getClass().getPackage().getImplementationVersion();
+    }
+
+    @VisibleForTesting
+    protected String parseSystemVmMetadata() {
+        return SystemVmTemplateRegistration.parseMetadataFile();
+    }
+
+    // Make this protected so tests can noop it out
+    protected void initializeDatabaseEncryptors() {
         TransactionLegacy txn = TransactionLegacy.open("initializeDatabaseEncryptors");
         txn.start();
         String errorMessage = "Unable to get the database connections";

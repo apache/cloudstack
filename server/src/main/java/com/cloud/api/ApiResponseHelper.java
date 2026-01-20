@@ -368,6 +368,7 @@ import com.cloud.network.vpc.VpcGateway;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
+import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Detail;
@@ -527,6 +528,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     BgpPeerDao bgpPeerDao;
     @Inject
     RoutedIpv4Manager routedIpv4Manager;
+    @Inject
+    Site2SiteVpnManager site2SiteVpnManager;
     @Inject
     ResourceIconManager resourceIconManager;
 
@@ -3899,6 +3902,16 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setRemoved(result.getRemoved());
         response.setIkeVersion(result.getIkeVersion());
         response.setSplitConnections(result.getSplitConnections());
+
+        Set<String> obsoleteParameters = site2SiteVpnManager.getObsoleteVpnGatewayParameters(result);
+        if (CollectionUtils.isNotEmpty(obsoleteParameters)) {
+            response.setContainsObsoleteParameters(obsoleteParameters.toString());
+        }
+        Set<String> excludedParameters = site2SiteVpnManager.getExcludedVpnGatewayParameters(result);
+        if (CollectionUtils.isNotEmpty(excludedParameters)) {
+            response.setContainsExcludedParameters(excludedParameters.toString());
+        }
+
         response.setObjectName("vpncustomergateway");
         response.setHasAnnotation(annotationDao.hasAnnotations(result.getUuid(), AnnotationService.EntityType.VPN_CUSTOMER_GATEWAY.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
@@ -5545,6 +5558,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setAddress(backupRepository.getAddress());
         response.setProviderName(backupRepository.getProvider());
         response.setType(backupRepository.getType());
+        if (StringUtils.isNotBlank(backupRepository.getMountOptions())) {
+            response.setMountOptions(backupRepository.getMountOptions());
+        }
         response.setCapacityBytes(backupRepository.getCapacityBytes());
         response.setCrossZoneInstanceCreation(backupRepository.crossZoneInstanceCreationEnabled());
         response.setObjectName("backuprepository");
