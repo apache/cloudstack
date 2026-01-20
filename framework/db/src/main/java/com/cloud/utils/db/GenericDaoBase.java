@@ -2058,7 +2058,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 attr = _allColumns.get(new Pair<>(tbl.name(), meta.getColumnLabel(index)));
             }
         }
-        assert (attr != null) : "How come I can't find " + tableName + "." + columnName;
         if(attr == null) {
             logger.warn(String.format("Failed to find attribute in the entity %s to map column %s.%s (%s)",
                     ClassUtils.getUserClass(entity).getSimpleName(), tableName, columnName));
