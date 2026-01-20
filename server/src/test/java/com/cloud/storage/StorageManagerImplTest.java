@@ -583,17 +583,21 @@ public class StorageManagerImplTest {
     }
 
     @Test
-    public void getStoragePoolNonDestroyedVolumesLogTestNonDestroyedVolumes_NoLog() {
+    public void getStoragePoolNonDestroyedVolumesLogTestNonDestroyedVolumes_VMNotExistsLog() {
         Mockito.doReturn(1L).when(storagePoolVOMock).getId();
         Mockito.doReturn(1L).when(volume1VOMock).getInstanceId();
+        Mockito.doReturn("786633d1-a942-4374-9d56-322dd4b0d202").when(volume1VOMock).getUuid();
         Mockito.doReturn(1L).when(volume2VOMock).getInstanceId();
+        Mockito.doReturn("ffb46333-e983-4c21-b5f0-51c5877a3805").when(volume2VOMock).getUuid();
 
         Mockito.when(_volumeDao.findByPoolId(storagePoolVOMock.getId(), null)).thenReturn(List.of(volume1VOMock, volume2VOMock));
         Mockito.doReturn(null).when(vmInstanceDao).findById(Mockito.anyLong());
 
         String log = storageManagerImpl.getStoragePoolNonDestroyedVolumesLog(storagePoolVOMock.getId());
+        String expected = String.format("[Volume [%s] (attached VM with ID [%d] doesn't exists), Volume [%s] (attached VM with ID [%d] doesn't exists)]",
+                volume1VOMock.getUuid(), volume1VOMock.getInstanceId(), volume2VOMock.getUuid(), volume2VOMock.getInstanceId());
 
-        Assert.assertEquals("[]", log);
+        Assert.assertEquals(expected, log);
     }
 
     private ChangeStoragePoolScopeCmd mockChangeStoragePooolScopeCmd(String newScope) {
