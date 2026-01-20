@@ -136,9 +136,7 @@ public class LogContext {
         }
         s_currentContext.set(callingContext);
         ThreadContext.put("logcontextid", UuidUtils.first(contextId));
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Registered for log: " + callingContext);
-        }
+        LOGGER.trace("Registered for log: {}", callingContext);
         return callingContext;
     }
 
@@ -207,9 +205,7 @@ public class LogContext {
         LogContext context = s_currentContext.get();
         if (context != null) {
             s_currentContext.remove();
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("Unregistered: " + context);
-            }
+            LOGGER.trace("Unregistered: {}", context);
         }
         ThreadContext.clearMap();
     }

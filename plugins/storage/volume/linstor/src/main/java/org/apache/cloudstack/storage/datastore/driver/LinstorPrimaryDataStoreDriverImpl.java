@@ -63,6 +63,8 @@ import com.cloud.api.storage.LinstorBackupSnapshotCommand;
 import com.cloud.api.storage.LinstorRevertBackupSnapshotCommand;
 import com.cloud.configuration.Config;
 import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.DataStoreRole;
@@ -137,7 +139,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     private HostDao _hostDao;
     @Inject private VMTemplateDao _vmTemplateDao;
 
-    private long volumeStatsLastUpdate = 0L;
+    private final Map<String, Long> volumeStatsLastUpdate = new HashMap<>();
     private final Map<String, Pair<Long, Long>> volumeStats = new HashMap<>();
 
     public LinstorPrimaryDataStoreDriverImpl()
@@ -868,6 +870,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                     devPath = createVolume(volumeInfo, storagePool);
                     volume.setFolder("/dev/");
                     volume.setPoolId(storagePool.getId());
+                    volume.setPoolType(storagePool.getPoolType());
                     volume.setUuid(vol.getUuid());
                     volume.setPath(vol.getUuid());
 
@@ -921,9 +924,10 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             _backupsnapshotwait,
             VirtualMachineManager.ExecuteInSequence.value());
 
-        Optional<RemoteHostEndPoint> optEP = getDiskfullEP(linstorApi, rscName);
+        final StoragePool pool = (StoragePool) volumeInfo.getDataStore();
+        Optional<RemoteHostEndPoint> optEP = getDiskfullEP(linstorApi, pool, rscName);
         if (optEP.isEmpty()) {
-            optEP = getLinstorEP(linstorApi, rscName);
+            optEP = getLinstorEP(linstorApi, pool, rscName);
         }
 
         if (optEP.isPresent()) {
@@ -1063,11 +1067,27 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             Answer answer = copyVolume(srcData, dstData);
             res = new CopyCommandResult(null, answer);
         } else {
-            Answer answer = new Answer(null, false, "noimpl");
-            res = new CopyCommandResult(null, answer);
-            res.setResult("Not implemented yet");
+            throw new CloudRuntimeException("Not implemented for Linstor primary storage.");
         }
         callback.complete(res);
+    }
+
+    private Host getEnabledClusterHost(StoragePool storagePool, List<String> linstorNodeNames) {
+        List<HostVO> csHosts;
+        if (storagePool.getClusterId() != null) {
+            csHosts = _hostDao.findByClusterId(storagePool.getClusterId());
+        } else {
+            csHosts = _hostDao.findByDataCenterId(storagePool.getDataCenterId());
+        }
+        Collections.shuffle(csHosts); // so we do not always pick the same host for operations
+        for (HostVO host : csHosts) {
+            if (host.getResourceState() == ResourceState.Enabled &&
+                    host.getStatus() == Status.Up &&
+                    linstorNodeNames.contains(host.getName())) {
+                return host;
+            }
+        }
+        return null;
     }
 
     /**
@@ -1078,47 +1098,37 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
      * @return Optional RemoteHostEndPoint if one could get found.
      * @throws ApiException
      */
-    private Optional<RemoteHostEndPoint> getLinstorEP(DevelopersApi api, String rscName) throws ApiException {
+    private Optional<RemoteHostEndPoint> getLinstorEP(DevelopersApi api, StoragePool storagePool, String rscName)
+            throws ApiException {
         List<String> linstorNodeNames = LinstorUtil.getLinstorNodeNames(api);
-        Collections.shuffle(linstorNodeNames);  // do not always pick the first linstor node
-
-        Host host = null;
-        for (String nodeName : linstorNodeNames) {
-            host = _hostDao.findByName(nodeName);
-            if (host != null && host.getResourceState() == ResourceState.Enabled) {
-                logger.info(String.format("Linstor: Make resource %s available on node %s ...", rscName, nodeName));
-                ApiCallRcList answers = api.resourceMakeAvailableOnNode(rscName, nodeName, new ResourceMakeAvailable());
-                if (!answers.hasError()) {
-                    break; // found working host
-                } else {
-                    logger.error(
-                        String.format("Linstor: Unable to make resource %s on node %s available: %s",
-                            rscName,
-                            nodeName,
-                            LinstorUtil.getBestErrorMessage(answers)));
-                }
+        Host host = getEnabledClusterHost(storagePool, linstorNodeNames);
+        if (host != null) {
+            logger.info("Linstor: Make resource {} available on node {} ...", rscName, host.getName());
+            ApiCallRcList answers = api.resourceMakeAvailableOnNode(
+                    rscName, host.getName(), new ResourceMakeAvailable());
+            if (answers.hasError()) {
+                logger.error("Linstor: Unable to make resource {} on node {} available: {}",
+                        rscName, host.getName(), LinstorUtil.getBestErrorMessage(answers));
+                return Optional.empty();
+            } else {
+                return Optional.of(RemoteHostEndPoint.getHypervisorHostEndPoint(host));
             }
         }
 
-        if (host == null)
-        {
-            logger.error("Linstor: Couldn't create a resource on any cloudstack host.");
-            return Optional.empty();
-        }
-        else
-        {
-            return Optional.of(RemoteHostEndPoint.getHypervisorHostEndPoint(host));
-        }
+        logger.error("Linstor: Couldn't create a resource on any cloudstack host.");
+        return Optional.empty();
     }
 
-    private Optional<RemoteHostEndPoint> getDiskfullEP(DevelopersApi api, String rscName) throws ApiException {
+    private Optional<RemoteHostEndPoint> getDiskfullEP(DevelopersApi api, StoragePool storagePool, String rscName)
+            throws ApiException {
         List<com.linbit.linstor.api.model.StoragePool> linSPs = LinstorUtil.getDiskfulStoragePools(api, rscName);
         if (linSPs != null) {
-            for (com.linbit.linstor.api.model.StoragePool sp : linSPs) {
-                Host host = _hostDao.findByName(sp.getNodeName());
-                if (host != null && host.getResourceState() == ResourceState.Enabled) {
-                    return Optional.of(RemoteHostEndPoint.getHypervisorHostEndPoint(host));
-                }
+            List<String> linstorNodeNames = linSPs.stream()
+                    .map(com.linbit.linstor.api.model.StoragePool::getNodeName)
+                    .collect(Collectors.toList());
+            Host host = getEnabledClusterHost(storagePool, linstorNodeNames);
+            if (host != null) {
+                return Optional.of(RemoteHostEndPoint.getHypervisorHostEndPoint(host));
             }
         }
         logger.error("Linstor: No diskfull host found.");
@@ -1199,12 +1209,12 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                     VirtualMachineManager.ExecuteInSequence.value());
 
             try {
-                Optional<RemoteHostEndPoint> optEP = getLinstorEP(api, rscName);
+                Optional<RemoteHostEndPoint> optEP = getLinstorEP(api, pool, rscName);
                 if (optEP.isPresent()) {
                     answer = optEP.get().sendMessage(cmd);
                 } else {
-                    answer = new Answer(cmd, false, "Unable to get matching Linstor endpoint.");
                     deleteResourceDefinition(pool, rscName);
+                    throw new CloudRuntimeException("Unable to get matching Linstor endpoint.");
                 }
             } catch (ApiException exc) {
                 logger.error("copy template failed: ", exc);
@@ -1241,12 +1251,12 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         Answer answer;
 
         try {
-            Optional<RemoteHostEndPoint> optEP = getLinstorEP(api, rscName);
+            Optional<RemoteHostEndPoint> optEP = getLinstorEP(api, pool, rscName);
             if (optEP.isPresent()) {
                 answer = optEP.get().sendMessage(cmd);
             }
             else {
-                answer = new Answer(cmd, false, "Unable to get matching Linstor endpoint.");
+                throw new CloudRuntimeException("Unable to get matching Linstor endpoint.");
             }
         } catch (ApiException exc) {
             logger.error("copy volume failed: ", exc);
@@ -1279,14 +1289,14 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         try {
             String devName = restoreResourceFromSnapshot(api, pool, rscName, snapshotName, restoreName);
 
-            Optional<RemoteHostEndPoint> optEPAny = getLinstorEP(api, restoreName);
+            Optional<RemoteHostEndPoint> optEPAny = getLinstorEP(api, pool, restoreName);
             if (optEPAny.isPresent()) {
                 // patch the src device path to the temporary linstor resource
                 snapshotObject.setPath(devName);
                 origCmd.setSrcTO(snapshotObject.getTO());
                 answer = optEPAny.get().sendMessage(origCmd);
-            } else{
-                answer = new Answer(origCmd, false, "Unable to get matching Linstor endpoint.");
+            } else {
+                throw new CloudRuntimeException("Unable to get matching Linstor endpoint.");
             }
         } finally {
             // delete the temporary resource, noop if already gone
@@ -1348,7 +1358,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 VirtualMachineManager.ExecuteInSequence.value());
             cmd.setOptions(options);
 
-            Optional<RemoteHostEndPoint> optEP = getDiskfullEP(api, rscName);
+            Optional<RemoteHostEndPoint> optEP = getDiskfullEP(api, pool, rscName);
             Answer answer;
             if (optEP.isPresent()) {
                 answer = optEP.get().sendMessage(cmd);
@@ -1535,11 +1545,12 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
     /**
      * Updates the cache map containing current allocated size data.
-     * @param api Linstor Developers api object
+     * @param linstorAddr Linstor cluster api address
      */
-    private void fillVolumeStatsCache(DevelopersApi api) {
+    private void fillVolumeStatsCache(String linstorAddr) {
+        final DevelopersApi api = LinstorUtil.getLinstorAPI(linstorAddr);
         try {
-            logger.trace("Start volume stats cache update");
+            logger.trace("Start volume stats cache update for " + linstorAddr);
             List<ResourceWithVolumes> resources = api.viewResources(
                     Collections.emptyList(),
                     Collections.emptyList(),
@@ -1566,14 +1577,14 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 }
             }
 
-            volumeStats.clear();
+            volumeStats.keySet().removeIf(key -> key.startsWith(linstorAddr));
             for (Map.Entry<String, Long> entry : allocSizeMap.entrySet()) {
                 Long reserved = resSizeMap.getOrDefault(entry.getKey(), 0L);
                 Pair<Long, Long> volStat = new Pair<>(entry.getValue(), reserved);
-                volumeStats.put(entry.getKey(), volStat);
+                volumeStats.put(linstorAddr + "/" + entry.getKey(), volStat);
             }
-            volumeStatsLastUpdate = System.currentTimeMillis();
-            logger.trace("Done volume stats cache update: {}", volumeStats.size());
+            volumeStatsLastUpdate.put(linstorAddr, System.currentTimeMillis());
+            logger.debug(String.format("Done volume stats cache update for %s: %d", linstorAddr, volumeStats.size()));
         } catch (ApiException e) {
             logger.error("Unable to fetch Linstor resources: {}", e.getBestMessage());
         }
@@ -1581,14 +1592,19 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
     @Override
     public Pair<Long, Long> getVolumeStats(StoragePool storagePool, String volumeId) {
-        final DevelopersApi api = LinstorUtil.getLinstorAPI(storagePool.getHostAddress());
+        String linstorAddr = storagePool.getHostAddress();
         synchronized (volumeStats) {
-            long invalidateCacheTime = volumeStatsLastUpdate +
+            long invalidateCacheTime = volumeStatsLastUpdate.getOrDefault(storagePool.getHostAddress(), 0L) +
                     LinstorConfigurationManager.VolumeStatsCacheTime.value() * 1000;
             if (invalidateCacheTime < System.currentTimeMillis()) {
-                fillVolumeStatsCache(api);
+                fillVolumeStatsCache(storagePool.getHostAddress());
             }
-            return volumeStats.get(LinstorUtil.RSC_PREFIX + volumeId);
+            String volumeKey = linstorAddr + "/" + LinstorUtil.RSC_PREFIX + volumeId;
+            Pair<Long, Long> sizePair = volumeStats.get(volumeKey);
+            if (sizePair == null) {
+                logger.warn(String.format("Volumestats for %s not found in cache", volumeKey));
+            }
+            return sizePair;
         }
     }
 

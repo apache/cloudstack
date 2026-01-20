@@ -144,7 +144,7 @@ export default {
       createModalVisible: false,
       editModalVisible: false,
       selectedRole: null,
-      projectPermisssions: [],
+      projectPermissions: [],
       customStyle: 'margin-bottom: 0; border: none'
     }
   },
@@ -173,17 +173,6 @@ export default {
   mounted () {
     this.fetchData()
   },
-  watch: {
-    resource: {
-      deep: true,
-      handler (newItem) {
-        if (!newItem || !newItem.id) {
-          return
-        }
-        this.fetchData()
-      }
-    }
-  },
   methods: {
     initForm () {
       this.formRef = ref()
@@ -192,6 +181,7 @@ export default {
     },
     fetchData () {
       this.loading = true
+      if (!this.resource.id) return
       getAPI('listProjectRoles', { projectid: this.resource.id }).then(json => {
         const projectRoles = json.listprojectrolesresponse.projectrole
         if (!projectRoles || projectRoles.length === 0) {

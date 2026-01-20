@@ -140,20 +140,12 @@ public class ProvisioningServiceImpl implements ProvisioningService {
 
     @Override
     public List<PodEntity> listPods() {
-        /*
-         * Not in use now, just commented out.
-         */
-        //List<PodEntity> pods = new ArrayList<PodEntity>();
-        //pods.add(new PodEntityImpl("pod-uuid-1", "pod1"));
-        //pods.add(new PodEntityImpl("pod-uuid-2", "pod2"));
         return null;
     }
 
     @Override
     public List<ZoneEntity> listZones() {
         List<ZoneEntity> zones = new ArrayList<ZoneEntity>();
-        //zones.add(new ZoneEntityImpl("zone-uuid-1"));
-        //zones.add(new ZoneEntityImpl("zone-uuid-2"));
         return zones;
     }
 

@@ -33,6 +33,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
+import java.util.List;
 
 @APICommand(name = "updateLoadBalancerRule", description = "Updates load balancer", responseObject = LoadBalancerResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -42,27 +43,30 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCustomIdCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ALGORITHM, type = CommandType.STRING, description = "load balancer algorithm (source, roundrobin, leastconn)")
+    @Parameter(name = ApiConstants.ALGORITHM, type = CommandType.STRING, description = "Load balancer algorithm (source, roundrobin, leastconn)")
     private String algorithm;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "the description of the load balancer rule", length = 4096)
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "The description of the load balancer rule", length = 4096)
     private String description;
 
     @Parameter(name = ApiConstants.ID,
                type = CommandType.UUID,
                entityType = FirewallRuleResponse.class,
                required = true,
-               description = "the ID of the load balancer rule to update")
+               description = "The ID of the load balancer rule to update")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the load balancer rule")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the load balancer rule")
     private String loadBalancerName;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "The protocol for the LB")
     private String lbProtocol;
+
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to forward traffic from", since = "4.22")
+    private List<String> cidrList;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -92,6 +96,9 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCustomIdCmd {
        return lbProtocol;
     }
 
+    public List<String> getCidrList() {
+        return cidrList;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

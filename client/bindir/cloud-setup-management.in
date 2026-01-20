@@ -36,6 +36,106 @@ from cloudutils.cloudException import CloudRuntimeException, CloudInternalExcept
 from cloudutils.globalEnv import globalEnv
 from cloudutils.serviceConfigServer import cloudManagementConfig
 from optparse import OptionParser
+import urllib.request
+import configparser
+import hashlib
+
+SYSTEMVM_TEMPLATES_PATH = "/usr/share/cloudstack-management/templates/systemvm"
+SYSTEMVM_TEMPLATES_METADATA_FILE = SYSTEMVM_TEMPLATES_PATH + "/metadata.ini"
+
+def verify_sha512_checksum(file_path, expected_checksum):
+    sha512 = hashlib.sha512()
+    try:
+        with open(file_path, "rb") as f:
+            for chunk in iter(lambda: f.read(8192), b""):
+                sha512.update(chunk)
+        return sha512.hexdigest().lower() == expected_checksum.lower()
+    except Exception as e:
+        print(f"Failed to verify checksum for {file_path}: {e}")
+        return False
+
+def download_file(url, dest_path, chunk_size=8 * 1024 * 1024):
+    """
+    Downloads a file from the given URL to the specified destination path in chunks.
+    """
+    try:
+        with urllib.request.urlopen(url) as response:
+            total_size = response.length if response.length else None
+            downloaded = 0
+            try:
+                with open(dest_path, 'wb') as out_file:
+                    while True:
+                        chunk = response.read(chunk_size)
+                        if not chunk:
+                            break
+                        out_file.write(chunk)
+                        downloaded += len(chunk)
+                        if total_size:
+                            print(f"Downloaded {downloaded / (1024 * 1024):.2f}MB of {total_size / (1024 * 1024):.2f}MB", end='\r')
+            except PermissionError as pe:
+                print(f"Permission denied: {dest_path}")
+                raise
+        print(f"\nDownloaded file from {url} to {dest_path}")
+    except Exception as e:
+        print(f"Failed to download file: {e}")
+        raise
+
+def download_template_if_needed(template, url, filename, checksum):
+    dest_path = os.path.join(SYSTEMVM_TEMPLATES_PATH, filename)
+    if os.path.exists(dest_path):
+        if checksum and verify_sha512_checksum(dest_path, checksum):
+            print(f"{template} System VM template already exists at {dest_path} with valid checksum, skipping download.")
+            return
+        else:
+            print(f"{template} System VM template at {dest_path} has invalid or missing checksum, re-downloading...")
+    else:
+        print(f"Downloading {template} System VM template from {url} to {dest_path}...")
+    try:
+        download_file(url, dest_path)
+        #After download, verify checksum if provided
+        if checksum:
+            if verify_sha512_checksum(dest_path, checksum):
+                print(f"{template} System VM template downloaded and verified successfully.")
+            else:
+                print(f"ERROR: Checksum verification failed for {template} System VM template after download.")
+    except Exception as e:
+        print(f"ERROR: Failed to download {template} System VM template: {e}")
+
+def collect_template_metadata(selected_templates, options):
+    template_metadata_list = []
+    if not os.path.exists(SYSTEMVM_TEMPLATES_METADATA_FILE):
+        print(f"ERROR: System VM templates metadata file not found at {SYSTEMVM_TEMPLATES_METADATA_FILE}, cannot download templates.")
+        sys.exit(1)
+    config = configparser.ConfigParser()
+    config.read(SYSTEMVM_TEMPLATES_METADATA_FILE)
+    template_repo_url = None
+    if options.systemvm_templates_repository:
+        if "default" in config and "downloadrepository" in config["default"]:
+            template_repo_url = config["default"]["downloadrepository"].strip()
+        if not template_repo_url:
+            print("ERROR: downloadrepository value is empty in metadata file, cannot use --systemvm-template-repository option.")
+            sys.exit(1)
+    for template in selected_templates:
+        if template in config:
+            url = config[template].get("downloadurl")
+            filename = config[template].get("filename")
+            checksum = config[template].get("checksum")
+            if url and filename:
+                if template_repo_url:
+                    url = url.replace(template_repo_url, options.systemvm_templates_repository)
+                template_metadata_list.append({
+                    "template": template,
+                    "url": url,
+                    "filename": filename,
+                    "checksum": checksum
+                })
+            else:
+                print(f"ERROR: URL or filename not found for {template} System VM template in metadata.")
+                sys.exit(1)
+        else:
+            print(f"ERROR: No metadata found for {template} System VM template.")
+            sys.exit(1)
+    return template_metadata_list
 
 if __name__ == '__main__':
     initLoging("@MSLOGDIR@/setupManagement.log")
@@ -45,6 +145,16 @@ if __name__ == '__main__':
     parser.add_option("--https", action="store_true", dest="https", help="Enable HTTPs connection of management server")
     parser.add_option("--tomcat7", action="store_true", dest="tomcat7", help="Depreciated option, don't use it")
     parser.add_option("--no-start", action="store_true", dest="nostart", help="Do not start management server after successful configuration")
+    parser.add_option(
+        "--systemvm-templates",
+        dest="systemvm_templates",
+        help="Specify System VM templates to download: all, kvm-aarch64, kvm-x86_64, xenserver, vmware or comma-separated list of hypervisor combinations (e.g., kvm-x86_64,xenserver). Default is kvm-x86_64.",
+    )
+    parser.add_option(
+        "--systemvm-templates-repository",
+        dest="systemvm_templates_repository",
+        help="Specify the URL to download System VM templates from."
+    )
     (options, args) = parser.parse_args()
     if options.https:
         glbEnv.svrMode = "HttpsServer"
@@ -52,6 +162,34 @@ if __name__ == '__main__':
         print("The --tomcat7 option is deprecated, CloudStack now uses embedded Jetty server.")
     if options.nostart:
         glbEnv.noStart = True
+
+    available_templates = ["kvm-aarch64", "kvm-x86_64", "xenserver", "vmware"]
+    templates_arg = options.systemvm_templates
+
+    selected_templates = ["kvm-x86_64"]
+    if templates_arg:
+        templates_list = [t.strip().lower() for t in templates_arg.split(",")]
+        if "all" in templates_list:
+            if len(templates_list) > 1:
+                print("WARNING: 'all' specified for System VM templates, ignoring other specified templates.")
+            selected_templates = available_templates
+        else:
+            invalid_templates = []
+            for t in templates_list:
+                if t in available_templates:
+                    if t not in selected_templates:
+                        selected_templates.append(t)
+                else:
+                    if t not in invalid_templates:
+                        invalid_templates.append(t)
+            if invalid_templates:
+                print(f"ERROR: Invalid System VM template names provided: {', '.join(invalid_templates)}")
+                sys.exit(1)
+    print(f"Selected systemvm templates to download: {', '.join(selected_templates) if selected_templates else 'None'}")
+
+    template_metadata_list = []
+    if selected_templates:
+        template_metadata_list = collect_template_metadata(selected_templates, options)
 
     glbEnv.mode = "Server"
 
@@ -74,3 +212,6 @@ if __name__ == '__main__':
             syscfg.restore()
         except:
             pass
+
+    for meta in template_metadata_list:
+        download_template_if_needed(meta["template"], meta["url"], meta["filename"], meta["checksum"])

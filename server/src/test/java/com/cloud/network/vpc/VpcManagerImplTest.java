@@ -551,7 +551,7 @@ public class VpcManagerImplTest {
         Mockito.when(vpcDao.persist(any(), anyMap())).thenReturn(vpc);
         Mockito.when(vpc.getUuid()).thenReturn("uuid");
         doReturn(true).when(routedIpv4Manager).isRoutedVpc(any());
-        doReturn(true).when(routedIpv4Manager).isVpcVirtualRouterGateway(vpcOfferingVO);
+        doReturn(true).when(routedIpv4Manager).isValidGateway(vpcOfferingVO);
         doReturn(true).when(routedIpv4Manager).isDynamicRoutedVpc(vpcOfferingVO);
         Ipv4GuestSubnetNetworkMap ipv4GuestSubnetNetworkMap = Mockito.mock(Ipv4GuestSubnetNetworkMap.class);
         doReturn(ipv4GuestSubnetNetworkMap).when(routedIpv4Manager).getOrCreateIpv4SubnetForVpc(any(), anyInt());

@@ -62,6 +62,10 @@ import static com.cloud.network.Network.Service.NetworkACL;
 import static com.cloud.network.Network.Service.UserData;
 import static com.cloud.network.Network.Service.Gateway;
 
+import static org.apache.cloudstack.api.command.utils.OfferingUtils.isNetrisNatted;
+import static org.apache.cloudstack.api.command.utils.OfferingUtils.isNetrisRouted;
+import static org.apache.cloudstack.api.command.utils.OfferingUtils.isNsxWithoutLb;
+
 @APICommand(name = "createVPCOffering", description = "Creates VPC offering", responseObject = VpcOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
@@ -70,49 +74,49 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the vpc offering")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "The name of the VPC offering")
     private String vpcOfferingName;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the vpc offering, defaults to the 'name'")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "The display text of the VPC offering, defaults to the 'name'")
     private String displayText;
 
     @Parameter(name = ApiConstants.SUPPORTED_SERVICES,
                type = CommandType.LIST,
                collectionType = CommandType.STRING,
-               description = "services supported by the vpc offering")
+               description = "Services supported by the VPC offering")
     private List<String> supportedServices;
 
-    @Parameter(name = ApiConstants.SERVICE_PROVIDER_LIST, type = CommandType.MAP, description = "provider to service mapping. "
+    @Parameter(name = ApiConstants.SERVICE_PROVIDER_LIST, type = CommandType.MAP, description = "Provider to service mapping. "
         + "If not specified, the provider for the service will be mapped to the default provider on the physical network")
     private Map<String, ? extends Map<String, String>> serviceProviderList;
 
-    @Parameter(name = ApiConstants.SERVICE_CAPABILITY_LIST, type = CommandType.MAP, description = "desired service capabilities as part of vpc offering", since = "4.4")
+    @Parameter(name = ApiConstants.SERVICE_CAPABILITY_LIST, type = CommandType.MAP, description = "Desired service capabilities as part of VPC offering", since = "4.4")
     private Map<String, List<String>> serviceCapabilityList;
 
     @Parameter(name = ApiConstants.INTERNET_PROTOCOL,
             type = CommandType.STRING,
-            description = "The internet protocol of the offering. Options are ipv4 and dualstack. Default is ipv4. dualstack will create an offering that supports both IPv4 and IPv6",
+            description = "The internet protocol of the offering. Options are IPv4 and dualstack. Default is IPv4. dualstack will create an offering that supports both IPv4 and IPv6",
             since = "4.17.0")
     private String internetProtocol;
 
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
                type = CommandType.UUID,
                entityType = ServiceOfferingResponse.class,
-               description = "the ID of the service offering for the VPC router appliance")
+               description = "The ID of the service offering for the VPC router appliance")
     private Long serviceOfferingId;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.LIST,
             collectionType = CommandType.UUID,
             entityType = DomainResponse.class,
-            description = "the ID of the containing domain(s), null for public offerings")
+            description = "The ID of the containing domain(s), null for public offerings")
     private List<Long> domainIds;
 
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.LIST,
             collectionType = CommandType.UUID,
             entityType = ZoneResponse.class,
-            description = "the ID of the containing zone(s), null for public offerings",
+            description = "The ID of the containing zone(s), null for public offerings",
             since = "4.13")
     private List<Long> zoneIds;
 
@@ -137,7 +141,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.ENABLE,
             type = CommandType.BOOLEAN,
-            description = "set to true if the offering is to be enabled during creation. Default is false",
+            description = "Set to true if the offering is to be enabled during creation. Default is false",
             since = "4.16")
     private Boolean enable;
 
@@ -194,7 +198,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
             if (NetworkOffering.NetworkMode.ROUTED.name().equalsIgnoreCase(getNetworkMode())) {
                 supportedServices.add(Gateway.getName());
             }
-            if (getNsxSupportsLbService()) {
+            if (getNsxSupportsLbService() || isNetrisNatted(getProvider(), getNetworkMode())) {
                 supportedServices.add(Lb.getName());
             }
         }
@@ -220,10 +224,8 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
             Iterator<? extends Map<String, String>> iter = servicesCollection.iterator();
             while (iter.hasNext()) {
                 Map<String, String> obj = iter.next();
-                if (logger.isTraceEnabled()) {
-                    logger.trace("service provider entry specified: " + obj);
-                }
-                HashMap<String, String> services = (HashMap<String, String>) obj;
+                logger.trace("Service provider entry specified: {}", obj);
+                HashMap<String, String> services = (HashMap<String, String>)obj;
                 String service = services.get("service");
                 String provider = services.get("provider");
                 List<String> providerList = null;
@@ -259,7 +261,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
                 serviceProviderMap.put(service, List.of(provider));
             }
         }
-        if (!getNsxSupportsLbService()) {
+        if ((isNsxWithoutLb(getProvider(), getNsxSupportsLbService())) || isNetrisRouted(getProvider(), getNetworkMode())) {
             serviceProviderMap.remove(Lb.getName());
         }
     }

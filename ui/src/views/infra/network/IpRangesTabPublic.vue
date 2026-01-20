@@ -220,6 +220,20 @@
             <a-select-option v-for="pod in pods" :key="pod.id" :value="pod.id" :label="pod.name">{{ pod.name }}</a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item name="isolationmethod" ref="isolationmethod" class="form__item" v-if="!basicGuestNetwork">
+          <tooltip-label :title="$t('label.isolation.method')" :tooltip="$t('label.choose.isolation.method.public.ip.range')" class="tooltip-label-wrapper"/>
+          <a-select
+            v-model:value="form.isolationmethod"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option value="">{{ }}</a-select-option>
+            <a-select-option value="vlan"> VLAN </a-select-option>
+            <a-select-option value="vxlan"> VXLAN </a-select-option>
+          </a-select>
+        </a-form-item>
         <a-form-item name="vlan" ref="vlan" :label="$t('label.vlan')" class="form__item" v-if="!basicGuestNetwork">
           <a-input v-model:value="form.vlan" />
         </a-form-item>
@@ -472,7 +486,8 @@ export default {
     initAddIpRangeForm () {
       this.formRef = ref()
       this.form = reactive({
-        iptype: ''
+        iptype: '',
+        isolationmethod: ''
       })
       this.rules = reactive({
         podid: [{ required: true, message: this.$t('label.required') }],
@@ -644,6 +659,15 @@ export default {
         if (!this.basicGuestNetwork) {
           params.zoneId = this.resource.zoneid
           params.vlan = values.vlan
+          const vlanInput = (values.vlan || '').toString().trim()
+          if (vlanInput) {
+            const vlanInputLower = vlanInput.toLowerCase()
+            const startsWithPrefix = vlanInputLower.startsWith('vlan') || vlanInputLower.startsWith('vxlan')
+            const isNumeric = /^[0-9]+$/.test(vlanInput)
+            if (!startsWithPrefix && isNumeric && values.isolationmethod) {
+              params.vlan = `${values.isolationmethod}://${vlanInput}`
+            }
+          }
           params.forsystemvms = values.forsystemvms
           params.account = values.forsystemvms ? null : values.account
           params.domainid = values.forsystemvms ? null : values.domain

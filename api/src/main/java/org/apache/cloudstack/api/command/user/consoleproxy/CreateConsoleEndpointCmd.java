@@ -35,11 +35,12 @@ import org.apache.cloudstack.consoleproxy.ConsoleAccessManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.utils.consoleproxy.ConsoleAccessUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 
 import javax.inject.Inject;
 import java.util.Map;
 
-@APICommand(name = "createConsoleEndpoint", description = "Create a console endpoint to connect to a VM console",
+@APICommand(name = "createConsoleEndpoint", description = "Create a console endpoint to connect to a Instance console",
         responseObject = CreateConsoleEndpointResponse.class, since = "4.18.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
@@ -53,7 +54,7 @@ public class CreateConsoleEndpointCmd extends BaseCmd {
             type = CommandType.UUID,
             entityType = UserVmResponse.class,
             required = true,
-            description = "ID of the VM")
+            description = "ID of the Instance")
     private Long vmId;
 
     @Parameter(name = ApiConstants.TOKEN,
@@ -70,7 +71,7 @@ public class CreateConsoleEndpointCmd extends BaseCmd {
             CreateConsoleEndpointResponse response = createResponse(endpoint);
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Unable to generate console endpoint for vm " + vmId);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Unable to generate console endpoint for Instance " + vmId);
         }
     }
 
@@ -86,6 +87,10 @@ public class CreateConsoleEndpointCmd extends BaseCmd {
     }
 
     private ConsoleEndpointWebsocketResponse createWebsocketResponse(ConsoleEndpoint endpoint) {
+        if (ObjectUtils.allNull(endpoint.getWebsocketHost(), endpoint.getWebsocketPort(), endpoint.getWebsocketPath(),
+                endpoint.getWebsocketToken(), endpoint.getWebsocketExtra())) {
+            return null;
+        }
         ConsoleEndpointWebsocketResponse wsResponse = new ConsoleEndpointWebsocketResponse();
         wsResponse.setHost(endpoint.getWebsocketHost());
         wsResponse.setPort(endpoint.getWebsocketPort());

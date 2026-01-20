@@ -103,6 +103,6 @@ public final class EnableHAForClusterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "enable HA for cluster: " + getClusterId();
+        return "Enable HA for cluster: " + getClusterId();
     }
 }

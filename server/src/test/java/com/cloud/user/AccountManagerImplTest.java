@@ -201,6 +201,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.when(_sshKeyPairDao.listKeyPairs(Mockito.anyLong(), Mockito.anyLong())).thenReturn(sshkeyList);
         Mockito.when(_sshKeyPairDao.remove(Mockito.anyLong())).thenReturn(true);
         Mockito.when(userDataDao.removeByAccountId(Mockito.anyLong())).thenReturn(222);
+        Mockito.when(sslCertDao.removeByAccountId(Mockito.anyLong())).thenReturn(333);
         Mockito.doNothing().when(accountManagerImpl).deleteWebhooksForAccount(Mockito.anyLong());
         Mockito.doNothing().when(accountManagerImpl).verifyCallerPrivilegeForUserOrAccountOperations((Account) any());
 
@@ -1363,6 +1364,22 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Account caller = Mockito.mock(Account.class);
         Mockito.when(caller.getRoleId()).thenReturn(2L);
         Mockito.when(roleService.findRole(1L)).thenReturn(accountRole);
+        Mockito.when(roleService.findRole(2L)).thenReturn(callerRole);
+        accountManagerImpl.validateRoleChange(account, newRole, caller);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testValidateRoleAdminCannotChangeDefaultAdmin() {
+        Account account = Mockito.mock(Account.class);
+        Mockito.when(account.isDefault()).thenReturn(true);
+        Mockito.when(account.getRoleId()).thenReturn(1L);
+        Role newRole = Mockito.mock(Role.class);
+        Mockito.when(newRole.getRoleType()).thenReturn(RoleType.User);
+        Role callerRole = Mockito.mock(Role.class);
+        Mockito.when(callerRole.getRoleType()).thenReturn(RoleType.Admin);
+        Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getRoleId()).thenReturn(2L);
+        Mockito.when(roleService.findRole(1L)).thenReturn(Mockito.mock(Role.class));
         Mockito.when(roleService.findRole(2L)).thenReturn(callerRole);
         accountManagerImpl.validateRoleChange(account, newRole, caller);
     }

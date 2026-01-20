@@ -18,7 +18,7 @@
 
 parse_json() {
     local json_string="$1"
-    echo "$json_string" | jq '.' > /dev/null || { echo '{"error":"Invalid JSON input"}'; exit 1; }
+    echo "$json_string" | jq '.' > /dev/null || { echo '{"status": "error", "error": "Invalid JSON input"}'; exit 1; }
 
     local -A details
     while IFS="=" read -r key value; do
@@ -39,6 +39,10 @@ parse_json() {
         "template_id":      (.externaldetails.virtualmachine.template_id // ""),
         "template_type":    (.externaldetails.virtualmachine.template_type // ""),
         "iso_path":         (.externaldetails.virtualmachine.iso_path // ""),
+        "iso_os_type":      (.externaldetails.virtualmachine.iso_os_type // "l26"),
+        "disk_size_gb":     (.externaldetails.virtualmachine.disk_size_gb // "64"),
+        "storage":          (.externaldetails.virtualmachine.storage // "local-lvm"),
+        "is_full_clone":    (.externaldetails.virtualmachine.is_full_clone // "false"),
         "snap_name":        (.parameters.snap_name // ""),
         "snap_description": (.parameters.snap_description // ""),
         "snap_save_memory": (.parameters.snap_save_memory // ""),
@@ -112,9 +116,14 @@ call_proxmox_api() {
       curl_opts+=(-d "$data")
     fi
 
-    #echo curl "${curl_opts[@]}" "https://${url}:8006/api2/json${path}" >&2
     response=$(curl "${curl_opts[@]}" "https://${url}:8006/api2/json${path}")
+    local status=$?
+    if [[ $status -ne 0 ]]; then
+        echo "{\"errors\":{\"curl\":\"API call failed with status $status: $(echo "$response" | jq -Rsa . | jq -r .)\"}}"
+        return $status
+    fi
     echo "$response"
+    return 0
 }
 
 wait_for_proxmox_task() {
@@ -129,7 +138,7 @@ wait_for_proxmox_task() {
         local now
         now=$(date +%s)
         if (( now - start_time > timeout )); then
-            echo '{"error":"Timeout while waiting for async task"}'
+            echo '{"status": "error", "error":"Timeout while waiting for async task"}'
             exit 1
         fi
 
@@ -139,7 +148,7 @@ wait_for_proxmox_task() {
         if [[ -z "$status_response" || "$status_response" == *'"errors":'* ]]; then
             local msg
             msg=$(echo "$status_response" | jq -r '.message // "Unknown error"')
-            echo "{\"error\":\"$msg\"}"
+            echo "{\"status\": \"error\", \"error\": \"$msg\"}"
             exit 1
         fi
 
@@ -207,9 +216,9 @@ create() {
         local data="vmid=$vmid"
         data+="&name=$vm_name"
         data+="&ide2=$(urlencode "$iso_path,media=cdrom")"
-        data+="&ostype=l26"
+        data+="&ostype=$iso_os_type"
         data+="&scsihw=virtio-scsi-single"
-        data+="&scsi0=$(urlencode "local-lvm:64,iothread=on")"
+        data+="&scsi0=$(urlencode "$storage:$disk_size_gb,iothread=on")"
         data+="&sockets=1"
         data+="&cores=$vmcpus"
         data+="&numa=0"
@@ -223,6 +232,8 @@ create() {
         check_required_fields template_id
         local data="newid=$vmid"
         data+="&name=$vm_name"
+        clone_flag=$(( is_full_clone == "true" ))
+        data+="&storage=$storage&full=$clone_flag"
         execute_and_wait POST "/nodes/${node}/qemu/${template_id}/clone" "$data"
         cleanup_vm=1
 
@@ -285,6 +296,86 @@ status() {
     echo "{\"status\": \"success\", \"power_state\": \"$powerstate\"}"
 }
 
+get_node_host() {
+    check_required_fields node
+    local net_json host
+
+    if ! net_json="$(call_proxmox_api GET "/nodes/${node}/network")"; then
+        echo ""
+        return 1
+    fi
+
+    # Prefer a static non-bridge IP
+    host="$(echo "$net_json" | jq -r '
+        .data
+        | map(select(
+            (.type // "") != "bridge" and
+            (.type // "") != "bond" and
+            (.method // "") == "static" and
+            ((.address // .cidr // "") != "")
+        ))
+        | map(.address // (.cidr | split("/")[0]))
+        | .[0] // empty
+    ' 2>/dev/null)"
+
+    # Fallback: first interface with a CIDR
+    if [[ -z "$host" ]]; then
+        host="$(echo "$net_json" | jq -r '
+            .data
+            | map(select((.cidr // "") != ""))
+            | map(.cidr | split("/")[0])
+            | .[0] // empty
+        ' 2>/dev/null)"
+    fi
+
+    echo "$host"
+}
+
+ get_console() {
+     check_required_fields node vmid
+
+     local api_resp port ticket
+     if ! api_resp="$(call_proxmox_api POST "/nodes/${node}/qemu/${vmid}/vncproxy")"; then
+         echo "$api_resp" | jq -c '{status:"error", error:(.errors.curl // (.errors|tostring))}'
+         exit 1
+     fi
+
+     port="$(echo "$api_resp"   | jq -re '.data.port // empty' 2>/dev/null || true)"
+     ticket="$(echo "$api_resp" | jq -re '.data.ticket // empty' 2>/dev/null || true)"
+
+     if [[ -z "$port" || -z "$ticket" ]]; then
+         jq -n --arg raw "$api_resp" \
+             '{status:"error", error:"Proxmox response missing port/ticket", upstream:$raw}'
+         exit 1
+     fi
+
+     # Derive host from node’s network info
+     local host
+     host="$(get_node_host)"
+     if [[ -z "$host" ]]; then
+         jq -n --arg msg "Could not determine host IP for node $node" \
+             '{status:"error", error:$msg}'
+         exit 1
+     fi
+
+     jq -n \
+         --arg host "$host" \
+         --arg port "$port" \
+         --arg password "$ticket" \
+         --argjson passwordonetimeuseonly true \
+         '{
+             status: "success",
+             message: "Console retrieved",
+             console: {
+                 host: $host,
+                 port: $port,
+                 password: $password,
+                 passwordonetimeuseonly: $passwordonetimeuseonly,
+                 protocol: "vnc"
+             }
+         }'
+ }
+
 list_snapshots() {
     snapshot_response=$(call_proxmox_api GET "/nodes/${node}/qemu/${vmid}/snapshot")
     echo "$snapshot_response" | jq '
@@ -334,7 +425,11 @@ restore_snapshot() {
 
     execute_and_wait POST "/nodes/${node}/qemu/${vmid}/snapshot/${snap_name}/rollback"
 
-    execute_and_wait POST "/nodes/${node}/qemu/${vmid}/status/start"
+    status_response=$(call_proxmox_api GET "/nodes/${node}/qemu/${vmid}/status/current")
+    vm_status=$(echo "$status_response" | jq -r '.data.status')
+    if [ "$vm_status" = "stopped" ];then
+        execute_and_wait POST "/nodes/${node}/qemu/${vmid}/status/start"
+    fi
 
     echo '{"status": "success", "message": "Instance Snapshot restored"}'
 }
@@ -352,7 +447,12 @@ parameters_file="$2"
 wait_time=$3
 
 if [[ -z "$action" || -z "$parameters_file" ]]; then
-    echo '{"error":"Missing required arguments"}'
+    echo '{"status": "error", "error": "Missing required arguments"}'
+    exit 1
+fi
+
+if [[ ! -r "$parameters_file" ]]; then
+    echo '{"status": "error", "error": "File not found or unreadable"}'
     exit 1
 fi
 
@@ -392,6 +492,9 @@ case $action in
     status)
         status
         ;;
+    getconsole)
+        get_console
+        ;;
     ListSnapshots)
         list_snapshots
         ;;
@@ -405,7 +508,7 @@ case $action in
         delete_snapshot
         ;;
     *)
-        echo '{"error":"Invalid action"}'
+        echo '{"status": "error", "error": "Invalid action"}'
         exit 1
         ;;
 esac

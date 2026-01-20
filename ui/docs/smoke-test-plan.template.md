@@ -17,7 +17,7 @@ Note: for User role test exclude after Account/User feature, for DomainAdmin rol
 - [ ] Add/delete secondary IP address
 
 **Compute > Kubernetes**
-This requires configuring and setting up CKS: http://docs.cloudstack.apache.org/en/latest/plugins/cloudstack-kubernetes-service.html
+This requires configuring and setting up CKS: https://docs.cloudstack.apache.org/en/latest/plugins/cloudstack-kubernetes-service.html
 - [ ] Add Kubernetes cluster
 - [ ] Start/stop a Kubernetes cluster
 - [ ] Scale Kubernetes cluster

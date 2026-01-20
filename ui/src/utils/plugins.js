@@ -557,7 +557,8 @@ export const cpuArchitectureUtilPlugin = {
     app.config.globalProperties.$fetchCpuArchitectureTypes = function () {
       const architectures = [
         { id: 'x86_64', name: 'Intel/AMD 64 bits (x86_64)' },
-        { id: 'aarch64', name: 'ARM 64 bits (aarch64)' }
+        { id: 'aarch64', name: 'ARM 64 bits (aarch64)' },
+        { id: 's390x', name: 'IBM Z 64 bits (s390x)' }
       ]
       return architectures.map(item => ({ ...item, description: item.name }))
     }
@@ -594,6 +595,17 @@ export const extensionsUtilPlugin = {
         })
       })
       return roleTypes
+    }
+  }
+}
+
+export const backupUtilPlugin = {
+  install (app) {
+    app.config.globalProperties.$isBackupProviderSupportsQuiesceVm = function (provider) {
+      if (!provider && typeof provider !== 'string') {
+        return false
+      }
+      return ['nas'].includes(provider.toLowerCase())
     }
   }
 }

@@ -338,7 +338,6 @@ const user = {
             const result = response.listusersresponse.user[0]
             commit('SET_INFO', result)
             commit('SET_NAME', result.firstname + ' ' + result.lastname)
-            store.dispatch('SetCsLatestVersion', result.rolename)
             resolve(cachedApis)
           }).catch(error => {
             reject(error)
@@ -496,9 +495,17 @@ const user = {
         }).catch(() => {
           resolve()
         }).finally(() => {
+          const paths = ['/', '/client']
+          const hostname = window.location.hostname
+          const domains = [undefined, hostname, `.${hostname}`]
           Object.keys(Cookies.get()).forEach(cookieName => {
-            Cookies.remove(cookieName)
-            Cookies.remove(cookieName, { path: '/client' })
+            paths.forEach(path => {
+              domains.forEach(domain => {
+                const options = { path }
+                if (domain) options.domain = domain
+                Cookies.remove(cookieName, options)
+              })
+            })
           })
         })
       })
@@ -555,15 +562,16 @@ const user = {
         }).catch(error => {
           reject(error)
         })
-
-        getAPI('listConfigurations', { name: 'hypervisor.custom.display.name' }).then(json => {
-          if (json.listconfigurationsresponse.configuration !== null) {
-            const config = json.listconfigurationsresponse.configuration[0]
-            commit('SET_CUSTOM_HYPERVISOR_NAME', config.value)
-          }
-        }).catch(error => {
-          reject(error)
-        })
+        if ('listConfigurations' in store.getters.apis) {
+          getAPI('listConfigurations', { name: 'hypervisor.custom.display.name' }).then(json => {
+            if (json.listconfigurationsresponse.configuration !== null) {
+              const config = json.listconfigurationsresponse.configuration[0]
+              commit('SET_CUSTOM_HYPERVISOR_NAME', config.value)
+            }
+          }).catch(error => {
+            reject(error)
+          })
+        }
       })
     },
     UpdateConfiguration ({ commit }) {
@@ -580,6 +588,9 @@ const user = {
       commit('SET_DOMAIN_STORE', domainStore)
     },
     SetCsLatestVersion ({ commit }, rolename) {
+      if (!vueProps.$config.notifyLatestCSVersion) {
+        return
+      }
       const lastFetchTs = store.getters.latestVersion?.fetchedTs ? store.getters.latestVersion.fetchedTs : 0
       if (rolename === 'Root Admin' && (+new Date() - lastFetchTs) > 24 * 60 * 60 * 1000) {
         axios.get(

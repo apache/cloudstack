@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.BackupOffering;
@@ -40,6 +41,11 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.commons.collections.CollectionUtils;
+
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 @APICommand(name = "importBackupOffering",
         description = "Imports a backup offering using a backup provider",
@@ -55,11 +61,11 @@ public class ImportBackupOfferingCmd extends BaseAsyncCmd {
     ////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true,
-            description = "the name of the backup offering")
+            description = "The name of the backup offering")
     private String name;
 
     @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, required = true,
-            description = "the description of the backup offering")
+            description = "The description of the backup offering")
     private String description;
 
     @Parameter(name = ApiConstants.EXTERNAL_ID,
@@ -75,6 +81,13 @@ public class ImportBackupOfferingCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ALLOW_USER_DRIVEN_BACKUPS, type = CommandType.BOOLEAN,
             description = "Whether users are allowed to create adhoc backups and backup schedules", required = true)
     private Boolean userDrivenBackups;
+
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+            type = CommandType.LIST,
+            collectionType = CommandType.UUID,
+            entityType = DomainResponse.class,
+            description = "the ID of the containing domain(s), null for public offerings")
+    private List<Long> domainIds;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -98,6 +111,15 @@ public class ImportBackupOfferingCmd extends BaseAsyncCmd {
 
     public Boolean getUserDrivenBackups() {
         return userDrivenBackups == null ? false : userDrivenBackups;
+    }
+
+    public List<Long> getDomainIds() {
+        if (CollectionUtils.isNotEmpty(domainIds)) {
+            Set<Long> set = new LinkedHashSet<>(domainIds);
+            domainIds.clear();
+            domainIds.addAll(set);
+        }
+        return domainIds;
     }
 
     /////////////////////////////////////////////////////
