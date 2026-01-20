@@ -78,6 +78,12 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
             " order by created %s " +
             " limit 1";
 
+    private static final String GET_SIZE_OF_SNAPSHOTS_ON_PRIMARY_BY_ACCOUNT = "SELECT SUM(size) " +
+            "FROM cloud.snapshots " +
+            "WHERE account_id = ? " +
+            "AND removed IS NULL " +
+            "AND id IN (SELECT s.snapshot_id FROM cloud.snapshot_store_ref s WHERE s.store_role = 'Primary' AND s.state = 'Ready' AND NOT EXISTS (SELECT 1 FROM cloud.snapshot_store_ref i WHERE i.snapshot_id = s.snapshot_id AND i.store_role = 'Image'))";
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
@@ -117,7 +123,6 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         stateSearch = createSearchBuilder();
         stateSearch.and(STATE, stateSearch.entity().getState(), SearchCriteria.Op.IN);
         stateSearch.done();
-
 
         idStateNeqSearch = createSearchBuilder();
         idStateNeqSearch.and(SNAPSHOT_ID, idStateNeqSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
@@ -577,5 +582,30 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         SearchCriteria<SnapshotDataStoreVO> sc = sb.create();
         sc.setParameters("snapshotIds", snapshotIds.toArray());
         return batchExpunge(sc, batchSize);
+    }
+
+    @Override
+    public long getSnapshotsSizeOnPrimaryByAccountId(long accountId) {
+        String sql = String.format("SELECT SUM(size) " +
+                "FROM cloud.snapshots " +
+                "WHERE account_id = %d " +
+                "AND removed IS NULL " +
+                "AND id IN (SELECT s.snapshot_id FROM cloud.snapshot_store_ref s WHERE s.store_role = 'Primary' AND s.state = 'Ready' AND NOT EXISTS (SELECT 1 FROM cloud.snapshot_store_ref i WHERE i.snapshot_id = s.snapshot_id AND i.store_role = 'Image'))", accountId);
+
+        long snapshotsSize = 0;
+        try (TransactionLegacy transactionLegacy = TransactionLegacy.currentTxn()) {
+            try (PreparedStatement preparedStatement = transactionLegacy.prepareStatement(GET_SIZE_OF_SNAPSHOTS_ON_PRIMARY_BY_ACCOUNT)) {
+                preparedStatement.setLong(1, accountId);
+
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    if (resultSet.next()) {
+                        snapshotsSize = resultSet.getLong(1);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            logger.warn("Failed to get the snapshots size for the account [{}] due to [{}].", accountId, e.getMessage(), e);
+        }
+        return snapshotsSize;
     }
 }

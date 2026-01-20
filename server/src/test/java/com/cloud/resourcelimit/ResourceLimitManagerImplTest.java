@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.TaggedResourceLimitAndCountResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -118,6 +119,8 @@ public class ResourceLimitManagerImplTest extends TestCase {
     VolumeDao volumeDao;
     @Mock
     UserVmDao userVmDao;
+    @Mock
+    SnapshotDataStoreDao snapshotDataStoreDao;
 
     private List<String> hostTags = List.of("htag1", "htag2", "htag3");
     private List<String> storageTags = List.of("stag1", "stag2");
@@ -840,12 +843,13 @@ public class ResourceLimitManagerImplTest extends TestCase {
         String tag = null;
         Mockito.when(vmDao.findIdsOfAllocatedVirtualRoutersForAccount(accountId))
                 .thenReturn(List.of(1L));
+        Mockito.when(snapshotDataStoreDao.getSnapshotsSizeOnPrimaryByAccountId(accountId)).thenReturn(100L);
         Mockito.when(volumeDao.primaryStorageUsedForAccount(Mockito.eq(accountId), Mockito.anyList())).thenReturn(100L);
-        Assert.assertEquals(100L, resourceLimitManager.calculatePrimaryStorageForAccount(accountId, tag));
+        Assert.assertEquals(200L, resourceLimitManager.calculatePrimaryStorageForAccount(accountId, tag));
 
         tag = "";
         Mockito.when(volumeDao.primaryStorageUsedForAccount(Mockito.eq(accountId), Mockito.anyList())).thenReturn(200L);
-        Assert.assertEquals(200L, resourceLimitManager.calculatePrimaryStorageForAccount(accountId, tag));
+        Assert.assertEquals(300L, resourceLimitManager.calculatePrimaryStorageForAccount(accountId, tag));
 
         tag = "tag";
         VolumeVO vol = Mockito.mock(VolumeVO.class);
@@ -853,7 +857,7 @@ public class ResourceLimitManagerImplTest extends TestCase {
         Mockito.when(vol.getSize()).thenReturn(size);
         List<VolumeVO> vols = List.of(vol, vol);
         Mockito.doReturn(vols).when(resourceLimitManager).getVolumesWithAccountAndTag(accountId, tag);
-        Assert.assertEquals(vols.size() * size, resourceLimitManager.calculatePrimaryStorageForAccount(accountId, tag));
+        Assert.assertEquals((vols.size() * size) + 100L, resourceLimitManager.calculatePrimaryStorageForAccount(accountId, tag));
     }
 
     @Test
