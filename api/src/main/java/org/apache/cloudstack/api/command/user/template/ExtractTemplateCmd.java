@@ -100,14 +100,14 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        String baseDescription = String.format("Extracting Template with ID: %s", getResourceUuid(ApiConstants.ID));
+        String description = "Extracting Template with ID: " + getResourceUuid(ApiConstants.ID);
 
         Long zoneId = getZoneId();
-        if (zoneId == null) {
-            return baseDescription;
+        if (zoneId != null) {
+            description += "from zone with ID: " + getResourceUuid(ApiConstants.ZONE_ID);
         }
 
-        return String.format("%s from zone with ID: %s", baseDescription, getResourceUuid(ApiConstants.ZONE_ID));
+        return description;
     }
 
     @Override

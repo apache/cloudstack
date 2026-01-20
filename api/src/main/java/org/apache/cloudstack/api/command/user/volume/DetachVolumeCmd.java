@@ -38,7 +38,7 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "detachVolume", description = "Detaches a disk volume from  an Instance.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
+@APICommand(name = "detachVolume", description = "Detaches a disk volume from an Instance.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DetachVolumeCmd extends BaseAsyncCmd implements UserCmd {
     private static final String s_name = "detachvolumeresponse";
@@ -126,17 +126,19 @@ public class DetachVolumeCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        StringBuilder sb = new StringBuilder("Detaching volume");
+        String description = "Detaching volume";
 
         if (id != null) {
-            sb.append(": ").append(getResourceUuid(ApiConstants.ID));
-        } else if ((deviceId != null) && (virtualMachineId != null)) {
-            sb.append(" with device id: " + deviceId + " from Instance: " + ((getVirtualMachineId() != null) ? getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID) : ""));
-        } else {
-            sb.append(" <error:  either volume id or deviceId/vmId need to be specified>");
+            description += ": " + getResourceUuid(ApiConstants.ID);
         }
 
-        return  sb.toString();
+        if ((deviceId != null) && (virtualMachineId != null)) {
+            description += " with device id: " + deviceId + " from Instance: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID);
+        } else {
+            description += " <error:  either volume id or deviceId/vmId need to be specified>";
+        }
+
+        return description;
     }
 
     @Override

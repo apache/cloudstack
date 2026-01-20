@@ -124,15 +124,15 @@ public class MigrateVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        String eventDescription;
+        String description = "Attempting to migrate Instance with ID: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID);
+
         if (getHostId() != null) {
-            eventDescription = String.format("Attempting to migrate Instance with ID: %s to host with ID: %s", getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID), getResourceUuid(ApiConstants.HOST_ID));
+            description += " to host with ID: " +getResourceUuid(ApiConstants.HOST_ID);
         } else if (getStoragePoolId() != null) {
-            eventDescription = String.format("Attempting to migrate Instance with ID: %s to storage pool with ID: %s", getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID), getResourceUuid(ApiConstants.STORAGE_ID));
-        } else {
-            eventDescription = String.format("Attempting to migrate Instance with ID: %s", getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID));
+            description = " to storage pool with ID: " + getResourceUuid(ApiConstants.STORAGE_ID);
         }
-        return eventDescription;
+
+        return description;
     }
 
     @Override

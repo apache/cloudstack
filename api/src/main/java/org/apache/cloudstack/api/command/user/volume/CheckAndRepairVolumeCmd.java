@@ -105,7 +105,7 @@ public class CheckAndRepairVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return String.format("Starting checking and repairing operation on volume: %s", getResourceUuid(ApiConstants.ID));
+        return "Starting checking and repairing operation on volume: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
