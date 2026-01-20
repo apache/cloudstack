@@ -155,7 +155,9 @@ public class SnapshotObject implements SnapshotInfo {
     @Override
     public SnapshotInfo getChild() {
         QueryBuilder<SnapshotDataStoreVO> sc = QueryBuilder.create(SnapshotDataStoreVO.class);
-        sc.and(sc.entity().getDataStoreId(), Op.EQ, store.getId());
+        if (!HypervisorType.KVM.equals(snapshot.getHypervisorType())) {
+            sc.and(sc.entity().getDataStoreId(), Op.EQ, store.getId());
+        }
         sc.and(sc.entity().getRole(), Op.EQ, store.getRole());
         sc.and(sc.entity().getState(), Op.NIN, State.Destroying, State.Destroyed, State.Error);
         sc.and(sc.entity().getParentSnapshotId(), Op.EQ, getId());
@@ -200,10 +202,15 @@ public class SnapshotObject implements SnapshotInfo {
     @Override
     public long getPhysicalSize() {
         long physicalSize = 0;
-        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Image, store.getId(), snapshot.getId());
-        if (snapshotStore != null) {
-            physicalSize = snapshotStore.getPhysicalSize();
+        for (DataStoreRole role : List.of(DataStoreRole.Image, DataStoreRole.Primary)) {
+            logger.trace("Retrieving snapshot [{}] size from {} storage.", snapshot.getUuid(), role);
+            SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findByStoreSnapshot(role, store.getId(), snapshot.getId());
+            if (snapshotStore != null) {
+                return snapshotStore.getPhysicalSize();
+            }
+            logger.trace("Snapshot [{}] size not found on {} storage.", snapshot.getUuid(), role);
         }
+        logger.warn("Snapshot [{}] reference not found in any storage. There may be an inconsistency on the database.", snapshot.getUuid());
         return physicalSize;
     }
 

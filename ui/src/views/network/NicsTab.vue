@@ -22,7 +22,7 @@
       style="width: 100%; margin-bottom: 10px"
       @click="showAddNicModal"
       :loading="loadingNic"
-      :disabled="!('addNicToVirtualMachine' in $store.getters.apis)">
+      :disabled="!('addNicToVirtualMachine' in $store.getters.apis) || resource.hypervisor === 'External'">
       <template #icon><plus-outlined /></template> {{ $t('label.network.addvm') }}
     </a-button>
     <NicsTable :resource="resource" :loading="loading">
@@ -32,7 +32,7 @@
           @confirm="setAsDefault(record.nic)"
           :okText="$t('label.yes')"
          :cancelText="$t('label.no')"
-          v-if="!record.nic.isdefault"
+          v-if="!record.nic.isdefault && resource.hypervisor !== 'External'"
         >
           <tooltip-button
             tooltipPlacement="bottom"
@@ -41,14 +41,14 @@
             icon="check-square-outlined" />
         </a-popconfirm>
         <tooltip-button
-          v-if="record.nic.type !== 'L2'"
+          v-if="record.nic.type !== 'L2' && resource.hypervisor !== 'External'"
           tooltipPlacement="bottom"
           :tooltip="$t('label.change.ip.address')"
           icon="swap-outlined"
           :disabled="!('updateVmNicIp' in $store.getters.apis)"
           @onClick="onChangeIPAddress(record)" />
         <tooltip-button
-          v-if="record.nic.type !== 'L2'"
+          v-if="record.nic.type !== 'L2' && resource.hypervisor !== 'External'"
           tooltipPlacement="bottom"
           :tooltip="$t('label.edit.secondary.ips')"
           icon="environment-outlined"
@@ -59,7 +59,7 @@
           @confirm="removeNIC(record.nic)"
           :okText="$t('label.yes')"
           :cancelText="$t('label.no')"
-          v-if="!record.nic.isdefault"
+          v-if="!record.nic.isdefault && resource.hypervisor !== 'External'"
         >
           <tooltip-button
             tooltipPlacement="bottom"
@@ -80,10 +80,16 @@
       :footer="null"
       @cancel="closeModals">
       {{ $t('message.network.addvm.desc') }}
-      <a-form @finish="submitAddNetwork" v-ctrl-enter="submitAddNetwork">
-        <div class="modal-form">
-          <p class="modal-form__label">{{ $t('label.network') }}:</p>
+      <a-form
+        @finish="submitAddNetwork"
+        v-ctrl-enter="submitAddNetwork"
+        layout="vertical">
+        <a-form-item name="network" ref="network">
+          <template #label>
+            <tooltip-label :title="$t('label.network')" :tooltip="addNetworkData.apiParams.networkid.description"/>
+          </template>
           <a-select
+            :placeholder="addNetworkData.apiParams.networkid.description"
             :value="addNetworkData.network"
             @change="e => addNetworkData.network = e"
             v-focus="true"
@@ -104,14 +110,28 @@
               </span>
             </a-select-option>
           </a-select>
-          <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
-          <a-input v-model:value="addNetworkData.ip"></a-input>
-          <br>
+        </a-form-item>
+        <a-form-item name="ip" ref="ip">
+          <template #label>
+            <tooltip-label :title="$t('label.ipaddress')" :tooltip="addNetworkData.apiParams.ipaddress.description"/>
+          </template>
+          <a-input
+            :placeholder="addNetworkData.apiParams.ipaddress.description"
+            v-model:value="addNetworkData.ipaddress" />
+        </a-form-item>
+        <a-form-item name="macaddress" ref="macaddress">
+          <template #label>
+            <tooltip-label :title="$t('label.macaddress')" :tooltip="addNetworkData.apiParams.macaddress.description"/>
+          </template>
+          <a-input
+            :placeholder="addNetworkData.apiParams.macaddress.description"
+            v-model:value="addNetworkData.macaddress" />
+        </a-form-item>
+        <a-form-item name="makedefault" ref="makedefault">
           <a-checkbox v-model:checked="addNetworkData.makedefault">
             {{ $t('label.make.default') }}
           </a-checkbox>
-          <br>
-        </div>
+        </a-form-item>
 
         <div :span="24" class="action-button">
           <a-button @click="closeModals">{{ $t('label.cancel') }}</a-button>
@@ -227,8 +247,9 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import NicsTable from '@/views/network/NicsTable'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
 
@@ -236,6 +257,7 @@ export default {
   name: 'NicsTab',
   components: {
     NicsTable,
+    TooltipLabel,
     TooltipButton,
     ResourceIcon
   },
@@ -279,10 +301,11 @@ export default {
   },
   created () {
     this.vm = this.resource
+    this.addNetworkData.apiParams = this.$getApiParams('addNicToVirtualMachine')
   },
   methods: {
     listNetworks () {
-      api('listNetworks', {
+      getAPI('listNetworks', {
         listAll: 'true',
         showicon: true,
         zoneid: this.vm.zoneid
@@ -294,7 +317,7 @@ export default {
     fetchSecondaryIPs (nicId) {
       this.showSecondaryIpModal = true
       this.selectedNicId = nicId
-      api('listNics', {
+      getAPI('listNics', {
         nicId: nicId,
         keyword: '',
         virtualmachineid: this.vm.id
@@ -305,7 +328,7 @@ export default {
     fetchPublicIps (networkid) {
       this.listIps.loading = true
       this.listIps.opts = []
-      api('listPublicIpAddresses', {
+      getAPI('listPublicIpAddresses', {
         networkid: networkid,
         allocatedonly: false,
         forvirtualnetwork: false
@@ -338,7 +361,8 @@ export default {
       this.showUpdateIpModal = false
       this.showSecondaryIpModal = false
       this.addNetworkData.network = ''
-      this.addNetworkData.ip = ''
+      this.addNetworkData.ipaddress = ''
+      this.addNetworkData.macaddress = ''
       this.addNetworkData.makedefault = false
       this.editIpAddressValue = ''
       this.newSecondaryIp = ''
@@ -367,12 +391,15 @@ export default {
       const params = {}
       params.virtualmachineid = this.vm.id
       params.networkid = this.addNetworkData.network
-      if (this.addNetworkData.ip) {
-        params.ipaddress = this.addNetworkData.ip
+      if (this.addNetworkData.ipaddress) {
+        params.ipaddress = this.addNetworkData.ipaddress
+      }
+      if (this.addNetworkData.macaddress) {
+        params.macaddress = this.addNetworkData.macaddress
       }
       this.showAddNetworkModal = false
       this.loadingNic = true
-      api('addNicToVirtualMachine', params).then(response => {
+      postAPI('addNicToVirtualMachine', params).then(response => {
         this.$pollJob({
           jobId: response.addnictovirtualmachineresponse.jobid,
           successMessage: this.$t('message.success.add.network'),
@@ -414,13 +441,13 @@ export default {
       const params = {}
       params.virtualmachineid = virtualmachineid
       params.networkid = networkid
-      return api('listNics', params).then(response => {
+      return getAPI('listNics', params).then(response => {
         return response.listnicsresponse.nic[0]
       })
     },
     setAsDefault (item) {
       this.loadingNic = true
-      api('updateDefaultNicForVirtualMachine', {
+      postAPI('updateDefaultNicForVirtualMachine', {
         virtualmachineid: this.vm.id,
         nicid: item.id
       }).then(response => {
@@ -456,7 +483,7 @@ export default {
       if (this.editIpAddressValue) {
         params.ipaddress = this.editIpAddressValue
       }
-      api('updateVmNicIp', params).then(response => {
+      postAPI('updateVmNicIp', params).then(response => {
         this.$pollJob({
           jobId: response.updatevmnicipresponse.jobid,
           successMessage: this.$t('message.success.update.ipaddress'),
@@ -486,7 +513,7 @@ export default {
     removeNIC (item) {
       this.loadingNic = true
 
-      api('removeNicFromVirtualMachine', {
+      postAPI('removeNicFromVirtualMachine', {
         nicid: item.id,
         virtualmachineid: this.vm.id
       }).then(response => {
@@ -523,7 +550,7 @@ export default {
         params.ipaddress = this.newSecondaryIp
       }
 
-      api('addIpToNic', params).then(response => {
+      postAPI('addIpToNic', params).then(response => {
         this.$pollJob({
           jobId: response.addiptovmnicresponse.jobid,
           successMessage: this.$t('message.success.add.secondary.ipaddress'),
@@ -555,7 +582,7 @@ export default {
     removeSecondaryIP (id) {
       this.loadingNic = true
 
-      api('removeIpFromNic', { id }).then(response => {
+      postAPI('removeIpFromNic', { id }).then(response => {
         this.$pollJob({
           jobId: response.removeipfromnicresponse.jobid,
           successMessage: this.$t('message.success.remove.secondary.ipaddress'),
@@ -599,22 +626,6 @@ export default {
 
     &--no-margin {
       margin-top: 0;
-    }
-  }
-}
-
-.action-button {
-  display: flex;
-  flex-wrap: wrap;
-
-  button {
-    padding: 5px;
-    height: auto;
-    margin-bottom: 10px;
-    align-self: flex-start;
-
-    &:not(:last-child) {
-      margin-right: 10px;
     }
   }
 }

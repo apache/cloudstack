@@ -32,6 +32,9 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
@@ -86,6 +89,7 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
 
 public class ManagementServerMock {
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     private AccountManager _accountMgr;
@@ -217,15 +221,7 @@ public class ManagementServerMock {
                 return null;
             }
         };
-        try {
-            Mockito.when(_agentMgr.send(ArgumentMatchers.anyLong(), ArgumentMatchers.any(Commands.class))).thenAnswer(callback);
-        } catch (AgentUnavailableException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (OperationTimedoutException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+        sendCommands(callback);
         long id = _userVmDao.getNextInSequence(Long.class, "id");
         UserVmVO vm =
             new UserVmVO(id, name, name, tmpl.getId(), HypervisorType.XenServer, tmpl.getGuestOSId(), false, false, _zone.getDomainId(), Account.ACCOUNT_ID_SYSTEM,
@@ -239,10 +235,19 @@ public class ManagementServerMock {
         try {
             _vmMgr.addVmToNetwork(vm, network, profile);
         } catch (Exception ex) {
-            // TODO Auto-generated catch block
-            //ex.printStackTrace();
+            // ignored
         }
         return vm;
+    }
+
+    private void sendCommands(Answer<?> callback) {
+        try {
+            Mockito.when(_agentMgr.send(ArgumentMatchers.anyLong(), ArgumentMatchers.any(Commands.class))).thenAnswer(callback);
+        } catch (AgentUnavailableException e) {
+            logger.warn("no agent running", e);
+        } catch (OperationTimedoutException e) {
+            logger.warn("agent not responding (in time)", e);
+        }
     }
 
     private void deleteHost() {
@@ -265,15 +270,7 @@ public class ManagementServerMock {
                 return null;
             }
         };
-
-        try {
-            Mockito.when(_agentMgr.send(ArgumentMatchers.anyLong(), ArgumentMatchers.any(Commands.class))).thenAnswer(callback);
-        } catch (AgentUnavailableException e) {
-            e.printStackTrace();
-        } catch (OperationTimedoutException e) {
-            e.printStackTrace();
-        }
-
+        sendCommands(callback);
         _userVmDao.remove(vm.getId());
     }
 

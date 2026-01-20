@@ -16,17 +16,21 @@
 // under the License.
 package org.apache.cloudstack.ldap;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import javax.naming.directory.SearchControls;
 import javax.naming.ldap.LdapContext;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
@@ -35,41 +39,46 @@ public class ADLdapUserManagerImplTest {
 
     ADLdapUserManagerImpl adLdapUserManager;
 
+    MockedStatic<LdapConfiguration> LdapConfiguration;
     @Mock
-    LdapConfiguration ldapConfiguration;
+    LdapConfiguration ldapConfigurationMock;
 
     @Before
-    public void init() throws Exception {
+    public void init() {
+        LdapConfiguration = Mockito.mockStatic(LdapConfiguration.class,Mockito.CALLS_REAL_METHODS);
         adLdapUserManager = new ADLdapUserManagerImpl();
-        adLdapUserManager._ldapConfiguration = ldapConfiguration;
+        adLdapUserManager._ldapConfiguration = ldapConfigurationMock;
     }
 
+    @After
+    public void afterEach() {
+        LdapConfiguration.close();
+    }
     @Test
     public void testGenerateADSearchFilterWithNestedGroupsEnabled() {
-        when(ldapConfiguration.getUserObject(any())).thenReturn("user");
-        when(ldapConfiguration.getCommonNameAttribute()).thenReturn("CN");
-        when(ldapConfiguration.getBaseDn(any())).thenReturn("DC=cloud,DC=citrix,DC=com");
-        when(ldapConfiguration.isNestedGroupsEnabled(any())).thenReturn(true);
+        when(adLdapUserManager._ldapConfiguration.getUserObject(anyLong())).thenReturn("user");
+        when(adLdapUserManager._ldapConfiguration.getCommonNameAttribute()).thenReturn("CN");
+        when(adLdapUserManager._ldapConfiguration.getBaseDn(any())).thenReturn("DC=cloud,DC=citrix,DC=com");
+        when(adLdapUserManager._ldapConfiguration.isNestedGroupsEnabled(anyLong())).thenReturn(true);
 
         String [] groups = {"dev", "dev-hyd"};
         for (String group: groups) {
             String result = adLdapUserManager.generateADGroupSearchFilter(group, 1L);
-            assertTrue(("(&(objectClass=user)(memberOf:1.2.840.113556.1.4.1941:=CN=" + group + ",DC=cloud,DC=citrix,DC=com))").equals(result));
+            assertEquals(("(&(&(objectCategory=person)(objectClass=user))(memberOf:1.2.840.113556.1.4.1941:=CN=" + group + ",DC=cloud,DC=citrix,DC=com))"), result);
         }
-
     }
 
     @Test
     public void testGenerateADSearchFilterWithNestedGroupsDisabled() {
-        when(ldapConfiguration.getUserObject(any())).thenReturn("user");
-        when(ldapConfiguration.getCommonNameAttribute()).thenReturn("CN");
-        when(ldapConfiguration.getBaseDn(any())).thenReturn("DC=cloud,DC=citrix,DC=com");
-        when(ldapConfiguration.isNestedGroupsEnabled(any())).thenReturn(false);
+        when(adLdapUserManager._ldapConfiguration.getUserObject(anyLong())).thenReturn("user");
+        when(adLdapUserManager._ldapConfiguration.getCommonNameAttribute()).thenReturn("CN");
+        when(adLdapUserManager._ldapConfiguration.getBaseDn(anyLong())).thenReturn("DC=cloud,DC=citrix,DC=com");
+        when(adLdapUserManager._ldapConfiguration.isNestedGroupsEnabled(anyLong())).thenReturn(false);
 
         String [] groups = {"dev", "dev-hyd"};
         for (String group: groups) {
             String result = adLdapUserManager.generateADGroupSearchFilter(group, 1L);
-            assertTrue(("(&(objectClass=user)(memberOf=CN=" + group + ",DC=cloud,DC=citrix,DC=com))").equals(result));
+            assertEquals(("(&(&(objectCategory=person)(objectClass=user))(memberOf=CN=" + group + ",DC=cloud,DC=citrix,DC=com))"), result);
         }
     }
 
@@ -79,9 +88,9 @@ public class ADLdapUserManagerImplTest {
     @Test(expected = IllegalArgumentException.class)
     public void testGetUsersInGroupUsingNullGroup() throws Exception {
         String[] returnAttributes = {"username", "firstname", "lastname", "email"};
-        lenient().when(ldapConfiguration.getScope()).thenReturn(SearchControls.SUBTREE_SCOPE);
-        lenient().when(ldapConfiguration.getReturnAttributes(null)).thenReturn(returnAttributes);
-        lenient().when(ldapConfiguration.getBaseDn(any())).thenReturn(null).thenReturn(null).thenReturn("DC=cloud,DC=citrix,DC=com");
+        lenient().when(adLdapUserManager._ldapConfiguration.getScope()).thenReturn(SearchControls.SUBTREE_SCOPE);
+        lenient().when(adLdapUserManager._ldapConfiguration.getReturnAttributes(null)).thenReturn(returnAttributes);
+        lenient().when(adLdapUserManager._ldapConfiguration.getBaseDn(any())).thenReturn(null).thenReturn(null).thenReturn("DC=cloud,DC=citrix,DC=com");
 
         LdapContext context = ldapContext;
         String [] groups = {null, "group", null};

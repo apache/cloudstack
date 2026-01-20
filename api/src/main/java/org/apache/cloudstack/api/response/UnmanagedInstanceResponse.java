@@ -32,11 +32,11 @@ import com.google.gson.annotations.SerializedName;
 public class UnmanagedInstanceResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the virtual machine")
+    @Param(description = "The name of the Instance")
     private String name;
 
     @SerializedName(ApiConstants.CLUSTER_ID)
-    @Param(description = "the ID of the cluster to which virtual machine belongs")
+    @Param(description = "The ID of the cluster to which Instance belongs")
     private String clusterId;
 
     @SerializedName(ApiConstants.CLUSTER_NAME)
@@ -44,39 +44,39 @@ public class UnmanagedInstanceResponse extends BaseResponse {
     private String clusterName;
 
     @SerializedName(ApiConstants.HOST_ID)
-    @Param(description = "the ID of the host to which virtual machine belongs")
+    @Param(description = "The ID of the host to which Instance belongs")
     private String hostId;
 
     @SerializedName(ApiConstants.HOST_NAME)
-    @Param(description = "the name of the host to which virtual machine belongs")
+    @Param(description = "The name of the host to which Instance belongs")
     private String hostName;
 
     @SerializedName(ApiConstants.POWER_STATE)
-    @Param(description = "the power state of the virtual machine")
+    @Param(description = "The power state of the Instance")
     private String  powerState;
 
     @SerializedName(ApiConstants.CPU_NUMBER)
-    @Param(description = "the CPU cores of the virtual machine")
+    @Param(description = "The CPU cores of the Instance")
     private Integer cpuCores;
 
     @SerializedName(ApiConstants.CPU_CORE_PER_SOCKET)
-    @Param(description = "the CPU cores per socket for the virtual machine. VMware specific")
+    @Param(description = "The CPU cores per socket for the Instance. VMware specific")
     private Integer cpuCoresPerSocket;
 
     @SerializedName(ApiConstants.CPU_SPEED)
-    @Param(description = "the CPU speed of the virtual machine")
+    @Param(description = "The CPU speed of the Instance")
     private Integer cpuSpeed;
 
     @SerializedName(ApiConstants.MEMORY)
-    @Param(description = "the memory of the virtual machine in MB")
+    @Param(description = "The memory of the Instance in MB")
     private Integer memory;
 
     @SerializedName(ApiConstants.OS_ID)
-    @Param(description = "the operating system ID of the virtual machine")
+    @Param(description = "The operating system ID of the Instance")
     private String operatingSystemId;
 
     @SerializedName(ApiConstants.OS_DISPLAY_NAME)
-    @Param(description = "the operating system of the virtual machine")
+    @Param(description = "The operating system of the Instance")
     private String operatingSystem;
 
     @SerializedName(ApiConstants.BOOT_MODE)
@@ -88,11 +88,11 @@ public class UnmanagedInstanceResponse extends BaseResponse {
     private String bootType;
 
     @SerializedName(ApiConstants.DISK)
-    @Param(description = "the list of disks associated with the virtual machine", responseObject = UnmanagedInstanceDiskResponse.class)
+    @Param(description = "The list of disks associated with the Instance", responseObject = UnmanagedInstanceDiskResponse.class)
     private Set<UnmanagedInstanceDiskResponse> disks;
 
     @SerializedName(ApiConstants.NIC)
-    @Param(description = "the list of nics associated with the virtual machine", responseObject = NicResponse.class)
+    @Param(description = "The list of NICs associated with the Instance", responseObject = NicResponse.class)
     private Set<NicResponse> nics;
 
     public UnmanagedInstanceResponse() {

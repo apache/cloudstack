@@ -101,7 +101,6 @@ public class Queue extends BaseElement {
      * Example.
      */
     public static void main(String args[]) {
-        // System.setProperty("streamer.Link.debug", "true");
         System.setProperty("streamer.Element.debug", "true");
 
         Element source1 = new FakeSource("source1") {

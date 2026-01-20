@@ -41,7 +41,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.vm.Nic;
 
-@APICommand(name = "listNics", description = "list the vm nics  IP to NIC", responseObject = NicResponse.class,
+@APICommand(name = "listNics", description = "List the Instance NICs IP to NIC", responseObject = NicResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListNicsCmd extends BaseListCmd {
 
@@ -49,16 +49,16 @@ public class ListNicsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NIC_ID, type = CommandType.UUID, entityType = NicResponse.class, required = false, description = "the ID of the nic to list IPs")
+    @Parameter(name = ApiConstants.NIC_ID, type = CommandType.UUID, entityType = NicResponse.class, required = false, description = "The ID of the NIC to list IPs")
     private Long nicId;
 
-    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "the ID of the vm")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the Instance")
     private Long vmId;
 
-    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "list nic of the specific vm's network")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "List NIC of the specific Instance's Network")
     private Long networkId;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "List resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     /////////////////////////////////////////////////////
@@ -155,7 +155,7 @@ public class ListNicsCmd extends BaseListCmd {
                 this.setResponseObject(response);
             }
         } catch (Exception e) {
-            logger.warn("Failed to list secondary ip address per nic ");
+            logger.warn("Failed to list secondary ip address per NIC");
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }

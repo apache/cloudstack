@@ -1710,8 +1710,8 @@ class TestKVMLiveMigration(cloudstackTestCase):
     def get_target_pool(self, volid):
         target_pools = StoragePool.listForMigration(self.apiclient, id=volid)
 
-        if len(target_pools) < 1:
-            self.skipTest("Not enough storage pools found")
+        if target_pools is None or len(target_pools) == 0:
+            self.skipTest("Not enough storage pools found for migration")
 
         return target_pools[0]
 

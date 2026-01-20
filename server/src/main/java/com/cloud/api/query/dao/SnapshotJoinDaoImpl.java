@@ -26,6 +26,22 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
+import com.cloud.api.query.vo.SnapshotJoinVO;
+import com.cloud.storage.GuestOS;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.Volume.Type;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.user.Account;
+import com.cloud.user.AccountService;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.vm.VMInstanceVO;
+
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ResponseObject;
@@ -37,21 +53,6 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
 
 import org.apache.commons.collections.CollectionUtils;
-
-import com.cloud.api.ApiDBUtils;
-import com.cloud.api.ApiResponseHelper;
-import com.cloud.api.query.vo.SnapshotJoinVO;
-import com.cloud.storage.GuestOS;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
-import com.cloud.storage.Volume.Type;
-import com.cloud.storage.VolumeVO;
-import com.cloud.user.Account;
-import com.cloud.user.AccountService;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.vm.VMInstanceVO;
 
 public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<SnapshotJoinVO, SnapshotResponse> implements SnapshotJoinDao {
 
@@ -68,6 +69,8 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
 
     private final SearchBuilder<SnapshotJoinVO> snapshotIdsSearch;
 
+    private final SearchBuilder<SnapshotJoinVO> snapshotByZoneSearch;
+
     SnapshotJoinDaoImpl() {
         snapshotStorePairSearch = createSearchBuilder();
         snapshotStorePairSearch.and("snapshotStoreState", snapshotStorePairSearch.entity().getStoreState(), SearchCriteria.Op.IN);
@@ -79,6 +82,11 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
         snapshotIdsSearch.and("idsIN", snapshotIdsSearch.entity().getId(), SearchCriteria.Op.IN);
         snapshotIdsSearch.groupBy(snapshotIdsSearch.entity().getId());
         snapshotIdsSearch.done();
+
+        snapshotByZoneSearch = createSearchBuilder();
+        snapshotByZoneSearch.and("zoneId", snapshotByZoneSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        snapshotByZoneSearch.and("id", snapshotByZoneSearch.entity().getId(), SearchCriteria.Op.EQ);
+        snapshotByZoneSearch.done();
     }
 
     private void setSnapshotInfoDetailsInResponse(SnapshotJoinVO snapshot, SnapshotResponse snapshotResponse, boolean isShowUnique) {
@@ -96,7 +104,25 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
         } else {
             snapshotResponse.setRevertable(snapshotInfo.isRevertable());
             snapshotResponse.setPhysicalSize(snapshotInfo.getPhysicalSize());
+
+            boolean showChainSize = SnapshotManager.snapshotShowChainSize.valueIn(snapshot.getDataCenterId());
+            if (showChainSize && snapshotInfo.getParent() != null) {
+                long chainSize = calculateChainSize(snapshotInfo);
+                snapshotResponse.setChainSize(chainSize);
+            }
         }
+    }
+
+    private long calculateChainSize(SnapshotInfo snapshotInfo) {
+        long chainSize = snapshotInfo.getPhysicalSize();
+        SnapshotInfo parent = snapshotInfo.getParent();
+
+        while (parent != null) {
+            chainSize += parent.getPhysicalSize();
+            parent = parent.getParent();
+        }
+
+        return chainSize;
     }
 
     private String getSnapshotStatus(SnapshotJoinVO snapshot) {
@@ -272,5 +298,17 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
         }
         sc.setParameters("idsIN", ids);
         return searchIncludingRemoved(sc, searchFilter, null, false);
+    }
+
+    public List<SnapshotJoinVO> listBySnapshotIdAndZoneId(Long zoneId, Long snapshotId) {
+        if (snapshotId == null) {
+            return new ArrayList<>();
+        }
+        SearchCriteria<SnapshotJoinVO> sc = snapshotByZoneSearch.create();
+        if (zoneId != null) {
+            sc.setParameters("zoneId", zoneId);
+        }
+        sc.setParameters("id", snapshotId);
+        return listBy(sc);
     }
 }

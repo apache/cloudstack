@@ -44,12 +44,12 @@ public class DeleteAffinityGroupCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the account of the affinity group. Must be specified with domain ID")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "The account of the affinity group. Must be specified with domain ID")
     private String accountName;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
-               description = "the domain ID of account owning the affinity group",
+               description = "The domain ID of account owning the affinity group",
                entityType = DomainResponse.class)
     private Long domainId;
 
@@ -63,7 +63,7 @@ public class DeleteAffinityGroupCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the affinity group. Mutually exclusive with ID parameter")
     private String name;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, description = "the project of the affinity group", entityType = ProjectResponse.class)
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, description = "The project of the affinity group", entityType = ProjectResponse.class)
     private Long projectId;
 
     /////////////////////////////////////////////////////

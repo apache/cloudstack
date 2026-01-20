@@ -68,7 +68,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import DedicateDomain from '../../components/view/DedicateDomain'
 import ResourceIcon from '@/components/view/ResourceIcon'
@@ -119,7 +119,7 @@ export default {
       if (!zoneId) return
       this.zoneId = zoneId
       this.loading = true
-      api('listClusters', { zoneid: zoneId }).then(response => {
+      getAPI('listClusters', { zoneid: zoneId }).then(response => {
         this.clustersList = response.listclustersresponse.cluster || []
         this.form.clusterid = this.clustersList[0].id || null
         if (this.form.clusterid) {
@@ -166,7 +166,7 @@ export default {
       this.$emit('close-action')
     },
     changeStoragePoolScope (args) {
-      api('changeStoragePoolScope', args).then(json => {
+      postAPI('changeStoragePoolScope', args).then(json => {
         this.$pollJob({
           jobId: json.changestoragepoolscoperesponse.jobid,
           title: this.$t('message.success.change.scope'),

@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.List;
 
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageJobVO;
@@ -114,7 +115,7 @@ public class UsageJobDaoImpl extends GenericDaoBase<UsageJobVO, Long> implements
     public UsageJobVO isOwner(String hostname, int pid) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
-            if ((hostname == null) || (pid <= 0)) {
+            if (hostname == null || pid <= 0) {
                 return null;
             }
 
@@ -174,7 +175,7 @@ public class UsageJobDaoImpl extends GenericDaoBase<UsageJobVO, Long> implements
         SearchCriteria<UsageJobVO> sc = createSearchCriteria();
         sc.addAnd("endMillis", SearchCriteria.Op.EQ, Long.valueOf(0));
         sc.addAnd("jobType", SearchCriteria.Op.EQ, Integer.valueOf(UsageJobVO.JOB_TYPE_SINGLE));
-        sc.addAnd("scheduled", SearchCriteria.Op.EQ, Integer.valueOf(0));
+        sc.addAnd("scheduled", SearchCriteria.Op.EQ, Integer.valueOf(UsageJobVO.JOB_NOT_SCHEDULED));
         List<UsageJobVO> jobs = search(sc, filter);
 
         if ((jobs == null) || jobs.isEmpty()) {
@@ -193,5 +194,37 @@ public class UsageJobDaoImpl extends GenericDaoBase<UsageJobVO, Long> implements
             return null;
         }
         return jobs.get(0).getHeartbeat();
+    }
+
+    private List<UsageJobVO> getLastOpenJobsOwned(String hostname, int pid) {
+        SearchCriteria<UsageJobVO> sc = createSearchCriteria();
+        sc.addAnd("endMillis", SearchCriteria.Op.EQ, Long.valueOf(0));
+        sc.addAnd("host", SearchCriteria.Op.EQ, hostname);
+        if (pid > 0) {
+            sc.addAnd("pid", SearchCriteria.Op.EQ, Integer.valueOf(pid));
+        }
+        return listBy(sc);
+    }
+
+    @Override
+    public void removeLastOpenJobsOwned(String hostname, int pid) {
+        if (hostname == null) {
+            return;
+        }
+
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+        try {
+            List<UsageJobVO> jobs = getLastOpenJobsOwned(hostname, pid);
+            if (CollectionUtils.isNotEmpty(jobs)) {
+                logger.info("Found {} opens job, to remove", jobs.size());
+                for (UsageJobVO job : jobs) {
+                    logger.debug("Removing job - id: {}, pid: {}, job type: {}, scheduled: {}, heartbeat: {}",
+                            job.getId(), job.getPid(), job.getJobType(), job.getScheduled(), job.getHeartbeat());
+                    remove(job.getId());
+                }
+            }
+        } finally {
+            txn.close();
+        }
     }
 }

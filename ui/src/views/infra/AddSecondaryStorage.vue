@@ -169,7 +169,7 @@
 </template>
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 
@@ -230,7 +230,7 @@ export default {
       this.$emit('close-action')
     },
     listZones () {
-      api('listZones', { showicon: true }).then(json => {
+      getAPI('listZones', { showicon: true }).then(json => {
         if (json && json.listzonesresponse && json.listzonesresponse.zone) {
           this.zones = json.listzonesresponse.zone
           if (this.zones.length > 0) {
@@ -295,8 +295,10 @@ export default {
           const swiftParams = {
             account: values.account,
             username: values.username,
-            key: values.key,
-            storagepolicy: values.storagepolicy
+            key: values.key
+          }
+          if (values.storagepolicy) {
+            swiftParams.storagepolicy = values.storagepolicy
           }
           Object.keys(swiftParams).forEach((key, index) => {
             data['details[' + index.toString() + '].key'] = key
@@ -385,7 +387,7 @@ export default {
     },
     addImageStore (params) {
       return new Promise((resolve, reject) => {
-        api('addImageStore', params).then(json => {
+        postAPI('addImageStore', params).then(json => {
           resolve()
         }).catch(error => {
           reject(error)
@@ -394,7 +396,7 @@ export default {
     },
     createSecondaryStagingStore (params) {
       return new Promise((resolve, reject) => {
-        api('createSecondaryStagingStore', params).then(json => {
+        postAPI('createSecondaryStagingStore', params).then(json => {
           resolve()
         }).catch(error => {
           reject(error)

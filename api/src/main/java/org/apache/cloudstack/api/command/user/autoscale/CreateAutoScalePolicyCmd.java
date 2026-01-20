@@ -37,7 +37,7 @@ import com.cloud.network.as.Condition;
 import com.cloud.user.Account;
 
 @APICommand(name = "createAutoScalePolicy",
-            description = "Creates an autoscale policy for a provision or deprovision action, the action is taken when the all the conditions evaluates to true for the specified duration. The policy is in effect once it is attached to a autscale vm group.",
+            description = "Creates an autoscale policy for a provision or deprovision action, the action is taken when the all the conditions evaluates to true for the specified duration. The policy is in effect once it is attached to a autscale Instance group.",
         responseObject = AutoScalePolicyResponse.class, entityType = {AutoScalePolicy.class},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
@@ -51,25 +51,25 @@ public class CreateAutoScalePolicyCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.NAME,
             type = CommandType.STRING,
-            description = "the name of the autoscale policy",
+            description = "The name of the autoscale policy",
             since = "4.18.0")
     private String name;
 
     @Parameter(name = ApiConstants.ACTION,
                type = CommandType.STRING,
                required = true,
-               description = "the action to be executed if all the conditions evaluate to true for the specified duration.")
+               description = "The action to be executed if all the conditions evaluate to true for the specified duration.")
     private String action;
 
     @Parameter(name = ApiConstants.DURATION,
                type = CommandType.INTEGER,
                required = true,
-               description = "the duration in which the conditions have to be true before action is taken")
+               description = "The duration in which the conditions have to be true before action is taken")
     private int duration;
 
     @Parameter(name = ApiConstants.QUIETTIME,
                type = CommandType.INTEGER,
-               description = "the cool down period in which the policy should not be evaluated after the action has been taken")
+               description = "The cool down period in which the policy should not be evaluated after the action has been taken")
     private Integer quietTime;
 
     @Parameter(name = ApiConstants.CONDITION_IDS,
@@ -77,7 +77,7 @@ public class CreateAutoScalePolicyCmd extends BaseAsyncCreateCmd {
                collectionType = CommandType.UUID,
                entityType = ConditionResponse.class,
                required = true,
-               description = "the list of IDs of the conditions that are being evaluated on every interval")
+               description = "The list of IDs of the conditions that are being evaluated on every interval")
     private List<Long> conditionIds;
 
     // ///////////////////////////////////////////////////

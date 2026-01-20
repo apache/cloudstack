@@ -50,7 +50,7 @@ public class DeleteGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = GlobalLoadBalancerResponse.class,
                required = true,
-               description = "the ID of the global load balancer rule")
+               description = "The ID of the global load balancer rule")
     private Long id;
 
     /////////////////////////////////////////////////////

@@ -117,7 +117,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 
 export default {
   name: 'AddF5LoadBalancer',
@@ -275,7 +275,7 @@ export default {
     },
     addNetworkServiceProvider (args) {
       return new Promise((resolve, reject) => {
-        api('addNetworkServiceProvider', args).then(async json => {
+        postAPI('addNetworkServiceProvider', args).then(async json => {
           this.$pollJob({
             jobId: json.addnetworkserviceproviderresponse.jobid,
             successMethod: (result) => {
@@ -296,7 +296,7 @@ export default {
     },
     addF5LoadBalancer (args) {
       return new Promise((resolve, reject) => {
-        api('addF5LoadBalancer', args).then(json => {
+        postAPI('addF5LoadBalancer', args).then(json => {
           const jobId = json.addf5bigiploadbalancerresponse.jobid || null
           resolve(jobId)
         }).catch(error => {

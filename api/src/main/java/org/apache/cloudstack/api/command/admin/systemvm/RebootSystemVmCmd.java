@@ -46,10 +46,10 @@ public class RebootSystemVmCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = SystemVmResponse.class,
                required = true,
-               description = "The ID of the system virtual machine")
+               description = "The ID of the System VM")
     private Long id;
 
-    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force reboot the system VM (System VM is Stopped and then Started)", since = "4.16.0")
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force reboot the System VM (System VM is Stopped and then Started)", since = "4.16.0")
     private Boolean forced;
 
     /////////////////////////////////////////////////////

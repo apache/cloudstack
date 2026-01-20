@@ -25,7 +25,7 @@ import com.cloud.serializer.Param;
 public class QuotaEnabledResponse extends BaseResponse {
 
     @SerializedName("isenabled")
-    @Param(description = "is quota service enabled")
+    @Param(description = "Is quota service enabled")
     private Boolean isEnabled;
 
 

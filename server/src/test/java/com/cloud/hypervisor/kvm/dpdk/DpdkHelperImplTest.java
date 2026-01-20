@@ -22,12 +22,13 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,7 +55,7 @@ public class DpdkHelperImplTest {
     @Mock
     VMInstanceDao vmInstanceDao;
     @Mock
-    UserVmDetailsDao userVmDetailsDao;
+    VMInstanceDetailsDao vmInstanceDetailsDao;
 
     @Spy
     @InjectMocks
@@ -73,9 +74,9 @@ public class DpdkHelperImplTest {
     @Mock
     ServiceOffering serviceOffering;
     @Mock
-    UserVmDetailVO dpdkNumaVmDetail;
+    VMInstanceDetailVO dpdkNumaVmDetail;
     @Mock
-    UserVmDetailVO dpdkHugePagesVmDetail;
+    VMInstanceDetailVO dpdkHugePagesVmDetail;
     @Mock
     HostVO hostVO;
     @Mock
@@ -135,7 +136,7 @@ public class DpdkHelperImplTest {
         Mockito.lenient().when(dpdkNumaVmDetail.getValue()).thenReturn(dpdkNumaConf);
         Mockito.when(dpdkHugePagesVmDetail.getName()).thenReturn(DpdkHelper.DPDK_HUGE_PAGES);
         Mockito.lenient().when(dpdkHugePagesVmDetail.getValue()).thenReturn(dpdkHugePagesConf);
-        Mockito.when(userVmDetailsDao.listDetails(vmId)).thenReturn(Arrays.asList(dpdkNumaVmDetail, dpdkHugePagesVmDetail));
+        Mockito.when(vmInstanceDetailsDao.listDetails(vmId)).thenReturn(Arrays.asList(dpdkNumaVmDetail, dpdkHugePagesVmDetail));
     }
 
     @Test
@@ -202,7 +203,7 @@ public class DpdkHelperImplTest {
 
     @Test
     public void testIsVMDpdkEnabledGuestTypeMissingConfigurationOnDetails() {
-        Mockito.when(userVmDetailsDao.listDetails(vmId)).thenReturn(Arrays.asList(dpdkNumaVmDetail));
+        Mockito.when(vmInstanceDetailsDao.listDetails(vmId)).thenReturn(Arrays.asList(dpdkNumaVmDetail));
         Mockito.when(serviceOfferingDetailsDao.listDetails(offeringId)).thenReturn(new ArrayList<>());
         Assert.assertFalse(dpdkHelper.isVMDpdkEnabled(vmId));
         Mockito.verify(dpdkHelper, Mockito.never()).isHostDpdkEnabled(hostId);
@@ -210,7 +211,7 @@ public class DpdkHelperImplTest {
 
     @Test
     public void testIsVMDpdkEnabledGuestTypeEmptyDetails() {
-        Mockito.when(userVmDetailsDao.listDetails(vmId)).thenReturn(new ArrayList<>());
+        Mockito.when(vmInstanceDetailsDao.listDetails(vmId)).thenReturn(new ArrayList<>());
         Mockito.when(serviceOfferingDetailsDao.listDetails(offeringId)).thenReturn(new ArrayList<>());
         Assert.assertFalse(dpdkHelper.isVMDpdkEnabled(vmId));
         Mockito.verify(dpdkHelper, Mockito.never()).isHostDpdkEnabled(hostId);
@@ -223,21 +224,21 @@ public class DpdkHelperImplTest {
 
     @Test
     public void testIsVMDpdkEnabledGuestTypeMissingConfigurationOnVmDetails() {
-        Mockito.when(userVmDetailsDao.listDetails(vmId)).thenReturn(Collections.singletonList(dpdkNumaVmDetail));
+        Mockito.when(vmInstanceDetailsDao.listDetails(vmId)).thenReturn(Collections.singletonList(dpdkNumaVmDetail));
         Mockito.when(hostVO.getCapabilities()).thenReturn(hostCapabilities + ",dpdk");
         Assert.assertTrue(dpdkHelper.isVMDpdkEnabled(vmId));
     }
 
     @Test
     public void testIsVMDpdkEnabledGuestTypeEmptyVmDetails() {
-        Mockito.when(userVmDetailsDao.listDetails(vmId)).thenReturn(new ArrayList<>());
+        Mockito.when(vmInstanceDetailsDao.listDetails(vmId)).thenReturn(new ArrayList<>());
         Mockito.when(hostVO.getCapabilities()).thenReturn(hostCapabilities + ",dpdk");
         Assert.assertTrue(dpdkHelper.isVMDpdkEnabled(vmId));
     }
 
     @Test
     public void testIsVMDpdkEnabledGuestTypeMixedConfigurationOnDetails() {
-        Mockito.when(userVmDetailsDao.listDetails(vmId)).thenReturn(Collections.singletonList(dpdkNumaVmDetail));
+        Mockito.when(vmInstanceDetailsDao.listDetails(vmId)).thenReturn(Collections.singletonList(dpdkNumaVmDetail));
         Mockito.when(serviceOfferingDetailsDao.listDetails(offeringId)).thenReturn(Collections.singletonList(dpdkHugePagesDetailVO));
         Mockito.when(hostVO.getCapabilities()).thenReturn(hostCapabilities + ",dpdk");
         Assert.assertTrue(dpdkHelper.isVMDpdkEnabled(vmId));

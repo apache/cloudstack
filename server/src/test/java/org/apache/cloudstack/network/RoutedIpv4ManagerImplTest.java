@@ -545,12 +545,12 @@ public class RoutedIpv4ManagerImplTest {
         DataCenterIpv4GuestSubnetVO subnet3 = Mockito.mock(DataCenterIpv4GuestSubnetVO.class);
         when(dataCenterIpv4GuestSubnetDao.listNonDedicatedByDataCenterId(zoneId)).thenReturn(Arrays.asList(subnet3));
 
-        doReturn(null).doReturn(null).doReturn(ipv4GuestSubnetNetworkMap).when(routedIpv4Manager).getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(eq(cidrSize), any());
+        doReturn(null).doReturn(null).doReturn(ipv4GuestSubnetNetworkMap).when(routedIpv4Manager).getIpv4SubnetForGuestNetworkOrVpcInternal(eq(cidrSize), any());
 
         Ipv4GuestSubnetNetworkMap result = routedIpv4Manager.getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(cidrSize, domainId, accountId, zoneId);
 
         Assert.assertEquals(ipv4GuestSubnetNetworkMap, result);
-        verify(routedIpv4Manager, times(3)).getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(eq(cidrSize), any());
+        verify(routedIpv4Manager, times(3)).getIpv4SubnetForGuestNetworkOrVpcInternal(eq(cidrSize), any());
     }
 
     @Test

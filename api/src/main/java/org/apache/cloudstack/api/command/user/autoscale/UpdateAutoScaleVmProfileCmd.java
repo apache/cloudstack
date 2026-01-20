@@ -42,7 +42,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScaleVmProfile;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateAutoScaleVmProfile", description = "Updates an existing autoscale vm profile.", responseObject = AutoScaleVmProfileResponse.class, entityType = {AutoScaleVmProfile.class},
+@APICommand(name = "updateAutoScaleVmProfile", description = "Updates an existing autoscale Instance profile.", responseObject = AutoScaleVmProfileResponse.class, entityType = {AutoScaleVmProfile.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
 
@@ -56,25 +56,25 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
                type = CommandType.UUID,
                entityType = AutoScaleVmProfileResponse.class,
                required = true,
-               description = "the ID of the autoscale vm profile")
+               description = "The ID of the autoscale Instance profile")
     private Long id;
 
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
             type = CommandType.UUID,
             entityType = ServiceOfferingResponse.class,
-            description = "the service offering of the auto deployed virtual machine",
+            description = "The service offering of the auto deployed  Instance",
             since = "4.18.0")
     private Long serviceOfferingId;
 
     @Parameter(name = ApiConstants.TEMPLATE_ID,
                type = CommandType.UUID,
                entityType = TemplateResponse.class,
-               description = "the template of the auto deployed virtual machine")
+               description = "The Template of the auto deployed Instance")
     private Long templateId;
 
     @Parameter(name = ApiConstants.AUTOSCALE_EXPUNGE_VM_GRACE_PERIOD,
                type = CommandType.INTEGER,
-               description = "the time allowed for existing connections to get closed before a vm is destroyed")
+               description = "The time allowed for existing connections to get closed before an Instance is destroyed")
     private Integer expungeVmGracePeriod;
 
     @Parameter(name = ApiConstants.COUNTERPARAM_LIST,
@@ -84,7 +84,7 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
 
     @Parameter(name = ApiConstants.OTHER_DEPLOY_PARAMS,
             type = CommandType.MAP,
-            description = "parameters other than zoneId/serviceOfferringId/templateId of the auto deployed virtual machine. \n"
+            description = "Parameters other than zoneId/serviceOfferringId/templateId of the auto deployed  Instance. \n"
                     + "Example: otherdeployparams[0].name=serviceofferingid&otherdeployparams[0].value=a7fb50f6-01d9-11ed-8bc1-77f8f0228926&otherdeployparams[1].name=rootdisksize&otherdeployparams[1].value=10 .\n"
                     + "Possible parameters are \"rootdisksize\", \"diskofferingid\",\"size\", \"securitygroupids\", \"overridediskofferingid\", \"keypairs\", \"affinitygroupids'\" and \"networkids\".",
             since = "4.18.0")
@@ -92,7 +92,7 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
 
     @Parameter(name = ApiConstants.USER_DATA,
             type = CommandType.STRING,
-            description = "an optional binary data that can be sent to the virtual machine upon a successful deployment. " +
+            description = "An optional binary data that can be sent to the  Instance upon a successful deployment. " +
                     "This binary data must be base64 encoded before adding it to the request. " +
                     "Using HTTP GET (via querystring), you can send up to 4KB of data after base64 encoding. " +
                     "Using HTTP POST (via POST body), you can send up to 1MB of data after base64 encoding. " +
@@ -112,10 +112,10 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.AUTOSCALE_USER_ID,
                type = CommandType.UUID,
                entityType = UserResponse.class,
-               description = "the ID of the user used to launch and destroy the VMs")
+               description = "The ID of the user used to launch and destroy the Instances")
     private Long autoscaleUserId;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the profile to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the profile to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     // ///////////////////////////////////////////////////
@@ -131,7 +131,7 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update autoscale vm profile");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update autoscale Instance profile");
         }
     }
 
@@ -190,7 +190,7 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public String getEventDescription() {
-        return "Updating AutoScale Vm Profile. Vm Profile Id: " + getId();
+        return "Updating AutoScale Instance Profile. Instance Profile Id: " + getId();
     }
 
     @Override

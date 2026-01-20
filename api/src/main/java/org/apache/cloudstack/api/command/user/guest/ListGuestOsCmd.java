@@ -42,13 +42,13 @@ public class ListGuestOsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GuestOSResponse.class, description = "list by Os type Id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GuestOSResponse.class, description = "List by OS type ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.OS_CATEGORY_ID, type = CommandType.UUID, entityType = GuestOSCategoryResponse.class, description = "list by Os Category id")
+    @Parameter(name = ApiConstants.OS_CATEGORY_ID, type = CommandType.UUID, entityType = GuestOSCategoryResponse.class, description = "List by OS Category ID")
     private Long osCategoryId;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "list os by description", since = "3.0.1")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "List OS by description", since = "3.0.1")
     private String description;
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter",

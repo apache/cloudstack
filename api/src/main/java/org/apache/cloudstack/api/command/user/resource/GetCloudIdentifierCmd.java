@@ -42,7 +42,7 @@ public class GetCloudIdentifierCmd extends BaseCmd {
                type = CommandType.UUID,
                entityType = UserResponse.class,
                required = true,
-               description = "the user ID for the cloud identifier")
+               description = "The user ID for the cloud identifier")
     private Long userid;
 
     /////////////////////////////////////////////////////

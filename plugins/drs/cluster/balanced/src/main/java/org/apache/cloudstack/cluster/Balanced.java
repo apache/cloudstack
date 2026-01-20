@@ -68,23 +68,26 @@ public class Balanced extends AdapterBase implements ClusterDrsAlgorithm {
         return "balanced";
     }
 
+
     @Override
     public Ternary<Double, Double, Double> getMetrics(Cluster cluster, VirtualMachine vm,
             ServiceOffering serviceOffering, Host destHost,
             Map<Long, Ternary<Long, Long, Long>> hostCpuMap, Map<Long, Ternary<Long, Long, Long>> hostMemoryMap,
-            Boolean requiresStorageMotion) throws ConfigurationException {
-        Double preImbalance = ClusterDrsAlgorithm.getClusterImbalance(cluster.getId(), new ArrayList<>(hostCpuMap.values()), new ArrayList<>(hostMemoryMap.values()), null);
-        Double postImbalance = getImbalancePostMigration(serviceOffering, vm, destHost, hostCpuMap, hostMemoryMap);
+            Boolean requiresStorageMotion, Double preImbalance,
+            double[] baseMetricsArray, Map<Long, Integer> hostIdToIndexMap) throws ConfigurationException {
+        // Use provided pre-imbalance if available, otherwise calculate it
+        if (preImbalance == null) {
+            preImbalance = ClusterDrsAlgorithm.getClusterImbalance(cluster.getId(), new ArrayList<>(hostCpuMap.values()), new ArrayList<>(hostMemoryMap.values()), null);
+        }
 
-        logger.debug("Cluster {} pre-imbalance: {} post-imbalance: {} Algorithm: {} VM: {} srcHost: {} destHost: {}",
+        // Use optimized post-imbalance calculation that adjusts only affected hosts
+        Double postImbalance = getImbalancePostMigration(vm, destHost,
+                cluster.getId(), ClusterDrsAlgorithm.getVmMetric(serviceOffering, cluster.getId()),
+                baseMetricsArray, hostIdToIndexMap, hostCpuMap, hostMemoryMap);
+
+        logger.trace("Cluster {} pre-imbalance: {} post-imbalance: {} Algorithm: {} VM: {} srcHost ID: {} destHost: {}",
                 cluster, preImbalance, postImbalance, getName(), vm, vm.getHostId(), destHost);
 
-        // This needs more research to determine the cost and benefit of a migration
-        // TODO: Cost should be a factor of the VM size and the host capacity
-        // TODO: Benefit should be a factor of the VM size and the host capacity and the number of VMs on the host
-        final double improvement = preImbalance - postImbalance;
-        final double cost = 0.0;
-        final double benefit = 1.0;
-        return new Ternary<>(improvement, cost, benefit);
+        return calculateMetricsFromImbalances(preImbalance, postImbalance);
     }
 }

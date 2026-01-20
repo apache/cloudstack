@@ -430,7 +430,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import _ from 'lodash'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
@@ -526,7 +526,7 @@ export default {
     },
     getInfraData () {
       this.loading = true
-      api('listZones', { showicon: true }).then(json => {
+      getAPI('listZones', { showicon: true }).then(json => {
         this.zones = json.listzonesresponse.zone || []
         this.changeZone(this.zones[0] ? this.zones[0].id : '')
       }).finally(() => {
@@ -548,7 +548,7 @@ export default {
         this.form.pod = ''
         return
       }
-      api('listPods', {
+      getAPI('listPods', {
         zoneid: this.form.zone
       }).then(json => {
         this.pods = json.listpodsresponse.pod || []
@@ -561,7 +561,7 @@ export default {
         this.form.cluster = ''
         return
       }
-      api('listClusters', {
+      getAPI('listClusters', {
         podid: this.form.pod
       }).then(json => {
         this.clusters = json.listclustersresponse.cluster || []
@@ -570,7 +570,7 @@ export default {
           this.fetchHypervisor()
         }
       }).then(() => {
-        api('listHosts', {
+        getAPI('listHosts', {
           clusterid: this.form.cluster
         }).then(json => {
           this.hosts = json.listhostsresponse.host || []
@@ -583,7 +583,7 @@ export default {
     listStorageProviders () {
       this.providers = []
       this.loading = true
-      api('listStorageProviders', { type: 'primary' }).then(json => {
+      getAPI('listStorageProviders', { type: 'primary' }).then(json => {
         var providers = json.liststorageprovidersresponse.dataStoreProvider || []
         for (const provider of providers) {
           this.providers.push(provider.name)
@@ -594,7 +594,7 @@ export default {
     },
     listStorageTags () {
       this.loading = true
-      api('listStorageTags').then(json => {
+      getAPI('listStorageTags').then(json => {
         this.storageTags = json.liststoragetagsresponse.storagetag || []
         if (this.storageTags) {
           this.storageTags = _.uniqBy(this.storageTags, 'name')
@@ -928,7 +928,7 @@ export default {
           params.tags = this.selectedTags.join()
         }
         this.loading = true
-        api('createStoragePool', {}, 'POST', params).then(json => {
+        postAPI('createStoragePool', params).then(json => {
           this.$notification.success({
             message: this.$t('label.add.primary.storage'),
             description: this.$t('label.add.primary.storage')

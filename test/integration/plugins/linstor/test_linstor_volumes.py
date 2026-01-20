@@ -953,9 +953,72 @@ class TestLinstorVolumes(cloudstackTestCase):
 
         snapshot.delete(self.apiClient)
 
+    @attr(tags=['basic'], required_hardware=False)
+    def test_10_create_template_from_snapshot(self):
+        """
+        Create a template from a snapshot and start an instance from it
+        """
+        self.virtual_machine.stop(self.apiClient)
+
+        volume = list_volumes(
+            self.apiClient,
+            virtualmachineid = self.virtual_machine.id,
+            type = "ROOT",
+            listall = True,
+        )
+        snapshot = Snapshot.create(
+            self.apiClient,
+            volume_id=volume[0].id,
+            account=self.account.name,
+            domainid=self.domain.id,
+        )
+        self.cleanup.append(snapshot)
+
+        self.assertIsNotNone(snapshot, "Could not create snapshot")
+
+        services = {
+            "displaytext": "IntegrationTestTemplate",
+            "name": "int-test-template",
+            "ostypeid": self.template.ostypeid,
+            "ispublic": "true"
+        }
+
+        custom_template = Template.create_from_snapshot(
+            self.apiClient,
+            snapshot,
+            services,
+        )
+        self.cleanup.append(custom_template)
+
+        # create VM from custom template
+        test_virtual_machine = VirtualMachine.create(
+            self.apiClient,
+            self.testdata[TestData.virtualMachine2],
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            serviceofferingid=self.compute_offering.id,
+            templateid=custom_template.id,
+            domainid=self.domain.id,
+            startvm=False,
+            mode='basic',
+        )
+        self.cleanup.append(test_virtual_machine)
+
+        TestLinstorVolumes._start_vm(test_virtual_machine)
+
+        test_virtual_machine.stop(self.apiClient)
+
+        test_virtual_machine.delete(self.apiClient, True)
+        self.cleanup.remove(test_virtual_machine)
+
+        custom_template.delete(self.apiClient)
+        self.cleanup.remove(custom_template)
+        snapshot.delete(self.apiClient)
+        self.cleanup.remove(snapshot)
+
 
     @attr(tags=['advanced', 'migration'], required_hardware=False)
-    def test_10_migrate_volume_to_same_instance_pool(self):
+    def test_11_migrate_volume_to_same_instance_pool(self):
         """Migrate volume to the same instance pool"""
 
         if not self.testdata[TestData.migrationTests]:
@@ -1088,7 +1151,7 @@ class TestLinstorVolumes(cloudstackTestCase):
         test_virtual_machine.delete(self.apiClient, True)
 
     @attr(tags=['advanced', 'migration'], required_hardware=False)
-    def test_11_migrate_volume_to_distinct_instance_pool(self):
+    def test_12_migrate_volume_to_distinct_instance_pool(self):
         """Migrate volume to distinct instance pool"""
 
         if not self.testdata[TestData.migrationTests]:
@@ -1221,7 +1284,7 @@ class TestLinstorVolumes(cloudstackTestCase):
         test_virtual_machine.delete(self.apiClient, True)
 
     @attr(tags=["basic"], required_hardware=False)
-    def test_12_create_vm_snapshots(self):
+    def test_13_create_vm_snapshots(self):
         """Test to create VM snapshots
         """
         vm = TestLinstorVolumes._start_vm(self.virtual_machine)
@@ -1251,7 +1314,7 @@ class TestLinstorVolumes(cloudstackTestCase):
         )
 
     @attr(tags=["basic"], required_hardware=False)
-    def test_13_revert_vm_snapshots(self):
+    def test_14_revert_vm_snapshots(self):
         """Test to revert VM snapshots
         """
 
@@ -1313,7 +1376,7 @@ class TestLinstorVolumes(cloudstackTestCase):
         )
 
     @attr(tags=["basic"], required_hardware=False)
-    def test_14_delete_vm_snapshots(self):
+    def test_15_delete_vm_snapshots(self):
         """Test to delete vm snapshots
         """
 

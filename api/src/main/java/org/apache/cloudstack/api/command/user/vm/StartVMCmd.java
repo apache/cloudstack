@@ -47,7 +47,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "startVirtualMachine", responseObject = UserVmResponse.class, description = "Starts a virtual machine.", responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
+@APICommand(name = "startVirtualMachine", responseObject = UserVmResponse.class, description = "Starts  an Instance.", responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class StartVMCmd extends BaseAsyncCmd implements UserCmd {
 
@@ -58,37 +58,37 @@ public class StartVMCmd extends BaseAsyncCmd implements UserCmd {
     // ///////////////////////////////////////////////////
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType=UserVmResponse.class,
-            required = true, description = "The ID of the virtual machine")
+            required = true, description = "The ID of the Instance")
     private Long id;
 
     @Parameter(name = ApiConstants.POD_ID,
             type = CommandType.UUID,
             entityType = PodResponse.class,
-            description = "destination Pod ID to deploy the VM to - parameter available for root admin only")
+            description = "Destination Pod ID to deploy the Instance to - parameter available for root admin only")
     private Long podId;
 
     @Parameter(name = ApiConstants.CLUSTER_ID,
             type = CommandType.UUID,
             entityType = ClusterResponse.class,
-            description = "destination Cluster ID to deploy the VM to - parameter available for root admin only")
+            description = "Destination Cluster ID to deploy the Instance to - parameter available for root admin only")
     private Long clusterId;
 
     @Parameter(name = ApiConstants.HOST_ID,
                type = CommandType.UUID,
                entityType = HostResponse.class,
-               description = "destination Host ID to deploy the VM to - parameter available for root admin only",
+               description = "Destination Host ID to deploy the Instance to - parameter available for root admin only",
                since = "3.0.1")
     private Long hostId;
 
     @Parameter(name = ApiConstants.CONSIDER_LAST_HOST,
             type = CommandType.BOOLEAN,
-            description = "True by default, CloudStack will firstly try to start the VM on the last host where it run on before stopping, if destination host is not specified. " +
-                    "If false, CloudStack will not consider the last host and start the VM by normal process.",
+            description = "True by default, CloudStack will firstly try to start the Instance on the last host where it run on before stopping, if destination host is not specified. " +
+                    "If false, CloudStack will not consider the last host and start the Instance by normal process.",
             since = "4.18.0",
             authorized = {RoleType.Admin})
     private Boolean considerLastHost;
 
-    @Parameter(name = ApiConstants.DEPLOYMENT_PLANNER, type = CommandType.STRING, description = "Deployment planner to use for vm allocation. Available to ROOT admin only", since = "4.4", authorized = { RoleType.Admin })
+    @Parameter(name = ApiConstants.DEPLOYMENT_PLANNER, type = CommandType.STRING, description = "Deployment planner to use for Instance allocation. Available to ROOT admin only", since = "4.4", authorized = { RoleType.Admin })
     private String deploymentPlanner;
 
     @Parameter(name = ApiConstants.BOOT_INTO_SETUP, type = CommandType.BOOLEAN, required = false, description = "Boot into hardware setup menu or not", since = "4.15.0.0")
@@ -161,7 +161,7 @@ public class StartVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return "starting user vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
+        return "Starting User Instance: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
     }
 
     @Override
@@ -187,7 +187,7 @@ public class StartVMCmd extends BaseAsyncCmd implements UserCmd {
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to start a vm");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to start an Instance");
             }
         } catch (ConcurrentOperationException ex) {
             logger.warn("Exception: ", ex);

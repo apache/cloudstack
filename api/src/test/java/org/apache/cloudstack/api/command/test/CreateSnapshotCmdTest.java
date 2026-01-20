@@ -93,7 +93,7 @@ public class CreateSnapshotCmdTest extends TestCase {
         Snapshot snapshot = Mockito.mock(Snapshot.class);
         try {
             Mockito.when(volumeApiService.takeSnapshot(nullable(Long.class), nullable(Long.class), isNull(),
-                    nullable(Account.class), nullable(Boolean.class), nullable(Snapshot.LocationType.class), nullable(Boolean.class), nullable(Map.class), nullable(List.class))).thenReturn(snapshot);
+                    nullable(Account.class), nullable(Boolean.class), nullable(Snapshot.LocationType.class), nullable(Boolean.class), nullable(Map.class), nullable(List.class), nullable(List.class), Mockito.anyBoolean())).thenReturn(snapshot);
 
         } catch (Exception e) {
             Assert.fail("Received exception when success expected " + e.getMessage());
@@ -126,7 +126,7 @@ public class CreateSnapshotCmdTest extends TestCase {
 
         try {
                 Mockito.when(volumeApiService.takeSnapshot(nullable(Long.class), nullable(Long.class), nullable(Long.class),
-                        nullable(Account.class), nullable(Boolean.class), nullable(Snapshot.LocationType.class), nullable(Boolean.class), any(), Mockito.anyList())).thenReturn(null);
+                        nullable(Account.class), nullable(Boolean.class), nullable(Snapshot.LocationType.class), nullable(Boolean.class), any(), Mockito.anyList(), Mockito.anyList(), Mockito.anyBoolean())).thenReturn(null);
         } catch (Exception e) {
             Assert.fail("Received exception when success expected " + e.getMessage());
         }
@@ -137,7 +137,7 @@ public class CreateSnapshotCmdTest extends TestCase {
         try {
             createSnapshotCmd.execute();
         } catch (ServerApiException exception) {
-            Assert.assertEquals("Failed to create snapshot due to an internal error creating snapshot for volume 123", exception.getDescription());
+            Assert.assertEquals("Failed to create Snapshot due to an internal error creating Snapshot for volume 123", exception.getDescription());
         }
     }
 

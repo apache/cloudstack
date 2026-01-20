@@ -115,7 +115,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -169,7 +169,7 @@ export default {
       this.pods = []
       this.podsLoading = true
       const params = { zoneid: this.resource.zoneid }
-      api('listPods', params).then(json => {
+      getAPI('listPods', params).then(json => {
         this.pods = json.listpodsresponse.pod || []
         if (this.pods.length === 0) {
           this.$notification.error({
@@ -188,7 +188,7 @@ export default {
       if (podid) {
         params.podid = podid
       }
-      api('listClusters', params).then(json => {
+      getAPI('listClusters', params).then(json => {
         this.clusters = json.listclustersresponse.cluster || []
         if (this.clusters.length === 0) {
           this.$notification.error({
@@ -210,7 +210,7 @@ export default {
       if (clusterid) {
         params.clusterid = clusterid
       }
-      api('listHosts', params).then(json => {
+      getAPI('listHosts', params).then(json => {
         this.hosts = json.listhostsresponse.host || []
         if (this.hosts.length === 0) {
           this.$notification.error({
@@ -247,7 +247,7 @@ export default {
             params[key] = values[key]
           }
         }
-        api('startVirtualMachine', params).then(json => {
+        postAPI('startVirtualMachine', params).then(json => {
           const jobId = json.startvirtualmachineresponse.jobid
           this.$pollJob({
             jobId,

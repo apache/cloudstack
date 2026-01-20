@@ -41,8 +41,8 @@ import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
 @Deprecated(since = "4.18")
-@APICommand(name = "changeServiceForVirtualMachine", responseObject=UserVmResponse.class, description="(This API is deprecated, use scaleVirtualMachine API)" +
-        "Changes the service offering for a virtual machine. The virtual machine must be in a \"Stopped\" state for " +
+@APICommand(name = "changeServiceForVirtualMachine", responseObject=UserVmResponse.class, description = "(This API is deprecated, use scaleVirtualMachine API)" +
+        "Changes the service offering for  an Instance. The Instance must be in a \"Stopped\" state for " +
         "this command to take effect.", responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class UpgradeVMCmd extends BaseCmd implements UserCmd {
@@ -54,14 +54,14 @@ public class UpgradeVMCmd extends BaseCmd implements UserCmd {
 
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserVmResponse.class,
-            required=true, description="The ID of the virtual machine")
+            required=true, description = "The ID of the Instance")
     private Long id;
 
     @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.UUID, entityType=ServiceOfferingResponse.class,
-            required=true, description="the service offering ID to apply to the virtual machine")
+            required=true, description = "The service offering ID to apply to the Instance")
     protected Long serviceOfferingId;
 
-    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "name value pairs of custom parameters for cpuspeed, memory and cpunumber. example details[i].name=value")
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "Name value pairs of custom parameters for cpuspeed, memory and cpunumber. example details[i].name=value")
     private Map<String, String> details;
 
     @Parameter(name = ApiConstants.MIN_IOPS, type = CommandType.LONG, required = false, description = "New minimum number of IOPS for the custom disk offering", since = "4.17")
@@ -153,7 +153,7 @@ public class UpgradeVMCmd extends BaseCmd implements UserCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to upgrade vm");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to upgrade Instance");
         }
     }
 }

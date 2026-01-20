@@ -45,7 +45,7 @@ public class DeletePrivateGatewayCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = PrivateGatewayResponse.class, required = true, description = "the ID of the private gateway")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = PrivateGatewayResponse.class, required = true, description = "The ID of the private gateway")
     private Long id;
 
     /////////////////////////////////////////////////////

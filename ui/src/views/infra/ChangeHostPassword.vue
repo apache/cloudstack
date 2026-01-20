@@ -60,7 +60,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -116,7 +116,7 @@ export default {
           hostId: this.resource.id,
           password: values.password
         }
-        api('updateHostPassword', {}, 'POST', params).then(json => {
+        postAPI('updateHostPassword', params).then(json => {
           this.$notification.success({
             message: this.$t('label.action.change.password'),
             description: `${this.$t('message.success.change.host.password', { name: this.resource.name })}`

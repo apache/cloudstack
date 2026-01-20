@@ -36,7 +36,7 @@ import org.apache.cloudstack.network.tungsten.service.TungstenService;
 
 import javax.inject.Inject;
 
-@APICommand(name = DeleteTungstenFabricAddressGroupCmd.APINAME, description = "delete Tungsten-Fabric address group",
+@APICommand(name = DeleteTungstenFabricAddressGroupCmd.APINAME, description = "Delete Tungsten-Fabric address group",
     responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteTungstenFabricAddressGroupCmd extends BaseAsyncCmd {
     public static final String APINAME = "deleteTungstenFabricAddressGroup";
@@ -44,10 +44,10 @@ public class DeleteTungstenFabricAddressGroupCmd extends BaseAsyncCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.ADDRESS_GROUP_UUID, type = CommandType.STRING, required = true, description = "the uuid of Tungsten-Fabric address group")
+    @Parameter(name = ApiConstants.ADDRESS_GROUP_UUID, type = CommandType.STRING, required = true, description = "The UUID of Tungsten-Fabric address group")
     private String addressGroupUuid;
 
     @Override

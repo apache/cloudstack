@@ -180,7 +180,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
 import ResourceIcon from '@/components/view/ResourceIcon'
@@ -256,7 +256,7 @@ export default {
         showicon: true,
         details: 'min'
       }
-      api('listDomains', params).then(response => {
+      getAPI('listDomains', params).then(response => {
         this.domainsList = response.listdomainsresponse.domain || []
       }).catch(error => {
         this.$notification.error({
@@ -278,7 +278,7 @@ export default {
       if (domainid) {
         params.domainid = domainid
       }
-      api('listAccounts', params).then(response => {
+      getAPI('listAccounts', params).then(response => {
         this.accountList = response.listaccountsresponse.account || []
       }).catch(error => {
         this.$notification.error({
@@ -300,7 +300,7 @@ export default {
     },
     fetchIdps () {
       this.idpLoading = true
-      api('listIdps').then(response => {
+      getAPI('listIdps').then(response => {
         this.idps = response.listidpsresponse.idp || []
         this.form.samlentity = this.idps[0].id || ''
       }).finally(() => {
@@ -331,7 +331,7 @@ export default {
 
         const user = userCreationResponse?.createuserresponse?.user
         if (values.samlenable && user) {
-          await api('authorizeSamlSso', {
+          await postAPI('authorizeSamlSso', {
             enable: values.samlenable,
             entityid: values.samlentity,
             userid: user.id
@@ -385,7 +385,7 @@ export default {
         params.timezone = rawParams.timezone
       }
 
-      return api('createUser', {}, 'POST', params)
+      return postAPI('createUser', params)
     },
     async validateConfirmPassword (rule, value) {
       if (!value || value.length === 0) {

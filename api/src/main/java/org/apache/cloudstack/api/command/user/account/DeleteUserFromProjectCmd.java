@@ -37,7 +37,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
 
-@APICommand(name = "deleteUserFromProject", description = "Deletes user from the project", responseObject = SuccessResponse.class, since = "4.15.0",
+@APICommand(name = "deleteUserFromProject", description = "Deletes User from the project", responseObject = SuccessResponse.class, since = "4.15.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin, RoleType.User})
 public class DeleteUserFromProjectCmd extends BaseAsyncCmd {
 
@@ -48,11 +48,11 @@ public class DeleteUserFromProjectCmd extends BaseAsyncCmd {
             type = BaseCmd.CommandType.UUID,
             entityType = ProjectResponse.class,
             required = true,
-            description = "ID of the project to remove the user from")
+            description = "ID of the project to remove the User from")
     private Long projectId;
 
     @Parameter(name = ApiConstants.USER_ID, type = BaseCmd.CommandType.UUID, entityType = UserResponse.class,
-            required = true, description = "Id of the user to be removed from the project")
+            required = true, description = "Id of the User to be removed from the project")
     private Long userId;
 
     /////////////////////////////////////////////////////
@@ -78,7 +78,7 @@ public class DeleteUserFromProjectCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Removing user " + userId + " from project: " + projectId;
+        return "Removing User " + userId + " from project: " + projectId;
     }
 
     @Override
@@ -107,13 +107,13 @@ public class DeleteUserFromProjectCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Project ID: " + projectId + "; user ID: " + userId);
+        CallContext.current().setEventDetails("Project ID: " + projectId + "; User ID: " + userId);
         boolean result = _projectService.deleteUserFromProject(getProjectId(), getUserId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete account from the project");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete Account from the project");
         }
     }
 }

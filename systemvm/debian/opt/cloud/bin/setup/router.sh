@@ -40,18 +40,18 @@ setup_router() {
   # To save router public interface and gw ip information
   touch /var/cache/cloud/ifaceGwIp
 
-  oldmd5=
-  [ -f "/etc/udev/rules.d/70-persistent-net.rules" ] && oldmd5=$(md5sum "/etc/udev/rules.d/70-persistent-net.rules" | awk '{print $1}')
+  oldchecksum=
+  [ -f "/etc/udev/rules.d/70-persistent-net.rules" ] && oldchecksum=$(sha512sum "/etc/udev/rules.d/70-persistent-net.rules" | awk '{print $1}')
 
   log_it "Checking udev NIC assignment order changes"
   if [ "$NIC_MACS" != "" ]
   then
     init_interfaces_orderby_macs "$NIC_MACS" "/tmp/interfaces" "/tmp/udev-rules"
-    newmd5=$(md5sum "/tmp/udev-rules" | awk '{print $1}')
+    newchecksum=$(sha512sum "/tmp/udev-rules" | awk '{print $1}')
     rm /tmp/interfaces
     rm /tmp/udev-rules
 
-    if [ "$oldmd5" != "$newmd5" ]
+    if [ "$oldchecksum" != "$newchecksum" ]
     then
       log_it "Reloading udev for new udev NIC assignment"
       udevadm control --reload-rules && udevadm trigger

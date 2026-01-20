@@ -32,39 +32,39 @@ import com.cloud.serializer.Param;
 public class QuotaBalanceResponse extends BaseResponse {
 
     @SerializedName("accountid")
-    @Param(description = "account id")
+    @Param(description = "Account ID")
     private Long accountId;
 
     @SerializedName("account")
-    @Param(description = "account name")
+    @Param(description = "Account name")
     private String accountName;
 
     @SerializedName("domain")
-    @Param(description = "domain id")
+    @Param(description = "Domain ID")
     private Long domainId;
 
     @SerializedName("startquota")
-    @Param(description = "quota started with")
+    @Param(description = "Quota started with")
     private BigDecimal startQuota;
 
     @SerializedName("endquota")
-    @Param(description = "quota by end of this period")
+    @Param(description = "Quota by end of this period")
     private BigDecimal endQuota;
 
     @SerializedName("credits")
-    @Param(description = "list of credits made during this period")
+    @Param(description = "List of credits made during this period")
     private List<QuotaCreditsResponse> credits = null;
 
     @SerializedName("startdate")
-    @Param(description = "start date")
+    @Param(description = "Start date")
     private Date startDate = null;
 
     @SerializedName("enddate")
-    @Param(description = "end date")
+    @Param(description = "End date")
     private Date endDate = null;
 
     @SerializedName("currency")
-    @Param(description = "currency")
+    @Param(description = "Currency")
     private String currency;
 
     public QuotaBalanceResponse() {

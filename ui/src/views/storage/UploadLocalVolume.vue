@@ -168,7 +168,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import { axios } from '../../utils/request'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
@@ -222,7 +222,7 @@ export default {
       })
     },
     listZones () {
-      api('listZones', { showicon: true }).then(json => {
+      getAPI('listZones', { showicon: true }).then(json => {
         if (json && json.listzonesresponse && json.listzonesresponse.zone) {
           this.zones = json.listzonesresponse.zone
           this.zones = this.zones.filter(zone => zone.type !== 'Edge')
@@ -241,7 +241,7 @@ export default {
       this.offeringLoading = true
       this.offerings = [{ id: -1, name: '' }]
       this.form.diskofferingid = undefined
-      api('listDiskOfferings', {
+      getAPI('listDiskOfferings', {
         zoneid: zoneId,
         listall: true
       }).then(json => {
@@ -287,7 +287,7 @@ export default {
     },
     fetchDomains () {
       this.domainLoading = true
-      api('listDomains', {
+      getAPI('listDomains', {
         listAll: true,
         details: 'min'
       }).then(response => {
@@ -303,7 +303,7 @@ export default {
       })
     },
     fetchAccounts () {
-      api('listAccounts', {
+      getAPI('listAccounts', {
         domainid: this.domainId
       }).then(response => {
         this.accountList = response.listaccountsresponse.account || []
@@ -333,7 +333,7 @@ export default {
         }
         params.domainId = this.domainId
         this.loading = true
-        api('getUploadParamsForVolume', params).then(json => {
+        getAPI('getUploadParamsForVolume', params).then(json => {
           this.uploadParams = json.postuploadvolumeresponse?.getuploadparams || ''
           const { fileList } = this
           if (this.fileList.length > 1) {

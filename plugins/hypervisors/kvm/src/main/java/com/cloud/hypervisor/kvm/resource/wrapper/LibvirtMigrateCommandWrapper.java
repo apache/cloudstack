@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -40,9 +41,13 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
+import com.cloud.agent.api.VgpuTypesInfo;
+import com.cloud.agent.api.to.GPUDeviceTO;
+import com.cloud.hypervisor.kvm.resource.LibvirtGpuDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtXMLParser;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -170,10 +175,10 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             String oldIsoVolumePath = getOldVolumePath(disks, vmName);
             String newIsoVolumePath = getNewVolumePathIfDatastoreHasChanged(libvirtComputingResource, conn, to);
             if (newIsoVolumePath != null && !newIsoVolumePath.equals(oldIsoVolumePath)) {
-                logger.debug(String.format("Editing mount path of iso from %s to %s", oldIsoVolumePath, newIsoVolumePath));
+                logger.debug(String.format("Editing mount path of ISO from %s to %s", oldIsoVolumePath, newIsoVolumePath));
                 xmlDesc = replaceDiskSourceFile(xmlDesc, newIsoVolumePath, vmName);
                 if (logger.isDebugEnabled()) {
-                    logger.debug(String.format("Replaced disk mount point [%s] with [%s] in VM [%s] XML configuration. New XML configuration is [%s].", oldIsoVolumePath, newIsoVolumePath, vmName, xmlDesc));
+                    logger.debug(String.format("Replaced disk mount point [%s] with [%s] in Instance [%s] XML configuration. New XML configuration is [%s].", oldIsoVolumePath, newIsoVolumePath, vmName, xmlDesc));
                 }
             }
 
@@ -226,6 +231,8 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
 
             xmlDesc = updateVmSharesIfNeeded(command, xmlDesc, libvirtComputingResource);
 
+            xmlDesc = updateGpuDevicesIfNeeded(command, xmlDesc, libvirtComputingResource);
+
             dconn = libvirtUtilitiesHelper.retrieveQemuConnection(destinationUri);
 
             if (to.getType() == VirtualMachine.Type.User) {
@@ -271,17 +278,20 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
 
                 // abort the vm migration if the job is executed more than vm.migrate.wait
                 final int migrateWait = libvirtComputingResource.getMigrateWait();
+                logger.info("vm.migrate.wait value set to: {}for VM: {}", migrateWait, vmName);
                 if (migrateWait > 0 && sleeptime > migrateWait * 1000) {
                     DomainState state = null;
                     try {
                         state = dm.getInfo().state;
+                        logger.info("VM domain state when trying to abort migration : {}", state);
                     } catch (final LibvirtException e) {
                         logger.info("Couldn't get VM domain state after " + sleeptime + "ms: " + e.getMessage());
                     }
                     if (state != null && state == DomainState.VIR_DOMAIN_RUNNING) {
                         try {
                             DomainJobInfo job = dm.getJobInfo();
-                            logger.info(String.format("Aborting migration of VM [%s] with domain job [%s] due to time out after %d seconds.", vmName, job, migrateWait));
+                            logger.warn("Aborting migration of VM {} with domain job [{}] due to timeout after {} seconds. " +
+                                    "Job stats: data processed={} bytes, data remaining={} bytes", vmName, job, migrateWait, job.getDataProcessed(), job.getDataRemaining());
                             dm.abortJob();
                             result = String.format("Migration of VM [%s] was cancelled by CloudStack due to time out after %d seconds.", vmName, migrateWait);
                             commandState = Command.State.FAILED;
@@ -296,10 +306,12 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
 
                 // pause vm if we meet the vm.migrate.pauseafter threshold and not already paused
                 final int migratePauseAfter = libvirtComputingResource.getMigratePauseAfter();
+                logger.info("vm.migrate.pauseafter value set to: {} for VM: {}", migratePauseAfter, vmName);
                 if (migratePauseAfter > 0 && sleeptime > migratePauseAfter) {
                     DomainState state = null;
                     try {
                         state = dm.getInfo().state;
+                        logger.info("VM domain state when trying to pause VM for migration: {}", state);
                     } catch (final LibvirtException e) {
                         logger.info("Couldn't get VM domain state after " + sleeptime + "ms: " + e.getMessage());
                     }
@@ -374,6 +386,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         }
 
         if (result == null) {
+            logger.info("Post-migration cleanup for VM {}: ", vmName);
             libvirtComputingResource.destroyNetworkRulesForVM(conn, vmName);
             for (final InterfaceDef iface : ifaces) {
                 String vlanId = libvirtComputingResource.getVlanIdFromBridgeName(iface.getBrName());
@@ -387,6 +400,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             commandState = Command.State.COMPLETED;
             libvirtComputingResource.createOrUpdateLogFileForCommand(command, commandState);
         } else if (commandState == null) {
+            logger.error("Migration of VM {} failed with result: {}", vmName, result);
             commandState = Command.State.FAILED;
             libvirtComputingResource.createOrUpdateLogFileForCommand(command, commandState);
         }
@@ -417,6 +431,116 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         return setOfLabels;
     }
 
+        String updateGpuDevicesIfNeeded(MigrateCommand migrateCommand, String xmlDesc, LibvirtComputingResource libvirtComputingResource)
+            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        GPUDeviceTO gpuDevice = migrateCommand.getVirtualMachine().getGpuDevice();
+        if (gpuDevice == null || CollectionUtils.isEmpty(gpuDevice.getGpuDevices())) {
+            logger.debug("No GPU device to update for VM [{}].", migrateCommand.getVmName());
+            return xmlDesc;
+        }
+
+        List<VgpuTypesInfo> devices = gpuDevice.getGpuDevices();
+        logger.info("Updating GPU devices for VM [{}] during migration. Number of devices: {}",
+                    migrateCommand.getVmName(), devices.size());
+
+        // Parse XML and find devices element
+        DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
+        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+        Document document;
+        try (InputStream inputStream = IOUtils.toInputStream(xmlDesc, StandardCharsets.UTF_8)) {
+            document = docBuilder.parse(inputStream);
+        }
+
+        NodeList devicesList = document.getElementsByTagName("devices");
+        if (devicesList.getLength() == 0) {
+            logger.warn("No devices section found in XML for VM [{}]", migrateCommand.getVmName());
+            return xmlDesc;
+        }
+
+        Element devicesElement = (Element) devicesList.item(0);
+
+        // Remove existing GPU hostdev elements and add new ones
+        removeExistingGpuHostdevElements(devicesElement);
+        addNewGpuHostdevElements(document, devicesElement, devices);
+
+        String newXmlDesc = LibvirtXMLParser.getXml(document);
+        logger.debug("Updated XML configuration for VM [{}] with new GPU devices", migrateCommand.getVmName());
+
+        return newXmlDesc;
+    }
+
+    /**
+     * Removes existing GPU hostdev elements from the devices section.
+     * GPU devices are identified as hostdev elements with type='pci' or type='mdev'.
+     */
+    private void removeExistingGpuHostdevElements(Element devicesElement) {
+        NodeList hostdevNodes = devicesElement.getElementsByTagName("hostdev");
+        List<Node> nodesToRemove = new ArrayList<>();
+
+        for (int i = 0; i < hostdevNodes.getLength(); i++) {
+            Node hostdevNode = hostdevNodes.item(i);
+            if (hostdevNode.getNodeType() == Node.ELEMENT_NODE) {
+                Element hostdevElement = (Element) hostdevNode;
+                String hostdevType = hostdevElement.getAttribute("type");
+
+                // Remove hostdev elements that represent GPU devices (type='pci' or type='mdev')
+                if ("pci".equals(hostdevType) || "mdev".equals(hostdevType)) {
+                    // Additional check: ensure this is actually a GPU device by checking mode='subsystem'
+                    String mode = hostdevElement.getAttribute("mode");
+                    if ("subsystem".equals(mode)) {
+                        nodesToRemove.add(hostdevNode);
+                    }
+                }
+            }
+        }
+
+        // Remove the nodes
+        for (Node node : nodesToRemove) {
+            devicesElement.removeChild(node);
+        }
+
+        logger.debug("Removed {} existing GPU hostdev elements", nodesToRemove.size());
+    }
+
+    /**
+     * Adds new GPU hostdev elements to the devices section based on the GPU devices
+     * allocated on the destination host.
+     */
+    private void addNewGpuHostdevElements(Document document, Element devicesElement, List<VgpuTypesInfo> devices)
+            throws ParserConfigurationException, IOException, SAXException {
+        if (devices.isEmpty()) {
+            return;
+        }
+
+        // Reuse parser for efficiency
+        DocumentBuilderFactory factory = ParserUtils.getSaferDocumentBuilderFactory();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+
+        for (VgpuTypesInfo deviceInfo : devices) {
+            Element hostdevElement = createGpuHostdevElement(document, deviceInfo, builder);
+            devicesElement.appendChild(hostdevElement);
+            logger.debug("Added new GPU hostdev element for device: {} (type: {}, busAddress: {})",
+                         deviceInfo.getDeviceName(), deviceInfo.getDeviceType(), deviceInfo.getBusAddress());
+        }
+    }
+
+    /**
+     * Creates a hostdev element for a GPU device using LibvirtGpuDef.
+     */
+    private Element createGpuHostdevElement(Document document, VgpuTypesInfo deviceInfo, DocumentBuilder builder)
+            throws IOException, SAXException {
+        // Generate GPU XML using LibvirtGpuDef
+        LibvirtGpuDef gpuDef = new LibvirtGpuDef();
+        gpuDef.defGpu(deviceInfo);
+        String gpuXml = gpuDef.toString();
+
+        // Parse and import into target document
+        try (InputStream xmlStream = IOUtils.toInputStream(gpuXml, StandardCharsets.UTF_8)) {
+            Document gpuDocument = builder.parse(xmlStream);
+            Element hostdevElement = gpuDocument.getDocumentElement();
+            return (Element) document.importNode(hostdevElement, true);
+        }
+    }
 
     /**
      * Checks if the CPU shares are equal in the source host and destination host.
@@ -901,7 +1025,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 Node sourceNode = diskChildNode;
                 NamedNodeMap sourceNodeAttributes = sourceNode.getAttributes();
                 Node sourceNodeAttribute = sourceNodeAttributes.getNamedItem("file");
-                if ( sourceNodeAttribute.getNodeValue().contains(vmName)) {
+                if (sourceNodeAttribute != null && sourceNodeAttribute.getNodeValue().contains(vmName)) {
                     diskNode.removeChild(diskChildNode);
                     Element newChildSourceNode = doc.createElement("source");
                     newChildSourceNode.setAttribute("file", isoPath);

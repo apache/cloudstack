@@ -43,7 +43,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.net.NetUtils;
 
 @APICommand(name = "createIpv6FirewallRule",
-        description = "Creates an Ipv6 firewall rule in the given network (the network must not belong to VPC)",
+        description = "Creates an IPv6 firewall rule in the given Network (the Network must not belong to VPC)",
         responseObject = FirewallRuleResponse.class,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
@@ -55,34 +55,34 @@ public class CreateIpv6FirewallRuleCmd extends BaseAsyncCreateCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, required = true, description = "the protocol for the Ipv6 firewall rule. Valid values are TCP/UDP/ICMP/ALL or valid protocol number")
+    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, required = true, description = "The protocol for the Ipv6 firewall rule. Valid values are TCP/UDP/ICMP/ALL or valid protocol number")
     private String protocol;
 
-    @Parameter(name = ApiConstants.START_PORT, type = CommandType.INTEGER, description = "the starting port of Ipv6 firewall rule")
+    @Parameter(name = ApiConstants.START_PORT, type = CommandType.INTEGER, description = "The starting port of Ipv6 firewall rule")
     private Integer publicStartPort;
 
-    @Parameter(name = ApiConstants.END_PORT, type = CommandType.INTEGER, description = "the ending port of Ipv6 firewall rule")
+    @Parameter(name = ApiConstants.END_PORT, type = CommandType.INTEGER, description = "The ending port of Ipv6 firewall rule")
     private Integer publicEndPort;
 
-    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the source CIDR list to allow traffic from. Multiple entries must be separated by a single comma character (,).")
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "The source CIDR list to allow traffic from. Multiple entries must be separated by a single comma character (,).")
     private List<String> sourceCidrList;
 
-    @Parameter(name = ApiConstants.DEST_CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the destination CIDR list to allow traffic to. Multiple entries must be separated by a single comma character (,).")
+    @Parameter(name = ApiConstants.DEST_CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "The destination CIDR list to allow traffic to. Multiple entries must be separated by a single comma character (,).")
     private List<String> destinationCidrlist;
 
-    @Parameter(name = ApiConstants.ICMP_TYPE, type = CommandType.INTEGER, description = "type of the ICMP message being sent")
+    @Parameter(name = ApiConstants.ICMP_TYPE, type = CommandType.INTEGER, description = "Type of the ICMP message being sent")
     private Integer icmpType;
 
-    @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "error code for this ICMP message")
+    @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "Error code for this ICMP message")
     private Integer icmpCode;
 
-    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "The network of the VM the Ipv6 firewall rule will be created for", required = true)
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "The Network of the Instance the Ipv6 firewall rule will be created for", required = true)
     private Long networkId;
 
-    @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "the traffic type for the Ipv6 firewall rule, can be ingress or egress, defaulted to ingress if not specified")
+    @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "The traffic type for the Ipv6 firewall rule, can be ingress or egress, defaulted to ingress if not specified")
     private String trafficType;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the rule to the end User or not", authorized = {RoleType.Admin})
     private Boolean display;
 
     // ///////////////////////////////////////////////////
@@ -193,7 +193,7 @@ public class CreateIpv6FirewallRuleCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "Creating ipv6 firewall rule";
+        return "Creating IPv6 firewall rule";
     }
 
     public Integer getIcmpCode() {
@@ -246,7 +246,7 @@ public class CreateIpv6FirewallRuleCmd extends BaseAsyncCreateCmd {
         } finally {
             if (!success || rule == null) {
                 ipv6Service.revokeIpv6FirewallRule(getEntityId());
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create ipv6 firewall rule");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create IPv6 firewall rule");
             }
         }
     }

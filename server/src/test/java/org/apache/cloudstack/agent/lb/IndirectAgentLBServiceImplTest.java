@@ -204,7 +204,7 @@ public class IndirectAgentLBServiceImplTest {
     public void testGetOrderedRunningHostIdsEmptyList() {
         doReturn(Collections.emptyList()).when(hostDao).findHostIdsByZoneClusterResourceStateTypeAndHypervisorType(
                 Mockito.eq(DC_1_ID), Mockito.eq(null), Mockito.eq(null), Mockito.anyList(), Mockito.anyList(), Mockito.anyList());
-        Assert.assertTrue(agentMSLB.getOrderedHostIdList(DC_1_ID).isEmpty());
+        Assert.assertTrue(agentMSLB.getOrderedHostIdList(DC_1_ID, false).isEmpty());
     }
 
     @Test
@@ -213,6 +213,6 @@ public class IndirectAgentLBServiceImplTest {
                 .findHostIdsByZoneClusterResourceStateTypeAndHypervisorType(Mockito.eq(DC_1_ID), Mockito.eq(null), Mockito.eq(null),
                         Mockito.anyList(), Mockito.anyList(), Mockito.anyList());
         Assert.assertEquals(Arrays.asList(host1.getId(), host2.getId(), host3.getId(), host4.getId()),
-                agentMSLB.getOrderedHostIdList(DC_1_ID));
+                agentMSLB.getOrderedHostIdList(DC_1_ID, false));
     }
 }

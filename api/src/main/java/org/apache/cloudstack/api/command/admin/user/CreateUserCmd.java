@@ -52,13 +52,13 @@ public class CreateUserCmd extends BaseCmd {
                description = "Creates the user under the specified domain. Has to be accompanied with the account parameter")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.EMAIL, type = CommandType.STRING, required = true, description = "email")
+    @Parameter(name = ApiConstants.EMAIL, type = CommandType.STRING, required = true, description = "Email")
     private String email;
 
-    @Parameter(name = ApiConstants.FIRSTNAME, type = CommandType.STRING, required = true, description = "firstname")
+    @Parameter(name = ApiConstants.FIRSTNAME, type = CommandType.STRING, required = true, description = "Firstname")
     private String firstname;
 
-    @Parameter(name = ApiConstants.LASTNAME, type = CommandType.STRING, required = true, description = "lastname")
+    @Parameter(name = ApiConstants.LASTNAME, type = CommandType.STRING, required = true, description = "Lastname")
     private String lastname;
 
     @Parameter(name = ApiConstants.PASSWORD,

@@ -68,8 +68,15 @@ public class VpcServiceMapDaoImpl extends GenericDaoBase<VpcServiceMapVO, Long> 
 
     @Override
     public boolean canProviderSupportServiceInVpc(long vpcId, Service service, Provider provider) {
-        // TODO Auto-generated method stub
-        return false;
+        SearchCriteria<VpcServiceMapVO> sc = AllFieldsSearch.create();
+        sc.setParameters("vpcId", vpcId);
+        sc.setParameters("service", service.getName());
+        sc.setParameters("provider", provider.getName());
+        if (findOneBy(sc) != null) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override

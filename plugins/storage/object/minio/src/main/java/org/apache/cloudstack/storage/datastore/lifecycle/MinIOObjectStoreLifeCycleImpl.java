@@ -53,6 +53,7 @@ public class MinIOObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
 
         String url = (String)dsInfos.get("url");
         String name = (String)dsInfos.get("name");
+        Long size = (Long)dsInfos.get("size");
         String providerName = (String)dsInfos.get("providerName");
         Map<String, String> details = (Map<String, String>)dsInfos.get("details");
         if(details == null){
@@ -65,6 +66,7 @@ public class MinIOObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
         Map<String, Object> objectStoreParameters = new HashMap();
         objectStoreParameters.put("name", name);
         objectStoreParameters.put("url", url);
+        objectStoreParameters.put("size", size);
 
         objectStoreParameters.put("providerName", providerName);
         objectStoreParameters.put("accesskey", accessKey);

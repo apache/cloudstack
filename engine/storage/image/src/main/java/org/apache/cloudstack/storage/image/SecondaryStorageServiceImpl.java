@@ -257,9 +257,9 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
                 }
             } else {
                 if (destData instanceof  VolumeInfo) {
-                    ((VolumeInfo) destData).processEventOnly(ObjectInDataStoreStateMachine.Event.OperationSuccessed, answer);
+                    ((VolumeInfo) destData).processEventOnly(ObjectInDataStoreStateMachine.Event.OperationSucceeded, answer);
                 } else {
-                    destData.processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed, answer);
+                    destData.processEvent(ObjectInDataStoreStateMachine.Event.OperationSucceeded, answer);
                 }
                 updateDataObject(srcData, destData);
                 logger.debug("Deleting source data");

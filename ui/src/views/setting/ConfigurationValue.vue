@@ -193,7 +193,7 @@
   </a-list>
 </template>
 <script>
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
@@ -217,6 +217,10 @@ export default {
     actions: {
       type: Array,
       default: () => []
+    },
+    resource: {
+      type: Object,
+      required: false
     }
   },
   data () {
@@ -254,6 +258,12 @@ export default {
     this.setConfigData()
   },
   watch: {
+    configrecord: {
+      handler () {
+        this.setConfigData()
+      },
+      deep: true
+    }
   },
   methods: {
     setConfigData () {
@@ -280,7 +290,10 @@ export default {
         name: configrecord.name,
         value: newValue
       }
-      api('updateConfiguration', params).then(json => {
+      if (this.scopeKey === 'domainid' && !params[this.scopeKey]) {
+        params[this.scopeKey] = this.resource?.id
+      }
+      postAPI('updateConfiguration', params).then(json => {
         this.editableValue = this.getEditableValue(json.updateconfigurationresponse.configuration)
         this.actualValue = this.editableValue
         this.$emit('change-config', { value: newValue })
@@ -315,7 +328,10 @@ export default {
         [this.scopeKey]: this.$route.params?.id,
         name: configrecord.name
       }
-      api('resetConfiguration', params).then(json => {
+      if (this.scopeKey === 'domainid' && !params[this.scopeKey]) {
+        params[this.scopeKey] = this.resource?.id
+      }
+      postAPI('resetConfiguration', params).then(json => {
         this.editableValue = this.getEditableValue(json.resetconfigurationresponse.configuration)
         this.actualValue = this.editableValue
         var newValue = this.editableValue

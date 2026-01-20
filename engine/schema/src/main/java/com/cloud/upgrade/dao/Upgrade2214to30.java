@@ -77,8 +77,6 @@ public class Upgrade2214to30 extends Upgrade30xBase {
         encryptData(conn);
         // drop keys
         dropKeysIfExist(conn);
-        //update template ID for system Vms
-        //updateSystemVms(conn); This is not required as system template update is handled during 4.2 upgrade
         // update domain network ref
         updateDomainNetworkRef(conn);
         // update networks that use redundant routers to the new network offering

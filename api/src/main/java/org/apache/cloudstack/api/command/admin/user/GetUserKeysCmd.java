@@ -26,14 +26,14 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.RegisterResponse;
+import org.apache.cloudstack.api.response.RegisterUserKeyResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 
 import java.util.Map;
 
 @APICommand(name = "getUserKeys",
             description = "This command allows the user to query the seceret and API keys for the account",
-            responseObject = RegisterResponse.class,
+            responseObject = RegisterUserKeyResponse.class,
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true,
             authorized = {RoleType.User, RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin},
@@ -57,7 +57,7 @@ public class GetUserKeysCmd extends BaseCmd{
     public void execute(){
         Pair<Boolean, Map<String, String>> keys = _accountService.getKeys(this);
 
-        RegisterResponse response = new RegisterResponse();
+        RegisterUserKeyResponse response = new RegisterUserKeyResponse();
         if(keys != null){
             response.setApiKeyAccess(keys.first());
             response.setApiKey(keys.second().get("apikey"));

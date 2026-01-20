@@ -168,7 +168,6 @@ public class StoragePoolMonitor implements Listener {
                     throw new ConnectionException(true, String.format("Unable to prepare OCFS2 nodes for pool %s", pool));
                 }
 
-                Long hostId = host.getId();
                 if (logger.isDebugEnabled()) {
                     logger.debug("Host {} connected, connecting host to shared pool {} and sending storage pool information ...", host, pool);
                 }
@@ -185,6 +184,9 @@ public class StoragePoolMonitor implements Listener {
             // Disconnect any pools which are not expected to be connected
             for (StoragePoolHostVO poolToDisconnect: previouslyConnectedPools) {
                 StoragePoolVO pool = _poolDao.findById(poolToDisconnect.getPoolId());
+                if (!pool.isShared()) {
+                    continue;
+                }
                 try {
                     _storageManager.disconnectHostFromSharedPool(host, pool);
                     _storagePoolHostDao.deleteStoragePoolHostDetails(host.getId(), pool.getId());

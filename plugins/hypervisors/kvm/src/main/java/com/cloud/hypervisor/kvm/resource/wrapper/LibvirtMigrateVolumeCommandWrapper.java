@@ -44,6 +44,7 @@ import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
 import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.libvirt.Connect;
@@ -113,12 +114,12 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
             Connect conn = libvirtUtilitiesHelper.getConnection();
             dm = libvirtComputingResource.getDomain(conn, vmName);
             if (dm == null) {
-                return new MigrateVolumeAnswer(command, false, "Migrate volume failed due to can not find vm: " + vmName, null);
+                return new MigrateVolumeAnswer(command, false, "Migrate volume failed due to can not find Instance: " + vmName, null);
             }
 
             DomainInfo.DomainState domainState = dm.getInfo().state ;
             if (domainState != DomainInfo.DomainState.VIR_DOMAIN_RUNNING) {
-                return new MigrateVolumeAnswer(command, false, "Migrate volume failed due to VM is not running: " + vmName + " with domainState = " + domainState, null);
+                return new MigrateVolumeAnswer(command, false, "Migrate volume failed due to Instance is not running: " + vmName + " with domainState = " + domainState, null);
             }
 
             final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
@@ -237,7 +238,7 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
 
     private String generateDestinationDiskLabel(String diskXml) throws ParserConfigurationException, IOException, SAXException {
 
-        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilderFactory dbFactory = ParserUtils.getSaferDocumentBuilderFactory();
         DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
         Document doc = dBuilder.parse(new ByteArrayInputStream(diskXml.getBytes("UTF-8")));
         doc.getDocumentElement().normalize();
@@ -251,7 +252,7 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
     protected String generateDestinationDiskXML(Domain dm, String srcVolumeId, String diskFilePath, String destSecretUUID) throws LibvirtException, ParserConfigurationException, IOException, TransformerException, SAXException {
         final String domXml = dm.getXMLDesc(0);
 
-        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilderFactory dbFactory = ParserUtils.getSaferDocumentBuilderFactory();
         DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
         Document doc = dBuilder.parse(new ByteArrayInputStream(domXml.getBytes("UTF-8")));
         doc.getDocumentElement().normalize();

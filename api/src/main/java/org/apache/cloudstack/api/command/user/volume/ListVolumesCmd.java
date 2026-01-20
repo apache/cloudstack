@@ -50,55 +50,55 @@ public class ListVolumesCmd extends BaseListRetrieveOnlyResourceCountCmd impleme
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "list volumes on specified host")
+    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "List volumes on specified host")
     private Long hostId;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VolumeResponse.class, description = "the ID of the disk volume")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VolumeResponse.class, description = "The ID of the disk volume")
     private Long id;
 
-    @Parameter(name = ApiConstants.IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = VolumeResponse.class, description = "the IDs of the volumes, mutually exclusive with id", since = "4.9")
+    @Parameter(name = ApiConstants.IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = VolumeResponse.class, description = "The IDs of the volumes, mutually exclusive with id", since = "4.9")
     private List<Long> ids;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the disk volume")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the disk volume")
     private String volumeName;
 
-    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "the pod id the disk volume belongs to")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "The pod ID the disk volume belongs to")
     private Long podId;
 
-    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "the cluster id the disk volume belongs to", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "The cluster ID the disk volume belongs to", authorized = {RoleType.Admin})
     private Long clusterId;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "the type of disk volume")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "The type of disk volume")
     private String type;
 
-    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, description = "the ID of the virtual machine")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, description = "The ID of the Instance")
     private Long virtualMachineId;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of the availability zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The ID of the availability zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.STORAGE_ID, type = CommandType.STRING, entityType = StoragePoolResponse.class, description = "the ID of the storage pool, available to ROOT admin only", since = "4.3", authorized = {
+    @Parameter(name = ApiConstants.STORAGE_ID, type = CommandType.STRING, entityType = StoragePoolResponse.class, description = "The ID of the storage pool, available to ROOT admin only", since = "4.3", authorized = {
             RoleType.Admin})
     private String storageId;
 
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID,
                entityType = ServiceOfferingResponse.class,
-               description = "list volumes by disk offering of a service offering. If both service offering and " +
+               description = "List volumes by disk offering of a service offering. If both service offering and " +
                        "disk offering are passed, service offering is ignored", since = "4.19.1")
     private Long serviceOfferingId;
 
-    @Parameter(name = ApiConstants.DISK_OFFERING_ID, type = CommandType.UUID, entityType = DiskOfferingResponse.class, description = "list volumes by disk offering", since = "4.4")
+    @Parameter(name = ApiConstants.DISK_OFFERING_ID, type = CommandType.UUID, entityType = DiskOfferingResponse.class, description = "List volumes by disk offering", since = "4.4")
     private Long diskOfferingId;
 
-    @Parameter(name = ApiConstants.DISPLAY_VOLUME, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {
+    @Parameter(name = ApiConstants.DISPLAY_VOLUME, type = CommandType.BOOLEAN, description = "List resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {
             RoleType.Admin})
     private Boolean display;
 
-    @Parameter(name = ApiConstants.LIST_SYSTEM_VMS, type = CommandType.BOOLEAN, description = "list system VMs; only ROOT admin is eligible to pass this parameter", since = "4.18",
+    @Parameter(name = ApiConstants.LIST_SYSTEM_VMS, type = CommandType.BOOLEAN, description = "List system VMs; only ROOT admin is eligible to pass this parameter", since = "4.18",
             authorized = { RoleType.Admin })
     private Boolean listSystemVms;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "state of the volume. Possible values are: Ready, Allocated, Destroy, Expunging, Expunged.")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "State of the volume. Possible values are: Ready, Allocated, Destroy, Expunging, Expunged.")
     private String state;
 
     @Parameter(name = ApiConstants.IS_ENCRYPTED, type = CommandType.BOOLEAN, description = "list only volumes that are encrypted", since = "4.19.1",

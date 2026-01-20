@@ -105,7 +105,7 @@ public final class CitrixCreateVMSnapshotCommandWrapper extends CommandWrapper<C
                 }
 
                 if (vm == null) {
-                    return new CreateVMSnapshotAnswer(command, false, "Creating VM Snapshot Failed due to can not find vm: " + vmName);
+                    return new CreateVMSnapshotAnswer(command, false, "Creating Instance Snapshot Failed due to can not find Instance: " + vmName);
                 }
 
                 // call XenServer API
@@ -162,13 +162,13 @@ public final class CitrixCreateVMSnapshotCommandWrapper extends CommandWrapper<C
             } else {
                 msg = e.toString();
             }
-            logger.warn("Creating VM Snapshot {} failed due to: {}", command.getTarget().getSnapshotName(), msg, e);
+            logger.warn("Creating Instance Snapshot {} failed due to: {}", command.getTarget().getSnapshotName(), msg, e);
             return new CreateVMSnapshotAnswer(command, false, msg);
         } finally {
             try {
                 if (!success) {
                     if (vmSnapshot != null) {
-                        logger.debug("Delete existing VM Snapshot {} after making VolumeTO failed", vmSnapshotName);
+                        logger.debug("Delete existing Instance Snapshot {} after making VolumeTO failed", vmSnapshotName);
                         final Set<VBD> vbds = vmSnapshot.getVBDs(conn);
                         for (final VBD vbd : vbds) {
                             final VBD.Record vbdr = vbd.getRecord(conn);

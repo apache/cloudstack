@@ -55,7 +55,7 @@
 
 <script>
 import { ref, reactive } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 
 export default {
   name: 'DeleteAccount',
@@ -106,7 +106,7 @@ export default {
         this.$router.push({ path: '/account' })
           .then(() => {
             // After successful navigation, start the deletion job
-            api('deleteAccount', {
+            postAPI('deleteAccount', {
               id: accountId
             }).then(response => {
               this.$pollJob({
@@ -128,7 +128,7 @@ export default {
             this.isDeleting = false
             // If navigation fails, still try to delete the account
             // but don't navigate afterwards
-            api('deleteAccount', {
+            postAPI('deleteAccount', {
               id: accountId
             }).then(response => {
               this.$pollJob({

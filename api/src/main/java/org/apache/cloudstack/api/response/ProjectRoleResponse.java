@@ -27,7 +27,7 @@ import com.google.gson.annotations.SerializedName;
 @EntityReference(value = ProjectRole.class)
 public class ProjectRoleResponse extends BaseRoleResponse {
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the id of the project")
+    @Param(description = "The ID of the project")
     private String projectId;
 
     public String getProjectId() {

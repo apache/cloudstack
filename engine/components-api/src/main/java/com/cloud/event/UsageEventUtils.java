@@ -95,6 +95,14 @@ public class UsageEventUtils {
     }
 
     public static void publishUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,
+                                         Long size, String entityType, String entityUUID, Long vmId, boolean displayResource) {
+        if (displayResource) {
+            saveUsageEvent(usageType, accountId, zoneId, resourceId, offeringId, templateId, size, vmId, resourceName);
+        }
+        publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
+    }
+
+    public static void publishUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,
                                          Long size, Long virtualSize, String entityType, String entityUUID, Map<String, String> details) {
         saveUsageEvent(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, size, virtualSize, details);
         publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
@@ -200,6 +208,10 @@ public class UsageEventUtils {
 
     public static void saveUsageEvent(String usageType, long accountId, long zoneId, long vmId, long securityGroupId) {
         s_usageEventDao.persist(new UsageEventVO(usageType, accountId, zoneId, vmId, securityGroupId));
+    }
+
+    public static void saveUsageEvent(String usageType, long accountId, long zoneId, long resourceId, Long offeringId, Long templateId, Long size, Long vmId, String resourceName) {
+        s_usageEventDao.persist(new UsageEventVO(usageType, accountId, zoneId, resourceId, offeringId, templateId, size, vmId, resourceName));
     }
 
     private static void publishUsageEvent(String usageEventType, Long accountId, Long zoneId, String resourceType, String resourceUUID) {

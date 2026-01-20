@@ -69,14 +69,14 @@ public final class CitrixReadyCommandWrapper extends CommandWrapper<ReadyCommand
         try {
             final boolean result = citrixResourceBase.cleanupHaltedVms(conn);
             if (!result) {
-                return new ReadyAnswer(command, "Unable to cleanup halted vms");
+                return new ReadyAnswer(command, "Unable to cleanup halted Instances");
             }
         } catch (final XenAPIException e) {
-            logger.warn("Unable to cleanup halted vms", e);
-            return new ReadyAnswer(command, "Unable to cleanup halted vms");
+            logger.warn("Unable to cleanup halted Instances", e);
+            return new ReadyAnswer(command, "Unable to cleanup halted Instances");
         } catch (final XmlRpcException e) {
-            logger.warn("Unable to cleanup halted vms", e);
-            return new ReadyAnswer(command, "Unable to cleanup halted vms");
+            logger.warn("Unable to cleanup halted Instances", e);
+            return new ReadyAnswer(command, "Unable to cleanup halted Instances");
         }
 
         return new ReadyAnswer(command, hostDetails);

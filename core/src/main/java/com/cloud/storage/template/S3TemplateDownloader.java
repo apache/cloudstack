@@ -150,7 +150,7 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
         }
 
         if (remoteSize > maxTemplateSizeInByte) {
-            errorString = "Remote size is too large for template " + downloadUrl + " remote size is " + remoteSize + " max allowed is " + maxTemplateSizeInByte;
+            errorString = "Remote size is too large for Template " + downloadUrl + " remote size is " + remoteSize + " max allowed is " + maxTemplateSizeInByte;
             logger.warn(errorString);
 
             status = Status.UNRECOVERABLE_ERROR;
@@ -162,7 +162,7 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
         try {
             inputStream = new BufferedInputStream(getMethod.getResponseBodyAsStream());
         } catch (IOException e) {
-            errorString = "Exception occurred while opening InputStream for template " + downloadUrl;
+            errorString = "Exception occurred while opening InputStream for Template " + downloadUrl;
             logger.warn(errorString);
 
             status = Status.UNRECOVERABLE_ERROR;

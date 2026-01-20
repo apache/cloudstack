@@ -49,17 +49,17 @@ public class DedicatePodCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, required = true, description = "the ID of the Pod")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, required = true, description = "The ID of the Pod")
     private Long podId;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
                entityType = DomainResponse.class,
                required = true,
-               description = "the ID of the containing domain")
+               description = "The ID of the containing domain")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the name of the account which needs dedication. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "The name of the account which needs dedication. Must be used with domainId.")
     private String accountName;
 
     /////////////////////////////////////////////////////

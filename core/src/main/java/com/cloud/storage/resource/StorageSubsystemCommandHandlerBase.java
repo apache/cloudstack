@@ -21,7 +21,7 @@ package com.cloud.storage.resource;
 
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.storage.command.AttachCommand;
-import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplianceCommand;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
@@ -79,8 +79,8 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
             return processor.resignature((ResignatureCommand) command);
         } else if (command instanceof DirectDownloadCommand) {
             return processor.handleDownloadTemplateToPrimaryStorage((DirectDownloadCommand) command);
-        } else if (command instanceof CheckDataStoreStoragePolicyComplainceCommand) {
-            return processor.checkDataStoreStoragePolicyCompliance((CheckDataStoreStoragePolicyComplainceCommand) command);
+        } else if (command instanceof CheckDataStoreStoragePolicyComplianceCommand) {
+            return processor.checkDataStoreStoragePolicyCompliance((CheckDataStoreStoragePolicyComplianceCommand) command);
         } else if (command instanceof SyncVolumePathCommand) {
             return processor.syncVolumePath((SyncVolumePathCommand) command);
         } else if (command instanceof QuerySnapshotZoneCopyCommand) {

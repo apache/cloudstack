@@ -88,7 +88,6 @@ COPY test/conf /root/test/conf
 COPY test/metadata /root/test/metadata
 COPY test/pom.xml /root/test/pom.xml
 COPY test/scripts /root/test/scripts
-COPY test/selenium /root/test/selenium
 COPY test/systemvm /root/test/systemvm
 COPY test/target /root/test/target
 COPY tools/pom.xml /root/tools/pom.xml

@@ -47,6 +47,10 @@ export default {
       }
     },
     {
+      name: 'certificates',
+      component: shallowRef(defineAsyncComponent(() => import('@/views/iam/SSLCertificateTab.vue')))
+    },
+    {
       name: 'limits',
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/ResourceCountUsage.vue')))
     },

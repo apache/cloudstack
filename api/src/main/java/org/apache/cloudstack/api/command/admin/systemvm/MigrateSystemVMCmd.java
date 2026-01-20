@@ -43,7 +43,7 @@ import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "migrateSystemVm", description = "Attempts Migration of a system virtual machine to the host specified.", responseObject = SystemVmResponse.class, entityType = {VirtualMachine.class},
+@APICommand(name = "migrateSystemVm", description = "Attempts Migration of a System VM to the host specified.", responseObject = SystemVmResponse.class, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class MigrateSystemVMCmd extends BaseAsyncCmd {
 
@@ -55,7 +55,7 @@ public class MigrateSystemVMCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.HOST_ID,
                type = CommandType.UUID,
                entityType = HostResponse.class,
-               description = "destination Host ID to migrate VM to")
+               description = "Destination Host ID to migrate Instance to")
     private Long hostId;
 
     @ACL(accessType = AccessType.OperateEntry)
@@ -63,14 +63,14 @@ public class MigrateSystemVMCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = SystemVmResponse.class,
                required = true,
-               description = "the ID of the virtual machine")
+               description = "The ID of the Instance")
     private Long virtualMachineId;
 
     @Parameter(name = ApiConstants.STORAGE_ID,
             since = "4.16.0",
             type = CommandType.UUID,
             entityType = StoragePoolResponse.class,
-            description = "Destination storage pool ID to migrate VM volumes to. Required for migrating the root disk volume")
+            description = "Destination storage pool ID to migrate Instance volumes to. Required for migrating the root disk volume")
     private Long storageId;
 
     @Parameter(name = ApiConstants.AUTO_SELECT,
@@ -120,7 +120,7 @@ public class MigrateSystemVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Attempting to migrate VM Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getVirtualMachineId()) + " to host Id: " + this._uuidMgr.getUuid(Host.class, getHostId());
+        return "Attempting to migrate Instance Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getVirtualMachineId()) + " to host Id: " + this._uuidMgr.getUuid(Host.class, getHostId());
     }
 
     @Override
@@ -136,7 +136,7 @@ public class MigrateSystemVMCmd extends BaseAsyncCmd {
                 // OfflineMigration performed when this parameter is specified
                 StoragePool destStoragePool = _storageService.getStoragePool(getStorageId());
                 if (destStoragePool == null) {
-                    throw new InvalidParameterValueException("Unable to find the storage pool to migrate the VM");
+                    throw new InvalidParameterValueException("Unable to find the storage pool to migrate the Instance");
                 }
                 CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to storage pool Id: " + getStorageId());
                 migratedVm = _userVmService.vmStorageMigration(getVirtualMachineId(), destStoragePool);
@@ -145,10 +145,10 @@ public class MigrateSystemVMCmd extends BaseAsyncCmd {
                 if (getHostId() != null) {
                     destinationHost =_resourceService.getHost(getHostId());
                     if (destinationHost == null) {
-                        throw new InvalidParameterValueException("Unable to find the host to migrate the VM, host id=" + getHostId());
+                        throw new InvalidParameterValueException("Unable to find the host to migrate the Instance, host id=" + getHostId());
                     }
                     if (destinationHost.getType() != Host.Type.Routing) {
-                        throw new InvalidParameterValueException("The specified host(" + destinationHost.getName() + ") is not suitable to migrate the VM, please specify another one");
+                        throw new InvalidParameterValueException("The specified host(" + destinationHost.getName() + ") is not suitable to migrate the Instance, please specify another one");
                     }
                 } else if (! isAutoSelect()) {
                     throw new InvalidParameterValueException("Please specify a host or storage as destination, or pass 'autoselect=true' to automatically select a destination host which do not require storage migration");

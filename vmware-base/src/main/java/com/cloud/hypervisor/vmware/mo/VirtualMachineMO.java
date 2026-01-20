@@ -247,9 +247,9 @@ public class VirtualMachineMO extends BaseMO {
                                         logger.info("msg id: " + msg.getId());
                                         logger.info("msg text: " + msg.getText());
                                     }
-                                    String logMsg = "Found that VM has a pending question that we need to answer programmatically, question id: " + msg.getId();
+                                    String logMsg = "Found that instance has a pending question that we need to answer programmatically, question id: " + msg.getId();
                                     if ("msg.uuid.altered".equalsIgnoreCase(msg.getId())) {
-                                        logger.info(logMsg + ", we will automatically answer as 'moved it' to address out of band HA for the VM");
+                                        logger.info(logMsg + ", we will automatically answer as 'moved it' to address out of band HA for the Instance");
                                         vmMo.answerVM(question.getId(), "1");
                                         break;
                                     } else if (msg.getId().equalsIgnoreCase("msg.cpuid.noVHVQuestion")) {
@@ -317,7 +317,7 @@ public class VirtualMachineMO extends BaseMO {
             try {
                 String vmName = getName();
 
-                logger.info("Try gracefully shut down VM " + vmName);
+                logger.info("Try gracefully shut down Instance " + vmName);
                 shutdown();
 
                 long startTick = System.currentTimeMillis();
@@ -325,12 +325,12 @@ public class VirtualMachineMO extends BaseMO {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
-                        logger.debug("[ignored] interrupted while powering of vm.");
+                        logger.debug("[ignored] interrupted while powering of Instance.");
                     }
                 }
 
                 if (getResetSafePowerState() != VirtualMachinePowerState.POWERED_OFF) {
-                    logger.info("can not gracefully shutdown VM within " + (shutdownWaitMs / 1000) + " seconds, we will perform force power off on VM " + vmName);
+                    logger.info("Can not gracefully shutdown Instance within " + (shutdownWaitMs / 1000) + " seconds, we will perform force power off on VM " + vmName);
                     return powerOffNoCheck();
                 }
 
@@ -358,14 +358,14 @@ public class VirtualMachineMO extends BaseMO {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
-                    logger.debug("[ignored] interrupted while powering of vm unconditionally.");
+                    logger.debug("[ignored] interrupted while powering of Instance unconditionally.");
                 }
             }
             return true;
         } else {
             if (getResetSafePowerState() == VirtualMachinePowerState.POWERED_OFF) {
                 // to help deal with possible race-condition
-                logger.info("Current power-off task failed. However, VM has been switched to the state we are expecting for");
+                logger.info("Current power-off task failed. However, Instance has been switched to the state we are expecting for");
                 return true;
             }
 
@@ -616,7 +616,7 @@ public class VirtualMachineMO extends BaseMO {
         if (result) {
             _context.waitForTaskProgressDone(task);
         } else {
-            throw new Exception("Unable to register VM due to the following issue: " + TaskMO.getTaskFailureInfo(_context, task));
+            throw new Exception("Unable to register instance due to the following issue: " + TaskMO.getTaskFailureInfo(_context, task));
         }
     }
 
@@ -769,9 +769,9 @@ public class VirtualMachineMO extends BaseMO {
 
         VirtualDisk[] vmDisks = getAllDiskDevice();
         VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
-        logger.debug(String.format("Removing the disks other than the required disk with key %s to the cloned VM", requiredDisk.getKey()));
+        logger.debug(String.format("Removing the disks other than the required disk with key %s to the cloned Instance", requiredDisk.getKey()));
         for (VirtualDisk disk : vmDisks) {
-            logger.debug(String.format("Original disk with key %s found in the VM %s", disk.getKey(), getName()));
+            logger.debug(String.format("Original disk with key %s found in the Instance %s", disk.getKey(), getName()));
             if (requiredDisk.getKey() != disk.getKey()) {
                 VirtualDeviceConfigSpec virtualDeviceConfigSpec = new VirtualDeviceConfigSpec();
                 virtualDeviceConfigSpec.setDevice(disk);
@@ -788,33 +788,29 @@ public class VirtualMachineMO extends BaseMO {
         cloneSpec.setMemory(false);
         cloneSpec.setConfig(vmConfigSpec);
 
-        ManagedObjectReference morTask = _context.getService().cloneVMTask(_mor, morFolder, cloneName, cloneSpec);
-
-        boolean result = _context.getVimClient().waitForTask(morTask);
+        boolean result = cloneVM(cloneName, morFolder, cloneSpec);
         if (result) {
-            _context.waitForTaskProgressDone(morTask);
             VirtualMachineMO clonedVm = dcMo.findVm(cloneName);
             if (clonedVm == null) {
-                logger.error(String.format("Failed to clone VM %s", cloneName));
+                logger.error(String.format("Failed to clone Instance %s", cloneName));
                 return null;
             }
-            logger.debug(String.format("Cloned VM: %s as %s", getName(), cloneName));
+            logger.debug(String.format("Cloned Instance: %s as %s", getName(), cloneName));
             clonedVm.tagAsWorkerVM();
             makeSureVMHasOnlyRequiredDisk(clonedVm, requiredDisk, dsMo, dcMo);
             return clonedVm;
-        } else {
-            logger.error("VMware cloneVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
-            return null;
         }
+
+        return null;
     }
 
     private void makeSureVMHasOnlyRequiredDisk(VirtualMachineMO clonedVm, VirtualDisk requiredDisk, DatastoreMO dsMo, DatacenterMO dcMo) throws Exception {
 
         String vmName = clonedVm.getName();
         VirtualDisk[] vmDisks = clonedVm.getAllDiskDevice();
-        logger.debug(String.format("Checking if VM %s is created only with required Disk, if not detach the remaining disks", vmName));
+        logger.debug(String.format("Checking if Instance %s is created only with required Disk, if not detach the remaining disks", vmName));
         if (vmDisks.length == 1) {
-            logger.debug(String.format("VM %s is created only with required Disk", vmName));
+            logger.debug(String.format("Instance %s is created only with required Disk", vmName));
             return;
         }
 
@@ -826,12 +822,12 @@ public class VirtualMachineMO extends BaseMO {
             }
         }
         if (requiredCloneDisk == null) {
-            logger.error(String.format("Failed to identify required disk in VM %s", vmName));
-            throw new CloudRuntimeException(String.format("VM %s is not created with required disk", vmName));
+            logger.error(String.format("Failed to identify required disk in Instance %s", vmName));
+            throw new CloudRuntimeException(String.format("Instance %s is not created with required disk", vmName));
         }
 
         String baseName = VmwareHelper.getDiskDeviceFileName(requiredCloneDisk);
-        logger.debug(String.format("Detaching all disks for the VM: %s except disk with base name: %s, key=%d", vmName, baseName, requiredCloneDisk.getKey()));
+        logger.debug(String.format("Detaching all disks for the Instance: %s except disk with base name: %s, key=%d", vmName, baseName, requiredCloneDisk.getKey()));
         List<String> detachedDisks = clonedVm.detachAllDisksExcept(baseName, null);
         for (String diskPath : detachedDisks) {
             dsMo.deleteFile(diskPath, dcMo.getMor(), true, null);
@@ -852,16 +848,42 @@ public class VirtualMachineMO extends BaseMO {
 
         setDiskProvisioningType(relocSpec, morDs, diskProvisioningType);
 
-        ManagedObjectReference morTask = _context.getService().cloneVMTask(_mor, morFolder, cloneName, cloneSpec);
+        return cloneVM(cloneName, morFolder, cloneSpec);
+    }
 
+    private boolean cloneVMTask(String cloneName, ManagedObjectReference morFolder, VirtualMachineCloneSpec cloneSpec) throws Exception {
+        ManagedObjectReference morTask = _context.getService().cloneVMTask(_mor, morFolder, cloneName, cloneSpec);
         boolean result = _context.getVimClient().waitForTask(morTask);
         if (result) {
             _context.waitForTaskProgressDone(morTask);
             return true;
-        } else {
-            logger.error("VMware cloneVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
         }
 
+        logger.error("VMware cloneVM_Task failed due to {}", TaskMO.getTaskFailureInfo(_context, morTask));
+        return false;
+    }
+
+    private boolean cloneVM(final String cloneName, final ManagedObjectReference morFolder, final VirtualMachineCloneSpec cloneSpec) throws Exception {
+        final int retry = 20;
+        int retryAttempt = 0;
+        while (++retryAttempt <= retry) {
+            try {
+                logger.debug("Cloning VM {}, attempt #{}", cloneName, retryAttempt);
+                return cloneVMTask(cloneName, morFolder, cloneSpec);
+            } catch (Exception e) {
+                logger.info("Got exception while cloning VM {}", cloneName, e);
+                if (e.getMessage() != null && e.getMessage().contains("Unable to access file")) {
+                    logger.debug("Failed to clone VM {}. Retrying", cloneName);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ie) {
+                        logger.debug("Waiting to clone VM {} been interrupted: ", cloneName);
+                    }
+                } else {
+                    throw e;
+                }
+            }
+        }
         return false;
     }
 
@@ -925,17 +947,7 @@ public class VirtualMachineMO extends BaseMO {
         cloneSpec.setLocation(rSpec);
         cloneSpec.setSnapshot(morBaseSnapshot);
 
-        ManagedObjectReference morTask = _context.getService().cloneVMTask(_mor, morFolder, cloneName, cloneSpec);
-
-        boolean result = _context.getVimClient().waitForTask(morTask);
-        if (result) {
-            _context.waitForTaskProgressDone(morTask);
-            return true;
-        } else {
-            logger.error("VMware cloneVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
-        }
-
-        return false;
+        return cloneVM(cloneName, morFolder, cloneSpec);
     }
 
     public VirtualMachineRuntimeInfo getRuntimeInfo() throws Exception {
@@ -1432,7 +1444,7 @@ public class VirtualMachineMO extends BaseMO {
         if (DiskControllerType.getType(diskController) == DiskControllerType.ide) {
             // IDE virtual disk cannot be added if VM is running
             if (getPowerState() == VirtualMachinePowerState.POWERED_ON) {
-                throw new Exception("Adding a virtual disk over IDE controller is not supported while VM is running in VMware hypervisor. Please re-try when VM is not running.");
+                throw new Exception("Adding a virtual disk over IDE controller is not supported while instance is running in VMware hypervisor. Please re-try when instance is not running.");
             }
             // Get next available unit number and controller key
             int ideDeviceCount = getNumberOfIDEDevices();
@@ -1518,8 +1530,8 @@ public class VirtualMachineMO extends BaseMO {
         // IDE virtual disk cannot be detached if VM is running
         if (deviceInfo.second() != null && deviceInfo.second().contains("ide")) {
             if (getPowerState() == VirtualMachinePowerState.POWERED_ON) {
-                throw new CloudRuntimeException("Removing a virtual disk over IDE controller is not supported while the VM is running in VMware hypervisor. " +
-                        "Please re-try when VM is not running.");
+                throw new CloudRuntimeException("Removing a virtual disk over IDE controller is not supported while the instance is running in VMware hypervisor. " +
+                        "Please re-try when the instance is not running.");
             }
         }
 
@@ -1540,7 +1552,7 @@ public class VirtualMachineMO extends BaseMO {
         boolean result = _context.getVimClient().waitForTask(morTask);
 
         if (!result) {
-            throw new CloudRuntimeException(String.format("Failed to detach disk from VM [%s] due to [%s].", getVmName(), TaskMO.getTaskFailureInfo(_context, morTask)));
+            throw new CloudRuntimeException(String.format("Failed to detach disk from instance [%s] due to [%s].", getVmName(), TaskMO.getTaskFailureInfo(_context, morTask)));
         }
         _context.waitForTaskProgressDone(morTask);
 
@@ -1626,7 +1638,7 @@ public class VirtualMachineMO extends BaseMO {
                                         logger.trace("msg text: " + msg.getText());
                                     }
                                     if ("msg.cdromdisconnect.locked".equalsIgnoreCase(msg.getId())) {
-                                        logger.info("Found that VM has a pending question that we need to answer programmatically, question id: " + msg.getId() +
+                                        logger.info("Found that Instance has a pending question that we need to answer programmatically, question id: " + msg.getId() +
                                                 ", for safe operation we will automatically decline it");
                                         vmMo.answerVM(question.getId(), force ? ANSWER_YES : ANSWER_NO);
                                         break;
@@ -1643,7 +1655,7 @@ public class VirtualMachineMO extends BaseMO {
                                 msgId = tokens[0];
                                 msgText = tokens[1];
                                 if ("msg.cdromdisconnect.locked".equalsIgnoreCase(msgId)) {
-                                    logger.info("Found that VM has a pending question that we need to answer programmatically, question id: " + question.getId() +
+                                    logger.info("Found that Instance has a pending question that we need to answer programmatically, question id: " + question.getId() +
                                             ". Message id : " + msgId + ". Message text : " + msgText + ", for safe operation we will automatically decline it.");
                                     vmMo.answerVM(question.getId(), force ? ANSWER_YES : ANSWER_NO);
                                 }
@@ -1665,7 +1677,7 @@ public class VirtualMachineMO extends BaseMO {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
-                        logger.debug("[ignored] interrupted while handling vm question about iso detach.");
+                        logger.debug("[ignored] interrupted while handling Instance question about ISO detach.");
                     }
                 }
                 logger.info("VM Question monitor stopped");
@@ -1716,7 +1728,6 @@ public class VirtualMachineMO extends BaseMO {
         cdRom.setBacking(backingInfo);
 
         VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
-        //VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
         VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
 
         deviceConfigSpec.setDevice(cdRom);
@@ -1726,7 +1737,6 @@ public class VirtualMachineMO extends BaseMO {
             deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.EDIT);
         }
 
-        //deviceConfigSpecArray[0] = deviceConfigSpec;
         reConfigSpec.getDeviceChange().add(deviceConfigSpec);
 
         ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
@@ -1768,13 +1778,11 @@ public class VirtualMachineMO extends BaseMO {
         device.setBacking(backingInfo);
 
         VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
-        //VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
         VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
 
         deviceConfigSpec.setDevice(device);
         deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.EDIT);
 
-        //deviceConfigSpecArray[0] = deviceConfigSpec;
         reConfigSpec.getDeviceChange().add(deviceConfigSpec);
 
         ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
@@ -1834,7 +1842,7 @@ public class VirtualMachineMO extends BaseMO {
         DatacenterMO dcMo = new DatacenterMO(_context, hostMo.getHyperHostDatacenter());
 
         if (runtimeInfo.getPowerState() != VirtualMachinePowerState.POWERED_OFF) {
-            String msg = "Unable to export VM because it is not at powerdOff state. vmName: " + vmName + ", host: " + hostName;
+            String msg = "Unable to export Instance because it is not at powerdOff state. vmName: " + vmName + ", host: " + hostName;
             logger.error(msg);
             throw new Exception(msg);
         }
@@ -2077,7 +2085,7 @@ public class VirtualMachineMO extends BaseMO {
         SnapshotDescriptor descriptor = getSnapshotDescriptor();
         SnapshotInfo[] snapshotInfo = descriptor.getCurrentDiskChain();
         if (snapshotInfo.length == 0) {
-            String msg = "No snapshot found in this VM";
+            String msg = "No snapshot found in this instance";
             throw new Exception(msg);
         }
 
@@ -2176,7 +2184,7 @@ public class VirtualMachineMO extends BaseMO {
 
         VirtualMachineMO clonedVmMo = HypervisorHostHelper.createWorkerVM(hostMo, new DatastoreMO(hostMo.getContext(), morDs), clonedVmName, cloneHardwareVersion);
         if (clonedVmMo == null)
-            throw new Exception("Unable to find just-created blank VM");
+            throw new Exception("Unable to find just-created blank instance");
 
         boolean bSuccess = false;
         try {
@@ -2277,7 +2285,7 @@ public class VirtualMachineMO extends BaseMO {
 
                     vmdkDescriptor = getVmdkFileInfo(fileItem.first());
 
-                    logger.info("Copy VM disk file " + srcFile.getPath() + " to " + destFile.getPath());
+                    logger.info("Copy Instance disk file " + srcFile.getPath() + " to " + destFile.getPath());
                     srcDsMo.copyDatastoreFile(fileItem.first(), dcMo.getMor(), destDsMo.getMor(), destFile.getPath(), dcMo.getMor(), true);
 
                     if (vmdkDescriptor != null) {
@@ -2285,7 +2293,7 @@ public class VirtualMachineMO extends BaseMO {
                         String baseFilePath = srcFile.getCompanionPath(vmdkBaseFileName);
                         destFile = new DatastoreFile(destDsMo.getName(), destDsDir, vmdkBaseFileName);
 
-                        logger.info("Copy VM disk file " + baseFilePath + " to " + destFile.getPath());
+                        logger.info("Copy Instance disk file " + baseFilePath + " to " + destFile.getPath());
                         srcDsMo.copyDatastoreFile(baseFilePath, dcMo.getMor(), destDsMo.getMor(), destFile.getPath(), dcMo.getMor(), true);
                     }
                 }
@@ -2332,7 +2340,7 @@ public class VirtualMachineMO extends BaseMO {
                     Pair<VmdkFileDescriptor, byte[]> vmdkDescriptor = null;
                     vmdkDescriptor = getVmdkFileInfo(fileItem.first());
 
-                    logger.info("Move VM disk file " + srcFile.getPath() + " to " + destFile.getPath());
+                    logger.info("Move Instance disk file " + srcFile.getPath() + " to " + destFile.getPath());
                     moveDatastoreFile(srcDsMo, fileItem.first(), dcMo.getMor(), destDsMo.getMor(), destFile.getPath(), dcMo.getMor(), true);
 
                     if (vmdkDescriptor != null) {
@@ -2340,7 +2348,7 @@ public class VirtualMachineMO extends BaseMO {
                         String baseFilePath = srcFile.getCompanionPath(vmdkBaseFileName);
                         destFile = new DatastoreFile(destDsMo.getName(), destDsDir, vmdkBaseFileName);
 
-                        logger.info("Move VM disk file " + baseFilePath + " to " + destFile.getPath());
+                        logger.info("Move Instance disk file " + baseFilePath + " to " + destFile.getPath());
                         moveDatastoreFile(srcDsMo, baseFilePath, dcMo.getMor(), destDsMo.getMor(), destFile.getPath(), dcMo.getMor(), true);
                     }
                 }
@@ -2435,7 +2443,7 @@ public class VirtualMachineMO extends BaseMO {
         if (configureVm(vmConfig)) {
             logger.info("Successfully added SCSI controllers.");
         } else {
-            throw new Exception("Unable to add Scsi controllers to the VM " + getName());
+            throw new Exception("Unable to add Scsi controllers to the instance " + getName());
         }
     }
 
@@ -2458,7 +2466,7 @@ public class VirtualMachineMO extends BaseMO {
         }
 
         if (configureVm(vmConfig)) {
-            throw new Exception("Unable to add Scsi controllers to the VM " + getName());
+            throw new Exception("Unable to add Scsi controllers to the instance " + getName());
         } else {
             logger.info("Successfully added " + requiredNumScsiControllers + " SCSI controllers.");
         }
@@ -2478,8 +2486,8 @@ public class VirtualMachineMO extends BaseMO {
 
         // Check if virtual machine is using hardware version 7 or later.
         if (virtualHardwareVersion < 7) {
-            logger.error("The virtual hardware version of the VM is " + virtualHardwareVersion
-                    + ", which doesn't support PV SCSI controller type for virtual harddisks. Please upgrade this VM's virtual hardware version to 7 or later.");
+            logger.error("The virtual hardware version of the Instance is " + virtualHardwareVersion
+                    + ", which doesn't support PV SCSI controller type for virtual harddisks. Please upgrade this Instance's virtual hardware version to 7 or later.");
             return false;
         }
         return true;
@@ -2613,7 +2621,7 @@ public class VirtualMachineMO extends BaseMO {
                 busNum++;
             }
             if (configureVm(vmConfig)) {
-                throw new Exception("Unable to add Lsi Logic controllers to the VM " + getName());
+                throw new Exception("Unable to add Lsi Logic controllers to the instance " + getName());
             } else {
                 logger.info("Successfully added " + count + " LsiLogic Parallel SCSI controllers.");
             }
@@ -2675,7 +2683,7 @@ public class VirtualMachineMO extends BaseMO {
                 busNum++;
             }
             if (configureVm(vmConfig)) {
-                throw new Exception("Unable to add Scsi controllers to the VM " + getName());
+                throw new Exception("Unable to add Scsi controllers to the instance " + getName());
             } else {
                 logger.info("Successfully added " + count + " SCSI controllers.");
             }
@@ -3072,8 +3080,8 @@ public class VirtualMachineMO extends BaseMO {
             if (result) {
                 _context.waitForTaskProgressDone(morTask);
             } else {
-                logger.warn("Unable to reconfigure the VM to detach disks");
-                throw new Exception("Unable to reconfigure the VM to detach disks");
+                logger.warn("Unable to reconfigure the Instance to detach disks");
+                throw new Exception("Unable to reconfigure the Instance to detach disks");
             }
         }
 
@@ -3448,7 +3456,7 @@ public class VirtualMachineMO extends BaseMO {
                                         logger.trace("msg text: " + msg.getText());
                                     }
                                     if ("msg.cdromdisconnect.locked".equalsIgnoreCase(msg.getId())) {
-                                        logger.info("Found that VM has a pending question that we need to answer programmatically, question id: " + msg.getId() +
+                                        logger.info("Found that Instance has a pending question that we need to answer programmatically, question id: " + msg.getId() +
                                                 ", for safe operation we will automatically decline it");
                                         vmMo.answerVM(question.getId(), ANSWER_NO);
                                         break;
@@ -3465,7 +3473,7 @@ public class VirtualMachineMO extends BaseMO {
                                 msgId = tokens[0];
                                 msgText = tokens[1];
                                 if ("msg.cdromdisconnect.locked".equalsIgnoreCase(msgId)) {
-                                    logger.info("Found that VM has a pending question that we need to answer programmatically, question id: " + question.getId() +
+                                    logger.info("Found that Instance has a pending question that we need to answer programmatically, question id: " + question.getId() +
                                             ". Message id : " + msgId + ". Message text : " + msgText + ", for safe operation we will automatically decline it.");
                                     vmMo.answerVM(question.getId(), ANSWER_NO);
                                 }
@@ -3488,7 +3496,7 @@ public class VirtualMachineMO extends BaseMO {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
-                        logger.debug("[ignored] interrupted while handling vm question about umount tools install.");
+                        logger.debug("[ignored] interrupted while handling Instance question about umount tools install.");
                     }
                 }
 
@@ -3503,10 +3511,10 @@ public class VirtualMachineMO extends BaseMO {
             future.cancel(true);
         }
         if (encounterQuestion[0]) {
-            logger.warn("cdrom is locked by VM. Failed to detach the ISO.");
+            logger.warn("Cdrom is locked by Instance. Failed to detach the ISO.");
             return false;
         } else {
-            logger.info("Successfully unmounted tools installer from VM.");
+            logger.info("Successfully unmounted tools installer from Instance.");
             return true;
         }
     }
@@ -3701,7 +3709,7 @@ public class VirtualMachineMO extends BaseMO {
             }
 
             if (configureVm(vmConfig)) {
-                throw new Exception("Unable to add Scsi BusLogic controllers to the VM " + getName());
+                throw new Exception("Unable to add Scsi BusLogic controllers to the instance " + getName());
             } else {
                 logger.info("Successfully added " + count + " SCSI BusLogic controllers.");
             }
@@ -3757,7 +3765,7 @@ public class VirtualMachineMO extends BaseMO {
     public int getNumberOfVirtualDisks() throws Exception {
         List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
 
-        logger.info("Counting disk devices attached to VM " + getVmName());
+        logger.info("Counting disk devices attached to Instance " + getVmName());
         int count = 0;
 
         if (devices != null && !devices.isEmpty()) {
@@ -3808,7 +3816,7 @@ public class VirtualMachineMO extends BaseMO {
     public boolean upgradeVirtualHardwareVersion(String version) {
         try {
             String targetHwVersion = StringUtils.isNotBlank(version) ? version : "the highest available";
-            logger.info("Upgrading the VM hardware version to " + targetHwVersion);
+            logger.info("Upgrading the Instance hardware version to " + targetHwVersion);
             ManagedObjectReference morTask = _context.getService().upgradeVMTask(_mor, version);
             boolean result = _context.getVimClient().waitForTask(morTask);
             if (result) {
@@ -3819,7 +3827,7 @@ public class VirtualMachineMO extends BaseMO {
             }
             return true;
         } catch (Exception e) {
-            String msg = "Attempted to upgrade VM hardware version failed: " + e.getMessage();
+            String msg = "Attempted to upgrade Instance hardware version failed: " + e.getMessage();
             logger.error(msg, e);
             return false;
         }
@@ -3836,7 +3844,7 @@ public class VirtualMachineMO extends BaseMO {
 
     public void cancelPendingTasks() throws Exception {
         String vmName = getVmName();
-        logger.debug("Checking for pending tasks of the VM: " + vmName);
+        logger.debug("Checking for pending tasks of the Instance: " + vmName);
 
         ManagedObjectReference taskmgr = _context.getServiceContent().getTaskManager();
         List<ManagedObjectReference> tasks = _context.getVimClient().getDynamicProperty(taskmgr, "recentTask");
@@ -3848,14 +3856,14 @@ public class VirtualMachineMO extends BaseMO {
                 vmTasks++;
                 if (!(info.getState().equals(TaskInfoState.SUCCESS) || info.getState().equals(TaskInfoState.ERROR))) {
                     String taskName = StringUtils.isNotBlank(info.getName()) ? info.getName() : "Unknown";
-                    logger.debug(taskName + " task pending for the VM: " + vmName + ", cancelling it");
+                    logger.debug(taskName + " task pending for the Instance: " + vmName + ", cancelling it");
                     vmPendingTasks++;
                     _context.getVimClient().cancelTask(task);
                 }
             }
         }
 
-        logger.debug(vmPendingTasks + " pending tasks for the VM: " + vmName + " found, out of " + vmTasks + " recent VM tasks");
+        logger.debug(vmPendingTasks + " pending tasks for the Instance: " + vmName + " found, out of " + vmTasks + " recent Instance tasks");
     }
 
     public void tagAsWorkerVM() throws Exception {

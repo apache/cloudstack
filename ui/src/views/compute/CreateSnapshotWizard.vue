@@ -78,7 +78,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -124,7 +124,7 @@ export default {
         this.hypervisorSupportsQuiesceVm = true
       }
 
-      api('listVolumes', { virtualMachineId: this.resource.id, listall: true })
+      getAPI('listVolumes', { virtualMachineId: this.resource.id, listall: true })
         .then(json => {
           this.listVolumes = json.listvolumesresponse.volume || []
         })
@@ -155,7 +155,7 @@ export default {
 
         this.loading = true
 
-        api('createSnapshot', params)
+        postAPI('createSnapshot', params)
           .then(json => {
             const jobId = json.createsnapshotresponse.jobid
             if (jobId) {

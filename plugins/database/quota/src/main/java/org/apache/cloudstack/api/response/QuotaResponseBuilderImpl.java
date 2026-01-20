@@ -80,8 +80,8 @@ import org.apache.cloudstack.quota.dao.QuotaCreditsDao;
 import org.apache.cloudstack.quota.dao.QuotaEmailConfigurationDao;
 import org.apache.cloudstack.quota.dao.QuotaEmailTemplatesDao;
 import org.apache.cloudstack.quota.dao.QuotaTariffDao;
-import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.cloudstack.quota.dao.QuotaUsageDao;
+import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailConfigurationVO;
@@ -90,15 +90,17 @@ import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
 import org.apache.cloudstack.utils.jsinterpreter.JsInterpreter;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
-import org.apache.commons.lang3.ObjectUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -107,8 +109,6 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
-import com.cloud.event.ActionEvent;
-import com.cloud.event.EventTypes;
 
 @Component
 public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
@@ -150,6 +150,11 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     private final Class<?>[] assignableClasses = {GenericPresetVariable.class, ComputingResources.class};
 
+    protected void checkActivationRulesAllowed(String activationRule) {
+        if (!_quotaService.isJsInterpretationEnabled() && StringUtils.isNotEmpty(activationRule)) {
+            throw new PermissionDeniedException("Quota Tariff Activation Rule cannot be set, as Javascript interpretation is disabled in the configuration.");
+        }
+    }
 
     @Override
     public QuotaTariffResponse createQuotaTariffResponse(QuotaTariffVO tariff, boolean returnActivationRule) {
@@ -452,6 +457,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             throw new InvalidParameterValueException(String.format("There is no quota tariffs with name [%s].", name));
         }
 
+        checkActivationRulesAllowed(activationRule);
+
         Date currentQuotaTariffStartDate = currentQuotaTariff.getEffectiveOn();
 
         currentQuotaTariff.setRemoved(now);
@@ -705,6 +712,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         if (currentQuotaTariff != null) {
             throw new InvalidParameterValueException(String.format("A quota tariff with name [%s] already exist.", name));
         }
+
+        checkActivationRulesAllowed(activationRule);
 
         if (startDate.compareTo(now) < 0) {
             throw new InvalidParameterValueException(String.format("The value passed as Quota tariff's start date is in the past: [%s]. " +

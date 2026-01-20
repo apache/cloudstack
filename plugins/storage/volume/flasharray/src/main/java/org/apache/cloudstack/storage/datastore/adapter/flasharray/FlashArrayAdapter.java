@@ -367,7 +367,8 @@ public class FlashArrayAdapter implements ProviderAdapter {
 
     @Override
     public ProviderVolume copy(ProviderAdapterContext context, ProviderAdapterDataObject sourceDataObject,
-            ProviderAdapterDataObject destDataObject) {
+            ProviderAdapterDataObject destDataObject, Long newSize) {
+        // Add new parameter as newSize to match method declaration but not used anywhere
         // private ManagedVolume copy(ManagedVolume sourceVolume, String destNamespace,
         // String destName) {
         if (sourceDataObject == null || sourceDataObject.getExternalName() == null

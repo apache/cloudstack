@@ -664,7 +664,7 @@ class TestRouterServices(cloudstackTestCase):
             self.assertEqual(
                 hasattr(router, 'linklocalip'),
                 True,
-                "Check whether router has link local IP field"
+                "Check whether router has Control IP field"
             )
         return
 
@@ -730,7 +730,7 @@ class TestRouterServices(cloudstackTestCase):
             self.assertEqual(
                 hasattr(router, 'linklocalip'),
                 True,
-                "Check whether router has link local IP field"
+                "Check whether router has Control IP field"
             )
 
             # Fetch corresponding ip ranges information from listVlanIpRanges

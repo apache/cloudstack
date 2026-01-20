@@ -84,12 +84,12 @@ public class SSHCmdHelper {
         if (StringUtils.isNotBlank(privateKey)) {
             try {
                 if (!sshConnection.authenticateWithPublicKey(username, privateKey.toCharArray(), null)) {
-                    LOGGER.warn("Failed to authenticate with ssh key");
+                    LOGGER.warn("Failed to authenticate with SSH key");
                     return false;
                 }
                 return true;
             } catch (IOException e) {
-                LOGGER.warn("An exception occurred when authenticate with ssh key");
+                LOGGER.warn("An exception occurred when authenticate with SSH key");
                 return false;
             }
         }
@@ -173,7 +173,7 @@ public class SSHCmdHelper {
             Thread.sleep(1000);
 
             if (sshSession == null) {
-                throw new SshException("Cannot open ssh session");
+                throw new SshException("Cannot open SSH session");
             }
 
             sshSession.execCommand(cmd);
@@ -188,7 +188,7 @@ public class SSHCmdHelper {
             int currentReadBytes = 0;
             while (true) {
                 if (stdout == null || stderr == null) {
-                    throw new SshException("stdout or stderr of ssh session is null");
+                    throw new SshException("stdout or stderr of SSH session is null");
                 }
                 if ((stdout.available() == 0) && (stderr.available() == 0)) {
                     int conditions = sshSession.waitForCondition(ChannelCondition.STDOUT_DATA

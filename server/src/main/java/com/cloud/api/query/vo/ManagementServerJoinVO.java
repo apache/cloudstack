@@ -170,4 +170,8 @@ public class ManagementServerJoinVO {
     public String getJavaVersion() {
         return javaVersion;
     }
+
+    public void setRemoved(Date removedDate) {
+        removed = removedDate;
+    }
 }

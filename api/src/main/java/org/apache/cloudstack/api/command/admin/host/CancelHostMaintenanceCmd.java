@@ -40,7 +40,7 @@ public class CancelHostMaintenanceCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "the host ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "The host ID")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -76,7 +76,7 @@ public class CancelHostMaintenanceCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "canceling maintenance for host: " + getId();
+        return "Canceling maintenance for host: " + getId();
     }
 
     @Override

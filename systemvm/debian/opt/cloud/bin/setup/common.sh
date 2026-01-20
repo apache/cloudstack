@@ -683,7 +683,7 @@ getPublicIp() {
 
 setup_ntp() {
     log_it "Setting up NTP"
-    NTP_CONF_FILE="/etc/ntp.conf"
+    NTP_CONF_FILE="/etc/ntpsec/ntp.conf"
     if [ -f $NTP_CONF_FILE ]
     then
         IFS=',' read -a server_list <<< "$NTP_SERVER_LIST"
@@ -692,9 +692,9 @@ setup_ntp() {
         do
             server=$(echo ${server_list[iterator]} | tr -d '\r')
             PATTERN="server $server"
-            sed -i "0,/^#server/s//$PATTERN\n#server/" $NTP_CONF_FILE
+            sed -i "0,/^# server/s//$PATTERN\n# server/" $NTP_CONF_FILE
         done
-        systemctl enable ntp
+        systemctl enable --now --no-block ntp
     else
         log_it "NTP configuration file not found"
     fi

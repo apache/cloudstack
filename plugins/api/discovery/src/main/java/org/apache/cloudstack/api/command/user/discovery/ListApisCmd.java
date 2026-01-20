@@ -35,7 +35,7 @@ import com.cloud.user.User;
 
 @APICommand(name = "listApis",
             responseObject = ApiDiscoveryResponse.class,
-            description = "lists all available apis on the server, provided by the Api Discovery plugin",
+            description = "Lists all available APIs on the server, provided by the API Discovery plugin",
             since = "4.1.0",
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false, authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})

@@ -71,7 +71,6 @@ public class LocalNfsSecondaryStorageResourceTest extends TestCase {
         }
 
         System.setProperty("paths.script", "/Users/edison/develop/asf-master/script");
-        //resource.configure("test", new HashMap<String, Object>());
     }
 
     @Test

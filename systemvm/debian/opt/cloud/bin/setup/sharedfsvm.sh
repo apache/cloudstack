@@ -49,6 +49,12 @@ setup_sharedfsvm() {
 
     rm -f /etc/logrotate.d/cloud
 
+    # Enable cloud-init without any aid from ds-identify
+    echo "policy: enabled" >  /etc/cloud/ds-identify.cfg
+
+    # Add ConfigDrive to datasource_list
+    sed -i "s/datasource_list: .*/datasource_list: ['ConfigDrive', 'CloudStack']/g" /etc/cloud/cloud.cfg.d/cloudstack.cfg
+
     log_it "Starting cloud-init services"
     if [ -f /home/cloud/success ]; then
       systemctl stop cloud-init cloud-config cloud-final

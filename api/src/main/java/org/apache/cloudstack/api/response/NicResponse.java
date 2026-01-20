@@ -31,79 +31,79 @@ import com.google.gson.annotations.SerializedName;
 public class NicResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the nic")
+    @Param(description = "The ID of the NIC")
     private String id;
 
     @SerializedName(ApiConstants.NETWORK_ID)
-    @Param(description = "the ID of the corresponding network")
+    @Param(description = "The ID of the corresponding Network")
     private String networkId;
 
     @SerializedName(ApiConstants.NETWORK_NAME)
-    @Param(description = "the name of the corresponding network")
+    @Param(description = "The name of the corresponding Network")
     private String networkName;
 
     @SerializedName(ApiConstants.NETMASK)
-    @Param(description = "the netmask of the nic")
+    @Param(description = "The netmask of the NIC")
     private String netmask;
 
     @SerializedName(ApiConstants.GATEWAY)
-    @Param(description = "the gateway of the nic")
+    @Param(description = "The gateway of the NIC")
     private String gateway;
 
     @SerializedName(ApiConstants.IP_ADDRESS)
-    @Param(description = "the ip address of the nic")
+    @Param(description = "The IP address of the NIC")
     private String ipaddress;
 
     @SerializedName(ApiConstants.ISOLATION_URI)
-    @Param(description = "the isolation uri of the nic")
+    @Param(description = "The isolation URI of the NIC")
     private String isolationUri;
 
     @SerializedName(ApiConstants.BROADCAST_URI)
-    @Param(description = "the broadcast uri of the nic")
+    @Param(description = "The broadcast URI of the NIC")
     private String broadcastUri;
 
     @SerializedName(ApiConstants.TRAFFIC_TYPE)
-    @Param(description = "the traffic type of the nic")
+    @Param(description = "The traffic type of the NIC")
     private String trafficType;
 
     @SerializedName(ApiConstants.TYPE)
-    @Param(description = "the type of the nic")
+    @Param(description = "The type of the NIC")
     private String type;
 
     @SerializedName(ApiConstants.IS_DEFAULT)
-    @Param(description = "true if nic is default, false otherwise")
+    @Param(description = "True if NIC is default, false otherwise")
     private Boolean isDefault;
 
     @SerializedName(ApiConstants.MAC_ADDRESS)
-    @Param(description = "true if nic is default, false otherwise")
+    @Param(description = "True if NIC is default, false otherwise")
     private String macAddress;
 
     @SerializedName(ApiConstants.IP6_GATEWAY)
-    @Param(description = "the gateway of IPv6 network")
+    @Param(description = "The gateway of IPv6 Network")
     private String ip6Gateway;
 
     @SerializedName(ApiConstants.IP6_CIDR)
-    @Param(description = "the cidr of IPv6 network")
+    @Param(description = "The CIDR of IPv6 Network")
     private String ip6Cidr;
 
     @SerializedName(ApiConstants.IP6_ADDRESS)
-    @Param(description = "the IPv6 address of network")
+    @Param(description = "The IPv6 address of Network")
     private String ip6Address;
 
     @SerializedName(ApiConstants.SECONDARY_IP)
-    @Param(description = "the Secondary ipv4 addr of nic")
+    @Param(description = "The Secondary IPv4 addr of NIC")
     private List<NicSecondaryIpResponse> secondaryIps;
 
     @SerializedName(ApiConstants.EXTRA_DHCP_OPTION)
-    @Param(description = "the extra dhcp options on the nic", since = "4.11.0")
+    @Param(description = "The extra DHCP options on the NIC", since = "4.11.0")
     private List<NicExtraDhcpOptionResponse> extraDhcpOptions;
 
     @SerializedName(ApiConstants.DEVICE_ID)
-    @Param(description = "device id for the network when plugged into the virtual machine", since = "4.4")
+    @Param(description = "Device ID for the Network when plugged into the Instance", since = "4.4")
     private String deviceId;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
-    @Param(description = "Id of the vm to which the nic belongs")
+    @Param(description = "Id of the Instance to which the NIC belongs")
     private String vmId;
 
     @SerializedName(ApiConstants.NSX_LOGICAL_SWITCH)
@@ -119,11 +119,11 @@ public class NicResponse extends BaseResponse {
     private Integer vlanId;
 
     @SerializedName(ApiConstants.ISOLATED_PVLAN)
-    @Param(description = "the isolated private VLAN if available", since="4.14.0")
+    @Param(description = "The isolated private VLAN if available", since="4.14.0")
     private Integer isolatedPvlanId;
 
     @SerializedName(ApiConstants.ISOLATED_PVLAN_TYPE)
-    @Param(description = "the isolated private VLAN type if available", since="4.14.0")
+    @Param(description = "The isolated private VLAN type if available", since="4.14.0")
     private String isolatedPvlanType;
 
     @SerializedName(ApiConstants.ADAPTER_TYPE)
@@ -131,7 +131,7 @@ public class NicResponse extends BaseResponse {
     private String adapterType;
 
     @SerializedName(ApiConstants.IP_ADDRESSES)
-    @Param(description = "IP addresses associated with NIC found for unmanaged VM", since="4.14.0")
+    @Param(description = "IP addresses associated with NIC found for unmanaged Instance", since="4.14.0")
     private List<String> ipAddresses;
 
     @SerializedName(ApiConstants.MTU)
@@ -139,11 +139,11 @@ public class NicResponse extends BaseResponse {
     private Integer mtu;
 
     @SerializedName(ApiConstants.PUBLIC_IP_ID)
-    @Param(description = "public IP address id associated with this nic via Static nat rule")
+    @Param(description = "Public IP address ID associated with this NIC via Static NAT rule")
     private String publicIpId;
 
     @SerializedName(ApiConstants.PUBLIC_IP)
-    @Param(description = "public IP address associated with this nic via Static nat rule")
+    @Param(description = "Public IP address associated with this NIC via Static NAT rule")
     private String publicIp;
 
     public void setVmId(String vmId) {
@@ -223,11 +223,11 @@ public class NicResponse extends BaseResponse {
     }
 
     @SerializedName(ApiConstants.VPC_ID)
-    @Param(description = "Id of the vpc to which the nic belongs")
+    @Param(description = "ID of the VPC to which the NIC belongs")
     private String vpcId;
 
     @SerializedName(ApiConstants.VPC_NAME)
-    @Param(description = "name of the vpc to which the nic belongs")
+    @Param(description = "Name of the VPC to which the NIC belongs")
     private String vpcName;
 
     @Override

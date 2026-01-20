@@ -25,11 +25,11 @@ import com.cloud.serializer.Param;
 
 public class TrafficTypeImplementorResponse extends BaseResponse {
     @SerializedName(ApiConstants.TRAFFIC_TYPE)
-    @Param(description = "network traffic type")
+    @Param(description = "Network traffic type")
     private String trafficType;
 
     @SerializedName(ApiConstants.TRAFFIC_TYPE_IMPLEMENTOR)
-    @Param(description = "implementor of network traffic type")
+    @Param(description = "Implementor of Network traffic type")
     private String implementor;
 
     public void setTrafficType(String type) {

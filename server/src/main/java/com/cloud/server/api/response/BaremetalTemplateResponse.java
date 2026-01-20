@@ -24,7 +24,7 @@ import com.cloud.serializer.Param;
 
 public class BaremetalTemplateResponse extends BaseResponse {
     @SerializedName("id")
-    @Param(description = "the template ID")
+    @Param(description = "The template ID")
     private String id;
 
     public String getId() {

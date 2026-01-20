@@ -82,7 +82,7 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
         try {
             int status = client.executeMethod(request);
             if (status != HttpStatus.SC_OK) {
-                logger.warn("Not able to download template, status code: " + status);
+                logger.warn("Not able to download Template, status code: " + status);
                 return new Pair<>(false, null);
             }
             return performDownload();
@@ -94,14 +94,14 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
     }
 
     protected Pair<Boolean, String> performDownload() {
-        logger.info("Downloading template " + getTemplateId() + " from " + getUrl() + " to: " + getDownloadedFilePath());
+        logger.info("Downloading Template " + getTemplateId() + " from " + getUrl() + " to: " + getDownloadedFilePath());
         try (
                 InputStream in = request.getResponseBodyAsStream();
                 OutputStream out = new FileOutputStream(getDownloadedFilePath())
         ) {
             IOUtils.copy(in, out);
         } catch (IOException e) {
-            logger.error("Error downloading template " + getTemplateId() + " due to: " + e.getMessage());
+            logger.error("Error downloading Template " + getTemplateId() + " due to: " + e.getMessage());
             return new Pair<>(false, null);
         }
         return new Pair<>(true, getDownloadedFilePath());

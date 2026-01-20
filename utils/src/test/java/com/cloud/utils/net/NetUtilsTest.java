@@ -309,6 +309,14 @@ public class NetUtilsTest {
     }
 
     @Test
+    public void testGetCleanIp4CidrList() {
+        final String cidrList = " 10.0.151.5/20, 10.0.144.10/21 ";
+        final String cleanCidrList = "10.0.144.0/20,10.0.144.0/21";
+
+        assertEquals(cleanCidrList, NetUtils.getCleanIp4CidrList(cidrList));
+    }
+
+    @Test
     public void testIsValidCidrList() throws Exception {
         final String cidrFirst = "10.0.144.0/20,1.2.3.4/32,5.6.7.8/24";
         final String cidrSecond = "10.0.151.0/20,129.0.0.0/4";
@@ -931,5 +939,16 @@ public class NetUtilsTest {
     public void testTransformCidr() {
         Assert.assertEquals("192.168.0.0/24", NetUtils.transformCidr("192.168.0.100/24"));
         Assert.assertEquals("10.10.10.10/32", NetUtils.transformCidr("10.10.10.10/32"));
+    }
+
+    @Test
+    public void testVpnIpRange() {
+        String ipRange = "10.1.2.1-10.1.2.8";
+        String startIp = ipRange.split("-")[0];
+        String endIp = ipRange.split("-")[1];
+        int cidrSize = NetUtils.getBigCidrSizeOfIpRange(NetUtils.ip2Long(startIp), NetUtils.ip2Long(endIp));
+        Assert.assertEquals(28, cidrSize);
+        String cidr = NetUtils.transformCidr(startIp + "/" + cidrSize);
+        Assert.assertEquals("10.1.2.0/28", cidr);
     }
 }

@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -29,6 +28,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.Callable;
@@ -158,13 +158,7 @@ public class Script implements Callable<String> {
         boolean obscureParam = false;
         for (int i = 0; i < command.length; i++) {
             String cmd = command[i];
-            if (StringUtils.isNotEmpty(cmd) && cmd.startsWith("vi://")) {
-                String[] tokens = cmd.split("@");
-                if (tokens.length >= 2) {
-                    builder.append("vi://").append("******@").append(tokens[1]).append(" ");
-                } else {
-                    builder.append("vi://").append("******").append(" ");
-                }
+            if (sanitizeViCmdParameter(cmd, builder) || sanitizeRbdFileFormatCmdParameter(cmd, builder)) {
                 continue;
             }
             if (obscureParam) {
@@ -180,6 +174,41 @@ public class Script implements Callable<String> {
             }
         }
         return builder.toString();
+    }
+
+    private boolean sanitizeViCmdParameter(String cmd, StringBuilder builder) {
+        if (StringUtils.isEmpty(cmd) || !cmd.startsWith("vi://")) {
+            return false;
+        }
+
+        String[] tokens = cmd.split("@");
+        if (tokens.length >= 2) {
+            builder.append("vi://").append("******@").append(tokens[1]).append(" ");
+        } else {
+            builder.append("vi://").append("******").append(" ");
+        }
+        return true;
+    }
+
+    private boolean sanitizeRbdFileFormatCmdParameter(String cmd, StringBuilder builder) {
+        if (StringUtils.isEmpty(cmd) || !cmd.startsWith("rbd:") || !cmd.contains("key=")) {
+            return false;
+        }
+
+        String[] tokens = cmd.split("key=");
+        if (tokens.length != 2) {
+            return false;
+        }
+
+        String tokenWithKey = tokens[1];
+        String[] options = tokenWithKey.split(":");
+        if (options.length > 1) {
+            String optionsAfterKey = String.join(":", Arrays.copyOfRange(options, 1, options.length));
+            builder.append(tokens[0]).append("key=").append("******").append(":").append(optionsAfterKey).append(" ");
+        } else {
+            builder.append(tokens[0]).append("key=").append("******").append(" ");
+        }
+        return true;
     }
 
     public long getTimeout() {
@@ -215,6 +244,7 @@ public class Script implements Callable<String> {
 
         try {
             _logger.trace(String.format("Creating process for command [%s].", commandLine));
+
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.redirectErrorStream(true);
             if (_workDir != null)
@@ -669,6 +699,26 @@ public class Script implements Callable<String> {
 
     public static String executeCommand(String... command) {
         return runScript(getScriptForCommandRun(command));
+    }
+
+    /**
+     * Execute command and return standard output and standard error.
+     *
+     * @param command OS command to be executed
+     * @return {@link Pair} with standard output as first and standard error as second field
+     */
+    public static Pair<String, String> executeCommand(String command) {
+        // wrap command into bash
+        Script script = new Script("/bin/bash");
+        script.add("-c");
+        script.add(command);
+
+        // parse all lines from the output
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        String stdErr = script.execute(parser);
+        String stdOut = parser.getLines();
+        LOGGER.debug(String.format("Command [%s] result - stdout: [%s], stderr: [%s]", command, stdOut, stdErr));
+        return new Pair<>(stdOut, stdErr);
     }
 
     public static int executeCommandForExitValue(long timeout, String... command) {

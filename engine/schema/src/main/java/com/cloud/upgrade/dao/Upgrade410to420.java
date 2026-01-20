@@ -665,25 +665,25 @@ public class Upgrade410to420 extends DbUpgradeAbstractImpl {
                             newLabel = getNewLabel(rsLabel, trafficTypeVswitchParamValue);
                             try(PreparedStatement update_pstmt =
                                     conn.prepareStatement("update physical_network_traffic_types set vmware_network_label = ? where traffic_type = ? and vmware_network_label is not NULL;");) {
-                                logger.debug("Updating vmware label for " + trafficType + " traffic. Update SQL statement is " + pstmt);
+                                logger.debug("Updating VMware label for " + trafficType + " traffic. Update SQL statement is " + pstmt);
                                 pstmt.setString(1, newLabel);
                                 pstmt.setString(2, trafficType);
                                 update_pstmt.executeUpdate();
                             }catch (SQLException e) {
-                                throw new CloudRuntimeException("Unable to set vmware traffic labels ", e);
+                                throw new CloudRuntimeException("Unable to set VMware traffic labels ", e);
                             }
                         }catch (SQLException e) {
-                            throw new CloudRuntimeException("Unable to set vmware traffic labels ", e);
+                            throw new CloudRuntimeException("Unable to set VMware traffic labels ", e);
                         }
                     }catch (SQLException e) {
-                        throw new CloudRuntimeException("Unable to set vmware traffic labels ", e);
+                        throw new CloudRuntimeException("Unable to set VMware traffic labels ", e);
                     }
                 }
             }catch (SQLException e) {
-                throw new CloudRuntimeException("Unable to set vmware traffic labels ", e);
+                throw new CloudRuntimeException("Unable to set VMware traffic labels ", e);
             }
         } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to set vmware traffic labels ", e);
+            throw new CloudRuntimeException("Unable to set VMware traffic labels ", e);
         }
     }
 
@@ -1195,9 +1195,9 @@ public class Upgrade410to420 extends DbUpgradeAbstractImpl {
                             plannerName = "FirstFitPlanner";
                         } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.firstfit.toString())) {
                             plannerName = "FirstFitPlanner";
-                        } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.userconcentratedpod_firstfit.toString())) {
+                        } else if (globalValue.equals("userconcentratedpod_firstfit")) {
                             plannerName = "UserConcentratedPodPlanner";
-                        } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.userconcentratedpod_random.toString())) {
+                        } else if (globalValue.equals("userconcentratedpod_random")) {
                             plannerName = "UserConcentratedPodPlanner";
                         } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.userdispersing.toString())) {
                             plannerName = "UserDispersingPlanner";

@@ -44,8 +44,8 @@ import com.cloud.vm.VirtualMachine;
 import java.util.ArrayList;
 import java.util.List;
 
-@APICommand(name = "resetSSHKeyForVirtualMachine", responseObject = UserVmResponse.class, description = "Resets the SSH Key for virtual machine. " +
-        "The virtual machine must be in a \"Stopped\" state. [async]", responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
+@APICommand(name = "resetSSHKeyForVirtualMachine", responseObject = UserVmResponse.class, description = "Resets the SSH Key for the Instance. " +
+        "The Instance must be in a \"Stopped\" state. [async]", responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class ResetVMSSHKeyCmd extends BaseAsyncCmd implements UserCmd {
 
@@ -56,27 +56,27 @@ public class ResetVMSSHKeyCmd extends BaseAsyncCmd implements UserCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the virtual machine")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the Instance")
     private Long id;
 
     @Deprecated
-    @Parameter(name = ApiConstants.SSH_KEYPAIR, type = CommandType.STRING ,description = "name of the ssh key pair used to login to the virtual machine")
+    @Parameter(name = ApiConstants.SSH_KEYPAIR, type = CommandType.STRING ,description = "Name of the SSH key pair used to login to the Instance")
     String name;
 
-    @Parameter(name = ApiConstants.SSH_KEYPAIRS, type = CommandType.LIST, collectionType = CommandType.STRING, since="4.17", description = "names of the ssh key pairs to be used to login to the virtual machine")
+    @Parameter(name = ApiConstants.SSH_KEYPAIRS, type = CommandType.LIST, collectionType = CommandType.STRING, since="4.17", description = "Names of the SSH key pairs to be used to login to the Instance")
     List<String> names;
 
     //Owner information
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the ssh key. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "An optional Account for the SSH key. Must be used with domainId.")
     private String accountName;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
                entityType = DomainResponse.class,
-               description = "an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used.")
+               description = "An optional domainId for the Instance. If the Account parameter is used, domainId must also be used.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the ssh key")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "An optional project for the SSH key")
     private Long projectId;
 
     /////////////////////////////////////////////////////
@@ -121,7 +121,7 @@ public class ResetVMSSHKeyCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return "resetting SSHKey for vm: " + getId();
+        return "resetting SSHKey for Instance: " + getId();
     }
 
     @Override
@@ -160,7 +160,7 @@ public class ResetVMSSHKeyCmd extends BaseAsyncCmd implements UserCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to reset vm SSHKey");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to reset  SSHKey");
         }
     }
 

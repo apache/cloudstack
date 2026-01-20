@@ -25,7 +25,7 @@ import com.cloud.serializer.Param;
 
 public class NetworkDeviceResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the network device")
+    @Param(description = "The ID of the Network device")
     private String id;
 
     public String getId() {

@@ -48,13 +48,14 @@ public interface IndirectAgentLB {
     List<String> getManagementServerList(Long hostId, Long dcId, List<Long> orderedHostIdList, String lbAlgorithm);
 
     /**
-     * Compares received management server list against expected list for a host in a zone.
+     * Compares received management server list against expected list for a host in a zone and LB algorithm.
      * @param hostId host id
      * @param dcId zone id
      * @param receivedMSHosts received management server list
-     * @return true if mgmtHosts is up to date, false if not
+     * @param lbAlgorithm received LB algorithm
+     * @return true if mgmtHosts and LB algorithm are up to date, false if not
      */
-    boolean compareManagementServerList(Long hostId, Long dcId, List<String> receivedMSHosts, String lbAlgorithm);
+    boolean compareManagementServerListAndLBAlgorithm(Long hostId, Long dcId, List<String> receivedMSHosts, String lbAlgorithm);
 
     /**
      * Returns the configure LB algorithm
@@ -70,9 +71,11 @@ public interface IndirectAgentLB {
      */
     Long getLBPreferredHostCheckInterval(Long clusterId);
 
-    void propagateMSListToAgents();
+    void propagateMSListToAgents(boolean triggerHostLB);
 
-    boolean haveAgentBasedHosts(long msId);
+    void propagateMSListToAgentsInCluster(Long clusterId);
 
-    boolean migrateAgents(String fromMsUuid, long fromMsId, String lbAlgorithm, long timeoutDurationInMs);
+    boolean haveAgentBasedHosts(long msId, boolean excludeHostsInMaintenance);
+
+    boolean migrateAgents(String fromMsUuid, long fromMsId, String lbAlgorithm, long timeoutDurationInMs, boolean excludeHostsInMaintenance);
 }

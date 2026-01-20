@@ -53,10 +53,10 @@ public class ChangeOutOfBandManagementPasswordCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, required = true,
-            validations = {ApiArgValidator.PositiveNumber}, description = "the ID of the host")
+            validations = {ApiArgValidator.PositiveNumber}, description = "The ID of the host")
     private Long hostId;
 
-    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, description = "the new host management interface password of maximum length 16, if none is provided a random password would be used")
+    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, description = "The new host management interface password of maximum length 16, if none is provided a random password would be used")
     private String password;
 
     /////////////////////////////////////////////////////

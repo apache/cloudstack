@@ -123,7 +123,7 @@ public class CloudianClientTest {
                 .willReturn(aResponse()
                         .withStatus(401)
                         .withBody("")));
-        client.listUser("someUserId", "somegGroupId");
+        client.listUser("someUserId", "someGroupId");
     }
 
     @Test
@@ -201,7 +201,7 @@ public class CloudianClientTest {
 
     @Test(expected = CloudRuntimeException.class)
     public void getUserBucketUsagesNoSuchGroup() {
-        // no group, no user, no bucket etc are all 400
+        // no group, no user, no bucket etc. are all 400
         wireMockRule.stubFor(get(urlEqualTo("/system/bucketusage?groupId=mygroup"))
                 .willReturn(aResponse()
                         .withStatus(400)
@@ -257,7 +257,7 @@ public class CloudianClientTest {
         b2.setByteCount(789L);
         b2.setObjectCount(0L);
         b2.setPolicyName("pname2");
-        List<CloudianBucketUsage> buckets = new ArrayList<CloudianBucketUsage>();
+        List<CloudianBucketUsage> buckets = new ArrayList<>();
         buckets.add(b1);
         buckets.add(b2);
         expect_u1.setBuckets(buckets);
@@ -315,7 +315,7 @@ public class CloudianClientTest {
         b2.setByteCount(789L);
         b2.setObjectCount(0L);
         b2.setPolicyName("pname2");
-        List<CloudianBucketUsage> buckets = new ArrayList<CloudianBucketUsage>();
+        List<CloudianBucketUsage> buckets = new ArrayList<>();
         buckets.add(b1);
         buckets.add(b2);
         expect_u1.setBuckets(buckets);
@@ -404,10 +404,10 @@ public class CloudianClientTest {
                         .withBody("{\"userId\":\"someUser\",\"userType\":\"User\",\"fullName\":\"John Doe (jdoe)\",\"emailAddr\":\"j@doe.com\",\"address1\":null,\"address2\":null,\"city\":null,\"state\":null,\"zip\":null,\"country\":null,\"phone\":null,\"groupId\":\"someGroup\",\"website\":null,\"active\":\"true\",\"canonicalUserId\":\"b3940886468689d375ebf8747b151c37\",\"ldapEnabled\":false}")));
 
         final CloudianUser user = client.listUser(userId, groupId);
-        Assert.assertEquals(user.getActive(), true);
-        Assert.assertEquals(user.getUserId(), userId);
-        Assert.assertEquals(user.getGroupId(), groupId);
-        Assert.assertEquals(user.getUserType(), "User");
+        Assert.assertEquals(true, user.getActive());
+        Assert.assertEquals(userId, user.getUserId());
+        Assert.assertEquals(groupId, user.getGroupId());
+        Assert.assertEquals("User", user.getUserType());
     }
 
     @Test
@@ -441,9 +441,9 @@ public class CloudianClientTest {
                         .withBody("[{\"userId\":\"someUser\",\"userType\":\"User\",\"fullName\":\"John Doe (jdoe)\",\"emailAddr\":\"j@doe.com\",\"address1\":null,\"address2\":null,\"city\":null,\"state\":null,\"zip\":null,\"country\":null,\"phone\":null,\"groupId\":\"someGroup\",\"website\":null,\"active\":\"true\",\"canonicalUserId\":\"b3940886468689d375ebf8747b151c37\",\"ldapEnabled\":false}]")));
 
         final List<CloudianUser> users = client.listUsers(groupId);
-        Assert.assertEquals(users.size(), 1);
-        Assert.assertEquals(users.get(0).getActive(), true);
-        Assert.assertEquals(users.get(0).getGroupId(), groupId);
+        Assert.assertEquals(1, users.size());
+        Assert.assertEquals(true, users.get(0).getActive());
+        Assert.assertEquals(groupId, users.get(0).getGroupId());
     }
 
     @Test
@@ -658,7 +658,7 @@ public class CloudianClientTest {
     }
 
     @Test
-    public void addGroupFail() throws Exception {
+    public void addGroupFail() {
         wireMockRule.stubFor(put(urlEqualTo("/group"))
                 .willReturn(aResponse()
                         .withStatus(400)
@@ -678,8 +678,8 @@ public class CloudianClientTest {
                         .withBody("{\"groupId\":\"someGroup\",\"groupName\":\"/someDomain\",\"ldapGroup\":null,\"active\":\"true\",\"ldapEnabled\":false,\"ldapServerURL\":null,\"ldapUserDNTemplate\":null,\"ldapSearch\":null,\"ldapSearchUserBase\":null,\"ldapMatchAttribute\":null}")));
 
         final CloudianGroup group = client.listGroup(groupId);
-        Assert.assertEquals(group.getActive(), true);
-        Assert.assertEquals(group.getGroupId(), groupId);
+        Assert.assertEquals(true, group.getActive());
+        Assert.assertEquals(groupId, group.getGroupId());
     }
 
     @Test
@@ -712,9 +712,9 @@ public class CloudianClientTest {
                         .withBody("[{\"groupId\":\"someGroup\",\"groupName\":\"/someDomain\",\"ldapGroup\":null,\"active\":\"true\",\"ldapEnabled\":false,\"ldapServerURL\":null,\"ldapUserDNTemplate\":null,\"ldapSearch\":null,\"ldapSearchUserBase\":null,\"ldapMatchAttribute\":null}]")));
 
         final List<CloudianGroup> groups = client.listGroups();
-        Assert.assertEquals(groups.size(), 1);
-        Assert.assertEquals(groups.get(0).getActive(), true);
-        Assert.assertEquals(groups.get(0).getGroupId(), groupId);
+        Assert.assertEquals(1, groups.size());
+        Assert.assertEquals(true, groups.get(0).getActive());
+        Assert.assertEquals(groupId, groups.get(0).getGroupId());
     }
 
     @Test

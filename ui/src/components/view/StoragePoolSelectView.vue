@@ -96,7 +96,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 
 export default {
   name: 'VolumeStoragePoolSelector',
@@ -184,7 +184,7 @@ export default {
     fetchStoragePools () {
       this.loading = true
       if (this.suitabilityEnabled) {
-        api('findStoragePoolsForMigration', {
+        getAPI('findStoragePoolsForMigration', {
           id: this.resource.id,
           keyword: this.searchQuery,
           page: this.page,
@@ -207,7 +207,7 @@ export default {
         if (this.clusterId) {
           params.clusterid = this.clusterId
         }
-        api('listStoragePools', params).then(response => {
+        getAPI('listStoragePools', params).then(response => {
           this.storagePools = response.liststoragepoolsresponse.storagepool || []
           this.totalCount = response.liststoragepoolsresponse.count
         }).catch(error => {

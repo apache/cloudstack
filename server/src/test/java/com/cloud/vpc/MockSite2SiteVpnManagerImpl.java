@@ -23,7 +23,6 @@ import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.network.dao.Site2SiteVpnConnectionVO;
 import com.cloud.network.vpn.Site2SiteVpnManager;
-import com.cloud.network.vpn.Site2SiteVpnService;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.DomainRouterVO;
@@ -41,11 +40,13 @@ import org.apache.cloudstack.api.command.user.vpn.UpdateVpnCustomerGatewayCmd;
 import org.springframework.stereotype.Component;
 
 import javax.naming.ConfigurationException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Component
-public class MockSite2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpnManager, Site2SiteVpnService {
+public class MockSite2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpnManager {
 
     /* (non-Javadoc)
      * @see com.cloud.network.vpn.Site2SiteVpnService#createVpnGateway(org.apache.cloudstack.api.commands.CreateVpnGatewayCmd)
@@ -273,6 +274,18 @@ public class MockSite2SiteVpnManagerImpl extends ManagerBase implements Site2Sit
     public Site2SiteVpnGateway updateVpnGateway(Long id, String customId, Boolean forDisplay) {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public Set<String> getExcludedVpnGatewayParameters(Site2SiteCustomerGateway customerGw) {
+        // TODO Auto-generated method stub
+        return new HashSet<>();
+    }
+
+    @Override
+    public Set<String> getObsoleteVpnGatewayParameters(Site2SiteCustomerGateway customerGw) {
+        // TODO Auto-generated method stub
+        return new HashSet<>();
     }
 
 }

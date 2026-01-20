@@ -60,7 +60,7 @@ deploy_server() {
 if [ $? -gt 0 ]; then echo "failed to setup db.properties file on remote $1"; return 2; fi
 
 #ssh root@$1 "cd /root/cloudstack-oss && nohup ant run &"
-  #if [ $? -gt 0 ]; then echo "failed to start the softare on remote $1"; return 2; fi
+  #if [ $? -gt 0 ]; then echo "failed to start the software on remote $1"; return 2; fi
 
   echo "Remote management server is deployed as a part of cluster setup; you have to start it manually by logging in remotely"
 }

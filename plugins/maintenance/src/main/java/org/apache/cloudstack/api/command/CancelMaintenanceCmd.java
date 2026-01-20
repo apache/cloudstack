@@ -18,12 +18,15 @@
 package org.apache.cloudstack.api.command;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 
 import com.cloud.user.Account;
 
+import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ManagementServerMaintenanceResponse;
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.commons.lang3.BooleanUtils;
 
 @APICommand(name = CancelMaintenanceCmd.APINAME,
             description = "Cancels maintenance of the management server",
@@ -35,6 +38,13 @@ import org.apache.cloudstack.acl.RoleType;
 public class CancelMaintenanceCmd extends BaseMSMaintenanceActionCmd {
 
     public static final String APINAME = "cancelMaintenance";
+
+    @Parameter(name = ApiConstants.REBALANCE, type = CommandType.BOOLEAN, description = "Rebalance agents (applicable for indirect agents, ensure the settings 'host' and 'indirect.agent.lb.algorithm' are properly configured) after cancelling maintenance, default is true")
+    private Boolean rebalance;
+
+    public boolean getRebalance() {
+        return BooleanUtils.toBooleanDefaultIfNull(rebalance, true);
+    }
 
     @Override
     public String getCommandName() {

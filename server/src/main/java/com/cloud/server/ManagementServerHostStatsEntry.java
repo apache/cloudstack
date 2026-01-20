@@ -108,7 +108,7 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     }
 
     @Override
-    public Date getCollectionTime(){
+    public Date getCollectionTime() {
         return collectionTime;
     }
 

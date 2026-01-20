@@ -46,7 +46,7 @@ public class DeleteStorageNetworkIpRangeCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = StorageNetworkIpRangeResponse.class,
                required = true,
-               description = "the uuid of the storage network ip range")
+               description = "The UUID of the storage network IP range")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -75,7 +75,7 @@ public class DeleteStorageNetworkIpRangeCmd extends BaseAsyncCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } catch (Exception e) {
-            logger.warn("Failed to delete storage network ip range " + getId(), e);
+            logger.warn("Failed to delete storage network ip range {}", getId(), e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }

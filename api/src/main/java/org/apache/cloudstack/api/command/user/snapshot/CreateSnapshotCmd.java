@@ -16,11 +16,13 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.snapshot;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -32,6 +34,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.SnapshotPolicyResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.collections.MapUtils;
@@ -46,7 +49,7 @@ import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "createSnapshot", description = "Creates an instant snapshot of a volume.", responseObject = SnapshotResponse.class, entityType = {Snapshot.class},
+@APICommand(name = "createSnapshot", description = "Creates an instant Snapshot of a volume.", responseObject = SnapshotResponse.class, entityType = {Snapshot.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 
@@ -56,13 +59,13 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.ACCOUNT,
                type = CommandType.STRING,
-               description = "The account of the snapshot. The account parameter must be used with the domainId parameter.")
+               description = "The Account of the Snapshot. The Account parameter must be used with the domainId parameter.")
     private String accountName;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
                entityType = DomainResponse.class,
-            description = "The domain ID of the snapshot. If used with the account parameter, specifies a domain for the account associated with the disk volume. If account is NOT provided then snapshot will be assigned to the caller account and domain.")
+            description = "The domain ID of the Snapshot. If used with the Account parameter, specifies a domain for the Account associated with the disk volume. If Account is NOT provided then snapshot will be assigned to the caller Account and domain.")
     private Long domainId;
 
     @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "The ID of the disk volume")
@@ -71,20 +74,20 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.POLICY_ID,
                type = CommandType.UUID,
                entityType = SnapshotPolicyResponse.class,
-            description = "policy id of the snapshot, if this is null, then use MANUAL_POLICY.")
+            description = "Policy ID of the Snapshot, if this is null, then use MANUAL_POLICY.")
     private Long policyId;
 
-    @Parameter(name = ApiConstants.SNAPSHOT_QUIESCEVM, type = CommandType.BOOLEAN, required = false, description = "quiesce vm if true")
+    @Parameter(name = ApiConstants.SNAPSHOT_QUIESCEVM, type = CommandType.BOOLEAN, required = false, description = "Quiesce Instance if true")
     private Boolean quiescevm;
 
     @Parameter(name = ApiConstants.LOCATION_TYPE, type = CommandType.STRING, required = false, description = "Currently applicable only for managed storage. " +
             "Valid location types: 'primary', 'secondary'. Default = 'primary'.")
     private String locationType;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the snapshot")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the Snapshot")
     private String snapshotName;
 
-    @Parameter(name = ApiConstants.ASYNC_BACKUP, type = CommandType.BOOLEAN, required = false, description = "asynchronous backup if true")
+    @Parameter(name = ApiConstants.ASYNC_BACKUP, type = CommandType.BOOLEAN, required = false, description = "Asynchronous backup if true")
     private Boolean asyncBackup;
 
     @Parameter(name = ApiConstants.TAGS, type = CommandType.MAP, description = "Map of tags (key/value pairs)")
@@ -98,6 +101,22 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
                     "The snapshot will always be made available in the zone in which the volume is present.",
             since = "4.19.0")
     protected List<Long> zoneIds;
+
+    @Parameter(name = ApiConstants.STORAGE_ID_LIST,
+            type=CommandType.LIST,
+            collectionType = CommandType.UUID,
+            entityType = StoragePoolResponse.class,
+            authorized = RoleType.Admin,
+            description = "A comma-separated list of IDs of the storage pools in other zones in which the snapshot will be made available. " +
+                    "The snapshot will always be made available in the zone in which the volume is present.",
+            since = "4.21.0")
+    protected List<Long> storagePoolIds;
+
+    @Parameter (name = ApiConstants.USE_STORAGE_REPLICATION,
+            type=CommandType.BOOLEAN,
+            description = "Enables the snapshot to be copied to the supported primary storages when the config 'use.storage.replication' is set to true for the storage or globally. " +
+                    "This is supported only for StorPool storage for now.")
+    protected Boolean useStorageReplication;
 
     private String syncObjectType = BaseAsyncCmd.snapshotHostSyncObject;
 
@@ -161,6 +180,17 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
         return zoneIds;
     }
 
+    public List<Long> getStoragePoolIds() {
+        return storagePoolIds == null ? new ArrayList<>() : storagePoolIds;
+    }
+
+    public Boolean useStorageReplication() {
+        if (useStorageReplication == null) {
+            return false;
+        }
+        return useStorageReplication;
+    }
+
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
@@ -186,7 +216,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
                     " as it's no longer active");
             }
         } else if (account.getState() == Account.State.DISABLED) {
-            throw new PermissionDeniedException("The owner of template is disabled: " + account);
+            throw new PermissionDeniedException("The owner of Template is disabled: " + account);
         }
 
         return volume.getAccountId();
@@ -199,7 +229,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "creating snapshot for volume: " + getVolumeUuid();
+        return "Creating Snapshot for volume: " + getVolumeUuid();
     }
 
     @Override
@@ -209,12 +239,12 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        Snapshot snapshot = _volumeService.allocSnapshot(getVolumeId(), getPolicyId(), getSnapshotName(), getLocationType(), getZoneIds());
+        Snapshot snapshot = _volumeService.allocSnapshot(getVolumeId(), getPolicyId(), getSnapshotName(), getLocationType(), getZoneIds(), getStoragePoolIds(), useStorageReplication());
         if (snapshot != null) {
             setEntityId(snapshot.getId());
             setEntityUuid(snapshot.getUuid());
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot for volume" + getVolumeUuid());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Snapshot for volume" + getVolumeUuid());
         }
     }
 
@@ -223,7 +253,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
         Snapshot snapshot;
         try {
             snapshot =
-                _volumeService.takeSnapshot(getVolumeId(), getPolicyId(), getEntityId(), _accountService.getAccount(getEntityOwnerId()), getQuiescevm(), getLocationType(), getAsyncBackup(), getTags(), getZoneIds());
+                _volumeService.takeSnapshot(getVolumeId(), getPolicyId(), getEntityId(), _accountService.getAccount(getEntityOwnerId()), getQuiescevm(), getLocationType(), getAsyncBackup(), getTags(), getZoneIds(), getStoragePoolIds(), useStorageReplication());
 
             if (snapshot != null) {
                 SnapshotResponse response = _responseGenerator.createSnapshotResponse(snapshot);
@@ -234,16 +264,16 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
             }
         } catch (Exception e) {
             if (e.getCause() instanceof UnsupportedOperationException) {
-                throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, String.format("Failed to create snapshot due to unsupported operation: %s", e.getCause().getMessage()));
+                throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, String.format("Failed to create Snapshot due to unsupported operation: %s", e.getCause().getMessage()));
             }
 
-            String errorMessage = "Failed to create snapshot due to an internal error creating snapshot for volume " + getVolumeUuid();
+            String errorMessage = "Failed to create Snapshot due to an internal error creating Snapshot for volume " + getVolumeUuid();
             logger.error(errorMessage, e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMessage);
         }
     }
 
-    private Snapshot.LocationType getLocationType() {
+    public Snapshot.LocationType getLocationType() {
 
         if (Snapshot.LocationType.values() == null || Snapshot.LocationType.values().length == 0 || locationType == null) {
             return null;

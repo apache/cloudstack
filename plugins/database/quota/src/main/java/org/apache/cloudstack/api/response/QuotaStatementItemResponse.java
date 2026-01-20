@@ -28,31 +28,31 @@ import com.cloud.serializer.Param;
 public class QuotaStatementItemResponse extends BaseResponse {
 
     @SerializedName("type")
-    @Param(description = "usage type")
+    @Param(description = "Usage type")
     private int usageType;
 
     @SerializedName("accountid")
-    @Param(description = "account id")
+    @Param(description = "Account id")
     private Long accountId;
 
     @SerializedName("account")
-    @Param(description = "account name")
+    @Param(description = "Account name")
     private String accountName;
 
     @SerializedName("domain")
-    @Param(description = "domain id")
+    @Param(description = "Domain id")
     private Long domainId;
 
     @SerializedName("name")
-    @Param(description = "usage type name")
+    @Param(description = "Usage type name")
     private String usageName;
 
     @SerializedName("unit")
-    @Param(description = "usage unit")
+    @Param(description = "Usage unit")
     private String usageUnit;
 
     @SerializedName("quota")
-    @Param(description = "quota consumed")
+    @Param(description = "Quota consumed")
     private BigDecimal quotaUsed;
 
     public QuotaStatementItemResponse(final int usageType) {

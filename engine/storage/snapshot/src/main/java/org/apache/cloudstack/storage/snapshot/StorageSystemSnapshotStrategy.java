@@ -38,6 +38,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -540,7 +541,6 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
                 logger.warn("Failed to clean up snapshot '" + snapshot.getId() + "' on primary storage: " + e.getMessage());
             }
         }
-
     }
 
     private VMSnapshot takeHypervisorSnapshot(VolumeInfo volumeInfo) {
@@ -556,7 +556,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
             VMSnapshot vmSnapshot = vmSnapshotDao.persist(vmSnapshotVO);
 
             if (vmSnapshot == null) {
-                throw new CloudRuntimeException("Unable to allocate a VM snapshot object");
+                throw new CloudRuntimeException("Unable to allocate an Instance Snapshot object");
             }
 
             vmSnapshot = vmSnapshotService.createVMSnapshot(virtualMachine.getId(), vmSnapshot.getId(), true);
@@ -912,7 +912,9 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
     @Override
     public StrategyPriority canHandle(Snapshot snapshot, Long zoneId, SnapshotOperation op) {
         Snapshot.LocationType locationType = snapshot.getLocationType();
-
+        if (SnapshotOperation.COPY.equals(op)) {
+            return StrategyPriority.CANT_HANDLE;
+        }
         // If the snapshot exists on Secondary Storage, we can't delete it.
         if (SnapshotOperation.DELETE.equals(op)) {
             if (Snapshot.LocationType.SECONDARY.equals(locationType)) {

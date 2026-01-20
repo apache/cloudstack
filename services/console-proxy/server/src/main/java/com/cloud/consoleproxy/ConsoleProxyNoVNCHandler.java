@@ -93,6 +93,7 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
         String websocketUrl = queryMap.get("websocketUrl");
         String sessionUuid = queryMap.get("sessionUuid");
         String clientIp = session.getRemoteAddress().getAddress().getHostAddress();
+        boolean sessionRequiresNewViewer = Boolean.parseBoolean(queryMap.get("sessionRequiresNewViewer"));
 
         if (tag == null)
             tag = "";
@@ -141,6 +142,7 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
             param.setSessionUuid(sessionUuid);
             param.setSourceIP(sourceIP);
             param.setClientIp(clientIp);
+            param.setSessionRequiresNewViewer(sessionRequiresNewViewer);
 
             if (queryMap.containsKey("extraSecurityToken")) {
                 param.setExtraSecurityToken(queryMap.get("extraSecurityToken"));

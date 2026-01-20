@@ -61,7 +61,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 
 export default {
   name: 'CreateSnapshotFromVMSnapshot',
@@ -92,7 +92,7 @@ export default {
     },
     fetchData () {
       this.loading = true
-      api('listVolumes', {
+      getAPI('listVolumes', {
         virtualmachineid: this.resource.virtualmachineid,
         listall: true
       }).then(json => {
@@ -107,7 +107,7 @@ export default {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         this.loading = true
-        api('createSnapshotFromVMSnapshot', {
+        postAPI('createSnapshotFromVMSnapshot', {
           name: values.name,
           volumeid: values.volumeid,
           vmsnapshotid: this.resource.id

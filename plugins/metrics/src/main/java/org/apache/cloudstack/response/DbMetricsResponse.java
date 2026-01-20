@@ -26,43 +26,43 @@ import java.util.Date;
 
 public class DbMetricsResponse extends BaseResponse {
     @SerializedName(MetricConstants.COLLECTION_TIME)
-    @Param(description = "the time these statistics were collected")
+    @Param(description = "The time these statistics were collected")
     private Date collectionTime;
 
     @SerializedName(ApiConstants.HOST_NAME)
-    @Param(description = "the name of the active usage server")
+    @Param(description = "The name of the active usage server")
     private String hostname;
 
     @SerializedName(MetricConstants.REPLICAS)
-    @Param(description = "the state of the usage server")
+    @Param(description = "The state of the usage server")
     private String[] replicas;
 
     @SerializedName(MetricConstants.CONNECTIONS)
-    @Param(description = "the number of connections to the DB")
+    @Param(description = "The number of connections to the DB")
     private int connections;
 
     @SerializedName(MetricConstants.UPTIME)
-    @Param(description = "the uptime of the DB in seconds")
+    @Param(description = "The uptime of the DB in seconds")
     private long uptime;
 
     @SerializedName(MetricConstants.TLS_VERSIONS)
-    @Param(description = "the tls versions currently in use (accepted) by the DB")
+    @Param(description = "The TLS versions currently in use (accepted) by the DB")
     private String tlsVersions;
 
     @SerializedName(ApiConstants.VERSION)
-    @Param(description = "the version of the currently running DB")
+    @Param(description = "The version of the currently running DB")
     private String version;
 
     @SerializedName(MetricConstants.VERSION_COMMENT)
-    @Param(description = "the version of the currently running DB")
+    @Param(description = "The version of the currently running DB")
     private String versionComment;
 
     @SerializedName(MetricConstants.QUERIES)
-    @Param(description = "the number of queries performed on the DB")
+    @Param(description = "The number of queries performed on the DB")
     private long queries;
 
     @SerializedName(MetricConstants.DATABASE_LOAD_AVERAGES)
-    @Param(description = "the last measured load averages on the DB")
+    @Param(description = "The last measured load averages on the DB")
     private double[] loadAverages;
 
     public void setHostname(String hostname) {

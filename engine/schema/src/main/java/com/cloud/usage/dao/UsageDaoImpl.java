@@ -52,7 +52,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
     private static final String DELETE_ALL = "DELETE FROM cloud_usage";
     private static final String DELETE_ALL_BY_ACCOUNTID = "DELETE FROM cloud_usage WHERE account_id = ?";
     private static final String DELETE_ALL_BY_INTERVAL = "DELETE FROM cloud_usage WHERE end_date < DATE_SUB(CURRENT_DATE(), INTERVAL ? DAY)";
-    private static final String INSERT_ACCOUNT = "INSERT INTO cloud_usage.account (id, account_name, type, role_id, domain_id, removed, cleanup_needed) VALUES (?,?,?,?,?,?,?)";
+    private static final String INSERT_ACCOUNT = "INSERT INTO cloud_usage.account (id, account_name, uuid, type, role_id, domain_id, removed, cleanup_needed) VALUES (?,?,?,?,?,?,?,?)";
     private static final String INSERT_USER_STATS = "INSERT INTO cloud_usage.user_statistics (id, data_center_id, account_id, public_ip_address, device_id, device_type, network_id, net_bytes_received,"
             + " net_bytes_sent, current_bytes_received, current_bytes_sent, agg_bytes_received, agg_bytes_sent) VALUES (?,?,?,?,?,?,?,?,?,?, ?, ?, ?)";
 
@@ -107,7 +107,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            logger.error("error retrieving usage vm instances for account id: " + accountId, ex);
+            logger.error("Error retrieving usage Instances for Account ID: " + accountId, ex);
         } finally {
             txn.close();
         }
@@ -129,25 +129,26 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             for (AccountVO acct : accounts) {
                 pstmt.setLong(1, acct.getId());
                 pstmt.setString(2, acct.getAccountName());
-                pstmt.setInt(3, acct.getType().ordinal());
+                pstmt.setString(3, acct.getUuid());
+                pstmt.setInt(4, acct.getType().ordinal());
 
                 //prevent autoboxing NPE by defaulting to User role
                 if(acct.getRoleId() == null){
-                    pstmt.setLong(4, RoleType.User.getId());
+                    pstmt.setLong(5, RoleType.User.getId());
                 }else{
-                    pstmt.setLong(4, acct.getRoleId());
+                    pstmt.setLong(5, acct.getRoleId());
                 }
 
-                pstmt.setLong(5, acct.getDomainId());
+                pstmt.setLong(6, acct.getDomainId());
 
                 Date removed = acct.getRemoved();
                 if (removed == null) {
-                    pstmt.setString(6, null);
+                    pstmt.setString(7, null);
                 } else {
-                    pstmt.setString(6, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), acct.getRemoved()));
+                    pstmt.setString(7, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), acct.getRemoved()));
                 }
 
-                pstmt.setBoolean(7, acct.getNeedsCleanup());
+                pstmt.setBoolean(8, acct.getNeedsCleanup());
 
                 pstmt.addBatch();
             }
@@ -369,7 +370,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
                 templateList.add(Long.valueOf(rs.getLong(1)));
             }
         } catch (Exception ex) {
-            logger.error("error listing public templates", ex);
+            logger.error("Error listing public Templates", ex);
         }
         return templateList;
     }

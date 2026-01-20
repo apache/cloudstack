@@ -130,7 +130,7 @@ public class ServiceManagerImpl implements ServiceManager {
         svm.setUserData(userData);
 
         try {
-            _vmManager.allocate(instanceName, template, serviceOffering, networks, plan, template.getHypervisorType());
+            _vmManager.allocate(instanceName, template, serviceOffering, networks, plan, template.getHypervisorType(), null, null);
         } catch (InsufficientCapacityException ex) {
             throw new CloudRuntimeException("Insufficient capacity", ex);
         }

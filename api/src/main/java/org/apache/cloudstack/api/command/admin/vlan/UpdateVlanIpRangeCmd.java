@@ -45,35 +45,35 @@ public class UpdateVlanIpRangeCmd extends BaseCmd {
 
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VlanIpRangeResponse.class, required = true,
-            description = "the UUID of the VLAN IP range")
+            description = "The UUID of the VLAN IP range")
     private Long id;
 
-    @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, description = "the gateway of the VLAN IP range")
+    @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, description = "The gateway of the VLAN IP range")
     private String gateway;
 
-    @Parameter(name = ApiConstants.NETMASK, type = CommandType.STRING, description = "the netmask of the VLAN IP range")
+    @Parameter(name = ApiConstants.NETMASK, type = CommandType.STRING, description = "The netmask of the VLAN IP range")
     private String netmask;
 
-    @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, description = "the beginning IP address in the VLAN IP range")
+    @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, description = "The beginning IP address in the VLAN IP range")
     private String startIp;
 
     @Parameter(name = ApiConstants.END_IP, type = CommandType.STRING,
-            description = "the ending IP address in the VLAN IP range")
+            description = "The ending IP address in the VLAN IP range")
     private String endIp;
 
-    @Parameter(name = ApiConstants.START_IPV6, type = CommandType.STRING, description = "the beginning IPv6 address in the IPv6 network range")
+    @Parameter(name = ApiConstants.START_IPV6, type = CommandType.STRING, description = "The beginning IPv6 address in the IPv6 Network range")
     private String startIpv6;
 
-    @Parameter(name = ApiConstants.END_IPV6, type = CommandType.STRING, description = "the ending IPv6 address in the IPv6 network range")
+    @Parameter(name = ApiConstants.END_IPV6, type = CommandType.STRING, description = "The ending IPv6 address in the IPv6 Network range")
     private String endIpv6;
 
-    @Parameter(name = ApiConstants.IP6_GATEWAY, type = CommandType.STRING, description = "the gateway of the IPv6 network")
+    @Parameter(name = ApiConstants.IP6_GATEWAY, type = CommandType.STRING, description = "The gateway of the IPv6 Network")
     private String ip6Gateway;
 
-    @Parameter(name = ApiConstants.IP6_CIDR, type = CommandType.STRING, description = "the CIDR of IPv6 network, must be at least /64")
+    @Parameter(name = ApiConstants.IP6_CIDR, type = CommandType.STRING, description = "The CIDR of IPv6 Network, must be at least /64")
     private String ip6Cidr;
 
-    @Parameter(name = ApiConstants.FOR_SYSTEM_VMS, type = CommandType.BOOLEAN, description = "true if IP range is set to system vms, false if not")
+    @Parameter(name = ApiConstants.FOR_SYSTEM_VMS, type = CommandType.BOOLEAN, description = "True if IP range is set to System VM, false if not")
     private Boolean forSystemVms;
 
     /////////////////////////////////////////////////////
@@ -144,7 +144,7 @@ public class UpdateVlanIpRangeCmd extends BaseCmd {
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to Update vlan ip range");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to Update VLAN IP range");
             }
         } catch (ConcurrentOperationException ex) {
             logger.warn("Exception: ", ex);

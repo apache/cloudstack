@@ -34,103 +34,103 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class VpcResponse extends BaseResponseWithAnnotations implements ControlledEntityResponse, SetResourceIconResponse {
     @SerializedName("id")
-    @Param(description = "the id of the VPC")
+    @Param(description = "The ID of the VPC")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the VPC")
+    @Param(description = "The name of the VPC")
     private String name;
 
     @SerializedName(ApiConstants.DISPLAY_TEXT)
-    @Param(description = "an alternate display text of the VPC.")
+    @Param(description = "An alternate display text of the VPC.")
     private String displayText;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "state of the VPC. Can be Inactive/Enabled")
+    @Param(description = "State of the VPC. Can be Inactive/Enabled")
     private String state;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "zone id of the vpc")
+    @Param(description = "Zone ID of the VPC")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "the name of the zone the VPC belongs to")
+    @Param(description = "The name of the zone the VPC belongs to")
     private String zoneName;
 
     @SerializedName(ApiConstants.SERVICE)
-    @Param(description = "the list of supported services", responseObject = ServiceResponse.class)
+    @Param(description = "The list of supported services", responseObject = ServiceResponse.class)
     private List<ServiceResponse> services;
 
     @SerializedName(ApiConstants.CIDR)
-    @Param(description = "the cidr the VPC")
+    @Param(description = "The CIDR the VPC")
     private String cidr;
 
     @SerializedName(ApiConstants.VPC_OFF_ID)
-    @Param(description = "vpc offering id the VPC is created from")
+    @Param(description = "VPC offering ID the VPC is created from")
     private String vpcOfferingId;
 
     @SerializedName(ApiConstants.VPC_OFF_NAME)
-    @Param(description = "vpc offering name the VPC is created from", since = "4.13.2")
+    @Param(description = "VPC offering name the VPC is created from", since = "4.13.2")
     private String vpcOfferingName;
 
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "the date this VPC was created")
+    @Param(description = "The date this VPC was created")
     private Date created;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the owner of the VPC")
+    @Param(description = "The owner of the VPC")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the VPC")
+    @Param(description = "The project ID of the VPC")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the VPC")
+    @Param(description = "The project name of the VPC")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain id of the VPC owner")
+    @Param(description = "The domain ID of the VPC owner")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name of the owner")
+    @Param(description = "The domain name of the owner")
     private String domain;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "the domain path of the owner", since = "4.19.2.0")
+    @Param(description = "The domain path of the owner", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.NETWORK)
-    @Param(description = "the list of networks belongign to the VPC", responseObject = NetworkResponse.class)
+    @Param(description = "The list of Networks belonging to the VPC", responseObject = NetworkResponse.class)
     private List<NetworkResponse> networks;
 
     @SerializedName(ApiConstants.RESTART_REQUIRED)
-    @Param(description = "true VPC requires restart")
+    @Param(description = "True VPC requires restart")
     private Boolean restartRequired;
 
     @SerializedName(ApiConstants.NETWORK_DOMAIN)
-    @Param(description = "the network domain of the VPC")
+    @Param(description = "The Network domain of the VPC")
     private String networkDomain;
 
     @SerializedName(ApiConstants.TAGS)
-    @Param(description = "the list of resource tags associated with the project", responseObject = ResourceTagResponse.class)
+    @Param(description = "The list of resource tags associated with the project", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
     @SerializedName(ApiConstants.FOR_DISPLAY)
-    @Param(description = "is vpc for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    @Param(description = "Is VPC for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
 
     @SerializedName(ApiConstants.DISTRIBUTED_VPC_ROUTER)
-    @Param(description = "is VPC uses distributed router for one hop forwarding and host based network ACL's", since = "4.4")
+    @Param(description = "Does VPC use distributed router for one hop forwarding and host based Network ACL's", since = "4.4")
     private boolean usesDistributedRouter;
 
     @SerializedName(ApiConstants.REGION_LEVEL_VPC)
-    @Param(description = "true if VPC is region level", since = "4.4")
+    @Param(description = "True if VPC is region level", since = "4.4")
     private Boolean regionLevelVpc;
 
     @SerializedName(ApiConstants.REDUNDANT_VPC_ROUTER)
-    @Param(description = "if this VPC has redundant router", since = "4.6")
+    @Param(description = "If this VPC has redundant router", since = "4.6")
     private boolean redundantRouter;
 
     @SerializedName(ApiConstants.RESOURCE_ICON)
@@ -138,7 +138,7 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
     ResourceIconResponse icon;
 
     @SerializedName(ApiConstants.IPV6_ROUTES)
-    @Param(description = "The routes for the network to ease adding route in upstream router", since = "4.17.0")
+    @Param(description = "The routes for the Network to ease adding route in upstream router", since = "4.17.0")
     private Set<Ipv6RouteResponse> ipv6Routes;
 
     @SerializedName(ApiConstants.PUBLIC_MTU)
@@ -146,19 +146,19 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
     private Integer publicMtu;
 
     @SerializedName(ApiConstants.DNS1)
-    @Param(description = "the first IPv4 DNS for the VPC")
+    @Param(description = "The first IPv4 DNS for the VPC")
     private String dns1;
 
     @SerializedName(ApiConstants.DNS2)
-    @Param(description = "the second IPv4 DNS for the VPC")
+    @Param(description = "The second IPv4 DNS for the VPC")
     private String dns2;
 
     @SerializedName(ApiConstants.IP6_DNS1)
-    @Param(description = "the first IPv6 DNS for the VPC", since = "4.18.0")
+    @Param(description = "The first IPv6 DNS for the VPC", since = "4.18.0")
     private String ipv6Dns1;
 
     @SerializedName(ApiConstants.IP6_DNS2)
-    @Param(description = "the second IPv6 DNS for the VPC", since = "4.18.0")
+    @Param(description = "The second IPv6 DNS for the VPC", since = "4.18.0")
     private String ipv6Dns2;
 
     @SerializedName(ApiConstants.IPV4_ROUTING)

@@ -25,7 +25,7 @@ import org.apache.cloudstack.api.BaseResponse;
 
 public class TungstenFabricAddressGroupResponse extends BaseResponse {
     @SerializedName(ApiConstants.UUID)
-    @Param(description = "Tungsten-Fabric address group uuid")
+    @Param(description = "Tungsten-Fabric address group UUID")
     private String uuid;
 
     @SerializedName(ApiConstants.NAME)
@@ -33,15 +33,15 @@ public class TungstenFabricAddressGroupResponse extends BaseResponse {
     private String name;
 
     @SerializedName(ApiConstants.IP_PREFIX)
-    @Param(description = "Tungsten-Fabric address group ip prefix")
+    @Param(description = "Tungsten-Fabric address group IP prefix")
     private String ipPrefix;
 
     @SerializedName(ApiConstants.IP_PREFIX_LEN)
-    @Param(description = "Tungsten-Fabric address group ip prefix length")
+    @Param(description = "Tungsten-Fabric address group IP prefix length")
     private int ipPrefixLen;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "Tungsten-Fabric provider zone id")
+    @Param(description = "Tungsten-Fabric provider zone ID")
     private long zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)

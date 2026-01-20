@@ -18,12 +18,18 @@
 package org.apache.cloudstack.engine.orchestration.service;
 
 import java.util.List;
+import java.util.concurrent.Future;
 
 import org.apache.cloudstack.api.response.MigrationResponse;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.TemplateApiResult;
 import org.apache.cloudstack.storage.ImageStoreService.MigrationPolicy;
 
 public interface StorageOrchestrationService {
     MigrationResponse migrateData(Long srcDataStoreId, List<Long> destDatastores, MigrationPolicy migrationPolicy);
 
     MigrationResponse migrateResources(Long srcImgStoreId, Long destImgStoreId, List<Long> templateIdList, List<Long> snapshotIdList);
+
+    Future<TemplateApiResult> orchestrateTemplateCopyToImageStore(TemplateInfo source, DataStore destStore);
 }

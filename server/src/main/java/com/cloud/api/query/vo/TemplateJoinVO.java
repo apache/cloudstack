@@ -247,6 +247,9 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
     @Column(name = "deploy_as_is")
     private boolean deployAsIs;
 
+    @Column(name = "for_cks")
+    private boolean forCks;
+
     @Column(name = "user_data_id")
     private Long userDataId;
 
@@ -261,6 +264,15 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
 
     @Column(name = "user_data_params")
     private String userDataParams;
+
+    @Column(name = "extension_id")
+    private Long extensionId;
+
+    @Column(name = "extension_uuid")
+    private String extensionUuid;
+
+    @Column(name = "extension_name")
+    private String extensionName;
 
     public TemplateJoinVO() {
     }
@@ -529,6 +541,10 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
         return deployAsIs;
     }
 
+    public boolean isForCks() {
+        return forCks;
+    }
+
     public Object getParentTemplateId() {
         return parentTemplateId;
     }
@@ -559,5 +575,17 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
 
     public CPU.CPUArch getArch() {
         return arch;
+    }
+
+    public Long getExtensionId() {
+        return extensionId;
+    }
+
+    public String getExtensionUuid() {
+        return extensionUuid;
+    }
+
+    public String getExtensionName() {
+        return extensionName;
     }
 }

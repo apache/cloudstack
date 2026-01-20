@@ -113,7 +113,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -218,7 +218,7 @@ export default {
       this.dataSource = []
       this.fetchLoading = true
 
-      api('listTungstenFabricPolicy', params).then(json => {
+      getAPI('listTungstenFabricPolicy', params).then(json => {
         this.itemCount = json?.listtungstenfabricpolicyresponse?.count || 0
         this.dataSource = json?.listtungstenfabricpolicyresponse?.policy || []
       }).catch(error => {
@@ -230,7 +230,7 @@ export default {
       this.showAction = true
       this.networks.loading = true
       this.networks.opts = []
-      api('listTungstenFabricPolicy', { listall: true, zoneid: this.resource.zoneid }).then(json => {
+      getAPI('listTungstenFabricPolicy', { listall: true, zoneid: this.resource.zoneid }).then(json => {
         this.networks.opts = json?.listtungstenfabricpolicyresponse?.policy || []
         this.form.networkuuid = this.networks.opts[0]?.uuid || null
       }).finally(() => {
@@ -264,7 +264,7 @@ export default {
         const match = this.networks.opts.filter(network => network.uuid === values.policyuuid)
         const resourceName = match[0]?.name || values.policyuuid
 
-        api('applyTungstenFabricPolicy', params).then(json => {
+        postAPI('applyTungstenFabricPolicy', params).then(json => {
           const jobId = json?.applytungstenfabricpolicyresponse?.jobid
           this.$pollJob({
             jobId,
@@ -303,7 +303,7 @@ export default {
       params.networkuuid = this.resource.id
       params.policyuuid = record.uuid
 
-      api('removeTungstenFabricPolicy', params).then(json => {
+      postAPI('removeTungstenFabricPolicy', params).then(json => {
         const jobId = json?.removetungstenfabricpolicyresponse?.jobid
         this.$pollJob({
           jobId,

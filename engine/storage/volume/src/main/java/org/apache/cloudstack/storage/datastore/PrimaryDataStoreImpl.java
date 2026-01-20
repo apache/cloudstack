@@ -334,6 +334,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
             VolumeVO vol = volumeDao.findById(obj.getId());
             if (vol != null) {
                 vol.setPoolId(getId());
+                vol.setPoolType(getPoolType());
                 volumeDao.update(vol.getId(), vol);
             }
         }

@@ -36,7 +36,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import ImageStoreSelector from '@/components/view/ImageStoreSelectView'
 
@@ -75,7 +75,7 @@ export default {
   computed: {},
   methods: {
     fetchDestinationStores () {
-      api('listImageStores', {
+      getAPI('listImageStores', {
         zoneid: this.zoneid
       }).then(response => {
         this.destinationStoreList = response.listimagestoresresponse.imagestore
@@ -112,7 +112,7 @@ export default {
       params.templates = this.templateIdsToMigrate.join(',')
       params.snapshots = this.snapshotIdsToMigrate.join(',')
 
-      api('migrateResourceToAnotherSecondaryStorage', params).then(response => {
+      postAPI('migrateResourceToAnotherSecondaryStorage', params).then(response => {
         const jobId = response.migrateresourcetoanothersecondarystorageresponse.jobid
         this.$pollJob({
           title: this.$t('label.migrating.data'),

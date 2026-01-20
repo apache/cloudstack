@@ -21,49 +21,35 @@ import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.List;
 
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.usage.UsageTypes;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageBackupVO;
 import com.cloud.usage.UsageVO;
-import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageBackupDao;
 import com.cloud.user.AccountVO;
 
 @Component
-public class BackupUsageParser {
-    protected static Logger LOGGER = LogManager.getLogger(BackupUsageParser.class);
-
-    private static UsageDao s_usageDao;
-    private static UsageBackupDao s_usageBackupDao;
-
-    @Inject
-    private UsageDao usageDao;
+public class BackupUsageParser extends UsageParser {
     @Inject
     private UsageBackupDao usageBackupDao;
 
-    @PostConstruct
-    void init() {
-        s_usageDao = usageDao;
-        s_usageBackupDao = usageBackupDao;
+    @Override
+    public String getParserName() {
+        return "VM Backup";
     }
 
-    public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Parsing all VM Backup usage events for account: " + account.getId());
-        }
+    @Override
+    protected boolean parse(AccountVO account, Date startDate, Date endDate) {
         if ((endDate == null) || endDate.after(new Date())) {
             endDate = new Date();
         }
 
-        final List<UsageBackupVO> usageBackups = s_usageBackupDao.getUsageRecords(account.getId(), startDate, endDate);
+        final List<UsageBackupVO> usageBackups = usageBackupDao.getUsageRecords(account.getId(), startDate, endDate);
         if (usageBackups == null || usageBackups.isEmpty()) {
-            LOGGER.debug("No VM Backup usage for this period");
+            logger.debug("No VM Backup usage for this period");
             return true;
         }
 
@@ -91,7 +77,7 @@ public class BackupUsageParser {
                     new UsageVO(zoneId, account.getAccountId(), account.getDomainId(), description, usageDisplay + " Hrs",
                             UsageTypes.BACKUP, new Double(usage), vmId, null, offeringId, null, vmId,
                             usageBackup.getSize(), usageBackup.getProtectedSize(), startDate, endDate);
-            s_usageDao.persist(usageRecord);
+            usageDao.persist(usageRecord);
         }
 
         return true;

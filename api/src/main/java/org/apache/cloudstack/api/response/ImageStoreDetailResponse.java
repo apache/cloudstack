@@ -24,11 +24,11 @@ import com.cloud.serializer.Param;
 
 public class ImageStoreDetailResponse extends BaseResponse {
     @SerializedName("name")
-    @Param(description = "detail property name of the image store")
+    @Param(description = "Detail property name of the image store")
     private String name;
 
     @SerializedName("value")
-    @Param(description = "detail property value of the image store")
+    @Param(description = "Detail property value of the image store")
     private String value;
 
     public ImageStoreDetailResponse() {

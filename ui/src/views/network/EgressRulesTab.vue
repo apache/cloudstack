@@ -174,7 +174,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import BulkActionView from '@/components/view/BulkActionView'
@@ -274,12 +274,12 @@ export default {
   inject: ['parentFetchData'],
   methods: {
     fetchNetworkProtocols () {
-      api('listNetworkProtocols', {
+      getAPI('listNetworkProtocols', {
         option: 'protocolnumber'
       }).then(json => {
         this.protocolNumbers = json.listnetworkprotocolsresponse?.networkprotocol || []
       })
-      api('listNetworkProtocols', {
+      getAPI('listNetworkProtocols', {
         option: 'icmptype'
       }).then(json => {
         this.icmpTypes.push({ index: -1, description: this.$t('label.all') })
@@ -303,7 +303,7 @@ export default {
     },
     fetchData () {
       this.loading = true
-      api('listEgressFirewallRules', {
+      getAPI('listEgressFirewallRules', {
         listAll: true,
         networkid: this.resource.id,
         page: this.page,
@@ -368,7 +368,7 @@ export default {
     },
     deleteRule (rule) {
       this.loading = true
-      api('deleteEgressFirewallRule', { id: rule.id }).then(response => {
+      postAPI('deleteEgressFirewallRule', { id: rule.id }).then(response => {
         const jobId = response.deleteegressfirewallruleresponse.jobid
         eventBus.emit('update-job-details', { jobId, resourceId: null })
         this.$pollJob({
@@ -404,7 +404,7 @@ export default {
     addRule () {
       if (this.loading) return
       this.loading = true
-      api('createEgressFirewallRule', { ...this.newRule }).then(response => {
+      postAPI('createEgressFirewallRule', { ...this.newRule }).then(response => {
         this.$pollJob({
           jobId: response.createegressfirewallruleresponse.jobid,
           successMessage: this.$t('message.success.add.egress.rule'),

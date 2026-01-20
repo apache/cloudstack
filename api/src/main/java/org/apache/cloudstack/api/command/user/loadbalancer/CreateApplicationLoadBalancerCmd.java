@@ -48,51 +48,51 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the load balancer")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Name of the load balancer")
     private String loadBalancerName;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "the description of the load balancer", length = 4096)
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "The description of the load balancer", length = 4096)
     private String description;
 
     @Parameter(name = ApiConstants.NETWORK_ID,
                type = CommandType.UUID,
                required = true,
                entityType = NetworkResponse.class,
-               description = "The guest network the load balancer will be created for")
+               description = "The guest Network the load balancer will be created for")
     private Long networkId;
 
     @Parameter(name = ApiConstants.SOURCE_PORT,
                type = CommandType.INTEGER,
                required = true,
-               description = "the source port the network traffic will be load balanced from")
+               description = "The source port the Network traffic will be load balanced from")
     private Integer sourcePort;
 
-    @Parameter(name = ApiConstants.ALGORITHM, type = CommandType.STRING, required = true, description = "load balancer algorithm (source, roundrobin, leastconn)")
+    @Parameter(name = ApiConstants.ALGORITHM, type = CommandType.STRING, required = true, description = "Load balancer algorithm (source, roundrobin, leastconn)")
     private String algorithm;
 
     @Parameter(name = ApiConstants.INSTANCE_PORT,
                type = CommandType.INTEGER,
                required = true,
-               description = "the TCP port of the virtual machine where the network traffic will be load balanced to")
+               description = "The TCP port of the Instance where the network traffic will be load balanced to")
     private Integer instancePort;
 
-    @Parameter(name = ApiConstants.SOURCE_IP, type = CommandType.STRING, description = "the source IP address the network traffic will be load balanced from")
+    @Parameter(name = ApiConstants.SOURCE_IP, type = CommandType.STRING, description = "The source IP address the network traffic will be load balanced from")
     private String sourceIp;
 
     @Parameter(name = ApiConstants.SOURCE_IP_NETWORK_ID,
                type = CommandType.UUID,
                entityType = NetworkResponse.class,
                required = true,
-               description = "the network id of the source ip address")
+               description = "The Network ID of the source IP address")
     private Long sourceIpNetworkId;
 
     @Parameter(name = ApiConstants.SCHEME,
                type = CommandType.STRING,
                required = true,
-               description = "the load balancer scheme. Supported value in this release is Internal")
+               description = "The load balancer scheme. Supported value in this release is Internal")
     private String scheme;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     /////////////////////////////////////////////////////

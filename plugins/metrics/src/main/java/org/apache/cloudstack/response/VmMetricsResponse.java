@@ -26,31 +26,31 @@ import com.google.gson.annotations.SerializedName;
 public class VmMetricsResponse extends UserVmResponse {
 
     @SerializedName("cputotal")
-    @Param(description = "the total cpu capacity in Ghz")
+    @Param(description = "The total cpu capacity in Ghz")
     private String cpuTotal;
 
     @SerializedName("memorytotal")
-    @Param(description = "the total memory capacity in GiB")
+    @Param(description = "The total memory capacity in GiB")
     private String memTotal;
 
     @SerializedName("networkread")
-    @Param(description = "network read in MiB")
+    @Param(description = "Network read in MiB")
     private String networkRead;
 
     @SerializedName("networkwrite")
-    @Param(description = "network write in MiB")
+    @Param(description = "Network write in MiB")
     private String networkWrite;
 
     @SerializedName("diskread")
-    @Param(description = "disk read in MiB")
+    @Param(description = "Disk read in MiB")
     private String diskRead;
 
     @SerializedName("diskwrite")
-    @Param(description = "disk write in MiB")
+    @Param(description = "Disk write in MiB")
     private String diskWrite;
 
     @SerializedName(ApiConstants.DISK_IO_PSTOTAL)
-    @Param(description = "the total disk iops")
+    @Param(description = "The total disk iops")
     private Long diskIopsTotal;
 
 

@@ -45,8 +45,9 @@ export default {
       const props = Object.assign({}, this.props)
       props.width = '1em'
       props.height = '1em'
-      props.class = 'custom-icon'
-
+      if (!this.$attrs.style) {
+        props.class = 'custom-icon'
+      }
       return h('span', { role: 'img', class: 'anticon' }, [
         h(this.svgIcon, { ...props }, this.event)
       ])

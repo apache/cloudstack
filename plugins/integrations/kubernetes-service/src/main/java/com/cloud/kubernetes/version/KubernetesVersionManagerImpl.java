@@ -17,6 +17,7 @@
 
 package com.cloud.kubernetes.version;
 
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,10 +27,13 @@ import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.kubernetes.version.AddKubernetesSupportedVersionCmd;
 import org.apache.cloudstack.api.command.admin.kubernetes.version.DeleteKubernetesSupportedVersionCmd;
+import org.apache.cloudstack.api.command.admin.kubernetes.version.GetUploadParamsForKubernetesSupportedVersionCmd;
 import org.apache.cloudstack.api.command.admin.kubernetes.version.UpdateKubernetesSupportedVersionCmd;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.version.ListKubernetesSupportedVersionsCmd;
+import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.api.response.KubernetesSupportedVersionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -160,6 +164,33 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             }
         }
         return versions;
+    }
+
+    private GetUploadParamsResponse registerKubernetesVersionIsoForUpload(final Long zoneId, final String versionName, final String isoChecksum) {
+        CallContext.register(CallContext.current(), ApiCommandResourceType.Iso);
+        String isoName = String.format("%s-Kubernetes-Binaries-ISO", versionName);
+        GetUploadParamsForIsoCmd uploadIso = new GetUploadParamsForIsoCmd();
+        uploadIso = ComponentContext.inject(uploadIso);
+        uploadIso.setName(isoName);
+        uploadIso.setPublicIso(true);
+        if (zoneId != null) {
+            uploadIso.setZoneId(zoneId);
+        }
+        uploadIso.setDisplayText(isoName);
+        uploadIso.setBootable(false);
+        if (StringUtils.isNotEmpty(isoChecksum)) {
+            uploadIso.setChecksum(isoChecksum);
+        }
+        uploadIso.setAccountName(accountManager.getSystemAccount().getAccountName());
+        uploadIso.setDomainId(accountManager.getSystemAccount().getDomainId());
+        try {
+            return templateService.registerIsoForPostUpload(uploadIso);
+        } catch (MalformedURLException | ResourceAllocationException e) {
+            logger.error(String.format("Unable to register binaries ISO for supported kubernetes version, %s", versionName), e);
+            throw new CloudRuntimeException(String.format("Unable to register binaries ISO for supported kubernetes version, %s", versionName), e);
+        } finally {
+            CallContext.unregister();
+        }
     }
 
     private VirtualMachineTemplate registerKubernetesVersionIso(final Long zoneId, final String versionName, final String isoUrl, final String isoChecksum, final boolean directDownload, CPU.CPUArch arch) throws IllegalAccessException, NoSuchFieldException,
@@ -316,23 +347,8 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         return createKubernetesSupportedVersionListResponse(versions, versionsAndCount.second());
     }
 
-    @Override
-    @ActionEvent(eventType = KubernetesVersionEventTypes.EVENT_KUBERNETES_VERSION_ADD,
-            eventDescription = "Adding Kubernetes supported version")
-    public KubernetesSupportedVersionResponse addKubernetesSupportedVersion(final AddKubernetesSupportedVersionCmd cmd) {
-        if (!KubernetesClusterService.KubernetesServiceEnabled.value()) {
-            throw new CloudRuntimeException("Kubernetes Service plugin is disabled");
-        }
-        String name = cmd.getName();
-        final String semanticVersion = cmd.getSemanticVersion();
-        final Long zoneId = cmd.getZoneId();
-        final String isoUrl = cmd.getUrl();
-        final String isoChecksum = cmd.getChecksum();
-        final Integer minimumCpu = cmd.getMinimumCpu();
-        final Integer minimumRamSize = cmd.getMinimumRamSize();
-        final boolean isDirectDownload = cmd.isDirectDownload();
-        CPU.CPUArch arch = cmd.getArch();
-
+    private void validateKubernetesSupportedVersion(Long zoneId, String semanticVersion, Integer minimumCpu,
+                                                    Integer minimumRamSize, boolean isDirectDownload) {
         if (minimumCpu == null || minimumCpu < KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_CPU) {
             throw new InvalidParameterValueException(String.format("Invalid value for %s parameter. Minimum %d vCPUs required.", ApiConstants.MIN_CPU_NUMBER, KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_CPU));
         }
@@ -351,6 +367,27 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
                 throw new InvalidParameterValueException(String.format("Zone: %s supports only direct download Kubernetes versions", zone.getName()));
             }
         }
+    }
+
+    @Override
+    @ActionEvent(eventType = KubernetesVersionEventTypes.EVENT_KUBERNETES_VERSION_ADD,
+            eventDescription = "Adding Kubernetes supported version")
+    public KubernetesSupportedVersionResponse addKubernetesSupportedVersion(final AddKubernetesSupportedVersionCmd cmd) {
+        if (!KubernetesClusterService.KubernetesServiceEnabled.value()) {
+            throw new CloudRuntimeException("Kubernetes Service plugin is disabled");
+        }
+        String name = cmd.getName();
+        final String semanticVersion = cmd.getSemanticVersion();
+        final Long zoneId = cmd.getZoneId();
+        final String isoUrl = cmd.getUrl();
+        final String isoChecksum = cmd.getChecksum();
+        final Integer minimumCpu = cmd.getMinimumCpu();
+        final Integer minimumRamSize = cmd.getMinimumRamSize();
+        final boolean isDirectDownload = cmd.isDirectDownload();
+        CPU.CPUArch arch = cmd.getArch();
+
+        validateKubernetesSupportedVersion(zoneId, semanticVersion, minimumCpu, minimumRamSize, isDirectDownload);
+
         if (StringUtils.isEmpty(isoUrl)) {
             throw new InvalidParameterValueException(String.format("Invalid URL for ISO specified, %s", isoUrl));
         }
@@ -375,6 +412,30 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         CallContext.current().putContextParameter(KubernetesSupportedVersion.class, supportedVersionVO.getUuid());
 
         return createKubernetesSupportedVersionResponse(supportedVersionVO);
+    }
+
+    @Override
+    public GetUploadParamsResponse registerKubernetesSupportedVersionForPostUpload(GetUploadParamsForKubernetesSupportedVersionCmd cmd) {
+        if (!KubernetesClusterService.KubernetesServiceEnabled.value()) {
+            throw new CloudRuntimeException("Kubernetes Service plugin is disabled");
+        }
+        String name = cmd.getName();
+        final String semanticVersion = cmd.getSemanticVersion();
+        final Long zoneId = cmd.getZoneId();
+        final String isoChecksum = cmd.getChecksum();
+        final Integer minimumCpu = cmd.getMinimumCpu();
+        final Integer minimumRamSize = cmd.getMinimumRamSize();
+
+        validateKubernetesSupportedVersion(zoneId, semanticVersion, minimumCpu, minimumRamSize, false);
+
+        GetUploadParamsResponse response = registerKubernetesVersionIsoForUpload(zoneId, name, isoChecksum);
+
+        VMTemplateVO template = templateDao.findByUuid(response.getId().toString());
+        KubernetesSupportedVersionVO supportedVersionVO = new KubernetesSupportedVersionVO(name, semanticVersion, template.getId(), zoneId, minimumCpu, minimumRamSize);
+        supportedVersionVO = kubernetesSupportedVersionDao.persist(supportedVersionVO);
+        CallContext.current().putContextParameter(KubernetesSupportedVersion.class, supportedVersionVO.getUuid());
+
+        return response;
     }
 
     @Override
@@ -445,6 +506,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             return cmdList;
         }
         cmdList.add(AddKubernetesSupportedVersionCmd.class);
+        cmdList.add(GetUploadParamsForKubernetesSupportedVersionCmd.class);
         cmdList.add(ListKubernetesSupportedVersionsCmd.class);
         cmdList.add(DeleteKubernetesSupportedVersionCmd.class);
         cmdList.add(UpdateKubernetesSupportedVersionCmd.class);

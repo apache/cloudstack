@@ -77,6 +77,14 @@
         </template>
       </template>
     </a-table>
+    <div v-if="preFillContent.allowIpAddressesFetch" style="margin-bottom: 2rem;">
+      <a-button :type="'primary'" @click="handleFetchIpAddresses">
+        {{ $t('label.fetch.from.backup') }}
+      </a-button>
+      <a-button style="margin-left: 8px;" @click="handleClearIpAddresses">
+        {{ $t('label.clear') }}
+      </a-button>
+    </div>
   </a-form>
 </template>
 
@@ -219,26 +227,29 @@ export default {
     },
     updateNetworkData (name, key, value) {
       this.formRef.value.validate().then(() => {
-        this.$emit('handler-error', false)
-        const index = this.networks.findIndex(item => item.key === key)
-        if (index === -1) {
-          const networkItem = {}
-          networkItem.key = key
-          networkItem[name] = value
-          this.networks.push(networkItem)
-          this.$emit('update-network-config', this.networks)
-          return
-        }
-
-        this.networks.filter((item, index) => {
-          if (item.key === key) {
-            this.networks[index][name] = value
-          }
-        })
+        this.updateNetworkDataWithoutValidation(name, key, value)
         this.$emit('update-network-config', this.networks)
       }).catch((error) => {
         this.formRef.value.scrollToField(error.errorFields[0].name)
         this.$emit('handler-error', true)
+      })
+    },
+    updateNetworkDataWithoutValidation (name, key, value) {
+      this.$emit('handler-error', false)
+      const index = this.networks.findIndex(item => item.key === key)
+      if (index === -1) {
+        const networkItem = {}
+        networkItem.key = key
+        networkItem[name] = value
+        this.networks.push(networkItem)
+        this.$emit('update-network-config', this.networks)
+        return
+      }
+
+      this.networks.filter((item, index) => {
+        if (item.key === key) {
+          this.networks[index][name] = value
+        }
       })
     },
     removeItem (id) {
@@ -249,6 +260,59 @@ export default {
           this.$emit('select-default-network-item', this.dataItems[0].id)
         }
       }
+    },
+    handleFetchIpAddresses () {
+      if (!this.preFillContent.networkids) {
+        return
+      }
+      if (!this.preFillContent.ipAddresses && !this.preFillContent.macAddresses) {
+        return
+      }
+
+      const networkIds = this.dataItems.map(item => item.id)
+      this.dataItems.forEach(record => {
+        const ipAddressKey = 'ipAddress' + record.id
+        const macAddressKey = 'macAddress' + record.id
+        this.form[ipAddressKey] = ''
+        this.form[macAddressKey] = ''
+      })
+
+      networkIds.forEach((networkId) => {
+        const backupIndex = this.preFillContent.networkids.findIndex(id => id === networkId)
+        if (backupIndex !== -1) {
+          if (this.preFillContent.ipAddresses && backupIndex < this.preFillContent.ipAddresses.length) {
+            const ipAddress = this.preFillContent.ipAddresses[backupIndex]
+            if (ipAddress) {
+              const ipAddressKey = 'ipAddress' + networkId
+              this.form[ipAddressKey] = ipAddress
+              this.updateNetworkDataWithoutValidation('ipAddress', networkId, ipAddress)
+            }
+          }
+
+          if (this.preFillContent.macAddresses && backupIndex < this.preFillContent.macAddresses.length) {
+            const macAddress = this.preFillContent.macAddresses[backupIndex]
+            if (macAddress) {
+              const macAddressKey = 'macAddress' + networkId
+              this.form[macAddressKey] = macAddress
+              this.updateNetworkDataWithoutValidation('macAddress', networkId, macAddress)
+            }
+          }
+        }
+      })
+    },
+    handleClearIpAddresses () {
+      this.dataItems.forEach(record => {
+        const ipAddressKey = 'ipAddress' + record.id
+        const macAddressKey = 'macAddress' + record.id
+        this.form[ipAddressKey] = ''
+        this.form[macAddressKey] = ''
+
+        this.updateNetworkDataWithoutValidation('ipAddress', record.id, '')
+        this.updateNetworkDataWithoutValidation('macAddress', record.id, '')
+      })
+
+      this.networks = []
+      this.$emit('update-network-config', this.networks)
     },
     async validatorMacAddress (rule, value) {
       if (!value || value === '') {

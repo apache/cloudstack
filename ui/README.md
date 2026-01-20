@@ -1,3 +1,22 @@
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+ -->
+
 # CloudStack UI
 
 A modern role-based progressive CloudStack UI based on Vue.js and Ant Design.
@@ -8,18 +27,18 @@ A modern role-based progressive CloudStack UI based on Vue.js and Ant Design.
 
 Install node: (Debian/Ubuntu)
 
-    curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+    curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
     sudo apt-get install -y nodejs
     # Or use distro provided: sudo apt-get install npm nodejs
 
 Install node: (CentOS/Fedora/RHEL)
 
-    curl -sL https://rpm.nodesource.com/setup_16.x | sudo bash -
+    curl -sL https://rpm.nodesource.com/setup_20.x | sudo bash -
     sudo yum install nodejs
 
 Install node: (Mac OS)
 
-    brew install node@16
+    brew install node@20
 
 Optionally, you may also install system-wide dev tools:
 
@@ -43,6 +62,10 @@ To configure https, you may use `.env.local.https.example`.
 To use the community Simulator QA server you can do this:
 
     echo "CS_URL=https://qa.cloudstack.cloud" > .env.local
+
+This may be required for newer npm versions:
+
+    export NODE_OPTIONS=--openssl-legacy-provider
 
 Build and run:
 

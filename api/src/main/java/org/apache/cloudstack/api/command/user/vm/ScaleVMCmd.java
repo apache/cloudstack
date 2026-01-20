@@ -45,7 +45,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
 
-@APICommand(name = "scaleVirtualMachine", description = "Scales the virtual machine to a new service offering. This command also considers the volume size in the service offering or disk offering linked to the new service offering and apply all characteristics to the root volume.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
+@APICommand(name = "scaleVirtualMachine", description = "Scales the  Instance to a new service offering. This command also considers the volume size in the service offering or disk offering linked to the new service offering and apply all characteristics to the root volume.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ScaleVMCmd extends BaseAsyncCmd implements UserCmd {
     private static final String s_name = "scalevirtualmachineresponse";
@@ -55,14 +55,14 @@ public class ScaleVMCmd extends BaseAsyncCmd implements UserCmd {
     /////////////////////////////////////////////////////
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserVmResponse.class,
-            required=true, description="The ID of the virtual machine")
+            required=true, description = "The ID of the  Instance")
     private Long id;
 
     @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.UUID, entityType=ServiceOfferingResponse.class,
-            required=true, description="the ID of the service offering for the virtual machine")
+            required=true, description = "The ID of the service offering for the  Instance")
     private Long serviceOfferingId;
 
-    @Parameter(name = ApiConstants.DETAILS, type = BaseCmd.CommandType.MAP, description = "name value pairs of custom parameters for cpuspeed, memory and cpunumber. example details[i].name=value")
+    @Parameter(name = ApiConstants.DETAILS, type = BaseCmd.CommandType.MAP, description = "Name value pairs of custom parameters for cpuspeed, memory and cpunumber. example details[i].name=value")
     private Map<String, String> details;
 
     @Parameter(name = ApiConstants.MIN_IOPS, type = CommandType.LONG, required = false, description = "New minimum number of IOPS for the custom disk offering", since = "4.17")
@@ -148,7 +148,7 @@ public class ScaleVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return  "upgrading vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()) + " to service offering: " + this._uuidMgr.getUuid(ServiceOffering.class, getServiceOfferingId());
+        return  "Upgrading Instance: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()) + " to service offering: " + this._uuidMgr.getUuid(ServiceOffering.class, getServiceOfferingId());
     }
 
     @Override
@@ -185,7 +185,7 @@ public class ScaleVMCmd extends BaseAsyncCmd implements UserCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to scale vm");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to scale Instance");
         }
     }
 }

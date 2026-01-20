@@ -17,7 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-for i in `xm list | awk '{ print $1 }' | egrep -v "Name|Domain-0"`
+for i in `xm list | awk '{ print $1 }' | grep -E -v "Name|Domain-0"`
 do
     xm destroy $i
 done

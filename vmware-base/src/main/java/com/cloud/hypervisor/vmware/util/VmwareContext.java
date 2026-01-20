@@ -476,8 +476,8 @@ public class VmwareContext {
 
         String cookie = _vimClient.getServiceCookie();
         if (cookie == null) {
-            LOGGER.error("No cookie is found in vwware web service request context!");
-            throw new Exception("No cookie is found in vmware web service request context!");
+            LOGGER.error("No cookie is found in VMware web service request context!");
+            throw new Exception("No cookie is found in VMware web service request context!");
         }
         conn.addRequestProperty("Cookie", cookie);
         conn.setDoInput(true);
@@ -652,8 +652,8 @@ public class VmwareContext {
     public HttpURLConnection getHTTPConnection(String urlString, String httpMethod) throws Exception {
         String cookie = _vimClient.getServiceCookie();
         if (cookie == null) {
-            LOGGER.error("No cookie is found in vmware web service request context!");
-            throw new Exception("No cookie is found in vmware web service request context!");
+            LOGGER.error("No cookie is found in VMware web service request context!");
+            throw new Exception("No cookie is found in VMware web service request context!");
         }
         URL url = new URL(urlString);
         HttpURLConnection conn = (HttpURLConnection)url.openConnection();

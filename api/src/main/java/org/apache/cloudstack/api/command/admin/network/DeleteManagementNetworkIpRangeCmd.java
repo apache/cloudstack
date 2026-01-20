@@ -116,7 +116,7 @@ public class DeleteManagementNetworkIpRangeCmd extends BaseAsyncCmd {
             logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         } catch (Exception e) {
-            logger.warn("Failed to delete management ip range from " + getStartIp() + " to " + getEndIp() + " of Pod: " + getPodId(), e);
+            logger.warn("Failed to delete management ip range from {} to {} of Pod: {}", getStartIp(), getEndIp(), getPodId(), e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }

@@ -92,10 +92,10 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.constants.VmDetails;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
@@ -174,7 +174,7 @@ public class PresetVariableHelper {
     VMSnapshotDao vmSnapshotDao;
 
     @Inject
-    UserVmDetailsDao userVmDetailsDao;
+    VMInstanceDetailsDao vmInstanceDetailsDao;
 
     @Inject
     BackupOfferingDao backupOfferingDao;
@@ -465,7 +465,7 @@ public class PresetVariableHelper {
         computingResources.setCpuSpeed(serviceOfferingVo.getSpeed());
 
         if (serviceOfferingVo.isDynamic()) {
-            List<UserVmDetailVO> details = userVmDetailsDao.listDetails(vmVo.getId());
+            List<VMInstanceDetailVO> details = vmInstanceDetailsDao.listDetails(vmVo.getId());
 
             computingResources.setMemory(getDetailByName(details, VmDetails.MEMORY.getName(), computingResources.getMemory()));
             computingResources.setCpuNumber(getDetailByName(details, VmDetails.CPU_NUMBER.getName(), computingResources.getCpuNumber()));
@@ -485,14 +485,14 @@ public class PresetVariableHelper {
         }
     }
 
-    protected Integer getDetailByName(List<UserVmDetailVO> details, String name, Integer defaultValue) {
-        List<UserVmDetailVO> detailFiltered = details.stream().filter(det -> name.equals(det.getName())).collect(Collectors.toList());
+    protected Integer getDetailByName(List<VMInstanceDetailVO> details, String name, Integer defaultValue) {
+        List<VMInstanceDetailVO> detailFiltered = details.stream().filter(det -> name.equals(det.getName())).collect(Collectors.toList());
 
         if (CollectionUtils.isEmpty(detailFiltered)) {
             return defaultValue;
         }
 
-        UserVmDetailVO detail = detailFiltered.get(0);
+        VMInstanceDetailVO detail = detailFiltered.get(0);
 
         if (detail.getValue() != null) {
             return Integer.valueOf(detail.getValue());

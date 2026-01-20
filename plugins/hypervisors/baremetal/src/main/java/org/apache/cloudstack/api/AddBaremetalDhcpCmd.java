@@ -34,7 +34,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 
-@APICommand(name = "addBaremetalDhcp", description = "adds a baremetal dhcp server", responseObject = BaremetalDhcpResponse.class,
+@APICommand(name = "addBaremetalDhcp", description = "Adds a baremetal DHCP server", responseObject = BaremetalDhcpResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddBaremetalDhcpCmd extends BaseAsyncCmd {
 
@@ -48,7 +48,7 @@ public class AddBaremetalDhcpCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = PhysicalNetworkResponse.class,
                required = true,
-               description = "the Physical Network ID")
+               description = "The Physical Network ID")
     private Long physicalNetworkId;
 
     @Parameter(name = ApiConstants.DHCP_SERVER_TYPE, type = CommandType.STRING, required = true, description = "Type of dhcp device")
