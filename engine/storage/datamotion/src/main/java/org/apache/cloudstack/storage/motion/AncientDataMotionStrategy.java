@@ -396,7 +396,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                     return answer;
                 }
 
-                objOnImageStore.processEvent(Event.OperationSuccessed, answer);
+                objOnImageStore.processEvent(Event.OperationSucceeded, answer);
 
                 objOnImageStore.processEvent(Event.CopyingRequested);
 
@@ -427,7 +427,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 throw e;
             }
 
-            objOnImageStore.processEvent(Event.OperationSuccessed);
+            objOnImageStore.processEvent(Event.OperationSucceeded);
             deleteVolumeOnSecondaryStore(objOnImageStore);
             return answer;
         } else {
