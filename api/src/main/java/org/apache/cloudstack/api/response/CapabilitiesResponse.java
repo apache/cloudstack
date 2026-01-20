@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import java.util.Map;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -153,6 +155,10 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "true if additional configurations or extraconfig can be passed to Instances", since = "4.20.2")
     private Boolean additionalConfigEnabled;
 
+    @SerializedName(ApiConstants.VPN_CUSTOMER_GATEWAY_PARAMETERS)
+    @Param(description = "Excluded and obsolete VPN customer gateway cryptographic parameters")
+    private Map<String, Object> vpnCustomerGatewayParameters;
+
     @SerializedName(ApiConstants.LOGS_WEB_SERVER_ENABLED)
     @Param(description = "true if Logs Web Server plugin is enabled, false otherwise", since = "4.23.0")
     private boolean logsWebServerEnabled;
@@ -284,6 +290,10 @@ public class CapabilitiesResponse extends BaseResponse {
     public void setAdditionalConfigEnabled(Boolean additionalConfigEnabled) {
         this.additionalConfigEnabled = additionalConfigEnabled;
 
+    }
+
+    public void setVpnCustomerGatewayParameters(Map<String, Object> vpnCustomerGatewayParameters) {
+        this.vpnCustomerGatewayParameters = vpnCustomerGatewayParameters;
     }
 
     public void setLogsWebServerEnabled(boolean logsWebServerEnabled) {

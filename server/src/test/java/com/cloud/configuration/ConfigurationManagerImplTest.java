@@ -49,6 +49,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManagerImpl;
 import com.cloud.user.User;
+import com.cloud.utils.DomainHelper;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.SearchCriteria;
@@ -178,6 +179,8 @@ public class ConfigurationManagerImplTest {
     PrimaryDataStoreDao storagePoolDao;
     @Mock
     StoragePoolDetailsDao storagePoolDetailsDao;
+    @Mock
+    DomainHelper domainHelper;
 
     DeleteZoneCmd deleteZoneCmd;
     CreateNetworkOfferingCmd createNetworkOfferingCmd;

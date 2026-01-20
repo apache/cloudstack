@@ -53,6 +53,8 @@
         <project.systemvm.template.version>4.22.0.0</project.systemvm.template.version>
         <sonar.organization>apache</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+        <sonar.exclusions>engine/schema/src/main/java/org/apache/cloudstack/backup/BackupOfferingDetailsVO.java</sonar.exclusions>
+        <sonar.exclusions>api/src/main/java/org/apache/cloudstack/api/response/BackupOfferingResponse.java</sonar.exclusions>
 
         <!-- Build properties -->
         <cs.jdk.version>11</cs.jdk.version>
