@@ -19,7 +19,7 @@
   <a-form layout="vertical" >
     <a-form-item :label="$t('label.owner.type')">
       <a-select
-        @change="changeAccountType"
+        @change="changeAccountTypeOrDomain"
         v-model:value="selectedAccountType"
         defaultValue="account"
         autoFocus
@@ -36,62 +36,116 @@
       </a-select>
     </a-form-item>
     <a-form-item :label="$t('label.domain')" required>
-      <infinite-scroll-select
+      <a-select
+        @change="changeAccountTypeOrDomain"
         v-model:value="selectedDomain"
-        api="listDomains"
-        :apiParams="domainsApiParams"
-        resourceType="domain"
-        optionValueKey="id"
-        optionLabelKey="path"
-        defaultIcon="block-outlined"
-        @change-option-value="handleDomainChange" />
+        showSearch
+        optionFilterProp="label"
+        :filterOption="
+          (input, option) => {
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }
+        "
+      >
+        <a-select-option
+          v-for="domain in domains"
+          :key="domain.name"
+          :value="domain.id"
+          :label="domain.path || domain.name || domain.description"
+        >
+          <span>
+            <resource-icon
+              v-if="domain && domain.icon"
+              :image="domain.icon.base64image"
+              size="1x"
+              style="margin-right: 5px"
+            />
+            <block-outlined v-else />
+            {{ domain.path || domain.name || domain.description }}
+          </span>
+        </a-select-option>
+      </a-select>
     </a-form-item>
 
     <template v-if="selectedAccountType === 'Account'">
       <a-form-item :label="$t('label.account')" required>
-        <infinite-scroll-select
+        <a-select
+          @change="emitChangeEvent"
           v-model:value="selectedAccount"
-          api="listAccounts"
-          :apiParams="accountsApiParams"
-          resourceType="account"
-          optionValueKey="name"
-          optionLabelKey="name"
-          defaultIcon="team-outlined"
-          @change-option-value="handleAccountChange" />
+          showSearch
+          optionFilterProp="label"
+          :filterOption="
+            (input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }
+          "
+        >
+          <a-select-option v-for="account in accounts" :key="account.name" :value="account.name">
+            <span>
+              <resource-icon
+                v-if="account && account.icon"
+                :image="account.icon.base64image"
+                size="1x"
+                style="margin-right: 5px"
+              />
+              <team-outlined v-else />
+              {{ account.name }}
+            </span>
+          </a-select-option>
+        </a-select>
       </a-form-item>
     </template>
 
     <template v-else>
       <a-form-item :label="$t('label.project')" required>
-        <infinite-scroll-select
+        <a-select
+          @change="emitChangeEvent"
           v-model:value="selectedProject"
-          api="listProjects"
-          :apiParams="projectsApiParams"
-          resourceType="project"
-          optionValueKey="id"
-          optionLabelKey="name"
-          defaultIcon="project-outlined"
-          @change-option-value="handleProjectChange" />
+          showSearch
+          optionFilterProp="label"
+          :filterOption="
+            (input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }
+          "
+        >
+          <a-select-option v-for="project in projects" :key="project.id" :value="project.id" :label="project.name">
+            <span>
+              <resource-icon
+                v-if="project && project.icon"
+                :image="project.icon.base64image"
+                size="1x"
+                style="margin-right: 5px"
+              />
+              <project-outlined v-else />
+              {{ project.name }}
+            </span>
+          </a-select-option>
+        </a-select>
       </a-form-item>
     </template>
   </a-form>
 </template>
 
 <script>
-import InfiniteScrollSelect from '@/components/widgets/InfiniteScrollSelect.vue'
+import { api } from '@/api'
+import ResourceIcon from '@/components/view/ResourceIcon.vue'
 
 export default {
   name: 'OwnershipSelection',
-  components: { InfiniteScrollSelect },
+  components: { ResourceIcon },
   data () {
     return {
+      initialized: false,
+      domains: [],
+      accounts: [],
+      projects: [],
       selectedAccountType: this.$store.getters.project?.id ? 'Project' : 'Account',
       selectedDomain: null,
       selectedAccount: null,
       selectedProject: null,
-      selectedDomainOption: null,
-      selectedAccountOption: null,
-      selectedProjectOption: null
+      loading: false,
+      requestToken: 0
     }
   },
   props: {
@@ -99,78 +153,121 @@ export default {
       type: Object
     }
   },
-  computed: {
-    domainsApiParams () {
-      return {
+  created () {
+    this.fetchData()
+  },
+  methods: {
+    fetchData () {
+      this.loading = true
+      api('listDomains', {
+        response: 'json',
         listAll: true,
         showicon: true,
         details: 'min'
-      }
+      })
+        .then((response) => {
+          this.domains = response.listdomainsresponse.domain
+          if (this.override) {
+            this.domains = this.domains.filter(item => this.override.domains.has(item.id))
+          }
+          if (this.domains.length === 0) {
+            this.selectedDomain = null
+            this.selectedProject = null
+            this.selectedAccount = null
+            return
+          }
+          const domainIds = this.domains?.map(domain => domain.id)
+          const ownerDomainId = this.$store.getters.project?.domainid || this.$store.getters.userInfo.domainid
+          this.selectedDomain = domainIds?.includes(ownerDomainId) ? ownerDomainId : this.domains?.[0]?.id
+          this.fetchOwnerData()
+        })
+        .catch((error) => {
+          this.$notifyError(error)
+        })
+        .finally(() => {
+          this.loading = false
+        })
     },
-    accountsApiParams () {
-      if (!this.selectedDomain) {
-        return null
-      }
-      return {
-        domainid: this.selectedDomain,
+    incrementAndGetRequestToken () {
+      this.requestToken += 1
+      return this.requestToken
+    },
+    fetchAccounts () {
+      this.loading = true
+      const currentToken = this.incrementAndGetRequestToken()
+      api('listAccounts', {
+        response: 'json',
+        domainId: this.selectedDomain,
         showicon: true,
         state: 'Enabled',
         isrecursive: false
-      }
+      })
+        .then((response) => {
+          if (currentToken !== this.requestToken) {
+            return
+          }
+          this.accounts = response.listaccountsresponse.account || []
+          if (this.override?.accounts && this.accounts) {
+            this.accounts = this.accounts.filter(item => this.override.accounts.has(item.name))
+          }
+          const accountNames = this.accounts.map(account => account.name)
+          if (this.selectedDomain === this.$store.getters.userInfo.domainid && accountNames.includes(this.$store.getters.userInfo.account)) {
+            this.selectedAccount = this.$store.getters.userInfo.account
+          } else {
+            this.selectedAccount = this.accounts?.[0]?.name
+          }
+          this.selectedProject = null
+          this.emitChangeEvent()
+        })
+        .catch((error) => {
+          this.$notifyError(error)
+        })
+        .finally(() => {
+          this.loading = false
+          this.initialized = true
+        })
     },
-    projectsApiParams () {
-      if (!this.selectedDomain) {
-        return null
-      }
-      return {
+    fetchProjects () {
+      this.loading = true
+      const currentToken = this.incrementAndGetRequestToken()
+      api('listProjects', {
+        response: 'json',
         domainId: this.selectedDomain,
         state: 'Active',
         showicon: true,
         details: 'min',
         isrecursive: false
+      })
+        .then((response) => {
+          if (currentToken !== this.requestToken) {
+            return
+          }
+          this.projects = response.listprojectsresponse.project
+          if (this.override?.projects && this.projects) {
+            this.projects = this.projects.filter(item => this.override.projects.has(item.id))
+          }
+          this.selectedProject = this.projects?.map(project => project.id)?.includes(this.$store.getters.project?.id) ? this.$store.getters.project?.id : this.projects?.[0]?.id
+          this.selectedAccount = null
+          this.emitChangeEvent()
+        })
+        .catch((error) => {
+          this.$notifyError(error)
+        })
+        .finally(() => {
+          this.loading = false
+          this.initialized = true
+        })
+    },
+    changeAccountTypeOrDomain () {
+      this.initialized = true
+      this.fetchOwnerData()
+    },
+    fetchOwnerData () {
+      if (this.selectedAccountType === 'Account') {
+        this.fetchAccounts()
+      } else {
+        this.fetchProjects()
       }
-    }
-  },
-  created () {
-    const ownerDomainId = this.$store.getters.project?.domainid || this.$store.getters.userInfo.domainid
-    if (ownerDomainId) {
-      this.selectedDomain = ownerDomainId
-    }
-  },
-  methods: {
-    changeAccountType () {
-      this.selectedAccount = null
-      this.selectedProject = null
-
-      this.handleDomainChange(this.selectedDomain)
-    },
-    handleDomainChange (domainId) {
-      this.selectedDomain = domainId
-      this.selectedAccount = null
-      this.selectedProject = null
-
-      // Pre-select account if it's the user's domain
-      if (this.selectedAccountType === 'Account' &&
-          this.selectedDomain === this.$store.getters.userInfo.domainid) {
-        this.selectedAccount = this.$store.getters.userInfo.account
-      } else if (this.selectedAccountType === 'Project' &&
-               this.$store.getters.project?.id &&
-               this.selectedDomain === this.$store.getters.project?.domainid) {
-        // Pre-select project if applicable
-        this.selectedProject = this.$store.getters.project?.id
-      }
-
-      this.emitChangeEvent()
-    },
-    handleAccountChange (accountName) {
-      this.selectedAccount = accountName
-      this.selectedProject = null
-      this.emitChangeEvent()
-    },
-    handleProjectChange (projectId) {
-      this.selectedProject = projectId
-      this.selectedAccount = null
-      this.emitChangeEvent()
     },
     emitChangeEvent () {
       this.$emit('fetch-owner', this)

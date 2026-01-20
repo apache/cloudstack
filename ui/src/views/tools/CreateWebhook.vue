@@ -129,7 +129,7 @@
         <test-webhook-delivery-view
           ref="dispatchview"
           :payloadUrl="form.payloadurl"
-          :sslVerification="form.sslverification"
+          :sslVerification="isPayloadUrlHttps && form.sslverification"
           :secretKey="form.secretkey"
           :showActions="!(!form.payloadurl)" />
         <a-form-item name="state" ref="state">
