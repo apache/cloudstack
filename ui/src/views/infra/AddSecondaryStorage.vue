@@ -48,6 +48,7 @@
           <a-form-item name="zone" ref="zone" :label="$t('label.zone')">
             <a-select
               v-model:value="form.zone"
+              @change="onZoneChange"
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
@@ -105,6 +106,7 @@
           <a-form-item name="zone" ref="zone" :label="$t('label.zone')">
             <a-select
               v-model:value="form.zone"
+              @change="onZoneChange"
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
@@ -239,7 +241,6 @@ export default {
     },
     fetchData () {
       this.listZones()
-      this.fetchCopyTemplatesConfig()
       this.checkOtherSecondaryStorages()
     },
     closeModal () {
@@ -265,14 +266,18 @@ export default {
         })
       })
     },
+    onZoneChange (val) {
+      this.form.zone = val
+      this.copyTemplatesTouched = false
+      this.fetchCopyTemplatesConfig()
+    },
     listZones () {
       api('listZones', { showicon: true }).then(json => {
-        if (json?.listzonesresponse?.zone) {
-          this.zones = json.listzonesresponse.zone
+        this.zones = json.listzonesresponse.zone || []
 
-          if (this.zones.length > 0) {
-            this.form.zone = this.zones[0].id || ''
-          }
+        if (this.zones.length > 0) {
+          this.form.zone = this.zones[0].id
+          this.fetchCopyTemplatesConfig()
         }
       })
     },
@@ -465,11 +470,6 @@ export default {
           reject(error)
         })
       })
-    },
-    watch: {
-      'form.zone' () {
-        this.copyTemplatesTouched = false
-      }
     }
   }
 }
