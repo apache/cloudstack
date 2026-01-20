@@ -54,7 +54,7 @@ public class CloneBackupOfferingCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     ////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.SOURCE_OFFERING_ID, type = BaseCmd.CommandType.UUID,
+    @Parameter(name = ApiConstants.SOURCE_OFFERING_ID, type = BaseCmd.CommandType.UUID, entityType = BackupOfferingResponse.class,
             required = true, description = "The ID of the source backup offering to clone from")
     private Long sourceOfferingId;
 
