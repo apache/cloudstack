@@ -21,7 +21,6 @@ import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.gpu.VgpuProfileVO;
 import com.cloud.network.Network;
 import com.cloud.network.Networks;
 import com.cloud.offering.DiskOffering;
@@ -40,6 +39,9 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserDao;
+import com.cloud.utils.DomainHelper;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.gpu.dao.VgpuProfileDao;
@@ -68,7 +70,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -117,10 +126,13 @@ public class ConfigurationManagerCloneIntegrationTest {
     private VgpuProfileDao vgpuProfileDao;
 
     @Mock
-    private com.cloud.user.dao.AccountDao accountDao;
+    private AccountDao accountDao;
 
     @Mock
-    private com.cloud.user.dao.UserDao userDao;
+    private UserDao userDao;
+
+    @Mock
+    private DomainHelper domainHelper;
 
     private MockedStatic<CallContext> callContextMock;
 
