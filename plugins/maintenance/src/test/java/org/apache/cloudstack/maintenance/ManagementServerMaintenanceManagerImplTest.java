@@ -81,7 +81,7 @@ public class ManagementServerMaintenanceManagerImplTest {
         Mockito.doReturn(expectedCount).when(jobManagerMock).countPendingNonPseudoJobs(1L);
         return expectedCount;
     }
-
+    
     @Test
     public void countPendingJobs() {
         long expectedCount = prepareCountPendingJobs();

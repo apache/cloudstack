@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.KMSKeyResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.framework.kms.KMSException;
 import org.apache.cloudstack.kms.KMSManager;
@@ -68,6 +69,13 @@ public class MigrateVolumesToKMSCmd extends BaseAsyncCmd {
                description = "Domain ID")
     private Long domainId;
 
+    @Parameter(name = ApiConstants.ID,
+               required = true,
+               type = CommandType.UUID,
+               entityType = KMSKeyResponse.class,
+               description = "KMS Key ID to use for migrating volumes")
+    private Long kmsKeyId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -82,6 +90,10 @@ public class MigrateVolumesToKMSCmd extends BaseAsyncCmd {
 
     public Long getDomainId() {
         return domainId;
+    }
+
+    public Long getKmsKeyId() {
+        return kmsKeyId;
     }
 
     /////////////////////////////////////////////////////

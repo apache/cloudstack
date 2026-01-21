@@ -111,8 +111,9 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
 
     @Override
     public KMSProvider getKMSProvider(String name) {
+        // Default to database provider if no name specified
         if (StringUtils.isEmpty(name)) {
-            return getConfiguredKmsProvider();
+            name = "database";
         }
 
         String providerName = name.toLowerCase();
@@ -130,9 +131,9 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
 
     @Override
     public KMSProvider getKMSProviderForZone(Long zoneId) throws KMSException {
-        // For now, use global provider
-        // In the future, could support zone-specific providers via zone-scoped config
-        return getConfiguredKmsProvider();
+        // Default to database provider for backward compatibility
+        // HSM-based keys will use provider from HSM profile's protocol field
+        return getKMSProvider("database");
     }
 
     @Override
@@ -225,40 +226,26 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         }
     }
 
-    @Override
     @ActionEvent(eventType = EventTypes.EVENT_KMS_KEK_CREATE, eventDescription = "creating user KMS key")
-    public KMSKey createUserKMSKey(Long accountId, Long domainId, Long zoneId,
-            String name, String description, KeyPurpose purpose,
-            Integer keyBits) throws KMSException {
-        // Delegate to method with profileId
-        return createUserKMSKey(accountId, domainId, zoneId, name, description, purpose, keyBits, null);
-    }
-
     KMSKey createUserKMSKey(Long accountId, Long domainId, Long zoneId,
             String name, String description, KeyPurpose purpose,
-            Integer keyBits, String hsmProfileName) throws KMSException {
+            Integer keyBits, long hsmProfileId) throws KMSException {
         validateKmsEnabled(zoneId);
 
-        KMSProvider provider = getKMSProviderForZone(zoneId);
-
-        // Resolve HSM Profile
-        Long hsmProfileId = null;
-        if (hsmProfileName != null) {
-            HSMProfileVO profile = hsmProfileDao.findByName(hsmProfileName);
-            if (profile == null) {
-                throw KMSException.invalidParameter("HSM Profile not found: " + hsmProfileName);
-            }
-            // Validate access
-            if (profile.getAccountId() != null && !profile.getAccountId().equals(accountId)) {
-                // Check if admin
-                // For simplicity, strict check for now. Ideally should check if user is admin.
-                // Assuming caller check happened upstream in createKMSKey(CreateKMSKeyCmd)
-            }
-            hsmProfileId = profile.getId();
-        } else {
-            // Auto-resolve based on hierarchy
-            hsmProfileId = resolveHSMProfile(accountId, zoneId, provider.getProviderName());
+        HSMProfileVO profile = hsmProfileDao.findById(hsmProfileId);
+        if (profile == null) {
+            throw KMSException.invalidParameter("HSM Profile not found");
         }
+        // Validate access
+        if (profile.getAccountId() != null && !profile.getAccountId().equals(accountId)) {
+            // Check if admin
+            // For simplicity, strict check for now. Ideally should check if user is admin.
+            // Assuming caller check happened upstream in createKMSKey(CreateKMSKeyCmd)
+            throw KMSException.invalidParameter("HSM Profile not found");
+        }
+
+        // Determine provider from HSM profile or default to database
+        KMSProvider provider = getKMSProvider(profile.getProtocol());
 
         // Generate unique KEK label
         String kekLabel = purpose.getName() + "-kek-" + UUID.randomUUID().toString().substring(0, 8);
@@ -288,46 +275,6 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         logger.info("Created KMS key ({}) with initial KEK version {} for account {} in zone {} (profile: {})",
                 kmsKey, initialVersion.getVersionNumber(), accountId, zoneId, finalProfileId);
         return kmsKey;
-    }
-
-    Long resolveHSMProfile(Long accountId, Long zoneId, String providerName) {
-        // Only applicable for providers that use profiles (pkcs11, kmip)
-        if ("database".equalsIgnoreCase(providerName)) {
-            return null;
-        }
-
-        // 1. User-provided profile
-        List<HSMProfileVO> userProfiles = hsmProfileDao.listByAccountId(accountId);
-        if (CollectionUtils.isNotEmpty(userProfiles)) {
-            // Filter by protocol/provider match if needed, for now pick first enabled
-            for (HSMProfileVO p : userProfiles) {
-                if (p.isEnabled() && isProviderMatch(p, providerName)) return p.getId();
-            }
-        }
-
-        // 2. Zone-scoped admin profile
-        List<HSMProfileVO> zoneProfiles = hsmProfileDao.listAdminProfiles(zoneId);
-        if (CollectionUtils.isNotEmpty(zoneProfiles)) {
-            for (HSMProfileVO p : zoneProfiles) {
-                if (p.isEnabled() && isProviderMatch(p, providerName)) return p.getId();
-            }
-        }
-
-        // 3. Global admin profile
-        List<HSMProfileVO> globalProfiles = hsmProfileDao.listAdminProfiles();
-        if (CollectionUtils.isNotEmpty(globalProfiles)) {
-            for (HSMProfileVO p : globalProfiles) {
-                if (p.isEnabled() && isProviderMatch(p, providerName)) return p.getId();
-            }
-        }
-
-        // If provider is not database, we must have a profile
-        throw new CloudRuntimeException("No suitable HSM profile found for provider " + providerName + " for account " + accountId);
-    }
-
-    boolean isProviderMatch(HSMProfileVO profile, String providerName) {
-        // Simple mapping: PKCS11 -> pkcs11, KMIP -> kmip
-        return profile.getProtocol().equalsIgnoreCase(providerName);
     }
 
     @Override
@@ -490,7 +437,12 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             throw KMSException.invalidParameter("KMS key purpose is not VOLUME_ENCRYPTION: " + kmsKey);
         }
 
-        KMSProvider provider = getKMSProviderForZone(kmsKey.getZoneId());
+        HSMProfileVO hsmProfile = hsmProfileDao.findById(kmsKey.getHsmProfileId());
+        if (hsmProfile == null) {
+            throw KMSException.invalidParameter("HSM profile not found: " + kmsKey.getHsmProfileId());
+        }
+
+        KMSProvider provider = getKMSProvider(hsmProfile.getProtocol());
 
         // Get active KEK version
         KMSKekVersionVO activeVersion = getActiveKekVersion(kmsKey.getId());
@@ -588,7 +540,8 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                 cmd.getName(),
                 cmd.getDescription(),
                 keyPurpose,
-                bits
+                bits,
+                cmd.getHsmProfileId()
         );
 
         return responseGenerator.createKMSKeyResponse(kmsKey);
@@ -823,12 +776,46 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         Long zoneId = cmd.getZoneId();
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
+        Long kmsKeyId = cmd.getKmsKeyId();
 
         if (zoneId == null) {
             throw KMSException.invalidParameter("zoneId must be specified");
         }
 
+        if (kmsKeyId == null) {
+            throw KMSException.invalidParameter("kmsKeyId must be specified");
+        }
+
         validateKmsEnabled(zoneId);
+
+        // Get and validate KMS key
+        KMSKeyVO kmsKey = kmsKeyDao.findById(kmsKeyId);
+        if (kmsKey == null) {
+            throw KMSException.kekNotFound("KMS key not found: " + kmsKeyId);
+        }
+
+        if (kmsKey.getState() != KMSKey.State.Enabled) {
+            throw KMSException.invalidParameter("KMS key is not enabled: " + kmsKey.getUuid());
+        }
+
+        if (kmsKey.getPurpose() != KeyPurpose.VOLUME_ENCRYPTION) {
+            throw KMSException.invalidParameter("KMS key purpose must be VOLUME_ENCRYPTION");
+        }
+
+        // Get provider from KMS key's HSM profile
+        KMSProvider provider;
+        if (kmsKey.getHsmProfileId() != null) {
+            HSMProfileVO profile = hsmProfileDao.findById(kmsKey.getHsmProfileId());
+            if (profile == null) {
+                throw KMSException.invalidParameter("HSM Profile not found for KMS key");
+            }
+            provider = getKMSProvider(profile.getProtocol());
+        } else {
+            provider = getKMSProvider("database");
+        }
+
+        // Get active KEK version
+        KMSKekVersionVO activeVersion = getActiveKekVersion(kmsKey.getId());
 
         Long accountId = null;
         if (accountName != null) {
@@ -836,9 +823,6 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         }
 
         int pageSize = 100; // Process 100 volumes per page to avoid OutOfMemoryError
-
-        // Get provider
-        KMSProvider provider = getKMSProviderForZone(zoneId);
 
         int successCount = 0;
         int failureCount = 0;
@@ -871,41 +855,13 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                     // The KMS will store the same format, maintaining compatibility
                     byte[] passphraseBytes = passphrase.getPassphrase();
 
-                    // Get or create KMS key for account
-                    KMSKeyVO kmsKey;
-                    List<? extends KMSKey> accountKeys = listUserKMSKeys(
-                            volume.getAccountId(),
-                            volume.getDomainId(),
-                            zoneId,
-                            KeyPurpose.VOLUME_ENCRYPTION,
-                            KMSKey.State.Enabled
-                    );
-
-                    if (!accountKeys.isEmpty()) {
-                        kmsKey = (KMSKeyVO) accountKeys.get(0); // Use first available key
-                    } else {
-                        // Create new KMS key for account
-                        String keyName = "Volume-Encryption-Key-" + volume.getAccountId();
-                        kmsKey = (KMSKeyVO) createUserKMSKey(
-                                volume.getAccountId(),
-                                volume.getDomainId(),
-                                zoneId,
-                                keyName,
-                                "Auto-created for volume migration",
-                                KeyPurpose.VOLUME_ENCRYPTION,
-                                256 // Default to 256 bits
-                        );
-                        logger.info("Created KMS key {} for account {} during migration", kmsKey, volume.getAccountId());
-                    }
-
-                    // Get active KEK version
-                    KMSKekVersionVO activeVersion = getActiveKekVersion(kmsKey.getId());
-
-                    // Wrap existing passphrase bytes as DEK (don't generate new DEK)
+                    // Wrap existing passphrase bytes as DEK using the specified KMS key
+                    // Pass the HSM profile ID from the active version
                     WrappedKey wrappedKey = provider.wrapKey(
                             passphraseBytes,
                             KeyPurpose.VOLUME_ENCRYPTION,
-                            activeVersion.getKekLabel()
+                            activeVersion.getKekLabel(),
+                            activeVersion.getHsmProfileId()
                     );
 
                     // Store wrapped key
@@ -1011,16 +967,6 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         return KMSException.transientError("KMS operation failed: " + e.getMessage(), e);
     }
 
-    private KMSProvider getConfiguredKmsProvider() {
-        String providerName = KMSProviderPlugin.value();
-        String providerKey = providerName != null ? providerName.toLowerCase() : null;
-        if (providerKey != null && kmsProviderMap.containsKey(providerKey) && kmsProviderMap.get(providerKey) != null) {
-            return kmsProviderMap.get(providerKey);
-        }
-
-        throw new CloudRuntimeException("Failed to find default configured KMS provider plugin: " + providerName);
-    }
-
     public void setKmsProviders(List<KMSProvider> kmsProviders) {
         this.kmsProviders = kmsProviders;
         initializeKmsProviderMap();
@@ -1055,30 +1001,20 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         super.start();
         initializeKmsProviderMap();
 
-        String configuredProviderName = KMSProviderPlugin.value();
-        String providerKey = configuredProviderName != null ? configuredProviderName.toLowerCase() : null;
-        KMSProvider provider = null;
-        if (providerKey != null && kmsProviderMap.containsKey(providerKey)) {
-            provider = kmsProviderMap.get(providerKey);
-            logger.info("Configured KMS provider: {}", provider.getProviderName());
-        }
-
-        if (provider == null) {
-            logger.warn("No valid configured KMS provider found. KMS functionality will be unavailable.");
-            // Don't fail - KMS is optional
-            return true;
-        }
-
-        // Run health check on startup
-        try {
-            boolean healthy = provider.healthCheck();
-            if (healthy) {
-                logger.info("KMS provider {} health check passed", provider.getProviderName());
-            } else {
-                logger.warn("KMS provider {} health check failed", provider.getProviderName());
+        // Run health check on all registered providers
+        for (KMSProvider provider : kmsProviderMap.values()) {
+            if (provider != null) {
+                try {
+                    boolean healthy = provider.healthCheck();
+                    if (healthy) {
+                        logger.info("KMS provider {} health check passed", provider.getProviderName());
+                    } else {
+                        logger.warn("KMS provider {} health check failed", provider.getProviderName());
+                    }
+                } catch (Exception e) {
+                    logger.warn("KMS provider {} health check error: {}", provider.getProviderName(), e.getMessage());
+                }
             }
-        } catch (Exception e) {
-            logger.warn("KMS provider health check error: {}", e.getMessage());
         }
 
         // Schedule background rewrap worker
@@ -1276,7 +1212,6 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[]{
-                KMSProviderPlugin,
                 KMSEnabled,
                 KMSDekSizeBits,
                 KMSRetryCount,
@@ -1295,7 +1230,6 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         cmdList.add(UpdateKMSKeyCmd.class);
         cmdList.add(DeleteKMSKeyCmd.class);
         cmdList.add(RotateKMSKeyCmd.class);
-        cmdList.add(MigrateVolumesToKMSCmd.class);
         cmdList.add(MigrateVolumesToKMSCmd.class);
         cmdList.add(AddHSMProfileCmd.class);
         cmdList.add(ListHSMProfilesCmd.class);
@@ -1358,6 +1292,22 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         boolean isAdmin = accountManager.isAdmin(accountId);
 
         List<HSMProfile> result = new ArrayList<>();
+
+        if (cmd.getId() != null) {
+            HSMProfileVO key = hsmProfileDao.findById(cmd.getId());
+            if (key == null) {
+                return result;
+            }
+            // Validate the caller can list this profile
+            if (!isAdmin) {
+                Account caller = CallContext.current().getCallingAccount();
+                Account owner = accountManager.getAccount(key.getAccountId());
+
+                accountManager.checkAccess(caller, null, true, owner);
+            }
+            result.add(key);
+            return result;
+        }
 
         // 1. User's own profiles
         result.addAll(hsmProfileDao.listByAccountId(accountId));

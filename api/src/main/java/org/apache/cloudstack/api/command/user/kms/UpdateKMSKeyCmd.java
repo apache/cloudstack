@@ -48,10 +48,6 @@ public class UpdateKMSKeyCmd extends BaseAsyncCmd implements UserCmd {
     @Inject
     private KMSManager kmsManager;
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
     @Parameter(name = ApiConstants.ID,
                required = true,
                type = CommandType.UUID,
@@ -74,10 +70,6 @@ public class UpdateKMSKeyCmd extends BaseAsyncCmd implements UserCmd {
                description = "New state: Enabled or Disabled")
     private String state;
 
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
     public Long getId() {
         return id;
     }
@@ -93,10 +85,6 @@ public class UpdateKMSKeyCmd extends BaseAsyncCmd implements UserCmd {
     public String getState() {
         return state;
     }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
 
     @Override
     public void execute() {

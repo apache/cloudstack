@@ -47,10 +47,6 @@ public class ListKMSKeysCmd extends BaseListAccountResourcesCmd implements UserC
     @Inject
     private KMSManager kmsManager;
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
     @Parameter(name = ApiConstants.ID,
                type = CommandType.UUID,
                entityType = KMSKeyResponse.class,
@@ -72,10 +68,6 @@ public class ListKMSKeysCmd extends BaseListAccountResourcesCmd implements UserC
                type = CommandType.STRING,
                description = "Filter by state: Enabled, Disabled")
     private String state;
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
 
     public Long getId() {
         return id;

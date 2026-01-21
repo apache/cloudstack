@@ -17,21 +17,8 @@
 
 package org.apache.cloudstack.kms.provider.pkcs11;
 
-import java.security.KeyStore;
-import java.security.Provider;
-import java.security.Security;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-
+import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.kms.KMSException;
 import org.apache.cloudstack.framework.kms.KMSProvider;
@@ -45,30 +32,65 @@ import org.apache.cloudstack.kms.dao.KMSKekVersionDao;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.stereotype.Component;
 
-import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.crypt.DBEncryptionUtil;
+import javax.annotation.PostConstruct;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import javax.inject.Inject;
+import java.io.Closeable;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.security.SecureRandom;
+import java.security.Security;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 
-@Component
 public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
     private static final Logger logger = LogManager.getLogger(PKCS11HSMProvider.class);
     private static final String PROVIDER_NAME = "pkcs11";
 
-    @Inject
-    private HSMProfileDao hsmProfileDao;
+    // Constants for session management
+    private static final long SESSION_ACQUIRE_TIMEOUT_MS = 5000L;
+    private static final int MAX_SESSION_RETRIES = 3;
+    private static final long RETRY_BACKOFF_BASE_MS = 100L;
 
-    @Inject
-    private HSMProfileDetailsDao hsmProfileDetailsDao;
-
-    @Inject
-    private KMSKekVersionDao kmsKekVersionDao;
-
+    // Valid key sizes for AES
+    private static final int[] VALID_KEY_SIZES = {128, 192, 256};
     // Session pool per HSM profile
     private final Map<Long, HSMSessionPool> sessionPools = new ConcurrentHashMap<>();
-
     // Profile configuration caching
     private final Map<Long, Map<String, String>> profileConfigCache = new ConcurrentHashMap<>();
+    @Inject
+    private HSMProfileDao hsmProfileDao;
+    @Inject
+    private HSMProfileDetailsDao hsmProfileDetailsDao;
+    @Inject
+    private KMSKekVersionDao kmsKekVersionDao;
 
     @PostConstruct
     public void init() {
@@ -78,21 +100,6 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
     @Override
     public String getProviderName() {
         return PROVIDER_NAME;
-    }
-
-    /**
-     * @return The name of the component that provided this configuration
-     * variable.  This value is saved in the database so someone can easily
-     * identify who provides this variable.
-     **/
-    @Override
-    public String getConfigComponentName() {
-        return PKCS11HSMProvider.class.getSimpleName();
-    }
-
-    @Override
-    public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[0];
     }
 
     @Override
@@ -116,20 +123,35 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
     }
 
     @Override
-    public WrappedKey wrapKey(byte[] plainDek, KeyPurpose purpose, String kekLabel, Long hsmProfileId) throws KMSException {
+    public void deleteKek(String kekId) throws KMSException {
+        Long hsmProfileId = resolveProfileId(kekId);
+        executeWithSession(hsmProfileId, session -> {
+            session.deleteKey(kekId);
+            return null;
+        });
+    }
+
+    @Override
+    public boolean isKekAvailable(String kekId) throws KMSException {
+        Long hsmProfileId = resolveProfileId(kekId);
+        if (hsmProfileId == null) return false;
+
+        try {
+            return executeWithSession(hsmProfileId, session -> session.checkKeyExists(kekId));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    @Override
+    public WrappedKey wrapKey(byte[] plainDek, KeyPurpose purpose, String kekLabel,
+            Long hsmProfileId) throws KMSException {
         if (hsmProfileId == null) {
             hsmProfileId = resolveProfileId(kekLabel);
         }
 
-        HSMSessionPool pool = getSessionPool(hsmProfileId);
-        PKCS11Session session = null;
-        try {
-            session = pool.acquireSession(5000);
-            byte[] wrappedBlob = session.wrapKey(plainDek, kekLabel);
-            return new WrappedKey(kekLabel, purpose, "AES/GCM/NoPadding", wrappedBlob, PROVIDER_NAME, new Date(), null);
-        } finally {
-            pool.releaseSession(session);
-        }
+        byte[] wrappedBlob = executeWithSession(hsmProfileId, session -> session.wrapKey(plainDek, kekLabel));
+        return new WrappedKey(kekLabel, purpose, "AES/GCM/NoPadding", wrappedBlob, PROVIDER_NAME, new Date(), null);
     }
 
     @Override
@@ -138,18 +160,27 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
             hsmProfileId = resolveProfileId(wrappedKey.getKekId());
         }
 
-        HSMSessionPool pool = getSessionPool(hsmProfileId);
-        PKCS11Session session = null;
+        return executeWithSession(hsmProfileId,
+                session -> session.unwrapKey(wrappedKey.getWrappedKeyMaterial(), wrappedKey.getKekId()));
+    }
+
+    @Override
+    public WrappedKey generateAndWrapDek(KeyPurpose purpose, String kekLabel, int keyBits,
+            Long hsmProfileId) throws KMSException {
+        // Generate random DEK
+        byte[] dekBytes = new byte[keyBits / 8];
+        new SecureRandom().nextBytes(dekBytes);
+
         try {
-            session = pool.acquireSession(5000);
-            return session.unwrapKey(wrappedKey.getWrappedKeyMaterial(), wrappedKey.getKekId());
+            return wrapKey(dekBytes, purpose, kekLabel, hsmProfileId);
         } finally {
-            pool.releaseSession(session);
+            java.util.Arrays.fill(dekBytes, (byte) 0);
         }
     }
 
     @Override
-    public WrappedKey rewrapKey(WrappedKey oldWrappedKey, String newKekLabel, Long targetHsmProfileId) throws KMSException {
+    public WrappedKey rewrapKey(WrappedKey oldWrappedKey, String newKekLabel,
+            Long targetHsmProfileId) throws KMSException {
         // 1. Unwrap with old KEK
         byte[] plainKey = unwrapKey(oldWrappedKey, null); // Auto-resolve old profile
 
@@ -167,52 +198,76 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         }
     }
 
-    @Override
-    public WrappedKey generateAndWrapDek(KeyPurpose purpose, String kekLabel, int keyBits, Long hsmProfileId) throws KMSException {
-        // Generate random DEK
-        byte[] dekBytes = new byte[keyBits / 8];
-        new java.security.SecureRandom().nextBytes(dekBytes);
-
-        try {
-            return wrapKey(dekBytes, purpose, kekLabel, hsmProfileId);
-        } finally {
-            java.util.Arrays.fill(dekBytes, (byte) 0);
-        }
-    }
-
-    @Override
-    public void deleteKek(String kekId) throws KMSException {
-        Long hsmProfileId = resolveProfileId(kekId);
-        HSMSessionPool pool = getSessionPool(hsmProfileId);
-        PKCS11Session session = null;
-        try {
-            session = pool.acquireSession(5000);
-            session.deleteKey(kekId);
-        } finally {
-            pool.releaseSession(session);
-        }
-    }
-
-    @Override
-    public boolean isKekAvailable(String kekId) throws KMSException {
-        Long hsmProfileId = resolveProfileId(kekId);
-        if (hsmProfileId == null) return false;
-
-        HSMSessionPool pool = getSessionPool(hsmProfileId);
-        PKCS11Session session = null;
-        try {
-            session = pool.acquireSession(5000);
-            return session.checkKeyExists(kekId);
-        } catch (Exception e) {
-            return false;
-        } finally {
-            pool.releaseSession(session);
-        }
-    }
-
+    /**
+     * Performs health check on all configured HSM profiles.
+     *
+     * <p>For each configured HSM profile:
+     * <ol>
+     *   <li>Attempts to acquire a test session</li>
+     *   <li>Verifies HSM is responsive (lightweight KeyStore operation)</li>
+     *   <li>Releases the session</li>
+     * </ol>
+     *
+     * <p>If any HSM profile fails the health check, this method throws an exception.
+     * If no profiles are configured, returns true (nothing to check).
+     *
+     * @return true if all configured HSM profiles are healthy
+     * @throws KMSException with {@code HEALTH_CHECK_FAILED} if any HSM profile is unhealthy
+     */
     @Override
     public boolean healthCheck() throws KMSException {
-        return true;
+        // Test connectivity to at least one configured HSM profile
+        if (sessionPools.isEmpty()) {
+            logger.debug("No HSM profiles configured for health check");
+            return true; // No profiles means nothing to check
+        }
+
+        boolean allHealthy = true;
+        for (Map.Entry<Long, HSMSessionPool> entry : sessionPools.entrySet()) {
+            Long profileId = entry.getKey();
+            HSMSessionPool pool = entry.getValue();
+            if (!checkProfileHealth(profileId, pool)) {
+                allHealthy = false;
+            }
+        }
+
+        if (!allHealthy) {
+            throw KMSException.healthCheckFailed("One or more HSM profiles failed health check", null);
+        }
+
+        return allHealthy;
+    }
+
+    /**
+     * Checks health of a single HSM profile.
+     *
+     * @param profileId HSM profile ID
+     * @param pool      Session pool for the profile
+     * @return true if profile is healthy, false otherwise
+     */
+    private boolean checkProfileHealth(Long profileId, HSMSessionPool pool) {
+        try {
+            PKCS11Session testSession = pool.acquireSession(SESSION_ACQUIRE_TIMEOUT_MS);
+            if (testSession == null || !testSession.isValid()) {
+                logger.warn("Health check failed for HSM profile {}: Could not acquire valid session", profileId);
+                return false;
+            }
+            try {
+                if (testSession.keyStore != null) {
+                    testSession.keyStore.size(); // Lightweight operation
+                    logger.debug("Health check passed for HSM profile {}", profileId);
+                    return true;
+                } else {
+                    logger.warn("Health check failed for HSM profile {}: KeyStore is null", profileId);
+                    return false;
+                }
+            } finally {
+                pool.releaseSession(testSession);
+            }
+        } catch (Exception e) {
+            logger.warn("Health check failed for HSM profile {}: {}", profileId, e.getMessage(), e);
+            return false;
+        }
     }
 
     Long resolveProfileId(String kekLabel) throws KMSException {
@@ -220,12 +275,32 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         if (version != null && version.getHsmProfileId() != null) {
             return version.getHsmProfileId();
         }
-        throw new KMSException(KMSException.ErrorType.KEK_NOT_FOUND, "Could not resolve HSM profile for KEK: " + kekLabel);
+        throw new KMSException(KMSException.ErrorType.KEK_NOT_FOUND,
+                "Could not resolve HSM profile for KEK: " + kekLabel);
+    }
+
+    /**
+     * Executes an operation with a session from the pool, handling acquisition and release.
+     *
+     * @param hsmProfileId HSM profile ID
+     * @param operation    Operation to execute with the session
+     * @return Result of the operation
+     * @throws KMSException if session acquisition fails or operation throws an exception
+     */
+    private <T> T executeWithSession(Long hsmProfileId, SessionOperation<T> operation) throws KMSException {
+        HSMSessionPool pool = getSessionPool(hsmProfileId);
+        PKCS11Session session = null;
+        try {
+            session = pool.acquireSession(SESSION_ACQUIRE_TIMEOUT_MS);
+            return operation.execute(session);
+        } finally {
+            pool.releaseSession(session);
+        }
     }
 
     HSMSessionPool getSessionPool(Long profileId) {
         return sessionPools.computeIfAbsent(profileId,
-            id -> new HSMSessionPool(id, loadProfileConfig(id)));
+                id -> new HSMSessionPool(id, loadProfileConfig(id)));
     }
 
     Map<String, String> loadProfileConfig(Long profileId) {
@@ -239,8 +314,119 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                 }
                 config.put(detail.getName(), value);
             }
+            // Validate configuration
+            validateProfileConfig(config);
             return config;
         });
+    }
+
+    /**
+     * Validates HSM profile configuration for PKCS#11 provider.
+     *
+     * <p>Validates:
+     * <ul>
+     *   <li>{@code library}: Required, should point to PKCS#11 library</li>
+     *   <li>{@code slot} or {@code token_label}: At least one required</li>
+     *   <li>{@code pin}: Required for HSM authentication</li>
+     *   <li>{@code max_sessions}: Optional, must be positive integer if provided</li>
+     *   <li>{@code min_idle_sessions}: Optional, must be non-negative integer if provided</li>
+     * </ul>
+     *
+     * @param config Configuration map from HSM profile details
+     * @throws KMSException with {@code INVALID_PARAMETER} if validation fails
+     */
+    void validateProfileConfig(Map<String, String> config) throws KMSException {
+        // Validate required config keys
+        String libraryPath = config.get("library");
+        if (StringUtils.isEmpty(libraryPath)) {
+            throw KMSException.invalidParameter("library is required for PKCS#11 HSM profile");
+        }
+
+        // Validate slot or token_label (at least one required)
+        String slot = config.get("slot");
+        String tokenLabel = config.get("token_label");
+        if (StringUtils.isEmpty(slot) && StringUtils.isEmpty(tokenLabel)) {
+            throw KMSException.invalidParameter("Either 'slot' or 'token_label' is required for PKCS#11 HSM profile");
+        }
+
+        // Validate slot is numeric if provided
+        if (!StringUtils.isEmpty(slot)) {
+            try {
+                Integer.parseInt(slot);
+            } catch (NumberFormatException e) {
+                throw KMSException.invalidParameter("slot must be a valid integer: " + slot);
+            }
+        }
+
+        // Validate PIN is present
+        String pin = config.get("pin");
+        if (StringUtils.isEmpty(pin)) {
+            throw KMSException.invalidParameter("pin is required for PKCS#11 HSM profile");
+        }
+
+        // Validate library points to existing file (if accessible)
+        File libraryFile = new File(libraryPath);
+        if (!libraryFile.exists() && !libraryFile.isAbsolute()) {
+            // Try to find in common library paths, but don't fail if not found
+            // The HSM library might be in system library path
+            logger.debug("Library path {} does not exist as absolute path, will rely on system library path",
+                    libraryPath);
+        }
+
+        // Validate max_sessions and min_idle_sessions if provided
+        parsePositiveInteger(config, "max_sessions", "max_sessions");
+        parseNonNegativeInteger(config, "min_idle_sessions", "min_idle_sessions");
+    }
+
+    /**
+     * Parses a positive integer from configuration.
+     *
+     * @param config      Configuration map
+     * @param key         Configuration key
+     * @param errorPrefix Prefix for error messages
+     * @return Parsed integer value, or -1 if not provided
+     * @throws KMSException if value is invalid or not positive
+     */
+    private int parsePositiveInteger(Map<String, String> config, String key, String errorPrefix) throws KMSException {
+        String value = config.get(key);
+        if (StringUtils.isEmpty(value)) {
+            return -1; // Not provided
+        }
+        try {
+            int parsed = Integer.parseInt(value);
+            if (parsed <= 0) {
+                throw KMSException.invalidParameter(errorPrefix + " must be greater than 0");
+            }
+            return parsed;
+        } catch (NumberFormatException e) {
+            throw KMSException.invalidParameter(errorPrefix + " must be a valid integer: " + value);
+        }
+    }
+
+    /**
+     * Parses a non-negative integer from configuration.
+     *
+     * @param config      Configuration map
+     * @param key         Configuration key
+     * @param errorPrefix Prefix for error messages
+     * @return Parsed integer value, or -1 if not provided
+     * @throws KMSException if value is invalid or negative
+     */
+    private int parseNonNegativeInteger(Map<String, String> config, String key,
+            String errorPrefix) throws KMSException {
+        String value = config.get(key);
+        if (StringUtils.isEmpty(value)) {
+            return -1; // Not provided
+        }
+        try {
+            int parsed = Integer.parseInt(value);
+            if (parsed < 0) {
+                throw KMSException.invalidParameter(errorPrefix + " must be non-negative");
+            }
+            return parsed;
+        } catch (NumberFormatException e) {
+            throw KMSException.invalidParameter(errorPrefix + " must be a valid integer: " + value);
+        }
     }
 
     boolean isSensitiveKey(String key) {
@@ -252,6 +438,29 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
 
     String generateKekLabel(KeyPurpose purpose) {
         return purpose.getName() + "-kek-" + UUID.randomUUID().toString().substring(0, 8);
+    }
+
+    /**
+     * @return The name of the component that provided this configuration
+     * variable.  This value is saved in the database so someone can easily
+     * identify who provides this variable.
+     **/
+    @Override
+    public String getConfigComponentName() {
+        return PKCS11HSMProvider.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[0];
+    }
+
+    /**
+     * Functional interface for operations that require a PKCS#11 session.
+     */
+    @FunctionalInterface
+    private interface SessionOperation<T> {
+        T execute(PKCS11Session session) throws KMSException;
     }
 
     // Inner class for session pooling
@@ -279,19 +488,47 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
             }
         }
 
+        private PKCS11Session createNewSession() throws KMSException {
+            return new PKCS11Session(config);
+        }
+
         PKCS11Session acquireSession(long timeoutMs) throws KMSException {
-            try {
-                PKCS11Session session = availableSessions.poll();
-                if (session == null || !session.isValid()) {
-                    if (session != null) {
-                        session.close();
+            // Retry logic for session creation
+            Exception lastException = null;
+
+            for (int attempt = 0; attempt < MAX_SESSION_RETRIES; attempt++) {
+                try {
+                    PKCS11Session session = availableSessions.poll();
+                    if (session == null || !session.isValid()) {
+                        if (session != null) {
+                            session.close();
+                        }
+                        session = createNewSession();
                     }
-                    session = createNewSession();
+                    return session;
+                } catch (Exception e) {
+                    lastException = e;
+                    if (attempt < MAX_SESSION_RETRIES - 1) {
+                        // Exponential backoff: 100ms, 200ms, 400ms
+                        long backoffMs = RETRY_BACKOFF_BASE_MS * (1L << attempt);
+                        try {
+                            Thread.sleep(backoffMs);
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                            throw new KMSException(KMSException.ErrorType.CONNECTION_FAILED,
+                                    "Interrupted while waiting to retry HSM session acquisition", ie);
+                        }
+                        logger.debug("Retrying HSM session acquisition for profile {} (attempt {}/{})",
+                                profileId, attempt + 2, MAX_SESSION_RETRIES);
+                    }
                 }
-                return session;
-            } catch (Exception e) {
-                throw new KMSException(KMSException.ErrorType.CONNECTION_FAILED, "Failed to acquire HSM session", e);
             }
+
+            // All retries failed
+            logger.error("Failed to acquire HSM session for profile {} after {} attempts", profileId,
+                    MAX_SESSION_RETRIES);
+            throw new KMSException(KMSException.ErrorType.CONNECTION_FAILED,
+                    "Failed to acquire HSM session after " + MAX_SESSION_RETRIES + " attempts", lastException);
         }
 
         void releaseSession(PKCS11Session session) {
@@ -301,63 +538,692 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                 }
             }
         }
-
-        private PKCS11Session createNewSession() throws KMSException {
-            return new PKCS11Session(config);
-        }
     }
 
-    // Inner class representing a PKCS#11 session
+    /**
+     * Inner class representing an active PKCS#11 session with an HSM.
+     * This class manages the connection to the HSM, key operations, and session lifecycle.
+     *
+     * <p>Key operations supported:
+     * <ul>
+     *   <li>Key generation: Generate AES keys directly in the HSM</li>
+     *   <li>Key wrapping: Encrypt DEKs using KEKs stored in the HSM (AES-GCM)</li>
+     *   <li>Key unwrapping: Decrypt DEKs using KEKs stored in the HSM (AES-GCM)</li>
+     *   <li>Key deletion: Remove keys from the HSM</li>
+     *   <li>Key existence check: Verify if a key exists in the HSM</li>
+     * </ul>
+     *
+     * <p>Configuration requirements:
+     * <ul>
+     *   <li>{@code library}: Path to PKCS#11 library (required)</li>
+     *   <li>{@code slot} or {@code token_label}: HSM slot/token selection (at least one required)</li>
+     *   <li>{@code pin}: PIN for HSM authentication (required, sensitive)</li>
+     * </ul>
+     *
+     * <p>Error handling: PKCS#11 specific error codes are mapped to appropriate
+     * {@link KMSException.ErrorType} values for proper retry logic and error reporting.
+     */
     private static class PKCS11Session {
+        private static final String ALGORITHM = "AES/GCM/NoPadding";
+        private static final int GCM_IV_LENGTH = 12; // 96 bits
+        private static final int GCM_TAG_LENGTH = 16; // 128 bits
+        private static final String PROVIDER_PREFIX = "CloudStackPKCS11-";
+
         private final Map<String, String> config;
         private KeyStore keyStore;
         private Provider provider;
+        private String providerName;
+        private Path tempConfigFile;
 
+        /**
+         * Creates a new PKCS#11 session and connects to the HSM.
+         *
+         * @param config HSM profile configuration containing library, slot/token_label, and pin
+         * @throws KMSException if connection fails or configuration is invalid
+         */
         PKCS11Session(Map<String, String> config) throws KMSException {
             this.config = config;
             connect();
         }
 
+        /**
+         * Establishes connection to the PKCS#11 HSM.
+         *
+         * <p>This method:
+         * <ol>
+         *   <li>Validates required configuration (library, slot/token_label, pin)</li>
+         *   <li>Creates a SunPKCS11 provider with the HSM library</li>
+         *   <li>Loads the PKCS#11 KeyStore</li>
+         *   <li>Authenticates using the provided PIN</li>
+         * </ol>
+         *
+         * <p>Slot/token selection:
+         * <ul>
+         *   <li>If {@code token_label} is provided, it is used (more reliable)</li>
+         *   <li>Otherwise, {@code slot} (numeric ID) is used</li>
+         * </ul>
+         *
+         * @throws KMSException with appropriate ErrorType:
+         *                      <ul>
+         *                        <li>{@code AUTHENTICATION_FAILED} if PIN is incorrect</li>
+         *                        <li>{@code INVALID_PARAMETER} if configuration is missing or invalid</li>
+         *                        <li>{@code CONNECTION_FAILED} if HSM is unreachable or device error occurs</li>
+         *                      </ul>
+         */
         private void connect() throws KMSException {
             try {
-                String libraryPath = config.get("library_path");
-                // In real implementation:
-                // Configure SunPKCS11 provider with library path
-                // Login to keystore
-                logger.debug("Simulating PKCS#11 connection to " + libraryPath);
+                // Create unique provider name to avoid conflicts
+                providerName = PROVIDER_PREFIX + UUID.randomUUID().toString().substring(0, 8);
+
+                String configString = buildSunPKCS11Config(config);
+
+                // For Java 9+, use the recommended approach: get provider and configure with file
+                // Write config to temporary file (required by Java 9+ API)
+                tempConfigFile = Files.createTempFile("pkcs11-config-", ".cfg");
+                try (FileWriter writer = new FileWriter(tempConfigFile.toFile(), StandardCharsets.UTF_8)) {
+                    writer.write(configString);
+                }
+
+                // Get the base SunPKCS11 provider and configure it
+                Provider baseProvider = Security.getProvider("SunPKCS11");
+                if (baseProvider == null) {
+                    throw new KMSException(KMSException.ErrorType.CONNECTION_FAILED,
+                            "SunPKCS11 provider not available in this JVM");
+                }
+
+                // Configure the provider with the config file (Java 9+ API)
+                provider = baseProvider.configure(tempConfigFile.toAbsolutePath().toString());
+
+                // Set the provider name (it will be based on the 'name' field in config)
+                // Add provider to Security if not already present
+                if (Security.getProvider(providerName) == null) {
+                    Security.addProvider(provider);
+                } else {
+                    provider = Security.getProvider(providerName);
+                }
+
+                // Load PKCS#11 KeyStore
+                keyStore = KeyStore.getInstance("PKCS11", provider);
+
+                // Get PIN for authentication
+                String pin = config.get("pin");
+                if (StringUtils.isEmpty(pin)) {
+                    throw KMSException.invalidParameter("pin is required");
+                }
+                char[] pinChars = pin.toCharArray();
+
+                // Load KeyStore with PIN (this authenticates to the HSM)
+                keyStore.load(null, pinChars);
+
+                // Zeroize PIN from memory
+                Arrays.fill(pinChars, '\0');
+
+                logger.debug("Successfully connected to PKCS#11 HSM at {}", config.get("library"));
+            } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException e) {
+                handlePKCS11Exception(e, "Failed to initialize PKCS#11 connection");
+            } catch (IOException e) {
+                String errorMsg = e.getMessage();
+                if (errorMsg != null && errorMsg.contains("CKR_PIN_INCORRECT")) {
+                    throw new KMSException(KMSException.ErrorType.AUTHENTICATION_FAILED,
+                            "Incorrect PIN for HSM authentication", e);
+                } else if (errorMsg != null && errorMsg.contains("CKR_SLOT_ID_INVALID")) {
+                    throw KMSException.invalidParameter("Invalid slot ID: " + config.get("slot"));
+                } else {
+                    handlePKCS11Exception(e, "I/O error during PKCS#11 connection");
+                }
             } catch (Exception e) {
-                throw new KMSException(KMSException.ErrorType.CONNECTION_FAILED, "Failed to connect to HSM: " + e.getMessage(), e);
+                handlePKCS11Exception(e, "Unexpected error during PKCS#11 connection");
             }
         }
 
+        /**
+         * Builds SunPKCS11 provider configuration string.
+         *
+         * @param config HSM profile configuration
+         * @return Configuration string for SunPKCS11 provider
+         * @throws KMSException if required configuration is missing
+         */
+        private String buildSunPKCS11Config(Map<String, String> config) throws KMSException {
+            String libraryPath = config.get("library");
+            if (StringUtils.isEmpty(libraryPath)) {
+                throw KMSException.invalidParameter("library is required");
+            }
+
+            StringBuilder configBuilder = new StringBuilder();
+            configBuilder.append("name=CloudStackHSM\n");
+            configBuilder.append("library=").append(libraryPath).append("\n");
+
+            String tokenLabel = config.get("token_label");
+            String slot = config.get("slot");
+
+            if (!StringUtils.isEmpty(tokenLabel)) {
+                configBuilder.append("tokenLabel=").append(tokenLabel).append("\n");
+            } else if (!StringUtils.isEmpty(slot)) {
+                configBuilder.append("slot=").append(slot).append("\n");
+            } else {
+                throw KMSException.invalidParameter("Either 'slot' or 'token_label' is required");
+            }
+
+            return configBuilder.toString();
+        }
+
+        /**
+         * Maps PKCS#11 specific exceptions to appropriate KMSException.ErrorType.
+         *
+         * <p>PKCS#11 error codes are parsed from exception messages and mapped as follows:
+         * <ul>
+         *   <li>{@code CKR_PIN_INCORRECT} → {@code AUTHENTICATION_FAILED}</li>
+         *   <li>{@code CKR_SLOT_ID_INVALID} → {@code INVALID_PARAMETER}</li>
+         *   <li>{@code CKR_KEY_NOT_FOUND} → {@code KEK_NOT_FOUND}</li>
+         *   <li>{@code CKR_DEVICE_ERROR} → {@code CONNECTION_FAILED}</li>
+         *   <li>{@code CKR_SESSION_HANDLE_INVALID} → {@code CONNECTION_FAILED}</li>
+         *   <li>{@code CKR_KEY_ALREADY_EXISTS} → {@code KEY_ALREADY_EXISTS}</li>
+         *   <li>{@code KeyStoreException} → {@code WRAP_UNWRAP_FAILED}</li>
+         *   <li>Other errors → {@code KEK_OPERATION_FAILED}</li>
+         * </ul>
+         *
+         * @param e       The exception to map
+         * @param context Context description for the error message
+         * @throws KMSException with appropriate ErrorType and detailed message
+         */
+        private void handlePKCS11Exception(Exception e, String context) throws KMSException {
+            String errorMsg = e.getMessage();
+            if (errorMsg == null) {
+                errorMsg = e.getClass().getSimpleName();
+            }
+            logger.warn("PKCS#11 error: {} - {}", errorMsg, context, e);
+
+            // Map PKCS#11 error codes to KMSException types
+            if (errorMsg.contains("CKR_PIN_INCORRECT") || errorMsg.contains("PIN_INCORRECT")) {
+                throw new KMSException(KMSException.ErrorType.AUTHENTICATION_FAILED,
+                        context + ": Incorrect PIN", e);
+            } else if (errorMsg.contains("CKR_SLOT_ID_INVALID") || errorMsg.contains("SLOT_ID_INVALID")) {
+                throw KMSException.invalidParameter(context + ": Invalid slot ID");
+            } else if (errorMsg.contains("CKR_KEY_NOT_FOUND") || errorMsg.contains("KEY_NOT_FOUND")) {
+                throw KMSException.kekNotFound(context + ": Key not found");
+            } else if (errorMsg.contains("CKR_DEVICE_ERROR") || errorMsg.contains("DEVICE_ERROR")) {
+                throw new KMSException(KMSException.ErrorType.CONNECTION_FAILED,
+                        context + ": HSM device error", e);
+            } else if (errorMsg.contains("CKR_SESSION_HANDLE_INVALID") || errorMsg.contains("SESSION_HANDLE_INVALID")) {
+                throw new KMSException(KMSException.ErrorType.CONNECTION_FAILED,
+                        context + ": Invalid session handle", e);
+            } else if (errorMsg.contains("CKR_KEY_ALREADY_EXISTS") || errorMsg.contains("KEY_ALREADY_EXISTS")) {
+                throw KMSException.keyAlreadyExists(context);
+            } else if (e instanceof KeyStoreException) {
+                throw new KMSException(KMSException.ErrorType.WRAP_UNWRAP_FAILED,
+                        context + ": " + errorMsg, e);
+            } else {
+                throw new KMSException(KMSException.ErrorType.KEK_OPERATION_FAILED,
+                        context + ": " + errorMsg, e);
+            }
+        }
+
+        /**
+         * Validates that the PKCS#11 session is still active and connected to the HSM.
+         *
+         * <p>Checks performed:
+         * <ul>
+         *   <li>KeyStore object is not null</li>
+         *   <li>Provider is still registered in Security</li>
+         *   <li>HSM is responsive (lightweight operation: get KeyStore size)</li>
+         * </ul>
+         *
+         * @return true if session is valid and HSM is accessible, false otherwise
+         */
         boolean isValid() {
-            return true;
-        }
+            try {
+                // Check if KeyStore object is not null
+                if (keyStore == null) {
+                    return false;
+                }
 
-        void close() {
-            if (provider != null) {
-                Security.removeProvider(provider.getName());
+                // Check if Provider is still registered in Security
+                if (provider == null || Security.getProvider(provider.getName()) == null) {
+                    return false;
+                }
+
+                // Test with a lightweight HSM operation (get KeyStore size)
+                keyStore.size();
+                return true;
+            } catch (Exception e) {
+                logger.debug("Session validation failed: {}", e.getMessage());
+                return false;
             }
         }
 
+        /**
+         * Closes the PKCS#11 session and cleans up resources.
+         *
+         * <p>This method:
+         * <ol>
+         *   <li>Closes the KeyStore (if it implements Closeable)</li>
+         *   <li>Logs out from the HSM token</li>
+         *   <li>Removes the provider from Security</li>
+         *   <li>Clears all references</li>
+         * </ol>
+         *
+         * <p>Note: Errors during cleanup are logged but do not throw exceptions
+         * to ensure cleanup continues even if some steps fail.
+         */
+        void close() {
+            try {
+                // Close KeyStore if it implements Closeable
+                if (keyStore instanceof Closeable) {
+                    ((Closeable) keyStore).close();
+                }
+
+                // Logout from HSM token (if supported)
+                // Note: SunPKCS11 KeyStore doesn't have explicit logout, but closing should handle it
+
+                // Remove provider from Security
+                if (provider != null && providerName != null) {
+                    try {
+                        Security.removeProvider(providerName);
+                    } catch (Exception e) {
+                        logger.debug("Failed to remove provider {}: {}", providerName, e.getMessage());
+                    }
+                }
+
+                // Clean up temporary config file
+                if (tempConfigFile != null) {
+                    try {
+                        Files.deleteIfExists(tempConfigFile);
+                    } catch (IOException e) {
+                        logger.debug("Failed to delete temporary config file {}: {}", tempConfigFile, e.getMessage());
+                    }
+                }
+            } catch (Exception e) {
+                logger.warn("Error during session close: {}", e.getMessage());
+            } finally {
+                keyStore = null;
+                provider = null;
+                providerName = null;
+                tempConfigFile = null;
+            }
+        }
+
+        /**
+         * Generates an AES key directly in the HSM with the specified label.
+         *
+         * <p>Implementation note: Due to limitations in the Java PKCS#11 API, this method:
+         * <ol>
+         *   <li>Generates a secure random key in software using SecureRandom</li>
+         *   <li>Imports it into the HSM via KeyStore.setEntry() with the label</li>
+         *   <li>Clears the key material from memory immediately</li>
+         * </ol>
+         *
+         * <p>While the key is briefly in software memory, this is necessary because:
+         * <ul>
+         *   <li>Java's PKCS#11 provider doesn't support setting CKA_LABEL during generation</li>
+         *   <li>Keys generated via KeyGenerator have no label and can't be retrieved later</li>
+         *   <li>The key material is immediately cleared after import</li>
+         * </ul>
+         *
+         * <p>Once imported, the key:
+         * <ul>
+         *   <li>Resides permanently in the HSM token storage</li>
+         *   <li>Is marked as non-extractable (CKA_EXTRACTABLE=false) by the HSM</li>
+         *   <li>Can only be used for cryptographic operations via the HSM</li>
+         * </ul>
+         *
+         * @param label   Unique label for the key in the HSM
+         * @param keyBits Key size in bits (128, 192, or 256)
+         * @param purpose Key purpose (for logging/auditing)
+         * @return The label of the generated key
+         * @throws KMSException if generation fails or key already exists
+         */
         String generateKey(String label, int keyBits, KeyPurpose purpose) throws KMSException {
-            return label;
+            validateKeySize(keyBits);
+
+            byte[] keyBytes = null;
+            try {
+                // Check if key with this label already exists
+                if (keyStore.containsAlias(label)) {
+                    throw KMSException.keyAlreadyExists("Key with label '" + label + "' already exists in HSM");
+                }
+
+                // Generate cryptographically secure random key material
+                // Using SecureRandom instead of HSM generation due to Java PKCS#11 API limitations
+                keyBytes = new byte[keyBits / 8];
+                SecureRandom.getInstanceStrong().nextBytes(keyBytes);
+
+                // Wrap key bytes in a SecretKeySpec for import into HSM
+                SecretKey secretKey = new SecretKeySpec(keyBytes, "AES");
+
+                // Import into PKCS#11 KeyStore with label
+                // Uses setKeyEntry(String, Key, char[], Certificate[]) which is  the only
+                // variant supported by P11KeyStore (the byte[] variant throws UnsupportedOperationException)
+                // The P11KeyStore will internally convert the SecretKeySpec to a P11 token object with:
+                // - CKA_TOKEN=true, CKA_LABEL=label, CKA_EXTRACTABLE=false
+                keyStore.setKeyEntry(label, secretKey, null, null);
+
+                logger.info("Generated and imported AES-{} key '{}' into HSM (purpose: {})",
+                        keyBits, label, purpose);
+                return label;
+
+            } catch (KeyStoreException e) {
+                handlePKCS11Exception(e, "Failed to import key into HSM KeyStore");
+            } catch (NoSuchAlgorithmException e) {
+                handlePKCS11Exception(e, "SecureRandom algorithm not available or key not retrievable");
+            } catch (Exception e) {
+                String errorMsg = e.getMessage();
+                if (errorMsg != null && (errorMsg.contains("CKR_OBJECT_HANDLE_INVALID")
+                                         || errorMsg.contains("already exists"))) {
+                    throw KMSException.keyAlreadyExists("Key with label '" + label + "' already exists in HSM");
+                } else {
+                    handlePKCS11Exception(e, "Failed to generate key in HSM");
+                }
+            } finally {
+                // Immediately clear sensitive key material from memory
+                if (keyBytes != null) {
+                    Arrays.fill(keyBytes, (byte) 0);
+                }
+            }
+            return null; // Unreachable
         }
 
+        /**
+         * Validates that the key size is one of the supported AES key sizes.
+         *
+         * @param keyBits Key size in bits
+         * @throws KMSException if key size is invalid
+         */
+        private void validateKeySize(int keyBits) throws KMSException {
+            if (Arrays.stream(VALID_KEY_SIZES).noneMatch(size -> size == keyBits)) {
+                throw KMSException.invalidParameter("Key size must be 128, 192, or 256 bits");
+            }
+        }
+
+        /**
+         * Wraps (encrypts) a plaintext DEK using a KEK stored in the HSM.
+         *
+         * <p>Uses AES-GCM for authenticated encryption:
+         * <ul>
+         *   <li>Generates a random 96-bit IV</li>
+         *   <li>Encrypts the DEK using the KEK from HSM</li>
+         *   <li>Appends a 128-bit authentication tag</li>
+         *   <li>Returns format: [IV (12 bytes)][ciphertext+tag]</li>
+         * </ul>
+         *
+         * <p>Security: The plaintext DEK should be zeroized by the caller after wrapping.
+         *
+         * @param plainDek Plaintext DEK to wrap (will be encrypted)
+         * @param kekLabel Label of the KEK stored in the HSM
+         * @return Wrapped blob: [IV][ciphertext+tag]
+         * @throws KMSException with appropriate ErrorType:
+         *                      <ul>
+         *                        <li>{@code INVALID_PARAMETER} if plainDek is null or empty</li>
+         *                        <li>{@code KEK_NOT_FOUND} if KEK with label doesn't exist or is not accessible</li>
+         *                        <li>{@code WRAP_UNWRAP_FAILED} if wrapping operation fails</li>
+         *                      </ul>
+         */
         byte[] wrapKey(byte[] plainDek, String kekLabel) throws KMSException {
-            return "wrapped_blob".getBytes();
+            if (plainDek == null || plainDek.length == 0) {
+                throw KMSException.invalidParameter("Plain DEK cannot be null or empty");
+            }
+
+            SecretKey kek = null;
+            try {
+                kek = getKekFromKeyStore(kekLabel);
+
+                // Generate random IV for GCM
+                byte[] iv = new byte[GCM_IV_LENGTH];
+                new SecureRandom().nextBytes(iv);
+
+                // Create and initialize AES-GCM cipher in ENCRYPT_MODE
+                Cipher cipher = createGCMCipher(kek, iv, Cipher.ENCRYPT_MODE);
+
+                // Encrypt the plaintext DEK using doFinal (GCM includes authentication tag)
+                byte[] wrappedBlob = cipher.doFinal(plainDek);
+
+                // Prepend IV to wrapped blob: [IV][ciphertext+tag]
+                byte[] result = prependIV(iv, wrappedBlob);
+
+                logger.debug("Wrapped key with KEK '{}'", kekLabel);
+                return result;
+            } catch (IllegalBlockSizeException e) {
+                handlePKCS11Exception(e, "Invalid block size for wrapping");
+            } catch (Exception e) {
+                handlePKCS11Exception(e, "Failed to wrap key with HSM");
+            } finally {
+                // Zeroize KEK reference (actual key material is in HSM, but clear reference)
+                kek = null;
+            }
+            return null; // Unreachable
         }
 
+        /**
+         * Retrieves a KEK (Key Encryption Key) from the HSM KeyStore.
+         *
+         * @param kekLabel Label of the KEK to retrieve
+         * @return SecretKey representing the KEK
+         * @throws KMSException if KEK is not found or not accessible
+         */
+        private SecretKey getKekFromKeyStore(String kekLabel) throws KMSException {
+            try {
+                Key key = keyStore.getKey(kekLabel, null);
+                if (key == null) {
+                    throw KMSException.kekNotFound("KEK with label '" + kekLabel + "' not found in HSM");
+                }
+                if (!(key instanceof SecretKey)) {
+                    throw KMSException.kekNotFound("Key with label '" + kekLabel + "' is not a secret key");
+                }
+                return (SecretKey) key;
+            } catch (UnrecoverableKeyException e) {
+                throw KMSException.kekNotFound("KEK with label '" + kekLabel + "' is not accessible");
+            } catch (NoSuchAlgorithmException e) {
+                handlePKCS11Exception(e, "Algorithm not supported");
+            } catch (KeyStoreException e) {
+                handlePKCS11Exception(e, "Failed to retrieve KEK from HSM");
+            }
+            return null; // Unreachable
+        }
+
+        /**
+         * Prepends IV to data, creating a new byte array.
+         *
+         * @param iv   Initialization vector
+         * @param data Data to prepend IV to
+         * @return Combined array: [IV][data]
+         */
+        private byte[] prependIV(byte[] iv, byte[] data) {
+            byte[] result = new byte[GCM_IV_LENGTH + data.length];
+            System.arraycopy(iv, 0, result, 0, GCM_IV_LENGTH);
+            System.arraycopy(data, 0, result, GCM_IV_LENGTH, data.length);
+            return result;
+        }
+
+        /**
+         * Creates and initializes an AES-GCM cipher.
+         *
+         * @param kek  Key Encryption Key
+         * @param iv   Initialization vector
+         * @param mode Cipher mode (ENCRYPT_MODE or DECRYPT_MODE)
+         * @return Initialized Cipher instance
+         * @throws KMSException if cipher creation or initialization fails
+         */
+        private Cipher createGCMCipher(SecretKey kek, byte[] iv, int mode) throws KMSException {
+            try {
+                Cipher cipher = Cipher.getInstance(ALGORITHM, provider);
+                GCMParameterSpec gcmSpec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, iv);
+                cipher.init(mode, kek, gcmSpec);
+                return cipher;
+            } catch (NoSuchPaddingException e) {
+                handlePKCS11Exception(e, "GCM padding not supported");
+            } catch (InvalidKeyException e) {
+                handlePKCS11Exception(e, "Invalid KEK");
+            } catch (InvalidAlgorithmParameterException e) {
+                handlePKCS11Exception(e, "Invalid GCM parameters");
+            } catch (NoSuchAlgorithmException e) {
+                handlePKCS11Exception(e, String.format("Algorithm %s not supported.", ALGORITHM));
+            }
+            return null; // Unreachable
+        }
+
+        /**
+         * Unwraps (decrypts) a wrapped DEK using a KEK stored in the HSM.
+         *
+         * <p>Process:
+         * <ol>
+         *   <li>Extracts IV from the wrapped blob</li>
+         *   <li>Retrieves KEK from HSM using the label</li>
+         *   <li>Decrypts using AES-GCM (verifies authentication tag)</li>
+         *   <li>Returns plaintext DEK</li>
+         * </ol>
+         *
+         * <p>Security: The returned plaintext DEK must be zeroized by the caller after use.
+         *
+         * <p>Expected format: [IV (12 bytes)][ciphertext+tag]
+         *
+         * @param wrappedBlob Wrapped DEK blob (IV + ciphertext + tag)
+         * @param kekLabel    Label of the KEK stored in the HSM
+         * @return Plaintext DEK
+         * @throws KMSException with appropriate ErrorType:
+         *                      <ul>
+         *                        <li>{@code INVALID_PARAMETER} if wrappedBlob is null, empty, or too short</li>
+         *                        <li>{@code KEK_NOT_FOUND} if KEK with label doesn't exist or is not accessible</li>
+         *                        <li>{@code WRAP_UNWRAP_FAILED} if unwrapping fails (e.g., authentication tag
+         *                        verification fails)</li>
+         *                      </ul>
+         */
         byte[] unwrapKey(byte[] wrappedBlob, String kekLabel) throws KMSException {
-            return new byte[32]; // 256 bits
+            if (wrappedBlob == null || wrappedBlob.length == 0) {
+                throw KMSException.invalidParameter("Wrapped blob cannot be null or empty");
+            }
+
+            if (wrappedBlob.length < GCM_IV_LENGTH + GCM_TAG_LENGTH) {
+                throw KMSException.invalidParameter("Wrapped blob too short: expected at least " +
+                                                    (GCM_IV_LENGTH + GCM_TAG_LENGTH) + " bytes");
+            }
+
+            SecretKey kek = null;
+            try {
+                kek = getKekFromKeyStore(kekLabel);
+
+                // Extract IV and ciphertext from wrapped blob
+                IVAndCiphertext extracted = extractIVAndCiphertext(wrappedBlob);
+
+                // Create and initialize AES-GCM cipher in DECRYPT_MODE
+                Cipher cipher = createGCMCipher(kek, extracted.iv, Cipher.DECRYPT_MODE);
+
+                // Decrypt the ciphertext to get plaintext DEK (GCM verifies authentication tag)
+                byte[] plainDek = cipher.doFinal(extracted.ciphertextWithTag);
+
+                logger.debug("Unwrapped key with KEK '{}'", kekLabel);
+                return plainDek;
+            } catch (BadPaddingException e) {
+                // GCM authentication tag verification failed
+                throw KMSException.wrapUnwrapFailed(
+                        "Authentication failed: wrapped key may be corrupted or KEK is incorrect", e);
+            } catch (IllegalBlockSizeException e) {
+                handlePKCS11Exception(e, "Invalid block size for unwrapping");
+            } catch (Exception e) {
+                handlePKCS11Exception(e, "Failed to unwrap key with HSM");
+            } finally {
+                // Zeroize KEK reference
+                kek = null;
+            }
+            return null; // Unreachable
         }
 
+        /**
+         * Extracts IV and ciphertext from a wrapped blob.
+         *
+         * @param wrappedBlob Wrapped blob containing IV and ciphertext
+         * @return IVAndCiphertext containing extracted IV and ciphertext
+         * @throws KMSException if wrapped blob is too short
+         */
+        private IVAndCiphertext extractIVAndCiphertext(byte[] wrappedBlob) throws KMSException {
+            if (wrappedBlob.length < GCM_IV_LENGTH + GCM_TAG_LENGTH) {
+                throw KMSException.invalidParameter("Wrapped blob too short: expected at least " +
+                                                    (GCM_IV_LENGTH + GCM_TAG_LENGTH) + " bytes");
+            }
+            byte[] iv = new byte[GCM_IV_LENGTH];
+            System.arraycopy(wrappedBlob, 0, iv, 0, GCM_IV_LENGTH);
+            byte[] ciphertextWithTag = new byte[wrappedBlob.length - GCM_IV_LENGTH];
+            System.arraycopy(wrappedBlob, GCM_IV_LENGTH, ciphertextWithTag, 0, ciphertextWithTag.length);
+            return new IVAndCiphertext(iv, ciphertextWithTag);
+        }
+
+        /**
+         * Deletes a key from the HSM.
+         *
+         * <p><strong>Warning:</strong> Deleting a KEK makes all DEKs wrapped with that KEK
+         * permanently unrecoverable. This operation should be used with extreme caution.
+         *
+         * @param label Label of the key to delete
+         * @throws KMSException with appropriate ErrorType:
+         *                      <ul>
+         *                        <li>{@code KEK_NOT_FOUND} if key with label doesn't exist</li>
+         *                        <li>{@code KEK_OPERATION_FAILED} if deletion fails (e.g., key is in use)</li>
+         *                      </ul>
+         */
         void deleteKey(String label) throws KMSException {
-            // Stub
+            try {
+                // Check if key exists first
+                if (!keyStore.containsAlias(label)) {
+                    throw KMSException.kekNotFound("Key with label '" + label + "' not found in HSM");
+                }
+
+                // Delete key from KeyStore
+                keyStore.deleteEntry(label);
+
+                logger.debug("Deleted key '{}' from HSM", label);
+            } catch (KeyStoreException e) {
+                String errorMsg = e.getMessage();
+                if (errorMsg != null && errorMsg.contains("not found")) {
+                    throw KMSException.kekNotFound("Key with label '" + label + "' not found in HSM");
+                } else if (errorMsg != null && errorMsg.contains("in use")) {
+                    throw KMSException.kekOperationFailed(
+                            "Key with label '" + label + "' is in use and cannot be deleted");
+                } else {
+                    handlePKCS11Exception(e, "Failed to delete key from HSM");
+                }
+            } catch (Exception e) {
+                handlePKCS11Exception(e, "Failed to delete key from HSM");
+            }
         }
 
+        /**
+         * Checks if a key with the given label exists and is accessible in the HSM.
+         *
+         * @param label Label of the key to check
+         * @return true if key exists and is accessible, false otherwise
+         * @throws KMSException only for unexpected errors (KeyStoreException, etc.)
+         *                      Returns false for expected cases (key not found, unrecoverable key)
+         */
         boolean checkKeyExists(String label) throws KMSException {
-            return true;
+            try {
+                // Try to retrieve key from HSM KeyStore
+                Key key = keyStore.getKey(label, null);
+                return key != null;
+            } catch (KeyStoreException e) {
+                logger.debug("KeyStore error while checking key existence: {}", e.getMessage());
+                return false;
+            } catch (UnrecoverableKeyException e) {
+                // Key exists but is not accessible (might be a different key type)
+                logger.debug("Key '{}' exists but is not accessible: {}", label, e.getMessage());
+                return false;
+            } catch (NoSuchAlgorithmException e) {
+                logger.debug("Algorithm error while checking key existence: {}", e.getMessage());
+                return false;
+            } catch (Exception e) {
+                logger.debug("Unexpected error while checking key existence: {}", e.getMessage());
+                return false;
+            }
+        }
+
+        /**
+         * Helper class to hold IV and ciphertext extracted from wrapped blob.
+         */
+        private static class IVAndCiphertext {
+            final byte[] iv;
+            final byte[] ciphertextWithTag;
+
+            IVAndCiphertext(byte[] iv, byte[] ciphertextWithTag) {
+                this.iv = iv;
+                this.ciphertextWithTag = ciphertextWithTag;
+            }
         }
     }
 }

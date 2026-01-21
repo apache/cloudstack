@@ -31,6 +31,10 @@ public class KMSException extends CloudRuntimeException {
     public enum ErrorType {
         CONNECTION_FAILED(true),
         /**
+         * Authentication failed (e.g., incorrect PIN)
+         */
+        AUTHENTICATION_FAILED(false),
+        /**
          * Provider not initialized or unavailable
          */
         PROVIDER_NOT_INITIALIZED(false),
