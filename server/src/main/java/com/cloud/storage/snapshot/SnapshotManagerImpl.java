@@ -623,7 +623,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         _snapshotDao.update(snapshot.getId(), snapshot);
         snapshotInfo = this.snapshotFactory.getSnapshot(snapshotId, store);
 
-        Long snapshotOwnerId = vm.getAccountId();
+        long snapshotOwnerId = vm.getAccountId();
 
         try {
             SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.BACKUP);
@@ -631,7 +631,6 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 throw new CloudRuntimeException(String.format("Unable to find Snapshot strategy to handle Snapshot [%s]", snapshot));
             }
             snapshotInfo = snapshotStrategy.backupSnapshot(snapshotInfo);
-
         } catch (Exception e) {
             logger.debug("Failed to backup Snapshot from Instance Snapshot", e);
             _resourceLimitMgr.decrementResourceCount(snapshotOwnerId, ResourceType.snapshot);
@@ -780,12 +779,11 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         _accountMgr.checkAccess(caller, null, true, snapshotCheck);
 
         SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshotCheck, zoneId, SnapshotOperation.DELETE);
-
         if (snapshotStrategy == null) {
             logger.error("Unable to find snapshot strategy to handle snapshot [{}]", snapshotCheck);
-
             return false;
         }
+
         Pair<List<SnapshotDataStoreVO>, List<Long>> storeRefAndZones = getStoreRefsAndZonesForSnapshotDelete(snapshotId, zoneId);
         List<SnapshotDataStoreVO> snapshotStoreRefs = storeRefAndZones.first();
         List<Long> zoneIds = storeRefAndZones.second();
@@ -998,9 +996,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                     if (Type.MANUAL == snapshot.getRecurringType()) {
                         _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.snapshot);
                         for (SnapshotDataStoreVO snapshotStoreRef : snapshotStoreRefs) {
-                            if (!DataStoreRole.Primary.equals(snapshotStoreRef.getRole())) {
-                                _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.secondary_storage, new Long(snapshotStoreRef.getPhysicalSize()));
-                            }
+                            _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.secondary_storage, new Long(snapshotStoreRef.getPhysicalSize()));
                         }
                     }
 

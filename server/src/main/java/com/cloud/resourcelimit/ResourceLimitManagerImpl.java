@@ -1436,17 +1436,17 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     protected long calculatePrimaryStorageForAccount(long accountId, String tag) {
-        long snapshotsSizeOnPrimary = _snapshotDataStoreDao.getSnapshotsSizeOnPrimaryByAccountId(accountId);
+        long snapshotsPhysicalSizeOnPrimaryStorage = _snapshotDataStoreDao.getSnapshotsPhysicalSizeOnPrimaryStorageByAccountId(accountId);
         if (StringUtils.isEmpty(tag)) {
             List<Long> virtualRouters = _vmDao.findIdsOfAllocatedVirtualRoutersForAccount(accountId);
-            return snapshotsSizeOnPrimary + _volumeDao.primaryStorageUsedForAccount(accountId, virtualRouters);
+            return snapshotsPhysicalSizeOnPrimaryStorage + _volumeDao.primaryStorageUsedForAccount(accountId, virtualRouters);
         }
         long storage = 0;
         List<VolumeVO> volumes = getVolumesWithAccountAndTag(accountId, tag);
         for (VolumeVO volume : volumes) {
             storage += volume.getSize() == null ? 0L : volume.getSize();
         }
-        return snapshotsSizeOnPrimary + storage;
+        return snapshotsPhysicalSizeOnPrimaryStorage + storage;
     }
 
     @Override

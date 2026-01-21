@@ -111,5 +111,5 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
 
     int expungeBySnapshotList(List<Long> snapshotIds, Long batchSize);
 
-    long getSnapshotsSizeOnPrimaryByAccountId(long accountId);
+    long getSnapshotsPhysicalSizeOnPrimaryStorageByAccountId(long accountId);
 }

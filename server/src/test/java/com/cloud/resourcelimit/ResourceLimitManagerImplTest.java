@@ -843,7 +843,7 @@ public class ResourceLimitManagerImplTest extends TestCase {
         String tag = null;
         Mockito.when(vmDao.findIdsOfAllocatedVirtualRoutersForAccount(accountId))
                 .thenReturn(List.of(1L));
-        Mockito.when(snapshotDataStoreDao.getSnapshotsSizeOnPrimaryByAccountId(accountId)).thenReturn(100L);
+        Mockito.when(snapshotDataStoreDao.getSnapshotsPhysicalSizeOnPrimaryStorageByAccountId(accountId)).thenReturn(100L);
         Mockito.when(volumeDao.primaryStorageUsedForAccount(Mockito.eq(accountId), Mockito.anyList())).thenReturn(100L);
         Assert.assertEquals(200L, resourceLimitManager.calculatePrimaryStorageForAccount(accountId, tag));
 
