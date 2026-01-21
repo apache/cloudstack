@@ -58,7 +58,7 @@
     "mitt": "^2.1.0",
     "moment": "^2.26.0",
     "moment-timezone": "^0.5.43",
-    "npm-check-updates": "^6.0.1",
+    "npm-check-updates": "^19.3.1",
     "nprogress": "^0.2.0",
     "qrious": "^4.0.2",
     "semver": "^7.6.3",
@@ -107,7 +107,7 @@
     "vue-jest": "^5.0.0-0",
     "vue-svg-loader": "^0.17.0-beta.2",
     "webpack": "^4.46.0",
-    "node-gyp": "10.0.1",  "nan": "2.18.0"
+    "node-gyp": "12.1.0",  "nan": "2.18.0"
   },
   "resolutions": { "nan": "2.18.0" },
   "eslintConfig": {
