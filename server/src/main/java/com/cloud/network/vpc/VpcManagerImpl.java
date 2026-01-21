@@ -63,6 +63,7 @@ import com.cloud.network.element.NetworkACLServiceProvider;
 import com.cloud.network.element.NsxProviderVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.vpn.RemoteAccessVpnService;
+import com.cloud.utils.DomainHelper;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.collect.Sets;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -285,6 +286,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     DomainRouterDao routerDao;
     @Inject
     DomainDao domainDao;
+    @Inject
+    DomainHelper domainHelper;
     @Inject
     private AnnotationDao annotationDao;
     @Inject
@@ -643,7 +646,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         // Filter child domains when both parent and child domains are present
-        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        List<Long> filteredDomainIds = domainHelper.filterChildSubDomains(domainIds);
 
         final Map<Network.Service, Set<Network.Provider>> svcProviderMap = new HashMap<Network.Service, Set<Network.Provider>>();
         final Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
@@ -1449,7 +1452,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
 
         // Filter child domains when both parent and child domains are present
-        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        List<Long> filteredDomainIds = domainHelper.filterChildSubDomains(domainIds);
         Collections.sort(filteredDomainIds);
 
         List<Long> filteredZoneIds = new ArrayList<>();
@@ -3987,30 +3990,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         return _ntwkMgr.areRoutersRunning(routerDao.listByVpcId(vpc.getId()));
-    }
-
-    private List<Long> filterChildSubDomains(final List<Long> domainIds) {
-        List<Long> filteredDomainIds = new ArrayList<>();
-        if (domainIds != null) {
-            filteredDomainIds.addAll(domainIds);
-        }
-        if (filteredDomainIds.size() > 1) {
-            for (int i = filteredDomainIds.size() - 1; i >= 1; i--) {
-                long first = filteredDomainIds.get(i);
-                for (int j = i - 1; j >= 0; j--) {
-                    long second = filteredDomainIds.get(j);
-                    if (domainDao.isChildDomain(filteredDomainIds.get(i), filteredDomainIds.get(j))) {
-                        filteredDomainIds.remove(j);
-                        i--;
-                    }
-                    if (domainDao.isChildDomain(filteredDomainIds.get(j), filteredDomainIds.get(i))) {
-                        filteredDomainIds.remove(i);
-                        break;
-                    }
-                }
-            }
-        }
-        return filteredDomainIds;
     }
 
     protected boolean isGlobalAcl(Long aclVpcId) {
