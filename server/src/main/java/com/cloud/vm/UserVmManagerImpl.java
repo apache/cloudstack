@@ -2884,11 +2884,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         UserVmVO vmInstance = _vmDao.findById(cmd.getId());
         VMTemplateVO template = _templateDao.findById(vmInstance.getTemplateId());
-        if (MapUtils.isNotEmpty(details) || cmd.isCleanupDetails()) {
-            if (template != null && template.isDeployAsIs()) {
-                throw new CloudRuntimeException("Detail settings are read from OVA, it cannot be changed by API call.");
-            }
-        }
+
         UserVmVO userVm = _vmDao.findById(cmd.getId());
         if (userVm != null && UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
             throw new InvalidParameterValueException("Operation not supported on Shared FileSystem Instance");
@@ -2918,6 +2914,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 .collect(Collectors.toList());
         List<VMInstanceDetailVO> existingDetails = vmInstanceDetailsDao.listDetails(id);
         if (cleanupDetails){
+            if (template != null && template.isDeployAsIs()) {
+                throw new InvalidParameterValueException("Detail settings are read from OVA, it cannot be cleaned up by API call.");
+            }
             if (caller != null && caller.getType() == Account.Type.ADMIN) {
                 for (final VMInstanceDetailVO detail : existingDetails) {
                     if (detail != null && detail.isDisplay() && !isExtraConfig(detail.getName())) {
@@ -2944,6 +2943,23 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 if (details.containsKey("extraconfig")) {
                     throw new InvalidParameterValueException("'extraconfig' should not be included in details as key");
+                }
+
+                if (template != null && template.isDeployAsIs()) {
+                    final List<String> vmwareAllowedDetailsFromOva = VmwareAdditionalDetailsFromOvaEnabled.valueIn(vmInstance.getDataCenterId()) ?
+                            Stream.of(VmwareAllowedAdditionalDetailsFromOva.valueIn(vmInstance.getDataCenterId()).split(","))
+                            .map(String::trim)
+                            .collect(Collectors.toList()) : List.of();
+                    for (String detailKey : details.keySet()) {
+                        if (vmwareAllowedDetailsFromOva.contains(detailKey)) {
+                            continue;
+                        }
+                        UserVmDetailVO detailVO = existingDetails.stream().filter(d -> Objects.equals(d.getName(), detailKey)).findFirst().orElse(null);
+                        if (detailVO != null && ObjectUtils.allNotNull(detailVO.getValue(), details.get(detailKey)) && detailVO.getValue().equals(details.get(detailKey))) {
+                            continue;
+                        }
+                        throw new InvalidParameterValueException("Detail settings are read from OVA, it cannot be changed by API call.");
+                    }
                 }
 
                 details.entrySet().removeIf(detail -> isExtraConfig(detail.getKey()));
@@ -9336,7 +9352,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return new ConfigKey<?>[] {EnableDynamicallyScaleVm, AllowDiskOfferingChangeDuringScaleVm, AllowUserExpungeRecoverVm, VmIpFetchWaitInterval, VmIpFetchTrialMax,
                 VmIpFetchThreadPoolMax, VmIpFetchTaskWorkers, AllowDeployVmIfGivenHostFails, EnableAdditionalVmConfig, DisplayVMOVFProperties,
                 KvmAdditionalConfigAllowList, XenServerAdditionalConfigAllowList, VmwareAdditionalConfigAllowList, DestroyRootVolumeOnVmDestruction,
-                EnforceStrictResourceLimitHostTagCheck, StrictHostTags, AllowUserForceStopVm, VmDistinctHostNameScope};
+                EnforceStrictResourceLimitHostTagCheck, StrictHostTags, AllowUserForceStopVm, VmDistinctHostNameScope,
+                VmwareAdditionalDetailsFromOvaEnabled, VmwareAllowedAdditionalDetailsFromOva};
     }
 
     @Override
