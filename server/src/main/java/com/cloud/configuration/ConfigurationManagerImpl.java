@@ -22,6 +22,7 @@ import static com.cloud.offering.NetworkOffering.RoutingMode.Static;
 import static org.apache.cloudstack.framework.config.ConfigKey.CATEGORY_SYSTEM;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Field;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
@@ -8663,7 +8664,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     public static void setField(Object obj, String fieldName, Object value) throws Exception {
-        java.lang.reflect.Field field = findField(obj.getClass(), fieldName);
+        Field field = findField(obj.getClass(), fieldName);
         if (field == null) {
             throw new NoSuchFieldException("Field '" + fieldName + "' not found in class hierarchy of " + obj.getClass().getName());
         }
@@ -8671,7 +8672,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         field.set(obj, value);
     }
 
-    public static java.lang.reflect.Field findField(Class<?> clazz, String fieldName) {
+    public static Field findField(Class<?> clazz, String fieldName) {
         Class<?> currentClass = clazz;
         while (currentClass != null) {
             try {

@@ -372,8 +372,31 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("Unable to clone backup offering from ID: " + cmd.getSourceOfferingId());
         }
 
+        List<Long> filteredDomainIds = cmd.getDomainIds() == null ? new ArrayList<>() : new ArrayList<>(cmd.getDomainIds());
+        Collections.sort(filteredDomainIds);
+        updateBackupOfferingDomainDetail(savedOffering, filteredDomainIds);
+
         logger.debug("Successfully cloned backup offering '" + sourceOffering.getName() + "' (ID: " + cmd.getSourceOfferingId() + ") to '" + cmd.getName() + "' (ID: " + savedOffering.getId() + ")");
         return savedOffering;
+    }
+
+    private void updateBackupOfferingDomainDetail(BackupOfferingVO savedOffering, List<Long> filteredDomainIds) {
+        if (filteredDomainIds.size() > 1) {
+            filteredDomainIds = domainHelper.filterChildSubDomains(filteredDomainIds);
+        }
+
+        if (CollectionUtils.isNotEmpty(filteredDomainIds)) {
+            List<BackupOfferingDetailsVO> detailsVOList = new ArrayList<>();
+            for (Long domainId : filteredDomainIds) {
+                if (domainDao.findById(domainId) == null) {
+                    throw new InvalidParameterValueException("Please specify a valid domain id");
+                }
+                detailsVOList.add(new BackupOfferingDetailsVO(savedOffering.getId(), ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
+            }
+            if (!detailsVOList.isEmpty()) {
+                backupOfferingDetailsDao.saveDetails(detailsVOList);
+            }
+        }
     }
 
     @Override

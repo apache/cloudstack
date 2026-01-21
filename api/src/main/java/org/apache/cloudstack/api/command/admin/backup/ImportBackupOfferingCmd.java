@@ -86,7 +86,8 @@ public class ImportBackupOfferingCmd extends BaseAsyncCmd {
             type = CommandType.LIST,
             collectionType = CommandType.UUID,
             entityType = DomainResponse.class,
-            description = "the ID of the containing domain(s), null for public offerings")
+            description = "the ID of the containing domain(s), null for public offerings",
+            since = "4.23.0")
     private List<Long> domainIds;
 
     /////////////////////////////////////////////////////

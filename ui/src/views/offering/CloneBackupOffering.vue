@@ -101,6 +101,34 @@
           </template>
           <a-switch v-model:checked="form.allowuserdrivenbackups"/>
         </a-form-item>
+        <a-form-item name="ispublic" ref="ispublic" :label="$t('label.ispublic')" v-if="isAdmin()">
+          <a-switch v-model:checked="form.ispublic" @change="onChangeIsPublic" />
+        </a-form-item>
+        <a-form-item name="domainid" ref="domainid" v-if="!form.ispublic">
+          <template #label>
+            <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
+          </template>
+          <a-select
+            mode="multiple"
+            :getPopupContainer="(trigger) => trigger.parentNode"
+            v-model:value="form.domainid"
+            @change="onChangeDomain"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="domains.loading"
+            :placeholder="apiParams.domainid.description">
+            <a-select-option v-for="(opt, optIndex) in domains.opts" :key="optIndex" :label="opt.path || opt.name || opt.description">
+              <span>
+                <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <block-outlined v-else style="margin-right: 5px" />
+                {{ opt.path || opt.name || opt.description }}
+              </span>
+            </a-select-option>
+          </a-select>
+        </a-form-item>
         <div :span="24" class="action-button">
           <a-button :loading="loading" @click="closeAction">{{ $t('label.cancel') }}</a-button>
           <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -116,6 +144,7 @@ import { getAPI, postAPI } from '@/api'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import { GlobalOutlined } from '@ant-design/icons-vue'
+import { isAdmin } from '@/role'
 
 export default {
   name: 'CloneBackupOffering',
@@ -138,6 +167,10 @@ export default {
         opts: []
       },
       externals: {
+        loading: false,
+        opts: []
+      },
+      domains: {
         loading: false,
         opts: []
       }
@@ -163,6 +196,7 @@ export default {
     },
     fetchData () {
       this.fetchZone()
+      this.fetchDomain()
       this.$nextTick(() => {
         this.populateFormFromResource()
       })
@@ -178,6 +212,20 @@ export default {
         this.$notifyError(error)
       }).finally(() => {
         this.zones.loading = false
+      })
+    },
+    fetchDomain () {
+      this.domains.loading = true
+      const params = { listAll: true, showicon: true, details: 'min' }
+      getAPI('listDomains', params).then(json => {
+        this.domains.opts = json.listdomainsresponse.domain || []
+        this.$nextTick(() => {
+          this.populateFormFromResource()
+        })
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.domains.loading = false
       })
     },
     fetchExternal (zoneId) {
@@ -204,6 +252,27 @@ export default {
 
       if (r.allowuserdrivenbackups !== undefined) {
         this.form.allowuserdrivenbackups = r.allowuserdrivenbackups
+      }
+
+      if (r.domainid) {
+        let offeringDomainIds = r.domainid
+        offeringDomainIds = (typeof offeringDomainIds === 'string' && offeringDomainIds.indexOf(',') !== -1) ? offeringDomainIds.split(',') : [offeringDomainIds]
+        const selected = []
+        for (let i = 0; i < offeringDomainIds.length; i++) {
+          for (let j = 0; j < this.domains.opts.length; j++) {
+            if (String(offeringDomainIds[i]) === String(this.domains.opts[j].id)) {
+              selected.push(j)
+            }
+          }
+        }
+        if (selected.length > 0) {
+          this.form.ispublic = false
+          this.form.domainid = selected
+        }
+      } else {
+        if (isAdmin()) {
+          this.form.ispublic = true
+        }
       }
 
       if (r.zoneid && this.zones.opts.length > 0) {
@@ -255,6 +324,23 @@ export default {
           params.allowuserdrivenbackups = values.allowuserdrivenbackups
         }
 
+        // Include selected domain IDs when offering is not public
+        if (values.ispublic !== true) {
+          const domainIndexes = values.domainid
+          let domainId = null
+          if (domainIndexes && domainIndexes.length > 0) {
+            const domainIds = []
+            const domains = this.domains.opts
+            for (let i = 0; i < domainIndexes.length; i++) {
+              domainIds.push(domains[domainIndexes[i]].id)
+            }
+            domainId = domainIds.join(',')
+          }
+          if (domainId) {
+            params.domainid = domainId
+          }
+        }
+
         this.loading = true
         const title = this.$t('message.success.clone.backup.offering')
 
@@ -301,8 +387,35 @@ export default {
         this.fetchExternal(zone.id)
       }
     },
+    onChangeIsPublic (value) {
+      // when made public, clear any domain selection
+      try {
+        if (value === true) {
+          this.form.domainid = []
+        }
+      } catch (e) {
+        // ignore
+      }
+    },
+    onChangeDomain (value) {
+      // value is an array of selected indexes (as used in the form), when empty -> make offering public
+      try {
+        if (!value || (Array.isArray(value) && value.length === 0)) {
+          this.form.ispublic = true
+          // clear domain selection to avoid confusing hidden inputs
+          this.form.domainid = []
+        } else {
+          this.form.ispublic = false
+        }
+      } catch (e) {
+        // defensive - do nothing on error
+      }
+    },
     closeAction () {
       this.$emit('close-action')
+    },
+    isAdmin () {
+      return isAdmin()
     }
   }
 }
