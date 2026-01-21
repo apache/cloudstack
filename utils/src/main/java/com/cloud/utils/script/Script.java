@@ -710,6 +710,22 @@ public class Script implements Callable<String> {
         return executeCommandForExitValue(0, command);
     }
 
+    private static void cleanupProcesses(AtomicReference<List<Process>> processesRef) {
+        List<Process> processes = processesRef.get();
+        if (CollectionUtils.isNotEmpty(processes)) {
+            for (Process process : processes) {
+                if (process == null) {
+                    continue;
+                }
+                LOGGER.trace(String.format("Cleaning up process [%s] from piped commands.", process.pid()));
+                IOUtils.closeQuietly(process.getErrorStream());
+                IOUtils.closeQuietly(process.getOutputStream());
+                IOUtils.closeQuietly(process.getInputStream());
+                process.destroyForcibly();
+            }
+        }
+    }
+
     public static Pair<Integer, String> executePipedCommands(List<String[]> commands, long timeout) {
         if (timeout <= 0) {
             timeout = DEFAULT_TIMEOUT;
@@ -746,19 +762,7 @@ public class Script implements Callable<String> {
         } catch (InterruptedException | ExecutionException e) {
             LOGGER.error("Error executing piped commands", e);
         } finally {
-            List<Process> processes = processesRef.get();
-            if (CollectionUtils.isNotEmpty(processes)) {
-                for (Process process : processes) {
-                    if (process == null) {
-                        continue;
-                    }
-                    LOGGER.trace(String.format("Cleaning up process [%s] from piped commands.", process.pid()));
-                    IOUtils.closeQuietly(process.getErrorStream());
-                    IOUtils.closeQuietly(process.getOutputStream());
-                    IOUtils.closeQuietly(process.getInputStream());
-                    process.destroyForcibly();
-                }
-            }
+            cleanupProcesses(processesRef);
         }
         return result;
     }
