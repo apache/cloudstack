@@ -539,7 +539,7 @@ public class StorageManagerImplTest {
         Mockito.doReturn("ffb46333-e983-4c21-b5f0-51c5877a3805").when(volume2VOMock).getUuid();
         Mockito.doReturn("58760044-928f-4c4e-9fef-d0e48423595e").when(vmInstanceVOMock).getUuid();
 
-        Mockito.when(_volumeDao.findByPoolId(storagePoolVOMock.getId(), null)).thenReturn(List.of(volume1VOMock, volume2VOMock));
+        Mockito.when(_volumeDao.findNonDestroyedVolumesByPoolId(storagePoolVOMock.getId(), null)).thenReturn(List.of(volume1VOMock, volume2VOMock));
         Mockito.doReturn(vmInstanceVOMock).when(vmInstanceDao).findById(Mockito.anyLong());
 
         String log = storageManagerImpl.getStoragePoolNonDestroyedVolumesLog(storagePoolVOMock.getId());
@@ -557,7 +557,7 @@ public class StorageManagerImplTest {
         Mockito.doReturn("ffb46333-e983-4c21-b5f0-51c5877a3805").when(volume2VOMock).getUuid();
         Mockito.doReturn("58760044-928f-4c4e-9fef-d0e48423595e").when(vmInstanceVOMock).getUuid();
 
-        Mockito.when(_volumeDao.findByPoolId(storagePoolVOMock.getId(), null)).thenReturn(List.of(volume1VOMock, volume2VOMock));
+        Mockito.when(_volumeDao.findNonDestroyedVolumesByPoolId(storagePoolVOMock.getId(), null)).thenReturn(List.of(volume1VOMock, volume2VOMock));
         Mockito.doReturn(vmInstanceVOMock).when(vmInstanceDao).findById(Mockito.anyLong());
 
         String log = storageManagerImpl.getStoragePoolNonDestroyedVolumesLog(storagePoolVOMock.getId());
@@ -574,7 +574,7 @@ public class StorageManagerImplTest {
         Mockito.doReturn(null).when(volume2VOMock).getInstanceId();
         Mockito.doReturn("ffb46333-e983-4c21-b5f0-51c5877a3805").when(volume2VOMock).getUuid();
 
-        Mockito.when(_volumeDao.findByPoolId(storagePoolVOMock.getId(), null)).thenReturn(List.of(volume1VOMock, volume2VOMock));
+        Mockito.when(_volumeDao.findNonDestroyedVolumesByPoolId(storagePoolVOMock.getId(), null)).thenReturn(List.of(volume1VOMock, volume2VOMock));
 
         String log = storageManagerImpl.getStoragePoolNonDestroyedVolumesLog(storagePoolVOMock.getId());
         String expected = String.format("[Volume [%s] (not attached to any VM), Volume [%s] (not attached to any VM)]", volume1VOMock.getUuid(), volume2VOMock.getUuid());
@@ -590,7 +590,7 @@ public class StorageManagerImplTest {
         Mockito.doReturn(1L).when(volume2VOMock).getInstanceId();
         Mockito.doReturn("ffb46333-e983-4c21-b5f0-51c5877a3805").when(volume2VOMock).getUuid();
 
-        Mockito.when(_volumeDao.findByPoolId(storagePoolVOMock.getId(), null)).thenReturn(List.of(volume1VOMock, volume2VOMock));
+        Mockito.when(_volumeDao.findNonDestroyedVolumesByPoolId(storagePoolVOMock.getId(), null)).thenReturn(List.of(volume1VOMock, volume2VOMock));
         Mockito.doReturn(null).when(vmInstanceDao).findById(Mockito.anyLong());
 
         String log = storageManagerImpl.getStoragePoolNonDestroyedVolumesLog(storagePoolVOMock.getId());

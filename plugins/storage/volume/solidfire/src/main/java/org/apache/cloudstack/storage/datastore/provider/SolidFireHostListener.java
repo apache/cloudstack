@@ -199,7 +199,7 @@ public class SolidFireHostListener implements HypervisorHostListener {
         List<String> storagePaths = new ArrayList<>();
 
         // If you do not pass in null for the second parameter, you only get back applicable ROOT disks.
-        List<VolumeVO> volumes = volumeDao.findByPoolId(storagePoolId, null);
+        List<VolumeVO> volumes = volumeDao.findNonDestroyedVolumesByPoolId(storagePoolId, null);
 
         if (volumes != null) {
             for (VolumeVO volume : volumes) {
@@ -230,7 +230,7 @@ public class SolidFireHostListener implements HypervisorHostListener {
         StoragePoolVO storagePool = storagePoolDao.findById(storagePoolId);
 
         // If you do not pass in null for the second parameter, you only get back applicable ROOT disks.
-        List<VolumeVO> volumes = volumeDao.findByPoolId(storagePoolId, null);
+        List<VolumeVO> volumes = volumeDao.findNonDestroyedVolumesByPoolId(storagePoolId, null);
 
         if (volumes != null) {
             for (VolumeVO volume : volumes) {

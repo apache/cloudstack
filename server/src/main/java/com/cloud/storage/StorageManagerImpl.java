@@ -1558,7 +1558,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     protected String getStoragePoolNonDestroyedVolumesLog(long storagePoolId) {
         StringBuilder sb = new StringBuilder();
-        List<VolumeVO> nonDestroyedVols = volumeDao.findByPoolId(storagePoolId, null).stream().filter(vol -> vol.getState() != Volume.State.Destroy).collect(Collectors.toList());
+        List<VolumeVO> nonDestroyedVols = volumeDao.findNonDestroyedVolumesByPoolId(storagePoolId, null);
         VMInstanceVO volInstance;
         List<String> logMessageInfo = new ArrayList<>();
 
@@ -2644,7 +2644,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         for (String childDatastoreUUID : childDatastoreUUIDs) {
             StoragePoolVO dataStoreVO = _storagePoolDao.findPoolByUUID(childDatastoreUUID);
-            List<VolumeVO> allVolumes = volumeDao.findByPoolId(dataStoreVO.getId());
+            List<VolumeVO> allVolumes = volumeDao.findNonDestroyedVolumesByPoolId(dataStoreVO.getId());
             allVolumes.removeIf(volumeVO -> volumeVO.getInstanceId() == null);
             allVolumes.removeIf(volumeVO -> volumeVO.getState() != Volume.State.Ready);
             for (VolumeVO volume : allVolumes) {
