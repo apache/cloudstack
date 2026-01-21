@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.router;
 
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.dc.DataCenterVO;
@@ -25,11 +26,9 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
-import com.cloud.user.UserVmVO;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.NicVO;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.NicDao;
-import com.cloud.vm.dao.UserVmDao;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.junit.Assert;
@@ -42,8 +41,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
@@ -73,8 +70,6 @@ public class DhcpLeaseTimeoutIntegrationTest {
     RouterControlHelper routerControlHelper;
     @Mock
     DataCenterDao dcDao;
-    @Mock
-    UserVmDao userVmDao;
 
     private VirtualRouter mockRouter;
     private UserVmVO mockVm;
@@ -103,10 +98,8 @@ public class DhcpLeaseTimeoutIntegrationTest {
         when(mockRouter.getInstanceName()).thenReturn("r-100-VM");
         when(mockRouter.getDataCenterId()).thenReturn(1L);
 
-        when(mockVm.getId()).thenReturn(200L);
         when(mockVm.getHostName()).thenReturn("test-vm");
 
-        when(mockNic.getId()).thenReturn(300L);
         when(mockNic.getMacAddress()).thenReturn("02:00:0a:0b:0c:0d");
         when(mockNic.getIPv4Address()).thenReturn("10.1.1.10");
         when(mockNic.getIPv6Address()).thenReturn(null);
@@ -114,6 +107,7 @@ public class DhcpLeaseTimeoutIntegrationTest {
         when(mockNic.isDefaultNic()).thenReturn(true);
 
         when(dcDao.findById(anyLong())).thenReturn(mockDc);
+        when(mockDc.getNetworkType()).thenReturn(com.cloud.dc.DataCenter.NetworkType.Advanced);
         when(routerControlHelper.getRouterControlIp(anyLong())).thenReturn("10.1.1.1");
         when(routerControlHelper.getRouterIpInNetwork(anyLong(), anyLong())).thenReturn("10.1.1.1");
         when(networkModel.getExecuteInSeqNtwkElmtCmd()).thenReturn(false);
@@ -122,14 +116,14 @@ public class DhcpLeaseTimeoutIntegrationTest {
     @Test
     public void testDhcpEntryCommandContainsLeaseTime() {
         // Test that DhcpEntryCommand includes the lease time from ConfigKey
-        Commands cmds = new Commands(null);
+        Commands cmds = new Commands(Command.OnError.Continue);
         commandSetupHelper.createDhcpEntryCommand(mockRouter, mockVm, mockNic, false, cmds);
 
         Assert.assertEquals("Should have one DHCP command", 1, cmds.size());
         DhcpEntryCommand dhcpCmd = (DhcpEntryCommand) cmds.toCommands()[0];
         Assert.assertNotNull("DHCP command should not be null", dhcpCmd);
         Assert.assertNotNull("Lease time should not be null", dhcpCmd.getLeaseTime());
-        
+
         // Default value should be 0 (infinite)
         Assert.assertEquals("Default lease time should be 0", Long.valueOf(0L), dhcpCmd.getLeaseTime());
     }
@@ -140,7 +134,7 @@ public class DhcpLeaseTimeoutIntegrationTest {
         Long zoneId = mockRouter.getDataCenterId();
         Integer expectedLeaseTime = NetworkOrchestrationService.DhcpLeaseTimeout.valueIn(zoneId);
 
-        Commands cmds = new Commands(null);
+        Commands cmds = new Commands(Command.OnError.Continue);
         commandSetupHelper.createDhcpEntryCommand(mockRouter, mockVm, mockNic, false, cmds);
 
         DhcpEntryCommand dhcpCmd = (DhcpEntryCommand) cmds.toCommands()[0];
@@ -154,7 +148,7 @@ public class DhcpLeaseTimeoutIntegrationTest {
         ConfigKey<Integer> configKey = NetworkOrchestrationService.DhcpLeaseTimeout;
         Assert.assertEquals("Default value should be 0 for infinite lease", "0", configKey.defaultValue());
 
-        Commands cmds = new Commands(null);
+        Commands cmds = new Commands(Command.OnError.Continue);
         commandSetupHelper.createDhcpEntryCommand(mockRouter, mockVm, mockNic, false, cmds);
 
         DhcpEntryCommand dhcpCmd = (DhcpEntryCommand) cmds.toCommands()[0];
@@ -166,7 +160,7 @@ public class DhcpLeaseTimeoutIntegrationTest {
         // Test DHCP command creation for non-default NIC
         when(mockNic.isDefaultNic()).thenReturn(false);
 
-        Commands cmds = new Commands(null);
+        Commands cmds = new Commands(Command.OnError.Continue);
         commandSetupHelper.createDhcpEntryCommand(mockRouter, mockVm, mockNic, false, cmds);
 
         DhcpEntryCommand dhcpCmd = (DhcpEntryCommand) cmds.toCommands()[0];
@@ -178,7 +172,7 @@ public class DhcpLeaseTimeoutIntegrationTest {
     @Test
     public void testDhcpCommandWithRemoveFlag() {
         // Test DHCP command with remove flag set
-        Commands cmds = new Commands(null);
+        Commands cmds = new Commands(Command.OnError.Continue);
         commandSetupHelper.createDhcpEntryCommand(mockRouter, mockVm, mockNic, true, cmds);
 
         DhcpEntryCommand dhcpCmd = (DhcpEntryCommand) cmds.toCommands()[0];
