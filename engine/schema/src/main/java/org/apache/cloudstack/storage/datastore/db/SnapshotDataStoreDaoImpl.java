@@ -587,18 +587,6 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         return batchExpunge(sc, batchSize);
     }
 
-    /**
-     * Returns the total physical size, in bytes, of all snapshots stored on primary
-     * storage for the specified account that have not yet been backed up to
-     * secondary storage.
-     *
-     * <p>If no such snapshots are found, this method returns {@code 0}.</p>
-     *
-     * @param accountId the ID of the account whose snapshots on primary storage
-     *                  should be considered
-     * @return the total physical size in bytes of matching snapshots on primary
-     *         storage, or {@code 0} if none are found
-     */
     @Override
     public long getSnapshotsPhysicalSizeOnPrimaryStorageByAccountId(long accountId) {
         long snapshotsPhysicalSize = 0;
