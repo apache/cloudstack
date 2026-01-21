@@ -50,7 +50,7 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
     private RoleService roleService;
 
     private List<PluggableService> services;
-    private Map<RoleType, Set<String>> annotationRoleBasedApisMap = new HashMap<RoleType, Set<String>>();
+    private Map<RoleType, Set<String>> annotationRoleBasedApisMap = new HashMap<>();
 
     private LazyCache<Long, Account> accountCache;
     private LazyCache<Long, Pair<Role, List<RolePermission>>> rolePermissionsCache;
@@ -59,7 +59,7 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
     protected DynamicRoleBasedAPIAccessChecker() {
         super();
         for (RoleType roleType : RoleType.values()) {
-            annotationRoleBasedApisMap.put(roleType, new HashSet<String>());
+            annotationRoleBasedApisMap.put(roleType, new HashSet<>());
         }
     }
 
@@ -204,6 +204,14 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
             allPermissions = Arrays.asList(apiKeyPairPermissions);
         }
         return allPermissions;
+    }
+
+    @Override
+    public List<RolePermissionEntity> getImplicitRolePermissions(RoleType roleType) {
+        return annotationRoleBasedApisMap.get(roleType)
+                .stream()
+                .map(implicitApi -> new RolePermissionBaseVO(implicitApi, Permission.ALLOW))
+                .collect(Collectors.toList());
     }
 
     /**

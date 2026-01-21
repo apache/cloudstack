@@ -104,7 +104,7 @@ public interface RoleService {
 
     List<RolePermission> findAllPermissionsBy(Long roleId);
 
-    List<RolePermissionEntity> findAllRolePermissionsEntityBy(Long roleId);
+    List<RolePermissionEntity> findAllRolePermissionsEntityBy(Long roleId, boolean considerImplicitRules);
 
     Permission getRolePermission(String permission);
 

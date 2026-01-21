@@ -164,6 +164,11 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
         return super.start();
     }
 
+    @Override
+    public List<RolePermissionEntity> getImplicitRolePermissions(RoleType roleType) {
+        return List.of();
+    }
+
     private void processMapping(Map<String, String> configMap) {
         for (Map.Entry<String, String> entry : configMap.entrySet()) {
             String apiName = entry.getKey();

@@ -1296,14 +1296,15 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.doNothing().when(accountManagerImpl).checkAccess(Mockito.any(Account.class), Mockito.isNull(), Mockito.anyBoolean(), Mockito.any(Account.class));
         Mockito.doNothing().when(accountManagerImpl).verifyCallerPrivilegeForUserOrAccountOperations(Mockito.any(User.class));
         Mockito.when(apiKeyPairDaoMock.findBySecretKey(Mockito.anyString())).thenReturn(null);
-        Mockito.when(roleService.findAllPermissionsBy(Mockito.anyLong())).thenReturn(List.of(
+        Mockito.when(roleService.findAllRolePermissionsEntityBy(Mockito.anyLong(), Mockito.anyBoolean())).thenReturn(List.of(
                 new RolePermissionVO(1L, "api2", RolePermissionEntity.Permission.ALLOW, "description")
         ));
         Mockito.when(roleService.findRole(Mockito.anyLong())).thenReturn(new RoleVO());
+        Mockito.when(roleService.roleHasPermission(Mockito.anyMap(), Mockito.anyList())).thenReturn(true);
 
         accountManagerImpl.createApiKeyAndSecretKey(registerCmdMock);
         Mockito.verify(apiKeyPairDaoMock, Mockito.times(0)).remove(Mockito.anyLong());
-        Mockito.verify(apiKeyPairPermissionsDaoMock, Mockito.times(1)).persist(Mockito.any(ApiKeyPairPermissionVO.class));
+        Mockito.verify(apiKeyPairPermissionsDaoMock, Mockito.times(0)).persist(Mockito.any(ApiKeyPairPermissionVO.class));
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -1329,7 +1330,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.when(_accountDao.findById(Mockito.anyLong())).thenReturn(accountVoMock);
         Mockito.doNothing().when(accountManagerImpl).checkAccess(Mockito.any(Account.class), Mockito.isNull(), Mockito.anyBoolean(), Mockito.any());
         Mockito.doNothing().when(accountManagerImpl).verifyCallerPrivilegeForUserOrAccountOperations(Mockito.any(User.class));
-        Mockito.when(roleService.findAllPermissionsBy(Mockito.anyLong())).thenReturn(List.of(
+        Mockito.when(roleService.findAllRolePermissionsEntityBy(Mockito.anyLong(), Mockito.anyBoolean())).thenReturn(List.of(
                 new RolePermissionVO(1L, "api2", RolePermissionEntity.Permission.ALLOW, "description")
         ));
         Mockito.when(roleService.findRole(Mockito.anyLong())).thenReturn(new RoleVO());
@@ -1363,7 +1364,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.doNothing().when(accountManagerImpl).checkAccess(Mockito.any(Account.class), Mockito.isNull(), Mockito.anyBoolean(), Mockito.any());
         Mockito.doNothing().when(accountManagerImpl).verifyCallerPrivilegeForUserOrAccountOperations(Mockito.any(User.class));
         Mockito.when(apiKeyPairDaoMock.findBySecretKey(Mockito.anyString())).thenReturn(null);
-        Mockito.when(roleService.findAllPermissionsBy(Mockito.anyLong())).thenReturn(List.of(
+        Mockito.when(roleService.findAllRolePermissionsEntityBy(Mockito.anyLong(), Mockito.anyBoolean())).thenReturn(List.of(
                 new RolePermissionVO(1L, "api", RolePermissionEntity.Permission.DENY, "description")
         ));
         Mockito.when(roleService.findRole(Mockito.anyLong())).thenReturn(new RoleVO());
@@ -1562,7 +1563,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.doNothing().when(accountManagerImpl).checkAccess(Mockito.any(Account.class), Mockito.isNull(), Mockito.anyBoolean(), Mockito.any(Account.class));
         Mockito.doNothing().when(accountManagerImpl).verifyCallerPrivilegeForUserOrAccountOperations(Mockito.any(User.class));
         Mockito.when(apiKeyPairDaoMock.findBySecretKey(Mockito.anyString())).thenReturn(null);
-        Mockito.when(roleService.findAllPermissionsBy(Mockito.anyLong())).thenReturn(List.of(
+        Mockito.when(roleService.findAllRolePermissionsEntityBy(Mockito.anyLong(), Mockito.anyBoolean())).thenReturn(List.of(
                 new RolePermissionVO(1L, "api1", RolePermissionEntity.Permission.ALLOW, "description-1"),
                 new RolePermissionVO(1L, "api2", RolePermissionEntity.Permission.ALLOW, "description-2"),
                 new RolePermissionVO(1L, "api3", RolePermissionEntity.Permission.DENY, "description-3")
@@ -1608,7 +1609,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.doNothing().when(accountManagerImpl).checkAccess(Mockito.any(Account.class), Mockito.isNull(), Mockito.anyBoolean(), Mockito.any(Account.class));
         Mockito.doNothing().when(accountManagerImpl).verifyCallerPrivilegeForUserOrAccountOperations(Mockito.any(User.class));
         Mockito.when(apiKeyPairDaoMock.findBySecretKey(Mockito.anyString())).thenReturn(null);
-        Mockito.when(roleService.findAllPermissionsBy(Mockito.anyLong())).thenReturn(List.of(
+        Mockito.when(roleService.findAllRolePermissionsEntityBy(Mockito.anyLong(), Mockito.anyBoolean())).thenReturn(List.of(
                 new RolePermissionVO(1L, "api1", RolePermissionEntity.Permission.ALLOW, "description-1"),
                 new RolePermissionVO(1L, "api2", RolePermissionEntity.Permission.ALLOW, "description-2")
         ));

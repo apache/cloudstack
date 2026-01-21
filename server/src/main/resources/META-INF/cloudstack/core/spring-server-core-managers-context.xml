@@ -37,7 +37,9 @@
                   value="#{pluggableAPIAuthenticatorsRegistry.registered}" />
     </bean>
 
-    <bean id="roleManagerImpl" class="org.apache.cloudstack.acl.RoleManagerImpl" />
+    <bean id="roleManagerImpl" class="org.apache.cloudstack.acl.RoleManagerImpl">
+        <property name="apiAccessCheckers" value="#{apiAclCheckersRegistry.registered}" />
+    </bean>
 
     <bean id="projRoleManagerImpl" class="org.apache.cloudstack.acl.ProjectRoleManagerImpl" />
 

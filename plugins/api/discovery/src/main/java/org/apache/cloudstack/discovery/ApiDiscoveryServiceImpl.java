@@ -338,15 +338,16 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
 
     protected List<ApiDiscoveryResponse> listApisForKeyPair(String apiKey, String apiName, Account account, User user, Role role, List<String> apisAllowed) {
         ApiKeyPair keyPair = accountService.getKeyPairByApiKey(apiKey);
-        List<RolePermissionEntity> rolePermissionEntities = apiKeyPairService.findAllPermissionsByKeyPairId(keyPair.getId(), account.getRoleId()).stream()
-                .map(apiKeyPairPermission -> (RolePermissionEntity) apiKeyPairPermission).collect(Collectors.toList());
+        List<RolePermissionEntity> keyPairPermissions = apiKeyPairService.findAllPermissionsByKeyPairId(keyPair.getId(), account.getRoleId()).stream()
+                .map(apiKeyPairPermission -> (RolePermissionEntity) apiKeyPairPermission)
+                .collect(Collectors.toList());
 
         List<String> filteredApis = new ArrayList<>();
-        if (apiName != null && isApiAllowedForKey(rolePermissionEntities, apiName)) {
+        if (apiName != null && isApiAllowedForKey(keyPairPermissions, apiName)) {
             filteredApis = List.of(apiName);
         } else {
             for (String api : apisAllowed) {
-                if (isApiAllowedForKey(rolePermissionEntities, api)) {
+                if (isApiAllowedForKey(keyPairPermissions, api)) {
                     filteredApis.add(api);
                 }
             }

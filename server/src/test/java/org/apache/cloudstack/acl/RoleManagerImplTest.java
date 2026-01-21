@@ -233,10 +233,10 @@ public class RoleManagerImplTest {
         List<Role> roles = new ArrayList<>();
 
         List<RolePermissionEntity> callerAccountRolePermissions = Collections.singletonList(rolePermission1Mock);
-        Mockito.when(roleManagerImpl.findAllRolePermissionsEntityBy(callerAccountRoleMock.getId())).thenReturn(callerAccountRolePermissions);
+        Mockito.when(roleManagerImpl.findAllRolePermissionsEntityBy(callerAccountRoleMock.getId(), false)).thenReturn(callerAccountRolePermissions);
 
         List<RolePermissionEntity> callerAccountRolePermissions2 = Collections.singletonList(rolePermission2Mock);
-        Mockito.when(roleManagerImpl.findAllRolePermissionsEntityBy(morePermissionsRoleMock.getId())).thenReturn(callerAccountRolePermissions2);
+        Mockito.when(roleManagerImpl.findAllRolePermissionsEntityBy(morePermissionsRoleMock.getId(), false)).thenReturn(callerAccountRolePermissions2);
 
         roles.add(callerAccountRoleMock);
         roles.add(morePermissionsRoleMock);
@@ -253,10 +253,10 @@ public class RoleManagerImplTest {
         List<Role> roles = new ArrayList<>();
 
         List<RolePermissionEntity> callerAccountRolePermissions = Collections.singletonList(rolePermission1Mock);
-        Mockito.when(roleManagerImpl.findAllRolePermissionsEntityBy(callerAccountRoleMock.getId())).thenReturn(callerAccountRolePermissions);
+        Mockito.when(roleManagerImpl.findAllRolePermissionsEntityBy(callerAccountRoleMock.getId(), false)).thenReturn(callerAccountRolePermissions);
 
         List<RolePermissionEntity> callerAccountRolePermissions3 = Collections.singletonList(rolePermission2Mock);
-        Mockito.when(roleManagerImpl.findAllRolePermissionsEntityBy(differentPermissionsRoleMock.getId())).thenReturn(callerAccountRolePermissions3);
+        Mockito.when(roleManagerImpl.findAllRolePermissionsEntityBy(differentPermissionsRoleMock.getId(), false)).thenReturn(callerAccountRolePermissions3);
 
         roles.add(callerAccountRoleMock);
         roles.add(differentPermissionsRoleMock);

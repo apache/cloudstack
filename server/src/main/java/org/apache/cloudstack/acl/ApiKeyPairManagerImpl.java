@@ -18,7 +18,9 @@ package org.apache.cloudstack.acl;
 
 import com.cloud.utils.component.ManagerBase;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.cloudstack.acl.apikeypair.ApiKeyPairService;
 import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
@@ -40,36 +42,41 @@ public class ApiKeyPairManagerImpl extends ManagerBase implements ApiKeyPairServ
 
     @Override
     public List<ApiKeyPairPermission> findAllPermissionsByKeyPairId(Long apiKeyPairId, Long roleId) {
-        List<ApiKeyPairPermissionVO> allPermissions = apiKeyPairPermissionsDao.findAllByKeyPairIdSorted(apiKeyPairId);
-        List<RolePermissionEntity> rolePermissionsEntity = roleService.findAllRolePermissionsEntityBy(roleId);
+        List<ApiKeyPairPermissionVO> keyPairPermissions = apiKeyPairPermissionsDao.findAllByKeyPairIdSorted(apiKeyPairId);
+        List<RolePermissionEntity> rolePermissionsEntity = roleService.findAllRolePermissionsEntityBy(roleId, true);
 
-        if (!CollectionUtils.isEmpty(allPermissions)) {
-            List<RolePermissionEntity> keyPairPermissionsEntity = allPermissions.stream()
-                    .map(p -> (RolePermissionEntity) p).collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(keyPairPermissions)) {
+            return rolePermissionsEntity.stream().map(p -> {
+                ApiKeyPairPermissionVO permission = new ApiKeyPairPermissionVO();
+                permission.setRule(p.getRule().getRuleString());
+                permission.setDescription(p.getDescription());
+                permission.setPermission(p.getPermission());
+                return permission;
+            }).collect(Collectors.toList());
+        }
 
-            Map<String, RolePermissionEntity.Permission> rolePermissionInfo = roleService.getRoleRulesAndPermissions(rolePermissionsEntity);
+        List<RolePermissionEntity> keyPairPermissionsEntity = keyPairPermissions.stream()
+                .map(permission -> (RolePermissionEntity) permission)
+                .collect(Collectors.toList());
+        Map<String, RolePermissionEntity.Permission> rolePermissionInfo = roleService.getRoleRulesAndPermissions(rolePermissionsEntity);
+        if (roleService.roleHasPermission(rolePermissionInfo, keyPairPermissionsEntity)) {
+            return keyPairPermissions.stream().map(p -> (ApiKeyPairPermission) p).collect(Collectors.toList());
+        }
 
-            if (roleService.roleHasPermission(rolePermissionInfo, keyPairPermissionsEntity)) {
-                return allPermissions.stream().map(p -> (ApiKeyPairPermission) p).collect(Collectors.toList());
-            }
-
-            Map<String, RolePermissionEntity.Permission> keyPairPermissionInfo = roleService.getRoleRulesAndPermissions(keyPairPermissionsEntity);
-            if (!roleService.roleHasPermission(keyPairPermissionInfo, rolePermissionsEntity)) {
-                for (RolePermissionEntity rolePermission : keyPairPermissionsEntity) {
-                    if (rolePermission.getPermission() == RolePermissionEntity.Permission.DENY && !rolePermissionsEntity.contains(rolePermission)) {
-                        rolePermissionsEntity.add(0, rolePermission);
-                    }
-                }
+        Set<String> rulesToBeDeniedForTheKeyPair = new HashSet<>();
+        Map<String, RolePermissionEntity.Permission> keyPairPermissionInfo = roleService.getRoleRulesAndPermissions(keyPairPermissionsEntity);
+        for (Map.Entry<String, RolePermissionEntity.Permission> keyPairPermission : keyPairPermissionInfo.entrySet()) {
+            String rule = keyPairPermission.getKey();
+            RolePermissionEntity.Permission permission = keyPairPermission.getValue();
+            if (permission == RolePermissionEntity.Permission.ALLOW && rolePermissionInfo.getOrDefault(rule, RolePermissionEntity.Permission.DENY) == RolePermissionEntity.Permission.DENY) {
+                rulesToBeDeniedForTheKeyPair.add(rule);
             }
         }
 
-        return rolePermissionsEntity.stream().map(p -> {
-            ApiKeyPairPermissionVO permission = new ApiKeyPairPermissionVO();
-            permission.setRule(p.getRule().getRuleString());
-            permission.setDescription(p.getDescription());
-            permission.setPermission(p.getPermission());
-            return permission;
-        }).collect(Collectors.toList());
+        return keyPairPermissions.stream()
+                .filter(permission ->
+                        rulesToBeDeniedForTheKeyPair.stream().noneMatch(ruleToBeDenied -> permission.getRule().matches(ruleToBeDenied)))
+                .collect(Collectors.toList());
     }
 
     @Override

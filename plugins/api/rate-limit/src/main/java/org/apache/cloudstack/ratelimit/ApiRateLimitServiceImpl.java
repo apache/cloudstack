@@ -27,6 +27,8 @@ import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 
 import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RolePermissionEntity;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.springframework.stereotype.Component;
@@ -206,6 +208,11 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
             return false;
         }
         return true;
+    }
+
+    @Override
+    public List<RolePermissionEntity> getImplicitRolePermissions(RoleType roleType) {
+        return List.of();
     }
 
     @Override

@@ -1106,7 +1106,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             }
 
             if (!commandAvailable(remoteAddress, commandName, user)) {
-                return false;
+                return false;// remove this one, not required, does not need to check against rules role here
             }
 
             if (keyPair.getRemoved() != null) {
@@ -1141,9 +1141,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             CallContext.register(user, account);
 
             List<ApiKeyPairPermission> keyPairPermissions = keyPairManager.findAllPermissionsByKeyPairId(keyPair.getId(), account.getRoleId());
-
             if (commandAvailable(remoteAddress, commandName, user, keyPairPermissions.toArray(new ApiKeyPairPermission[0]))) {
-                logger.info(String.format("API accessed through API KeyPair. API Key: [%s]", keyPair.getApiKey()));
+                logger.info("API accessed through API KeyPair. API Key: [{}]", keyPair.getApiKey());
                 return true;
             }
         } catch (final ServerApiException ex) {

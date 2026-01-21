@@ -3168,17 +3168,17 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         List<ApiKeyPairResponse> responses = new ArrayList<>();
 
         if (cmd.getKeyId() != null || cmd.getApiKeyFilter() != null) {
-            fetchOnlyOneKeypair(responses, cmd);
+            fetchOnlyOneKeyPair(responses, cmd);
             finalResponse.setResponses(responses);
             return finalResponse;
         }
 
-        Integer total = fetchMultipleKeypairs(responses, cmd);
+        Integer total = fetchMultipleKeyPairs(responses, cmd);
         finalResponse.setResponses(responses, total);
         return finalResponse;
     }
 
-    private void fetchOnlyOneKeypair(List<ApiKeyPairResponse> responses, ListUserKeysCmd cmd) {
+    private void fetchOnlyOneKeyPair(List<ApiKeyPairResponse> responses, ListUserKeysCmd cmd) {
         ApiKeyPair keyPair;
         if (cmd.getKeyId() != null) {
             keyPair = _accountService.getKeyPairById(cmd.getKeyId());
@@ -3188,14 +3188,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         validateKeyPairIsNotNull(keyPair);
         validateAccessingKeyPairPermissionsIsSupersetOfAccessedKeyPair(keyPair, cmd);
-
         _accountService.validateCallingUserHasAccessToDesiredUser(keyPair.getUserId());
-        markExpiredKeysWithStateExpired(keyPair);
+        removeApiKeyPairIfExpired(keyPair);
 
         addKeypairResponse(keyPair, responses, cmd);
     }
 
-    private Integer fetchMultipleKeypairs(List<ApiKeyPairResponse> responses, ListUserKeysCmd cmd) {
+    private Integer fetchMultipleKeyPairs(List<ApiKeyPairResponse> responses, ListUserKeysCmd cmd) {
         List<Long> users;
         if (cmd.getUserId() != null) {
             _accountService.validateCallingUserHasAccessToDesiredUser(cmd.getUserId());
@@ -3210,7 +3209,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 .filter(keyPair -> isAccessingKeypairSuperset(keyPair, cmd))
                 .forEach(keyPair -> {
                     addKeypairResponse(keyPair, responses, cmd);
-                    markExpiredKeysWithStateExpired(keyPair);
+                    removeApiKeyPairIfExpired(keyPair);
                 });
 
         return keyPairs.second();
@@ -3281,7 +3280,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return roleService.roleHasPermission(apiNameToBaseKeyPermissions, comparedPermissions);
     }
 
-    private void markExpiredKeysWithStateExpired(ApiKeyPair apiKeyPair) {
+    private void removeApiKeyPairIfExpired(ApiKeyPair apiKeyPair) {
         if (apiKeyPair.hasEndDatePassed()) {
             internalDeleteApiKey(apiKeyPair);
         }
@@ -3406,7 +3405,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         Account caller = getCurrentCallingAccount();
         User user = _userDao.findById(cmd.getUserId());
         if (user == null) {
-            throw new InvalidParameterValueException(String.format("Unable to find user by id: %d", cmd.getUserId()));
+            throw new InvalidParameterValueException(String.format("Unable to find user by ID: %d", cmd.getUserId()));
         }
 
         final String name = cmd.getName();
@@ -3415,32 +3414,29 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         final Date startDate = cmd.getStartDate();
         final Date endDate = cmd.getEndDate();
         final List<Map<String, Object>> rules = cmd.getRules();
-        final RegisterUserKeysCmd registerCmd = cmd;
 
         Account account = _accountDao.findById(user.getAccountId());
         checkAccess(caller, null, true, account);
         verifyCallerPrivilegeForUserOrAccountOperations(user);
 
-        // don't allow baremetal or system user
         if (BaremetalUtils.BAREMETAL_SYSTEM_ACCOUNT_NAME.equals(user.getUsername()) || user.getId() == User.UID_SYSTEM) {
-            throw new PermissionDeniedException(String.format("User id: [%s] is system account, update is not allowed.", user.getId()));
+            throw new PermissionDeniedException(String.format("User ID: [%s] is a system account and, thus, the operation is not allowed.", user.getId()));
         }
 
         Date now = DateTime.now().toDate();
 
         if (endDate != null && endDate.compareTo(now) <= 0) {
-            throw new InvalidParameterValueException("Keypair cannot be created with expired date, please input a date on the future.");
+            throw new InvalidParameterValueException("Keypair cannot be created with expired date, please input a date in the future.");
         }
         if (ObjectUtils.allNotNull(startDate, endDate) && startDate.compareTo(endDate) > -1) {
             throw new InvalidParameterValueException("Please specify an end date that is after the start date.");
         }
 
-        // generate both an api key and a secret key, return the keypair to the user
         final ApiKeyPairVO newApiKeyPair = new ApiKeyPairVO(name, userId, description, startDate, endDate, account);
         return Transaction.execute((TransactionCallback<ApiKeyPairVO>) status -> {
             createUserApiKey(userId, newApiKeyPair);
             createUserSecretKey(userId, newApiKeyPair);
-            return validateAndPersistKeyPairAndPermissions(account, newApiKeyPair, rules, registerCmd);
+            return validateAndPersistKeyPairAndPermissions(account, newApiKeyPair, rules, cmd);
         });
     }
 
@@ -3486,28 +3482,22 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @DB
     private ApiKeyPairVO validateAndPersistKeyPairAndPermissions(Account account, ApiKeyPairVO newApiKeyPair,
                                                                  List<Map<String, Object>> rules, RegisterUserKeysCmd cmd) {
-        // this is only used to determine if we should use api key permissions or account permissions to base our new key on
         String accessingApiKey = getAccessingApiKey(cmd);
         final Role accountRole = roleService.findRole(account.getRoleId());
+        List<RolePermissionEntity> allPermissions = accessingApiKey == null ?
+                roleService.findAllRolePermissionsEntityBy(accountRole.getId(), true) : getAllKeypairPermissions(accessingApiKey);
 
-        List<RolePermissionEntity> allPermissions = accessingApiKey == null ? getAllAccountRolePermissions(accountRole) : getAllKeypairPermissions(accessingApiKey);
-        List<RolePermissionEntity> permissions;
-        if (CollectionUtils.isEmpty(rules)) {
-            permissions = allPermissions.stream()
-                    .map(permission -> new ApiKeyPairPermissionVO(0, permission.getRule().toString(), permission.getPermission(), permission.getDescription()))
-                    .collect(Collectors.toList());
-        } else {
-            permissions = new ArrayList<>();
-            for (Map<String, Object> ruleDetail : rules) {
-                String rule = ruleDetail.get(ApiConstants.RULE).toString();
-                RolePermission.Permission rulePermission = (RolePermission.Permission) ruleDetail.get(ApiConstants.PERMISSION);
-                String ruleDescription = (String) ruleDetail.get(ApiConstants.DESCRIPTION);
-                permissions.add(new ApiKeyPairPermissionVO(0, rule, rulePermission, ruleDescription));
-            }
-            if (!isApiKeySupersetOfPermission(allPermissions, permissions)) {
-                throw new InvalidParameterValueException(String.format("The keypair being created has a bigger set of permissions than the account [%s] that owns it. This is " +
-                        "not allowed.", account.getUuid()));
-            }
+        List<RolePermissionEntity> permissions = new ArrayList<>();
+        for (Map<String, Object> ruleDetail : rules) {
+            String rule = ruleDetail.get(ApiConstants.RULE).toString();
+            RolePermission.Permission rulePermission = (RolePermission.Permission) ruleDetail.get(ApiConstants.PERMISSION);
+            String ruleDescription = (String) ruleDetail.get(ApiConstants.DESCRIPTION);
+            permissions.add(new ApiKeyPairPermissionVO(0, rule, rulePermission, ruleDescription));
+        }
+
+        if (!isApiKeySupersetOfPermission(allPermissions, permissions)) {
+            throw new InvalidParameterValueException(String.format("The keypair being created has a bigger set of permissions than the account [%s] that owns it. This is " +
+                    "not allowed.", account.getUuid()));
         }
 
         ApiKeyPairVO savedApiKeyPair = apiKeyPairDao.persist(newApiKeyPair);
@@ -3520,16 +3510,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     /**
-     * Gets all account role permissions
-     * @param accountRole base account role of the user.
-     */
-    private List<RolePermissionEntity> getAllAccountRolePermissions(Role accountRole) {
-        List<RolePermission> allAccountRolePermissions = roleService.findAllPermissionsBy(accountRole.getId());
-        return allAccountRolePermissions.stream().map(permission -> (RolePermissionEntity) permission)
-                .collect(Collectors.toList());
-    }
-
-    /**
      * Gets all API keypair permissions for the given apiKey
      */
     private List<RolePermissionEntity> getAllKeypairPermissions(String apiKey) {
@@ -3539,7 +3519,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         ApiKeyPair apiKeyPair = keyPairManager.findByApiKey(apiKey);
         Account account = _accountDao.findById(apiKeyPair.getAccountId());
         List<ApiKeyPairPermission> allApiKeyRolePermissions = keyPairManager.findAllPermissionsByKeyPairId(apiKeyPair.getId(), account.getRoleId());
-        return allApiKeyRolePermissions.stream().map(permission -> (RolePermissionEntity) permission)
+        return allApiKeyRolePermissions.stream()
+                .map(permission -> (RolePermissionEntity) permission)
                 .collect(Collectors.toList());
     }
 

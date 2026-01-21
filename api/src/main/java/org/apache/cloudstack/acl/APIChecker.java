@@ -44,4 +44,5 @@ public interface APIChecker extends Adapter {
      */
     List<String> getApisAllowedToUser(Role role, User user, List<String> apiNames) throws PermissionDeniedException;
     boolean isEnabled();
+    List<RolePermissionEntity> getImplicitRolePermissions(RoleType roleType);
 }

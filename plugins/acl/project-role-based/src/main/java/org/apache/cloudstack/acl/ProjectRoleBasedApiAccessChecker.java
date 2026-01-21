@@ -184,6 +184,11 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
     }
 
     @Override
+    public List<RolePermissionEntity> getImplicitRolePermissions(RoleType roleType) {
+        return List.of();
+    }
+
+    @Override
     public boolean start() {
         return super.start();
     }
