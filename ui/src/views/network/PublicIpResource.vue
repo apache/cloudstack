@@ -135,12 +135,6 @@ export default {
         return
       }
       if (this.resource && this.resource.vpcid) {
-        // VPC IPs with source nat have only VPN
-        if (this.resource.issourcenat) {
-          this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
-          return
-        }
-
         // VPC IPs with static nat have nothing
         if (this.resource.isstaticnat) {
           if (this.resource.virtualmachinetype === 'DomainRouter') {
@@ -153,8 +147,12 @@ export default {
         let tabs = this.$route.meta.tabs.filter(tab => tab.name !== 'firewall')
 
         const network = await this.fetchNetwork()
-        if (network && network.networkofferingconservemode) {
+        if ((network && network.networkofferingconservemode) || !network && this.resource.issourcenat) {
           this.tabs = tabs
+          return
+        } else if (this.resource.issourcenat) {
+          // VPC IPs with Source Nat have only VPN when conserve_mode = false
+          this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
           return
         }
 

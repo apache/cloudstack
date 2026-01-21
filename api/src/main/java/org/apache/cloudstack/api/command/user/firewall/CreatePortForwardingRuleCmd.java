@@ -280,7 +280,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
         IpAddress ip = _entityMgr.findById(IpAddress.class, getIpAddressId());
         Long ntwkId = null;
 
-        if (ip.getAssociatedWithNetworkId() != null) {
+        if (ip.getVpcId() == null && ip.getAssociatedWithNetworkId() != null) {
             ntwkId = ip.getAssociatedWithNetworkId();
         } else {
             ntwkId = networkId;

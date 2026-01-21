@@ -216,10 +216,10 @@
       @cancel="closeModal">
       <div v-ctrl-enter="addRule">
         <span
-          v-if="'vpcid' in resource && !('associatednetworkid' in resource)">
+          v-if="'vpcid' in resource">
           <strong>{{ $t('label.select.tier') }} </strong>
           <a-select
-            :v-focus="'vpcid' in resource && !('associatednetworkid' in resource)"
+            :v-focus="'vpcid' in resource"
             v-model:value="selectedTier"
             @change="fetchVirtualMachines()"
             :placeholder="$t('label.select.tier')"
@@ -508,9 +508,6 @@ export default {
       this.fetchPFRules()
     },
     fetchListTiers () {
-      if ('vpcid' in this.resource && 'associatednetworkid' in this.resource) {
-        return
-      }
       this.selectedTier = null
       this.tiers.loading = true
       getAPI('listNetworks', {
@@ -630,7 +627,7 @@ export default {
       if (this.loading) return
       this.loading = true
       this.addVmModalVisible = false
-      const networkId = ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
+      const networkId = ('vpcid' in this.resource) ? this.selectedTier : this.resource.associatednetworkid
       postAPI('createPortForwardingRule', {
         ...this.newRule,
         ipaddressid: this.resource.id,
@@ -788,7 +785,7 @@ export default {
       this.newRule.virtualmachineid = e.target.value
       getAPI('listNics', {
         virtualmachineid: e.target.value,
-        networkId: ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
+        networkId: ('vpcid' in this.resource) ? this.selectedTier : this.resource.associatednetworkid
       }).then(response => {
         if (!response.listnicsresponse.nic || response.listnicsresponse.nic.length < 1) return
         const nic = response.listnicsresponse.nic[0]
@@ -808,7 +805,7 @@ export default {
       this.vmCount = 0
       this.vms = []
       this.addVmModalLoading = true
-      const networkId = ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
+      const networkId = ('vpcid' in this.resource) ? this.selectedTier : this.resource.associatednetworkid
       if (!networkId) {
         this.addVmModalLoading = false
         return

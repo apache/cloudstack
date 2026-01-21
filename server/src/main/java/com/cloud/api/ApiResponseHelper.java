@@ -3499,6 +3499,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (voff != null) {
             response.setVpcOfferingId(voff.getUuid());
             response.setVpcOfferingName(voff.getName());
+            response.setVpcOfferingConserveMode(voff.isConserveMode());
         }
         response.setCidr(vpc.getCidr());
         response.setRestartRequired(vpc.isRestartRequired());

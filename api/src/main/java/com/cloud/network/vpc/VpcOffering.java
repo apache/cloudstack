@@ -84,4 +84,6 @@ public interface VpcOffering extends InternalIdentity, Identity {
     NetworkOffering.RoutingMode getRoutingMode();
 
     Boolean isSpecifyAsNumber();
+
+    boolean isConserveMode();
 }

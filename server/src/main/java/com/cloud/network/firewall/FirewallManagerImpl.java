@@ -395,6 +395,12 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             assert (rules.size() >= 1);
         }
 
+        NetworkVO newRuleNetwork = _networkDao.findById(newRule.getNetworkId());
+        if (newRuleNetwork == null) {
+            throw new InvalidParameterValueException("Unable to create firewall rule as cannot find network by id=" + newRule.getNetworkId());
+        }
+        boolean isNewRuleOnVpcNetwork = newRuleNetwork.getVpcId() != null;
+
         for (FirewallRuleVO rule : rules) {
             if (rule.getId() == newRule.getId()) {
                 continue; // Skips my own rule.
@@ -442,8 +448,8 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                 }
             }
 
-            // Checking if the rule applied is to the same network that is passed in the rule.
-            if (rule.getNetworkId() != newRule.getNetworkId() && rule.getState() != State.Revoke) {
+            // Checking if the rule applied is to the same network that is passed in the rule. (except for VPC networks)
+            if (!isNewRuleOnVpcNetwork && rule.getNetworkId() != newRule.getNetworkId() && rule.getState() != State.Revoke) {
                 throw new NetworkRuleConflictException("New rule is for a different network than what's specified in rule " + rule.getXid());
             }
 
