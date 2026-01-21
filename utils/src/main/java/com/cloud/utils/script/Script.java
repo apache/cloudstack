@@ -40,9 +40,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -712,9 +714,11 @@ public class Script implements Callable<String> {
         if (timeout <= 0) {
             timeout = DEFAULT_TIMEOUT;
         }
+        final AtomicReference<List<Process>> processesRef = new AtomicReference<>();
         Callable<Pair<Integer, String>> commandRunner = () -> {
             List<ProcessBuilder> builders = commands.stream().map(ProcessBuilder::new).collect(Collectors.toList());
             List<Process> processes = ProcessBuilder.startPipeline(builders);
+            processesRef.set(processes);
             Process last = processes.get(processes.size()-1);
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(last.getInputStream()))) {
                 String line;
@@ -741,6 +745,20 @@ public class Script implements Callable<String> {
             result.second(ERR_TIMEOUT);
         } catch (InterruptedException | ExecutionException e) {
             LOGGER.error("Error executing piped commands", e);
+        } finally {
+            List<Process> processes = processesRef.get();
+            if (CollectionUtils.isNotEmpty(processes)) {
+                for (Process process : processes) {
+                    if (process == null) {
+                        continue;
+                    }
+                    LOGGER.trace(String.format("Cleaning up process [%s] from piped commands.", process.pid()));
+                    IOUtils.closeQuietly(process.getErrorStream());
+                    IOUtils.closeQuietly(process.getOutputStream());
+                    IOUtils.closeQuietly(process.getInputStream());
+                    process.destroyForcibly();
+                }
+            }
         }
         return result;
     }
