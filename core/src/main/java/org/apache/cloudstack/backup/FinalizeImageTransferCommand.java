@@ -19,32 +19,14 @@ package org.apache.cloudstack.backup;
 
 import com.cloud.agent.api.Command;
 
-public class CreateImageTransferCommand extends Command {
+public class FinalizeImageTransferCommand extends Command {
     private String transferId;
-    private String hostIpAddress;
-    private String deviceName;
-    private int nbdPort;
 
-    public CreateImageTransferCommand() {
+    public FinalizeImageTransferCommand() {
     }
 
-    public CreateImageTransferCommand(Long vmId, String transferId, String hostIpAddress, Long backupId, Long diskId, String deviceName, int nbdPort) {
+    public FinalizeImageTransferCommand(String transferId) {
         this.transferId = transferId;
-        this.hostIpAddress = hostIpAddress;
-        this.deviceName = deviceName;
-        this.nbdPort = nbdPort;
-    }
-
-    public String getDeviceName() {
-        return deviceName;
-    }
-
-    public int getNbdPort() {
-        return nbdPort;
-    }
-
-    public String getHostIpAddress() {
-        return hostIpAddress;
     }
 
     public String getTransferId() {

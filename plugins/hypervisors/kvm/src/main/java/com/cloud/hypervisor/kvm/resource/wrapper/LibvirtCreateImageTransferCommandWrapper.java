@@ -43,13 +43,12 @@ public class LibvirtCreateImageTransferCommandWrapper extends CommandWrapper<Cre
             // 2. Create transfer object in ImageIO
             // 3. Get signed ticket and transfer URL
 
-            // For POC, return stub data
-            String imageTransferId = "transfer-" + cmd.getDiskId();
-            String transferUrl = String.format("nbd://127.0.0.1:%d/%s", nbdPort, deviceName);
+            String hostIpAddress = cmd.getHostIpAddress();
+            String transferUrl = String.format("nbd://%s:%d/%s", hostIpAddress, nbdPort, deviceName);
             String phase = "initializing";
 
             return new CreateImageTransferAnswer(cmd, true, "Image transfer created (stub)",
-                imageTransferId, transferUrl, phase);
+                cmd.getTransferId(), transferUrl, phase);
 
         } catch (Exception e) {
             return new CreateImageTransferAnswer(cmd, false, "Error creating image transfer: " + e.getMessage());

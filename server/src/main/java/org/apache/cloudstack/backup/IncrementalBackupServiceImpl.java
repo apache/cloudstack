@@ -41,13 +41,18 @@ import org.apache.cloudstack.api.response.ImageTransferResponse;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.ImageTransferDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.commons.collections.CollectionUtils;
 import org.joda.time.DateTime;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.Host;
+import com.cloud.host.dao.HostDao;
 import com.cloud.storage.Volume;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.ManagerBase;
@@ -77,8 +82,15 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
     @Inject
     private BackupOfferingDao backupOfferingDao;
 
+    @Inject
+    private HostDao hostDao;
+
+    @Inject
+    EndPointSelector _epSelector;
+
     private static final int NBD_PORT_RANGE_START = 10809;
     private static final int NBD_PORT_RANGE_END = 10909;
+    private static final boolean DATAPLANE_PROXY_MODE = true;
 
     private boolean isDummyOffering(Long backupOfferingId) {
         if (backupOfferingId == null) {
@@ -151,14 +163,15 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
             diskVolumePaths.put(vol.getId(), vol.getPath());
         }
 
-        // Send StartBackupCommand to agent
+        Host host = hostDao.findById(vm.getHostId());
         StartBackupCommand startCmd = new StartBackupCommand(
             vm.getInstanceName(),
             vmId,
             toCheckpointId,
             fromCheckpointId,
             nbdPort,
-            diskVolumePaths
+            diskVolumePaths,
+            host.getPrivateIpAddress()
         );
 
         try {
@@ -282,9 +295,13 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         List<? extends Volume> volumes = volumeDao.findByInstance(backup.getVmId());
         String deviceName = resolveDeviceName(volumes, volumeId);
 
+        String transferId = UUID.randomUUID().toString();
+        Host host = hostDao.findById(backup.getHostId());
         // Create CreateImageTransferCommand
         CreateImageTransferCommand transferCmd = new CreateImageTransferCommand(
             backup.getVmId(),
+            transferId,
+            host.getPrivateIpAddress(),
             backupId,
             volumeId,
             deviceName,
@@ -295,6 +312,9 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
             CreateImageTransferAnswer answer;
             if (dummyOffering) {
                 answer = new CreateImageTransferAnswer(transferCmd, true, "Dummy answer", "image-transfer-id", "nbd://127.0.0.1:10809/vda", "initializing");
+            } else if (DATAPLANE_PROXY_MODE) {
+                EndPoint ssvm = _epSelector.findSsvm(backup.getZoneId());
+                answer = (CreateImageTransferAnswer) ssvm.sendMessage(transferCmd);
             } else {
                 answer = (CreateImageTransferAnswer) agentManager.send(backup.getHostId(), transferCmd);
             }
@@ -305,6 +325,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
 
             // Create ImageTransfer record
             ImageTransferVO imageTransfer = new ImageTransferVO(
+                transferId,
                 backupId,
                 backup.getVmId(),
                 volumeId,
@@ -347,10 +368,32 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
             throw new CloudRuntimeException("Image transfer not found: " + imageTransferId);
         }
 
-        // Mark as finished (NBD is closed in backup finalize, not here)
-        imageTransfer.setPhase(ImageTransferVO.Phase.finished);
-        imageTransferDao.update(imageTransferId, imageTransfer);
-        imageTransferDao.remove(imageTransferId);
+        BackupVO backup = backupDao.findById(imageTransfer.getBackupId());
+        boolean dummyOffering = isDummyOffering(backup.getBackupOfferingId());
+
+        FinalizeImageTransferCommand finalizeCmd = new FinalizeImageTransferCommand(imageTransfer.getUuid());
+        try {
+            Answer answer;
+            if (dummyOffering) {
+                answer = new Answer(finalizeCmd, true, "Image transfer finalized.");
+            } else if (DATAPLANE_PROXY_MODE) {
+                EndPoint ssvm = _epSelector.findSsvm(backup.getZoneId());
+                answer = ssvm.sendMessage(finalizeCmd);
+            } else {
+                answer = agentManager.send(backup.getHostId(), finalizeCmd);
+            }
+
+            if (!answer.getResult()) {
+                throw new CloudRuntimeException("Failed to create image transfer: " + answer.getDetails());
+            }
+
+            imageTransfer.setPhase(ImageTransferVO.Phase.finished);
+            imageTransferDao.update(imageTransferId, imageTransfer);
+            imageTransferDao.remove(imageTransferId);
+
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            throw new CloudRuntimeException("Failed to communicate with agent: " + e.getMessage(), e);
+        }
 
         return true;
     }
@@ -396,8 +439,14 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
 
     @Override
     public boolean deleteVmCheckpoint(DeleteVmCheckpointCmd cmd) {
-        // No-op for normal flow as per spec
-        // Kept for API parity with oVirt
+        // Todo : backend support?
+        VMInstanceVO vm = vmInstanceDao.findById(cmd.getVmId());
+        if (vm == null) {
+            throw new CloudRuntimeException("VM not found: " + cmd.getVmId());
+        }
+        vm.setActiveCheckpointId(null);
+        vm.setActiveCheckpointCreateTime(null);
+        vmInstanceDao.update(cmd.getVmId(), vm);
         return true;
     }
 

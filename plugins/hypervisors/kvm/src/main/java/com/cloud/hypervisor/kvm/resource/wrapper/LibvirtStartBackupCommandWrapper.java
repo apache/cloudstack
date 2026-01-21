@@ -114,7 +114,7 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
             xml.append("  <incremental>").append(fromCheckpointId).append("</incremental>\n");
         }
 
-        xml.append("  <server transport=\"tcp\" name=\"127.0.0.1\" port=\"").append(nbdPort).append("\"/>\n");
+        xml.append(String.format("  <server transport=\"tcp\" name=\"%s\" port=\"%s\"/>\n", cmd.getHostIpAddress(), nbdPort));
         xml.append("  <disks>\n");
 
         // Add disk entries - simplified for POC

@@ -18,7 +18,6 @@
 package org.apache.cloudstack.backup;
 
 import java.util.Date;
-import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -94,11 +93,10 @@ public class ImageTransferVO implements ImageTransfer {
     private Date removed;
 
     public ImageTransferVO() {
-        this.uuid = UUID.randomUUID().toString();
     }
 
-    public ImageTransferVO(long backupId, long vmId, long diskId, String deviceName, long hostId, int nbdPort, Phase phase, Direction direction, Long accountId, Long domainId) {
-        this();
+    public ImageTransferVO(String uuid, long backupId, long vmId, long diskId, String deviceName, long hostId, int nbdPort, Phase phase, Direction direction, Long accountId, Long domainId) {
+        this.uuid = uuid;
         this.backupId = backupId;
         this.vmId = vmId;
         this.diskId = diskId;
