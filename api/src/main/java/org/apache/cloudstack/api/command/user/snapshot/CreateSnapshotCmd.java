@@ -244,7 +244,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     }
 
     private Snapshot.LocationType getLocationType() {
-        if (Snapshot.LocationType.values().length == 0 || locationType == null) {
+        if (locationType == null) {
             return null;
         }
 

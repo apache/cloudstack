@@ -80,7 +80,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
     private static final String GET_PHYSICAL_SIZE_OF_SNAPSHOTS_ON_PRIMARY_BY_ACCOUNT = "SELECT SUM(s.physical_size) " +
             "FROM cloud.snapshot_store_ref s " +
-            "INNER JOIN cloud.snapshots ON s.snapshot_id = snapshots.id " +
+            "LEFT JOIN cloud.snapshots ON s.snapshot_id = snapshots.id " +
             "WHERE snapshots.account_id = ? " +
             "AND snapshots.removed IS NULL " +
             "AND s.state = 'Ready' " +
@@ -587,6 +587,18 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         return batchExpunge(sc, batchSize);
     }
 
+    /**
+     * Returns the total physical size, in bytes, of all snapshots stored on primary
+     * storage for the specified account that have not yet been backed up to
+     * secondary storage.
+     *
+     * <p>If no such snapshots are found, this method returns {@code 0}.</p>
+     *
+     * @param accountId the ID of the account whose snapshots on primary storage
+     *                  should be considered
+     * @return the total physical size in bytes of matching snapshots on primary
+     *         storage, or {@code 0} if none are found
+     */
     @Override
     public long getSnapshotsPhysicalSizeOnPrimaryStorageByAccountId(long accountId) {
         long snapshotsPhysicalSize = 0;
