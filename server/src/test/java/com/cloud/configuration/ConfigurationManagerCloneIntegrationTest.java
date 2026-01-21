@@ -1052,4 +1052,3 @@ public class ConfigurationManagerCloneIntegrationTest {
         verify(networkOfferingDao).findById(sourceId);
     }
 }
-
