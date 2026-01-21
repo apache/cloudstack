@@ -24,6 +24,8 @@ import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkRuleApplier;
 import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.FirewallServiceProvider;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VpcVirtualRouterElement;
@@ -43,6 +45,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -76,6 +79,8 @@ public class FirewallManagerTest {
     IpAddressManager _ipAddrMgr;
     @Mock
     FirewallRulesDao _firewallDao;
+    @Mock
+    NetworkDao _networkDao;
 
     @Spy
     @InjectMocks
@@ -195,6 +200,10 @@ public class FirewallManagerTest {
         FirewallRule newRule3 = new FirewallRuleVO("newRule3", 3, 4500, "TCP", 1, 2, 1, Purpose.PortForwarding, null, null, null, null);
         FirewallRule newRule4 = new FirewallRuleVO("newRule4", 3L, 15, 25, "TCP", 1, 2, 1, Purpose.Firewall, sString, dString2, null, null,
                 null, FirewallRule.TrafficType.Egress);
+
+        NetworkVO networkVO = Mockito.mock(NetworkVO.class);
+        when(firewallMgr._networkDao.findById(1L)).thenReturn(networkVO);
+        when(networkVO.getVpcId()).thenReturn(null);
 
         try {
             firewallMgr.detectRulesConflict(newRule1);
