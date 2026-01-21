@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.HSMProfileResponse;
 import org.apache.cloudstack.api.response.KMSKeyResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -50,10 +51,6 @@ public class CreateKMSKeyCmd extends BaseCmd implements UserCmd {
 
     @Inject
     private KMSManager kmsManager;
-
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.NAME,
                required = true,
@@ -95,14 +92,12 @@ public class CreateKMSKeyCmd extends BaseCmd implements UserCmd {
                description = "Key size in bits: 128, 192, or 256 (default: 256)")
     private Integer keyBits;
 
-    @Parameter(name = ApiConstants.HSM_PROFILE,
-               type = CommandType.STRING,
-               description = "Name of HSM profile to create key in")
-    private String hsmProfile;
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+    @Parameter(name = ApiConstants.HSM_PROFILE_ID,
+               type = CommandType.UUID,
+               entityType = HSMProfileResponse.class,
+               required = true,
+               description = "ID of HSM profile to create key in")
+    private Long hsmProfileId;
 
     public String getName() {
         return name;
@@ -132,13 +127,9 @@ public class CreateKMSKeyCmd extends BaseCmd implements UserCmd {
         return keyBits != null ? keyBits : 256; // Default to 256 bits
     }
 
-    public String getHsmProfile() {
-        return hsmProfile;
+    public Long getHsmProfileId() {
+        return hsmProfileId;
     }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
 
     @Override
     public void execute() throws ResourceAllocationException {

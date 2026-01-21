@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.HSMProfileResponse;
 import org.apache.cloudstack.api.response.KMSKeyResponse;
 import org.apache.cloudstack.framework.kms.KMSException;
 import org.apache.cloudstack.kms.KMSManager;
@@ -45,10 +46,6 @@ public class RotateKMSKeyCmd extends BaseAsyncCmd {
     @Inject
     private KMSManager kmsManager;
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
     @Parameter(name = ApiConstants.ID,
                required = true,
                type = CommandType.UUID,
@@ -61,14 +58,11 @@ public class RotateKMSKeyCmd extends BaseAsyncCmd {
                description = "Key size for new KEK (default: same as current)")
     private Integer keyBits;
 
-    @Parameter(name = ApiConstants.HSM_PROFILE,
-               type = CommandType.STRING,
-               description = "The target HSM profile name for the new KEK version. If provided, migrates the key to this HSM.")
+    @Parameter(name = ApiConstants.HSM_PROFILE_ID,
+            type = CommandType.UUID,
+            entityType = HSMProfileResponse.class,
+               description = "The target HSM profile ID for the new KEK version. If provided, migrates the key to this HSM.")
     private String hsmProfile;
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
 
     public Long getId() {
         return id;
@@ -81,10 +75,6 @@ public class RotateKMSKeyCmd extends BaseAsyncCmd {
     public String getHsmProfile() {
         return hsmProfile;
     }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
 
     @Override
     public void execute() {

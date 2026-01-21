@@ -40,15 +40,11 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 
 @APICommand(name = "updateHSMProfile", description = "Updates an HSM profile", responseObject = HSMProfileResponse.class,
-        requestHasSensitiveInfo = true, responseHasSensitiveInfo = true, since = "4.21.0")
+        requestHasSensitiveInfo = true, responseHasSensitiveInfo = true, since = "4.23.0")
 public class UpdateHSMProfileCmd extends BaseCmd {
 
     @Inject
     private KMSManager kmsManager;
-
-    ////////////////////////////////////////////////=====
-    // API parameters
-    ////////////////////////////////////////////////=====
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HSMProfileResponse.class, required = true, description = "the ID of the HSM profile")
     private Long id;
@@ -61,10 +57,6 @@ public class UpdateHSMProfileCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "HSM configuration details to update (protocol specific)")
     private Map<String, String> details;
-
-    ////////////////////////////////////////////////=====
-    // Accessors
-    ////////////////////////////////////////////////=====
 
     public Long getId() {
         return id;
@@ -81,10 +73,6 @@ public class UpdateHSMProfileCmd extends BaseCmd {
     public Map<String, String> getDetails() {
         return details;
     }
-
-    ////////////////////////////////////////////////=====
-    // Implementation
-    ////////////////////////////////////////////////=====
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {

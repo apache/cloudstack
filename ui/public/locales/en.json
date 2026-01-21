@@ -1423,6 +1423,8 @@
 "label.keyboardtype": "Keyboard type",
 "label.keypair": "SSH key pair",
 "label.keypairs": "SSH key pair(s)",
+"label.kms.key": "KMS Key",
+"label.select.kms.key.optional": "Select KMS Key (optional)",
 "label.kubeconfig.cluster": "Kubernetes Cluster config",
 "label.kubernetes": "Kubernetes",
 "label.kubernetes.access.details": "The kubernetes nodes can be accessed via ssh using: <br> <code><b> ssh -i [ssh_key] -p [port_number] cloud@[public_ip_address] </b></code> <br><br> where, <br> <code><b>ssh_key:</b></code> points to the ssh private key file corresponding to the key that was associated while creating the Kubernetes Cluster. If no ssh key was provided during Kubernetes cluster creation, use the ssh private key of the management server. <br> <code><b>port_number:</b></code> can be obtained from the Port Forwarding Tab (Public Port column)",
@@ -4203,5 +4205,6 @@
 "Compute*Month": "Compute * Month",
 "GB*Month": "GB * Month",
 "IP*Month": "IP * Month",
-"Policy*Month": "Policy * Month"
+"Policy*Month": "Policy * Month",
+"message.kms.key.optional": "Optional: Select a KMS key for encryption. If not selected, legacy passphrase encryption will be used."
 }

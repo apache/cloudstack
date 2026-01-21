@@ -17,16 +17,18 @@
 
 package org.apache.cloudstack.api.command.user.kms.hsm;
 
-import java.util.Map;
-
-import javax.inject.Inject;
-
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.HSMProfileResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
@@ -34,55 +36,56 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.kms.KMSException;
 import org.apache.cloudstack.kms.HSMProfile;
 import org.apache.cloudstack.kms.KMSManager;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.StringUtils;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.user.Account;
+import javax.inject.Inject;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 @APICommand(name = "addHSMProfile", description = "Adds a new HSM profile", responseObject = HSMProfileResponse.class,
-        requestHasSensitiveInfo = true, responseHasSensitiveInfo = true, since = "4.21.0")
+        requestHasSensitiveInfo = true, responseHasSensitiveInfo = true, since = "4.23.0")
 public class AddHSMProfileCmd extends BaseCmd {
 
     @Inject
     private KMSManager kmsManager;
 
-    ////////////////////////////////////////////////=====
-    // API parameters
-    ////////////////////////////////////////////////=====
-
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the HSM profile")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true,
+            description = "the name of the HSM profile")
     private String name;
 
-    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, required = true, description = "the protocol of the HSM profile (PKCS11, KMIP, etc.)")
+    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING,
+            description = "the protocol of the HSM profile (PKCS11, KMIP, etc.). Default is 'pkcs11'")
     private String protocol;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the zone ID where the HSM profile is available. If null, global scope (for admin only)")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class,
+            description = "the zone ID where the HSM profile is available. If null, global scope (for admin only)")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "the domain ID where the HSM profile is available")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
+            description = "the domain ID where the HSM profile is available")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "the account ID of the HSM profile owner. If null, admin-provided (available to all accounts)")
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class,
+            description = "the account ID of the HSM profile owner. If null, admin-provided (available to all "
+                          + "accounts)")
     private Long accountId;
 
     @Parameter(name = ApiConstants.VENDOR_NAME, type = CommandType.STRING, description = "the vendor name of the HSM")
     private String vendorName;
 
-    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, required = true, description = "HSM configuration details (protocol specific)")
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "HSM configuration details (protocol specific)")
     private Map<String, String> details;
-
-    ////////////////////////////////////////////////=====
-    // Accessors
-    ////////////////////////////////////////////////=====
 
     public String getName() {
         return name;
     }
 
     public String getProtocol() {
+        if (StringUtils.isBlank(protocol)) {
+            return "pkcs11";
+        }
         return protocol;
     }
 
@@ -103,15 +106,22 @@ public class AddHSMProfileCmd extends BaseCmd {
     }
 
     public Map<String, String> getDetails() {
-        return details;
+        Map<String, String> detailsMap = new HashMap<>();
+        if (MapUtils.isNotEmpty(details)) {
+            Collection<?> props = details.values();
+            for (Object prop : props) {
+                HashMap<String, String> detail = (HashMap<String, String>) prop;
+                for (Map.Entry<String, String> entry: detail.entrySet()) {
+                    detailsMap.put(entry.getKey(),entry.getValue());
+                }
+            }
+        }
+        return detailsMap;
     }
 
-    ////////////////////////////////////////////////=====
-    // Implementation
-    ////////////////////////////////////////////////=====
-
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
+            ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
             // Default to caller account if not admin and accountId not specified
             // But wait, the plan says: "No accountId parameter means account_id = NULL (admin-provided)"

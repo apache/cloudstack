@@ -33,15 +33,14 @@ import org.apache.cloudstack.kms.HSMProfile;
 import org.apache.cloudstack.kms.KMSManager;
 
 @APICommand(name = "listHSMProfiles", description = "Lists HSM profiles", responseObject = HSMProfileResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true, since = "4.21.0")
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true, since = "4.23.0")
 public class ListHSMProfilesCmd extends BaseListCmd {
 
     @Inject
     private KMSManager kmsManager;
 
-    ////////////////////////////////////////////////=====
-    // API parameters
-    ////////////////////////////////////////////////=====
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HSMProfileResponse.class, description = "the HSM profile ID")
+    private Long id;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the zone ID")
     private Long zoneId;
@@ -52,9 +51,9 @@ public class ListHSMProfilesCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, description = "list only enabled profiles")
     private Boolean enabled;
 
-    ////////////////////////////////////////////////=====
-    // Accessors
-    ////////////////////////////////////////////////=====
+    public Long getId() {
+        return id;
+    }
 
     public Long getZoneId() {
         return zoneId;
@@ -68,16 +67,12 @@ public class ListHSMProfilesCmd extends BaseListCmd {
         return enabled;
     }
 
-    ////////////////////////////////////////////////=====
-    // Implementation
-    ////////////////////////////////////////////////=====
-
     @Override
     public void execute() {
         List<HSMProfile> profiles = kmsManager.listHSMProfiles(this);
         ListResponse<HSMProfileResponse> response = new ListResponse<>();
         List<HSMProfileResponse> profileResponses = new ArrayList<>();
-        
+
         for (HSMProfile profile : profiles) {
             HSMProfileResponse profileResponse = kmsManager.createHSMProfileResponse(profile);
             profileResponses.add(profileResponse);

@@ -100,4 +100,6 @@ public interface KMSKey extends Identity, InternalIdentity, ControlledEntity {
         /** Key is soft-deleted */
         Deleted
     }
+
+    Long getHsmProfileId();
 }

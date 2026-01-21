@@ -252,6 +252,7 @@ public class KMSKeyVO implements KMSKey {
         this.state = state;
     }
 
+    @Override
     public Long getHsmProfileId() {
         return hsmProfileId;
     }

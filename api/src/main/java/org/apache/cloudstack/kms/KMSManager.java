@@ -51,20 +51,6 @@ public interface KMSManager extends Manager, Configurable {
     // ==================== Configuration Keys ====================
 
     /**
-     * Global: which KMS provider plugin to use by default
-     * Supported values: "database" (default), "pkcs11", or custom provider names
-     */
-    ConfigKey<String> KMSProviderPlugin = new ConfigKey<>(
-            "Advanced",
-            String.class,
-            "kms.provider.plugin",
-            "database",
-            "The KMS provider plugin to use for cryptographic operations (database, pkcs11, etc.)",
-            true,
-            ConfigKey.Scope.Global
-    );
-
-    /**
      * Zone-scoped: enable KMS for a specific zone
      * When false (default), new volumes use legacy passphrase encryption
      * When true, new volumes use KMS envelope encryption
@@ -210,23 +196,6 @@ public interface KMSManager extends Manager, Configurable {
     // ==================== User KEK Management ====================
 
     /**
-     * Create a new KMS key (KEK) for a user account
-     *
-     * @param accountId   the account ID
-     * @param domainId    the domain ID
-     * @param zoneId      the zone ID
-     * @param name        user-friendly name
-     * @param description optional description
-     * @param purpose     key purpose
-     * @param keyBits     key size in bits
-     * @return the created KMS key
-     * @throws KMSException if creation fails
-     */
-    KMSKey createUserKMSKey(Long accountId, Long domainId, Long zoneId,
-                            String name, String description, KeyPurpose purpose,
-                            Integer keyBits) throws KMSException;
-
-    /**
      * List KMS keys accessible to a user account
      *
      * @param accountId the account ID
@@ -341,7 +310,7 @@ public interface KMSManager extends Manager, Configurable {
 
     /**
      * Add a new HSM profile
-     * 
+     *
      * @param cmd the add command
      * @return the created HSM profile
      * @throws KMSException if addition fails
@@ -350,7 +319,7 @@ public interface KMSManager extends Manager, Configurable {
 
     /**
      * List HSM profiles
-     * 
+     *
      * @param cmd the list command
      * @return list of HSM profiles
      */
@@ -358,7 +327,7 @@ public interface KMSManager extends Manager, Configurable {
 
     /**
      * Delete an HSM profile
-     * 
+     *
      * @param cmd the delete command
      * @return true if deletion was successful
      * @throws KMSException if deletion fails
@@ -367,7 +336,7 @@ public interface KMSManager extends Manager, Configurable {
 
     /**
      * Update an HSM profile
-     * 
+     *
      * @param cmd the update command
      * @return the updated HSM profile
      * @throws KMSException if update fails
@@ -376,7 +345,7 @@ public interface KMSManager extends Manager, Configurable {
 
     /**
      * Create a response object for an HSM profile
-     * 
+     *
      * @param profile the HSM profile
      * @return the response object
      */

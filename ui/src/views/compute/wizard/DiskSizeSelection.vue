@@ -16,35 +16,62 @@
 // under the License.
 
 <template>
-  <a-row :span="24" :style="{ marginTop: '20px' }">
-    <a-col :span="isCustomizedDiskIOps || isCustomizedIOps ? 8 : 24" v-if="isCustomized">
-      <a-form-item
-        :label="inputDecorator === 'rootdisksize' ? $t('label.root.disk.size') : $t('label.disksize')"
-        class="form-item">
-        <span style="display: inline-flex">
-          <a-input-number
-            v-focus="true"
-            v-model:value="inputValue"
-            @change="($event) => updateDiskSize($event)"
-          />
-          <span style="padding-top: 6px; margin-left: 5px">GB</span>
-        </span>
-        <p v-if="error" style="color: red"> {{ $t(error) }} </p>
-      </a-form-item>
-    </a-col>
-    <a-col :span="8" v-if="isCustomizedDiskIOps || isCustomizedIOps">
-      <a-form-item :label="$t('label.diskiopsmin')">
-        <a-input-number v-model:value="minIOps" @change="updateDiskIOps" />
-        <p v-if="errorMinIOps" style="color: red"> {{ $t(errorMinIOps) }} </p>
-      </a-form-item>
-    </a-col>
-    <a-col :span="8" v-if="isCustomizedDiskIOps || isCustomizedIOps">
-      <a-form-item :label="$t('label.diskiopsmax')">
-        <a-input-number v-model:value="maxIOps" @change="updateDiskIOps" />
-        <p v-if="errorMaxIOps" style="color: red"> {{ $t(errorMaxIOps) }} </p>
-      </a-form-item>
-    </a-col>
-  </a-row>
+  <div>
+    <a-row :span="24" :style="{ marginTop: '20px' }">
+      <a-col :span="isCustomizedDiskIOps || isCustomizedIOps ? 8 : 24" v-if="isCustomized">
+        <a-form-item
+          :label="inputDecorator === 'rootdisksize' ? $t('label.root.disk.size') : $t('label.disksize')"
+          class="form-item">
+          <span style="display: inline-flex">
+            <a-input-number
+              v-focus="true"
+              v-model:value="inputValue"
+              @change="($event) => updateDiskSize($event)"
+            />
+            <span style="padding-top: 6px; margin-left: 5px">GB</span>
+          </span>
+          <p v-if="error" style="color: red"> {{ $t(error) }} </p>
+        </a-form-item>
+      </a-col>
+      <a-col :span="8" v-if="isCustomizedDiskIOps || isCustomizedIOps">
+        <a-form-item :label="$t('label.diskiopsmin')">
+          <a-input-number v-model:value="minIOps" @change="updateDiskIOps" />
+          <p v-if="errorMinIOps" style="color: red"> {{ $t(errorMinIOps) }} </p>
+        </a-form-item>
+      </a-col>
+      <a-col :span="8" v-if="isCustomizedDiskIOps || isCustomizedIOps">
+        <a-form-item :label="$t('label.diskiopsmax')">
+          <a-input-number v-model:value="maxIOps" @change="updateDiskIOps" />
+          <p v-if="errorMaxIOps" style="color: red"> {{ $t(errorMaxIOps) }} </p>
+        </a-form-item>
+      </a-col>
+    </a-row>
+    <a-row :span="24" v-if="showKmsKeySelector">
+      <a-col :span="24">
+        <a-form-item :label="$t('label.kms.key')" class="form-item">
+          <a-select
+            v-model:value="selectedKmsKey"
+            :loading="loadingKmsKeys"
+            :placeholder="$t('label.select.kms.key.optional')"
+            showSearch
+            optionFilterProp="label"
+            allowClear
+            @change="updateKmsKey">
+            <a-select-option
+              v-for="key in kmsKeys"
+              :key="key.id"
+              :value="key.id"
+              :label="key.name">
+              {{ key.name }}
+            </a-select-option>
+          </a-select>
+          <p style="color: gray; font-size: 12px; margin-top: 5px">
+            {{ $t('message.kms.key.optional') }}
+          </p>
+        </a-form-item>
+      </a-col>
+    </a-row>
+  </div>
 </template>
 
 <script>
@@ -74,6 +101,18 @@ export default {
     isCustomized: {
       type: Boolean,
       default: false
+    },
+    kmsKeys: {
+      type: Array,
+      default: () => []
+    },
+    loadingKmsKeys: {
+      type: Boolean,
+      default: false
+    },
+    computeOfferingEncryptRoot: {
+      type: Boolean,
+      default: false
     }
   },
   watch: {
@@ -90,6 +129,13 @@ export default {
     },
     isCustomizedIOps () {
       return this.rootDiskSelected?.iscustomizediops || false
+    },
+    showKmsKeySelector () {
+      const isRootDisk = this.inputDecorator === 'rootdisksize'
+      const isDataDisk = this.inputDecorator === 'size'
+
+      return (isRootDisk && (this.computeOfferingEncryptRoot || this.rootDiskSelected?.encrypt)) ||
+             (isDataDisk && this.diskSelected?.encrypt)
     }
   },
   data () {
@@ -99,7 +145,8 @@ export default {
       minIOps: null,
       maxIOps: null,
       errorMinIOps: false,
-      errorMaxIOps: false
+      errorMaxIOps: false,
+      selectedKmsKey: null
     }
   },
   mounted () {
@@ -153,6 +200,15 @@ export default {
       this.$emit('update-root-disk-iops-value', 'minIops', this.minIOps)
       this.$emit('update-root-disk-iops-value', 'maxIops', this.maxIOps)
       this.$emit('handler-error', false)
+    },
+    updateKmsKey (value) {
+      // Emit the KMS key ID (or null if cleared)
+      // Use different event names for root vs data disk
+      if (this.inputDecorator === 'rootdisksize') {
+        this.$emit('update-root-kms-key', value)
+      } else if (this.inputDecorator === 'size') {
+        this.$emit('update-data-kms-key', value)
+      }
     }
   }
 }

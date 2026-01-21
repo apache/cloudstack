@@ -49,10 +49,6 @@ public class DeleteKMSKeyCmd extends BaseAsyncCmd implements UserCmd {
     @Inject
     private KMSManager kmsManager;
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
     @Parameter(name = ApiConstants.ID,
                required = true,
                type = CommandType.UUID,
@@ -60,17 +56,9 @@ public class DeleteKMSKeyCmd extends BaseAsyncCmd implements UserCmd {
                description = "The UUID of the KMS key to delete")
     private Long id;
 
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
     public Long getId() {
         return id;
     }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
 
     @Override
     public void execute() {

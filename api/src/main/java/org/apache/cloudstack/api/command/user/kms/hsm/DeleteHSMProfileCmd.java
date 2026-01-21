@@ -39,30 +39,18 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 
 @APICommand(name = "deleteHSMProfile", description = "Deletes an HSM profile", responseObject = SuccessResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.21.0")
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.23.0")
 public class DeleteHSMProfileCmd extends BaseCmd {
 
     @Inject
     private KMSManager kmsManager;
 
-    ////////////////////////////////////////////////=====
-    // API parameters
-    ////////////////////////////////////////////////=====
-
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HSMProfileResponse.class, required = true, description = "the ID of the HSM profile")
     private Long id;
-
-    ////////////////////////////////////////////////=====
-    // Accessors
-    ////////////////////////////////////////////////=====
 
     public Long getId() {
         return id;
     }
-
-    ////////////////////////////////////////////////=====
-    // Implementation
-    ////////////////////////////////////////////////=====
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
