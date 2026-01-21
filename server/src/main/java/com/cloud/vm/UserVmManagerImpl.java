@@ -2954,7 +2954,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         if (vmwareAllowedDetailsFromOva.contains(detailKey)) {
                             continue;
                         }
-                        UserVmDetailVO detailVO = existingDetails.stream().filter(d -> Objects.equals(d.getName(), detailKey)).findFirst().orElse(null);
+                        VMInstanceDetailVO detailVO = existingDetails.stream().filter(d -> Objects.equals(d.getName(), detailKey)).findFirst().orElse(null);
                         if (detailVO != null && ObjectUtils.allNotNull(detailVO.getValue(), details.get(detailKey)) && detailVO.getValue().equals(details.get(detailKey))) {
                             continue;
                         }
