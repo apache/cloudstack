@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.offering.DomainAndZoneIdResolver;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupManager;
@@ -41,11 +42,15 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.LongFunction;
+
 @APICommand(name = "cloneBackupOffering",
         description = "Clones a backup offering from an existing offering",
         responseObject = BackupOfferingResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin})
-public class CloneBackupOfferingCmd extends BaseAsyncCmd {
+public class CloneBackupOfferingCmd extends BaseAsyncCmd implements DomainAndZoneIdResolver {
 
     @Inject
     protected BackupManager backupManager;
@@ -73,6 +78,13 @@ public class CloneBackupOfferingCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ZONE_ID, type = BaseCmd.CommandType.UUID, entityType = ZoneResponse.class,
             description = "The zone ID", required = false)
     private Long zoneId;
+
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+            type = CommandType.STRING,
+            description = "the ID of the containing domain(s) as comma separated string, public for public offerings",
+            since = "4.23.0",
+            length = 4096)
+    private String domainIds;
 
     @Parameter(name = ApiConstants.ALLOW_USER_DRIVEN_BACKUPS, type = BaseCmd.CommandType.BOOLEAN,
             description = "Whether users are allowed to create adhoc backups and backup schedules", required = false)
@@ -104,6 +116,17 @@ public class CloneBackupOfferingCmd extends BaseAsyncCmd {
 
     public Boolean getUserDrivenBackups() {
         return userDrivenBackups;
+    }
+
+    public List<Long> getDomainIds() {
+        if (domainIds != null && !domainIds.isEmpty()) {
+            return Arrays.asList(Arrays.stream(domainIds.split(",")).map(domainId -> Long.parseLong(domainId.trim())).toArray(Long[]::new));
+        }
+        LongFunction<List<Long>> defaultDomainsProvider = null;
+        if (backupManager != null) {
+            defaultDomainsProvider = backupManager::getBackupOfferingDomains;
+        }
+        return resolveDomainIds(domainIds, sourceOfferingId, defaultDomainsProvider, "backup offering");
     }
 
     /////////////////////////////////////////////////////
