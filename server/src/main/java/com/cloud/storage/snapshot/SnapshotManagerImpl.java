@@ -1890,7 +1890,22 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 logger.debug("Failed to delete snapshot in destroying state: {}", snapshotVO);
             }
         }
+        cleanupOrphanSnapshotPolicies();
+
         return true;
+    }
+
+    private void cleanupOrphanSnapshotPolicies() {
+        List<SnapshotPolicyVO> policies = _snapshotPolicyDao.listActivePolicies();
+        if (CollectionUtils.isEmpty(policies)) {
+            return;
+        }
+        for (SnapshotPolicyVO policy : policies) {
+            if (_volsDao.findByIdIncludingRemoved(policy.getVolumeId()) == null) {
+                logger.info("Removing orphan snapshot policy {} for non-existent volume {}", policy.getId(), policy.getVolumeId());
+                deletePolicy(policy.getId());
+            }
+        }
     }
 
     @Override
