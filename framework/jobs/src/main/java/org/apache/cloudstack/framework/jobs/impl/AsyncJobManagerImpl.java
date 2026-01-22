@@ -20,6 +20,7 @@ package org.apache.cloudstack.framework.jobs.impl;
 import static com.cloud.utils.HumanReadableJson.getHumanReadableBytesJson;
 
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -40,8 +41,13 @@ import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotService;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.Cancellable;
+import org.apache.cloudstack.api.CancellableCmd;
+import org.apache.cloudstack.api.command.user.job.CancelAsyncJobCmd;
 import org.apache.cloudstack.command.ReconcileCommandService;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -340,7 +346,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             resultObj = convertHumanReadableJson(obfuscatePassword(resultObject, HidePassword.value()));
             logger.debug("Complete async job-" + jobId + ", jobStatus: " + jobStatus + ", resultCode: " + resultCode + ", result: " + resultObj);
         }
-
 
         final AsyncJobVO job = _jobDao.findById(jobId);
         if (job == null) {
@@ -1428,7 +1433,26 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
         try {
             Class<?> cmdClass = Class.forName(job.getCmd());
-            if (!CancellableCmd.class.isAssignableFrom(cmdClass)) {
+            if (BaseAsyncCmd.class.isAssignableFrom(cmdClass)) {
+                logger.info(cmdClass.getName() + " is a subclass of BaseAsyncCmd");
+                try {
+                    BaseAsyncCmd cmd = (BaseAsyncCmd) cmdClass.getDeclaredConstructor().newInstance();
+                    boolean cmdCancellable = cmd.isCancellable();
+                    if (cmdCancellable) {
+                        logger.info("Cmd: " + cmdClass.getName() + " is cancellable");
+                    }
+                }  catch (NoSuchMethodException e) {
+                    logger.warn("No declared constructor for Cmd: " + cmdClass.getName() + ", not able to check if it is cancellable or not");
+                }
+            }
+
+            boolean cancellable = cmdClass.isAnnotationPresent(Cancellable.class);
+            if (cancellable) {
+                logger.info(cmdClass.getName() + " is cancellable");
+            }
+
+            APICommand apiCommand = cmdClass.getAnnotation(APICommand.class);
+            if (apiCommand == null || !apiCommand.cancellable() || !CancellableCmd.class.isAssignableFrom(cmdClass)) {
                 errMessage = "Cannot cancel, job-" + jobId + " as it is not cancellable.";
                 logger.debug(errMessage);
                 return errMessage;
@@ -1437,6 +1461,12 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             errMessage = "Command " + job.getCmd() + " of jobid-" + jobId + " not found.";
             logger.error(errMessage, e);
             return errMessage;
+        } catch (InvocationTargetException e) {
+            throw new RuntimeException(e);
+        } catch (InstantiationException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
 
         if (job.getStatus() != Status.IN_PROGRESS) {
@@ -1453,7 +1483,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             _jobMonitor.unregisterByJobId(jobId);
 
             // purge the item and resume queue processing
-            _queueMgr.purgeItem(jobId);
+            _queueMgr.purgeAsyncJobQueueItemId(jobId);
             return "";
         } catch (Throwable t) {
             errMessage = "Unexpected exception when cancelling async job with id: " + jobId;

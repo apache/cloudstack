@@ -43,6 +43,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import com.cloud.agent.api.CleanupVMCommand;
@@ -434,6 +435,10 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     protected VirtualRoutingResource _vrResource;
 
+    private final ConcurrentHashMap<Long, ActiveVmTaskInfo> _activeVmTasks = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Set<Long>> _vmNameToTaskSequences = new ConcurrentHashMap<>();
+    private static final ThreadLocal<TaskRegistrationContext> currentTaskContext = new ThreadLocal<>();
+
     protected final static HashMap<VirtualMachinePowerState, PowerState> s_powerStatesTable = new HashMap<>();
 
     static {
@@ -449,6 +454,148 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     public VmwareResource() {
         _gson = GsonHelper.getGsonLogger();
+    }
+
+    public static class ActiveVmTaskInfo {
+        final long cmdSequence;
+        final String vmName;
+        final String commandType;
+        final ManagedObjectReference taskMor;
+        final VmwareContext context;
+        final long startTime;
+
+        ActiveVmTaskInfo(long cmdSequence, String vmName, String commandType,
+                         ManagedObjectReference taskMor, VmwareContext context) {
+            this.cmdSequence = cmdSequence;
+            this.vmName = vmName;
+            this.commandType = commandType;
+            this.taskMor = taskMor;
+            this.context = context;
+            this.startTime = System.currentTimeMillis();
+        }
+    }
+
+    void registerActiveVmTask(long cmdSequence, String vmName, String commandType,
+                                      ManagedObjectReference taskMor, VmwareContext context) {
+        ActiveVmTaskInfo taskInfo = new ActiveVmTaskInfo(cmdSequence, vmName, commandType, taskMor, context);
+        _activeVmTasks.put(cmdSequence, taskInfo);
+
+        _vmNameToTaskSequences.computeIfAbsent(vmName, k -> ConcurrentHashMap.newKeySet()).add(cmdSequence);
+
+        logger.debug("Registered active VM task: sequence={}, vm={}, command={}, task={}",
+                cmdSequence, vmName, commandType, taskMor.getValue());
+    }
+
+    private void unregisterActiveVmTask(long cmdSequence) {
+        ActiveVmTaskInfo taskInfo = _activeVmTasks.remove(cmdSequence);
+        if (taskInfo != null) {
+            Set<Long> sequences = _vmNameToTaskSequences.get(taskInfo.vmName);
+            if (sequences != null) {
+                sequences.remove(cmdSequence);
+                if (sequences.isEmpty()) {
+                    _vmNameToTaskSequences.remove(taskInfo.vmName);
+                }
+            }
+            logger.debug("Unregistered active VM task: sequence={}, vm={}, command={}, duration={}ms",
+                    cmdSequence, taskInfo.vmName, taskInfo.commandType,
+                    System.currentTimeMillis() - taskInfo.startTime);
+        }
+    }
+
+    public int cancelActiveVmTasks(String vmName) {
+        Set<Long> sequences = _vmNameToTaskSequences.get(vmName);
+        if (sequences == null || sequences.isEmpty()) {
+            return 0;
+        }
+
+        int cancelled = 0;
+        for (Long seq : sequences) {
+            if (cancelActiveVmTask(seq)) {
+                cancelled++;
+            }
+        }
+        return cancelled;
+    }
+
+    public boolean cancelActiveVmTask(long cmdSequence) {
+        ActiveVmTaskInfo taskInfo = _activeVmTasks.get(cmdSequence);
+        if (taskInfo == null) {
+            return false;
+        }
+
+        try {
+            // Cancel the vCenter task
+            TaskMO taskMo = new TaskMO(taskInfo.context, taskInfo.taskMor);
+            taskMo.cancelTask();
+            logger.info("Cancelled vCenter task: sequence={}, vm={}, command={}, task={}",
+                    cmdSequence, taskInfo.vmName, taskInfo.commandType, taskInfo.taskMor.getValue());
+
+            // Unregister the task
+            unregisterActiveVmTask(cmdSequence);
+            return true;
+        } catch (Exception e) {
+            logger.warn("Failed to cancel vCenter task: sequence={}, vm={}, error={}",
+                    cmdSequence, taskInfo.vmName, e.getMessage(), e);
+            return false;
+        }
+    }
+
+    public List<ActiveVmTaskInfo> getActiveVmTasks(String vmName) {
+        Set<Long> sequences = _vmNameToTaskSequences.get(vmName);
+        if (sequences == null || sequences.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<ActiveVmTaskInfo> tasks = new ArrayList<>();
+        for (Long seq : sequences) {
+            ActiveVmTaskInfo taskInfo = _activeVmTasks.get(seq);
+            if (taskInfo != null) {
+                tasks.add(taskInfo);
+            }
+        }
+        return tasks;
+    }
+
+    public List<ActiveVmTaskInfo> getAllActiveVmTasks() {
+        return new ArrayList<>(_activeVmTasks.values());
+    }
+
+    public static class TaskRegistrationContext {
+        private final VmwareResource resource;
+        private final long cmdSequence;
+        private final String vmName;
+        private final String commandType;
+
+        public TaskRegistrationContext(VmwareResource resource, long cmdSequence, String vmName, String commandType) {
+            this.resource = resource;
+            this.cmdSequence = cmdSequence;
+            this.vmName = vmName;
+            this.commandType = commandType;
+        }
+
+        public void registerTask(ManagedObjectReference taskMor, VmwareContext context) {
+            if (resource != null) {
+                resource.registerActiveVmTask(cmdSequence, vmName, commandType, taskMor, context);
+            }
+        }
+
+        public void unregisterTask() {
+            if (resource != null) {
+                resource.unregisterActiveVmTask(cmdSequence);
+            }
+        }
+    }
+
+    private void setTaskRegistrationContext(long cmdSequence, String vmName, String commandType) {
+        currentTaskContext.set(new TaskRegistrationContext(this, cmdSequence, vmName, commandType));
+    }
+
+    private void clearTaskRegistrationContext() {
+        currentTaskContext.remove();
+    }
+
+    public static TaskRegistrationContext getCurrentTaskContext() {
+        return currentTaskContext.get();
     }
 
     private String getCommandLogTitle(Command cmd) {
@@ -467,10 +614,20 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     @Override
     public Answer executeRequest(Command cmd) {
+        if (Thread.currentThread().isInterrupted()) {
+            String msg = "Command " + cmd.getClass().getSimpleName() + " was cancelled before execution";
+            logger.warn(msg);
+            return new Answer(cmd, false, msg);
+        }
+
         logCommand(cmd);
         Answer answer;
         ThreadContext.push(getCommandLogTitle(cmd));
         try {
+            if (Thread.currentThread().isInterrupted()) {
+                throw new InterruptedException("Command execution cancelled");
+            }
+
             long cmdSequence = _cmdSequence++;
             Date startTime = DateUtil.currentGMTTime();
             PropertyMapDynamicBean mbean = new PropertyMapDynamicBean();
@@ -499,6 +656,11 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             } else if (clz == CheckHealthCommand.class) {
                 answer = execute((CheckHealthCommand) cmd);
             } else if (clz == StopCommand.class) {
+                String vmName = null;
+                String commandType = cmd.getClass().getSimpleName();
+                vmName = ((StopCommand) cmd).getVmName();
+                setTaskRegistrationContext(cmdSequence, vmName, commandType);
+                VmwareHelper.setTaskContext(cmdSequence, vmName, commandType);
                 answer = execute((StopCommand) cmd);
             } else if (clz == RebootRouterCommand.class) {
                 answer = execute((RebootRouterCommand) cmd);
@@ -509,6 +671,11 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             } else if (clz == PrepareForMigrationCommand.class) {
                 answer = execute((PrepareForMigrationCommand) cmd);
             } else if (clz == MigrateCommand.class) {
+                String vmName = null;
+                String commandType = cmd.getClass().getSimpleName();
+                vmName = ((MigrateCommand) cmd).getVmName();
+                setTaskRegistrationContext(cmdSequence, vmName, commandType);
+                VmwareHelper.setTaskContext(cmdSequence, vmName, commandType);
                 answer = execute((MigrateCommand) cmd);
             } else if (clz == MigrateVmToPoolCommand.class) {
                 answer = execute((MigrateVmToPoolCommand) cmd);
@@ -565,6 +732,11 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             } else if (clz == NetworkUsageCommand.class) {
                 answer = execute((NetworkUsageCommand) cmd);
             } else if (clz == StartCommand.class) {
+                String vmName = null;
+                String commandType = cmd.getClass().getSimpleName();
+                vmName = ((StartCommand) cmd).getVirtualMachine().getName();
+                setTaskRegistrationContext(cmdSequence, vmName, commandType);
+                VmwareHelper.setTaskContext(cmdSequence, vmName, commandType);
                 answer = execute((StartCommand) cmd);
             } else if (clz == CheckSshCommand.class) {
                 answer = execute((CheckSshCommand) cmd);
@@ -647,8 +819,13 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                         logger.trace("Unable to register JMX monitoring due to exception " + ExceptionUtil.toString(e));
                 }
             }
-
+        } catch (InterruptedException e) {
+            logger.warn("Command execution interrupted: " + cmd.getClass().getSimpleName());
+            Thread.currentThread().interrupt(); // Restore interrupt status
+            return new Answer(cmd, false, "Command execution was cancelled: " + e.getMessage());
         } finally {
+            clearTaskRegistrationContext();
+            VmwareHelper.clearTaskContext();
             recycleServiceContext();
             ThreadContext.pop();
         }
@@ -2653,6 +2830,12 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
             return startAnswer;
         } catch (Throwable e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+                logger.warn("StartCommand interrupted");
+                return new StartAnswer(cmd, "StartCommand cancelled: " + e.getMessage());
+            }
+
             StartAnswer startAnswer = new StartAnswer(cmd, createLogMessageException(e, cmd));
             if (vmAlreadyExistsInVcenter) {
                 startAnswer.setContextParam("stopRetry", "true");
@@ -2670,6 +2853,12 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 }
             }
             return startAnswer;
+        }
+    }
+
+    private void checkCancellation() throws InterruptedException {
+        if (Thread.currentThread().isInterrupted()) {
+            throw new InterruptedException("Command cancelled");
         }
     }
 
@@ -6052,6 +6241,12 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     @Override
     public void disconnected() {
+        List<ActiveVmTaskInfo> tasks = getAllActiveVmTasks();
+        for (ActiveVmTaskInfo task : tasks) {
+            cancelActiveVmTask(task.cmdSequence);
+        }
+        _activeVmTasks.clear();
+        _vmNameToTaskSequences.clear();
     }
 
     @Override

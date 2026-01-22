@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.junit.Assert;
 import org.junit.Test;
@@ -127,7 +128,7 @@ public class NASBackupProviderTest {
     private ResourceLimitService resourceLimitMgr;
 
     @Test
-    public void testDeleteBackup() throws OperationTimedoutException, AgentUnavailableException {
+    public void testDeleteBackup() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
         Long hostId = 1L;
         BackupVO backup = new BackupVO();
         backup.setBackupOfferingId(1L);
@@ -153,7 +154,7 @@ public class NASBackupProviderTest {
     }
 
     @Test
-    public void testSyncBackupStorageStats() throws AgentUnavailableException, OperationTimedoutException {
+    public void testSyncBackupStorageStats() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         BackupRepositoryVO backupRepository = new BackupRepositoryVO(1L, "nas", "test-repo",
                 "nfs", "address", "sync", 1024L, null);
 
@@ -204,7 +205,7 @@ public class NASBackupProviderTest {
     }
 
     @Test
-    public void takeBackupSuccessfully() throws AgentUnavailableException, OperationTimedoutException {
+    public void takeBackupSuccessfully() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         Long vmId = 1L;
         Long hostId = 2L;
         Long backupOfferingId = 3L;

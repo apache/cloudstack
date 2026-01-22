@@ -33,7 +33,9 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.Nonnull;
 import javax.xml.datatype.DatatypeConfigurationException;
@@ -46,6 +48,7 @@ import com.cloud.hypervisor.vmware.mo.ClusterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreFile;
 import com.cloud.hypervisor.vmware.mo.DistributedVirtualSwitchMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
+import com.cloud.hypervisor.vmware.mo.TaskMO;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.Volume;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -134,6 +137,146 @@ public class VmwareHelper {
     public static final int MAX_USABLE_SCSI_CONTROLLERS = 2;
     public static final String MIN_VERSION_UEFI_LEGACY = "5.5";
     public static final String MIN_VERSION_VMFS6 = "6.5";
+
+    private static final ConcurrentHashMap<Long, ActiveVmTaskInfo> activeVmTasks = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, Set<Long>> vmNameToTaskSequences = new ConcurrentHashMap<>();
+    private static final ThreadLocal<TaskContext> currentTaskContext = new ThreadLocal<>();
+
+    public static class ActiveVmTaskInfo {
+        final long cmdSequence;
+        final String vmName;
+        final String commandType;
+        final ManagedObjectReference taskMor;
+        final VmwareContext context;
+        final long startTime;
+
+        ActiveVmTaskInfo(long cmdSequence, String vmName, String commandType,
+                         ManagedObjectReference taskMor, VmwareContext context) {
+            this.cmdSequence = cmdSequence;
+            this.vmName = vmName;
+            this.commandType = commandType;
+            this.taskMor = taskMor;
+            this.context = context;
+            this.startTime = System.currentTimeMillis();
+        }
+    }
+
+    private static void registerActiveVmTask(long cmdSequence, String vmName, String commandType,
+                              ManagedObjectReference taskMor, VmwareContext context) {
+        ActiveVmTaskInfo taskInfo = new ActiveVmTaskInfo(cmdSequence, vmName, commandType, taskMor, context);
+        activeVmTasks.put(cmdSequence, taskInfo);
+
+        vmNameToTaskSequences.computeIfAbsent(vmName, k -> ConcurrentHashMap.newKeySet()).add(cmdSequence);
+
+        LOGGER.debug("Registered active VM task: sequence={}, vm={}, command={}, task={}",
+                cmdSequence, vmName, commandType, taskMor.getValue());
+    }
+
+    private static void unregisterActiveVmTask(long cmdSequence) {
+        ActiveVmTaskInfo taskInfo = activeVmTasks.remove(cmdSequence);
+        if (taskInfo != null) {
+            Set<Long> sequences = vmNameToTaskSequences.get(taskInfo.vmName);
+            if (sequences != null) {
+                sequences.remove(cmdSequence);
+                if (sequences.isEmpty()) {
+                    vmNameToTaskSequences.remove(taskInfo.vmName);
+                }
+            }
+            LOGGER.debug("Unregistered active VM task: sequence={}, vm={}, command={}, duration={}ms",
+                    cmdSequence, taskInfo.vmName, taskInfo.commandType,
+                    System.currentTimeMillis() - taskInfo.startTime);
+        }
+    }
+
+    public static int cancelActiveVmTasks(String vmName) {
+        Set<Long> sequences = vmNameToTaskSequences.get(vmName);
+        if (sequences == null || sequences.isEmpty()) {
+            return 0;
+        }
+
+        int cancelled = 0;
+        for (Long seq : sequences) {
+            if (cancelActiveVmTask(seq)) {
+                cancelled++;
+            }
+        }
+        return cancelled;
+    }
+
+    public static boolean cancelActiveVmTask(long cmdSequence) {
+        ActiveVmTaskInfo taskInfo = activeVmTasks.get(cmdSequence);
+        if (taskInfo == null) {
+            return false;
+        }
+
+        try {
+            // Cancel the vCenter task
+            TaskMO taskMo = new TaskMO(taskInfo.context, taskInfo.taskMor);
+            taskMo.cancelTask();
+            LOGGER.info("Cancelled vCenter task: sequence={}, vm={}, command={}, task={}",
+                    cmdSequence, taskInfo.vmName, taskInfo.commandType, taskInfo.taskMor.getValue());
+
+            // Unregister the task
+            unregisterActiveVmTask(cmdSequence);
+            return true;
+        } catch (Exception e) {
+            LOGGER.warn("Failed to cancel vCenter task: sequence={}, vm={}, error={}",
+                    cmdSequence, taskInfo.vmName, e.getMessage(), e);
+            return false;
+        }
+    }
+
+    public static List<ActiveVmTaskInfo> getActiveVmTasks(String vmName) {
+        Set<Long> sequences = vmNameToTaskSequences.get(vmName);
+        if (sequences == null || sequences.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<ActiveVmTaskInfo> tasks = new ArrayList<>();
+        for (Long seq : sequences) {
+            ActiveVmTaskInfo taskInfo = activeVmTasks.get(seq);
+            if (taskInfo != null) {
+                tasks.add(taskInfo);
+            }
+        }
+        return tasks;
+    }
+
+    public static List<ActiveVmTaskInfo> getAllActiveVmTasks() {
+        return new ArrayList<>(activeVmTasks.values());
+    }
+
+    public static class TaskContext {
+        private final long cmdSequence;
+        private final String vmName;
+        private final String commandType;
+
+        public TaskContext(long cmdSequence, String vmName, String commandType) {
+            this.cmdSequence = cmdSequence;
+            this.vmName = vmName;
+            this.commandType = commandType;
+        }
+
+        public void registerTask(ManagedObjectReference taskMor, VmwareContext context) {
+            registerActiveVmTask(cmdSequence, vmName, commandType, taskMor, context);
+        }
+
+        public void unregisterTask() {
+            unregisterActiveVmTask(cmdSequence);
+        }
+    }
+
+    public static void setTaskContext(long cmdSequence, String vmName, String commandType) {
+        currentTaskContext.set(new TaskContext(cmdSequence, vmName, commandType));
+    }
+
+    public static void clearTaskContext() {
+        currentTaskContext.remove();
+    }
+
+    public static TaskContext getCurrentTaskContext() {
+        return currentTaskContext.get();
+    }
 
     public static boolean isReservedScsiDeviceNumber(int deviceNumber) {
         // The SCSI controller is assigned to virtual device node (z:7), so that device node is unavailable for hard disks or SCSI devices.
