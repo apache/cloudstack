@@ -348,17 +348,17 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         for (VMInstanceVO vm : reorderedVMList) {
             if (_itMgr.isRootVolumeOnLocalStorage(vm.getId())) {
                 if (logger.isDebugEnabled()){
-                    logger.debug("Skipping HA on vm " + vm + ", because it uses local storage. Its fate is tied to the host.");
+                    logger.debug("Skipping HA on Instance " + vm + ", because it uses local storage. Its fate is tied to the host.");
                 }
                 continue;
             }
             if (logger.isDebugEnabled()) {
-                logger.debug("Notifying HA Mgr of to restart vm {}", vm);
+                logger.debug("Notifying HA Mgr of to restart Instance {}", vm);
             }
             vm = _instanceDao.findByUuid(vm.getUuid());
             Long hostId = vm.getHostId();
             if (hostId != null && !hostId.equals(host.getId())) {
-                logger.debug("VM {} is not on down host {} it is on other host {} VM HA is done", vm, host, hostId);
+                logger.debug("Instance {} is not on down host {} it is on other host {} Instance HA is done", vm, host, hostId);
                 continue;
             }
             scheduleRestart(vm, investigate, reasonType);

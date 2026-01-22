@@ -169,13 +169,13 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
             deleteExpiredVMSnapshots();
         }
         catch (Exception e) {
-            logger.warn("Error in expiring vm snapshots", e);
+            logger.warn("Error in expiring Instance Snapshots", e);
         }
     }
 
     private void scheduleNextSnapshotJobsIfNecessary() {
         List<SnapshotScheduleVO> snapshotSchedules = _snapshotScheduleDao.getSchedulesAssignedWithAsyncJob();
-        logger.info("Verifying the current state of [{}] snapshot schedules and scheduling next jobs, if necessary.", snapshotSchedules.size());
+        logger.info("Verifying the current state of [{}] Snapshot schedules and scheduling next jobs, if necessary.", snapshotSchedules.size());
         for (SnapshotScheduleVO snapshotSchedule : snapshotSchedules) {
             scheduleNextSnapshotJobIfNecessary(snapshotSchedule);
         }
@@ -220,7 +220,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
             long diffInHours = TimeUnit.MILLISECONDS.toHours(now.getTime() - creationTime.getTime());
             if (diffInHours >= expiration_interval_hours) {
                 if (logger.isDebugEnabled()){
-                    logger.debug("Deleting expired VM snapshot: {}", vmSnapshot);
+                    logger.debug("Deleting expired Instance Snapshot: {}", vmSnapshot);
                 }
                 _vmSnaphostManager.deleteVMSnapshot(vmSnapshot.getId());
             }
