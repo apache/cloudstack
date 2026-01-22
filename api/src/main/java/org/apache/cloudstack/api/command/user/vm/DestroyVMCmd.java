@@ -142,6 +142,10 @@ public class DestroyVMCmd extends BaseAsyncCmd implements UserCmd, CancellableCm
         return getId();
     }
 
+    public boolean isCancellable() {
+        return true;
+    }
+
     @Override
     public void execute() throws ResourceUnavailableException, ConcurrentOperationException {
         CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.ID));

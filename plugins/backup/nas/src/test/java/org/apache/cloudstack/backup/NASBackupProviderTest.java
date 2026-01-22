@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.junit.Assert;
 import org.junit.Test;
@@ -131,7 +132,7 @@ public class NASBackupProviderTest {
     private AlertManager alertManager;
 
     @Test
-    public void testDeleteBackup() throws OperationTimedoutException, AgentUnavailableException {
+    public void testDeleteBackup() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
         Long hostId = 1L;
         BackupVO backup = new BackupVO();
         backup.setBackupOfferingId(1L);
@@ -157,7 +158,7 @@ public class NASBackupProviderTest {
     }
 
     @Test
-    public void testSyncBackupStorageStats() throws AgentUnavailableException, OperationTimedoutException {
+    public void testSyncBackupStorageStats() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         BackupRepositoryVO backupRepository = new BackupRepositoryVO(1L, "nas", "test-repo",
                 "nfs", "address", "sync", 1024L, null);
 
@@ -241,7 +242,7 @@ public class NASBackupProviderTest {
     }
 
     @Test
-    public void takeBackupSuccessfully() throws AgentUnavailableException, OperationTimedoutException {
+    public void takeBackupSuccessfully() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         Long backupOfferingId = 3L;
         Long accountId = 4L;
         Long domainId = 5L;
@@ -276,7 +277,7 @@ public class NASBackupProviderTest {
     }
 
     @Test
-    public void takeBackupFailureNeedingCleanupReturnsErrorBackup() throws AgentUnavailableException, OperationTimedoutException {
+    public void takeBackupFailureNeedingCleanupReturnsErrorBackup() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         VMInstanceVO vm = mockRunningVmForBackup(1L, 2L, 3L, 4L, 5L, 6L);
         HostVO host = hostDao.findById(2L);
         Mockito.when(host.getName()).thenReturn("kvm01");
@@ -311,7 +312,7 @@ public class NASBackupProviderTest {
     }
 
     @Test
-    public void takeBackupFailureWithoutCleanupRemovesBackup() throws AgentUnavailableException, OperationTimedoutException {
+    public void takeBackupFailureWithoutCleanupRemovesBackup() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         VMInstanceVO vm = mockRunningVmForBackup(1L, 2L, 3L, 4L, 5L, 6L);
 
         BackupAnswer answer = mock(BackupAnswer.class);

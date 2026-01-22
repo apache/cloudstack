@@ -29,6 +29,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.exception.OperationCancelledException;
 import org.apache.cloudstack.api.AddBaremetalKickStartPxeCmd;
 import org.apache.cloudstack.api.AddBaremetalPxeCmd;
 import org.apache.cloudstack.api.ListBaremetalPxeServersCmd;
@@ -173,7 +174,7 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
         return keyFile;
     }
 
-    private boolean preparePxeInBasicZone(VirtualMachineProfile profile, NicProfile nic, DeployDestination dest, ReservationContext context) throws AgentUnavailableException, OperationTimedoutException {
+    private boolean preparePxeInBasicZone(VirtualMachineProfile profile, NicProfile nic, DeployDestination dest, ReservationContext context) throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         NetworkVO nwVO = _nwDao.findById(nic.getNetworkId());
         QueryBuilder<BaremetalPxeVO> sc = QueryBuilder.create(BaremetalPxeVO.class);
         sc.and(sc.entity().getDeviceType(), Op.EQ, BaremetalPxeType.KICK_START.toString());
