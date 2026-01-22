@@ -201,12 +201,16 @@ public class VnfTemplateManagerImpl extends ManagerBase implements VnfTemplateMa
     }
 
     @Override
-    public void validateVnfApplianceNics(VirtualMachineTemplate template, List<Long> networkIds) {
+    public void validateVnfApplianceNics(VirtualMachineTemplate template, List<Long> networkIds, Map<Integer, Long> vmNetworkMap) {
+        if (template.isDeployAsIs()) {
+            if (CollectionUtils.isNotEmpty(networkIds)) {
+                throw new InvalidParameterValueException("VNF nics mappings should be empty for deploy-as-is templates");
+            }
+            validateVnfApplianceNetworksMap(template, vmNetworkMap);
+            return;
+        }
         if (CollectionUtils.isEmpty(networkIds)) {
             throw new InvalidParameterValueException("VNF nics list is empty");
-        }
-        if (CollectionUtils.isNotEmpty(networkIds) && template.isDeployAsIs()) {
-            throw new InvalidParameterValueException("VNF nics list should be empty for deploy-as-is templates");
         }
         List<VnfTemplateNicVO> vnfNics = vnfTemplateNicDao.listByTemplateId(template.getId());
         for (VnfTemplateNicVO vnfNic : vnfNics) {
@@ -216,8 +220,7 @@ public class VnfTemplateManagerImpl extends ManagerBase implements VnfTemplateMa
         }
     }
 
-    @Override
-    public void validateVnfApplianceNetworksMap(VirtualMachineTemplate template, Map<Integer, Long> vmNetworkMap) {
+    private void validateVnfApplianceNetworksMap(VirtualMachineTemplate template, Map<Integer, Long> vmNetworkMap) {
         if (MapUtils.isEmpty(vmNetworkMap)) {
             throw new InvalidParameterValueException("VNF networks map is empty");
         }
