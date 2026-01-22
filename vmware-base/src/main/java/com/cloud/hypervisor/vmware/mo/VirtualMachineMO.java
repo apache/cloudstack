@@ -226,6 +226,17 @@ public class VirtualMachineMO extends BaseMO {
             return true;
 
         ManagedObjectReference morTask = _context.getService().powerOnVMTask(_mor, null);
+
+//        VmwareResource.TaskRegistrationContext taskCtx = VmwareResource.getCurrentTaskContext();
+//        if (taskCtx != null) {
+//            taskCtx.registerTask(morTask, _context);
+//        }
+
+        VmwareHelper.TaskContext taskCtx = VmwareHelper.getCurrentTaskContext();
+        if (taskCtx != null) {
+            taskCtx.registerTask(morTask, _context);
+        }
+
         // Monitor VM questions
         final Boolean[] flags = {false};
         final VirtualMachineMO vmMo = this;
@@ -293,9 +304,27 @@ public class VirtualMachineMO extends BaseMO {
             } else {
                 logger.error("VMware powerOnVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
             }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.warn("powerOn interrupted for VM: " + getVmName() + ", cancelling task");
+            try {
+                _context.getVimClient().cancelTask(morTask);
+            } catch (Exception ex) {
+                logger.warn("Failed to cancel powerOn task: " + ex.getMessage());
+            }
+            throw e;
         } finally {
+//            if (taskCtx != null) {
+//                taskCtx.unregisterTask();
+//            }
+            if (taskCtx != null) {
+                taskCtx.unregisterTask();
+            }
             // make sure to let VM question monitor exit
             flags[0] = true;
+            if (future != null) {
+                future.cancel(true);
+            }
         }
 
         return false;
@@ -346,9 +375,10 @@ public class VirtualMachineMO extends BaseMO {
     private boolean powerOffNoCheck() throws Exception {
         ManagedObjectReference morTask = _context.getService().powerOffVMTask(_mor);
 
-        boolean result = _context.getVimClient().waitForTask(morTask);
-        if (result) {
-            _context.waitForTaskProgressDone(morTask);
+        try {
+            boolean result = _context.getVimClient().waitForTask(morTask);
+            if (result) {
+                _context.waitForTaskProgressDone(morTask);
 
             // It seems that even if a power-off task is returned done, VM state may still not be marked,
             // wait up to 5 seconds to make sure to avoid race conditioning for immediate following on operations
@@ -369,10 +399,20 @@ public class VirtualMachineMO extends BaseMO {
                 return true;
             }
 
-            logger.error("VMware powerOffVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
-        }
+                logger.error("VMware powerOffVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            }
 
-        return false;
+            return false;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.warn("powerOff interrupted for VM: " + getVmName() + ", cancelling task");
+            try {
+                _context.getVimClient().cancelTask(morTask);
+            } catch (Exception ex) {
+                logger.warn("Failed to cancel powerOff task: " + ex.getMessage());
+            }
+            throw e;
+        }
     }
 
     public VirtualMachinePowerState getResetSafePowerState() throws Exception {
@@ -443,15 +483,26 @@ public class VirtualMachineMO extends BaseMO {
     public boolean migrate(ManagedObjectReference morRp, ManagedObjectReference morTargetHost) throws Exception {
         ManagedObjectReference morTask = _context.getService().migrateVMTask(_mor, morRp, morTargetHost, VirtualMachineMovePriority.DEFAULT_PRIORITY, null);
 
-        boolean result = _context.getVimClient().waitForTask(morTask);
-        if (result) {
-            _context.waitForTaskProgressDone(morTask);
-            return true;
-        } else {
-            logger.error("VMware migrateVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
-        }
+        try {
+            boolean result = _context.getVimClient().waitForTask(morTask);
+            if (result) {
+                _context.waitForTaskProgressDone(morTask);
+                return true;
+            } else {
+                logger.error("VMware migrateVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            }
 
-        return false;
+            return false;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.warn("migrate interrupted for VM: " + getVmName() + ", cancelling task");
+            try {
+                _context.getVimClient().cancelTask(morTask);
+            } catch (Exception ex) {
+                logger.warn("Failed to cancel migrate task: " + ex.getMessage());
+            }
+            throw e;
+        }
     }
 
     public boolean changeDatastore(VirtualMachineRelocateSpec relocateSpec) throws Exception {
