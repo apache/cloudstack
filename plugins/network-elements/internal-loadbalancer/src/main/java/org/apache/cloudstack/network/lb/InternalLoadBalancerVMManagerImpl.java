@@ -36,6 +36,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.OperationCancelledException;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -973,6 +974,9 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
             answers = _agentMgr.send(internalLbVm.getHostId(), cmds);
         } catch (final OperationTimedoutException e) {
             logger.warn("Timed Out", e);
+            throw new AgentUnavailableException("Unable to send commands to virtual router ", internalLbVm.getHostId(), e);
+        } catch (final OperationCancelledException e) {
+            logger.warn("Cancelled", e);
             throw new AgentUnavailableException("Unable to send commands to virtual router ", internalLbVm.getHostId(), e);
         }
 

@@ -48,6 +48,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.OperationCancelledException;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
@@ -1956,6 +1957,10 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             result.put(ApiConstants.DETAILS, msg);
         } catch (OperationTimedoutException e) {
             String msg = "Running custom action timed out, please try again";
+            logger.error(msg, e);
+            result.put(ApiConstants.DETAILS, msg);
+        } catch (OperationCancelledException e) {
+            String msg = "Running custom action cancelled";
             logger.error(msg, e);
             result.put(ApiConstants.DETAILS, msg);
         }

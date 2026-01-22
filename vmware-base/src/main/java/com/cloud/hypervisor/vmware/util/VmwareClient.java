@@ -37,6 +37,7 @@ import javax.xml.ws.handler.HandlerResolver;
 import javax.xml.ws.handler.PortInfo;
 
 
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
 
@@ -415,10 +416,39 @@ public class VmwareClient {
 
         boolean retVal = false;
 
+        if (Thread.currentThread().isInterrupted()) {
+            Thread.currentThread().interrupt(); // Restore interrupt status
+            try {
+                cancelTask(task);
+            } catch (Exception e) {
+                LOGGER.warn("Failed to cancel task on interruption: " + task.getValue(), e);
+            }
+            throw new InterruptedException("Task wait cancelled for task: " + task.getValue());
+//            boolean cancellable = false;
+//            try {
+//                cancellable = isTaskCancelable(task);
+//            } catch (Exception e) {
+//                LOGGER.warn("Failed to check if task is cancelable: " + task.getValue(), e);
+//            }
+//
+//            if (cancellable) {
+//                try {
+//                    cancelTask(task);
+//                    LOGGER.info("Cancelled cancelable task on interruption: " + task.getValue());
+//                } catch (Exception e) {
+//                    LOGGER.warn("Failed to cancel task on interruption: " + task.getValue(), e);
+//                }
+//                throw new InterruptedException("Task wait cancelled for task: " + task.getValue());
+//            } else {
+//                LOGGER.warn("Task " + task.getValue() + " is not cancelable, continuing execution despite interruption");
+//                Thread.interrupted();
+//            }
+        }
+
         try {
             // info has a property - state for state of the task
             Object[] result = waitForValues(task, new String[] { "info.state", "info.error" }, new String[] { "state" }, new Object[][] { new Object[] {
-                    TaskInfoState.SUCCESS, TaskInfoState.ERROR } });
+                    TaskInfoState.SUCCESS, TaskInfoState.ERROR }}, false);
 
             if (result != null && result.length == 2) { //result for 2 properties: info.state, info.error
                 if (result[0].equals(TaskInfoState.SUCCESS)) {
@@ -442,7 +472,7 @@ public class VmwareClient {
 
             // Since task cancellation is asynchronous, wait for the task to be cancelled
             Object[] result = waitForValues(task, new String[] {"info.state", "info.error"}, new String[] {"state"},
-                    new Object[][] {new Object[] {TaskInfoState.SUCCESS, TaskInfoState.ERROR}});
+                    new Object[][] {new Object[] {TaskInfoState.SUCCESS, TaskInfoState.ERROR}}, false);
 
             if (result != null && result.length == 2) { //result for 2 properties: info.state, info.error
                 if (result[0].equals(TaskInfoState.SUCCESS)) {
@@ -482,8 +512,8 @@ public class VmwareClient {
      * @throws InvalidPropertyFaultMsg
      * @throws InvalidCollectorVersionFaultMsg
      */
-    private synchronized Object[] waitForValues(ManagedObjectReference objmor, String[] filterProps, String[] endWaitProps, Object[][] expectedVals) throws InvalidPropertyFaultMsg,
-    RuntimeFaultFaultMsg, InvalidCollectorVersionFaultMsg {
+    private synchronized Object[] waitForValues(ManagedObjectReference objmor, String[] filterProps, String[] endWaitProps, Object[][] expectedVals, boolean isCancelTask) throws InvalidPropertyFaultMsg,
+            RuntimeFaultFaultMsg, InvalidCollectorVersionFaultMsg, InterruptedException {
         // version string is initially null
         String version = "";
         Object[] endVals = new Object[endWaitProps.length];
@@ -511,6 +541,22 @@ public class VmwareClient {
         List<ObjectUpdate> objupary = null;
         List<PropertyChange> propchgary = null;
         while (!reached) {
+            if (!isCancelTask && Thread.currentThread().isInterrupted()) {
+                try {
+                    vimPort.destroyPropertyFilter(filterSpecRef);
+                } catch (Exception e) {
+                    LOGGER.warn("Failed to destroy property filter on interruption: " + e.getMessage());
+                }
+                Thread.currentThread().interrupt();
+                if (objmor.getType().equals("Task")) {
+                    try {
+                        cancelTask(objmor);
+                    } catch (Exception e) {
+                        LOGGER.warn("Failed to cancel task on interruption: " + objmor.getValue(), e);
+                    }
+                }
+                throw new InterruptedException("Task wait cancelled for object: " + objmor.getValue());
+            }
             updateset = vimPort.waitForUpdatesEx(propertyCollector, version, new WaitOptions());
             if (updateset == null || updateset.getFilterSet() == null) {
                 continue;
@@ -780,11 +826,32 @@ public class VmwareClient {
         return vCenterSessionTimeout;
     }
 
-    public void cancelTask(ManagedObjectReference task) throws Exception {
+    public boolean isTaskCancelable(ManagedObjectReference task) throws Exception {
+        TaskInfo info = (TaskInfo)(getDynamicProperty(task, "info"));
+        if (info == null) {
+            LOGGER.warn("Unable to get the task info for task: " + task.getValue());
+            return false;
+        }
+
+        // Task must be in a pending state and be cancelable
+        TaskInfoState state = info.getState();
+        if (state == null) {
+            return false;
+        }
+
+        // Only pending tasks can be cancelled
+        if (state.equals(TaskInfoState.SUCCESS) || state.equals(TaskInfoState.ERROR)) {
+            return false;
+        }
+
+        return info.isCancelable();
+    }
+
+    public Pair<Boolean, String> cancelTask(ManagedObjectReference task) throws Exception {
         TaskInfo info = (TaskInfo)(getDynamicProperty(task, "info"));
         if (info == null) {
             LOGGER.warn("Unable to get the task info, so couldn't cancel the task");
-            return;
+            return new Pair<>(false, "Unable to get the task info, so couldn't cancel the task");
         }
 
         String taskName = StringUtils.isNotBlank(info.getName()) ? info.getName() : "Unknown";
@@ -794,18 +861,18 @@ public class VmwareClient {
 
         if (info.getState().equals(TaskInfoState.SUCCESS)) {
             LOGGER.debug(taskName + " task successfully completed for the entity " + entityName + ", can't cancel it");
-            return;
+            return new Pair<>(false, "Task successfully completed for the entity " + entityName);
         }
 
         if (info.getState().equals(TaskInfoState.ERROR)) {
             LOGGER.debug(taskName + " task execution failed for the entity " + entityName + ", can't cancel it");
-            return;
+            return new Pair<>(false, "Task execution failed for the entity " + entityName);
         }
 
         LOGGER.debug(taskName + " task pending for the entity " + entityName + ", trying to cancel");
         if (!info.isCancelable()) {
             LOGGER.warn(taskName + " task will continue to run on vCenter because it can't be cancelled");
-            return;
+            return new Pair<>(false, "Task will continue to run because it can't be cancelled" + entityName);
         }
 
         LOGGER.debug("Cancelling task " + taskName + " of the entity " + entityName);
@@ -813,21 +880,24 @@ public class VmwareClient {
 
         // Since task cancellation is asynchronous, wait for the task to be cancelled
         Object[] result = waitForValues(task, new String[] {"info.state", "info.error"}, new String[] {"state"},
-                new Object[][] {new Object[] {TaskInfoState.SUCCESS, TaskInfoState.ERROR}});
+                new Object[][] {new Object[] {TaskInfoState.SUCCESS, TaskInfoState.ERROR}}, true);
 
         if (result != null && result.length == 2) { //result for 2 properties: info.state, info.error
             if (result[0].equals(TaskInfoState.SUCCESS)) {
                 LOGGER.warn("Failed to cancel" + taskName + " task of the entity " + entityName + ", the task successfully completed");
+                return new Pair<>(false, "Task successfully completed for the entity " + entityName);
             }
 
             if (result[1] instanceof LocalizedMethodFault) {
                 MethodFault fault = ((LocalizedMethodFault)result[1]).getFault();
                 if (fault instanceof RequestCanceled) {
                     LOGGER.debug(taskName + " task of the entity " + entityName + " was successfully cancelled");
+                    return new Pair<>(true, "Successfully cancelled");
                 }
             } else {
                 LOGGER.warn("Couldn't cancel " + taskName + " task of the entity " + entityName + " due to " + ((LocalizedMethodFault)result[1]).getLocalizedMessage());
             }
         }
+        return new Pair<>(false, "Unable to cancel " + taskName + " of the entity " + entityName);
     }
 }
