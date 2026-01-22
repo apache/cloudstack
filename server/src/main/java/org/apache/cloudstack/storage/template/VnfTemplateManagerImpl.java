@@ -226,7 +226,7 @@ public class VnfTemplateManagerImpl extends ManagerBase implements VnfTemplateMa
         }
         List<VnfTemplateNicVO> vnfNics = vnfTemplateNicDao.listByTemplateId(template.getId());
         for (VnfTemplateNicVO vnfNic : vnfNics) {
-            if (vnfNic.isRequired() && !vmNetworkMap.containsKey(vnfNic.getDeviceId())) {
+            if (vnfNic.isRequired() && vmNetworkMap.size() <= vnfNic.getDeviceId()) {
                 throw new InvalidParameterValueException("VNF nic is required but not found: " + vnfNic);
             }
         }
