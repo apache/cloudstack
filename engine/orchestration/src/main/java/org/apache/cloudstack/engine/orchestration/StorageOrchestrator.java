@@ -638,36 +638,6 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         }
     }
 
-    private class CopyTemplateTask implements Callable<TemplateApiResult> {
-        private TemplateInfo sourceTmpl;
-        private DataStore destStore;
-        private String logid;
-
-        public CopyTemplateTask(TemplateInfo sourceTmpl, DataStore destStore) {
-            this.sourceTmpl = sourceTmpl;
-            this.destStore = destStore;
-            this.logid = ThreadContext.get(LOGCONTEXTID);
-        }
-
-        @Override
-        public TemplateApiResult call() {
-            ThreadContext.put(LOGCONTEXTID, logid);
-            TemplateApiResult result;
-            AsyncCallFuture<TemplateApiResult> future = templateService.copyTemplateToImageStore(sourceTmpl, destStore);
-            try {
-                result = future.get();
-            } catch (ExecutionException | InterruptedException e) {
-                logger.warn("Exception while copying template [{}] from image store [{}] to image store [{}]: {}",
-                        sourceTmpl.getUniqueName(), sourceTmpl.getDataStore().getName(), destStore.getName(), e.toString());
-                result = new TemplateApiResult(sourceTmpl);
-                result.setResult(e.getMessage());
-            }
-            tryCleaningUpExecutor(destStore.getScope().getScopeId());
-            ThreadContext.clearAll();
-            return result;
-        }
-    }
-
     private class CopyTemplateFromSecondaryStorageTask implements Callable<TemplateApiResult> {
         private final long srcTemplateId;
         private final DataStore destStore;

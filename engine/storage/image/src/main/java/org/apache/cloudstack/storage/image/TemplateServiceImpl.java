@@ -69,6 +69,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -665,7 +666,7 @@ public class TemplateServiceImpl implements TemplateService {
             List<DataStore> storesInOtherZone = _storeMgr.getImageStoresByZoneIds(otherZoneId);
             logger.debug("Checking zone [{}] for template [{}]...", otherZoneId, tmplt.getUniqueName());
 
-            if (storesInOtherZone == null || storesInOtherZone.isEmpty()) {
+            if (CollectionUtils.isEmpty(storesInOtherZone)) {
                 logger.debug("Zone [{}] has no image stores. Skipping.", otherZoneId);
                 continue;
             }
