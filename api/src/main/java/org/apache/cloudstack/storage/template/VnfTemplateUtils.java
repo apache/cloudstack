@@ -126,7 +126,7 @@ public class VnfTemplateUtils {
         if (cmd instanceof RegisterVnfTemplateCmd) {
             RegisterVnfTemplateCmd registerCmd = (RegisterVnfTemplateCmd) cmd;
             if (registerCmd.isDeployAsIs() && CollectionUtils.isNotEmpty(registerCmd.getVnfNics())) {
-                throw new InvalidParameterValueException("VNF Template cannot be registered with VNF nics as Template settings are read from OVA.");
+                throw new InvalidParameterValueException("VNF nics cannot be specified when register a deploy-as-is Template. Please wait until Template settings are read from OVA.");
             }
             validateApiCommandParams(registerCmd.getVnfDetails(), registerCmd.getVnfNics(), registerCmd.getTemplateType());
         } else if (cmd instanceof UpdateVnfTemplateCmd) {
