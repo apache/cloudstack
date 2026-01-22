@@ -335,7 +335,7 @@ export default {
     },
     confirmDeleteDomain () {
       const domain = this.deleteDomainResource
-      const params = { id: domain.id }
+      const params = { id: domain.id, cleanup: true }
 
       api('deleteDomain', params).then(json => {
         const jobId = json.deletedomainresponse.jobid
