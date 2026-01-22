@@ -6127,7 +6127,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Unable to use template " + templateId);
         }
         if (TemplateType.VNF.equals(template.getTemplateType())) {
-            vnfTemplateManager.validateVnfApplianceNics(template, cmd.getNetworkIds());
+            if (template.isDeployAsIs()) {
+                vnfTemplateManager.validateVnfApplianceNetworksMap(template, cmd.getVmNetworkMap());
+            } else {
+                vnfTemplateManager.validateVnfApplianceNics(template, cmd.getNetworkIds());
+            }
         } else if (cmd instanceof DeployVnfApplianceCmd) {
             throw new InvalidParameterValueException("Can't deploy VNF appliance from a non-VNF template");
         }

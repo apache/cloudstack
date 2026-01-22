@@ -23,6 +23,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.configuration.Resource;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InvalidParameterValueException;
@@ -204,6 +205,8 @@ public class TemplateManagerImplTest {
     AccountManager _accountMgr;
     @Inject
     VnfTemplateManager vnfTemplateManager;
+    @Inject
+    TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao;
 
     @Inject
     HeuristicRuleHelper heuristicRuleHelperMock;
@@ -954,6 +957,11 @@ public class TemplateManagerImplTest {
         @Bean
         public VnfTemplateManager vnfTemplateManager() {
             return Mockito.mock(VnfTemplateManager.class);
+        }
+
+        @Bean
+        public TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao() {
+            return Mockito.mock(TemplateDeployAsIsDetailsDao.class);
         }
 
         @Bean

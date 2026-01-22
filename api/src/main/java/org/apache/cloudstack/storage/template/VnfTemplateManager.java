@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.command.user.template.UpdateVnfTemplateCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVnfApplianceCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import java.util.List;
+import java.util.Map;
 
 public interface VnfTemplateManager {
 
@@ -44,9 +45,12 @@ public interface VnfTemplateManager {
 
     void validateVnfApplianceNics(VirtualMachineTemplate template, List<Long> networkIds);
 
+    void validateVnfApplianceNetworksMap(VirtualMachineTemplate template, Map<Integer, Long> vmNetworkMap);
+
     SecurityGroup createSecurityGroupForVnfAppliance(DataCenter zone, VirtualMachineTemplate template, Account owner, DeployVnfApplianceCmd cmd);
 
     void createIsolatedNetworkRulesForVnfAppliance(DataCenter zone, VirtualMachineTemplate template, Account owner,
                                                    UserVm vm, DeployVnfApplianceCmd cmd)
             throws InsufficientAddressCapacityException, ResourceAllocationException, ResourceUnavailableException;
+
 }
