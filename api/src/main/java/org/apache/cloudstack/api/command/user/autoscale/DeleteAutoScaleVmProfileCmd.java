@@ -79,7 +79,7 @@ public class DeleteAutoScaleVmProfileCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting autoscale Instance profile with ID: " + getResourceUuid(ApiConstants.ID);
+        return "Deleting AutoScale Instance profile with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

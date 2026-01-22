@@ -76,7 +76,7 @@ public class DestroySystemVmCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Destroying system Instance with ID: " + getResourceUuid(ApiConstants.ID);
+        return "Destroying System VM with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -98,7 +98,7 @@ public class DestroySystemVmCmd extends BaseAsyncCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Fail to destroy system vm");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to destroy System VM");
         }
     }
 }

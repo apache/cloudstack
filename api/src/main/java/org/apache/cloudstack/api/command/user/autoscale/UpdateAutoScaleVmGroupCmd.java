@@ -151,7 +151,7 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public String getEventDescription() {
-        return "Updating AutoScale Instance Group. Instance Group Id: " + getId();
+        return "Updating AutoScale Instance Group with ID: " + getId();
     }
 
     @Override

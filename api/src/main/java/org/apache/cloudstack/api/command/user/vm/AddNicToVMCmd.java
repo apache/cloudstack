@@ -121,7 +121,7 @@ public class AddNicToVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return "Adding NIC on network " + getResourceUuid(ApiConstants.NETWORK_ID) + " to User Instance: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID);
+        return "Adding NIC on Network " + getResourceUuid(ApiConstants.NETWORK_ID) + " to User Instance: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID);
     }
 
     @Override

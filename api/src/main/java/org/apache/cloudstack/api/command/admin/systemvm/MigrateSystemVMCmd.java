@@ -120,7 +120,7 @@ public class MigrateSystemVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Attempting to migrate Instance with ID: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID) + " to host with ID: " + getResourceUuid(ApiConstants.HOST_ID);
+        return "Attempting to migrate System VM with ID: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID) + " to host with ID: " + getResourceUuid(ApiConstants.HOST_ID);
     }
 
     @Override

@@ -100,6 +100,6 @@ public class DeleteConditionCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting auto scaling condition with ID: " + getResourceUuid(ApiConstants.ID);
+        return "Deleting AutoScale condition with ID: " + getResourceUuid(ApiConstants.ID);
     }
 }

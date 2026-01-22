@@ -136,7 +136,7 @@ public class CopyTemplateCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        String description = "Copying template: " + getResourceUuid(ApiConstants.ID);
+        String description = "Copying Template: " + getResourceUuid(ApiConstants.ID);
 
         if (getSourceZoneId() != null) {
             description += " from zone: " + getResourceUuid(ApiConstants.SOURCE_ZONE_ID);

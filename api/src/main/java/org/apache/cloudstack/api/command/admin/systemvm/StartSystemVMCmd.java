@@ -87,7 +87,7 @@ public class StartSystemVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Starting system VM with ID: " + getResourceUuid(ApiConstants.ID);
+        return "Starting System VM with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

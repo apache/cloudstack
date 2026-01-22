@@ -79,7 +79,7 @@ public class StopRouterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Stopping router with ID: " + getResourceUuid(ApiConstants.ID);
+        return "Stopping virtual router with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

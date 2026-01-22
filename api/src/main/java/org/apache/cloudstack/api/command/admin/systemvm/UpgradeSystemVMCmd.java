@@ -100,7 +100,7 @@ public class UpgradeSystemVMCmd extends BaseCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Fail to reboot system vm");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to reboot System VM");
         }
     }
 }

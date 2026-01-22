@@ -190,7 +190,7 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public String getEventDescription() {
-        return "Updating AutoScale Instance Profile. Instance Profile Id: " + getId();
+        return "Updating AutoScale Instance Profile with ID: " + getId();
     }
 
     @Override
