@@ -19,8 +19,8 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import org.apache.cloudstack.backup.CreateImageTransferAnswer;
 import org.apache.cloudstack.backup.CreateImageTransferCommand;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
@@ -31,27 +31,31 @@ import com.cloud.resource.ResourceWrapper;
 public class LibvirtCreateImageTransferCommandWrapper extends CommandWrapper<CreateImageTransferCommand, Answer, LibvirtComputingResource> {
     protected Logger logger = LogManager.getLogger(getClass());
 
-    @Override
-    public Answer execute(CreateImageTransferCommand cmd, LibvirtComputingResource resource) {
-        String deviceName = cmd.getDeviceName();
+    private CreateImageTransferAnswer handleUpload(CreateImageTransferCommand cmd) {
+        return new CreateImageTransferAnswer(cmd, false, "Image Upload is not handled by KVM agent");
+    }
+
+    private CreateImageTransferAnswer handleDownload(CreateImageTransferCommand cmd) {
+        String exportName = cmd.getExportName();
         int nbdPort = cmd.getNbdPort();
-
         try {
-            // POC: ImageIO interaction is stubbed out
-            // In production, this would:
-            // 1. Register NBD endpoint nbd://127.0.0.1:{nbdPort}/{deviceName} with ImageIO
-            // 2. Create transfer object in ImageIO
-            // 3. Get signed ticket and transfer URL
-
             String hostIpAddress = cmd.getHostIpAddress();
-            String transferUrl = String.format("nbd://%s:%d/%s", hostIpAddress, nbdPort, deviceName);
-            String phase = "initializing";
+            String transferUrl = String.format("nbd://%s:%d/%s", hostIpAddress, nbdPort, exportName);
 
-            return new CreateImageTransferAnswer(cmd, true, "Image transfer created (stub)",
-                cmd.getTransferId(), transferUrl, phase);
+            return new CreateImageTransferAnswer(cmd, true, "Image transfer created for download",
+                    cmd.getTransferId(), transferUrl);
 
         } catch (Exception e) {
             return new CreateImageTransferAnswer(cmd, false, "Error creating image transfer: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Answer execute(CreateImageTransferCommand cmd, LibvirtComputingResource resource) {
+        if (cmd.getDirection().equals("download")) {
+            return handleDownload(cmd);
+        } else {
+            return handleUpload(cmd);
         }
     }
 }

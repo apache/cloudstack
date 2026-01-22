@@ -15,16 +15,38 @@
 //specific language governing permissions and limitations
 //under the License.
 
-package org.apache.cloudstack.backup.dao;
+package org.apache.cloudstack.backup;
 
-import java.util.List;
+import com.cloud.agent.api.Command;
 
-import org.apache.cloudstack.backup.ImageTransferVO;
+public class StopNBDServerCommand extends Command {
+    private String transferId;
+    private String direction;
+    private int nbdPort;
 
-import com.cloud.utils.db.GenericDao;
+    public StopNBDServerCommand() {
+    }
 
-public interface ImageTransferDao extends GenericDao<ImageTransferVO, Long> {
-    List<ImageTransferVO> listByBackupId(Long backupId);
-    ImageTransferVO findByUuid(String uuid);
-    ImageTransferVO findByNbdPort(int port);
+    public StopNBDServerCommand(String transferId, String direction, int nbdPort) {
+        this.transferId = transferId;
+        this.direction = direction;
+        this.nbdPort = nbdPort;
+    }
+
+    public String getTransferId() {
+        return transferId;
+    }
+
+    public int getNbdPort() {
+        return nbdPort;
+    }
+
+    public String getDirection() {
+        return direction;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        return true;
+    }
 }

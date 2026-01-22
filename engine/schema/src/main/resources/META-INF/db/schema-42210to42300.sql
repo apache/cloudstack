@@ -131,14 +131,13 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_instance', 'active_checkpoint_cre
 
 -- Create image_transfer table for per-disk image transfers
 CREATE TABLE IF NOT EXISTS `cloud`.`image_transfer`(
-                                                       `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
-                                                       `uuid` varchar(40) NOT NULL COMMENT 'uuid',
+    `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+    `uuid` varchar(40) NOT NULL COMMENT 'uuid',
     `account_id` bigint unsigned NOT NULL COMMENT 'Account ID',
     `domain_id` bigint unsigned NOT NULL COMMENT 'Domain ID',
-    `backup_id` bigint unsigned NOT NULL COMMENT 'Backup ID',
-    `vm_id` bigint unsigned NOT NULL COMMENT 'VM ID',
+    `data_center_id` bigint unsigned NOT NULL COMMENT 'Data Center ID',
+    `backup_id` bigint unsigned COMMENT 'Backup ID',
     `disk_id` bigint unsigned NOT NULL COMMENT 'Disk/Volume ID',
-    `device_name` varchar(10) NOT NULL COMMENT 'Device name (vda, vdb, etc)',
     `host_id` bigint unsigned NOT NULL COMMENT 'Host ID',
     `nbd_port` int NOT NULL COMMENT 'NBD port',
     `transfer_url` varchar(255) COMMENT 'ImageIO transfer URL',
@@ -151,9 +150,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`image_transfer`(
     PRIMARY KEY (`id`),
     UNIQUE KEY `uuid` (`uuid`),
     CONSTRAINT `fk_image_transfer__backup_id` FOREIGN KEY (`backup_id`) REFERENCES `backups`(`id`) ON DELETE CASCADE,
-    CONSTRAINT `fk_image_transfer__vm_id` FOREIGN KEY (`vm_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_image_transfer__disk_id` FOREIGN KEY (`disk_id`) REFERENCES `volumes`(`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_image_transfer__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
-    INDEX `i_image_transfer__backup_id`(`backup_id`),
-    INDEX `i_image_transfer__vm_id`(`vm_id`)
+    INDEX `i_image_transfer__backup_id`(`backup_id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

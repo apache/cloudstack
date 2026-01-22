@@ -17,13 +17,11 @@
 
 package org.apache.cloudstack.backup;
 
-import java.util.Map;
-
 import com.cloud.agent.api.Answer;
 
 public class StartBackupAnswer extends Answer {
     private Long checkpointCreateTime;
-    private Map<Long, String> deviceMappings; // volumeId -> device name (vda, vdb, etc.)
+    private Boolean isIncremental;
 
     public StartBackupAnswer() {
     }
@@ -32,11 +30,9 @@ public class StartBackupAnswer extends Answer {
         super(cmd, success, details);
     }
 
-    public StartBackupAnswer(StartBackupCommand cmd, boolean success, String details,
-                            Long checkpointCreateTime, Map<Long, String> deviceMappings) {
+    public StartBackupAnswer(StartBackupCommand cmd, boolean success, String details, Long checkpointCreateTime) {
         super(cmd, success, details);
         this.checkpointCreateTime = checkpointCreateTime;
-        this.deviceMappings = deviceMappings;
     }
 
     public Long getCheckpointCreateTime() {
@@ -47,11 +43,11 @@ public class StartBackupAnswer extends Answer {
         this.checkpointCreateTime = checkpointCreateTime;
     }
 
-    public Map<Long, String> getDeviceMappings() {
-        return deviceMappings;
+    public Boolean getIncremental() {
+        return isIncremental;
     }
 
-    public void setDeviceMappings(Map<Long, String> deviceMappings) {
-        this.deviceMappings = deviceMappings;
+    public void setIncremental(Boolean incremental) {
+        isIncremental = incremental;
     }
 }

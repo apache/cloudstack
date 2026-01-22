@@ -3716,6 +3716,93 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return new QuerySnapshotZoneCopyAnswer(cmd, files);
     }
 
+    private void resetService(String unitName) {
+        Script resetScript = new Script("/bin/bash", logger);
+        resetScript.add("-c");
+        resetScript.add(String.format("systemctl reset-failed %s || true", unitName));
+        resetScript.execute();
+    }
+
+    private boolean stopImageServer() {
+        String unitName = "cloudstack-image-server";
+
+        Script checkScript = new Script("/bin/bash", logger);
+        checkScript.add("-c");
+        checkScript.add(String.format("systemctl is-active --quiet %s", unitName));
+        String checkResult = checkScript.execute();
+        if (checkResult != null) {
+            logger.info(String.format("Image server not running, resetting failed state", unitName));
+            resetService(unitName);
+            return true;
+        }
+
+        Script stopScript = new Script("/bin/bash", logger);
+        stopScript.add("-c");
+        stopScript.add(String.format("systemctl stop %s", unitName));
+        stopScript.execute();
+        resetService(unitName);
+        logger.info(String.format("Image server %s stoppped", unitName));
+
+        return true;
+    }
+
+    private boolean startImageServerIfNotRunning(int imageServerPort) {
+        final String imageServerScript = "/opt/cloud/bin/image_server.py";
+        String unitName = "cloudstack-image-server";
+
+        Script checkScript = new Script("/bin/bash", logger);
+        checkScript.add("-c");
+        checkScript.add(String.format("systemctl is-active --quiet %s", unitName));
+        String checkResult = checkScript.execute();
+        if (checkResult == null) {
+            return true;
+        }
+
+        String systemdRunCmd = String.format(
+                "systemd-run --unit=%s --property=Restart=no /usr/bin/python3 %s --listen 0.0.0.0 --port 54323",
+                unitName, imageServerScript, imageServerPort);
+
+        Script startScript = new Script("/bin/bash", logger);
+        startScript.add("-c");
+        startScript.add(systemdRunCmd);
+        String startResult = startScript.execute();
+
+        if (startResult != null) {
+            logger.error(String.format("Failed to start the Image serer: %s", startResult));
+            return false;
+        }
+
+        // Wait with timeout until the service is up
+        int maxWaitSeconds = 10;
+        int pollIntervalMs = 1000;
+        int maxAttempts = (maxWaitSeconds * 1000) / pollIntervalMs;
+        boolean serviceActive = false;
+
+        for (int attempt = 0; attempt < maxAttempts; attempt++) {
+            Script verifyScript = new Script("/bin/bash", logger);
+            verifyScript.add("-c");
+            verifyScript.add(String.format("systemctl is-active --quiet %s", unitName));
+            String verifyResult = verifyScript.execute();
+            if (verifyResult == null) {
+                serviceActive = true;
+                logger.info(String.format("Image server is now active (attempt %d)", unitName, attempt + 1));
+                break;
+            }
+            try {
+                Thread.sleep(pollIntervalMs);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return false;
+            }
+        }
+
+        if (!serviceActive) {
+            logger.error(String.format("Image server failed to start within %d seconds", unitName, maxWaitSeconds));
+            return false;
+        }
+        return true;
+    }
+
     protected Answer execute(CreateImageTransferCommand cmd) {
         if (!_inSystemVM) {
             return new CreateImageTransferAnswer(cmd, true, "Not running inside SSVM; skipping image transfer setup.");
@@ -3724,7 +3811,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         final String transferId = cmd.getTransferId();
 
         final String hostIp = cmd.getHostIpAddress();
-        final String exportName = cmd.getDeviceName();
+        final String exportName = cmd.getExportName();
         final int nbdPort = cmd.getNbdPort();
 
         if (StringUtils.isBlank(transferId)) {
@@ -3734,15 +3821,13 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return new CreateImageTransferAnswer(cmd, false, "hostIpAddress is empty.");
         }
         if (StringUtils.isBlank(exportName)) {
-            return new CreateImageTransferAnswer(cmd, false, "deviceName is empty.");
+            return new CreateImageTransferAnswer(cmd, false, "exportName is empty.");
         }
         if (nbdPort <= 0) {
             return new CreateImageTransferAnswer(cmd, false, "Invalid nbdPort: " + nbdPort);
         }
 
-        final String imageServerScript = "/opt/cloud/bin/image_server.py";
         final int imageServerPort = 54323;
-        final String imageServerLogFile = "/var/log/image_server.log";
 
         try {
             // 1) Write /tmp/<transferId> with NBD endpoint details.
@@ -3752,40 +3837,22 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             payload.put("export", exportName);
 
             final String json = new GsonBuilder().create().toJson(payload);
-            final File transferFile = new File("/tmp", transferId);
+            File dir = new File("/tmp/imagetransfer");
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+            final File transferFile = new File("/tmp/imagetransfer", transferId);
             FileUtils.writeStringToFile(transferFile, json, "UTF-8");
 
-            // 2) Start image_server if not already running.
-            final File scriptFile = new File(imageServerScript);
-            if (!scriptFile.exists()) {
-                return new CreateImageTransferAnswer(cmd, false, "Missing image server script: " + imageServerScript);
-            }
-
-            final Script isRunning = new Script("/bin/bash", logger);
-            isRunning.add("-c");
-            isRunning.add(String.format("pgrep -f '%s.*--port %d' >/dev/null 2>&1", imageServerScript, imageServerPort));
-            final String runningResult = isRunning.execute();
-            if (runningResult != null) {
-                try {
-                    ProcessBuilder pb = new ProcessBuilder(
-                            "python3", imageServerScript,
-                            "--listen", "0.0.0.0",
-                            "--port", String.valueOf(imageServerPort)
-                    );
-                    pb.redirectOutput(ProcessBuilder.Redirect.appendTo(new File(imageServerLogFile)));
-                    pb.redirectErrorStream(true);
-                    pb.start();
-                } catch (IOException e) {
-                    logger.warn("Failed to start Image Server");
-                    return new CreateImageTransferAnswer(cmd, false, "Failed to start image server");
-                }
-            }
-            final String transferUrl = String.format("http://%s:%d/images/%s", _publicIp, imageServerPort, transferId);
-            return new CreateImageTransferAnswer(cmd, true, "Image transfer prepared on SSVM.", transferId, transferUrl, "initializing");
-        } catch (Exception e) {
+        } catch (IOException e) {
             logger.warn("Failed to prepare image transfer on SSVM", e);
             return new CreateImageTransferAnswer(cmd, false, "Failed to prepare image transfer on SSVM: " + e.getMessage());
         }
+
+        startImageServerIfNotRunning(imageServerPort);
+
+        final String transferUrl = String.format("http://%s:%d/images/%s", _publicIp, imageServerPort, transferId);
+        return new CreateImageTransferAnswer(cmd, true, "Image transfer prepared on SSVM.", transferId, transferUrl);
     }
 
     protected Answer execute(FinalizeImageTransferCommand cmd) {
@@ -3798,26 +3865,17 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return new Answer(cmd, false, "transferId is empty.");
         }
 
-        final File transferFile = new File("/tmp", transferId);
+        final File transferFile = new File("/tmp/imagetransfer", transferId);
         if (transferFile.exists() && !transferFile.delete()) {
             return new Answer(cmd, false, "Failed to delete transfer config file: " + transferFile.getAbsolutePath());
         }
 
-        // Stop image_server.py only if /tmp directory is empty.
-        final File tmpDir = new File("/tmp");
-        final File[] tmpEntries = tmpDir.listFiles();
-        if (tmpEntries != null && tmpEntries.length == 0) {
-            final String imageServerScript = "/opt/cloud/bin/image_server.py";
-            final int imageServerPort = 54323;
-
-            // Use bash "|| true" so Script returns success even if process isn't running.
-            final Script stop = new Script("/bin/bash", logger);
-            stop.add("-c");
-            stop.add(String.format("pkill -f '%s.*--port %d' >/dev/null 2>&1 || true", imageServerScript, imageServerPort));
-            final String stopResult = stop.execute();
-            if (stopResult != null) {
-                return new Answer(cmd, false, "Failed to stop image server: " + stopResult);
+        try (Stream<Path> stream = Files.list(Paths.get("/tmp/imagetransfer"))) {
+            if (!stream.findAny().isPresent()) {
+                stopImageServer();
             }
+        } catch (IOException e) {
+            logger.warn("Failed to list /tmp/imagetransfer", e);
         }
 
         return new Answer(cmd, true, "Image transfer finalized.");

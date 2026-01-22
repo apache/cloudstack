@@ -17,61 +17,54 @@
 
 package org.apache.cloudstack.backup;
 
-import java.util.Map;
-
 import com.cloud.agent.api.Command;
 
-public class StartBackupCommand extends Command {
-    private String vmName;
-    private String toCheckpointId;
-    private String fromCheckpointId;
-    private int nbdPort;
-    private Map<String, String> diskVolumePaths;  // volumeId -> path mapping
+public class StartNBDServerCommand extends Command {
+    private String transferId;
     private String hostIpAddress;
+    private String exportName;
+    private String volumePath;
+    private int nbdPort;
+    private String direction;
 
-    public StartBackupCommand() {
+    public StartNBDServerCommand() {
     }
 
-    public StartBackupCommand(String vmName, String toCheckpointId, String fromCheckpointId,
-                             int nbdPort, Map<String, String> diskVolumePaths, String hostIpAddress) {
-        this.vmName = vmName;
-        this.toCheckpointId = toCheckpointId;
-        this.fromCheckpointId = fromCheckpointId;
-        this.nbdPort = nbdPort;
-        this.diskVolumePaths = diskVolumePaths;
+    public StartNBDServerCommand(String transferId, String hostIpAddress, String exportName, String volumePath, int nbdPort, String direction) {
+        this.transferId = transferId;
         this.hostIpAddress = hostIpAddress;
+        this.exportName = exportName;
+        this.volumePath = volumePath;
+        this.nbdPort = nbdPort;
+        this.direction = direction;
     }
 
-    public String getVmName() {
-        return vmName;
-    }
-
-    public String getToCheckpointId() {
-        return toCheckpointId;
-    }
-
-    public String getFromCheckpointId() {
-        return fromCheckpointId;
+    public String getExportName() {
+        return exportName;
     }
 
     public int getNbdPort() {
         return nbdPort;
     }
 
-    public Map<String, String> getDiskVolumePaths() {
-        return diskVolumePaths;
-    }
-
-    public boolean isIncremental() {
-        return fromCheckpointId != null && !fromCheckpointId.isEmpty();
-    }
-
     public String getHostIpAddress() {
         return hostIpAddress;
+    }
+
+    public String getTransferId() {
+        return transferId;
     }
 
     @Override
     public boolean executeInSequence() {
         return true;
+    }
+
+    public String getVolumePath() {
+        return volumePath;
+    }
+
+    public String getDirection() {
+        return direction;
     }
 }

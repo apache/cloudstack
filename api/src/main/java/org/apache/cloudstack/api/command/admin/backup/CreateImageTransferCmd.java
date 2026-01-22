@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.ImageTransferResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.backup.ImageTransfer;
 import org.apache.cloudstack.backup.IncrementalBackupService;
 import org.apache.cloudstack.context.CallContext;
 
@@ -44,7 +45,6 @@ public class CreateImageTransferCmd extends BaseCmd implements AdminCmd {
     @Parameter(name = ApiConstants.BACKUP_ID,
             type = CommandType.UUID,
             entityType = BackupResponse.class,
-            required = true,
             description = "ID of the backup")
     private Long backupId;
 
@@ -69,8 +69,8 @@ public class CreateImageTransferCmd extends BaseCmd implements AdminCmd {
         return volumeId;
     }
 
-    public String getDirection() {
-        return direction;
+    public ImageTransfer.Direction getDirection() {
+        return ImageTransfer.Direction.valueOf(direction);
     }
 
     @Override

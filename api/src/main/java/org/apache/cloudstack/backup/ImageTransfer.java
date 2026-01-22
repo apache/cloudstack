@@ -21,6 +21,8 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 public interface ImageTransfer extends ControlledEntity, InternalIdentity {
+    long getDataCenterId();
+
     public enum Direction {
         upload, download
     }
@@ -33,11 +35,7 @@ public interface ImageTransfer extends ControlledEntity, InternalIdentity {
 
     long getBackupId();
 
-    long getVmId();
-
     long getDiskId();
-
-    String getDeviceName();
 
     long getHostId();
 

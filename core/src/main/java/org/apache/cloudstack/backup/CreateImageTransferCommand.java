@@ -22,21 +22,25 @@ import com.cloud.agent.api.Command;
 public class CreateImageTransferCommand extends Command {
     private String transferId;
     private String hostIpAddress;
-    private String deviceName;
+    private String exportName;
+    private String volumePath;
     private int nbdPort;
+    private String direction;
 
     public CreateImageTransferCommand() {
     }
 
-    public CreateImageTransferCommand(Long vmId, String transferId, String hostIpAddress, Long backupId, Long diskId, String deviceName, int nbdPort) {
+    public CreateImageTransferCommand(String transferId, String hostIpAddress, String exportName, String volumePath, int nbdPort, String direction) {
         this.transferId = transferId;
         this.hostIpAddress = hostIpAddress;
-        this.deviceName = deviceName;
+        this.exportName = exportName;
+        this.volumePath = volumePath;
         this.nbdPort = nbdPort;
+        this.direction = direction;
     }
 
-    public String getDeviceName() {
-        return deviceName;
+    public String getExportName() {
+        return exportName;
     }
 
     public int getNbdPort() {
@@ -54,5 +58,13 @@ public class CreateImageTransferCommand extends Command {
     @Override
     public boolean executeInSequence() {
         return true;
+    }
+
+    public String getVolumePath() {
+        return volumePath;
+    }
+
+    public String getDirection() {
+        return direction;
     }
 }

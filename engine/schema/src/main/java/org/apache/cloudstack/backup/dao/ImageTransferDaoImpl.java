@@ -32,8 +32,8 @@ import com.cloud.utils.db.SearchCriteria;
 public class ImageTransferDaoImpl extends GenericDaoBase<ImageTransferVO, Long> implements ImageTransferDao {
 
     private SearchBuilder<ImageTransferVO> backupIdSearch;
-    private SearchBuilder<ImageTransferVO> vmIdSearch;
     private SearchBuilder<ImageTransferVO> uuidSearch;
+    private SearchBuilder<ImageTransferVO> nbdPortSearch;
 
     public ImageTransferDaoImpl() {
     }
@@ -44,13 +44,13 @@ public class ImageTransferDaoImpl extends GenericDaoBase<ImageTransferVO, Long> 
         backupIdSearch.and("backupId", backupIdSearch.entity().getBackupId(), SearchCriteria.Op.EQ);
         backupIdSearch.done();
 
-        vmIdSearch = createSearchBuilder();
-        vmIdSearch.and("vmId", vmIdSearch.entity().getVmId(), SearchCriteria.Op.EQ);
-        vmIdSearch.done();
-
         uuidSearch = createSearchBuilder();
         uuidSearch.and("uuid", uuidSearch.entity().getUuid(), SearchCriteria.Op.EQ);
         uuidSearch.done();
+
+        nbdPortSearch = createSearchBuilder();
+        nbdPortSearch.and("nbdPort", nbdPortSearch.entity().getNbdPort(), SearchCriteria.Op.EQ);
+        nbdPortSearch.done();
     }
 
     @Override
@@ -61,16 +61,16 @@ public class ImageTransferDaoImpl extends GenericDaoBase<ImageTransferVO, Long> 
     }
 
     @Override
-    public List<ImageTransferVO> listByVmId(Long vmId) {
-        SearchCriteria<ImageTransferVO> sc = vmIdSearch.create();
-        sc.setParameters("vmId", vmId);
-        return listBy(sc);
-    }
-
-    @Override
     public ImageTransferVO findByUuid(String uuid) {
         SearchCriteria<ImageTransferVO> sc = uuidSearch.create();
         sc.setParameters("uuid", uuid);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public ImageTransferVO findByNbdPort(int port) {
+        SearchCriteria<ImageTransferVO> sc = nbdPortSearch.create();
+        sc.setParameters("nbdPort", port);
         return findOneBy(sc);
     }
 }

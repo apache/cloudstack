@@ -19,7 +19,6 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.cloudstack.backup.StartBackupAnswer;
@@ -95,11 +94,7 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
             // Get checkpoint creation time - using current time for POC
             long checkpointCreateTime = System.currentTimeMillis();
 
-            // Build device mappings from domblklist
-            Map<Long, String> deviceMappings = getDeviceMappings(vmName, cmd.getDiskVolumePaths(), resource);
-
-            return new StartBackupAnswer(cmd, true, "Backup started successfully",
-                checkpointCreateTime, deviceMappings);
+            return new StartBackupAnswer(cmd, true, "Backup started successfully", checkpointCreateTime);
 
         } catch (Exception e) {
             return new StartBackupAnswer(cmd, false, "Error starting backup: " + e.getMessage());
@@ -118,13 +113,13 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
         xml.append("  <disks>\n");
 
         // Add disk entries - simplified for POC
-        Map<Long, String> diskPaths = cmd.getDiskVolumePaths();
+        Map<String, String> diskPaths = cmd.getDiskVolumePaths();
         int diskIndex = 0;
-        for (Map.Entry<Long, String> entry : diskPaths.entrySet()) {
+        for (Map.Entry<String, String> entry : diskPaths.entrySet()) {
             String deviceName = "vd" + (char)('a' + diskIndex);
             String scratchFile = "/var/tmp/scratch-" + entry.getKey() + ".qcow2";
             xml.append("    <disk name=\"").append(deviceName).append("\" type=\"file\" exportname=\"")
-               .append(deviceName).append("\">\n");
+               .append(entry.getKey()).append("\">\n");
             xml.append("      <scratch file=\"").append(scratchFile).append("\"/>\n");
             xml.append("    </disk>\n");
             diskIndex++;
@@ -140,20 +135,5 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
         return "<domaincheckpoint>\n" +
                "  <name>" + checkpointId + "</name>\n" +
                "</domaincheckpoint>";
-    }
-
-    private Map<Long, String> getDeviceMappings(String vmName, Map<Long, String> diskPaths,
-                                                 LibvirtComputingResource resource) {
-        Map<Long, String> mappings = new HashMap<>();
-
-        // Simplified for POC - map volumeIds to device names in order
-        int diskIndex = 0;
-        for (Long volumeId : diskPaths.keySet()) {
-            String deviceName = "vd" + (char)('a' + diskIndex);
-            mappings.put(volumeId, deviceName);
-            diskIndex++;
-        }
-
-        return mappings;
     }
 }

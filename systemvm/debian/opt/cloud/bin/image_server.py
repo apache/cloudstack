@@ -62,11 +62,11 @@ _IMAGE_LOCKS_GUARD = threading.Lock()
 
 
 # Dynamic image_id(transferId) -> NBD export mapping:
-# CloudStack writes a JSON file at /tmp/<transferId> with:
+# CloudStack writes a JSON file at /tmp/imagetransfer/<transferId> with:
 #   {"host": "...", "port": 10809, "export": "vda"}
 #
 # This server reads that file on-demand.
-_CFG_DIR = "/tmp"
+_CFG_DIR = "/tmp/imagetransfer"
 _CFG_CACHE: Dict[str, Tuple[float, Dict[str, Any]]] = {}
 _CFG_CACHE_GUARD = threading.Lock()
 

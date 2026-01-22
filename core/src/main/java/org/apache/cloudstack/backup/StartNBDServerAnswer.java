@@ -19,19 +19,19 @@ package org.apache.cloudstack.backup;
 
 import com.cloud.agent.api.Answer;
 
-public class CreateImageTransferAnswer extends Answer {
+public class StartNBDServerAnswer extends Answer {
     private String imageTransferId;
     private String transferUrl;
 
-    public CreateImageTransferAnswer() {
+    public StartNBDServerAnswer() {
     }
 
-    public CreateImageTransferAnswer(CreateImageTransferCommand cmd, boolean success, String details) {
+    public StartNBDServerAnswer(StartNBDServerCommand cmd, boolean success, String details) {
         super(cmd, success, details);
     }
 
-    public CreateImageTransferAnswer(CreateImageTransferCommand cmd, boolean success, String details,
-                                    String imageTransferId, String transferUrl) {
+    public StartNBDServerAnswer(StartNBDServerCommand cmd, boolean success, String details,
+                                String imageTransferId, String transferUrl) {
         super(cmd, success, details);
         this.imageTransferId = imageTransferId;
         this.transferUrl = transferUrl;

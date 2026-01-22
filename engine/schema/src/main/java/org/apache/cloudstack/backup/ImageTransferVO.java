@@ -45,14 +45,8 @@ public class ImageTransferVO implements ImageTransfer {
     @Column(name = "backup_id")
     private long backupId;
 
-    @Column(name = "vm_id")
-    private long vmId;
-
     @Column(name = "disk_id")
     private long diskId;
-
-    @Column(name = "device_name")
-    private String deviceName;
 
     @Column(name = "host_id")
     private long hostId;
@@ -80,6 +74,9 @@ public class ImageTransferVO implements ImageTransfer {
     @Column(name = "domain_id")
     Long domainId;
 
+    @Column(name = "data_center_id")
+    Long dataCenterId;
+
     @Column(name = "created")
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date created;
@@ -95,18 +92,17 @@ public class ImageTransferVO implements ImageTransfer {
     public ImageTransferVO() {
     }
 
-    public ImageTransferVO(String uuid, long backupId, long vmId, long diskId, String deviceName, long hostId, int nbdPort, Phase phase, Direction direction, Long accountId, Long domainId) {
+    public ImageTransferVO(String uuid, Long backupId, long diskId, long hostId, int nbdPort, Phase phase, Direction direction, Long accountId, Long domainId, Long dataCenterId) {
         this.uuid = uuid;
         this.backupId = backupId;
-        this.vmId = vmId;
         this.diskId = diskId;
-        this.deviceName = deviceName;
         this.hostId = hostId;
         this.nbdPort = nbdPort;
         this.phase = phase;
         this.direction = direction;
         this.accountId = accountId;
         this.domainId = domainId;
+        this.dataCenterId = dataCenterId;
         this.created = new Date();
     }
 
@@ -130,30 +126,12 @@ public class ImageTransferVO implements ImageTransfer {
     }
 
     @Override
-    public long getVmId() {
-        return vmId;
-    }
-
-    public void setVmId(long vmId) {
-        this.vmId = vmId;
-    }
-
-    @Override
     public long getDiskId() {
         return diskId;
     }
 
     public void setDiskId(long diskId) {
         this.diskId = diskId;
-    }
-
-    @Override
-    public String getDeviceName() {
-        return deviceName;
-    }
-
-    public void setDeviceName(String deviceName) {
-        this.deviceName = deviceName;
     }
 
     @Override
@@ -229,6 +207,11 @@ public class ImageTransferVO implements ImageTransfer {
     @Override
     public long getAccountId() {
         return accountId;
+    }
+
+    @Override
+    public long getDataCenterId() {
+        return dataCenterId;
     }
 
     public Date getCreated() {

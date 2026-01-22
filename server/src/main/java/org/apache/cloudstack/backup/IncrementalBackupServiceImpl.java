@@ -43,6 +43,8 @@ import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.ImageTransferDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.joda.time.DateTime;
 import org.springframework.stereotype.Component;
@@ -52,8 +54,11 @@ import com.cloud.agent.api.Answer;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -86,6 +91,9 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
     private HostDao hostDao;
 
     @Inject
+    private PrimaryDataStoreDao primaryDataStoreDao;
+
+    @Inject
     EndPointSelector _epSelector;
 
     private static final int NBD_PORT_RANGE_START = 10809;
@@ -110,7 +118,6 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
     public BackupResponse startBackup(StartBackupCmd cmd) {
         Long vmId = cmd.getVmId();
 
-        // Get VM
         VMInstanceVO vm = vmInstanceDao.findById(vmId);
         if (vm == null) {
             throw new CloudRuntimeException("VM not found: " + vmId);
@@ -120,7 +127,6 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
             throw new CloudRuntimeException("VM must be running to start backup");
         }
 
-        // Check if backup already in progress
         Backup existingBackup = backupDao.findByVmId(vmId);
         if (existingBackup != null && existingBackup.getStatus() == Backup.Status.BackingUp) {
             throw new CloudRuntimeException("Backup already in progress for VM: " + vmId);
@@ -128,45 +134,39 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
 
         boolean dummyOffering = isDummyOffering(vm.getBackupOfferingId());
 
-        // Create backup record
         BackupVO backup = new BackupVO();
         backup.setVmId(vmId);
         backup.setName(vmId + "-" + DateTime.now());
         backup.setAccountId(vm.getAccountId());
         backup.setDomainId(vm.getDomainId());
-        // todo: set to Increment if it is incremental backup
-        backup.setType("FULL");
         backup.setZoneId(vm.getDataCenterId());
         backup.setStatus(Backup.Status.BackingUp);
         backup.setBackupOfferingId(vm.getBackupOfferingId());
         backup.setDate(new Date());
 
-        // Generate checkpoint IDs
         String toCheckpointId = "ckp-" + UUID.randomUUID().toString().substring(0, 8);
-        String fromCheckpointId = vm.getActiveCheckpointId(); // null for first full backup
+        String fromCheckpointId = vm.getActiveCheckpointId();
 
         backup.setToCheckpointId(toCheckpointId);
         backup.setFromCheckpointId(fromCheckpointId);
 
-        // Allocate NBD port
         int nbdPort = allocateNbdPort();
         backup.setNbdPort(nbdPort);
         backup.setHostId(vm.getHostId());
+        // Will be changed later if incremental was done
+        backup.setType("FULL");
 
-        // Persist backup record
         backup = backupDao.persist(backup);
 
-        // Get disk volume paths
-        List<? extends Volume> volumes = volumeDao.findByInstance(vmId);
-        Map<Long, String> diskVolumePaths = new HashMap<>();
+        List<VolumeVO> volumes = volumeDao.findByInstance(vmId);
+        Map<String, String> diskVolumePaths = new HashMap<>();
         for (Volume vol : volumes) {
-            diskVolumePaths.put(vol.getId(), vol.getPath());
+            diskVolumePaths.put(vol.getUuid(), vol.getPath());
         }
 
         Host host = hostDao.findById(vm.getHostId());
         StartBackupCommand startCmd = new StartBackupCommand(
             vm.getInstanceName(),
-            vmId,
             toCheckpointId,
             fromCheckpointId,
             nbdPort,
@@ -178,7 +178,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
             StartBackupAnswer answer;
 
             if (dummyOffering) {
-                answer = new StartBackupAnswer(startCmd, true, "Dummy answer", System.currentTimeMillis(), diskVolumePaths);
+                answer = new StartBackupAnswer(startCmd, true, "Dummy answer", System.currentTimeMillis());
             } else {
                 answer = (StartBackupAnswer) agentManager.send(vm.getHostId(), startCmd);
             }
@@ -190,9 +190,12 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
 
             // Update backup with checkpoint creation time
             backup.setCheckpointCreateTime(answer.getCheckpointCreateTime());
+            if (Boolean.TRUE.equals(answer.getIncremental())) {
+                // todo: set it in the backend
+                backup.setType("Incremental");
+            }
             backupDao.update(backup.getId(), backup);
 
-            // Return response
             BackupResponse response = new BackupResponse();
             response.setId(backup.getUuid());
             response.setVmId(vm.getUuid());
@@ -270,48 +273,35 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         }
     }
 
-    @Override
-    public ImageTransferResponse createImageTransfer(CreateImageTransferCmd cmd) {
+    private ImageTransferVO createDownloadImageTransfer(CreateImageTransferCmd cmd) {
         Long backupId = cmd.getBackupId();
         Long volumeId = cmd.getVolumeId();
-
         BackupVO backup = backupDao.findById(backupId);
         if (backup == null) {
             throw new CloudRuntimeException("Backup not found: " + backupId);
         }
+        boolean dummyOffering = isDummyOffering(backup.getBackupOfferingId());
 
         Volume volume = volumeDao.findById(volumeId);
         if (volume == null) {
             throw new CloudRuntimeException("Volume not found: " + volumeId);
         }
 
-        VMInstanceVO vm = vmInstanceDao.findById(backup.getVmId());
-        if (vm == null) {
-            throw new CloudRuntimeException("VM not found: " + backup.getVmId());
-        }
-        boolean dummyOffering = isDummyOffering(vm.getBackupOfferingId());
-
-        // Resolve device name (simplified for POC)
-        List<? extends Volume> volumes = volumeDao.findByInstance(backup.getVmId());
-        String deviceName = resolveDeviceName(volumes, volumeId);
-
         String transferId = UUID.randomUUID().toString();
         Host host = hostDao.findById(backup.getHostId());
-        // Create CreateImageTransferCommand
         CreateImageTransferCommand transferCmd = new CreateImageTransferCommand(
-            backup.getVmId(),
-            transferId,
-            host.getPrivateIpAddress(),
-            backupId,
-            volumeId,
-            deviceName,
-            backup.getNbdPort()
+                transferId,
+                host.getPrivateIpAddress(),
+                volume.getUuid(),
+                null,
+                backup.getNbdPort(),
+                cmd.getDirection().toString()
         );
 
         try {
             CreateImageTransferAnswer answer;
             if (dummyOffering) {
-                answer = new CreateImageTransferAnswer(transferCmd, true, "Dummy answer", "image-transfer-id", "nbd://127.0.0.1:10809/vda", "initializing");
+                answer = new CreateImageTransferAnswer(transferCmd, true, "Dummy answer", "image-transfer-id", "nbd://127.0.0.1:10809/vda");
             } else if (DATAPLANE_PROXY_MODE) {
                 EndPoint ssvm = _epSelector.findSsvm(backup.getZoneId());
                 answer = (CreateImageTransferAnswer) ssvm.sendMessage(transferCmd);
@@ -323,55 +313,131 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
                 throw new CloudRuntimeException("Failed to create image transfer: " + answer.getDetails());
             }
 
-            // Create ImageTransfer record
             ImageTransferVO imageTransfer = new ImageTransferVO(
-                transferId,
-                backupId,
-                backup.getVmId(),
-                volumeId,
-                deviceName,
-                backup.getHostId(),
-                backup.getNbdPort(),
-                ImageTransferVO.Phase.initializing,
-                ImageTransfer.Direction.valueOf(cmd.getDirection()),
-                backup.getAccountId(),
-                backup.getDomainId()
+                    transferId,
+                    backupId,
+                    volumeId,
+                    backup.getHostId(),
+                    backup.getNbdPort(),
+                    ImageTransferVO.Phase.transferring,
+                    ImageTransfer.Direction.download,
+                    backup.getAccountId(),
+                    backup.getDomainId(),
+                    backup.getZoneId()
             );
             imageTransfer.setTransferUrl(answer.getTransferUrl());
             imageTransfer.setSignedTicketId(answer.getImageTransferId());
             imageTransfer = imageTransferDao.persist(imageTransfer);
-
-            // Return response
-            ImageTransferResponse response = new ImageTransferResponse();
-            response.setId(imageTransfer.getUuid());
-            response.setBackupId(backup.getUuid());
-            response.setVmId(vm.getUuid());
-            response.setDiskId(volume.getUuid());
-            response.setDeviceName(deviceName);
-            response.setTransferUrl(answer.getTransferUrl());
-            response.setPhase(ImageTransferVO.Phase.initializing.toString());
-            response.setDirection(imageTransfer.getDirection().toString());
-            response.setCreated(imageTransfer.getCreated());
-            return response;
+            return imageTransfer;
 
         } catch (AgentUnavailableException | OperationTimedoutException e) {
             throw new CloudRuntimeException("Failed to communicate with agent: " + e.getMessage(), e);
         }
     }
 
-    @Override
-    public boolean finalizeImageTransfer(FinalizeImageTransferCmd cmd) {
-        Long imageTransferId = cmd.getImageTransferId();
+    private HostVO getFirstHostFromStoragePool(StoragePoolVO storagePoolVO) {
+        List<HostVO> hosts = null;
+        if (storagePoolVO.getScope().equals(ScopeType.CLUSTER)) {
+            hosts = hostDao.findByClusterId(storagePoolVO.getClusterId());
 
-        ImageTransferVO imageTransfer = imageTransferDao.findById(imageTransferId);
-        if (imageTransfer == null) {
-            throw new CloudRuntimeException("Image transfer not found: " + imageTransferId);
+        } else if (storagePoolVO.getScope().equals(ScopeType.ZONE)) {
+            hosts = hostDao.findByDataCenterId(storagePoolVO.getDataCenterId());
         }
+        return hosts.get(0);
+    }
+
+    private ImageTransferVO createUploadImageTransfer(CreateImageTransferCmd cmd) {
+        String transferId = UUID.randomUUID().toString();
+
+        int nbdPort = allocateNbdPort();
+        VolumeVO volume = volumeDao.findById(cmd.getVolumeId());
+        Long poolId = volume.getPoolId();
+        StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(poolId);
+        Host host = getFirstHostFromStoragePool(storagePoolVO);
+
+        StartNBDServerAnswer nbdServerAnswer;
+        StartNBDServerCommand nbdServerCmd = new StartNBDServerCommand(
+                transferId,
+                host.getPrivateIpAddress(),
+                volume.getUuid(),
+                volume.getPath(),
+                nbdPort,
+                cmd.getDirection().toString()
+        );
+
+        try {
+            nbdServerAnswer = (StartNBDServerAnswer) agentManager.send(host.getId(), nbdServerCmd);
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            throw new CloudRuntimeException("Failed to communicate with agent: " + e.getMessage(), e);
+        }
+        if (!nbdServerAnswer.getResult()) {
+            throw new CloudRuntimeException("Failed to start the NBD server");
+        }
+
+        CreateImageTransferAnswer transferAnswer;
+        CreateImageTransferCommand transferCmd = new CreateImageTransferCommand(
+                transferId,
+                host.getPrivateIpAddress(),
+                volume.getUuid(),
+                volume.getPath(),
+                nbdPort,
+                cmd.getDirection().toString()
+        );
+
+        EndPoint ssvm = _epSelector.findSsvm(volume.getDataCenterId());
+        transferAnswer = (CreateImageTransferAnswer) ssvm.sendMessage(transferCmd);
+
+        if (!transferAnswer.getResult()) {
+            StopNBDServerCommand stopNbdServerCommand = new StopNBDServerCommand(transferId, cmd.getDirection().toString(), nbdPort);
+            throw new CloudRuntimeException("Failed to create image transfer: " + transferAnswer.getDetails());
+        }
+
+        ImageTransferVO imageTransfer = new ImageTransferVO(
+                transferId,
+                null,
+                volume.getId(),
+                host.getId(),
+                nbdPort,
+                ImageTransferVO.Phase.initializing,
+                ImageTransfer.Direction.upload,
+                volume.getAccountId(),
+                volume.getDomainId(),
+                volume.getDataCenterId()
+        );
+
+        imageTransfer.setTransferUrl(transferAnswer.getTransferUrl());
+        imageTransfer.setSignedTicketId(transferAnswer.getImageTransferId());
+        imageTransfer = imageTransferDao.persist(imageTransfer);
+        return imageTransfer;
+
+    }
+
+    @Override
+    public ImageTransferResponse createImageTransfer(CreateImageTransferCmd cmd) {
+        ImageTransfer imageTransfer;
+        if (cmd.getDirection().equals(ImageTransfer.Direction.upload)) {
+            imageTransfer = createUploadImageTransfer(cmd);
+        } else if (cmd.getDirection().equals(ImageTransfer.Direction.download)) {
+            imageTransfer = createDownloadImageTransfer(cmd);
+        } else {
+            throw new CloudRuntimeException("Invalid direction: " + cmd.getDirection());
+        }
+
+        ImageTransferVO imageTransferVO = imageTransferDao.findById(imageTransfer.getId());
+        ImageTransferResponse response = toImageTransferResponse(imageTransferVO);
+        return response;
+    }
+
+    private void finalizeDownloadImageTransfer(ImageTransferVO imageTransfer) {
+
+        String transferId = imageTransfer.getUuid();
+        int nbdPort = imageTransfer.getNbdPort();
+        String direction = imageTransfer.getDirection().toString();
+        FinalizeImageTransferCommand finalizeCmd = new FinalizeImageTransferCommand(transferId, direction, nbdPort);
 
         BackupVO backup = backupDao.findById(imageTransfer.getBackupId());
         boolean dummyOffering = isDummyOffering(backup.getBackupOfferingId());
 
-        FinalizeImageTransferCommand finalizeCmd = new FinalizeImageTransferCommand(imageTransfer.getUuid());
         try {
             Answer answer;
             if (dummyOffering) {
@@ -384,17 +450,56 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
             }
 
             if (!answer.getResult()) {
-                throw new CloudRuntimeException("Failed to create image transfer: " + answer.getDetails());
+                throw new CloudRuntimeException("Failed to finalize image transfer: " + answer.getDetails());
             }
-
-            imageTransfer.setPhase(ImageTransferVO.Phase.finished);
-            imageTransferDao.update(imageTransferId, imageTransfer);
-            imageTransferDao.remove(imageTransferId);
 
         } catch (AgentUnavailableException | OperationTimedoutException e) {
             throw new CloudRuntimeException("Failed to communicate with agent: " + e.getMessage(), e);
         }
+    }
 
+    private void finalizeUploadImageTransfer(ImageTransferVO imageTransfer) {
+        String transferId = imageTransfer.getUuid();
+        int nbdPort = imageTransfer.getNbdPort();
+        String direction = imageTransfer.getDirection().toString();
+
+        StopNBDServerCommand stopNbdServerCommand = new StopNBDServerCommand(transferId, direction, nbdPort);
+        Answer answer;
+        try {
+            answer = agentManager.send(imageTransfer.getHostId(), stopNbdServerCommand);
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            throw new CloudRuntimeException("Failed to communicate with agent: " + e.getMessage(), e);
+        }
+        if (!answer.getResult()) {
+            throw new CloudRuntimeException("Failed to stop the nbd server");
+        }
+
+        FinalizeImageTransferCommand finalizeCmd = new FinalizeImageTransferCommand(transferId, direction, nbdPort);
+        EndPoint ssvm = _epSelector.findSsvm(imageTransfer.getDataCenterId());
+        answer = ssvm.sendMessage(finalizeCmd);
+
+        if (!answer.getResult()) {
+            throw new CloudRuntimeException("Failed to finalize image transfer: " + answer.getDetails());
+        }
+    }
+
+    @Override
+    public boolean finalizeImageTransfer(FinalizeImageTransferCmd cmd) {
+        Long imageTransferId = cmd.getImageTransferId();
+
+        ImageTransferVO imageTransfer = imageTransferDao.findById(imageTransferId);
+        if (imageTransfer == null) {
+            throw new CloudRuntimeException("Image transfer not found: " + imageTransferId);
+        }
+
+        if (imageTransfer.getDirection().equals(ImageTransfer.Direction.download)) {
+            finalizeDownloadImageTransfer(imageTransfer);
+        } else {
+            finalizeUploadImageTransfer(imageTransfer);
+        }
+        imageTransfer.setPhase(ImageTransferVO.Phase.finished);
+        imageTransferDao.update(imageTransfer.getId(), imageTransfer);
+        imageTransferDao.remove(imageTransfer.getId());
         return true;
     }
 
@@ -463,43 +568,34 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         return cmdList;
     }
 
-    // Helper methods
-
-    private int allocateNbdPort() {
-        // Simplified port allocation for POC
+    private int getRandomNbdPort() {
         Random random = new Random();
         return NBD_PORT_RANGE_START + random.nextInt(NBD_PORT_RANGE_END - NBD_PORT_RANGE_START);
     }
 
-    private String resolveDeviceName(List<? extends Volume> volumes, Long targetDiskId) {
-        // Simplified device name resolution for POC
-        int index = 0;
-        for (Volume vol : volumes) {
-            if (Long.valueOf(vol.getId()).equals(targetDiskId)) {
-                return "vd" + (char)('a' + index);
-            }
-            index++;
+    private int allocateNbdPort() {
+        int port = getRandomNbdPort();
+        while (imageTransferDao.findByNbdPort(port) != null) {
+            port = getRandomNbdPort();
         }
-        return "vda"; // fallback
+        return port;
     }
 
-    private ImageTransferResponse toImageTransferResponse(ImageTransferVO imageTransfer) {
+    private ImageTransferResponse toImageTransferResponse(ImageTransferVO imageTransferVO) {
         ImageTransferResponse response = new ImageTransferResponse();
-        response.setId(imageTransfer.getUuid());
-
-        BackupVO backup = backupDao.findById(imageTransfer.getBackupId());
-        VMInstanceVO vm = vmInstanceDao.findById(imageTransfer.getVmId());
-        Volume volume = volumeDao.findById(imageTransfer.getDiskId());
-
-        if (backup != null) response.setBackupId(backup.getUuid());
-        if (vm != null) response.setVmId(vm.getUuid());
-        if (volume != null) response.setDiskId(volume.getUuid());
-
-        response.setDeviceName(imageTransfer.getDeviceName());
-        response.setTransferUrl(imageTransfer.getTransferUrl());
-        response.setPhase(imageTransfer.getPhase().toString());
-        response.setCreated(imageTransfer.getCreated());
-
+        response.setId(imageTransferVO.getUuid());
+        Long backupId = imageTransferVO.getBackupId();
+        if (backupId != null) {
+            Backup backup = backupDao.findById(backupId);
+            response.setBackupId(backup.getUuid());
+        }
+        Long volumeId = imageTransferVO.getDiskId();
+        Volume volume = volumeDao.findById(volumeId);
+        response.setDiskId(volume.getUuid());
+        response.setTransferUrl(imageTransferVO.getTransferUrl());
+        response.setPhase(ImageTransferVO.Phase.initializing.toString());
+        response.setDirection(imageTransferVO.getDirection().toString());
+        response.setCreated(imageTransferVO.getCreated());
         return response;
     }
 }
