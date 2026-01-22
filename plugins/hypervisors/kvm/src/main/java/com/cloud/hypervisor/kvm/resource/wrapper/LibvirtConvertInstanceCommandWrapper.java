@@ -22,9 +22,11 @@ import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.agent.api.Answer;
@@ -244,7 +246,12 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
 
         String logPrefix = String.format("(%s) virt-v2v ovf source: %s progress", originalVMName, sourceOVFDirPath);
         OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(logger, logPrefix);
-        script.execute(outputLogger);
+        Map<String, String> convertInstanceEnv = serverResource.getConvertInstanceEnv();
+        if (MapUtils.isEmpty(convertInstanceEnv)) {
+            script.execute(outputLogger);
+        } else {
+            script.execute(outputLogger, convertInstanceEnv);
+        }
         int exitValue = script.getExitValue();
         return exitValue == 0;
     }

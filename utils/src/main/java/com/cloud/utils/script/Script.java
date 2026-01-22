@@ -30,6 +30,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -42,6 +43,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -236,6 +238,14 @@ public class Script implements Callable<String> {
     }
 
     public String execute(OutputInterpreter interpreter) {
+        return execute(interpreter, null);
+    }
+
+    public String execute(OutputInterpreter interpreter, Map<String, String> environment) {
+        return executeInternal(interpreter, environment);
+    }
+
+    private String executeInternal(OutputInterpreter interpreter, Map<String, String> environment) {
         String[] command = _command.toArray(new String[_command.size()]);
         String commandLine = buildCommandLine(command);
         if (_logger.isDebugEnabled() && !avoidLoggingCommand) {
@@ -247,11 +257,19 @@ public class Script implements Callable<String> {
 
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.redirectErrorStream(true);
-            if (_workDir != null)
+
+            if (MapUtils.isNotEmpty(environment)) {
+                Map<String, String> processEnvironment = pb.environment();
+                processEnvironment.putAll(environment);
+            }
+
+            if (_workDir != null) {
                 pb.directory(new File(_workDir));
+            }
 
             _logger.trace(String.format("Starting process for command [%s].", commandLine));
             _process = pb.start();
+
             if (_process == null) {
                 _logger.warn(String.format("Unable to execute command [%s] because no process was created.", commandLine));
                 return "Unable to execute the command: " + command[0];
