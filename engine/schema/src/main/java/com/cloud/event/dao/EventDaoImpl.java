@@ -18,7 +18,7 @@ package com.cloud.event.dao;
 
 import java.util.Date;
 import java.util.List;
-
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
@@ -35,6 +35,7 @@ import com.cloud.utils.db.TransactionLegacy;
 public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements EventDao {
     protected final SearchBuilder<EventVO> CompletedEventSearch;
     protected final SearchBuilder<EventVO> ToArchiveOrDeleteEventSearch;
+    protected final SearchBuilder<EventVO> LastStartEventSearch;
 
     public EventDaoImpl() {
         CompletedEventSearch = createSearchBuilder();
@@ -51,6 +52,14 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
         ToArchiveOrDeleteEventSearch.and("createdDateL", ToArchiveOrDeleteEventSearch.entity().getCreateDate(), Op.LTEQ);
         ToArchiveOrDeleteEventSearch.and("archived", ToArchiveOrDeleteEventSearch.entity().getArchived(), Op.EQ);
         ToArchiveOrDeleteEventSearch.done();
+
+        LastStartEventSearch = createSearchBuilder();
+        LastStartEventSearch.and("type", LastStartEventSearch.entity().getType(), Op.EQ);
+        LastStartEventSearch.and("state", LastStartEventSearch.entity().getState(), Op.EQ);
+        LastStartEventSearch.and("resourceId", LastStartEventSearch.entity().getResourceId(), Op.EQ);
+        LastStartEventSearch.and("resourceType", LastStartEventSearch.entity().getResourceType(), Op.EQ);
+        LastStartEventSearch.and("archived", LastStartEventSearch.entity().getArchived(), Op.EQ);
+        LastStartEventSearch.done();
     }
 
     @Override
@@ -75,6 +84,19 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
         sc.setParameters("startId", startId);
         sc.setParameters("archived", false);
         return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public EventVO findLastEvent(String type, State state, Long resourceId, String resourceType) {
+        SearchCriteria<EventVO> sc = LastStartEventSearch.create();
+        sc.setParameters("type", type);
+        sc.setParameters("state", state);
+        sc.setParameters("resourceId", resourceId);
+        sc.setParameters("resourceType", resourceType);
+        sc.setParameters("archived", false);
+
+        Filter filter = new Filter(EventVO.class, "id", Boolean.FALSE, 0L, 1L);
+        return findOneBy(sc, filter);
     }
 
     @Override
