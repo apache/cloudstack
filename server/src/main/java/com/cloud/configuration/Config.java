@@ -1645,15 +1645,6 @@ public enum Config {
                     + " If set to false, these commands become asynchronous. Default value is false.",
                     null),
 
-    UCSSyncBladeInterval(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "ucs.sync.blade.interval",
-            "3600",
-            "the interval cloudstack sync with UCS manager for available blades in case user remove blades from chassis without notifying CloudStack",
-            null),
-
     RedundantRouterVrrpInterval(
             "Advanced",
             NetworkOrchestrationService.class,
