@@ -43,9 +43,7 @@ public interface VnfTemplateManager {
 
     void updateVnfTemplate(long templateId, UpdateVnfTemplateCmd cmd);
 
-    void validateVnfApplianceNics(VirtualMachineTemplate template, List<Long> networkIds);
-
-    void validateVnfApplianceNetworksMap(VirtualMachineTemplate template, Map<Integer, Long> vmNetworkMap);
+    void validateVnfApplianceNics(VirtualMachineTemplate template, List<Long> networkIds, Map<Integer, Long> vmNetworkMap);
 
     SecurityGroup createSecurityGroupForVnfAppliance(DataCenter zone, VirtualMachineTemplate template, Account owner, DeployVnfApplianceCmd cmd);
 
