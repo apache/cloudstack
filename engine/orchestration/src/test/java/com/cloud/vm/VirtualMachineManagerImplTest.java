@@ -394,9 +394,9 @@ public class VirtualMachineManagerImplTest {
         when(vm.getHostId()).thenReturn(1L);
         when(agentManagerMock.send(anyLong(), (Command)any())).thenReturn(answer);
 
-        boolean actual = virtualMachineManagerImpl.sendStop(guru, profile, false, false);
+        Pair<Boolean, String> actual = virtualMachineManagerImpl.sendStop(guru, profile, false, false);
 
-        Assert.assertTrue(actual);
+        Assert.assertTrue(actual.first());
     }
 
     @Test
@@ -409,9 +409,10 @@ public class VirtualMachineManagerImplTest {
         when(vm.getHostId()).thenReturn(1L);
         when(agentManagerMock.send(anyLong(), (Command)any())).thenReturn(answer);
 
-        boolean actual = virtualMachineManagerImpl.sendStop(guru, profile, false, false);
+        Pair<Boolean, String> actual = virtualMachineManagerImpl.sendStop(guru, profile, false, false);
 
-        assertFalse(actual);
+        assertFalse(actual.first());
+        Assert.assertEquals("fail", actual.second());
     }
 
     @Test
@@ -421,11 +422,13 @@ public class VirtualMachineManagerImplTest {
         VirtualMachineProfile profile = mock(VirtualMachineProfile.class);
         when(profile.getVirtualMachine()).thenReturn(vm);
         when(vm.getHostId()).thenReturn(1L);
+        when(vm.getInstanceName()).thenReturn("test-vm");
         when(agentManagerMock.send(anyLong(), (Command)any())).thenReturn(null);
 
-        boolean actual = virtualMachineManagerImpl.sendStop(guru, profile, false, false);
+        Pair<Boolean, String> actual = virtualMachineManagerImpl.sendStop(guru, profile, false, false);
 
-        assertFalse(actual);
+        assertFalse(actual.first());
+        Assert.assertNotNull(actual.second());
     }
 
     @Test
