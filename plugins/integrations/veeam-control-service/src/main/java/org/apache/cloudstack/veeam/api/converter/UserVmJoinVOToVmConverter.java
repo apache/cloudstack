@@ -66,28 +66,28 @@ public final class UserVmJoinVOToVmConverter {
         }
         final Ref template = buildRef(
                 basePath + ApiService.BASE_ROUTE,
-                "template",
+                "templates",
                 src.getTemplateUuid()
         );
         dst.template = template;
         dst.originalTemplate = template;
         dst.host = buildRef(
                 basePath + ApiService.BASE_ROUTE,
-                "host",
+                "hosts",
                 src.getHostUuid());
         dst.cluster = buildRef(
                 basePath + ApiService.BASE_ROUTE,
-                "cluster",
+                "clusters",
                 src.getHostUuid());
         dst.memory = src.getRamSize() * 1024L * 1024L;
 
-        dst.cpu = new Cpu(src.getArch(), new Topology(src.getCpu(), 1, 1));
+        dst.cpu = new Cpu(src.getArch(), new Topology(src.getCpu(), src.getCpu(), 1));
         dst.os = new Os();
         dst.os.type = src.getGuestOsId() % 2 == 0
                 ? "windows"
                 : "linux";
         dst.bios = new Bios();
-        dst.bios.type = "legacy";
+        dst.bios.type = "q35_secure_boot";
         dst.type = "server";
         dst.origin = "ovirt";
         dst.actions = null;dst.link = List.of(

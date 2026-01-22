@@ -372,4 +372,11 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
         return uvList;
     }
 
+    @Override
+    public List<VolumeJoinVO> listByInstanceId(long instanceId) {
+        SearchCriteria<VolumeJoinVO> sc = createSearchCriteria();
+        sc.addAnd("vmId", SearchCriteria.Op.EQ, instanceId);
+        return search(sc, null);
+    }
+
 }

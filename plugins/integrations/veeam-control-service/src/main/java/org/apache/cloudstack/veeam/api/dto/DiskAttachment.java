@@ -18,16 +18,36 @@
 package org.apache.cloudstack.veeam.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public final class Bios {
-    public String type; // "uefi" or "bios" or whatever mapping you choose
+@JacksonXmlRootElement(localName = "disk_attachment")
+public final class DiskAttachment {
 
-    public BootMenu bootMenu = new BootMenu();
+    public String active;
+    public String bootable;
 
-    public Bios() {}
+    @JsonProperty("interface")
+    public String iface; // virtio_scsi etc
 
-    public Bios(final String type) {
-        this.type = type;
-    }
+    @JsonProperty("logical_name")
+    public String logicalName;
+
+    @JsonProperty("pass_discard")
+    public String passDiscard;
+
+    @JsonProperty("read_only")
+    public String readOnly;
+
+    @JsonProperty("uses_scsi_reservation")
+    public String usesScsiReservation;
+
+    public Ref disk;
+    public Ref vm;
+
+    public String href;
+    public String id;
+
+    public DiskAttachment() {}
 }

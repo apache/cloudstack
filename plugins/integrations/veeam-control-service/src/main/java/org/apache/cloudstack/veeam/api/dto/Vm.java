@@ -61,7 +61,7 @@ public final class Vm {
     public Os os;
     public Bios bios;
 
-    public boolean stateless;  // true|false
+    public String stateless = "false";  // true|false
     public String type;    // "server"
     public String origin;  // "ovirt"
 

@@ -14,26 +14,27 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.query.dao;
+
+package org.apache.cloudstack.veeam.api.dto;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.ResponseObject.ResponseView;
-import org.apache.cloudstack.api.response.VolumeResponse;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
-import com.cloud.api.query.vo.VolumeJoinVO;
-import com.cloud.storage.Volume;
-import com.cloud.utils.db.GenericDao;
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JacksonXmlRootElement(localName = "disks")
+public final class Disks {
 
-public interface VolumeJoinDao extends GenericDao<VolumeJoinVO, Long> {
+    @JsonProperty("disk")
+    @JacksonXmlElementWrapper(useWrapping = false)
+    public List<Disk> disk;
 
-    VolumeResponse newVolumeResponse(ResponseView view, VolumeJoinVO vol);
+    public Disks() {}
 
-    VolumeResponse setVolumeResponse(ResponseView view, VolumeResponse volData, VolumeJoinVO vol);
-
-    List<VolumeJoinVO> newVolumeView(Volume vol);
-
-    List<VolumeJoinVO> searchByIds(Long... ids);
-
-    List<VolumeJoinVO> listByInstanceId(long instanceId);
+    public Disks(final List<Disk> disk) {
+        this.disk = disk;
+    }
 }

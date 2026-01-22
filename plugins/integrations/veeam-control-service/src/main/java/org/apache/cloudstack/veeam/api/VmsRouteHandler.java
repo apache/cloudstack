@@ -28,6 +28,9 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.cloudstack.veeam.RouteHandler;
 import org.apache.cloudstack.veeam.VeeamControlServlet;
 import org.apache.cloudstack.veeam.api.converter.UserVmJoinVOToVmConverter;
+import org.apache.cloudstack.veeam.api.converter.VolumeJoinVOToDiskConverter;
+import org.apache.cloudstack.veeam.api.dto.DiskAttachment;
+import org.apache.cloudstack.veeam.api.dto.DiskAttachments;
 import org.apache.cloudstack.veeam.api.dto.Vm;
 import org.apache.cloudstack.veeam.api.request.VmListQuery;
 import org.apache.cloudstack.veeam.api.request.VmSearchExpr;
@@ -36,9 +39,12 @@ import org.apache.cloudstack.veeam.api.request.VmSearchParser;
 import org.apache.cloudstack.veeam.api.response.VmCollectionResponse;
 import org.apache.cloudstack.veeam.api.response.VmEntityResponse;
 import org.apache.cloudstack.veeam.utils.Negotiation;
+import org.apache.cloudstack.veeam.utils.PathUtil;
 
 import com.cloud.api.query.dao.UserVmJoinDao;
+import com.cloud.api.query.dao.VolumeJoinDao;
 import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 
 public class VmsRouteHandler extends ManagerBase implements RouteHandler {
@@ -49,6 +55,9 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
 
     @Inject
     UserVmJoinDao userVmJoinDao;
+
+    @Inject
+    VolumeJoinDao volumeJoinDao;
 
     private VmSearchParser searchParser;
 
@@ -83,31 +92,22 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
             handleGet(req, resp, outFormat, io);
             return;
         }
-
-        // /api/vms/{id}
-        final String vmId = matchSinglePathParam(sanitizedPath, BASE_ROUTE + "/");
-        if (vmId != null) {
-            if (!"GET".equalsIgnoreCase(method)) {
-                io.methodNotAllowed(resp, "GET", outFormat);
-                return;
+        Pair<String, String> idAndSubPath = PathUtil.extractIdAndSubPath(sanitizedPath, BASE_ROUTE);
+        if (idAndSubPath != null) {
+            // /api/vms/{id}
+            if (idAndSubPath.first() != null) {
+                if (idAndSubPath.second() == null) {
+                    handleGetById(idAndSubPath.first(), resp, outFormat, io);
+                    return;
+                }
+                if ("diskattachments".equals(idAndSubPath.second())) {
+                    handleGetDisAttachmentsByVmId(idAndSubPath.first(), resp, outFormat, io);
+                    return;
+                }
             }
-            handleGetById(vmId, resp, outFormat, io);
-            return;
         }
 
         resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Not found");
-    }
-
-    /**
-     * Matches /api/vms/{id} where {id} is a single path segment (no extra '/').
-     * Returns id or null.
-     */
-    private static String matchSinglePathParam(final String path, final String prefix) {
-        if (!path.startsWith(prefix)) return null;
-        final String rest = path.substring(prefix.length()); // after "/api/vms/"
-        if (rest.isEmpty()) return null;
-        if (rest.contains("/")) return null; // ensure only 1 segment
-        return rest;
     }
 
     public void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
@@ -179,6 +179,20 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
             return;
         }
         VmEntityResponse response = new VmEntityResponse(UserVmJoinVOToVmConverter.toVm(userVmJoinVO));
+
+        io.getWriter().write(resp, 200, response, outFormat);
+    }
+
+    public void handleGetDisAttachmentsByVmId(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
+                                              final VeeamControlServlet io) throws IOException {
+        final UserVmJoinVO userVmJoinVO = userVmJoinDao.findByUuid(id);
+        if (userVmJoinVO == null) {
+            io.notFound(resp, "VM not found: " + id, outFormat);
+            return;
+        }
+        List<DiskAttachment> disks = VolumeJoinVOToDiskConverter.toDiskAttachmentList(
+              volumeJoinDao.listByInstanceId(userVmJoinVO.getId()));
+        DiskAttachments response = new DiskAttachments(disks);
 
         io.getWriter().write(resp, 200, response, outFormat);
     }

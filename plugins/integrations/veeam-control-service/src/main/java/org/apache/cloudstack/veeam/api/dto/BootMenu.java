@@ -14,26 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.query.dao;
 
-import java.util.List;
+package org.apache.cloudstack.veeam.api.dto;
 
-import org.apache.cloudstack.api.ResponseObject.ResponseView;
-import org.apache.cloudstack.api.response.VolumeResponse;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
-import com.cloud.api.query.vo.VolumeJoinVO;
-import com.cloud.storage.Volume;
-import com.cloud.utils.db.GenericDao;
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class BootMenu {
 
-public interface VolumeJoinDao extends GenericDao<VolumeJoinVO, Long> {
-
-    VolumeResponse newVolumeResponse(ResponseView view, VolumeJoinVO vol);
-
-    VolumeResponse setVolumeResponse(ResponseView view, VolumeResponse volData, VolumeJoinVO vol);
-
-    List<VolumeJoinVO> newVolumeView(Volume vol);
-
-    List<VolumeJoinVO> searchByIds(Long... ids);
-
-    List<VolumeJoinVO> listByInstanceId(long instanceId);
+    public String enabled = "false";
 }
