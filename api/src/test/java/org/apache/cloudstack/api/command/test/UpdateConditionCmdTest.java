@@ -89,7 +89,7 @@ public class UpdateConditionCmdTest {
         Assert.assertEquals(ApiCommandResourceType.Condition, updateConditionCmd.getApiResourceType());
         Assert.assertEquals("updateconditionresponse", updateConditionCmd.getCommandName());
         Assert.assertEquals(EventTypes.EVENT_CONDITION_UPDATE, updateConditionCmd.getEventType());
-        Assert.assertEquals("Updating VM auto scaling condition with ID: " + conditionUuid, updateConditionCmd.getEventDescription());
+        Assert.assertEquals("Updating Instance AutoScale condition with ID: " + conditionUuid, updateConditionCmd.getEventDescription());
 
         when(entityMgr.findById(Condition.class, conditionId)).thenReturn(condition);
         when(condition.getAccountId()).thenReturn(accountId);

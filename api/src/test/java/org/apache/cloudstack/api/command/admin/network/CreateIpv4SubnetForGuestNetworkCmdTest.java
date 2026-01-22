@@ -57,7 +57,7 @@ public class CreateIpv4SubnetForGuestNetworkCmdTest {
         Assert.assertEquals(cidrSize, cmd.getCidrSize());
         Assert.assertEquals(1L, cmd.getEntityOwnerId());
         Assert.assertEquals(EventTypes.EVENT_IP4_GUEST_SUBNET_CREATE, cmd.getEventType());
-        Assert.assertEquals(String.format("Creating guest IPv4 subnet %s in zone subnet=%s", subnet, parentUuid), cmd.getEventDescription());
+        Assert.assertEquals(String.format("Creating guest IPv4 subnet %s in zone subnet: %s", subnet, parentUuid), cmd.getEventDescription());
 
         Ipv4GuestSubnetNetworkMap ipv4GuestSubnetNetworkMap = Mockito.mock(Ipv4GuestSubnetNetworkMap.class);
         Mockito.when(routedIpv4Manager.createIpv4SubnetForGuestNetwork(cmd)).thenReturn(ipv4GuestSubnetNetworkMap);

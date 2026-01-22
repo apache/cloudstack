@@ -61,7 +61,7 @@ public class ChangeBgpPeersForNetworkCmdTest {
         Assert.assertEquals(bgpPeerIds, cmd.getBgpPeerIds());
         Assert.assertEquals(1L, cmd.getEntityOwnerId());
         Assert.assertEquals(EventTypes.EVENT_NETWORK_BGP_PEER_UPDATE, cmd.getEventType());
-        Assert.assertEquals(String.format("Changing BGP Peers for network with ID: %s", networkUuid), cmd.getEventDescription());
+        Assert.assertEquals(String.format("Changing BGP Peers for Network with ID: %s", networkUuid), cmd.getEventDescription());
 
         Network network = Mockito.mock(Network.class);
         Mockito.when(routedIpv4Manager.changeBgpPeersForNetwork(cmd)).thenReturn(network);
