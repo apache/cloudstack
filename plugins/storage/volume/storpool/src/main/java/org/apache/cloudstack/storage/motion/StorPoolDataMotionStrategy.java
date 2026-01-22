@@ -33,6 +33,7 @@ import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -354,6 +355,9 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
             } catch (final OperationTimedoutException e) {
                 errMsg = String.format("Operation timed out due to %s", e.getMessage());
                 throw new AgentUnavailableException(errMsg, destHost.getId());
+            } catch (final OperationCancelledException e) {
+                errMsg = String.format("Operation cancelled due to %s", e.getMessage());
+                throw new AgentUnavailableException(errMsg, destHost.getId());
             }
 
             VMInstanceVO vm = _vmDao.findById(vmTO.getId());
@@ -386,7 +390,7 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
 
                 throw new CloudRuntimeException(errMsg);
             }
-        } catch (AgentUnavailableException | OperationTimedoutException | CloudRuntimeException ex) {
+        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException | CloudRuntimeException ex) {
 
             errMsg = String.format(
                     "Copy volume(s) of VM [%s] to storage(s) [%s] and VM to host [%s] failed in StorPoolDataMotionStrategy.copyAsync. Error message: [%s].",

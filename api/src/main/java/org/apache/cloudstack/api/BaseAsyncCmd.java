@@ -84,4 +84,7 @@ public abstract class BaseAsyncCmd extends BaseCmd {
         return job;
     }
 
+    public boolean isCancellable() {
+        return false;
+    }
 }

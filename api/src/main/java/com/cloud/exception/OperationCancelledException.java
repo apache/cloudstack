@@ -26,17 +26,23 @@ public class OperationCancelledException extends CloudException {
     long _agentId;
     long _seqId;
     int _time;
+    boolean _isActive;
+    String _reason;
 
     transient Command[] _cmds;
-    boolean _isActive;
 
-    public OperationCancelledException(Command[] cmds, long agentId, long seqId, int time, boolean isActive) {
+    public OperationCancelledException(Command[] cmds, long agentId, long seqId, int time, boolean isActive, String reason) {
         super("Commands: " + Arrays.toString(cmds) + " to Host " + agentId + " with seqId " + seqId + " cancelled after " + time + " secs");
         _agentId = agentId;
         _seqId = seqId;
         _time = time;
         _cmds = cmds;
         _isActive = isActive;
+        _reason = reason;
+    }
+
+    public OperationCancelledException(Command[] cmds, long agentId, long seqId, int time, boolean isActive) {
+        this(cmds, agentId, seqId, time, isActive, null);
     }
 
     public long getAgentId() {
@@ -51,11 +57,15 @@ public class OperationCancelledException extends CloudException {
         return _time;
     }
 
-    public Command[] getCommands() {
-        return _cmds;
-    }
-
     public boolean isActive() {
         return _isActive;
+    }
+
+    public String getReason() {
+        return _reason;
+    }
+
+    public Command[] getCommands() {
+        return _cmds;
     }
 }

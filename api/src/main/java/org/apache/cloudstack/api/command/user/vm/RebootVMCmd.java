@@ -114,6 +114,10 @@ public class RebootVMCmd extends BaseAsyncCmd implements UserCmd, CancellableCmd
         return getId();
     }
 
+    public boolean isCancellable() {
+        return true;
+    }
+
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.ID));

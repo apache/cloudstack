@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.OperationCancelledException;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -169,6 +170,9 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
             answers = _agentMgr.send(elbVm.getHostId(), cmds);
         } catch (OperationTimedoutException e) {
             logger.warn("ELB: Timed Out", e);
+            throw new AgentUnavailableException("Unable to send commands to virtual elbVm ", elbVm.getHostId(), e);
+        } catch (OperationCancelledException e) {
+            logger.warn("ELB: Cancelled", e);
             throw new AgentUnavailableException("Unable to send commands to virtual elbVm ", elbVm.getHostId(), e);
         }
 
