@@ -136,18 +136,13 @@ class TestKubernetesClusterAffinityGroups(cloudstackTestCase):
             except Exception as e:
                 cls.debug("Error during cleanup for Kubernetes versions: %s" % e)
 
-        try:
-            # Restore CKS enabled
-            if cls.initial_configuration_cks_enabled not in ["true", True]:
-                cls.debug("Restoring Kubernetes Service enabled value")
-                Configurations.update(cls.apiclient, "cloud.kubernetes.service.enabled", "false")
-                cls.restartServer()
+        # Restore CKS enabled
+        if cls.initial_configuration_cks_enabled not in ["true", True]:
+            cls.debug("Restoring Kubernetes Service enabled value")
+            Configurations.update(cls.apiclient, "cloud.kubernetes.service.enabled", "false")
+            cls.restartServer()
 
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-
-        return
+        super(TestKubernetesClusterAffinityGroups, cls).tearDownClass()
 
     @classmethod
     def restartServer(cls):
@@ -262,11 +257,7 @@ class TestKubernetesClusterAffinityGroups(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestKubernetesClusterAffinityGroups, self).tearDown()
 
     def deleteKubernetesClusterAndVerify(self, cluster_id, verify=True, forced=False):
         """Delete Kubernetes cluster and check if it is really deleted"""
