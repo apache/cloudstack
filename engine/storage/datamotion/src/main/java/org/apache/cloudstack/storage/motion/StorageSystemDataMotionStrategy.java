@@ -1048,7 +1048,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             //submit processEvent
             if (StringUtils.isEmpty(errMsg)) {
-                snapshotInfo.processEvent(Event.OperationSuccessed);
+                snapshotInfo.processEvent(Event.OperationSucceeded);
             } else {
                 snapshotInfo.processEvent(Event.OperationFailed);
             }
@@ -1211,7 +1211,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     // command to copy this data from cache to secondary storage. We
                     // then clean up the cache.
 
-                    destOnStore.processEvent(Event.OperationSuccessed, copyCmdAnswer);
+                    destOnStore.processEvent(Event.OperationSucceeded, copyCmdAnswer);
 
                     CopyCommand cmd = new CopyCommand(destOnStore.getTO(), destData.getTO(), primaryStorageDownloadWait,
                             VirtualMachineManager.ExecuteInSequence.value());
@@ -1261,7 +1261,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 try {
                     if (StringUtils.isEmpty(errMsg)) {
-                        snapshotInfo.processEvent(Event.OperationSuccessed);
+                        snapshotInfo.processEvent(Event.OperationSucceeded);
                     }
                     else {
                         snapshotInfo.processEvent(Event.OperationFailed);
@@ -1394,7 +1394,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             try {
                 if (StringUtils.isEmpty(errMsg)) {
-                    snapshotInfo.processEvent(Event.OperationSuccessed);
+                    snapshotInfo.processEvent(Event.OperationSucceeded);
                 }
                 else {
                     snapshotInfo.processEvent(Event.OperationFailed);
@@ -2316,7 +2316,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 _volumeDao.update(volumeVO.getId(), volumeVO);
 
-                _volumeService.copyPoliciesBetweenVolumesAndDestroySourceVolumeAfterMigration(Event.OperationSuccessed, null, srcVolumeInfo, destVolumeInfo, false);
+                _volumeService.copyPoliciesBetweenVolumesAndDestroySourceVolumeAfterMigration(Event.OperationSucceeded, null, srcVolumeInfo, destVolumeInfo, false);
 
 
                 // Update the volume ID for snapshots on secondary storage
@@ -2639,7 +2639,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 try {
                     if (StringUtils.isEmpty(errMsg)) {
-                        volumeInfo.processEvent(Event.OperationSuccessed);
+                        volumeInfo.processEvent(Event.OperationSucceeded);
                     }
                     else {
                         volumeInfo.processEvent(Event.OperationFailed);

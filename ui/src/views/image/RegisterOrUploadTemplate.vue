@@ -638,14 +638,13 @@ export default {
         this.$emit('refresh-data')
         this.closeAction()
       }).catch(e => {
-        this.$notification.error({
-          message: this.$t('message.upload.failed'),
-          description: `${this.$t('message.upload.template.failed.description')} -  ${e}`,
-          duration: 0
-        })
+        this.$notifyError(e)
       })
     },
     fetchCustomHypervisorName () {
+      if (!('listConfigurations' in this.$store.getters.apis)) {
+        return
+      }
       const params = {
         name: 'hypervisor.custom.display.name'
       }
