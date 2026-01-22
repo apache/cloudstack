@@ -25,7 +25,10 @@ import java.util.stream.Collectors;
 import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.api.ApiService;
 import org.apache.cloudstack.veeam.api.VmsRouteHandler;
+import org.apache.cloudstack.veeam.api.dto.Bios;
 import org.apache.cloudstack.veeam.api.dto.Cpu;
+import org.apache.cloudstack.veeam.api.dto.Link;
+import org.apache.cloudstack.veeam.api.dto.Os;
 import org.apache.cloudstack.veeam.api.dto.Ref;
 import org.apache.cloudstack.veeam.api.dto.Topology;
 import org.apache.cloudstack.veeam.api.dto.Vm;
@@ -76,13 +79,25 @@ public final class UserVmJoinVOToVmConverter {
                 basePath + ApiService.BASE_ROUTE,
                 "cluster",
                 src.getHostUuid());
-        dst.memory = (long) src.getRamSize();
+        dst.memory = src.getRamSize() * 1024L * 1024L;
 
         dst.cpu = new Cpu(src.getArch(), new Topology(src.getCpu(), 1, 1));
-        dst.os = null;
-        dst.bios = null;
-        dst.actions = null;
-        dst.link = null;
+        dst.os = new Os();
+        dst.os.type = src.getGuestOsId() % 2 == 0
+                ? "windows"
+                : "linux";
+        dst.bios = new Bios();
+        dst.bios.type = "legacy";
+        dst.type = "server";
+        dst.origin = "ovirt";
+        dst.actions = null;dst.link = List.of(
+                new Link("diskattachments",
+                        dst.href + "/diskattachments"),
+                new Link("nics",
+                        dst.href + "/nics"),
+                new Link("snapshots",
+                        dst.href + "/snapshots")
+        );
 
         return dst;
     }

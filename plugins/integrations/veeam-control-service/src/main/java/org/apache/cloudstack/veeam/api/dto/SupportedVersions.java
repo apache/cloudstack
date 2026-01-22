@@ -15,29 +15,23 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.veeam;
+package org.apache.cloudstack.veeam.api.dto;
 
-import java.io.IOException;
+import java.util.List;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 
-import org.apache.cloudstack.veeam.utils.Negotiation;
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public final class SupportedVersions {
 
-import com.cloud.utils.component.Adapter;
+    @JsonProperty("version")
+    @JacksonXmlElementWrapper(useWrapping = false)
+    public List<Version> version;
 
-public interface RouteHandler extends Adapter {
-    default int priority() { return 0; }
-    boolean canHandle(String method, String path) throws IOException;
-    void handle(HttpServletRequest req, HttpServletResponse resp, String path, Negotiation.OutFormat outFormat, VeeamControlServlet io)
-            throws IOException;
-
-    default String getSanitizedPath(String path) {
-        // remove query params if exists
-        int qIdx = path.indexOf('?');
-        if (qIdx != -1) {
-            return path.substring(0, qIdx);
-        }
-        return path;
+    public SupportedVersions() {}
+    public SupportedVersions(final List<Version> version) {
+        this.version = version;
     }
 }

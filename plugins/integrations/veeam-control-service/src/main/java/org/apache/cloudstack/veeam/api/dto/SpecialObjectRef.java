@@ -15,29 +15,24 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.veeam;
+package org.apache.cloudstack.veeam.api.dto;
 
-import java.io.IOException;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public final class SpecialObjectRef {
 
-import org.apache.cloudstack.veeam.utils.Negotiation;
+    @JacksonXmlProperty(isAttribute = true, localName = "href")
+    public String href;
 
-import com.cloud.utils.component.Adapter;
+    @JacksonXmlProperty(isAttribute = true, localName = "id")
+    public String id;
 
-public interface RouteHandler extends Adapter {
-    default int priority() { return 0; }
-    boolean canHandle(String method, String path) throws IOException;
-    void handle(HttpServletRequest req, HttpServletResponse resp, String path, Negotiation.OutFormat outFormat, VeeamControlServlet io)
-            throws IOException;
+    public SpecialObjectRef() {}
 
-    default String getSanitizedPath(String path) {
-        // remove query params if exists
-        int qIdx = path.indexOf('?');
-        if (qIdx != -1) {
-            return path.substring(0, qIdx);
-        }
-        return path;
+    public SpecialObjectRef(String href, String id) {
+        this.href = href;
+        this.id = id;
     }
 }

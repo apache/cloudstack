@@ -15,29 +15,24 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.veeam;
+package org.apache.cloudstack.veeam.api.dto;
 
-import java.io.IOException;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public final class SummaryCount {
 
-import org.apache.cloudstack.veeam.utils.Negotiation;
+    @JacksonXmlProperty(localName = "active")
+    public Integer active;
 
-import com.cloud.utils.component.Adapter;
+    @JacksonXmlProperty(localName = "total")
+    public Integer total;
 
-public interface RouteHandler extends Adapter {
-    default int priority() { return 0; }
-    boolean canHandle(String method, String path) throws IOException;
-    void handle(HttpServletRequest req, HttpServletResponse resp, String path, Negotiation.OutFormat outFormat, VeeamControlServlet io)
-            throws IOException;
+    public SummaryCount() {}
 
-    default String getSanitizedPath(String path) {
-        // remove query params if exists
-        int qIdx = path.indexOf('?');
-        if (qIdx != -1) {
-            return path.substring(0, qIdx);
-        }
-        return path;
+    public SummaryCount(Integer active, Integer total) {
+        this.active = active;
+        this.total = total;
     }
 }

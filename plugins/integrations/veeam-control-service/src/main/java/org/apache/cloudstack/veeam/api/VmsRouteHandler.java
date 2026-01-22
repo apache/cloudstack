@@ -68,13 +68,14 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
 
     @Override
     public boolean canHandle(String method, String path) {
-        return path.startsWith(BASE_ROUTE);
+        return getSanitizedPath(path).startsWith(BASE_ROUTE);
     }
 
     @Override
     public void handle(HttpServletRequest req, HttpServletResponse resp, String path, Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
         final String method = req.getMethod();
-        if (path.equals(BASE_ROUTE)) {
+        final String sanitizedPath = getSanitizedPath(path);
+        if (sanitizedPath.equals(BASE_ROUTE)) {
             if (!"GET".equalsIgnoreCase(method)) {
                 io.methodNotAllowed(resp, "GET", outFormat);
                 return;
@@ -84,7 +85,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
         }
 
         // /api/vms/{id}
-        final String vmId = matchSinglePathParam(path, BASE_ROUTE + "/");
+        final String vmId = matchSinglePathParam(sanitizedPath, BASE_ROUTE + "/");
         if (vmId != null) {
             if (!"GET".equalsIgnoreCase(method)) {
                 io.methodNotAllowed(resp, "GET", outFormat);

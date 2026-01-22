@@ -15,29 +15,23 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.veeam;
+package org.apache.cloudstack.veeam.api.dto;
+
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
 
 import java.io.IOException;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.cloudstack.veeam.utils.Negotiation;
-
-import com.cloud.utils.component.Adapter;
-
-public interface RouteHandler extends Adapter {
-    default int priority() { return 0; }
-    boolean canHandle(String method, String path) throws IOException;
-    void handle(HttpServletRequest req, HttpServletResponse resp, String path, Negotiation.OutFormat outFormat, VeeamControlServlet io)
-            throws IOException;
-
-    default String getSanitizedPath(String path) {
-        // remove query params if exists
-        int qIdx = path.indexOf('?');
-        if (qIdx != -1) {
-            return path.substring(0, qIdx);
-        }
-        return path;
+/**
+ * Serializes as an "empty object".
+ * With Jackson XML this becomes an empty element: <engine_backup/>.
+ */
+public final class EmptyElementSerializer extends JsonSerializer<EmptyElement> {
+    @Override
+    public void serialize(EmptyElement value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+        gen.writeStartObject();
+        gen.writeEndObject();
     }
 }
+

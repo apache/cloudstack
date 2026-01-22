@@ -58,6 +58,34 @@ public class VeeamControlServlet extends HttpServlet {
 
         LOGGER.info("Received {} request for {} with out format: {}", method, path, outFormat);
 
+        // Add a log to give all info about the request
+        try {
+            StringBuilder details = new StringBuilder();
+            details.append("Request details: Method: ").append(method).append(", Path: ").append(path);
+            details.append(", Query: ").append(req.getQueryString() == null ? "" : req.getQueryString());
+            details.append(", Headers: ");
+            java.util.Enumeration<String> headerNames = req.getHeaderNames();
+            while (headerNames != null && headerNames.hasMoreElements()) {
+                String name = headerNames.nextElement();
+                details.append(name).append("=").append(req.getHeader(name)).append("; ");
+            }
+//            String body = "";
+//            if (!"GET".equalsIgnoreCase(method)) {
+//                StringBuilder bodySb = new StringBuilder();
+//                java.io.BufferedReader reader = req.getReader();
+//                if (reader != null) {
+//                    String line;
+//                    while ((line = reader.readLine()) != null) {
+//                        bodySb.append(line).append('\n');
+//                    }
+//                }
+//                body = bodySb.toString().trim();
+//            }
+//            details.append(", Body: ").append(body);
+            LOGGER.debug(details.toString());
+        } catch (Exception e) {
+            LOGGER.debug("Failed to capture request details", e);
+        }
 
         try {
             if ("/".equals(path)) {

@@ -30,7 +30,7 @@ public interface VeeamControlService extends PluggableService, Configurable {
     ConfigKey<Integer> Port = new ConfigKey<>("Advanced", Integer.class, "integration.veeam.control.port",
             "8090", "Port for Veeam Integration REST API server", false);
     ConfigKey<String> ContextPath = new ConfigKey<>("Advanced", String.class, "integration.veeam.control.context.path",
-            "/integrations/veeam", "Context path for Veeam Integration REST API server", false);
+            "/ovirt-engine", "Context path for Veeam Integration REST API server", false);
     ConfigKey<String> Username = new ConfigKey<>("Advanced", String.class, "integration.veeam.api.username",
             "veeam", "Username for Basic Auth on Veeam Integration REST API server", true);
     ConfigKey<String> Password = new ConfigKey<>("Advanced", String.class, "integration.veeam.api.password",

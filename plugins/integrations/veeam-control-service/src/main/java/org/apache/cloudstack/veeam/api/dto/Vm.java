@@ -61,6 +61,10 @@ public final class Vm {
     public Os os;
     public Bios bios;
 
+    public boolean stateless;  // true|false
+    public String type;    // "server"
+    public String origin;  // "ovirt"
+
     public Actions actions;      // actions.link[]
     @JacksonXmlElementWrapper(useWrapping = false)
     public List<Link> link;      // related resources

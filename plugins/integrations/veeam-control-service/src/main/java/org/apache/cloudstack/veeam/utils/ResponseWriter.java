@@ -24,8 +24,11 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.cloudstack.veeam.api.dto.Fault;
 import org.apache.cloudstack.veeam.api.response.FaultResponse;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public final class ResponseWriter {
+    private static final Logger LOGGER = LogManager.getLogger(ResponseWriter.class);
 
     private final ResponseMapper mapper;
 
@@ -61,6 +64,8 @@ public final class ResponseWriter {
             resp.getWriter().write("Internal Server Error");
             return;
         }
+
+        LOGGER.info("Writing response: {}\n{}", status, payload);
 
         resp.setCharacterEncoding(StandardCharsets.UTF_8.name());
         resp.setHeader("Content-Type", contentType);
