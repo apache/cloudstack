@@ -77,7 +77,7 @@ public class StoreVOToStorageDomainConverter {
         // dc attachment
         String dcId = pool.getZoneUuid();
         DataCenter dc = new DataCenter();
-        dc.href = href(basePath, DataCentersRouteHandler.BASE_ROUTE + dcId);
+        dc.href = href(basePath, DataCentersRouteHandler.BASE_ROUTE + "/" + dcId);
         dc.id = dcId;
         sd.dataCenters = new DataCenters(List.of(dc));
 
@@ -132,7 +132,7 @@ public class StoreVOToStorageDomainConverter {
         // Optionally include dc attachment (your first object had it; second didn’t)
         String dcId = store.getZoneUuid();
         DataCenter dc = new DataCenter();
-        dc.href = href(basePath, DataCentersRouteHandler.BASE_ROUTE + dcId);
+        dc.href = href(basePath, DataCentersRouteHandler.BASE_ROUTE + "/" + dcId);
         dc.id = dcId;
         sd.dataCenters = new DataCenters(List.of(dc));
 

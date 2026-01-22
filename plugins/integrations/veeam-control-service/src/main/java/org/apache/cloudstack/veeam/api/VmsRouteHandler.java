@@ -41,8 +41,10 @@ import org.apache.cloudstack.veeam.api.response.VmEntityResponse;
 import org.apache.cloudstack.veeam.utils.Negotiation;
 import org.apache.cloudstack.veeam.utils.PathUtil;
 
+import com.cloud.api.query.dao.HostJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
+import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
@@ -55,6 +57,9 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
 
     @Inject
     UserVmJoinDao userVmJoinDao;
+
+    @Inject
+    HostJoinDao hostJoinDao;
 
     @Inject
     VolumeJoinDao volumeJoinDao;
@@ -143,7 +148,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
             return;
         }
 
-        final List<Vm> result = UserVmJoinVOToVmConverter.toVmList(listUserVms());
+        final List<Vm> result = UserVmJoinVOToVmConverter.toVmList(listUserVms(), this::getHostById);
         final VmCollectionResponse response = new VmCollectionResponse(result);
 
         io.getWriter().write(resp, 200, response, outFormat);
@@ -178,7 +183,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
             io.notFound(resp, "VM not found: " + id, outFormat);
             return;
         }
-        VmEntityResponse response = new VmEntityResponse(UserVmJoinVOToVmConverter.toVm(userVmJoinVO));
+        VmEntityResponse response = new VmEntityResponse(UserVmJoinVOToVmConverter.toVm(userVmJoinVO, this::getHostById));
 
         io.getWriter().write(resp, 200, response, outFormat);
     }
@@ -196,4 +201,12 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
 
         io.getWriter().write(resp, 200, response, outFormat);
     }
+
+    private HostJoinVO getHostById(Long hostId) {
+        if (hostId == null) {
+            return null;
+        }
+        return hostJoinDao.findById(hostId);
+    }
+
 }

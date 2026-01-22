@@ -34,6 +34,7 @@
     <bean id="veeamControlApiService" class="org.apache.cloudstack.veeam.api.ApiService" />
     <bean id="vmsRouteHandler" class="org.apache.cloudstack.veeam.api.VmsRouteHandler"/>
     <bean id="dataCentersRouteHandler" class="org.apache.cloudstack.veeam.api.DataCentersRouteHandler"/>
+    <bean id="clustersRouteHandler" class="org.apache.cloudstack.veeam.api.ClustersRouteHandler"/>
     <bean id="disksRouteHandler" class="org.apache.cloudstack.veeam.api.DisksRouteHandler"/>
     <bean id="veeamControlSsoService" class="org.apache.cloudstack.veeam.sso.SsoService"/>
 

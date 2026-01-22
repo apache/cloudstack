@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 
 import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.api.ApiService;
+import org.apache.cloudstack.veeam.api.DisksRouteHandler;
 import org.apache.cloudstack.veeam.api.dto.Actions;
 import org.apache.cloudstack.veeam.api.dto.Disk;
 import org.apache.cloudstack.veeam.api.dto.DiskAttachment;
@@ -38,10 +39,10 @@ import com.cloud.storage.VolumeStats;
 public class VolumeJoinVOToDiskConverter {
     public static Disk toDisk(final VolumeJoinVO vol) {
         final Disk disk = new Disk();
-        final String apiBase = VeeamControlService.ContextPath.value() + ApiService.BASE_ROUTE;
+        final String basePath = VeeamControlService.ContextPath.value() + ApiService.BASE_ROUTE;
 
         final String diskId = vol.getUuid();
-        final String diskHref = apiBase + "/disks/" + diskId;
+        final String diskHref = basePath + DisksRouteHandler.BASE_ROUTE + "/" + diskId;
 
         disk.id = diskId;
         disk.href = diskHref;
@@ -49,7 +50,7 @@ public class VolumeJoinVOToDiskConverter {
         // Names
         disk.name = vol.getName();
         disk.alias = vol.getName();
-        disk.description = "";
+        disk.description = vol.getName();
 
         // Sizes (bytes)
         final long size = vol.getSize();
@@ -96,7 +97,7 @@ public class VolumeJoinVOToDiskConverter {
 
         // Disk profile (optional)
         disk.diskProfile = Ref.of(
-                apiBase + "/diskprofiles/" + vol.getDiskOfferingId(),
+                basePath + "/diskprofiles/" + vol.getDiskOfferingId(),
                 String.valueOf(vol.getDiskOfferingId())
         );
 
@@ -105,7 +106,7 @@ public class VolumeJoinVOToDiskConverter {
             Disk.StorageDomains sds = new Disk.StorageDomains();
             sds.storageDomain = List.of(
                     Ref.of(
-                            apiBase + "/storagedomains/" + vol.getPoolUuid(),
+                            basePath + "/storagedomains/" + vol.getPoolUuid(),
                             vol.getPoolUuid()
                     )
             );

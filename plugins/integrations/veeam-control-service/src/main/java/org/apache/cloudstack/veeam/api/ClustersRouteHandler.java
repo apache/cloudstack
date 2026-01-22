@@ -1,0 +1,123 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+package org.apache.cloudstack.veeam.api;
+
+import java.io.IOException;
+import java.util.List;
+
+import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.cloudstack.veeam.RouteHandler;
+import org.apache.cloudstack.veeam.VeeamControlServlet;
+import org.apache.cloudstack.veeam.api.converter.ClusterVOToClusterConverter;
+import org.apache.cloudstack.veeam.api.dto.Cluster;
+import org.apache.cloudstack.veeam.api.dto.Clusters;
+import org.apache.cloudstack.veeam.utils.Negotiation;
+import org.apache.cloudstack.veeam.utils.PathUtil;
+
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.utils.Pair;
+import com.cloud.utils.component.ManagerBase;
+
+public class ClustersRouteHandler extends ManagerBase implements RouteHandler {
+    public static final String BASE_ROUTE = "/api/clusters";
+
+    @Inject
+    ClusterDao clusterDao;
+
+    @Inject
+    DataCenterDao dataCenterDao;
+
+    @Override
+    public boolean start() {
+        return true;
+    }
+
+    @Override
+    public int priority() {
+        return 5;
+    }
+
+    @Override
+    public boolean canHandle(String method, String path) {
+        return getSanitizedPath(path).startsWith(BASE_ROUTE);
+    }
+
+    @Override
+    public void handle(HttpServletRequest req, HttpServletResponse resp, String path, Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
+        final String method = req.getMethod();
+        if (!"GET".equalsIgnoreCase(method)) {
+            io.methodNotAllowed(resp, "GET", outFormat);
+            return;
+        }
+        final String sanitizedPath = getSanitizedPath(path);
+        if (sanitizedPath.equals(BASE_ROUTE)) {
+            handleGet(req, resp, outFormat, io);
+            return;
+        }
+
+        Pair<String, String> idAndSubPath = PathUtil.extractIdAndSubPath(sanitizedPath, BASE_ROUTE);
+        if (idAndSubPath != null) {
+            // /api/disks/{id}
+            if (idAndSubPath.first() != null) {
+                if (idAndSubPath.second() == null) {
+                    handleGetById(idAndSubPath.first(), resp, outFormat, io);
+                    return;
+                }
+            }
+        }
+
+        resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Not found");
+    }
+
+    public void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
+                          Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
+        final List<Cluster> result = ClusterVOToClusterConverter.toClusterList(listClusters(), this::getZoneById);
+        final Clusters response = new Clusters(result);
+
+        io.getWriter().write(resp, 200, response, outFormat);
+    }
+
+    protected List<ClusterVO> listClusters() {
+        return clusterDao.listAll();
+    }
+
+    public void handleGetById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
+                              final VeeamControlServlet io) throws IOException {
+        final ClusterVO vo = clusterDao.findByUuid(id);
+        if (vo == null) {
+            io.notFound(resp, "DataCenter not found: " + id, outFormat);
+            return;
+        }
+        Cluster response = ClusterVOToClusterConverter.toCluster(vo, this::getZoneById);
+
+        io.getWriter().write(resp, 200, response, outFormat);
+    }
+
+    private DataCenterVO getZoneById(Long zoneId) {
+        if (zoneId == null) {
+            return null;
+        }
+        return dataCenterDao.findById(zoneId);
+    }
+}

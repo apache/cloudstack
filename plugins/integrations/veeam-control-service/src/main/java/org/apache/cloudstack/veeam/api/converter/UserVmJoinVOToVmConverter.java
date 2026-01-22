@@ -20,6 +20,7 @@ package org.apache.cloudstack.veeam.api.converter;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.cloudstack.veeam.VeeamControlService;
@@ -34,6 +35,7 @@ import org.apache.cloudstack.veeam.api.dto.Topology;
 import org.apache.cloudstack.veeam.api.dto.Vm;
 import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.vm.VirtualMachine;
 
@@ -47,7 +49,7 @@ public final class UserVmJoinVOToVmConverter {
      *
      * @param src      UserVmJoinVO
      */
-    public static Vm toVm(final UserVmJoinVO src) {
+    public static Vm toVm(final UserVmJoinVO src, final Function<Long, HostJoinVO> hostResolver) {
         if (src == null) {
             return null;
         }
@@ -71,14 +73,32 @@ public final class UserVmJoinVOToVmConverter {
         );
         dst.template = template;
         dst.originalTemplate = template;
-        dst.host = buildRef(
-                basePath + ApiService.BASE_ROUTE,
-                "hosts",
-                src.getHostUuid());
-        dst.cluster = buildRef(
-                basePath + ApiService.BASE_ROUTE,
-                "clusters",
-                src.getHostUuid());
+        if (StringUtils.isNotBlank(src.getHostUuid())) {
+            dst.host = buildRef(
+                    basePath + ApiService.BASE_ROUTE,
+                    "hosts",
+                    src.getHostUuid());
+
+        }
+        if (hostResolver != null) {
+            HostJoinVO hostVo = hostResolver.apply(src.getHostId() == null ? src.getLastHostId() : src.getHostId());
+            if (hostVo != null) {
+                dst.host = buildRef(
+                        basePath + ApiService.BASE_ROUTE,
+                        "hosts",
+                        hostVo.getUuid());
+                dst.cluster = buildRef(
+                        basePath + ApiService.BASE_ROUTE,
+                        "clusters",
+                        hostVo.getClusterUuid());
+            }
+        }
+        Long hostId = src.getHostId() != null ? src.getHostId() : src.getLastHostId();
+        if (hostId != null) {
+            // I want to get Host data from hostJoinDao but this is a static method without dao access.
+
+        }
+
         dst.memory = src.getRamSize() * 1024L * 1024L;
 
         dst.cpu = new Cpu(src.getArch(), new Topology(src.getCpu(), src.getCpu(), 1));
@@ -102,9 +122,9 @@ public final class UserVmJoinVOToVmConverter {
         return dst;
     }
 
-    public static List<Vm> toVmList(final List<UserVmJoinVO> srcList) {
+    public static List<Vm> toVmList(final List<UserVmJoinVO> srcList, final Function<Long, HostJoinVO> hostResolver) {
         return srcList.stream()
-                .map(UserVmJoinVOToVmConverter::toVm)
+                .map(v -> toVm(v, hostResolver))
                 .collect(Collectors.toList());
     }
 
