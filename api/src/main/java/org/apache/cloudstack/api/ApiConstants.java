@@ -1085,9 +1085,6 @@ public class ApiConstants {
     public static final String GUEST_VM_CIDR = "guestvmcidr";
     public static final String NETWORK_CIDR = "networkcidr";
     public static final String RESERVED_IP_RANGE = "reservediprange";
-    public static final String UCS_PROFILE_DN = "profiledn";
-    public static final String UCS_BLADE_DN = "bladedn";
-    public static final String UCS_BLADE_ID = "bladeid";
     public static final String VM_GUEST_IP = "vmguestip";
     public static final String HEALTHCHECK_FAILED = "healthchecksfailed";
     public static final String HEALTHCHECK_RESPONSE_TIMEOUT = "responsetimeout";
