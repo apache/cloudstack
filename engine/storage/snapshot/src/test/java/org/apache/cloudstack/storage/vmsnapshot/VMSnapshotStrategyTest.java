@@ -25,6 +25,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 import org.apache.cloudstack.backup.BackupManager;
@@ -107,7 +108,7 @@ public class VMSnapshotStrategyTest extends TestCase {
     }
 
     @Test
-    public void testCreateVMSnapshot() throws AgentUnavailableException, OperationTimedoutException {
+    public void testCreateVMSnapshot() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         Long hostId = 1L;
         Long vmId = 1L;
         Long guestOsId = 1L;
@@ -151,7 +152,7 @@ public class VMSnapshotStrategyTest extends TestCase {
     }
 
     @Test
-    public void testRevertSnapshot() throws AgentUnavailableException, OperationTimedoutException {
+    public void testRevertSnapshot() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         Long hostId = 1L;
         Long vmId = 1L;
         Long guestOsId = 1L;
@@ -199,7 +200,7 @@ public class VMSnapshotStrategyTest extends TestCase {
     }
 
     @Test
-    public void testDeleteVMSnapshot() throws AgentUnavailableException, OperationTimedoutException {
+    public void testDeleteVMSnapshot() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         Long hostId = 1L;
         Long vmId = 1L;
         Long guestOsId = 1L;

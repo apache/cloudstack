@@ -43,6 +43,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
@@ -1582,7 +1583,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 if (result) {
                     compatiblePools.add(pool);
                 }
-            } catch (AgentUnavailableException | OperationTimedoutException e) {
+            } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
                 logger.error("Could not verify if storage policy " + storagePolicy.getName() + " is compatible with storage pool " + pool.getName());
             }
         }

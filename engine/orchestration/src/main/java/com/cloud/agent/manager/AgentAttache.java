@@ -433,13 +433,22 @@ public abstract class AgentAttache {
                     try {
                         answers = sl.waitFor(wait);
                     } catch (final InterruptedException e) {
-                        logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Interrupted");
+                        logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Interrupted while waiting for job commands processing");
+                        Thread.currentThread().interrupt();
                         if (_agentMgr._asyncJobDao.isJobCancelled(jobId)) {
-                            throw new OperationCancelledException(req.getCommands(), _id, seq, wait, false);
+                            throw new OperationCancelledException(req.getCommands(), _id, seq, wait, true, "Cancelled during waiting for job commands processing");
                         }
                     }
                 }
                 if (answers != null) {
+                    for (Answer answer : answers) {
+                        if (answer != null && !answer.getResult() &&
+                                answer.getDetails() != null &&
+                                answer.getDetails().contains("cancelled")) {
+                            throw new OperationCancelledException(req.getCommands(), _id, seq, wait, true, answer.getDetails());
+                        }
+                    }
+
                     new Response(req, answers).logD("Received: ", false);
                     return answers;
                 }
@@ -472,6 +481,14 @@ public abstract class AgentAttache {
                 sendNext(seq);
             }
             throw e;
+        } catch (OperationCancelledException e) {
+            logger.warn(LOG_SEQ_FORMATTED_STRING, seq, "Operation cancelled: " + req.toString());
+            cancel(seq);
+            final Long current = _currentSequence;
+            if (req.executeInSequence() && (current != null && current == seq)) {
+                sendNext(seq);
+            }
+            throw e;
         } catch (Exception e) {
             logger.warn(LOG_SEQ_FORMATTED_STRING, seq, "Exception while waiting for answer", e);
             cancel(seq);
@@ -480,9 +497,9 @@ public abstract class AgentAttache {
                 sendNext(seq);
             }
             _agentMgr.updateReconcileCommandsIfNeeded(req.getSequence(), req.getCommands(), Command.State.TIMED_OUT);
-            if (e instanceof OperationCancelledException) {
-                throw e;
-            }
+//            if (e instanceof OperationCancelledException) {
+//                throw e;
+//            }
             throw new OperationTimedoutException(req.getCommands(), _id, seq, wait, false);
         } finally {
             unregisterListener(seq);
