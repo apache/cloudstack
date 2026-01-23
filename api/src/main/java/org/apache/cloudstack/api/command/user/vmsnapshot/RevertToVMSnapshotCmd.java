@@ -42,7 +42,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.vm.snapshot.VMSnapshot;
 
 @APICommand(name = "revertToVMSnapshot", description = "Revert Instance from a vmsnapshot.", responseObject = UserVmResponse.class, since = "4.2.0", responseView = ResponseView.Restricted,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true, cancellable = true)
 public class RevertToVMSnapshotCmd extends BaseAsyncCmd implements UserCmd {
     private static final String s_name = "reverttovmsnapshotresponse";
 

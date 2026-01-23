@@ -40,6 +40,8 @@ public interface AsyncJobManager extends Manager {
 
     void completeAsyncJob(long jobId, JobInfo.Status jobStatus, int resultCode, String result);
 
+    void completeAsyncJob(long jobId, JobInfo.Status jobStatus, int resultCode, String result, boolean remove);
+
     void updateAsyncJobStatus(long jobId, int processStatus, String resultObject);
 
     void updateAsyncJobAttachment(long jobId, String instanceType, Long instanceId);

@@ -50,7 +50,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "createSnapshot", description = "Creates an instant Snapshot of a volume.", responseObject = SnapshotResponse.class, entityType = {Snapshot.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, cancellable = true)
 public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 
     // ///////////////////////////////////////////////////
