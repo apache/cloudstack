@@ -36,7 +36,7 @@ import com.cloud.storage.Snapshot;
 import com.cloud.user.Account;
 
 @APICommand(name = "revertSnapshot", description = "This is supposed to revert a volume Snapshot. This command is only supported with KVM so far", responseObject = SnapshotResponse.class, entityType = {Snapshot.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, cancellable = true)
 public class RevertSnapshotCmd extends BaseAsyncCmd {
 
     /////////////////////////////////////////////////////
