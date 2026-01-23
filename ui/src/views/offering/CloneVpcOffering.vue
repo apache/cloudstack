@@ -92,6 +92,7 @@
                 v-model:value="form.provider"
                 @change="val => handleProviderChange(val)"
                 showSearch
+                disabled
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
                   return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -129,6 +130,7 @@
           <a-select
             optionFilterProp="label"
             v-model:value="form.networkmode"
+            :disabled="provider === 'NSX' || provider === 'Netris'"
             @change="val => { handleForNetworkModeChange(val) }"
             :filterOption="(input, option) => {
               return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -284,6 +286,7 @@ import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import { BlockOutlined, GlobalOutlined } from '@ant-design/icons-vue'
+import { buildVpcServiceCapabilityParams } from '@/composables/useServiceCapabilityParams'
 
 export default {
   name: 'CloneVpcOffering',
@@ -731,16 +734,13 @@ export default {
         e.preventDefault()
       }
       if (this.loading) return
-
       this.formRef.value.validate().then(() => {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
-
         const params = {
           sourceofferingid: this.resource.id,
           name: values.name
         }
-
         if (values.displaytext) {
           params.displaytext = values.displaytext
         }
@@ -808,38 +808,7 @@ export default {
             params['serviceProviderList[' + k + '].service'] = supportedServices[k]
             params['serviceProviderList[' + k + '].provider'] = this.selectedServiceProviderMap[supportedServices[k]]
           }
-
-          let serviceCapabilityIndex = 0
-          if (supportedServices.includes('Connectivity')) {
-            if (values.regionlevelvpc === true) {
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'Connectivity'
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RegionLevelVpc'
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
-              serviceCapabilityIndex++
-            }
-            if (values.distributedrouter === true) {
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'Connectivity'
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'DistributedRouter'
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
-              serviceCapabilityIndex++
-            }
-          }
-
-          if (supportedServices.includes('SourceNat') && values.redundantrouter === true) {
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'SourceNat'
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RedundantRouter'
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
-            serviceCapabilityIndex++
-          } else if (values.redundantrouter === true) {
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'Gateway'
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RedundantRouter'
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
-            serviceCapabilityIndex++
-          }
-
-          if (values.serviceofferingid && this.isVpcVirtualRouterForAtLeastOneService) {
-            params.serviceofferingid = values.serviceofferingid
-          }
+          buildVpcServiceCapabilityParams(params, values, this.selectedServiceProviderMap, this.isVpcVirtualRouterForAtLeastOneService)
         } else {
           params.supportedservices = ''
         }

@@ -324,7 +324,8 @@
         <a-form-item name="lbtype" ref="lbtype" :label="$t('label.lbtype')" v-if="forVpc && lbServiceChecked">
           <a-radio-group
             v-model:value="form.lbtype"
-            buttonStyle="solid">
+            buttonStyle="solid"
+            @change="e => { handleLbTypeChange(e.target.value) }" >
             <a-radio-button value="publicLb">
               {{ $t('label.public.lb') }}
             </a-radio-button>
@@ -579,6 +580,7 @@ import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
 import { BlockOutlined, GlobalOutlined } from '@ant-design/icons-vue'
+import { buildServiceCapabilityParams } from '@/composables/useServiceCapabilityParams'
 
 export default {
   name: 'CloneNetworkOffering',
@@ -792,6 +794,46 @@ export default {
         this.supportedServiceLoading = false
       })
     },
+    handleLbTypeChange (lbType) {
+      this.lbType = lbType
+      // Enable InternalLbVm provider for Lb service if internalLb is selected
+      if (lbType === 'internalLb') {
+        this.supportedServices = this.supportedServices.map(svc => {
+          if (svc.name === 'Lb') {
+            const providers = svc.provider.map(provider => {
+              provider.enabled = provider.name === 'InternalLbVm'
+              this.lbServiceProvider = provider
+              return provider
+            })
+            return { ...svc, provider: providers, defaultChecked: true, selectedProvider: 'InternalLbVm' }
+          }
+          return svc
+        })
+        this.selectedServiceProviderMap.Lb = 'InternalLbVm'
+      } else {
+        // Revert to default providers for Lb service
+        this.supportedServices = this.supportedServices.map(svc => {
+          if (svc.name === 'Lb') {
+            const providers = svc.provider.map(provider => {
+              provider.enabled = provider.name !== 'InternalLbVm'
+              return provider
+            })
+            // Pick the first enabled provider as selected
+            const firstEnabled = providers.find(p => p.enabled)
+            return { ...svc, provider: providers, defaultChecked: !!firstEnabled, selectedProvider: firstEnabled ? firstEnabled.name : null }
+          }
+          return svc
+        })
+        // Update selectedServiceProviderMap for Lb
+        const lbSvc = this.supportedServices.find(svc => svc.name === 'Lb')
+        if (lbSvc && lbSvc.selectedProvider) {
+          this.selectedServiceProviderMap.Lb = lbSvc.selectedProvider
+        } else {
+          delete this.selectedServiceProviderMap.Lb
+        }
+      }
+      this.updateSupportedServices()
+    },
     populateFormFromResource () {
       if (!this.resource) return
 
@@ -869,6 +911,10 @@ export default {
       if (r.networkmode) {
         this.networkmode = r.networkmode
         this.form.networkmode = r.networkmode
+      }
+
+      if (r.supportsinternallb) {
+        this.form.lbtype = 'internalLb'
       }
 
       if (r.availability) {
@@ -973,6 +1019,9 @@ export default {
             const providers = svc.provider.map(provider => {
               if (this.forVpc) {
                 const enabledProviders = ['VpcVirtualRouter', 'Netscaler', 'BigSwitchBcf', 'ConfigDrive']
+                if (self.lbType === 'internalLb') {
+                  enabledProviders.push('InternalLbVm')
+                }
                 provider.enabled = enabledProviders.includes(provider.name)
               } else {
                 provider.enabled = !['InternalLbVm', 'VpcVirtualRouter', 'Nsx', 'Netris'].includes(provider.name)
@@ -1245,100 +1294,12 @@ export default {
           params.guestiptype = values.guestiptype
         }
 
-        // MUST send supportedservices explicitly for ALL providers (including NSX/Netris)
-        // because backend's cloneNetworkOffering copies services from source offering if not provided
-        // When network mode changes, we need to send the updated service list
+        // Use composable for service capability params
         if (this.selectedServiceProviderMap != null) {
-          const supportedServices = Object.keys(this.selectedServiceProviderMap)
-          params.supportedservices = supportedServices.join(',')
-          for (const k in supportedServices) {
-            params['serviceProviderList[' + k + '].service'] = supportedServices[k]
-            params['serviceProviderList[' + k + '].provider'] = this.selectedServiceProviderMap[supportedServices[k]]
-          }
-
-          let serviceCapabilityIndex = 0
-
-          if (supportedServices.includes('Connectivity')) {
-            if (values.supportsstrechedl2subnet === true) {
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'Connectivity'
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RegionLevelVpc'
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
-              serviceCapabilityIndex++
-            }
-          }
-
-          if (supportedServices.includes('SourceNat')) {
-            if (values.redundantroutercapability === true) {
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'SourceNat'
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RedundantRouter'
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
-              serviceCapabilityIndex++
-            }
-            params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'SourceNat'
-            params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'SupportedSourceNatTypes'
-            params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = values.sourcenattype
-            serviceCapabilityIndex++
-          } else if (values.redundantroutercapability === true) {
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'Gateway'
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RedundantRouter'
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
-            serviceCapabilityIndex++
-          }
-
-          if (supportedServices.includes('SourceNat')) {
-            if (values.elasticip === true) {
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'StaticNat'
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'ElasticIp'
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true
-              serviceCapabilityIndex++
-            }
-            if (values.elasticip === true || values.associatepublicip === true) {
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'StaticNat'
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'associatePublicIP'
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = values.associatepublicip
-              serviceCapabilityIndex++
-            }
-          }
-
-          if (supportedServices.includes('Lb')) {
-            if ('vmautoscalingcapability' in values) {
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb'
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'VmAutoScaling'
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = values.vmautoscalingcapability
-              serviceCapabilityIndex++
-            }
-            if (values.elasticlb === true) {
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb'
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'ElasticLb'
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true
-              serviceCapabilityIndex++
-            }
-            if (values.inlinemode === 'true' && ((this.selectedServiceProviderMap.Lb === 'F5BigIp') || (this.selectedServiceProviderMap.Lb === 'Netscaler'))) {
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb'
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'InlineMode'
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = values.inlinemode
-              serviceCapabilityIndex++
-            }
-
-            params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb'
-            params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'SupportedLbIsolation'
-            params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = values.isolation || 'dedicated'
-            serviceCapabilityIndex++
-
-            if (this.selectedServiceProviderMap.Lb === 'InternalLbVm') {
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb'
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'lbSchemes'
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = 'internal'
-              serviceCapabilityIndex++
-            }
-
-            if ('netscalerservicepackages' in values &&
-                values.netscalerservicepackages !== null &&
-                this.registeredServicePackages.length > values.netscalerservicepackages &&
-                'netscalerservicepackagesdescription' in values) {
-              params['details[0].servicepackageuuid'] = this.registeredServicePackages[values.netscalerservicepackages].id
-              params['details[1].servicepackagedescription'] = values.netscalerservicepackagesdescription
-            }
+          buildServiceCapabilityParams(params, values, this.selectedServiceProviderMap, this.registeredServicePackages)
+        } else {
+          if (!('supportedservices' in params)) {
+            params.supportedservices = ''
           }
         }
 
