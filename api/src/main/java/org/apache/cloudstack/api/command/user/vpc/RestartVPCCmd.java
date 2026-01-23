@@ -118,7 +118,7 @@ public class RestartVPCCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Restarting VPC with ID:" + getResourceUuid(ApiConstants.ID);
+        return "Restarting VPC with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

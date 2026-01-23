@@ -529,7 +529,7 @@ public class ParamProcessWorker implements DispatchWorker {
             } catch (final NumberFormatException e) {
                 internalId = null;
             }
-            if (internalId != null){
+            if (internalId != null) {
                 // Populate CallContext for each of the entity.
                 for (final Class<?> entity : entities) {
                     CallContext.current().putContextParameter(entity, internalId);
