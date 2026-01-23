@@ -269,6 +269,7 @@ import { mixinForm } from '@/utils/mixin'
 import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import { buildVpcServiceCapabilityParams } from '@/composables/useServiceCapabilityParams'
 
 export default {
   name: 'AddVpcOffering',
@@ -733,35 +734,7 @@ export default {
             params['serviceProviderList[' + k + '].service'] = supportedServices[k]
             params['serviceProviderList[' + k + '].provider'] = this.selectedServiceProviderMap[supportedServices[k]]
           }
-          var serviceCapabilityIndex = 0
-          if (supportedServices.includes('Connectivity')) {
-            if (values.regionlevelvpc === true) {
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'Connectivity'
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RegionLevelVpc'
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
-              serviceCapabilityIndex++
-            }
-            if (values.distributedrouter === true) {
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'Connectivity'
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'DistributedRouter'
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
-              serviceCapabilityIndex++
-            }
-          }
-          if (supportedServices.includes('SourceNat') && values.redundantrouter === true) {
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'SourceNat'
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RedundantRouter'
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
-            serviceCapabilityIndex++
-          } else if (values.redundantrouter === true) {
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'Gateway'
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RedundantRouter'
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
-            serviceCapabilityIndex++
-          }
-          if (values.serviceofferingid && this.isVpcVirtualRouterForAtLeastOneService) {
-            params.serviceofferingid = values.serviceofferingid
-          }
+          buildVpcServiceCapabilityParams(params, values, this.selectedServiceProviderMap, this.isVpcVirtualRouterForAtLeastOneService)
         } else {
           params.supportedservices = []
         }
