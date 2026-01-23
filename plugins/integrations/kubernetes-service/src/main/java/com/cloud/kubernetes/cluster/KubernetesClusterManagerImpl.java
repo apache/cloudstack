@@ -2424,6 +2424,20 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             return;
         }
 
+        Set<Long> existingWorkerHostIds = getExistingWorkerHostIds(cluster);
+
+        for (Long affinityGroupId : workerAffinityGroupIds) {
+            AffinityGroupVO affinityGroup = affinityGroupDao.findById(affinityGroupId);
+            if (affinityGroup == null) {
+                continue;
+            }
+
+            validateNodesAgainstExistingWorkers(nodeIds, existingWorkerHostIds, affinityGroup, cluster);
+            validateNewNodesAntiAffinity(nodeIds, affinityGroup, cluster);
+        }
+    }
+
+    protected Set<Long> getExistingWorkerHostIds(KubernetesCluster cluster) {
         List<KubernetesClusterVmMapVO> existingWorkerVms = kubernetesClusterVmMapDao.listByClusterIdAndVmType(cluster.getId(), WORKER);
         Set<Long> existingWorkerHostIds = new HashSet<>();
         for (KubernetesClusterVmMapVO workerVmMap : existingWorkerVms) {
@@ -2432,66 +2446,69 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 existingWorkerHostIds.add(workerVm.getHostId());
             }
         }
+        return existingWorkerHostIds;
+    }
 
-        for (Long affinityGroupId : workerAffinityGroupIds) {
-            AffinityGroupVO affinityGroup = affinityGroupDao.findById(affinityGroupId);
-            if (affinityGroup == null) {
+    protected void validateNodesAgainstExistingWorkers(List<Long> nodeIds, Set<Long> existingWorkerHostIds,
+                                                       AffinityGroupVO affinityGroup, KubernetesCluster cluster) {
+        String affinityGroupType = affinityGroup.getType();
+
+        for (Long nodeId : nodeIds) {
+            VMInstanceVO node = vmInstanceDao.findById(nodeId);
+            if (node == null || node.getHostId() == null) {
                 continue;
             }
-            String affinityGroupType = affinityGroup.getType();
-
-            for (Long nodeId : nodeIds) {
-                VMInstanceVO node = vmInstanceDao.findById(nodeId);
-                if (node == null || node.getHostId() == null) {
-                    continue;
-                }
-                Long nodeHostId = node.getHostId();
-                HostVO nodeHost = hostDao.findById(nodeHostId);
-                String nodeHostName = nodeHost != null ? nodeHost.getName() : String.valueOf(nodeHostId);
-
-                if ("host anti-affinity".equalsIgnoreCase(affinityGroupType)) {
-                    if (existingWorkerHostIds.contains(nodeHostId)) {
-                        throw new InvalidParameterValueException(String.format(
-                                "Cannot add VM %s to cluster %s. VM is running on host %s which violates the cluster's " +
-                                "host anti-affinity rule (affinity group: %s). Existing worker VMs are already running on this host.",
-                                node.getInstanceName(), cluster.getName(), nodeHostName, affinityGroup.getName()));
-                    }
-                } else if ("host affinity".equalsIgnoreCase(affinityGroupType)) {
-                    if (!existingWorkerHostIds.isEmpty() && !existingWorkerHostIds.contains(nodeHostId)) {
-                        List<String> existingHostNames = new ArrayList<>();
-                        for (Long hostId : existingWorkerHostIds) {
-                            HostVO host = hostDao.findById(hostId);
-                            existingHostNames.add(host != null ? host.getName() : String.valueOf(hostId));
-                        }
-                        throw new InvalidParameterValueException(String.format(
-                                "Cannot add VM %s to cluster %s. VM is running on host %s which violates the cluster's " +
-                                "host affinity rule (affinity group: %s). All worker VMs must run on the same host. " +
-                                "Existing workers are on host(s): %s.",
-                                node.getInstanceName(), cluster.getName(), nodeHostName, affinityGroup.getName(),
-                                String.join(", ", existingHostNames)));
-                    }
-                }
-            }
+            Long nodeHostId = node.getHostId();
+            String nodeHostName = getHostName(nodeHostId);
 
             if ("host anti-affinity".equalsIgnoreCase(affinityGroupType)) {
-                Set<Long> newNodeHostIds = new HashSet<>();
-                for (Long nodeId : nodeIds) {
-                    VMInstanceVO node = vmInstanceDao.findById(nodeId);
-                    if (node != null && node.getHostId() != null) {
-                        Long nodeHostId = node.getHostId();
-                        if (newNodeHostIds.contains(nodeHostId)) {
-                            HostVO nodeHost = hostDao.findById(nodeHostId);
-                            String nodeHostName = nodeHost != null ? nodeHost.getName() : String.valueOf(nodeHostId);
-                            throw new InvalidParameterValueException(String.format(
-                                    "Cannot add VM %s to cluster %s. Multiple VMs being added are running on the same host %s, " +
-                                    "which violates the cluster's host anti-affinity rule (affinity group: %s).",
-                                    node.getInstanceName(), cluster.getName(), nodeHostName, affinityGroup.getName()));
-                        }
-                        newNodeHostIds.add(nodeHostId);
-                    }
+                if (existingWorkerHostIds.contains(nodeHostId)) {
+                    throw new InvalidParameterValueException(String.format(
+                            "Cannot add VM %s to cluster %s. VM is running on host %s which violates the cluster's " +
+                            "host anti-affinity rule (affinity group: %s). Existing worker VMs are already running on this host.",
+                            node.getInstanceName(), cluster.getName(), nodeHostName, affinityGroup.getName()));
+                }
+            } else if ("host affinity".equalsIgnoreCase(affinityGroupType)) {
+                if (!existingWorkerHostIds.isEmpty() && !existingWorkerHostIds.contains(nodeHostId)) {
+                    List<String> existingHostNames = existingWorkerHostIds.stream()
+                            .map(this::getHostName)
+                            .collect(Collectors.toList());
+                    throw new InvalidParameterValueException(String.format(
+                            "Cannot add VM %s to cluster %s. VM is running on host %s which violates the cluster's " +
+                            "host affinity rule (affinity group: %s). All worker VMs must run on the same host. " +
+                            "Existing workers are on host(s): %s.",
+                            node.getInstanceName(), cluster.getName(), nodeHostName, affinityGroup.getName(),
+                            String.join(", ", existingHostNames)));
                 }
             }
         }
+    }
+
+    protected void validateNewNodesAntiAffinity(List<Long> nodeIds, AffinityGroupVO affinityGroup, KubernetesCluster cluster) {
+        if (!"host anti-affinity".equalsIgnoreCase(affinityGroup.getType())) {
+            return;
+        }
+
+        Set<Long> newNodeHostIds = new HashSet<>();
+        for (Long nodeId : nodeIds) {
+            VMInstanceVO node = vmInstanceDao.findById(nodeId);
+            if (node != null && node.getHostId() != null) {
+                Long nodeHostId = node.getHostId();
+                if (newNodeHostIds.contains(nodeHostId)) {
+                    String nodeHostName = getHostName(nodeHostId);
+                    throw new InvalidParameterValueException(String.format(
+                            "Cannot add VM %s to cluster %s. Multiple VMs being added are running on the same host %s, " +
+                            "which violates the cluster's host anti-affinity rule (affinity group: %s).",
+                            node.getInstanceName(), cluster.getName(), nodeHostName, affinityGroup.getName()));
+                }
+                newNodeHostIds.add(nodeHostId);
+            }
+        }
+    }
+
+    protected String getHostName(Long hostId) {
+        HostVO host = hostDao.findById(hostId);
+        return host != null ? host.getName() : String.valueOf(hostId);
     }
 
     @Override
