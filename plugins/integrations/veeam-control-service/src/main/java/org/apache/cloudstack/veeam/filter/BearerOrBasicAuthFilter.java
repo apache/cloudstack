@@ -41,7 +41,7 @@ public class BearerOrBasicAuthFilter implements Filter {
     // Keep these aligned with SsoService (move to ConfigKeys later)
     public static final List<String> REQUIRED_SCOPES = List.of("ovirt-app-admin", "ovirt-app-portal");
     public static final String ISSUER = "veeam-control";
-    private static final String HMAC_SECRET = "change-this-super-secret-key-change-this";
+    public static final String HMAC_SECRET = "change-this-super-secret-key-change-this";
 
     @Override public void init(FilterConfig filterConfig) {}
     @Override public void destroy() {}

@@ -17,23 +17,17 @@
 
 package org.apache.cloudstack.veeam.api.dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+import java.util.List;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public final class Summary {
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-    @JacksonXmlProperty(localName = "hosts")
-    public SummaryCount hosts;
+public class Hosts {
+    @JsonProperty("host")
+    private List<Host> host;
 
-    @JacksonXmlProperty(localName = "storage_domains")
-    public SummaryCount storageDomains;
+    public Hosts() {}
+    public Hosts(List<Host> host) { this.host = host; }
 
-    @JacksonXmlProperty(localName = "users")
-    public SummaryCount users;
-
-    @JacksonXmlProperty(localName = "vms")
-    public SummaryCount vms;
-
-    public Summary() {}
+    public List<Host> getHost() { return host; }
+    public void setHost(List<Host> host) { this.host = host; }
 }

@@ -208,5 +208,4 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
         }
         return hostJoinDao.findById(hostId);
     }
-
 }

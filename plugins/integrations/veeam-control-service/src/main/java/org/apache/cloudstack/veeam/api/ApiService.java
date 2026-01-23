@@ -18,6 +18,7 @@
 package org.apache.cloudstack.veeam.api;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -37,11 +38,12 @@ import org.apache.cloudstack.veeam.api.dto.ProductInfo;
 import org.apache.cloudstack.veeam.api.dto.Ref;
 import org.apache.cloudstack.veeam.api.dto.SpecialObjectRef;
 import org.apache.cloudstack.veeam.api.dto.SpecialObjects;
-import org.apache.cloudstack.veeam.api.dto.Summary;
+import org.apache.cloudstack.veeam.api.dto.ApiSummary;
 import org.apache.cloudstack.veeam.api.dto.SummaryCount;
 import org.apache.cloudstack.veeam.api.dto.Version;
 import org.apache.cloudstack.veeam.utils.Negotiation;
 
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.ManagerBase;
 
 public class ApiService extends ManagerBase implements RouteHandler {
@@ -99,7 +101,7 @@ public class ApiService extends ManagerBase implements RouteHandler {
 
         /* ---------------- Product info ---------------- */
         ProductInfo productInfo = new ProductInfo();
-        productInfo.instanceId = UUID.randomUUID().toString();
+        productInfo.instanceId = UuidUtils.nameUUIDFromBytes(VeeamControlService.BindAddress.value().getBytes(StandardCharsets.UTF_8)).toString();
         productInfo.name = "oVirt Engine";
 
         Version version = new Version();
@@ -125,7 +127,7 @@ public class ApiService extends ManagerBase implements RouteHandler {
         api.specialObjects = specialObjects;
 
         /* ---------------- Summary ---------------- */
-        Summary summary = new Summary();
+        ApiSummary summary = new ApiSummary();
         summary.hosts = new SummaryCount(1, 1);
         summary.storageDomains = new SummaryCount(1, 2);
         summary.users = new SummaryCount(1, 1);

@@ -19,7 +19,6 @@ package org.apache.cloudstack.veeam.api.converter;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -31,11 +30,12 @@ import org.apache.cloudstack.veeam.api.dto.Cluster;
 import org.apache.cloudstack.veeam.api.dto.Link;
 import org.apache.cloudstack.veeam.api.dto.Ref;
 
+import com.cloud.api.query.vo.DataCenterJoinVO;
 import com.cloud.dc.ClusterVO;
-import com.cloud.dc.DataCenterVO;
+import com.cloud.utils.UuidUtils;
 
 public class ClusterVOToClusterConverter {
-    public static Cluster toCluster(final ClusterVO vo, final Function<Long, DataCenterVO> dataCenterResolver) {
+    public static Cluster toCluster(final ClusterVO vo, final Function<Long, DataCenterJoinVO> dataCenterResolver) {
         final Cluster c = new Cluster();
         final String basePath = VeeamControlService.ContextPath.value();
 
@@ -131,7 +131,7 @@ public class ClusterVOToClusterConverter {
 
         // --- data_center ref mapping (CloudStack cluster -> pod -> zone)
         if (dataCenterResolver != null) {
-            final DataCenterVO zone = dataCenterResolver.apply(vo.getDataCenterId());
+            final DataCenterJoinVO zone = dataCenterResolver.apply(vo.getDataCenterId());
             if (zone != null) {
                 c.dataCenter = Ref.of(basePath + DataCentersRouteHandler.BASE_ROUTE + "/" + zone.getUuid(), zone.getUuid());
             }
@@ -157,7 +157,7 @@ public class ClusterVOToClusterConverter {
     }
 
     public static List<Cluster> toClusterList(final List<ClusterVO> voList,
-            final Function<Long, DataCenterVO> dataCenterResolver) {
+            final Function<Long, DataCenterJoinVO> dataCenterResolver) {
         return voList.stream()
                 .map(vo -> toCluster(vo, dataCenterResolver))
                 .collect(Collectors.toList());
@@ -165,6 +165,6 @@ public class ClusterVOToClusterConverter {
 
     private static String stableUuid(final String key) {
         // deterministic UUID, so the same ClusterVO maps to same "ovirt id" every time
-        return UUID.nameUUIDFromBytes(key.getBytes()).toString();
+        return UuidUtils.nameUUIDFromBytes(key.getBytes()).toString();
     }
 }

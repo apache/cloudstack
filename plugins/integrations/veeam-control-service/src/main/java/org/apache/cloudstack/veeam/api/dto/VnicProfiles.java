@@ -17,28 +17,33 @@
 
 package org.apache.cloudstack.veeam.api.dto;
 
+
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * Root container for /ovirt-engine/api/vnicprofiles
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public final class Cpu {
-    @JsonProperty("name")
-    private String name;
+public class VnicProfiles {
 
-    @JsonProperty("speed")
-    private Integer speed;
-    public String architecture;
-    public Topology topology;
+    @JsonProperty("vnic_profile")
+    private List<VnicProfile> vnicProfile;
 
-    public Cpu() {}
-
-    public Cpu(final String architecture, final Topology topology) {
-        this.architecture = architecture;
-        this.topology = topology;
+    public VnicProfiles() {
     }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public Integer getSpeed() { return speed; }
-    public void setSpeed(Integer speed) { this.speed = speed; }
+    public VnicProfiles(final List<VnicProfile> vnicProfile) {
+        this.vnicProfile = vnicProfile;
+    }
+
+    public List<VnicProfile> getVnicProfile() {
+        return vnicProfile;
+    }
+
+    public void setVnicProfile(final List<VnicProfile> vnicProfile) {
+        this.vnicProfile = vnicProfile;
+    }
 }

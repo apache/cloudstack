@@ -46,7 +46,7 @@ public final class Api {
     public SpecialObjects specialObjects;
 
     @JacksonXmlProperty(localName = "summary")
-    public Summary summary;
+    public ApiSummary summary;
 
     // Keep as String to avoid timezone/date parsing friction; you control formatting.
     @JacksonXmlProperty(localName = "time")

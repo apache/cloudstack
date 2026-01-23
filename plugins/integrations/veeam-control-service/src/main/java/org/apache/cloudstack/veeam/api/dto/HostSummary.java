@@ -21,24 +21,20 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public final class Cpu {
-    @JsonProperty("name")
-    private String name;
+public class HostSummary {
+    @JsonProperty("active")
+    private String active;
 
-    @JsonProperty("speed")
-    private Integer speed;
-    public String architecture;
-    public Topology topology;
+    @JsonProperty("migrating")
+    private String migrating;
 
-    public Cpu() {}
+    @JsonProperty("total")
+    private String total;
 
-    public Cpu(final String architecture, final Topology topology) {
-        this.architecture = architecture;
-        this.topology = topology;
-    }
-
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public Integer getSpeed() { return speed; }
-    public void setSpeed(Integer speed) { this.speed = speed; }
+    public String getActive() { return active; }
+    public void setActive(String active) { this.active = active; }
+    public String getMigrating() { return migrating; }
+    public void setMigrating(String migrating) { this.migrating = migrating; }
+    public String getTotal() { return total; }
+    public void setTotal(String total) { this.total = total; }
 }

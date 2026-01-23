@@ -37,7 +37,6 @@ import com.cloud.utils.component.ManagerBase;
 
 public class SsoService extends ManagerBase implements RouteHandler {
     private static final String BASE_ROUTE = "/sso";
-    private static final String HMAC_SECRET = "change-this-super-secret-key-change-this"; // >= 32 chars recommended
     private static final long DEFAULT_TTL_SECONDS = 3600;
 
     // Replace with your real credential validation (CloudStack account, config, etc.)
@@ -104,7 +103,8 @@ public class SsoService extends ManagerBase implements RouteHandler {
         final long ttl = DEFAULT_TTL_SECONDS;
         final String token;
         try {
-            token = JwtUtil.issueHs256Jwt(BearerOrBasicAuthFilter.ISSUER, username, effectiveScope, ttl, HMAC_SECRET);
+            token = JwtUtil.issueHs256Jwt(BearerOrBasicAuthFilter.ISSUER, username, effectiveScope, ttl,
+                    BearerOrBasicAuthFilter.HMAC_SECRET);
         } catch (Exception e) {
             io.getWriter().write(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     Map.of("error", "server_error", "error_description", "Failed to issue token"), outFormat);

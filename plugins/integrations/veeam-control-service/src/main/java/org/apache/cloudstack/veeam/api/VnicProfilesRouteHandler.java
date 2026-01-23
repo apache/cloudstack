@@ -26,24 +26,24 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.cloudstack.veeam.RouteHandler;
 import org.apache.cloudstack.veeam.VeeamControlServlet;
-import org.apache.cloudstack.veeam.api.converter.ClusterVOToClusterConverter;
-import org.apache.cloudstack.veeam.api.dto.Cluster;
-import org.apache.cloudstack.veeam.api.dto.Clusters;
+import org.apache.cloudstack.veeam.api.converter.NetworkVOToVnicProfileConverter;
+import org.apache.cloudstack.veeam.api.dto.VnicProfile;
+import org.apache.cloudstack.veeam.api.dto.VnicProfiles;
 import org.apache.cloudstack.veeam.utils.Negotiation;
 import org.apache.cloudstack.veeam.utils.PathUtil;
 
 import com.cloud.api.query.dao.DataCenterJoinDao;
 import com.cloud.api.query.vo.DataCenterJoinVO;
-import com.cloud.dc.ClusterVO;
-import com.cloud.dc.dao.ClusterDao;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 
-public class ClustersRouteHandler extends ManagerBase implements RouteHandler {
-    public static final String BASE_ROUTE = "/api/clusters";
+public class VnicProfilesRouteHandler extends ManagerBase implements RouteHandler {
+    public static final String BASE_ROUTE = "/api/vnicprofiles";
 
     @Inject
-    ClusterDao clusterDao;
+    NetworkDao networkDao;
 
     @Inject
     DataCenterJoinDao dataCenterJoinDao;
@@ -78,7 +78,7 @@ public class ClustersRouteHandler extends ManagerBase implements RouteHandler {
 
         Pair<String, String> idAndSubPath = PathUtil.extractIdAndSubPath(sanitizedPath, BASE_ROUTE);
         if (idAndSubPath != null) {
-            // /api/clusters/{id}
+            // /api/vnicprofiles/{id}
             if (idAndSubPath.first() != null) {
                 if (idAndSubPath.second() == null) {
                     handleGetById(idAndSubPath.first(), resp, outFormat, io);
@@ -92,24 +92,24 @@ public class ClustersRouteHandler extends ManagerBase implements RouteHandler {
 
     public void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
                           Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
-        final List<Cluster> result = ClusterVOToClusterConverter.toClusterList(listClusters(), this::getZoneById);
-        final Clusters response = new Clusters(result);
+        final List<VnicProfile> result = NetworkVOToVnicProfileConverter.toVnicProfileList(listNetworks(), this::getZoneById);
+        final VnicProfiles response = new VnicProfiles(result);
 
         io.getWriter().write(resp, 200, response, outFormat);
     }
 
-    protected List<ClusterVO> listClusters() {
-        return clusterDao.listAll();
+    protected List<NetworkVO> listNetworks() {
+        return networkDao.listAll();
     }
 
     public void handleGetById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
                               final VeeamControlServlet io) throws IOException {
-        final ClusterVO vo = clusterDao.findByUuid(id);
+        final NetworkVO vo = networkDao.findByUuid(id);
         if (vo == null) {
             io.notFound(resp, "DataCenter not found: " + id, outFormat);
             return;
         }
-        Cluster response = ClusterVOToClusterConverter.toCluster(vo, this::getZoneById);
+        VnicProfile response = NetworkVOToVnicProfileConverter.toVnicProfile(vo, this::getZoneById);
 
         io.getWriter().write(resp, 200, response, outFormat);
     }

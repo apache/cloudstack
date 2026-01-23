@@ -29,11 +29,11 @@ import org.apache.cloudstack.veeam.api.dto.Ref;
 import org.apache.cloudstack.veeam.api.dto.SupportedVersions;
 import org.apache.cloudstack.veeam.api.dto.Version;
 
-import com.cloud.dc.DataCenterVO;
+import com.cloud.api.query.vo.DataCenterJoinVO;
 import com.cloud.org.Grouping;
 
-public class DataCenterVOToDataCenterConverter {
-    public static DataCenter toDataCenter(final DataCenterVO zone) {
+public class DataCenterJoinVOToDataCenterConverter {
+    public static DataCenter toDataCenter(final DataCenterJoinVO zone) {
         final String id = zone.getUuid();
         final String basePath = VeeamControlService.ContextPath.value();
         final String href = basePath + DataCentersRouteHandler.BASE_ROUTE + DataCentersRouteHandler.BASE_ROUTE + "/" + id;
@@ -72,9 +72,9 @@ public class DataCenterVOToDataCenterConverter {
         return dc;
     }
 
-    public static List<DataCenter> toDCList(final List<DataCenterVO> srcList) {
+    public static List<DataCenter> toDCList(final List<DataCenterJoinVO> srcList) {
         return srcList.stream()
-                .map(DataCenterVOToDataCenterConverter::toDataCenter)
+                .map(DataCenterJoinVOToDataCenterConverter::toDataCenter)
                 .collect(Collectors.toList());
     }
 }
