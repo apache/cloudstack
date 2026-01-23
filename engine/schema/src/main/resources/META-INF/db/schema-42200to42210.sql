@@ -26,4 +26,6 @@ CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.usage_event','vm_id', 'b
 -- Add vm_id column to cloud_usage.usage_volume table
 CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.usage_volume','vm_id', 'bigint UNSIGNED NULL COMMENT "VM ID associated with the volume usage"');
 
+DELETE FROM `cloud`.`configuration` WHERE name = 'ucs.sync.blade.interval';
+
 ALTER TABLE `cloud`.`template_store_ref` MODIFY COLUMN `download_url` varchar(2048);
