@@ -325,7 +325,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
 
     @Override
     public boolean isJobCancelled(Long jobId) {
-        AsyncJobVO job = findById(jobId);
+        AsyncJobVO job = findByIdIncludingRemoved(jobId);
         return job != null && job.getStatus() == JobInfo.Status.CANCELLED;
     }
 }

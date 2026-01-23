@@ -416,33 +416,22 @@ public class VmwareClient {
 
         boolean retVal = false;
 
+        boolean cancelled = false;
         if (Thread.currentThread().isInterrupted()) {
             Thread.currentThread().interrupt(); // Restore interrupt status
             try {
-                cancelTask(task);
+                Pair<Boolean, String> status = cancelTask(task);
+                cancelled = status.first();
             } catch (Exception e) {
                 LOGGER.warn("Failed to cancel task on interruption: " + task.getValue(), e);
             }
-            throw new InterruptedException("Task wait cancelled for task: " + task.getValue());
-//            boolean cancellable = false;
-//            try {
-//                cancellable = isTaskCancelable(task);
-//            } catch (Exception e) {
-//                LOGGER.warn("Failed to check if task is cancelable: " + task.getValue(), e);
-//            }
-//
-//            if (cancellable) {
-//                try {
-//                    cancelTask(task);
-//                    LOGGER.info("Cancelled cancelable task on interruption: " + task.getValue());
-//                } catch (Exception e) {
-//                    LOGGER.warn("Failed to cancel task on interruption: " + task.getValue(), e);
-//                }
-//                throw new InterruptedException("Task wait cancelled for task: " + task.getValue());
-//            } else {
-//                LOGGER.warn("Task " + task.getValue() + " is not cancelable, continuing execution despite interruption");
-//                Thread.interrupted();
-//            }
+
+            if (cancelled) {
+                throw new InterruptedException("Task wait cancelled for task: " + task.getValue());
+            } else {
+                // Clear interrupt flag to continue execution
+                Thread.interrupted();
+            }
         }
 
         try {
@@ -542,20 +531,30 @@ public class VmwareClient {
         List<PropertyChange> propchgary = null;
         while (!reached) {
             if (!isCancelTask && Thread.currentThread().isInterrupted()) {
-                try {
-                    vimPort.destroyPropertyFilter(filterSpecRef);
-                } catch (Exception e) {
-                    LOGGER.warn("Failed to destroy property filter on interruption: " + e.getMessage());
-                }
-                Thread.currentThread().interrupt();
+                boolean cancelled = false;
                 if (objmor.getType().equals("Task")) {
                     try {
-                        cancelTask(objmor);
+                        Pair<Boolean, String> status = cancelTask(objmor);
+                        cancelled = status.first();
                     } catch (Exception e) {
                         LOGGER.warn("Failed to cancel task on interruption: " + objmor.getValue(), e);
                     }
+                } else {
+                    Thread.currentThread().interrupt();
+                    throw new InterruptedException("Task wait cancelled for object: " + objmor.getValue());
                 }
-                throw new InterruptedException("Task wait cancelled for object: " + objmor.getValue());
+
+                if (cancelled) {
+                    try {
+                        vimPort.destroyPropertyFilter(filterSpecRef);
+                    } catch (Exception e) {
+                        LOGGER.warn("Failed to destroy property filter on interruption: " + e.getMessage());
+                    }
+                    Thread.currentThread().interrupt();
+                    throw new InterruptedException("Task wait cancelled for object: " + objmor.getValue());
+                } else {
+                    Thread.interrupted();
+                }
             }
             updateset = vimPort.waitForUpdatesEx(propertyCollector, version, new WaitOptions());
             if (updateset == null || updateset.getFilterSet() == null) {

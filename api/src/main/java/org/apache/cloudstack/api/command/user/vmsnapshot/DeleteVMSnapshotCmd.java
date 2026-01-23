@@ -36,7 +36,7 @@ import com.cloud.user.Account;
 import com.cloud.vm.snapshot.VMSnapshot;
 
 @APICommand(name = "deleteVMSnapshot", description = "Deletes an Instance Snapshot.", responseObject = SuccessResponse.class, since = "4.2.0", entityType = {VMSnapshot.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, cancellable = true)
 public class DeleteVMSnapshotCmd extends BaseAsyncCmd {
 
     @ACL(accessType = AccessType.OperateEntry)

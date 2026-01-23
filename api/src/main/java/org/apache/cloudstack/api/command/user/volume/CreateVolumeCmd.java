@@ -47,7 +47,7 @@ import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "createVolume", responseObject = VolumeResponse.class, description = "Creates a disk volume from a disk offering. This disk volume must still be attached to  an Instance to make use of it.", responseView = ResponseView.Restricted, entityType = {
         Volume.class, VirtualMachine.class},
-            requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+            requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, cancellable = true)
 public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
     private static final String s_name = "createvolumeresponse";
 

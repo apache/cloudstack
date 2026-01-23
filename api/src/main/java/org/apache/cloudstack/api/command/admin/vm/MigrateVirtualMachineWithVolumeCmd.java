@@ -49,8 +49,9 @@ import com.cloud.vm.VirtualMachine;
             description = "Attempts Migration of an Instance with its volumes to a different host",
             responseObject = UserVmResponse.class, entityType = {VirtualMachine.class},
             requestHasSensitiveInfo = false,
-            responseHasSensitiveInfo = true)
-public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
+            responseHasSensitiveInfo = true,
+            cancellable = true)
+public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd  {
 
 
     /////////////////////////////////////////////////////

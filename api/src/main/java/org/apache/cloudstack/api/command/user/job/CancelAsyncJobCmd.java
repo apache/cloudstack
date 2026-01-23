@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 
 import com.cloud.user.Account;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.jobs.AsyncJobService;
 
 import javax.inject.Inject;
@@ -89,7 +90,7 @@ public class CancelAsyncJobCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        String status = asyncJobService.cancelAsyncJob(id, "cancel request by user using cancelAsyncJob api");
+        String status = asyncJobService.cancelAsyncJob(id, "Cancel requested by {}" + CallContext.current().getCallingUser().toString());
         if (StringUtils.isBlank(status)) {
             AsyncJobResponse response = _responseGenerator.cancelJobResponse(this);
             response.setResponseName(getCommandName());
