@@ -47,6 +47,7 @@
 "label.acl.rules": "ACL rules",
 "label.acl.reason.description": "Enter the reason behind an ACL rule.",
 "label.aclid": "ACL",
+"label.aclname": "ACL name",
 "label.acl.rule.name": "ACL rule name",
 "label.acquire.new.ip": "Acquire new IP",
 "label.acquire.new.secondary.ip": "Acquire new secondary IP",
