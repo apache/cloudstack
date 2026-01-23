@@ -111,9 +111,9 @@ public class DisableAccountCmd extends BaseAsyncCmd {
         String message = "Disabling Account ";
 
         if (getId() != null) {
-            message += "with id: " + getResourceUuid(ApiConstants.ID);
+            message += "with ID: " + getResourceUuid(ApiConstants.ID);
         } else {
-            message += getAccountName() + " in domain: " + getResourceUuid(ApiConstants.DOMAIN_ID);
+            message += getAccountName() + " in Domain: " + getResourceUuid(ApiConstants.DOMAIN_ID);
         }
 
         return message;
