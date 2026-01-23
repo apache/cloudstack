@@ -43,7 +43,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import com.cloud.agent.api.CleanupVMCommand;
@@ -63,7 +62,10 @@ import com.vmware.vim25.VirtualMachineConfigSummary;
 import com.vmware.vim25.VirtualTPM;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.backup.PrepareForBackupRestorationCommand;
+import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.CreateObjectCommand;
+import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsAnswer;
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
@@ -435,10 +437,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     protected VirtualRoutingResource _vrResource;
 
-    private final ConcurrentHashMap<Long, ActiveVmTaskInfo> _activeVmTasks = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, Set<Long>> _vmNameToTaskSequences = new ConcurrentHashMap<>();
-    private static final ThreadLocal<TaskRegistrationContext> currentTaskContext = new ThreadLocal<>();
-
     protected final static HashMap<VirtualMachinePowerState, PowerState> s_powerStatesTable = new HashMap<>();
 
     static {
@@ -454,148 +452,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     public VmwareResource() {
         _gson = GsonHelper.getGsonLogger();
-    }
-
-    public static class ActiveVmTaskInfo {
-        final long cmdSequence;
-        final String vmName;
-        final String commandType;
-        final ManagedObjectReference taskMor;
-        final VmwareContext context;
-        final long startTime;
-
-        ActiveVmTaskInfo(long cmdSequence, String vmName, String commandType,
-                         ManagedObjectReference taskMor, VmwareContext context) {
-            this.cmdSequence = cmdSequence;
-            this.vmName = vmName;
-            this.commandType = commandType;
-            this.taskMor = taskMor;
-            this.context = context;
-            this.startTime = System.currentTimeMillis();
-        }
-    }
-
-    void registerActiveVmTask(long cmdSequence, String vmName, String commandType,
-                                      ManagedObjectReference taskMor, VmwareContext context) {
-        ActiveVmTaskInfo taskInfo = new ActiveVmTaskInfo(cmdSequence, vmName, commandType, taskMor, context);
-        _activeVmTasks.put(cmdSequence, taskInfo);
-
-        _vmNameToTaskSequences.computeIfAbsent(vmName, k -> ConcurrentHashMap.newKeySet()).add(cmdSequence);
-
-        logger.debug("Registered active VM task: sequence={}, vm={}, command={}, task={}",
-                cmdSequence, vmName, commandType, taskMor.getValue());
-    }
-
-    private void unregisterActiveVmTask(long cmdSequence) {
-        ActiveVmTaskInfo taskInfo = _activeVmTasks.remove(cmdSequence);
-        if (taskInfo != null) {
-            Set<Long> sequences = _vmNameToTaskSequences.get(taskInfo.vmName);
-            if (sequences != null) {
-                sequences.remove(cmdSequence);
-                if (sequences.isEmpty()) {
-                    _vmNameToTaskSequences.remove(taskInfo.vmName);
-                }
-            }
-            logger.debug("Unregistered active VM task: sequence={}, vm={}, command={}, duration={}ms",
-                    cmdSequence, taskInfo.vmName, taskInfo.commandType,
-                    System.currentTimeMillis() - taskInfo.startTime);
-        }
-    }
-
-    public int cancelActiveVmTasks(String vmName) {
-        Set<Long> sequences = _vmNameToTaskSequences.get(vmName);
-        if (sequences == null || sequences.isEmpty()) {
-            return 0;
-        }
-
-        int cancelled = 0;
-        for (Long seq : sequences) {
-            if (cancelActiveVmTask(seq)) {
-                cancelled++;
-            }
-        }
-        return cancelled;
-    }
-
-    public boolean cancelActiveVmTask(long cmdSequence) {
-        ActiveVmTaskInfo taskInfo = _activeVmTasks.get(cmdSequence);
-        if (taskInfo == null) {
-            return false;
-        }
-
-        try {
-            // Cancel the vCenter task
-            TaskMO taskMo = new TaskMO(taskInfo.context, taskInfo.taskMor);
-            taskMo.cancelTask();
-            logger.info("Cancelled vCenter task: sequence={}, vm={}, command={}, task={}",
-                    cmdSequence, taskInfo.vmName, taskInfo.commandType, taskInfo.taskMor.getValue());
-
-            // Unregister the task
-            unregisterActiveVmTask(cmdSequence);
-            return true;
-        } catch (Exception e) {
-            logger.warn("Failed to cancel vCenter task: sequence={}, vm={}, error={}",
-                    cmdSequence, taskInfo.vmName, e.getMessage(), e);
-            return false;
-        }
-    }
-
-    public List<ActiveVmTaskInfo> getActiveVmTasks(String vmName) {
-        Set<Long> sequences = _vmNameToTaskSequences.get(vmName);
-        if (sequences == null || sequences.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        List<ActiveVmTaskInfo> tasks = new ArrayList<>();
-        for (Long seq : sequences) {
-            ActiveVmTaskInfo taskInfo = _activeVmTasks.get(seq);
-            if (taskInfo != null) {
-                tasks.add(taskInfo);
-            }
-        }
-        return tasks;
-    }
-
-    public List<ActiveVmTaskInfo> getAllActiveVmTasks() {
-        return new ArrayList<>(_activeVmTasks.values());
-    }
-
-    public static class TaskRegistrationContext {
-        private final VmwareResource resource;
-        private final long cmdSequence;
-        private final String vmName;
-        private final String commandType;
-
-        public TaskRegistrationContext(VmwareResource resource, long cmdSequence, String vmName, String commandType) {
-            this.resource = resource;
-            this.cmdSequence = cmdSequence;
-            this.vmName = vmName;
-            this.commandType = commandType;
-        }
-
-        public void registerTask(ManagedObjectReference taskMor, VmwareContext context) {
-            if (resource != null) {
-                resource.registerActiveVmTask(cmdSequence, vmName, commandType, taskMor, context);
-            }
-        }
-
-        public void unregisterTask() {
-            if (resource != null) {
-                resource.unregisterActiveVmTask(cmdSequence);
-            }
-        }
-    }
-
-    private void setTaskRegistrationContext(long cmdSequence, String vmName, String commandType) {
-        currentTaskContext.set(new TaskRegistrationContext(this, cmdSequence, vmName, commandType));
-    }
-
-    private void clearTaskRegistrationContext() {
-        currentTaskContext.remove();
-    }
-
-    public static TaskRegistrationContext getCurrentTaskContext() {
-        return currentTaskContext.get();
     }
 
     private String getCommandLogTitle(Command cmd) {
@@ -656,34 +512,33 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             } else if (clz == CheckHealthCommand.class) {
                 answer = execute((CheckHealthCommand) cmd);
             } else if (clz == StopCommand.class) {
-                String vmName = null;
-                String commandType = cmd.getClass().getSimpleName();
-                vmName = ((StopCommand) cmd).getVmName();
-                setTaskRegistrationContext(cmdSequence, vmName, commandType);
-                VmwareHelper.setTaskContext(cmdSequence, vmName, commandType);
+                String vmName = ((StopCommand) cmd).getVmName();
+                setTaskContext(cmdSequence, cmd, vmName);
                 answer = execute((StopCommand) cmd);
             } else if (clz == RebootRouterCommand.class) {
                 answer = execute((RebootRouterCommand) cmd);
             } else if (clz == RebootCommand.class) {
+                String vmName = ((RebootCommand) cmd).getVmName();
+                setTaskContext(cmdSequence, cmd, vmName);
                 answer = execute((RebootCommand) cmd);
             } else if (clz == CheckVirtualMachineCommand.class) {
                 answer = execute((CheckVirtualMachineCommand) cmd);
             } else if (clz == PrepareForMigrationCommand.class) {
                 answer = execute((PrepareForMigrationCommand) cmd);
             } else if (clz == MigrateCommand.class) {
-                String vmName = null;
-                String commandType = cmd.getClass().getSimpleName();
-                vmName = ((MigrateCommand) cmd).getVmName();
-                setTaskRegistrationContext(cmdSequence, vmName, commandType);
-                VmwareHelper.setTaskContext(cmdSequence, vmName, commandType);
+                String vmName = ((MigrateCommand) cmd).getVmName();
+                setTaskContext(cmdSequence, cmd, vmName);
                 answer = execute((MigrateCommand) cmd);
             } else if (clz == MigrateVmToPoolCommand.class) {
                 answer = execute((MigrateVmToPoolCommand) cmd);
             } else if (clz == MigrateWithStorageCommand.class) {
                 answer = execute((MigrateWithStorageCommand) cmd);
             } else if (clz == MigrateVolumeCommand.class) {
+                setTaskContext(cmdSequence, cmd, null);
                 answer = execute((MigrateVolumeCommand) cmd);
             } else if (clz == DestroyCommand.class) {
+                String vmName = ((DestroyCommand) cmd).getVmName();
+                setTaskContext(cmdSequence, cmd, vmName);
                 answer = execute((DestroyCommand) cmd);
             } else if (clz == CreateStoragePoolCommand.class) {
                 return execute((CreateStoragePoolCommand) cmd);
@@ -732,11 +587,9 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             } else if (clz == NetworkUsageCommand.class) {
                 answer = execute((NetworkUsageCommand) cmd);
             } else if (clz == StartCommand.class) {
-                String vmName = null;
-                String commandType = cmd.getClass().getSimpleName();
-                vmName = ((StartCommand) cmd).getVirtualMachine().getName();
-                setTaskRegistrationContext(cmdSequence, vmName, commandType);
-                VmwareHelper.setTaskContext(cmdSequence, vmName, commandType);
+                String vmName = ((StartCommand) cmd).getVirtualMachine().getName();
+                setTaskContext(cmdSequence, cmd, vmName);
+                Thread.sleep(3 * 1000);
                 answer = execute((StartCommand) cmd);
             } else if (clz == CheckSshCommand.class) {
                 answer = execute((CheckSshCommand) cmd);
@@ -749,10 +602,16 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             } else if (clz == UnPlugNicCommand.class) {
                 answer = execute((UnPlugNicCommand) cmd);
             } else if (cmd instanceof CreateVMSnapshotCommand) {
+                String vmName = ((CreateVMSnapshotCommand) cmd).getVmName();
+                setTaskContext(cmdSequence, cmd, vmName);
                 return execute((CreateVMSnapshotCommand) cmd);
             } else if (cmd instanceof DeleteVMSnapshotCommand) {
+                String vmName = ((DeleteVMSnapshotCommand) cmd).getVmName();
+                setTaskContext(cmdSequence, cmd, vmName);
                 return execute((DeleteVMSnapshotCommand) cmd);
             } else if (cmd instanceof RevertToVMSnapshotCommand) {
+                String vmName = ((RevertToVMSnapshotCommand) cmd).getVmName();
+                setTaskContext(cmdSequence, cmd, vmName);
                 return execute((RevertToVMSnapshotCommand) cmd);
             } else if (clz == ResizeVolumeCommand.class) {
                 return execute((ResizeVolumeCommand) cmd);
@@ -761,6 +620,15 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             } else if (clz == CleanupVMCommand.class) {
                 return execute((CleanupVMCommand) cmd);
             } else if (cmd instanceof StorageSubSystemCommand) {
+                if (cmd instanceof CreateObjectCommand) {
+                    setTaskContext(cmdSequence, cmd, null);
+                } if (cmd instanceof AttachCommand) {
+                    String vmName = ((AttachCommand) cmd).getVmName();
+                    setTaskContext(cmdSequence, cmd, vmName);
+                } else if (cmd instanceof DettachCommand) {
+                    String vmName = ((DettachCommand) cmd).getVmName();
+                    setTaskContext(cmdSequence, cmd, vmName);
+                }
                 checkStorageProcessorAndHandlerNfsVersionAttribute((StorageSubSystemCommand) cmd);
                 return storageHandler.handleStorageCommands((StorageSubSystemCommand) cmd);
             } else if (clz == ScaleVmCommand.class) {
@@ -824,7 +692,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             Thread.currentThread().interrupt(); // Restore interrupt status
             return new Answer(cmd, false, "Command execution was cancelled: " + e.getMessage());
         } finally {
-            clearTaskRegistrationContext();
             VmwareHelper.clearTaskContext();
             recycleServiceContext();
             ThreadContext.pop();
@@ -834,6 +701,11 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             logger.trace("End executeRequest(), cmd: " + cmd.getClass().getSimpleName());
 
         return answer;
+    }
+
+    private void setTaskContext(long cmdSequence, Command cmd, String vmName) {
+        String commandType = cmd.getClass().getSimpleName();
+        VmwareHelper.setTaskContext(cmdSequence, vmName, commandType);
     }
 
     private ExecutionResult getSystemVmVersionAndChecksum(String controlIp) {
@@ -6241,12 +6113,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     @Override
     public void disconnected() {
-        List<ActiveVmTaskInfo> tasks = getAllActiveVmTasks();
-        for (ActiveVmTaskInfo task : tasks) {
-            cancelActiveVmTask(task.cmdSequence);
-        }
-        _activeVmTasks.clear();
-        _vmNameToTaskSequences.clear();
     }
 
     @Override

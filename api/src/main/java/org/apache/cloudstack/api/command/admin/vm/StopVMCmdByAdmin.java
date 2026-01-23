@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command.admin.vm;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.CancellableCmd;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.command.user.vm.StopVMCmd;
@@ -26,5 +25,5 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "stopVirtualMachine", responseObject = UserVmResponse.class, description = "Stops  an Instance.", responseView = ResponseView.Full, entityType = {VirtualMachine.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class StopVMCmdByAdmin extends StopVMCmd implements AdminCmd, CancellableCmd {}
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true, cancellable = true)
+public class StopVMCmdByAdmin extends StopVMCmd implements AdminCmd {}

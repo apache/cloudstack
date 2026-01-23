@@ -497,9 +497,6 @@ public abstract class AgentAttache {
                 sendNext(seq);
             }
             _agentMgr.updateReconcileCommandsIfNeeded(req.getSequence(), req.getCommands(), Command.State.TIMED_OUT);
-//            if (e instanceof OperationCancelledException) {
-//                throw e;
-//            }
             throw new OperationTimedoutException(req.getCommands(), _id, seq, wait, false);
         } finally {
             unregisterListener(seq);

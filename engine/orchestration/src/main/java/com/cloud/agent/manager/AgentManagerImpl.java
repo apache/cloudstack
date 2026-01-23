@@ -146,7 +146,7 @@ import com.cloud.utils.nio.NioServer;
 import com.cloud.utils.nio.Task;
 import com.cloud.utils.time.InaccurateClock;
 
-import static org.apache.cloudstack.jobs.AsyncJobService.CancelJobInterval;
+import static org.apache.cloudstack.jobs.AsyncJobService.CancelledJobInterval;
 
 /**
  * Implementation of the Agent Manager. This class controls the connection to the agents.
@@ -218,7 +218,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected ScheduledExecutorService _directAgentExecutor;
     protected ScheduledExecutorService _cronJobExecutor;
     protected ScheduledExecutorService _monitorExecutor;
-    protected ScheduledExecutorService _cancelJobExecutor;
+    protected ScheduledExecutorService _cancelledJobsCheckExecutor;
 
     private int _directAgentThreadCap;
 
@@ -399,7 +399,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     public void onManagementServerMaintenance() {
         logger.debug("Management server maintenance enabled");
         _monitorExecutor.shutdownNow();
-        _cancelJobExecutor.shutdownNow();
+        _cancelledJobsCheckExecutor.shutdownNow();
         newAgentConnectionsMonitor.shutdownNow();
         if (_connection != null) {
             _connection.stop();
@@ -451,8 +451,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     private void initAndScheduleCancelJobExecutor() {
-        _cancelJobExecutor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("CancelJob"));
-        _cancelJobExecutor.scheduleWithFixedDelay(new CancelJobTask(), CancelJobInterval.value(), CancelJobInterval.value(), TimeUnit.SECONDS);
+        _cancelledJobsCheckExecutor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("CancelledJobsCheck"));
+        _cancelledJobsCheckExecutor.scheduleWithFixedDelay(new CancelledJobsCheckTask(), CancelledJobInterval.value(), CancelledJobInterval.value(), TimeUnit.SECONDS);
     }
 
     private void initAndScheduleAgentConnectionsMonitor() {
@@ -924,7 +924,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         ManagementServerHostVO msHost = _mshostDao.findByMsid(_nodeId);
         if (msHost != null && (ManagementServerHost.State.Maintenance.equals(msHost.getState()) || ManagementServerHost.State.PreparingForMaintenance.equals(msHost.getState()))) {
             _monitorExecutor.shutdownNow();
-            _cancelJobExecutor.shutdownNow();
+            _cancelledJobsCheckExecutor.shutdownNow();
             newAgentConnectionsMonitor.shutdownNow();
             return true;
         }
@@ -1104,7 +1104,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         _connectExecutor.shutdownNow();
         _monitorExecutor.shutdownNow();
-        _cancelJobExecutor.shutdownNow();
+        _cancelledJobsCheckExecutor.shutdownNow();
         newAgentConnectionsMonitor.shutdownNow();
         return true;
     }
@@ -2100,7 +2100,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
     }
 
-    protected class CancelJobTask extends ManagedContextRunnable {
+    protected class CancelledJobsCheckTask extends ManagedContextRunnable {
         @Override
         protected void runInContext() {
             final List<AsyncJobVO> jobs = _asyncJobDao.getCancelledJobs();

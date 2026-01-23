@@ -20,7 +20,7 @@ import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface AsyncJobService extends PluggableService {
-    ConfigKey<Integer> CancelJobInterval = new ConfigKey<Integer>("Advanced", Integer.class, "ping.interval", "30",
+    ConfigKey<Integer> CancelledJobInterval = new ConfigKey<>("Advanced", Integer.class, "job.cancelled.interval", "5",
             "Interval in seconds to check the jobs cancelled", false);
 
     String cancelAsyncJob(long jobId, String reason);

@@ -39,7 +39,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "detachVolume", description = "Detaches a disk volume from an Instance.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, cancellable = true)
 public class DetachVolumeCmd extends BaseAsyncCmd implements UserCmd {
     private static final String s_name = "detachvolumeresponse";
 

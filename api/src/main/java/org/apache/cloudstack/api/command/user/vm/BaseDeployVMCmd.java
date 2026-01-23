@@ -35,7 +35,6 @@ import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.api.BaseAsyncCreateCustomIdCmd;
-import org.apache.cloudstack.api.CancellableCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
@@ -69,7 +68,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmDiskInfo;
 
-public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityGroupAction, UserCmd, CancellableCmd {
+public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityGroupAction, UserCmd {
 
     private static final String s_name = "deployvirtualmachineresponse";
 

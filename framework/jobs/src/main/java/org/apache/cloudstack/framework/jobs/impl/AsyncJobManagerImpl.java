@@ -20,7 +20,6 @@ package org.apache.cloudstack.framework.jobs.impl;
 import static com.cloud.utils.HumanReadableJson.getHumanReadableBytesJson;
 
 import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -44,9 +43,6 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.Cancellable;
-import org.apache.cloudstack.api.CancellableCmd;
 import org.apache.cloudstack.api.command.user.job.CancelAsyncJobCmd;
 import org.apache.cloudstack.command.ReconcileCommandService;
 import org.apache.cloudstack.context.CallContext;
@@ -203,7 +199,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {JobExpireMinutes, JobCancelThresholdMinutes, VmJobLockTimeout, HidePassword};
+        return new ConfigKey<?>[] {JobExpireMinutes, JobCancelThresholdMinutes, VmJobLockTimeout, HidePassword, CancelledJobInterval};
     }
 
     @Override
@@ -341,6 +337,12 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Override
     @DB
     public void completeAsyncJob(final long jobId, final Status jobStatus, final int resultCode, final String resultObject) {
+        completeAsyncJob(jobId, jobStatus, resultCode, resultObject, true);
+    }
+
+    @Override
+    @DB
+    public void completeAsyncJob(final long jobId, final Status jobStatus, final int resultCode, final String resultObject, boolean remove) {
         String resultObj = null;
         if (logger.isDebugEnabled()) {
             resultObj = convertHumanReadableJson(obfuscatePassword(resultObject, HidePassword.value()));
@@ -384,7 +386,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 if (logger.isDebugEnabled()) {
                     logger.debug("Update db status for job-" + jobId);
                 }
-                job.setCompleteMsid(getMsid());
                 job.setStatus(jobStatus);
                 job.setResultCode(resultCode);
 
@@ -396,8 +397,12 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
                 final Date currentGMTTime = DateUtil.currentGMTTime();
                 job.setLastUpdated(currentGMTTime);
-                job.setRemoved(currentGMTTime);
                 job.setExecutingMsid(null);
+
+                if (remove) {
+                    job.setCompleteMsid(getMsid());
+                    job.setRemoved(currentGMTTime);
+                }
                 _jobDao.update(jobId, job);
 
                 if (logger.isDebugEnabled()) {
@@ -918,10 +923,36 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     List<SyncQueueItemVO> l = _queueMgr.dequeueFromAny(getMsid(), MAX_ONETIME_SCHEDULE_SIZE);
                     if (l != null && l.size() > 0) {
                         for (SyncQueueItemVO item : l) {
-                            if (logger.isDebugEnabled()) {
-                                logger.debug("Execute sync-queue item: " + item.toString());
+                            boolean isPurged = false;
+                            if (item.getContentType().equalsIgnoreCase(SyncQueueItem.AsyncJobContentType)) {
+                                AsyncJobVO job = _jobDao.findById(item.getContentId());
+                                if (job != null && StringUtils.isNotBlank(job.getRelated())) {
+                                    AsyncJobVO parentJob = _jobDao.findById(Long.valueOf(job.getRelated()));
+                                    //If the parent job is done, do not execute the child. complete it and purge it from queue
+                                    if (parentJob != null && parentJob.getStatus().done() && !isPseudoJob(parentJob)) {
+                                        logger.debug("Purging sync-queue item: {}", item);
+                                        completeAsyncJob(item.getContentId(), parentJob.getStatus(), 0, "Job is not "
+                                                + "scheduled for execution as the parent job is done. Parent Job " +
+                                                "state:" + " " + parentJob.getStatus());
+                                        _jobMonitor.unregisterByJobId(item.getContentId());
+                                        _queueMgr.purgeItem(item.getId());
+
+                                        if (parentJob.getStatus() == Status.CANCELLED) {
+                                            parentJob.setCompleteMsid(getMsid());
+                                            final Date currentGMTTime = DateUtil.currentGMTTime();
+                                            parentJob.setLastUpdated(currentGMTTime);
+                                            parentJob.setRemoved(currentGMTTime);
+                                            _jobDao.update(parentJob.getId(), parentJob);
+                                        }
+
+                                        isPurged = true;
+                                    }
+                                }
                             }
-                            executeQueueItem(item, false);
+                            if (!isPurged) {
+                                logger.debug("Execute sync-queue item: {}", item);
+                                executeQueueItem(item, false);
+                            }
                         }
                     }
 
@@ -929,8 +960,17 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     for (Long jobId : standaloneWakeupJobs) {
                         // TODO, we assume that all jobs in this category is API job only
                         AsyncJobVO job = _jobDao.findById(jobId);
-                        if (job != null && (job.getPendingSignals() & AsyncJob.Constants.SIGNAL_MASK_WAKEUP) != 0)
-                            scheduleExecution(job, false);
+                        if (job != null && (job.getPendingSignals() & AsyncJob.Constants.SIGNAL_MASK_WAKEUP) != 0) {
+                            if (job.getStatus() != Status.CANCELLED) {
+                                scheduleExecution(job, false);
+                            } else {
+                                job.setCompleteMsid(getMsid());
+                                final Date currentGMTTime = DateUtil.currentGMTTime();
+                                job.setLastUpdated(currentGMTTime);
+                                job.setRemoved(currentGMTTime);
+                                _jobDao.update(job.getId(), job);
+                            }
+                        }
                     }
                 } catch (Throwable e) {
                     logger.error("Unexpected exception when trying to execute queue item, ", e);
@@ -1421,52 +1461,27 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     public String cancelAsyncJob(long jobId, String reason) {
-        final AsyncJobVO job = _jobDao.findById(jobId);
+        final AsyncJobVO job = _jobDao.findByIdIncludingRemoved(jobId);
         String errMessage;
         if (job == null) {
-            errMessage = "Cannot cancel, job-" + jobId + " no longer exists.";
+            errMessage = "Cannot cancel, job no longer exists.";
             logger.debug(errMessage);
-            // purge queue items (if any) to avoid blocking
             _queueMgr.purgeAsyncJobQueueItemId(jobId);
             return errMessage;
         }
 
         try {
             Class<?> cmdClass = Class.forName(job.getCmd());
-            if (BaseAsyncCmd.class.isAssignableFrom(cmdClass)) {
-                logger.info(cmdClass.getName() + " is a subclass of BaseAsyncCmd");
-                try {
-                    BaseAsyncCmd cmd = (BaseAsyncCmd) cmdClass.getDeclaredConstructor().newInstance();
-                    boolean cmdCancellable = cmd.isCancellable();
-                    if (cmdCancellable) {
-                        logger.info("Cmd: " + cmdClass.getName() + " is cancellable");
-                    }
-                }  catch (NoSuchMethodException e) {
-                    logger.warn("No declared constructor for Cmd: " + cmdClass.getName() + ", not able to check if it is cancellable or not");
-                }
-            }
-
-            boolean cancellable = cmdClass.isAnnotationPresent(Cancellable.class);
-            if (cancellable) {
-                logger.info(cmdClass.getName() + " is cancellable");
-            }
-
             APICommand apiCommand = cmdClass.getAnnotation(APICommand.class);
-            if (apiCommand == null || !apiCommand.cancellable() || !CancellableCmd.class.isAssignableFrom(cmdClass)) {
-                errMessage = "Cannot cancel, job-" + jobId + " as it is not cancellable.";
+            if (apiCommand == null || !apiCommand.cancellable()) {
+                errMessage = "Cannot cancel, job " + job.getUuid() + " is not cancellable.";
                 logger.debug(errMessage);
                 return errMessage;
             }
         } catch (ClassNotFoundException e) {
-            errMessage = "Command " + job.getCmd() + " of jobid-" + jobId + " not found.";
+            errMessage = "Command " + job.getCmd() + " of jobid " + job.getUuid() + " not found.";
             logger.error(errMessage, e);
             return errMessage;
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
-        } catch (InstantiationException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
         }
 
         if (job.getStatus() != Status.IN_PROGRESS) {
@@ -1476,13 +1491,11 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             return errMessage;
         }
 
-        logger.debug("Cancelling job-{} which is in IN_PROGRESS state.", jobId);
+        logger.debug("Cancelling job-{} which is in progress.", jobId);
 
         try {
-            completeAsyncJob(jobId, JobInfo.Status.CANCELLED, 0, "Job is cancelled due to " + reason);
+            completeAsyncJob(jobId, JobInfo.Status.CANCELLED, 0, "Job is cancelled due to " + reason, false);
             _jobMonitor.unregisterByJobId(jobId);
-
-            // purge the item and resume queue processing
             _queueMgr.purgeAsyncJobQueueItemId(jobId);
             return "";
         } catch (Throwable t) {
@@ -1495,7 +1508,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     public List<Class<?>> getCommands() {
-        final List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        final List<Class<?>> cmdList = new ArrayList<>();
         cmdList.add(CancelAsyncJobCmd.class);
         return cmdList;
     }

@@ -163,6 +163,11 @@ public class VmwareHelper {
 
     private static void registerActiveVmTask(long cmdSequence, String vmName, String commandType,
                               ManagedObjectReference taskMor, VmwareContext context) {
+        if (StringUtils.isBlank(vmName)) {
+            LOGGER.debug("No active VM for sequence={}, command={}, task={}", cmdSequence, commandType, taskMor);
+            return;
+        }
+
         ActiveVmTaskInfo taskInfo = new ActiveVmTaskInfo(cmdSequence, vmName, commandType, taskMor, context);
         activeVmTasks.put(cmdSequence, taskInfo);
 
