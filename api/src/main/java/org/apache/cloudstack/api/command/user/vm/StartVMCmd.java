@@ -27,7 +27,6 @@ import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.CancellableCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
@@ -49,8 +48,8 @@ import com.cloud.utils.exception.ExecutionException;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "startVirtualMachine", responseObject = UserVmResponse.class, description = "Starts  an Instance.", responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class StartVMCmd extends BaseAsyncCmd implements UserCmd, CancellableCmd {
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true, cancellable = true)
+public class StartVMCmd extends BaseAsyncCmd implements UserCmd {
 
     private static final String s_name = "startvirtualmachineresponse";
 
