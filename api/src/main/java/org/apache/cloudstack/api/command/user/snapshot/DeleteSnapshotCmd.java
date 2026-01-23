@@ -36,7 +36,7 @@ import com.cloud.storage.Snapshot;
 import com.cloud.user.Account;
 
 @APICommand(name = "deleteSnapshot", description = "Deletes a Snapshot of a disk volume.", responseObject = SuccessResponse.class, entityType = {Snapshot.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, cancellable = true)
 public class DeleteSnapshotCmd extends BaseAsyncCmd {
 
     /////////////////////////////////////////////////////
