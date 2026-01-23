@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kubernetes_cluster_affinity_group_map` (
     CONSTRAINT `fk_kubernetes_cluster_ag_map__ag_id` FOREIGN KEY (`affinity_group_id`) REFERENCES `affinity_group`(`id`) ON DELETE CASCADE,
     INDEX `i_kubernetes_cluster_ag_map__cluster_id`(`cluster_id`),
     INDEX `i_kubernetes_cluster_ag_map__ag_id`(`affinity_group_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Create webhook_filter table
 DROP TABLE IF EXISTS `cloud`.`webhook_filter`;
@@ -51,4 +51,4 @@ CREATE TABLE IF NOT EXISTS `cloud`.`webhook_filter` (
     PRIMARY KEY (`id`),
     INDEX `i_webhook_filter__webhook_id`(`webhook_id`),
     CONSTRAINT `fk_webhook_filter__webhook_id` FOREIGN KEY(`webhook_id`) REFERENCES `webhook`(`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
