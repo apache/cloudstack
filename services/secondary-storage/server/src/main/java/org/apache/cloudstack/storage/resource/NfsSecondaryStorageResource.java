@@ -3741,7 +3741,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         stopScript.add(String.format("systemctl stop %s", unitName));
         stopScript.execute();
         resetService(unitName);
-        logger.info(String.format("Image server %s stoppped", unitName));
+        logger.info(String.format("Image server %s stopped", unitName));
 
         return true;
     }
@@ -3759,7 +3759,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
 
         String systemdRunCmd = String.format(
-                "systemd-run --unit=%s --property=Restart=no /usr/bin/python3 %s --listen 0.0.0.0 --port 54323",
+                "systemd-run --unit=%s --property=Restart=no /usr/bin/python3 %s --listen 0.0.0.0 --port %d",
                 unitName, imageServerScript, imageServerPort);
 
         Script startScript = new Script("/bin/bash", logger);
@@ -3785,7 +3785,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             String verifyResult = verifyScript.execute();
             if (verifyResult == null) {
                 serviceActive = true;
-                logger.info(String.format("Image server is now active (attempt %d)", unitName, attempt + 1));
+                logger.info(String.format("Image server is now active (attempt %d)", attempt + 1));
                 break;
             }
             try {
@@ -3797,7 +3797,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
 
         if (!serviceActive) {
-            logger.error(String.format("Image server failed to start within %d seconds", unitName, maxWaitSeconds));
+            logger.error(String.format("Image server failed to start within %d seconds", maxWaitSeconds));
             return false;
         }
         return true;

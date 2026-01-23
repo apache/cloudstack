@@ -43,7 +43,7 @@ public class ImageTransferVO implements ImageTransfer {
     private String uuid;
 
     @Column(name = "backup_id")
-    private long backupId;
+    private Long backupId;
 
     @Column(name = "disk_id")
     private long diskId;

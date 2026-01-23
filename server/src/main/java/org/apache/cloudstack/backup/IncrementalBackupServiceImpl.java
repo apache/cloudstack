@@ -293,7 +293,6 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
                 transferId,
                 host.getPrivateIpAddress(),
                 volume.getUuid(),
-                null,
                 backup.getNbdPort(),
                 cmd.getDirection().toString()
         );
@@ -354,13 +353,15 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         Long poolId = volume.getPoolId();
         StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(poolId);
         Host host = getFirstHostFromStoragePool(storagePoolVO);
+        // todo: This only works with file based storage (not ceph, linbit)
+        String volumePath = String.format("/mnt/%s/%s", storagePoolVO.getUuid(), volume.getPath());
 
         StartNBDServerAnswer nbdServerAnswer;
         StartNBDServerCommand nbdServerCmd = new StartNBDServerCommand(
                 transferId,
                 host.getPrivateIpAddress(),
                 volume.getUuid(),
-                volume.getPath(),
+                volumePath,
                 nbdPort,
                 cmd.getDirection().toString()
         );
@@ -379,7 +380,6 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
                 transferId,
                 host.getPrivateIpAddress(),
                 volume.getUuid(),
-                volume.getPath(),
                 nbdPort,
                 cmd.getDirection().toString()
         );
