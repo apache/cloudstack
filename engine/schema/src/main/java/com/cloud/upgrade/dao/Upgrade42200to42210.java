@@ -16,6 +16,10 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
+import com.cloud.utils.exception.CloudRuntimeException;
+
+import java.io.InputStream;
+
 public class Upgrade42200to42210 extends DbUpgradeAbstractImpl implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
     @Override
@@ -27,4 +31,16 @@ public class Upgrade42200to42210 extends DbUpgradeAbstractImpl implements DbUpgr
     public String getUpgradedVersion() {
         return "4.22.1.0";
     }
+
+    @Override
+    public InputStream[] getPrepareScripts() {
+        final String scriptFile = "META-INF/db/schema-42200to42210.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
+        if (script == null) {
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
+        }
+
+        return new InputStream[] {script};
+    }
+
 }
