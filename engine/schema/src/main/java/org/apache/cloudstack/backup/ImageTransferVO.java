@@ -117,7 +117,7 @@ public class ImageTransferVO implements ImageTransfer {
     }
 
     @Override
-    public long getBackupId() {
+    public Long getBackupId() {
         return backupId;
     }
 

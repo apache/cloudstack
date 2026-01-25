@@ -3725,14 +3725,19 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     private boolean stopImageServer() {
         String unitName = "cloudstack-image-server";
+        final int imageServerPort = 54323;
 
         Script checkScript = new Script("/bin/bash", logger);
         checkScript.add("-c");
         checkScript.add(String.format("systemctl is-active --quiet %s", unitName));
         String checkResult = checkScript.execute();
         if (checkResult != null) {
-            logger.info(String.format("Image server not running, resetting failed state", unitName));
+            logger.info(String.format("Image server not running, resetting failed state"));
             resetService(unitName);
+            // Still try to remove firewall rule in case it exists
+            if (_inSystemVM) {
+                removeFirewallRule(imageServerPort);
+            }
             return true;
         }
 
@@ -3743,7 +3748,25 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         resetService(unitName);
         logger.info(String.format("Image server %s stopped", unitName));
 
+        // Close firewall port for image server
+        if (_inSystemVM) {
+            removeFirewallRule(imageServerPort);
+        }
+
         return true;
+    }
+
+    private void removeFirewallRule(int port) {
+        String rule = String.format("-p tcp -m state --state NEW -m tcp --dport %d -j ACCEPT", port);
+        Script removeScript = new Script("/bin/bash", logger);
+        removeScript.add("-c");
+        removeScript.add(String.format("iptables -D INPUT %s || true", rule));
+        String result = removeScript.execute();
+        if (result != null && !result.isEmpty() && !result.contains("iptables: Bad rule")) {
+            logger.debug(String.format("Firewall rule removal result for port %d: %s", port, result));
+        } else {
+            logger.info(String.format("Firewall rule removed for port %d (or did not exist)", port));
+        }
     }
 
     private boolean startImageServerIfNotRunning(int imageServerPort) {
@@ -3800,6 +3823,14 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             logger.error(String.format("Image server failed to start within %d seconds", maxWaitSeconds));
             return false;
         }
+
+        // Open firewall port for image server
+        if (_inSystemVM) {
+            String rule = String.format("-p tcp -m state --state NEW -m tcp --dport %d -j ACCEPT", imageServerPort);
+            IpTablesHelper.addConditionally(IpTablesHelper.INPUT_CHAIN, true, rule, 
+                    String.format("Error in opening up image server port %d", imageServerPort));
+        }
+
         return true;
     }
 

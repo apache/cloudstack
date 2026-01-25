@@ -273,19 +273,13 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         }
     }
 
-    private ImageTransferVO createDownloadImageTransfer(CreateImageTransferCmd cmd) {
+    private ImageTransferVO createDownloadImageTransfer(CreateImageTransferCmd cmd, VolumeVO volume) {
         Long backupId = cmd.getBackupId();
-        Long volumeId = cmd.getVolumeId();
         BackupVO backup = backupDao.findById(backupId);
         if (backup == null) {
             throw new CloudRuntimeException("Backup not found: " + backupId);
         }
         boolean dummyOffering = isDummyOffering(backup.getBackupOfferingId());
-
-        Volume volume = volumeDao.findById(volumeId);
-        if (volume == null) {
-            throw new CloudRuntimeException("Volume not found: " + volumeId);
-        }
 
         String transferId = UUID.randomUUID().toString();
         Host host = hostDao.findById(backup.getHostId());
@@ -315,7 +309,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
             ImageTransferVO imageTransfer = new ImageTransferVO(
                     transferId,
                     backupId,
-                    volumeId,
+                    volume.getId(),
                     backup.getHostId(),
                     backup.getNbdPort(),
                     ImageTransferVO.Phase.transferring,
@@ -345,17 +339,16 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         return hosts.get(0);
     }
 
-    private ImageTransferVO createUploadImageTransfer(CreateImageTransferCmd cmd) {
+    private ImageTransferVO createUploadImageTransfer(CreateImageTransferCmd cmd, VolumeVO volume) {
         String transferId = UUID.randomUUID().toString();
 
         int nbdPort = allocateNbdPort();
-        VolumeVO volume = volumeDao.findById(cmd.getVolumeId());
         Long poolId = volume.getPoolId();
         StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(poolId);
         Host host = getFirstHostFromStoragePool(storagePoolVO);
+
         // todo: This only works with file based storage (not ceph, linbit)
         String volumePath = String.format("/mnt/%s/%s", storagePoolVO.getUuid(), volume.getPath());
-
         StartNBDServerAnswer nbdServerAnswer;
         StartNBDServerCommand nbdServerCmd = new StartNBDServerCommand(
                 transferId,
@@ -415,10 +408,18 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
     @Override
     public ImageTransferResponse createImageTransfer(CreateImageTransferCmd cmd) {
         ImageTransfer imageTransfer;
+        Long volumeId = cmd.getVolumeId();
+        VolumeVO volume = volumeDao.findById(cmd.getVolumeId());
+
+        ImageTransferVO existingTransfer = imageTransferDao.findByVolume(volume.getId());
+        if (existingTransfer != null) {
+            throw new CloudRuntimeException("Image transfer already in progress for volume: " + volume.getUuid());
+        }
+
         if (cmd.getDirection().equals(ImageTransfer.Direction.upload)) {
-            imageTransfer = createUploadImageTransfer(cmd);
+            imageTransfer = createUploadImageTransfer(cmd, volume);
         } else if (cmd.getDirection().equals(ImageTransfer.Direction.download)) {
-            imageTransfer = createDownloadImageTransfer(cmd);
+            imageTransfer = createDownloadImageTransfer(cmd, volume);
         } else {
             throw new CloudRuntimeException("Invalid direction: " + cmd.getDirection());
         }

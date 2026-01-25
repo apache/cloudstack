@@ -33,7 +33,7 @@ public interface ImageTransfer extends ControlledEntity, InternalIdentity {
 
     String getUuid();
 
-    long getBackupId();
+    Long getBackupId();
 
     long getDiskId();
 
