@@ -28,6 +28,5 @@ public class Tariff extends GenericPresetVariable {
 
     public void setValue(BigDecimal value) {
         this.value = value;
-        fieldNamesToIncludeInToString.add("value");
     }
 }

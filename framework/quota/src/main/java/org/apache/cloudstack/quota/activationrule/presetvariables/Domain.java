@@ -27,7 +27,6 @@ public class Domain extends GenericPresetVariable {
 
     public void setPath(String path) {
         this.path = path;
-        fieldNamesToIncludeInToString.add("path");
     }
 
 }
