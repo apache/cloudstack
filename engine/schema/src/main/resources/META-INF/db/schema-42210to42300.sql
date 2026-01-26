@@ -51,4 +51,4 @@ CREATE TABLE IF NOT EXISTS `cloud`.`webhook_filter` (
     PRIMARY KEY (`id`),
     INDEX `i_webhook_filter__webhook_id`(`webhook_id`),
     CONSTRAINT `fk_webhook_filter__webhook_id` FOREIGN KEY(`webhook_id`) REFERENCES `webhook`(`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
