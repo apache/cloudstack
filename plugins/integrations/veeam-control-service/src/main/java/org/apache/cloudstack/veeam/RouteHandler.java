@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.veeam;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 
 import javax.servlet.http.HttpServletRequest;
@@ -39,5 +40,28 @@ public interface RouteHandler extends Adapter {
             return path.substring(0, qIdx);
         }
         return path;
+    }
+
+    static String getRequestData(HttpServletRequest req) {
+        String contentType = req.getContentType();
+        if (contentType == null) {
+            return null;
+        }
+        String mime = contentType.split(";")[0].trim().toLowerCase();
+        if (!"application/json".equals(mime) && !"application/x-www-form-urlencoded".equals(mime)) {
+            return null;
+        }
+        try {
+            StringBuilder data = new StringBuilder();
+            String line;
+            try (BufferedReader reader = req.getReader()) {
+                while ((line = reader.readLine()) != null) {
+                    data.append(line);
+                }
+            }
+            return data.toString();
+        } catch (IOException ignored) {
+            return null;
+        }
     }
 }

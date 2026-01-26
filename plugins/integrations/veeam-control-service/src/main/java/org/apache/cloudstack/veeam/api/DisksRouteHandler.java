@@ -61,16 +61,22 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
     @Override
     public void handle(HttpServletRequest req, HttpServletResponse resp, String path, Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
         final String method = req.getMethod();
+        final String sanitizedPath = getSanitizedPath(path);
+        if (sanitizedPath.equals(BASE_ROUTE)) {
+            if ("GET".equalsIgnoreCase(method)) {
+                handleGet(req, resp, outFormat, io);
+                return;
+            }
+            if ("POST".equalsIgnoreCase(method)) {
+                handlePost(req, resp, outFormat, io);
+                return;
+            }
+        }
+
         if (!"GET".equalsIgnoreCase(method)) {
             io.methodNotAllowed(resp, "GET", outFormat);
             return;
         }
-        final String sanitizedPath = getSanitizedPath(path);
-        if (sanitizedPath.equals(BASE_ROUTE)) {
-            handleGet(req, resp, outFormat, io);
-            return;
-        }
-
         Pair<String, String> idAndSubPath = PathUtil.extractIdAndSubPath(sanitizedPath, BASE_ROUTE);
         if (idAndSubPath != null) {
             // /api/disks/{id}
@@ -90,7 +96,15 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
         final List<Disk> result = VolumeJoinVOToDiskConverter.toDiskList(listDisks());
         final Disks response = new Disks(result);
 
-        io.getWriter().write(resp, 200, response, outFormat);
+        io.getWriter().write(resp, 400, response, outFormat);
+    }
+
+    public void handlePost(final HttpServletRequest req, final HttpServletResponse resp,
+                          Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
+        String data = RouteHandler.getRequestData(req);
+        logger.info("Received POST request on /api/disks endpoint, but method: POST is not supported atm. Request-data: {}", data);
+
+        io.getWriter().write(resp, 400, "Unable to process at the moment", outFormat);
     }
 
     protected List<VolumeJoinVO> listDisks() {

@@ -148,11 +148,9 @@ public class BearerOrBasicAuthFilter implements Filter {
         final String scope = JsonMini.getString(payloadJson, "scope");
         final Long exp = JsonMini.getLong(payloadJson, "exp");
 
-        if (iss == null || !ISSUER.equals(iss)) return false;
+        if (!ISSUER.equals(iss)) return false;
         if (exp == null || Instant.now().getEpochSecond() >= exp) return false;
-        if (scope == null || !hasRequiredScopes(scope)) return false;
-
-        return true;
+        return scope != null && hasRequiredScopes(scope);
     }
 
     private static boolean hasRequiredScopes(String scope) {

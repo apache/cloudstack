@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.api.DataCentersRouteHandler;
 import org.apache.cloudstack.veeam.api.NetworksRouteHandler;
+import org.apache.cloudstack.veeam.api.VnicProfilesRouteHandler;
 import org.apache.cloudstack.veeam.api.dto.Ref;
 import org.apache.cloudstack.veeam.api.dto.VnicProfile;
 
@@ -37,7 +38,7 @@ public class NetworkVOToVnicProfileConverter {
         final String networkUuid = vo.getUuid();
         vnicProfile.setId(networkUuid);
         final String basePath = VeeamControlService.ContextPath.value();
-        vnicProfile.setHref(basePath + NetworksRouteHandler.BASE_ROUTE + "/" + networkUuid);
+        vnicProfile.setHref(basePath + VnicProfilesRouteHandler.BASE_ROUTE + "/" + networkUuid);
         vnicProfile.setId(networkUuid);
         String name = vo.getName() != null ? vo.getName() : vo.getTrafficType().name() + "-" + networkUuid;
         vnicProfile.setName(name);
