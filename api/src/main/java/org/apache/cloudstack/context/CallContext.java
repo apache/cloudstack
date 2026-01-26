@@ -63,7 +63,7 @@ public class CallContext {
     private User user;
     private long userId;
     private final Map<Object, Object> context = new HashMap<Object, Object>();
-    private final Map<String, String> apiResourcesUuids = new HashMap<>();
+    private final Map<String, UUID> apiResourcesUuids = new HashMap<>();
     private Project project;
     private String apiName;
 
@@ -389,11 +389,11 @@ public class CallContext {
         isEventDisplayEnabled = eventDisplayEnabled;
     }
 
-    public String getApiResourceUuid(String paramName) {
+    public UUID getApiResourceUuid(String paramName) {
         return apiResourcesUuids.get(paramName);
     }
 
-    public void putApiResourceUuid(String paramName, String uuid) {
+    public void putApiResourceUuid(String paramName, UUID uuid) {
         apiResourcesUuids.put(paramName, uuid);
     }
 

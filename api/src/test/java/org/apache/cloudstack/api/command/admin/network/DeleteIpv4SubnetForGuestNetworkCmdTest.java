@@ -39,7 +39,7 @@ public class DeleteIpv4SubnetForGuestNetworkCmdTest {
     @Test
     public void testDeleteIpv4SubnetForGuestNetworkCmd() {
         Long id = 1L;
-        String uuid = UUID.randomUUID().toString();
+        UUID uuid = UUID.randomUUID();
 
         DeleteIpv4SubnetForGuestNetworkCmd cmd = new DeleteIpv4SubnetForGuestNetworkCmd();
         ReflectionTestUtils.setField(cmd, "id", id);

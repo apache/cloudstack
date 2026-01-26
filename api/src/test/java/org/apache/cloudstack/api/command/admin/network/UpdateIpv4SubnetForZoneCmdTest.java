@@ -40,7 +40,7 @@ public class UpdateIpv4SubnetForZoneCmdTest {
     @Test
     public void testUpdateIpv4SubnetForZoneCmd() {
         Long id = 1L;
-        String uuid = UUID.randomUUID().toString();
+        UUID uuid = UUID.randomUUID();
         String subnet = "192.168.1.0/24";
 
         UpdateIpv4SubnetForZoneCmd cmd = new UpdateIpv4SubnetForZoneCmd();

@@ -44,7 +44,7 @@ public class UnmanageVolumeCmdTest {
     public void testUnmanageVolumeCmd() {
         long accountId = 2L;
         Long volumeId = 3L;
-        String volumeUuid = UUID.randomUUID().toString();
+        UUID volumeUuid = UUID.randomUUID();
         Volume volume = Mockito.mock(Volume.class);
 
         Mockito.when(responseGenerator.findVolumeById(volumeId)).thenReturn(volume);

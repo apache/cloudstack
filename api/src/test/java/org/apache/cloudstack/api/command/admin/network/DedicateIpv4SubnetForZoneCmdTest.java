@@ -39,7 +39,7 @@ public class DedicateIpv4SubnetForZoneCmdTest {
     @Test
     public void testDedicateIpv4SubnetForZoneCmd() {
         Long id = 1L;
-        String uuid = UUID.randomUUID().toString();
+        UUID uuid = UUID.randomUUID();
         String accountName = "user";
         Long projectId = 10L;
         Long domainId = 11L;

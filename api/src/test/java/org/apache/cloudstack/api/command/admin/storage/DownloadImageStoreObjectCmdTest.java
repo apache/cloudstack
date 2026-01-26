@@ -97,7 +97,7 @@ public class DownloadImageStoreObjectCmdTest {
 
     @Test
     public void testGetEventDescription() {
-        String uuid = UUID.randomUUID().toString();
+        UUID uuid = UUID.randomUUID();
 
         ReflectionTestUtils.setField(cmd, "storeId", 1L);
         ReflectionTestUtils.setField(cmd, "path", "path/to/object");

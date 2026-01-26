@@ -40,7 +40,7 @@ public class CreateIpv4SubnetForZoneCmdTest {
     @Test
     public void testCreateIpv4SubnetForZoneCmd() {
         Long zoneId = 1L;
-        String zoneUuid = UUID.randomUUID().toString();
+        UUID zoneUuid = UUID.randomUUID();
         String subnet = "192.168.1.0/24";
         String accountName = "user";
         Long projectId = 10L;

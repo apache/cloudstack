@@ -539,7 +539,7 @@ public class ParamProcessWorker implements DispatchWorker {
                         continue;
                     }
                     String entityUuid = ((Identity) objVO).getUuid();
-                    CallContext.current().putApiResourceUuid(annotation.name(), entityUuid);
+                    CallContext.current().putApiResourceUuid(annotation.name(), UUID.fromString(entityUuid));
                 }
                 validateNaturalNumber(internalId, annotation.name());
                 return internalId;
@@ -564,7 +564,7 @@ public class ParamProcessWorker implements DispatchWorker {
             }
             // Return on first non-null Id for the uuid entity
             if (internalId != null){
-                CallContext.current().putApiResourceUuid(annotation.name(), uuid);
+                CallContext.current().putApiResourceUuid(annotation.name(), UUID.fromString(uuid));
                 CallContext.current().putContextParameter(entity, uuid);
                 break;
             }

@@ -40,7 +40,7 @@ public class CreateIpv4SubnetForGuestNetworkCmdTest {
     @Test
     public void testCreateIpv4SubnetForGuestNetworkCmd() {
         Long parentId = 1L;
-        String  parentUuid = UUID.randomUUID().toString();
+        UUID parentUuid = UUID.randomUUID();
         String subnet = "192.168.1.0/24";
         Integer cidrSize = 26;
 

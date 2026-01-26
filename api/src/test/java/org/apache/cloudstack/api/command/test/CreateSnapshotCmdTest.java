@@ -118,7 +118,7 @@ public class CreateSnapshotCmdTest extends TestCase {
         AccountService accountService = Mockito.mock(AccountService.class);
         Account account = Mockito.mock(Account.class);
         Mockito.when(accountService.getAccount(anyLong())).thenReturn(account);
-        String  volumeUuid = UUID.randomUUID().toString();
+        UUID volumeUuid = UUID.randomUUID();
 
         CallContext.current().putApiResourceUuid("volumeid", volumeUuid);
 

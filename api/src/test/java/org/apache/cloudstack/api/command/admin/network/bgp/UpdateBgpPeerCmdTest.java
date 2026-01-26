@@ -40,7 +40,7 @@ public class UpdateBgpPeerCmdTest {
     @Test
     public void testUpdateBgpPeerCmd() {
         Long id = 1L;
-        String uuid = UUID.randomUUID().toString();
+        UUID uuid = UUID.randomUUID();
         String ip4Address = "ip4-address";
         String ip6Address = "ip6-address";
         Long peerAsNumber = 15000L;

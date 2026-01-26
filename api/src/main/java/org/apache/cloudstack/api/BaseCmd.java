@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 import javax.inject.Inject;
@@ -500,10 +501,10 @@ public abstract class BaseCmd {
     }
 
     public String getResourceUuid(String parameterName) {
-        String resourceUuid = CallContext.current().getApiResourceUuid(parameterName);
+        UUID resourceUuid = CallContext.current().getApiResourceUuid(parameterName);
 
         if (resourceUuid != null) {
-            return resourceUuid;
+            return resourceUuid.toString();
         }
 
         return null;
