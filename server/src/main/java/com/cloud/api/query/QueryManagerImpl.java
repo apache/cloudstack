@@ -2332,6 +2332,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             hostSearchBuilder.and().op("keywordName", hostSearchBuilder.entity().getName(), SearchCriteria.Op.LIKE);
             hostSearchBuilder.or("keywordStatus", hostSearchBuilder.entity().getStatus(), SearchCriteria.Op.LIKE);
             hostSearchBuilder.or("keywordType", hostSearchBuilder.entity().getType(), SearchCriteria.Op.LIKE);
+            hostSearchBuilder.or("keywordVersion", hostSearchBuilder.entity().getVersion(), SearchCriteria.Op.LIKE);
             hostSearchBuilder.cp();
         }
 
@@ -2362,6 +2363,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("keywordName", "%" + keyword + "%");
             sc.setParameters("keywordStatus", "%" + keyword + "%");
             sc.setParameters("keywordType", "%" + keyword + "%");
+            sc.setParameters("keywordVersion", "%" + keyword + "%");
         }
 
         if (id != null) {
@@ -5404,6 +5406,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long id = cmd.getId();
         String name = cmd.getHostName();
         String version = cmd.getVersion();
+        String keyword = cmd.getKeyword();
 
         SearchBuilder<ManagementServerJoinVO> sb = managementServerJoinDao.createSearchBuilder();
         SearchCriteria<ManagementServerJoinVO> sc = sb.create();
@@ -5415,6 +5418,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
         if (version != null) {
             sc.addAnd("version", SearchCriteria.Op.EQ, version);
+        }
+        if (keyword != null) {
+            sc.addAnd("keywordVersion", SearchCriteria.Op.LIKE, "%" + keyword + "%");
         }
         return managementServerJoinDao.searchAndCount(sc, null);
     }
