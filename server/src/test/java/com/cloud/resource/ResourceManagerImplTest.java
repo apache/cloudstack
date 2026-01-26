@@ -944,7 +944,7 @@ public class ResourceManagerImplTest {
         Mockito.when(volume2.getInstanceId()).thenReturn(101L);
 
         List<VolumeVO> volumesInPool = Arrays.asList(volume1, volume2);
-        Mockito.doReturn(volumesInPool).when(volumeDao).findByPoolId(poolId);
+        Mockito.doReturn(volumesInPool).when(volumeDao).findNonDestroyedVolumesByPoolId(poolId);
 
         VMInstanceVO vmInstance1 = Mockito.mock(VMInstanceVO.class);
         VMInstanceVO vmInstance2 = Mockito.mock(VMInstanceVO.class);
