@@ -2366,7 +2366,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             List<Long> conflictingHostIds = new ArrayList<>(CollectionUtils.intersection(hostIdsToDisconnect, hostIdsUsingTheStoragePool));
             if (CollectionUtils.isNotEmpty(conflictingHostIds)) {
                 Map<HostVO, List<VolumeVO>> hostVolumeMap = new HashMap<>();
-                List<VolumeVO> volumesInPool = volumeDao.findByPoolId(poolId);
+                List<VolumeVO> volumesInPool = volumeDao.findNonDestroyedVolumesByPoolId(poolId);
                 Map<Long, VMInstanceVO> vmInstanceCache = new HashMap<>();
 
                 for (Long hostId : conflictingHostIds) {
