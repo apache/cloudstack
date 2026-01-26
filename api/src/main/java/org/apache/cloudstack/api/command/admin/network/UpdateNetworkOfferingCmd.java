@@ -75,6 +75,7 @@ public class UpdateNetworkOfferingCmd extends BaseCmd implements DomainAndZoneId
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.STRING,
+            length = 4096,
             description = "The ID of the containing domain(s) as comma separated string, public for public offerings")
     private String domainIds;
 

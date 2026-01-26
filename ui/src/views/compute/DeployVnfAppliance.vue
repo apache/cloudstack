@@ -1315,7 +1315,7 @@ export default {
       for (const deviceId of managementDeviceIds) {
         if (this.vnfNicNetworks && this.vnfNicNetworks[deviceId] &&
           ((this.vnfNicNetworks[deviceId].type === 'Isolated' && this.vnfNicNetworks[deviceId].vpcid === undefined) ||
-            (this.vnfNicNetworks[deviceId].type === 'Shared' && this.zone.securitygroupsenabled))) {
+            (this.vnfNicNetworks[deviceId].type === 'Shared' && this.vnfNicNetworks[deviceId].service.filter(svc => svc.name === 'SecurityGroupProvider')))) {
           return true
         }
       }
