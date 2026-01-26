@@ -5420,7 +5420,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.addAnd("version", SearchCriteria.Op.EQ, version);
         }
         if (keyword != null) {
-            sc.addAnd("keywordVersion", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("version", SearchCriteria.Op.LIKE, "%" + keyword + "%");
         }
         return managementServerJoinDao.searchAndCount(sc, null);
     }
