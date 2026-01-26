@@ -225,8 +225,8 @@ public class ResourceManagerImplTest {
 
         rootDisks = Arrays.asList(rootDisk1, rootDisk2);
         dataDisks = Collections.singletonList(dataDisk);
-        when(volumeDao.findByPoolId(poolId)).thenReturn(rootDisks);
-        when(volumeDao.findByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(dataDisks);
+        when(volumeDao.findNonDestroyedVolumesByPoolId(poolId)).thenReturn(rootDisks);
+        when(volumeDao.findNonDestroyedVolumesByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(dataDisks);
     }
 
     @After
@@ -591,22 +591,22 @@ public class ResourceManagerImplTest {
 
     @Test
     public void testDestroyLocalStoragePoolVolumesOnlyRootDisks() {
-        when(volumeDao.findByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(null);
+        when(volumeDao.findNonDestroyedVolumesByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(null);
         resourceManager.destroyLocalStoragePoolVolumes(poolId);
         verify(volumeDao, times(rootDisks.size())).updateAndRemoveVolume(any(VolumeVO.class));
     }
 
     @Test
     public void testDestroyLocalStoragePoolVolumesOnlyDataDisks() {
-        when(volumeDao.findByPoolId(poolId)).thenReturn(null);
+        when(volumeDao.findNonDestroyedVolumesByPoolId(poolId)).thenReturn(null);
         resourceManager.destroyLocalStoragePoolVolumes(poolId);
         verify(volumeDao, times(dataDisks.size())).updateAndRemoveVolume(any(VolumeVO.class));
     }
 
     @Test
     public void testDestroyLocalStoragePoolVolumesNoDisks() {
-        when(volumeDao.findByPoolId(poolId)).thenReturn(null);
-        when(volumeDao.findByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(null);
+        when(volumeDao.findNonDestroyedVolumesByPoolId(poolId)).thenReturn(null);
+        when(volumeDao.findNonDestroyedVolumesByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(null);
         resourceManager.destroyLocalStoragePoolVolumes(poolId);
         verify(volumeDao, never()).updateAndRemoveVolume(any(VolumeVO.class));
     }

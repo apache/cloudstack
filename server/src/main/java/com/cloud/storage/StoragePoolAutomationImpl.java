@@ -128,7 +128,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                 boolean restart = !CollectionUtils.isEmpty(upPools);
 
                 // 2. Get a list of all the ROOT volumes within this storage pool
-                List<VolumeVO> allVolumes = volumeDao.findByPoolId(pool.getId());
+                List<VolumeVO> allVolumes = volumeDao.findNonDestroyedVolumesByPoolId(pool.getId());
                 // 3. Enqueue to the work queue
                 enqueueMigrationsForVolumes(allVolumes, pool);
                 // 4. Process the queue
