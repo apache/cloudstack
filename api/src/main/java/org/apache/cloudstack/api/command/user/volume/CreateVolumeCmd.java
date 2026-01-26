@@ -230,7 +230,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Volume Id: " + getEntityUuid() + ((getSnapshotId() == null) ? "" : " from Snapshot: " + this._uuidMgr.getUuid(Snapshot.class, getSnapshotId())));
+        CallContext.current().setEventDetails("Volume ID: " + getEntityUuid() + ((getSnapshotId() == null) ? "" : " from Snapshot with ID: " + getResourceUuid(ApiConstants.SNAPSHOT_ID)));
         Volume volume = _volumeService.createVolume(this);
         if (volume != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(getResponseView(), volume);

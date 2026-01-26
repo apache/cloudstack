@@ -90,7 +90,7 @@ public class DeleteGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Deleting global Load balancer rule Id: " + getGlobalLoadBalancerId());
+        CallContext.current().setEventDetails("Deleting global Load balancer rule with ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _gslbService.deleteGlobalLoadBalancerRule(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

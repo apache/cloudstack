@@ -120,7 +120,7 @@ public class AddGuestOsCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Guest OS Id: " + getEntityId());
+        CallContext.current().setEventDetails("Guest OS ID: " + getEntityUuid());
         GuestOS guestOs = _mgr.getAddedGuestOs(getEntityId());
         if (guestOs != null) {
             GuestOSResponse response = _responseGenerator.createGuestOSResponse(guestOs);

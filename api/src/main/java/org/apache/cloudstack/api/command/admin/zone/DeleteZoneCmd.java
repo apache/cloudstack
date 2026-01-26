@@ -60,7 +60,7 @@ public class DeleteZoneCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Zone Id: " + getId());
+        CallContext.current().setEventDetails("Zone ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _configService.deleteZone(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

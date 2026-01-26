@@ -75,7 +75,7 @@ public class IssueOutOfBandManagementPowerActionCmd extends BaseAsyncCmd {
         }
         final PowerOperation powerOperation = PowerOperation.valueOf(getPowerAction());
 
-        CallContext.current().setEventDetails("Host Id: " + host.getId() + " Action: " + powerOperation.toString());
+        CallContext.current().setEventDetails("Host ID: " + host.getUuid() + " Action: " + powerOperation.toString());
         CallContext.current().putContextParameter(Host.class, host.getUuid());
 
         final OutOfBandManagementResponse response = outOfBandManagementService.executePowerOperation(host, powerOperation, getActionTimeout());

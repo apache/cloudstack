@@ -92,7 +92,7 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Rule ID: " + id);
+        CallContext.current().setEventDetails("Rule ID: " + getResourceUuid(ApiConstants.ID));
         //revoke corresponding firewall rule first
         boolean result = _firewallService.revokeRelatedFirewallRule(id, true);
         result = result && _rulesService.revokePortForwardingRule(id, true);

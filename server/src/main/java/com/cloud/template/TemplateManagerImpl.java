@@ -515,7 +515,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         String extractUrl = extract(caller, templateId, url, zoneId, mode, eventId, false);
-        CallContext.current().setEventDetails(String.format("Download URL: %s, template ID: %s", extractUrl, template.getUuid()));
+        CallContext.current().setEventDetails(String.format("Download URL: %s, Template ID: %s", extractUrl, template.getUuid()));
         return extractUrl;
     }
 
@@ -1188,7 +1188,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (isoId == null) {
             throw new InvalidParameterValueException("The specified instance has no ISO attached to it.");
         }
-        CallContext.current().setEventDetails("Vm Id: " + virtualMachine.getUuid() + " ISO Id: " + isoId);
+        CallContext.current().setEventDetails("Vm ID: " + virtualMachine.getUuid() + " ISO ID: " + isoId);
 
         State vmState = virtualMachine.getState();
         if (vmState != State.Running && vmState != State.Stopped) {

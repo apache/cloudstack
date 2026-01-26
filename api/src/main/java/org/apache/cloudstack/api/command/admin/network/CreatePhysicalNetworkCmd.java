@@ -148,7 +148,7 @@ public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Physical Network ID: " + getEntityId());
+        CallContext.current().setEventDetails("Physical Network ID: " + getEntityUuid());
         PhysicalNetwork result = _networkService.getCreatedPhysicalNetwork(getEntityId());
         if (result != null) {
             PhysicalNetworkResponse response = _responseGenerator.createPhysicalNetworkResponse(result);

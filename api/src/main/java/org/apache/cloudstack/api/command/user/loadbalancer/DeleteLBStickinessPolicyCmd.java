@@ -87,7 +87,7 @@ public class DeleteLBStickinessPolicyCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Load balancer stickiness policy ID: " + getId());
+        CallContext.current().setEventDetails("Load balancer stickiness policy ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _lbService.deleteLBStickinessPolicy(getId(), true);
 
         if (result) {

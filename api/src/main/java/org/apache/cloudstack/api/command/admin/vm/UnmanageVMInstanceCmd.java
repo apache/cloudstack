@@ -121,7 +121,7 @@ public class UnmanageVMInstanceCmd extends BaseAsyncCmd {
             ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         UnmanageVMInstanceResponse response = new UnmanageVMInstanceResponse();
         try {
-            CallContext.current().setEventDetails("VM ID = " + vmId);
+            CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.ID));
             Pair<Boolean, String> result = unmanagedVMsManager.unmanageVMInstance(vmId, hostId, isForced());
             if (result.first()) {
                 response.setSuccess(true);

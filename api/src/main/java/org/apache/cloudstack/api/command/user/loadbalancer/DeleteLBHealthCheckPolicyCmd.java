@@ -81,7 +81,7 @@ public class DeleteLBHealthCheckPolicyCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Load balancer health check policy Id: " + getId());
+        CallContext.current().setEventDetails("Load balancer health check policy ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _lbService.deleteLBHealthCheckPolicy(getId(), true);
 
         if (result) {

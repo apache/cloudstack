@@ -50,7 +50,7 @@ public class CreateIpv4SubnetForGuestNetworkCmdTest {
         ReflectionTestUtils.setField(cmd, "cidrSize", cidrSize);
         ReflectionTestUtils.setField(cmd,"routedIpv4Manager", routedIpv4Manager);
 
-        CallContext.current().putApiResourceUuid("parentid", parentUuid.toString());
+        CallContext.current().putApiResourceUuid("parentid", parentUuid);
 
         Assert.assertEquals(parentId, cmd.getParentId());
         Assert.assertEquals(subnet, cmd.getSubnet());

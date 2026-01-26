@@ -32,7 +32,6 @@ import java.util.regex.Pattern;
 import javax.inject.Inject;
 
 import com.cloud.bgp.BGPService;
-import com.cloud.utils.UuidUtils;
 import org.apache.cloudstack.acl.ProjectRoleService;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
@@ -503,7 +502,7 @@ public abstract class BaseCmd {
     public String getResourceUuid(String parameterName) {
         String resourceUuid = CallContext.current().getApiResourceUuid(parameterName);
 
-        if (resourceUuid != null && UuidUtils.isUuid(resourceUuid)) {
+        if (resourceUuid != null) {
             return resourceUuid;
         }
 

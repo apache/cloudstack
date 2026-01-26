@@ -70,7 +70,7 @@ public class EnableOutOfBandManagementForHostCmd extends BaseAsyncCmd {
 
         OutOfBandManagementResponse response = outOfBandManagementService.enableOutOfBandManagement(host);
 
-        CallContext.current().setEventDetails("Host Id:" + host.getId() + " out-of-band management enabled: true");
+        CallContext.current().setEventDetails("Host ID:" + host.getUuid() + " out-of-band management enabled: true");
         CallContext.current().putContextParameter(Host.class, host.getUuid());
 
         response.setId(host.getUuid());

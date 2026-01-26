@@ -204,9 +204,9 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
         Volume volume = null;
         try {
             if (size != null) {
-                CallContext.current().setEventDetails("Volume Id: " + this._uuidMgr.getUuid(Volume.class, getEntityId()) + " to size " + getSize() + " GB");
+                CallContext.current().setEventDetails("Volume ID: " + getResourceUuid(ApiConstants.ID) + " to size " + getSize() + " GB");
             } else {
-                CallContext.current().setEventDetails("Volume Id: " + this._uuidMgr.getUuid(Volume.class, getEntityId()));
+                CallContext.current().setEventDetails("Volume ID: " + getResourceUuid(ApiConstants.ID));
             }
 
             volume = _volumeService.resizeVolume(this);

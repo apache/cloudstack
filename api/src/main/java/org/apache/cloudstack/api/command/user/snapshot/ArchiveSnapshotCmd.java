@@ -59,7 +59,7 @@ public class ArchiveSnapshotCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        CallContext.current().setEventDetails("Snapshot Id: " + this._uuidMgr.getUuid(Snapshot.class,getId()));
+        CallContext.current().setEventDetails("Snapshot ID: " + getResourceUuid(ApiConstants.ID));
         Snapshot snapshot = _snapshotService.archiveSnapshot(getId());
         if (snapshot != null) {
             SuccessResponse response = new SuccessResponse(getCommandName());

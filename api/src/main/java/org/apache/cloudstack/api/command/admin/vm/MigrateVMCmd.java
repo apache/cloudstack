@@ -158,7 +158,7 @@ public class MigrateVMCmd extends BaseAsyncCmd {
             if (destStoragePool == null) {
                 throw new InvalidParameterValueException("Unable to find the storage pool to migrate the Instance");
             }
-            CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to storage pool Id: " + getStoragePoolId());
+            CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID) + " to storage pool with ID: " + getResourceUuid(ApiConstants.STORAGE_ID));
         } else if (getHostId() != null) {
             destinationHost = _resourceService.getHost(getHostId());
             if (destinationHost == null) {
@@ -167,7 +167,7 @@ public class MigrateVMCmd extends BaseAsyncCmd {
             if (destinationHost.getType() != Host.Type.Routing) {
                 throw new InvalidParameterValueException("The specified host(" + destinationHost.getName() + ") is not suitable to migrate the Instance, please specify another one");
             }
-            CallContext.current().setEventDetails("Instance Id: " + getVirtualMachineId() + " to host Id: " + getHostId());
+            CallContext.current().setEventDetails("Instance Id: " + getVirtualMachineId() + " to host with ID: " + getResourceUuid(ApiConstants.HOST_ID));
         } else if (! isAutoSelect()) {
             throw new InvalidParameterValueException("Please specify a host or storage as destination, or pass 'autoselect=true' to automatically select a destination host which do not require storage migration");
         }

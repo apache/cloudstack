@@ -70,7 +70,7 @@ public class DisableOutOfBandManagementForClusterCmd extends BaseAsyncCmd {
 
         OutOfBandManagementResponse response = outOfBandManagementService.disableOutOfBandManagement(cluster);
 
-        CallContext.current().setEventDetails("Cluster Id:" + cluster.getId() + " out-of-band management enabled: false");
+        CallContext.current().setEventDetails("Cluster ID:" + cluster.getUuid() + " out-of-band management enabled: false");
         CallContext.current().putContextParameter(Cluster.class, cluster.getUuid());
 
         response.setResponseName(getCommandName());

@@ -63,7 +63,7 @@ public class CallContext {
     private User user;
     private long userId;
     private final Map<Object, Object> context = new HashMap<Object, Object>();
-    private final Map<String, String > apiResourcesUuids = new HashMap<>();
+    private final Map<String, String> apiResourcesUuids = new HashMap<>();
     private Project project;
     private String apiName;
 

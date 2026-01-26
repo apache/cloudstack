@@ -101,7 +101,7 @@ public class AddNetworkServiceProviderCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Network ServiceProvider Id: " + getEntityId());
+        CallContext.current().setEventDetails("Network ServiceProvider ID: " + getEntityUuid());
         PhysicalNetworkServiceProvider result = _networkService.getCreatedPhysicalNetworkServiceProvider(getEntityId());
         if (result != null) {
             ProviderResponse response = _responseGenerator.createNetworkServiceProviderResponse(result);

@@ -76,7 +76,7 @@ public class DeletePrivateGatewayCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, ConcurrentOperationException {
-        CallContext.current().setEventDetails("Network ACL Id: " + id);
+        CallContext.current().setEventDetails("Network ACL ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _vpcService.deleteVpcPrivateGateway(id);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

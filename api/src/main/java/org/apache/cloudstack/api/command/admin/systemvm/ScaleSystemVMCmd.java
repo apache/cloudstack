@@ -98,7 +98,7 @@ public class ScaleSystemVMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("SystemVm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
+        CallContext.current().setEventDetails("System VM ID: " + getResourceUuid(ApiConstants.ID));
 
         ServiceOffering serviceOffering = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
         if (serviceOffering == null) {

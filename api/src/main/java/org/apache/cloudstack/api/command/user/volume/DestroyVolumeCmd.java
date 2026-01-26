@@ -115,7 +115,7 @@ public class DestroyVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Volume Id: " + getId());
+        CallContext.current().setEventDetails("Volume ID: " + getResourceUuid(ApiConstants.ID));
         Volume result = _volumeService.destroyVolume(getId(), CallContext.current().getCallingAccount(), getExpunge(), false);
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Restricted, result);

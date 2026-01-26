@@ -70,7 +70,7 @@ public class EnableOutOfBandManagementForZoneCmd extends BaseAsyncCmd {
 
         OutOfBandManagementResponse response = outOfBandManagementService.enableOutOfBandManagement(zone);
 
-        CallContext.current().setEventDetails("Zone Id:" + zone.getId() + " out-of-band management enabled: true");
+        CallContext.current().setEventDetails("Zone ID:" + zone.getUuid() + " out-of-band management enabled: true");
         CallContext.current().putContextParameter(DataCenter.class, zone.getUuid());
 
         response.setResponseName(getCommandName());

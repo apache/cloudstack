@@ -82,7 +82,7 @@ public class DeleteRoutingFirewallRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        CallContext.current().setEventDetails("Routing firewall rule ID: " + id);
+        CallContext.current().setEventDetails("Routing firewall rule with ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = routedIpv4Manager.revokeRoutingFirewallRule(id);
 
         if (result) {

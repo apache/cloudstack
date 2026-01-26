@@ -101,7 +101,7 @@ public class ReplaceNetworkACLListCmd extends BaseAsyncCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Network ID and private gateway can't be passed at the same time");
         }
 
-        CallContext.current().setEventDetails("Network ACL ID: " + aclId);
+        CallContext.current().setEventDetails("Network ACL ID: " + getResourceUuid(ApiConstants.ACL_ID));
         boolean result = false;
         if (getPrivateGatewayId() != null) {
             result = _networkACLService.replaceNetworkACLonPrivateGw(aclId, privateGatewayId);

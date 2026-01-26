@@ -107,7 +107,7 @@ public class UpdateGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        org.apache.cloudstack.context.CallContext.current().setEventDetails("Global Load balancer Id: " + getId());
+        org.apache.cloudstack.context.CallContext.current().setEventDetails("Global Load balancer ID: " + getResourceUuid(ApiConstants.ID));
         GlobalLoadBalancerRule gslbRule = _gslbService.updateGlobalLoadBalancerRule(this);
         if (gslbRule != null) {
             GlobalLoadBalancerResponse response = _responseGenerator.createGlobalLoadBalancerResponse(gslbRule);

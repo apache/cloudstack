@@ -404,7 +404,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         }
 
         Long id = _tmpltDao.getNextInSequence(Long.class, "id");
-        CallContext.current().setEventDetails("Id: " + id + " name: " + name);
+        CallContext.current().setEventDetails("ID: " + id + " name: " + name);
         TemplateProfile profile = new TemplateProfile(id, userId, name, displayText, arch, bits, passwordEnabled, requiresHVM, url, isPublic, featured, isExtractable, imgfmt, guestOSId, zoneIdList,
             hypervisorType, templateOwner.getAccountName(), templateOwner.getDomainId(), templateOwner.getAccountId(), chksum, bootable, templateTag, details,
             sshkeyEnabled, null, isDynamicallyScalable, templateType, directDownload, deployAsIs, extensionId);

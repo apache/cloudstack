@@ -105,7 +105,7 @@ public class RebootSystemVmCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
+        CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.ID));
         VirtualMachine result = _mgr.rebootSystemVM(this);
         if (result != null) {
             SystemVmResponse response = _responseGenerator.createSystemVmResponse(result);

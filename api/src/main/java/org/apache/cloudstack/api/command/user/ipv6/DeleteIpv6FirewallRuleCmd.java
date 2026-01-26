@@ -81,7 +81,7 @@ public class DeleteIpv6FirewallRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        CallContext.current().setEventDetails("IPv6 firewall rule ID: " + id);
+        CallContext.current().setEventDetails("IPv6 firewall rule ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = ipv6Service.revokeIpv6FirewallRule(id);
 
         if (result) {

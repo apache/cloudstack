@@ -91,7 +91,7 @@ public class DestroySystemVmCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("VM ID: " + getResourceUuid(ApiConstants.ID));
+        CallContext.current().setEventDetails("System VM ID: " + getResourceUuid(ApiConstants.ID));
         VirtualMachine instance = _mgr.destroySystemVM(this);
         if (instance != null) {
             SystemVmResponse response = _responseGenerator.createSystemVmResponse(instance);

@@ -66,7 +66,7 @@ public class DeleteNetworkCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Network Id: " + id);
+        CallContext.current().setEventDetails("Network ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _networkService.deleteNetwork(id, isForced());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

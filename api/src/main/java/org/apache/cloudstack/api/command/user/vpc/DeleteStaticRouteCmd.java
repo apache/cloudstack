@@ -87,7 +87,7 @@ public class DeleteStaticRouteCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        CallContext.current().setEventDetails("Route Id: " + id);
+        CallContext.current().setEventDetails("Route ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _vpcService.revokeStaticRoute(id);
 
         if (result) {

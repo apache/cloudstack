@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.UUID;
 import java.util.regex.Matcher;
 
 import javax.inject.Inject;
@@ -537,7 +538,8 @@ public class ParamProcessWorker implements DispatchWorker {
                     if (!(objVO instanceof Identity)) {
                         continue;
                     }
-                    CallContext.current().putApiResourceUuid(annotation.name(), ((Identity) objVO).getUuid());
+                    String entityUuid = ((Identity) objVO).getUuid();
+                    CallContext.current().putApiResourceUuid(annotation.name(), entityUuid);
                 }
                 validateNaturalNumber(internalId, annotation.name());
                 return internalId;

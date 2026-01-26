@@ -89,7 +89,7 @@ public class DeleteEgressFirewallRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        CallContext.current().setEventDetails("Rule Id: " + id);
+        CallContext.current().setEventDetails("Rule ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _firewallService.revokeEgressFirewallRule(id, true);
 
         if (result) {

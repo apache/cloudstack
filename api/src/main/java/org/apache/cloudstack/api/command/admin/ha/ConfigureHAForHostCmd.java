@@ -102,7 +102,7 @@ public final class ConfigureHAForHostCmd extends BaseAsyncCmd {
         if (!result) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to configure HA provider for the host");
         }
-        CallContext.current().setEventDetails("Host Id:" + host.getId() + " HA configured with provider: " + getHaProvider());
+        CallContext.current().setEventDetails("Host ID:" + host.getUuid() + " HA configured with provider: " + getHaProvider());
         CallContext.current().putContextParameter(Host.class, host.getUuid());
 
         setupResponse(result, host.getUuid());

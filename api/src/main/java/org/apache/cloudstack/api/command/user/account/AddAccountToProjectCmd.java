@@ -111,7 +111,7 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
             throw new InvalidParameterValueException("Either accountName or email is required");
         }
 
-        CallContext.current().setEventDetails("Project ID: " + projectId + "; accountName " + accountName);
+        CallContext.current().setEventDetails("Project ID: " + getResourceUuid(ApiConstants.PROJECT_ID) + "; accountName " + accountName);
         boolean result = _projectService.addAccountToProject(getProjectId(), getAccountName(), getEmail(), getProjectRoleId(), getRoleType());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

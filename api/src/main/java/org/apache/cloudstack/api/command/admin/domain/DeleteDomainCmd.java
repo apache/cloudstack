@@ -93,7 +93,7 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Domain Id: " + getId());
+        CallContext.current().setEventDetails("Domain ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _regionService.deleteDomain(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

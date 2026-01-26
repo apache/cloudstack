@@ -124,7 +124,7 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd implements UserCmd {
         } else {
             logger.debug("Resetting VM [{}] password to password defined by user.", vm.getUuid());
         }
-        CallContext.current().setEventDetails("Vm Id: " + getId());
+        CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.ID));
         UserVm result = _userVmService.resetVMPassword(this, password);
         if (result != null){
             UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", result).get(0);

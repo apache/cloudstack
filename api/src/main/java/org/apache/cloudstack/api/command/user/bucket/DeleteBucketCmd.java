@@ -83,7 +83,7 @@ public class DeleteBucketCmd extends BaseCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException {
-        CallContext.current().setEventDetails("Bucket Id: " + this._uuidMgr.getUuid(Bucket.class, getId()));
+        CallContext.current().setEventDetails("Bucket ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _bucketService.deleteBucket(id, CallContext.current().getCallingAccount());
         SuccessResponse response = new SuccessResponse(getCommandName());
         response.setSuccess(result);

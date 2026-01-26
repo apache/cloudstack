@@ -97,7 +97,7 @@ public class RestoreVMCmd extends BaseAsyncCmd implements UserCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
             ResourceAllocationException {
         UserVm result;
-        CallContext.current().setEventDetails("VM ID: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID));
+        CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID));
         result = _userVmService.restoreVM(this);
         if (result != null) {
             UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", result).get(0);

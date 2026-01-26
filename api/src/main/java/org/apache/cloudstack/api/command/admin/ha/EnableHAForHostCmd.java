@@ -91,7 +91,7 @@ public final class EnableHAForHostCmd extends BaseAsyncCmd {
         }
         final boolean result = haConfigManager.enableHA(host.getId(), HAResource.ResourceType.Host);
 
-        CallContext.current().setEventDetails("Host Id:" + host.getId() + " HA enabled: true");
+        CallContext.current().setEventDetails("Host ID:" + host.getUuid() + " HA enabled: true");
         CallContext.current().putContextParameter(Host.class, host.getUuid());
 
         setupResponse(result, host.getUuid());

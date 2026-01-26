@@ -97,7 +97,7 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("AutoScale Instance Group Id: " + getId());
+        CallContext.current().setEventDetails("AutoScale Instance Group ID: " + getResourceUuid(ApiConstants.ID));
         AutoScaleVmGroup result = _autoScaleService.updateAutoScaleVmGroup(this);
         if (result != null) {
             AutoScaleVmGroupResponse response = _responseGenerator.createAutoScaleVmGroupResponse(result);

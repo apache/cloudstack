@@ -102,7 +102,7 @@ public class DeleteIsoCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("ISO Id: " + getId());
+        CallContext.current().setEventDetails("ISO ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _templateService.deleteIso(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

@@ -177,7 +177,7 @@ public class StartVMCmd extends BaseAsyncCmd implements UserCmd {
     @Override
     public void execute() {
         try {
-            CallContext.current().setEventDetails("VM ID: " + getResourceUuid(ApiConstants.ID));
+            CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.ID));
 
             UserVm result;
             result = _userVmService.startVirtualMachine(this);

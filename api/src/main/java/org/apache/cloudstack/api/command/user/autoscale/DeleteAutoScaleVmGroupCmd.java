@@ -94,7 +94,7 @@ public class DeleteAutoScaleVmGroupCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("AutoScale Instance Group Id: " + getId());
+        CallContext.current().setEventDetails("AutoScale Instance Group ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _autoScaleService.deleteAutoScaleVmGroup(id, getCleanup());
 
         if (result) {

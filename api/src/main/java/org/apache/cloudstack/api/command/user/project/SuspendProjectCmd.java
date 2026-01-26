@@ -60,7 +60,7 @@ public class SuspendProjectCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException {
-        CallContext.current().setEventDetails("Project ID: " + id);
+        CallContext.current().setEventDetails("Project ID: " + getResourceUuid(ApiConstants.ID));
         Project project = _projectService.suspendProject(id);
         if (project != null) {
             ProjectResponse response = _responseGenerator.createProjectResponse(project);

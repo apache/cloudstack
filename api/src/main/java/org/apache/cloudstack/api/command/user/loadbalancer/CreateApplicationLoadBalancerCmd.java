@@ -193,7 +193,7 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
     public void execute() throws ResourceAllocationException, ResourceUnavailableException {
         ApplicationLoadBalancerRule rule = null;
         try {
-            CallContext.current().setEventDetails("Load Balancer Id: " + getEntityId());
+            CallContext.current().setEventDetails("Load Balancer ID: " + getEntityUuid());
             // State might be different after the rule is applied, so get new object here
             rule = _entityMgr.findById(ApplicationLoadBalancerRule.class, getEntityId());
             ApplicationLoadBalancerResponse lbResponse = _responseGenerator.createLoadBalancerContainerReponse(rule, _lbService.getLbInstances(getEntityId()));

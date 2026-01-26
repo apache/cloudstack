@@ -62,7 +62,7 @@ public class RemoveGuestOsCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Guest OS Id: " + id);
+        CallContext.current().setEventDetails("Guest OS ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _mgr.removeGuestOs(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

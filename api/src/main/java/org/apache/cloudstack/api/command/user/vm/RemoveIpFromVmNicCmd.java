@@ -132,7 +132,7 @@ public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws InvalidParameterValueException {
-        CallContext.current().setEventDetails("Ip Id: " + id);
+        CallContext.current().setEventDetails("IP address ID: " + getResourceUuid(ApiConstants.ID));
         NicSecondaryIp nicSecIp = getIpEntry();
 
         if (nicSecIp == null) {

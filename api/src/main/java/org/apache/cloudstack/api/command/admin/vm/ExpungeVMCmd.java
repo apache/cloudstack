@@ -96,7 +96,7 @@ public class ExpungeVMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, ConcurrentOperationException {
-        CallContext.current().setEventDetails("VM ID: " + getResourceUuid(ApiConstants.ID));
+        CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.ID));
         try {
             UserVm result = _userVmService.expungeVm(this.getId());
 

@@ -86,7 +86,7 @@ public class CreateDomainCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Domain Name: " + getDomainName() + ((getParentDomainId() != null) ? ", Parent DomainId :" + getParentDomainId() : ""));
+        CallContext.current().setEventDetails("Domain Name: " + getDomainName() + ((getParentDomainId() != null) ? ", Parent Domain ID:" + getResourceUuid(ApiConstants.PARENT_DOMAIN_ID) : ""));
         Domain domain = _domainService.createDomain(getDomainName(), getParentDomainId(), getNetworkDomain(), getDomainUUID());
         if (domain != null) {
             DomainResponse response = _responseGenerator.createDomainResponse(domain);

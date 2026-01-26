@@ -348,7 +348,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 // Set Event Details for Template/ISO Upload
                 String eventType = template.getFormat().equals(ImageFormat.ISO) ? "Iso" : "Template";
                 String eventResourceId = template.getUuid();
-                CallContext.current().setEventDetails(String.format("%s Id: %s", eventType, eventResourceId));
+                CallContext.current().setEventDetails(String.format("%s ID: %s", eventType, eventResourceId));
                 CallContext.current().putContextParameter(eventType.equals("Iso") ? eventType : VirtualMachineTemplate.class, eventResourceId);
                 if (template.getFormat().equals(ImageFormat.ISO)) {
                     CallContext.current().setEventResourceType(ApiCommandResourceType.Iso);
