@@ -67,7 +67,7 @@ public class JsInterpreter implements Closeable {
 
     protected ScriptEngine interpreter;
     protected String interpreterName;
-    private final String injectingLogMessage = "Injecting variable [%s] with value [%s] into the JS interpreter.";
+    private final String injectingLogMessage = "Injecting variable [{}] with value [{}] into the JS interpreter.";
     protected ExecutorService executor;
     private TimeUnit defaultTimeUnit = TimeUnit.MILLISECONDS;
     private long timeout;
