@@ -480,7 +480,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (CollectionUtils.isEmpty(userdataIdsList)) {
             return;
         }
-        List<Long> conflictingTemplateIds = _templateDao.listByUserdataIdsNotAccount(userdataIdsList, accountId);
+        List<Long> conflictingTemplateIds = _templateDao.listByUserdataIdsNotBelongingToAccount(userdataIdsList, accountId);
         if (CollectionUtils.isNotEmpty(conflictingTemplateIds)) {
             logger.warn("User data IDs {} owned by account ID {} cannot be deleted as some of them are " +
                     "linked to templates {} not owned by the account.", userdataIdsList, accountId,

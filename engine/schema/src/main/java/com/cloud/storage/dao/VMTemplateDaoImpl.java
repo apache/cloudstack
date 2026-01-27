@@ -865,7 +865,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
 
     @Override
-    public List<Long> listByUserdataIdsNotAccount(List<Long> userdataIds, long accountId) {
+    public List<Long> listByUserdataIdsNotBelongingToAccount(List<Long> userdataIds, long accountId) {
         if (CollectionUtils.isEmpty(userdataIds)) {
             return Collections.emptyList();
         }
