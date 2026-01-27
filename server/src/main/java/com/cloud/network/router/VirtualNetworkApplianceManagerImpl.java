@@ -3336,6 +3336,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 jobIds.add(jobId);
             } else {
                 logger.debug("Router: {} is already at the latest version. No upgrade required", router);
+                throw new CloudRuntimeException("Router is already at the latest version. No upgrade required");
             }
         }
         return jobIds;

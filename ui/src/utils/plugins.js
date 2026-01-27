@@ -224,18 +224,19 @@ export const notifierPlugin = {
         if (error.response.status) {
           msg = `${i18n.global.t('message.request.failed')} (${error.response.status})`
         }
-        if (error.message) {
-          desc = error.message
-        }
-        if (error.response.headers && 'x-description' in error.response.headers) {
+        if (error.response.headers?.['x-description']) {
           desc = error.response.headers['x-description']
-        }
-        if (error.response.data) {
+        } else if (error.response.data) {
           const responseKey = _.findKey(error.response.data, 'errortext')
-          if (responseKey && (desc === '' || error.response.data[responseKey].errortextkey)) {
+          if (responseKey) {
             const errObj = error.response.data[responseKey]
             desc = this.$toLocaleError(errObj.errortext, errObj.errortextkey, errObj.errormetadata)
+          } else if (typeof error.response.data === 'string') {
+            desc = error.response.data
           }
+        }
+        if (!desc && error.message) {
+          desc = error.message
         }
       }
       let countNotify = store.getters.countNotify
