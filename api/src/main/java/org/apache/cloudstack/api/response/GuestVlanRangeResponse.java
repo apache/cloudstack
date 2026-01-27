@@ -29,39 +29,43 @@ import com.cloud.serializer.Param;
 @SuppressWarnings("unused")
 public class GuestVlanRangeResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the guest VLAN range")
+    @Param(description = "The ID of the guest VLAN range")
     private String id;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account of the guest VLAN range")
+    @Param(description = "The Account of the guest VLAN range")
     private String accountName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID of the guest VLAN range")
+    @Param(description = "The domain ID of the guest VLAN range")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name of the guest VLAN range")
+    @Param(description = "The domain name of the guest VLAN range")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain to which the guest VLAN range belongs", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.GUEST_VLAN_RANGE)
-    @Param(description = "the guest VLAN range")
+    @Param(description = "The guest VLAN range")
     private String guestVlanRange;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the guest vlan range")
+    @Param(description = "The project id of the guest VLAN range")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the guest vlan range")
+    @Param(description = "The project name of the guest VLAN range")
     private String projectName;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
-    @Param(description = "the physical network of the guest vlan range")
+    @Param(description = "The physical Network of the guest VLAN range")
     private Long physicalNetworkId;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the zone of the guest vlan range")
+    @Param(description = "The zone of the guest VLAN range")
     private Long zoneId;
 
     public void setId(String id) {
@@ -83,6 +87,10 @@ public class GuestVlanRangeResponse extends BaseResponse implements ControlledEn
         this.domainName = domainName;
     }
 
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
+    }
     public void setGuestVlanRange(String guestVlanRange) {
         this.guestVlanRange = guestVlanRange;
     }

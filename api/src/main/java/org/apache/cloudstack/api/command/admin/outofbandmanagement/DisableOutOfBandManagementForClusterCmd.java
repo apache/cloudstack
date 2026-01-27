@@ -27,6 +27,7 @@ import com.cloud.org.Cluster;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -53,7 +54,7 @@ public class DisableOutOfBandManagementForClusterCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.CLUSTER_ID, type = BaseCmd.CommandType.UUID, required = true, entityType = ClusterResponse.class,
-            validations = {ApiArgValidator.PositiveNumber}, description = "the ID of the cluster")
+            validations = {ApiArgValidator.PositiveNumber}, description = "The ID of the cluster")
     private Long clusterId;
 
     /////////////////////////////////////////////////////
@@ -93,5 +94,15 @@ public class DisableOutOfBandManagementForClusterCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return "disable out-of-band management password for cluster: " + getClusterId();
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return getClusterId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Cluster;
     }
 }

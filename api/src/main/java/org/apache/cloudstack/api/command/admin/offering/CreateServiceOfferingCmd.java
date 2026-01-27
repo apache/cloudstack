@@ -29,14 +29,17 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.VgpuProfileResponse;
 import org.apache.cloudstack.api.response.VsphereStoragePoliciesResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.api.response.DiskOfferingResponse;
-import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.EnumUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.offering.ServiceOffering;
@@ -51,139 +54,142 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.CPU_NUMBER, type = CommandType.INTEGER, required = false, description = "the CPU number of the service offering")
+    @Parameter(name = ApiConstants.CPU_NUMBER, type = CommandType.INTEGER, required = false, description = "The CPU number of the service offering")
     private Integer cpuNumber;
 
-    @Parameter(name = ApiConstants.CPU_SPEED, type = CommandType.INTEGER, required = false, description = "the CPU speed of the service offering in MHz.")
+    @Parameter(name = ApiConstants.CPU_SPEED, type = CommandType.INTEGER, required = false, description = "For VMware and Xen based hypervisors this is the CPU speed of the service offering in MHz.\n" +
+            "For the KVM hypervisor," +
+            " the values of the parameters cpuSpeed and cpuNumber will be used to calculate the `shares` value. This value is used by the KVM hypervisor to calculate how much time" +
+            " the Instance will have access to the host's CPU. The `shares` value does not have a unit, and its purpose is being a weight value for the host to compare between its guest" +
+            " Instances. For more information, see https://libvirt.org/formatdomain.html#cpu-tuning.")
     private Integer cpuSpeed;
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "The display text of the service offering, defaults to 'name'.")
     private String displayText;
 
-    @Parameter(name = ApiConstants.PROVISIONINGTYPE, type = CommandType.STRING, description = "provisioning type used to create volumes. Valid values are thin, sparse, fat.")
+    @Parameter(name = ApiConstants.PROVISIONINGTYPE, type = CommandType.STRING, description = "Provisioning type used to create volumes. Valid values are thin, sparse, fat.")
     private String provisioningType = Storage.ProvisioningType.THIN.toString();
 
-    @Parameter(name = ApiConstants.MEMORY, type = CommandType.INTEGER, required = false, description = "the total memory of the service offering in MB")
+    @Parameter(name = ApiConstants.MEMORY, type = CommandType.INTEGER, required = false, description = "The total memory of the service offering in MB")
     private Integer memory;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the service offering")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "The name of the service offering")
     private String serviceOfferingName;
 
-    @Parameter(name = ApiConstants.OFFER_HA, type = CommandType.BOOLEAN, description = "the HA for the service offering")
+    @Parameter(name = ApiConstants.OFFER_HA, type = CommandType.BOOLEAN, description = "The HA for the service offering")
     private Boolean offerHa;
 
-    @Parameter(name = ApiConstants.LIMIT_CPU_USE, type = CommandType.BOOLEAN, description = "restrict the CPU usage to committed service offering")
+    @Parameter(name = ApiConstants.LIMIT_CPU_USE, type = CommandType.BOOLEAN, description = "Restrict the CPU usage to committed service offering")
     private Boolean limitCpuUse;
 
     @Parameter(name = ApiConstants.IS_VOLATILE,
             type = CommandType.BOOLEAN,
-            description = "true if the virtual machine needs to be volatile so that on every reboot of VM, original root disk is dettached then destroyed and a fresh root disk is created and attached to VM")
+            description = "True if the Instance needs to be volatile so that on every reboot, the original root disk is detached, then destroyed and a fresh root disk is created and attached to the Instance")
     private Boolean isVolatile;
 
-    @Parameter(name = ApiConstants.STORAGE_TYPE, type = CommandType.STRING, description = "the storage type of the service offering. Values are local and shared.")
+    @Parameter(name = ApiConstants.STORAGE_TYPE, type = CommandType.STRING, description = "The storage type of the service offering. Values are local and shared.")
     private String storageType;
 
-    @Parameter(name = ApiConstants.TAGS, type = CommandType.STRING, description = "the tags for this service offering.")
+    @Parameter(name = ApiConstants.TAGS, type = CommandType.STRING, description = "The tags for this service offering.")
     private String tags;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.LIST,
             collectionType = CommandType.UUID,
             entityType = DomainResponse.class,
-            description = "the ID of the containing domain(s), null for public offerings")
+            description = "The ID of the containing domain(s), null for public offerings")
     private List<Long> domainIds;
 
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.LIST,
             collectionType = CommandType.UUID,
             entityType = ZoneResponse.class,
-            description = "the ID of the containing zone(s), null for public offerings",
+            description = "The ID of the containing zone(s), null for public offerings",
             since = "4.13")
     private List<Long> zoneIds;
 
-    @Parameter(name = ApiConstants.HOST_TAGS, type = CommandType.STRING, description = "the host tag for this service offering.")
+    @Parameter(name = ApiConstants.HOST_TAGS, type = CommandType.STRING, description = "The host tag for this service offering.")
     private String hostTag;
 
-    @Parameter(name = ApiConstants.IS_SYSTEM_OFFERING, type = CommandType.BOOLEAN, description = "is this a system vm offering")
+    @Parameter(name = ApiConstants.IS_SYSTEM_OFFERING, type = CommandType.BOOLEAN, description = "Is this a system vm offering")
     private Boolean isSystem;
 
     @Parameter(name = ApiConstants.SYSTEM_VM_TYPE,
             type = CommandType.STRING,
-            description = "the system VM type. Possible types are \"domainrouter\", \"consoleproxy\" and \"secondarystoragevm\".")
+            description = "The system VM type. Possible types are \"domainrouter\", \"consoleproxy\" and \"secondarystoragevm\".")
     private String systemVmType;
 
     @Parameter(name = ApiConstants.NETWORKRATE,
             type = CommandType.INTEGER,
-            description = "data transfer rate in megabits per second allowed. Supported only for non-System offering and system offerings having \"domainrouter\" systemvmtype")
+            description = "Data transfer rate in megabits per second allowed. Supported only for non-System offering and system offerings having \"domainrouter\" systemvmtype")
     private Integer networkRate;
 
     @Parameter(name = ApiConstants.DEPLOYMENT_PLANNER,
             type = CommandType.STRING,
-            description = "The deployment planner heuristics used to deploy a VM of this offering. If null, value of global config vm.deployment.planner is used")
+            description = "The deployment planner heuristics used to deploy an Instance of this offering. If null, value of global config vm.deployment.planner is used")
     private String deploymentPlanner;
 
-    @Parameter(name = ApiConstants.SERVICE_OFFERING_DETAILS, type = CommandType.MAP, description = "details for planner, used to store specific parameters")
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_DETAILS, type = CommandType.MAP, description = "Details for planner, used to store specific parameters")
     private Map details;
 
-    @Parameter(name = ApiConstants.ROOT_DISK_SIZE, type = CommandType.LONG, since = "4.15", description = "the Root disk size in GB.")
+    @Parameter(name = ApiConstants.ROOT_DISK_SIZE, type = CommandType.LONG, since = "4.15", description = "The Root disk size in GB.")
     private Long rootDiskSize;
 
-    @Parameter(name = ApiConstants.BYTES_READ_RATE, type = CommandType.LONG, required = false, description = "bytes read rate of the disk offering")
+    @Parameter(name = ApiConstants.BYTES_READ_RATE, type = CommandType.LONG, required = false, description = "Bytes read rate of the disk offering")
     private Long bytesReadRate;
 
-    @Parameter(name = ApiConstants.BYTES_READ_RATE_MAX, type = CommandType.LONG, required = false, description = "burst bytes read rate of the disk offering")
+    @Parameter(name = ApiConstants.BYTES_READ_RATE_MAX, type = CommandType.LONG, required = false, description = "Burst bytes read rate of the disk offering")
     private Long bytesReadRateMax;
 
-    @Parameter(name = ApiConstants.BYTES_READ_RATE_MAX_LENGTH, type = CommandType.LONG, required = false, description = "length (in seconds) of the burst")
+    @Parameter(name = ApiConstants.BYTES_READ_RATE_MAX_LENGTH, type = CommandType.LONG, required = false, description = "Length (in seconds) of the burst")
     private Long bytesReadRateMaxLength;
 
-    @Parameter(name = ApiConstants.BYTES_WRITE_RATE, type = CommandType.LONG, required = false, description = "bytes write rate of the disk offering")
+    @Parameter(name = ApiConstants.BYTES_WRITE_RATE, type = CommandType.LONG, required = false, description = "Bytes write rate of the disk offering")
     private Long bytesWriteRate;
 
-    @Parameter(name = ApiConstants.BYTES_WRITE_RATE_MAX, type = CommandType.LONG, required = false, description = "burst bytes write rate of the disk offering")
+    @Parameter(name = ApiConstants.BYTES_WRITE_RATE_MAX, type = CommandType.LONG, required = false, description = "Burst bytes write rate of the disk offering")
     private Long bytesWriteRateMax;
 
-    @Parameter(name = ApiConstants.BYTES_WRITE_RATE_MAX_LENGTH, type = CommandType.LONG, required = false, description = "length (in seconds) of the burst")
+    @Parameter(name = ApiConstants.BYTES_WRITE_RATE_MAX_LENGTH, type = CommandType.LONG, required = false, description = "Length (in seconds) of the burst")
     private Long bytesWriteRateMaxLength;
 
-    @Parameter(name = ApiConstants.IOPS_READ_RATE, type = CommandType.LONG, required = false, description = "io requests read rate of the disk offering")
+    @Parameter(name = ApiConstants.IOPS_READ_RATE, type = CommandType.LONG, required = false, description = "I/O requests read rate of the disk offering")
     private Long iopsReadRate;
 
-    @Parameter(name = ApiConstants.IOPS_READ_RATE_MAX, type = CommandType.LONG, required = false, description = "burst requests read rate of the disk offering")
+    @Parameter(name = ApiConstants.IOPS_READ_RATE_MAX, type = CommandType.LONG, required = false, description = "Burst requests read rate of the disk offering")
     private Long iopsReadRateMax;
 
-    @Parameter(name = ApiConstants.IOPS_READ_RATE_MAX_LENGTH, type = CommandType.LONG, required = false, description = "length (in seconds) of the burst")
+    @Parameter(name = ApiConstants.IOPS_READ_RATE_MAX_LENGTH, type = CommandType.LONG, required = false, description = "Length (in seconds) of the burst")
     private Long iopsReadRateMaxLength;
 
-    @Parameter(name = ApiConstants.IOPS_WRITE_RATE, type = CommandType.LONG, required = false, description = "io requests write rate of the disk offering")
+    @Parameter(name = ApiConstants.IOPS_WRITE_RATE, type = CommandType.LONG, required = false, description = "I/O requests write rate of the disk offering")
     private Long iopsWriteRate;
 
-    @Parameter(name = ApiConstants.IOPS_WRITE_RATE_MAX, type = CommandType.LONG, required = false, description = "burst io requests write rate of the disk offering")
+    @Parameter(name = ApiConstants.IOPS_WRITE_RATE_MAX, type = CommandType.LONG, required = false, description = "Burst io requests write rate of the disk offering")
     private Long iopsWriteRateMax;
 
-    @Parameter(name = ApiConstants.IOPS_WRITE_RATE_MAX_LENGTH, type = CommandType.LONG, required = false, description = "length (in seconds) of the burst")
+    @Parameter(name = ApiConstants.IOPS_WRITE_RATE_MAX_LENGTH, type = CommandType.LONG, required = false, description = "Length (in seconds) of the burst")
     private Long iopsWriteRateMaxLength;
 
-    @Parameter(name = ApiConstants.CUSTOMIZED_IOPS, type = CommandType.BOOLEAN, required = false, description = "whether compute offering iops is custom or not", since = "4.4")
+    @Parameter(name = ApiConstants.CUSTOMIZED_IOPS, type = CommandType.BOOLEAN, required = false, description = "Whether compute offering iops is custom or not", since = "4.4")
     private Boolean customizedIops;
 
-    @Parameter(name = ApiConstants.MIN_IOPS, type = CommandType.LONG, required = false, description = "min iops of the compute offering", since = "4.4")
+    @Parameter(name = ApiConstants.MIN_IOPS, type = CommandType.LONG, required = false, description = "Min iops of the compute offering", since = "4.4")
     private Long minIops;
 
-    @Parameter(name = ApiConstants.MAX_IOPS, type = CommandType.LONG, required = false, description = "max iops of the compute offering", since = "4.4")
+    @Parameter(name = ApiConstants.MAX_IOPS, type = CommandType.LONG, required = false, description = "Max iops of the compute offering", since = "4.4")
     private Long maxIops;
 
     @Parameter(name = ApiConstants.HYPERVISOR_SNAPSHOT_RESERVE,
             type = CommandType.INTEGER,
             required = false,
-            description = "Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware)",
+            description = "Hypervisor Snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware)",
             since = "4.4")
     private Integer hypervisorSnapshotReserve;
 
     @Parameter(name = ApiConstants.CACHE_MODE,
             type = CommandType.STRING,
-            required = false,
-            description = "the cache mode to use for this disk offering. none, writeback or writethrough",
+            description = "The cache mode to use for this disk offering. none, writeback, writethrough or hypervisor default. If the hypervisor default cache mode is used on other hypervisors than KVM, it will fall back to none cache mode",
             since = "4.14")
     private String cacheMode;
 
@@ -222,14 +228,14 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     private Long storagePolicy;
 
     @Parameter(name = ApiConstants.DYNAMIC_SCALING_ENABLED, type = CommandType.BOOLEAN, since = "4.16",
-            description = "true if virtual machine needs to be dynamically scalable of cpu or memory")
+            description = "True if Instance needs to be dynamically scalable of cpu or memory")
     protected Boolean isDynamicScalingEnabled;
 
     @Parameter(name = ApiConstants.DISK_OFFERING_ID,
             required = false,
             type = CommandType.UUID,
             entityType = DiskOfferingResponse.class,
-            description = "the ID of the disk offering to which service offering should be mapped",
+            description = "The ID of the disk offering to which service offering should be mapped",
             since = "4.17")
     private Long diskOfferingId;
 
@@ -242,6 +248,45 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ENCRYPT_ROOT, type = CommandType.BOOLEAN, description = "VMs using this offering require root volume encryption", since="4.18")
     private Boolean encryptRoot;
 
+    @Parameter(name = ApiConstants.PURGE_RESOURCES, type = CommandType.BOOLEAN,
+            description = "Whether to cleanup instance and its associated resource from database upon expunge of the instance",
+            since="4.20")
+    private Boolean purgeResources;
+
+    @Parameter(name = ApiConstants.INSTANCE_LEASE_DURATION,
+            type = CommandType.INTEGER,
+            description = "Number of days instance is leased for.",
+            since = "4.21.0")
+    private Integer leaseDuration;
+
+    @Parameter(name = ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION, type = CommandType.STRING, since = "4.21.0",
+            description = "Lease expiry action, valid values are STOP and DESTROY")
+    private String leaseExpiryAction;
+
+    @Parameter(name = ApiConstants.VGPU_PROFILE_ID,
+            type = CommandType.UUID,
+            entityType = VgpuProfileResponse.class,
+            description = "the ID of the vGPU profile to which service offering should be mapped",
+            since = "4.21")
+    private Long vgpuProfileId;
+
+    @Parameter(name = ApiConstants.GPU_COUNT,
+            type = CommandType.INTEGER,
+            description = "Count of GPUs to be used with this service offering. This is applicable only when passed with vGPU profile.",
+            since = "4.21")
+    private Integer gpuCount;
+
+    @Parameter(name = ApiConstants.GPU_DISPLAY,
+            type = CommandType.BOOLEAN,
+            description = "Whether to enable GPU display for this service offering. This is applicable only when passed with vGPU profile. Defaults to false.",
+            since = "4.21")
+    private Boolean gpuDisplay;
+
+    @Parameter(name = ApiConstants.EXTERNAL_DETAILS,
+            type = CommandType.MAP,
+            description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue",
+            since = "4.21.0")
+    private Map externalDetails;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -269,7 +314,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     public String getServiceOfferingName() {
         if (StringUtils.isEmpty(serviceOfferingName)) {
-            throw new InvalidParameterValueException("Failed to create service offering because offering name has not been spified.");
+            throw new InvalidParameterValueException("Failed to create service offering because offering name has not been specified.");
         }
         return serviceOfferingName;
     }
@@ -349,7 +394,13 @@ public class CreateServiceOfferingCmd extends BaseCmd {
                 }
             }
         }
+
+        detailsMap.putAll(getExternalDetails());
         return detailsMap;
+    }
+
+    public Map<String, String> getExternalDetails() {
+        return convertExternalDetailsToMap(externalDetails);
     }
 
     public Long getRootDiskSize() {
@@ -475,6 +526,38 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             return encryptRoot;
         }
         return false;
+    }
+
+    public VMLeaseManager.ExpiryAction getLeaseExpiryAction() {
+        if (StringUtils.isBlank(leaseExpiryAction)) {
+            return null;
+        }
+        VMLeaseManager.ExpiryAction action = EnumUtils.getEnumIgnoreCase(VMLeaseManager.ExpiryAction.class, leaseExpiryAction);
+        if (action == null) {
+            throw new InvalidParameterValueException("Invalid value configured for leaseexpiryaction, valid values are: " +
+                    com.cloud.utils.EnumUtils.listValues(VMLeaseManager.ExpiryAction.values()));
+        }
+        return action;
+    }
+
+    public Integer getLeaseDuration() {
+        return leaseDuration;
+    }
+
+    public boolean isPurgeResources() {
+        return Boolean.TRUE.equals(purgeResources);
+    }
+
+    public Long getVgpuProfileId() {
+        return vgpuProfileId;
+    }
+
+    public Integer getGpuCount() {
+        return gpuCount;
+    }
+
+    public Boolean getGpuDisplay() {
+        return Boolean.TRUE.equals(gpuDisplay);
     }
 
     /////////////////////////////////////////////////////

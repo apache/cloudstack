@@ -41,19 +41,26 @@ SELECT
     host.cpus,
     host.speed,
     host.ram,
+    host.arch,
+    host.storage_access_groups,
     cluster.id cluster_id,
     cluster.uuid cluster_uuid,
     cluster.name cluster_name,
     cluster.cluster_type,
+    cluster.storage_access_groups AS cluster_storage_access_groups,
     data_center.id data_center_id,
     data_center.uuid data_center_uuid,
     data_center.name data_center_name,
+    data_center.storage_access_groups AS zone_storage_access_groups,
     data_center.networktype data_center_type,
     host_pod_ref.id pod_id,
     host_pod_ref.uuid pod_uuid,
     host_pod_ref.name pod_name,
+    host_pod_ref.storage_access_groups AS pod_storage_access_groups,
     GROUP_CONCAT(DISTINCT(host_tags.tag)) AS tag,
-    `host_tags`.`is_tag_a_rule` AS `is_tag_a_rule`,
+    GROUP_CONCAT(DISTINCT(explicit_host_tags.tag)) AS explicit_tag,
+    GROUP_CONCAT(DISTINCT(implicit_host_tags.tag)) AS implicit_tag,
+    `explicit_host_tags`.`is_tag_a_rule` AS `is_tag_a_rule`,
     guest_os_category.id guest_os_category_id,
     guest_os_category.uuid guest_os_category_uuid,
     guest_os_category.name guest_os_category_name,
@@ -88,6 +95,10 @@ FROM
     `cloud`.`guest_os_category` ON guest_os_category.id = CONVERT ( host_details.value, UNSIGNED )
         LEFT JOIN
     `cloud`.`host_tags` ON host_tags.host_id = host.id
+        LEFT JOIN
+    `cloud`.`host_tags` AS explicit_host_tags ON explicit_host_tags.host_id = host.id AND explicit_host_tags.is_implicit = 0
+        LEFT JOIN
+    `cloud`.`host_tags` AS implicit_host_tags ON implicit_host_tags.host_id = host.id AND implicit_host_tags.is_implicit = 1
         LEFT JOIN
     `cloud`.`op_host_capacity` mem_caps ON host.id = mem_caps.host_id
         AND mem_caps.capacity_type = 0

@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -470,13 +471,13 @@ public class VmwareContext {
         }
     }
 
-    public long downloadVmdkFile(String urlString, String localFileName, long totalBytesDownloaded, ActionDelegate<Long> progressUpdater) throws Exception {
+    public long downloadVmdkFile(String urlString, String localFileName, AtomicLong totalBytesDownloaded, ActionDelegate<Long> progressUpdater) throws Exception {
         HttpURLConnection conn = getRawHTTPConnection(urlString);
 
         String cookie = _vimClient.getServiceCookie();
         if (cookie == null) {
-            LOGGER.error("No cookie is found in vwware web service request context!");
-            throw new Exception("No cookie is found in vmware web service request context!");
+            LOGGER.error("No cookie is found in VMware web service request context!");
+            throw new Exception("No cookie is found in VMware web service request context!");
         }
         conn.addRequestProperty("Cookie", cookie);
         conn.setDoInput(true);
@@ -496,10 +497,10 @@ public class VmwareContext {
             while ((len = in.read(buf)) > 0) {
                 out.write(buf, 0, len);
                 bytesWritten += len;
-                totalBytesDownloaded += len;
+                totalBytesDownloaded.addAndGet(len);
 
                 if (progressUpdater != null)
-                    progressUpdater.action(new Long(totalBytesDownloaded));
+                    progressUpdater.action(new Long(totalBytesDownloaded.get()));
             }
         } finally {
             if (in != null)
@@ -651,8 +652,8 @@ public class VmwareContext {
     public HttpURLConnection getHTTPConnection(String urlString, String httpMethod) throws Exception {
         String cookie = _vimClient.getServiceCookie();
         if (cookie == null) {
-            LOGGER.error("No cookie is found in vmware web service request context!");
-            throw new Exception("No cookie is found in vmware web service request context!");
+            LOGGER.error("No cookie is found in VMware web service request context!");
+            throw new Exception("No cookie is found in VMware web service request context!");
         }
         URL url = new URL(urlString);
         HttpURLConnection conn = (HttpURLConnection)url.openConnection();

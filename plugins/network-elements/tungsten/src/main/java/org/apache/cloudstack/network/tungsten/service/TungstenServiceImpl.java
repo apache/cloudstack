@@ -32,6 +32,7 @@ import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -219,7 +220,6 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -2466,7 +2466,7 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
         boolean success = true;
         LoadBalancerVO loadBalancer = loadBalancerDao.findById(lbId);
         if (loadBalancer == null) {
-            throw new InvalidParameterException("Invalid Load balancer Id:" + lbId);
+            throw new InvalidParameterValueException("Invalid Load balancer Id:" + lbId);
         }
 
         if (loadBalancer.getState() == FirewallRule.State.Active) {

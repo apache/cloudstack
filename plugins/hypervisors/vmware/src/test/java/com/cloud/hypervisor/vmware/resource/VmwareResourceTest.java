@@ -41,6 +41,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.ScaleVmAnswer;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.HostDatastoreBrowserMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
@@ -48,11 +50,12 @@ import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.vmware.vim25.FileInfo;
 import com.vmware.vim25.HostDatastoreBrowserSearchResults;
 import com.vmware.vim25.HostDatastoreBrowserSearchSpec;
+import com.vmware.vim25.VirtualTPM;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsAnswer;
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -62,17 +65,14 @@ import org.mockito.Mock;
 import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CheckGuestOsMappingAnswer;
 import com.cloud.agent.api.CheckGuestOsMappingCommand;
 import com.cloud.agent.api.GetHypervisorGuestOsNamesAnswer;
 import com.cloud.agent.api.GetHypervisorGuestOsNamesCommand;
-import com.cloud.agent.api.ScaleVmAnswer;
 import com.cloud.agent.api.ScaleVmCommand;
 import com.cloud.agent.api.routing.GetAutoScaleMetricsAnswer;
 import com.cloud.agent.api.routing.GetAutoScaleMetricsCommand;
@@ -185,6 +185,8 @@ public class VmwareResourceTest {
     VimPortType vimService;
     @Mock
     HostCapability hostCapability;
+    @Mock
+    ManagedObjectReference _morHyperHost;
 
     CopyCommand storageCmd;
     EnumMap<VmwareStorageProcessorConfigurableFields, Object> params = new EnumMap<VmwareStorageProcessorConfigurableFields,Object>(VmwareStorageProcessorConfigurableFields.class);
@@ -201,11 +203,9 @@ public class VmwareResourceTest {
 
     private Map<String,String> specsArray = new HashMap<String,String>();
 
-    AutoCloseable closeable;
 
     @Before
     public void setup() throws Exception {
-        closeable = MockitoAnnotations.openMocks(this);
         storageCmd = mock(CopyCommand.class);
         doReturn(context).when(_resource).getServiceContext(null);
         when(cmd.getVirtualMachine()).thenReturn(vmSpec);
@@ -232,11 +232,6 @@ public class VmwareResourceTest {
         when(context.getService()).thenReturn(vimService);
         when(vimService.queryTargetCapabilities(envRef, hostRef)).thenReturn(hostCapability);
         when(hostCapability.isNestedHVSupported()).thenReturn(true);
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        closeable.close();
     }
 
     //Test successful scaling up the vm
@@ -841,5 +836,42 @@ public class VmwareResourceTest {
         assertEquals(Collections.singletonList(false), answer.getIsDirs());
         assertEquals(Collections.singletonList(1L), answer.getSizes());
         assertEquals(Collections.singletonList(date.getTime()), answer.getLastModified());
+    }
+
+    @Test
+    public void testAddVirtualTPMDevice() throws Exception {
+        VirtualMachineMO vmMo = Mockito.mock(VirtualMachineMO.class);
+        VirtualMachineTO vmSpec = Mockito.mock(VirtualMachineTO.class);
+        VirtualMachineConfigSpec vmConfigSpec = Mockito.mock(VirtualMachineConfigSpec.class);
+        Map<String, String> details = new HashMap<>();
+        details.put(ApiConstants.BootType.UEFI.toString(), "SECURE");
+        details.put(VmDetailConstants.VIRTUAL_TPM_ENABLED, "true");
+        when(vmSpec.getDetails()).thenReturn(details);
+        when(vmMo.getAllDeviceList()).thenReturn(new ArrayList<>());
+        List<VirtualDeviceConfigSpec> deviceChanges = Mockito.mock(List.class);
+        when(vmConfigSpec.getDeviceChange()).thenReturn(deviceChanges);
+
+        vmwareResource.configureVirtualTPM(vmMo, vmSpec, vmConfigSpec);
+        Mockito.verify(vmwareResource, Mockito.times(1)).addVirtualTPMDevice(vmConfigSpec);
+        Mockito.verify(deviceChanges, Mockito.times(1)).add(any(VirtualDeviceConfigSpec.class));
+    }
+
+    @Test
+    public void testRemoveVirtualTPMDevice() throws Exception {
+        VirtualMachineMO vmMo = Mockito.mock(VirtualMachineMO.class);
+        VirtualMachineTO vmSpec = Mockito.mock(VirtualMachineTO.class);
+        VirtualMachineConfigSpec vmConfigSpec = Mockito.mock(VirtualMachineConfigSpec.class);
+        Map<String, String> details = new HashMap<>();
+        details.put(ApiConstants.BootType.UEFI.toString(), "SECURE");
+        details.put(VmDetailConstants.VIRTUAL_TPM_ENABLED, "false");
+        when(vmSpec.getDetails()).thenReturn(details);
+        VirtualTPM tpm = new VirtualTPM();
+        when(vmMo.getAllDeviceList()).thenReturn(List.of(tpm));
+        List<VirtualDeviceConfigSpec> deviceChanges = Mockito.mock(List.class);
+        when(vmConfigSpec.getDeviceChange()).thenReturn(deviceChanges);
+
+        vmwareResource.configureVirtualTPM(vmMo, vmSpec, vmConfigSpec);
+        Mockito.verify(vmwareResource, Mockito.times(1)).removeVirtualTPMDevice(vmConfigSpec, tpm);
+        Mockito.verify(deviceChanges, Mockito.times(1)).add(any(VirtualDeviceConfigSpec.class));
     }
 }

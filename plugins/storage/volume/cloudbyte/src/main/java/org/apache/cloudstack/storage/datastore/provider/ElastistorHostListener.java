@@ -105,20 +105,20 @@ public class ElastistorHostListener implements HypervisorHostListener {
         final Answer answer = agentMgr.easySend(hostId, cmd);
 
         if (answer == null) {
-            throw new CloudRuntimeException("Unable to get an answer to the modify storage pool command" + pool.getId());
+            throw new CloudRuntimeException(String.format("Unable to get an answer to the modify storage pool command for pool %s", poolVO));
         }
 
         if (!answer.getResult()) {
-            String msg = "Unable to attach storage pool" + poolId + " to the host" + hostId;
+            String msg = String.format("Unable to attach storage pool %s to the host %s", poolVO, host);
 
             alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST,pool.getDataCenterId(), pool.getPodId(), msg, msg);
 
-            throw new CloudRuntimeException("Unable establish connection from storage head to storage pool " + pool.getId() + " due to " + answer.getDetails() + pool.getId());
+            throw new CloudRuntimeException(String.format("Unable to establish connection from storage head to storage pool %s due to %s", poolVO, answer.getDetails()));
         }
 
-        assert (answer instanceof ModifyStoragePoolAnswer) : "Well, now why won't you actually return the ModifyStoragePoolAnswer when it's ModifyStoragePoolCommand? Pool=" + pool.getId() + "Host=" + hostId;
+        assert (answer instanceof ModifyStoragePoolAnswer) : String.format("Well, now why won't you actually return the ModifyStoragePoolAnswer when it's ModifyStoragePoolCommand? Pool=%sHost=%s", poolVO, host);
 
-        logger.info("Connection established between " + pool + " host + " + hostId);
+        logger.info(String.format("Connection established between pool %s and host  %s", pool, host));
         return true;
     }
 

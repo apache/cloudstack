@@ -17,12 +17,14 @@
 
 package com.cloud.vm.snapshot.dao;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -39,6 +41,12 @@ public class VMSnapshotDaoImpl extends GenericDaoBase<VMSnapshotVO, Long> implem
     private final SearchBuilder<VMSnapshotVO> ExpungingSnapshotSearch;
     private final SearchBuilder<VMSnapshotVO> SnapshotStatusSearch;
     private final SearchBuilder<VMSnapshotVO> AllFieldsSearch;
+
+    private SearchBuilder<VMSnapshotVO> parentIdEqAndStateIn;
+
+    private static final String PARENT = "parent";
+
+    private static final String STATE = "state";
 
     protected VMSnapshotDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
@@ -69,12 +77,25 @@ public class VMSnapshotDaoImpl extends GenericDaoBase<VMSnapshotVO, Long> implem
         SnapshotStatusSearch.and("vm_id", SnapshotStatusSearch.entity().getVmId(), SearchCriteria.Op.EQ);
         SnapshotStatusSearch.and("state", SnapshotStatusSearch.entity().getState(), SearchCriteria.Op.IN);
         SnapshotStatusSearch.done();
+
+        parentIdEqAndStateIn = createSearchBuilder();
+        parentIdEqAndStateIn.and(PARENT, parentIdEqAndStateIn.entity().getParent(), Op.EQ);
+        parentIdEqAndStateIn.and(STATE, parentIdEqAndStateIn.entity().getState(), Op.IN);
+        parentIdEqAndStateIn.done();
     }
 
     @Override
     public List<VMSnapshotVO> findByVm(Long vmId) {
         SearchCriteria<VMSnapshotVO> sc = SnapshotSearch.create();
         sc.setParameters("vm_id", vmId);
+        return listBy(sc, null);
+    }
+
+    @Override
+    public List<VMSnapshotVO> findByVmAndByType(Long vmId, VMSnapshot.Type type) {
+        SearchCriteria<VMSnapshotVO> sc = AllFieldsSearch.create();
+        sc.setParameters("vm_id", vmId);
+        sc.setParameters("vm_snapshot_type", type);
         return listBy(sc, null);
     }
 
@@ -106,6 +127,14 @@ public class VMSnapshotDaoImpl extends GenericDaoBase<VMSnapshotVO, Long> implem
         SearchCriteria<VMSnapshotVO> sc = AllFieldsSearch.create();
         sc.setParameters("parent", vmSnapshotId);
         sc.setParameters("state", State.Ready);
+        return listBy(sc, null);
+    }
+
+    @Override
+    public List<VMSnapshotVO> listByParentAndStateIn(Long vmSnapshotId, State... states) {
+        SearchCriteria<VMSnapshotVO> sc = parentIdEqAndStateIn.create();
+        sc.setParameters(PARENT, vmSnapshotId);
+        sc.setParameters(STATE, (Object[])states);
         return listBy(sc, null);
     }
 
@@ -174,10 +203,35 @@ public class VMSnapshotDaoImpl extends GenericDaoBase<VMSnapshotVO, Long> implem
                     .append("; updatedTime=")
                     .append(oldUpdatedTime);
             } else {
-                logger.debug("Unable to update VM snapshot: id=" + vo.getId() + ", as there is no such snapshot exists in the database anymore");
+                logger.debug("Unable to update Instance Snapshot: {}, as there is no such Snapshot exists in the database anymore", vo);
             }
         }
         return rows > 0;
     }
 
+    @Override
+    public List<VMSnapshotVO> searchByVms(List<Long> vmIds) {
+        if (CollectionUtils.isEmpty(vmIds)) {
+            return new ArrayList<>();
+        }
+        SearchBuilder<VMSnapshotVO> sb = createSearchBuilder();
+        sb.and("vmIds", sb.entity().getVmId(), SearchCriteria.Op.IN);
+        SearchCriteria<VMSnapshotVO> sc = sb.create();
+        sc.setParameters("vmIds", vmIds.toArray());
+        return search(sc, null);
+    }
+
+    @Override
+    public List<VMSnapshotVO> searchRemovedByVms(List<Long> vmIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(vmIds)) {
+            return new ArrayList<>();
+        }
+        SearchBuilder<VMSnapshotVO> sb = createSearchBuilder();
+        sb.and("vmIds", sb.entity().getVmId(), SearchCriteria.Op.IN);
+        sb.and("removed", sb.entity().getRemoved(), SearchCriteria.Op.NNULL);
+        SearchCriteria<VMSnapshotVO> sc = sb.create();
+        sc.setParameters("vmIds", vmIds.toArray());
+        Filter filter = new Filter(VMSnapshotVO.class, "id", true, 0L, batchSize);
+        return searchIncludingRemoved(sc, filter, null, false);
+    }
 }

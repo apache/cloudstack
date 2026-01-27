@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.admin.network;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -60,6 +61,10 @@ import static com.cloud.network.Network.Service.NetworkACL;
 import static com.cloud.network.Network.Service.UserData;
 import static com.cloud.network.Network.Service.Firewall;
 
+import static org.apache.cloudstack.api.command.utils.OfferingUtils.isNetrisNatted;
+import static org.apache.cloudstack.api.command.utils.OfferingUtils.isNetrisRouted;
+import static org.apache.cloudstack.api.command.utils.OfferingUtils.isNsxWithoutLb;
+
 @APICommand(name = "createNetworkOffering", description = "Creates a network offering.", responseObject = NetworkOfferingResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateNetworkOfferingCmd extends BaseCmd {
@@ -68,105 +73,112 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the network offering")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "The name of the network offering")
     private String networkOfferingName;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the network offering, defaults to the value of 'name'.")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "The display text of the network offering, defaults to the value of 'name'.")
     private String displayText;
 
     @Parameter(name = ApiConstants.TRAFFIC_TYPE,
             type = CommandType.STRING,
             required = true,
-            description = "the traffic type for the network offering. Supported type in current release is GUEST only")
+            description = "The traffic type for the network offering. Supported type in current release is GUEST only")
     private String traffictype;
 
-    @Parameter(name = ApiConstants.TAGS, type = CommandType.STRING, description = "the tags for the network offering.", length = 4096)
+    @Parameter(name = ApiConstants.TAGS, type = CommandType.STRING, description = "The tags for the network offering.", length = 4096)
     private String tags;
 
-    @Parameter(name = ApiConstants.SPECIFY_VLAN, type = CommandType.BOOLEAN, description = "true if network offering supports vlans")
+    @Parameter(name = ApiConstants.SPECIFY_VLAN, type = CommandType.BOOLEAN, description = "True if network offering supports VLANs")
     private Boolean specifyVlan;
 
-    @Parameter(name = ApiConstants.AVAILABILITY, type = CommandType.STRING, description = "the availability of network offering. The default value is Optional. "
+    @Parameter(name = ApiConstants.AVAILABILITY, type = CommandType.STRING, description = "The availability of network offering. The default value is Optional. "
             + " Another value is Required, which will make it as the default network offering for new networks ")
     private String availability;
 
-    @Parameter(name = ApiConstants.NETWORKRATE, type = CommandType.INTEGER, description = "data transfer rate in megabits per second allowed")
+    @Parameter(name = ApiConstants.NETWORKRATE, type = CommandType.INTEGER, description = "Data transfer rate in megabits per second allowed")
     private Integer networkRate;
 
-    @Parameter(name = ApiConstants.CONSERVE_MODE, type = CommandType.BOOLEAN, description = "true if the network offering is IP conserve mode enabled")
+    @Parameter(name = ApiConstants.CONSERVE_MODE, type = CommandType.BOOLEAN, description = "True if the network offering is IP conserve mode enabled")
     private Boolean conserveMode;
 
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
             type = CommandType.UUID,
             entityType = ServiceOfferingResponse.class,
-            description = "the service offering ID used by virtual router provider")
+            description = "The service offering ID used by virtual router provider")
     private Long serviceOfferingId;
 
-    @Parameter(name = ApiConstants.GUEST_IP_TYPE, type = CommandType.STRING, required = true, description = "guest type of the network offering: Shared or Isolated")
+    @Parameter(name = ApiConstants.GUEST_IP_TYPE, type = CommandType.STRING, required = true, description = "Guest type of the network offering: Shared or Isolated")
     private String guestIptype;
 
     @Parameter(name = ApiConstants.INTERNET_PROTOCOL,
             type = CommandType.STRING,
-            description = "The internet protocol of network offering. Options are ipv4 and dualstack. Default is ipv4. dualstack will create a network offering that supports both IPv4 and IPv6",
+            description = "The internet protocol of network offering. Options are IPv4 and dualstack. Default is IPv4. dualstack will create a network offering that supports both IPv4 and IPv6",
             since = "4.17.0")
     private String internetProtocol;
 
     @Parameter(name = ApiConstants.SUPPORTED_SERVICES,
             type = CommandType.LIST,
             collectionType = CommandType.STRING,
-            description = "services supported by the network offering")
+            description = "Services supported by the network offering")
     private List<String> supportedServices;
 
     @Parameter(name = ApiConstants.SERVICE_PROVIDER_LIST,
             type = CommandType.MAP,
-            description = "provider to service mapping. If not specified, the provider for the service will be mapped to the default provider on the physical network")
+            description = "Provider to service mapping. If not specified, the provider for the service will be mapped to the default provider on the physical network")
     private Map serviceProviderList;
 
-    @Parameter(name = ApiConstants.SERVICE_CAPABILITY_LIST, type = CommandType.MAP, description = "desired service capabilities as part of network offering")
+    @Parameter(name = ApiConstants.SERVICE_CAPABILITY_LIST, type = CommandType.MAP, description = "Desired service capabilities as part of network offering")
     private Map serviceCapabilitystList;
 
     @Parameter(name = ApiConstants.SPECIFY_IP_RANGES,
             type = CommandType.BOOLEAN,
-            description = "true if network offering supports specifying ip ranges; defaulted to false if not specified")
+            description = "True if network offering supports specifying ip ranges; defaulted to false if not specified")
     private Boolean specifyIpRanges;
 
     @Parameter(name = ApiConstants.IS_PERSISTENT,
             type = CommandType.BOOLEAN,
-            description = "true if network offering supports persistent networks; defaulted to false if not specified")
+            description = "True if network offering supports persistent networks; defaulted to false if not specified")
     private Boolean isPersistent;
 
     @Parameter(name = ApiConstants.FOR_VPC,
             type = CommandType.BOOLEAN,
-            description = "true if network offering is meant to be used for VPC, false otherwise.")
+            description = "True if network offering is meant to be used for VPC, false otherwise.")
     private Boolean forVpc;
 
+    @Deprecated
     @Parameter(name = ApiConstants.FOR_NSX,
             type = CommandType.BOOLEAN,
             description = "true if network offering is meant to be used for NSX, false otherwise.",
             since = "4.20.0")
     private Boolean forNsx;
 
-    @Parameter(name = ApiConstants.NSX_MODE,
+    @Parameter(name = ApiConstants.PROVIDER,
             type = CommandType.STRING,
-            description = "Indicates the mode with which the network will operate. Valid option: NATTED or ROUTED",
-            since = "4.20.0")
-    private String nsxMode;
+            description = "Name of the provider providing the service",
+            since = "4.21.0")
+    private String provider;
 
     @Parameter(name = ApiConstants.NSX_SUPPORT_LB,
             type = CommandType.BOOLEAN,
-            description = "true if network offering for NSX network offering supports Load balancer service.",
+            description = "True if network offering for NSX network offering supports Load balancer service.",
             since = "4.20.0")
     private Boolean nsxSupportsLbService;
 
     @Parameter(name = ApiConstants.NSX_SUPPORTS_INTERNAL_LB,
             type = CommandType.BOOLEAN,
-            description = "true if network offering for NSX network offering supports Internal Load balancer service.",
+            description = "True if network offering for NSX network offering supports Internal Load balancer service.",
             since = "4.20.0")
     private Boolean nsxSupportsInternalLbService;
 
+    @Parameter(name = ApiConstants.NETWORK_MODE,
+            type = CommandType.STRING,
+            description = "Indicates the mode with which the network will operate. Valid option: NATTED or ROUTED",
+            since = "4.20.0")
+    private String networkMode;
+
     @Parameter(name = ApiConstants.FOR_TUNGSTEN,
             type = CommandType.BOOLEAN,
-            description = "true if network offering is meant to be used for Tungsten-Fabric, false otherwise.")
+            description = "True if network offering is meant to be used for Tungsten-Fabric, false otherwise.")
     private Boolean forTungsten;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, since = "4.2.0", description = "Network offering details in key/value pairs."
@@ -176,40 +188,50 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.EGRESS_DEFAULT_POLICY,
             type = CommandType.BOOLEAN,
-            description = "true if guest network default egress policy is allow; false if default egress policy is deny")
+            description = "True if guest network default egress policy is allow; false if default egress policy is deny")
     private Boolean egressDefaultPolicy;
 
     @Parameter(name = ApiConstants.KEEPALIVE_ENABLED,
             type = CommandType.BOOLEAN,
             required = false,
-            description = "if true keepalive will be turned on in the loadbalancer. At the time of writing this has only an effect on haproxy; the mode http and httpclose options are unset in the haproxy conf file.")
+            description = "If true keepalive will be turned on in the loadbalancer. At the time of writing this has only an effect on haproxy; the mode http and httpclose options are unset in the haproxy conf file.")
     private Boolean keepAliveEnabled;
 
     @Parameter(name = ApiConstants.MAX_CONNECTIONS,
             type = CommandType.INTEGER,
-            description = "maximum number of concurrent connections supported by the network offering")
+            description = "Maximum number of concurrent connections supported by the Network offering")
     private Integer maxConnections;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.LIST,
             collectionType = CommandType.UUID,
             entityType = DomainResponse.class,
-            description = "the ID of the containing domain(s), null for public offerings")
+            description = "The ID of the containing domain(s), null for public offerings")
     private List<Long> domainIds;
 
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.LIST,
             collectionType = CommandType.UUID,
             entityType = ZoneResponse.class,
-            description = "the ID of the containing zone(s), null for public offerings",
+            description = "The ID of the containing zone(s), null for public offerings",
             since = "4.13")
     private List<Long> zoneIds;
 
     @Parameter(name = ApiConstants.ENABLE,
             type = CommandType.BOOLEAN,
-            description = "set to true if the offering is to be enabled during creation. Default is false",
+            description = "Set to true if the offering is to be enabled during creation. Default is false",
             since = "4.16")
     private Boolean enable;
+
+    @Parameter(name = ApiConstants.SPECIFY_AS_NUMBER, type = CommandType.BOOLEAN, since = "4.20.0",
+            description = "true if network offering supports choosing AS number")
+    private Boolean specifyAsNumber;
+
+    @Parameter(name = ApiConstants.ROUTING_MODE,
+            type = CommandType.STRING,
+            since = "4.20.0",
+            description = "the routing mode for the network offering. Supported types are: Static or Dynamic.")
+    private String routingMode;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -247,19 +269,39 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
         return serviceOfferingId;
     }
 
+    public boolean isExternalNetworkProvider() {
+        return Arrays.asList("NSX", "Netris").stream()
+                .anyMatch(s -> provider != null && s.equalsIgnoreCase(provider));
+    }
+
+    public boolean isForNsx() {
+        return provider != null && provider.equalsIgnoreCase("NSX");
+    }
+
+    public boolean isForNetris() {
+        return provider != null && provider.equalsIgnoreCase("Netris");
+    }
+
+    public String getProvider() {
+        return provider;
+    }
+
     public List<String> getSupportedServices() {
-        if (!isForNsx()) {
+        if (!isExternalNetworkProvider()) {
             return supportedServices == null ? new ArrayList<String>() : supportedServices;
         } else {
             List<String> services = new ArrayList<>(List.of(
                     Dhcp.getName(),
                     Dns.getName(),
-                    StaticNat.getName(),
-                    SourceNat.getName(),
-                    PortForwarding.getName(),
                     UserData.getName()
             ));
-            if (getNsxSupportsLbService()) {
+            if (NetworkOffering.NetworkMode.NATTED.name().equalsIgnoreCase(getNetworkMode())) {
+                services.addAll(Arrays.asList(
+                        StaticNat.getName(),
+                        SourceNat.getName(),
+                        PortForwarding.getName()));
+            }
+            if (getNsxSupportsLbService() || (provider != null && isNetrisNatted(getProvider(), getNetworkMode()))) {
                 services.add(Lb.getName());
             }
             if (Boolean.TRUE.equals(forVpc)) {
@@ -298,12 +340,8 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
         return forVpc;
     }
 
-    public boolean isForNsx() {
-        return BooleanUtils.isTrue(forNsx);
-    }
-
-    public String getNsxMode() {
-        return nsxMode;
+    public String getNetworkMode() {
+        return networkMode;
     }
 
     public boolean getNsxSupportsLbService() {
@@ -335,7 +373,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     public Map<String, List<String>> getServiceProviders() {
         Map<String, List<String>> serviceProviderMap = new HashMap<>();
-        if (serviceProviderList != null && !serviceProviderList.isEmpty() && !isForNsx()) {
+        if (serviceProviderList != null && !serviceProviderList.isEmpty() && !isExternalNetworkProvider()) {
             Collection servicesCollection = serviceProviderList.values();
             Iterator iter = servicesCollection.iterator();
             while (iter.hasNext()) {
@@ -351,17 +389,16 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
                 providerList.add(provider);
                 serviceProviderMap.put(service, providerList);
             }
-        } else if (Boolean.TRUE.equals(forNsx)) {
-            getServiceProviderMapForNsx(serviceProviderMap);
+        } else if (isExternalNetworkProvider()) {
+            getServiceProviderMapForExternalProvider(serviceProviderMap, Network.Provider.getProvider(provider).getName());
         }
         return serviceProviderMap;
     }
 
-    private void getServiceProviderMapForNsx(Map<String, List<String>> serviceProviderMap) {
+    private void getServiceProviderMapForExternalProvider(Map<String, List<String>> serviceProviderMap, String provider) {
         String routerProvider = Boolean.TRUE.equals(getForVpc()) ? VirtualRouterProvider.Type.VPCVirtualRouter.name() :
                 VirtualRouterProvider.Type.VirtualRouter.name();
-        List<String> unsupportedServices = new ArrayList<>(List.of("Vpn", "SecurityGroup", "Connectivity",
-                "Gateway", "BaremetalPxeService"));
+        List<String> unsupportedServices = new ArrayList<>(List.of("Vpn", "Gateway", "SecurityGroup", "Connectivity", "BaremetalPxeService"));
         List<String> routerSupported = List.of("Dhcp", "Dns", "UserData");
         List<String> allServices = Service.listAllServices().stream().map(Service::getName).collect(Collectors.toList());
         if (routerProvider.equals(VirtualRouterProvider.Type.VPCVirtualRouter.name())) {
@@ -374,9 +411,10 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
                 continue;
             if (routerSupported.contains(service))
                 serviceProviderMap.put(service, List.of(routerProvider));
-            else
-                serviceProviderMap.put(service, List.of(Network.Provider.Nsx.getName()));
-            if (!getNsxSupportsLbService()) {
+            else if (NetworkOffering.NetworkMode.NATTED.name().equalsIgnoreCase(getNetworkMode()) || NetworkACL.getName().equalsIgnoreCase(service)) {
+                    serviceProviderMap.put(service, List.of(provider));
+                }
+            if (isNsxWithoutLb(getProvider(), getNsxSupportsLbService()) || isNetrisRouted(getProvider(), getNetworkMode())) {
                 serviceProviderMap.remove(Lb.getName());
             }
         }
@@ -460,6 +498,14 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             return enable;
         }
         return false;
+    }
+
+    public boolean getSpecifyAsNumber() {
+        return BooleanUtils.toBoolean(specifyAsNumber);
+    }
+
+    public String getRoutingMode() {
+        return routingMode;
     }
 
     /////////////////////////////////////////////////////

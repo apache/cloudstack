@@ -121,6 +121,9 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             /* In order to revert userSpecified network setup */
             config.setState(State.Allocated);
         }
+
+        getOrCreateIpv4SubnetForGuestNetwork(offering, config, userSpecified, owner);
+
         return updateNetworkDesignForIPv6IfNeeded(config, userSpecified);
     }
 
@@ -253,7 +256,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         InsufficientAddressCapacityException {
 
         if (_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId()) && nic != null && nic.getRequestedIPv4() != null) {
-            throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);
+            throw new CloudRuntimeException("Does not support custom IP allocation at this time: " + nic);
         }
 
         NicProfile profile = super.allocate(config, nic, vm);
@@ -266,13 +269,14 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             profile.setIPv4Netmask(null);
         }
 
-        if (config.getVpcId() == null && vm.getType() == VirtualMachine.Type.DomainRouter) {
-            boolean isPublicNetwork = _networkModel.isProviderSupportServiceInNetwork(config.getId(), Service.SourceNat, Provider.VirtualRouter);
+        if (vm.getType() == VirtualMachine.Type.DomainRouter) {
+            boolean isPublicNetwork = _networkModel.isProviderSupportServiceInNetwork(config.getId(), Service.SourceNat, Provider.VirtualRouter)
+                    || _networkModel.isProviderSupportServiceInNetwork(config.getId(), Service.SourceNat, Provider.VPCVirtualRouter);
             if (!isPublicNetwork) {
                 Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(config, null);
                 if (placeholderNic == null) {
-                    logger.debug("Saving placeholder nic with ip4 address " + profile.getIPv4Address() +
-                            " and ipv6 address " + profile.getIPv6Address() + " for the network " + config);
+                    logger.debug("Saving placeholder NIC with IPv4 address " + profile.getIPv4Address() +
+                            " and IPv6 address " + profile.getIPv6Address() + " for the Network " + config);
                     _networkMgr.savePlaceholderNic(config, profile.getIPv4Address(), profile.getIPv6Address(), VirtualMachine.Type.DomainRouter);
                 }
             }
@@ -297,7 +301,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     @Override
     public void reserve(NicProfile nic, Network config, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
         throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
-        assert (nic.getReservationStrategy() == ReservationStrategy.Start) : "What can I do for nics that are not allocated at start? ";
+        assert (nic.getReservationStrategy() == ReservationStrategy.Start) : "What can I do for NICs that are not allocated at start? ";
 
         DataCenter dc = _dcDao.findById(config.getDataCenterId());
 

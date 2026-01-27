@@ -39,13 +39,13 @@ function installed() {
 function doinstall() {
     aptitude install "$@" || return $?
 }
-    
+
 function doupdate() {
     service cloud-management stop
     apt-get --force-yes -y -u install "cloud-*"
     service cloud-management restart
 }
-    
+
 function doremove() {
     apt-get remove "$@" || return $?
 }
@@ -57,13 +57,13 @@ trap "cleanup" INT TERM EXIT
 cd `dirname "$0"`
 setuprepo
 
-installms="    M) Install the Management Server   
+installms="    M) Install the Management Server
 "
 installag="    A) Install the Agent
 "
 installus="    S) Install the Usage Monitor
 "
-installdb="    D) Install the database server     
+installdb="    D) Install the database server
 "
 quitoptio="    Q) Quit
 "

@@ -32,6 +32,7 @@ import java.util.concurrent.TimeoutException;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.rabbitmq.client.BlockedListener;
 
@@ -185,10 +186,11 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
      */
     @Override
     public UUID subscribe(EventTopic topic, EventSubscriber subscriber) throws EventBusException {
-
         if (subscriber == null || topic == null) {
             throw new EventBusException("Invalid EventSubscriber/EventTopic object passed.");
         }
+
+        logger.debug("subscribing '{}' to events of type '{}' from '{}'", subscriber.toString(), topic.getEventType(), topic.getEventSource());
 
         // create a UUID, that will be used for managing subscriptions and also used as queue name
         // for on the queue used for the subscriber on the AMQP broker
@@ -250,9 +252,10 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
 
     @Override
     public void unsubscribe(UUID subscriberId, EventSubscriber subscriber) throws EventBusException {
+        logger.debug("unsubscribing '{}'", subscriberId);
         try {
             String classname = subscriber.getClass().getName();
-            String queueName = UUID.nameUUIDFromBytes(classname.getBytes()).toString();
+            String queueName = UuidUtils.nameUUIDFromBytes(classname.getBytes()).toString();
             Ternary<String, Channel, EventSubscriber> queueDetails = s_subscribers.get(queueName);
             Channel channel = queueDetails.second();
             channel.basicCancel(queueName);
@@ -265,6 +268,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
     // publish event on to the exchange created on AMQP server
     @Override
     public void publish(Event event) throws EventBusException {
+        logger.trace("publish '{}'", event.getDescription());
 
         String routingKey = createRoutingKey(event);
         String eventDescription = event.getDescription();

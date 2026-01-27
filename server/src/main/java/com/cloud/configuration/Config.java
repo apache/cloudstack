@@ -19,14 +19,12 @@ package com.cloud.configuration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.StringTokenizer;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
@@ -78,7 +76,6 @@ public enum Config {
             "30000",
             "Socket I/O timeout value in milliseconds. -1 for infinite timeout.",
             null),
-    AlertSMTPUseAuth("Alert", ManagementServer.class, String.class, "alert.smtp.useAuth", null, "If true, use SMTP authentication when sending emails.", null),
     AlertSMTPUsername(
             "Alert",
             ManagementServer.class,
@@ -258,14 +255,6 @@ public enum Config {
             "8081",
             "Load Balancer(haproxy) stats port number.",
             null),
-    NetworkLBHaproxyMaxConn(
-            "Network",
-            ManagementServer.class,
-            Integer.class,
-            "network.loadbalancer.haproxy.max.conn",
-            "4096",
-            "Load Balancer(haproxy) maximum number of concurrent connections(global max)",
-            null),
     NetworkRouterRpFilter(
             "Network",
             ManagementServer.class,
@@ -397,7 +386,7 @@ public enum Config {
             null),
     MaxNumberOfSecondaryIPsPerNIC(
             "Network", ManagementServer.class, Integer.class,
-            "vm.network.nic.max.secondary.ipaddresses", "256",
+            "vm.network.nic.max.secondary.ipaddresses", "10",
             "Specify the number of secondary ip addresses per nic per vm. Default value 10 is used, if not specified.", null),
 
     EnableServiceMonitoring(
@@ -405,96 +394,6 @@ public enum Config {
             "network.router.enableserviceMonitoring", "false",
             "service monitoring in router enable/disable option, default false", null),
 
-
-    // Console Proxy
-    ConsoleProxyCapacityStandby(
-            "Console Proxy",
-            AgentManager.class,
-            String.class,
-            "consoleproxy.capacity.standby",
-            "10",
-            "The minimal number of console proxy viewer sessions that system is able to serve immediately(standby capacity)",
-            null),
-    ConsoleProxyCapacityScanInterval(
-            "Console Proxy",
-            AgentManager.class,
-            String.class,
-            "consoleproxy.capacityscan.interval",
-            "30000",
-            "The time interval(in millisecond) to scan whether or not system needs more console proxy to ensure minimal standby capacity",
-            null),
-    ConsoleProxyCmdPort(
-            "Console Proxy",
-            AgentManager.class,
-            Integer.class,
-            "consoleproxy.cmd.port",
-            "8001",
-            "Console proxy command port that is used to communicate with management server",
-            null),
-    ConsoleProxyRestart(
-        "Console Proxy",
-        AgentManager.class,
-        Boolean.class,
-        "consoleproxy.restart",
-        "true",
-        "Console proxy restart flag, defaulted to true",
-        null),
-    ConsoleProxyUrlDomain(
-        "Console Proxy",
-        AgentManager.class,
-        String.class,
-        "consoleproxy.url.domain",
-        "",
-        "Console proxy url domain",
-        "domainName,privateip"),
-    ConsoleProxySessionMax(
-            "Console Proxy",
-            AgentManager.class,
-            Integer.class,
-            "consoleproxy.session.max",
-            String.valueOf(ConsoleProxyManager.DEFAULT_PROXY_CAPACITY),
-            "The max number of viewer sessions console proxy is configured to serve for",
-            null),
-    ConsoleProxySessionTimeout(
-            "Console Proxy",
-            AgentManager.class,
-            Integer.class,
-            "consoleproxy.session.timeout",
-            "300000",
-            "Timeout(in milliseconds) that console proxy tries to maintain a viewer session before it times out the session for no activity",
-            null),
-    ConsoleProxyDisableRpFilter(
-            "Console Proxy",
-            AgentManager.class,
-            Boolean.class,
-            "consoleproxy.disable.rpfilter",
-            "true",
-            "disable rp_filter on console proxy VM public interface",
-            null),
-    ConsoleProxyLaunchMax(
-            "Console Proxy",
-            AgentManager.class,
-            Integer.class,
-            "consoleproxy.launch.max",
-            "10",
-            "maximum number of console proxy instances per zone can be launched",
-            null),
-    ConsoleProxyManagementState(
-            "Console Proxy",
-            AgentManager.class,
-            String.class,
-            "consoleproxy.management.state",
-            com.cloud.consoleproxy.ConsoleProxyManagementState.Auto.toString(),
-            "console proxy service management state",
-            null),
-    ConsoleProxyManagementLastState(
-            "Console Proxy",
-            AgentManager.class,
-            String.class,
-            "consoleproxy.management.state.last",
-            com.cloud.consoleproxy.ConsoleProxyManagementState.Auto.toString(),
-            "last console proxy service management state",
-            null),
 
     // Snapshots
 
@@ -506,8 +405,6 @@ public enum Config {
             "300",
             "The time interval in seconds when the management server polls for snapshots to be scheduled.",
             null),
-    SnapshotDeltaMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.delta.max", "16", "max delta snapshots between two full snapshots.", null),
-    KVMSnapshotEnabled("Hidden", SnapshotManager.class, Boolean.class, "kvm.snapshot.enabled", "false", "whether snapshot is enabled for KVM hosts", null),
 
     // Advanced
     EventPurgeInterval(
@@ -558,7 +455,7 @@ public enum Config {
             Boolean.class,
             "disable.extraction",
             "false",
-            "Flag for disabling extraction of template, isos and volumes",
+            "Flag for disabling extraction of Templates, ISOs, Snapshots and volumes",
             null),
     ExtractURLExpirationInterval(
             "Advanced",
@@ -645,13 +542,6 @@ public enum Config {
             "true",
             "Indicates whether or not to automatically reserver system VM standby capacity.",
             null),
-    SystemVMDefaultHypervisor("Advanced",
-            ManagementServer.class,
-            String.class,
-            "system.vm.default.hypervisor",
-            null,
-            "Hypervisor type used to create system vm, valid values are: XenServer, KVM, VMware, Hyperv, VirtualBox, Parralels, BareMetal, Ovm, LXC, Any",
-            null),
     SystemVMRandomPassword(
             "Advanced",
             ManagementServer.class,
@@ -666,8 +556,8 @@ public enum Config {
             ManagementServer.class,
             String.class,
             "hypervisor.list",
-            HypervisorType.Hyperv + "," + HypervisorType.KVM + "," + HypervisorType.XenServer + "," + HypervisorType.VMware + "," + HypervisorType.BareMetal + "," +
-                    HypervisorType.Ovm + "," + HypervisorType.LXC + "," + HypervisorType.Ovm3,
+            HypervisorType.KVM + "," + HypervisorType.VMware + "," + HypervisorType.XenServer + "," + HypervisorType.Hyperv + "," +
+                    HypervisorType.BareMetal + "," + HypervisorType.Ovm + "," + HypervisorType.LXC + "," + HypervisorType.Ovm3 + "," + HypervisorType.External,
                     "The list of hypervisors that this deployment will use.",
             "hypervisorList",
             ConfigKey.Kind.CSV,
@@ -900,8 +790,9 @@ public enum Config {
             String.class,
             "host.capacityType.to.order.clusters",
             "CPU",
-            "The host capacity type (CPU or RAM) is used by deployment planner to order clusters during VM resource allocation",
-            "CPU,RAM"),
+            "The host capacity type (CPU, RAM, COMBINED) is used by deployment planner to order clusters during VM resource allocation",
+            "CPU,RAM,COMBINED"),
+
     ApplyAllocationAlgorithmToPods(
             "Advanced",
             ManagementServer.class,
@@ -918,16 +809,6 @@ public enum Config {
             "1",
             "Weight for user dispersion heuristic (as a value between 0 and 1) applied to resource allocation during vm deployment. Weight for capacity heuristic will be (1 - weight of user dispersion)",
             null),
-    VmAllocationAlgorithm(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "vm.allocation.algorithm",
-            "random",
-            "'random', 'firstfit', 'userdispersing', 'userconcentratedpod_random', 'userconcentratedpod_firstfit', 'firstfitleastconsumed' : Order in which hosts within a cluster will be considered for VM/volume allocation.",
-            null,
-            ConfigKey.Kind.Select,
-            "random,firstfit,userdispersing,userconcentratedpod_random,userconcentratedpod_firstfit,firstfitleastconsumed"),
     VmDeploymentPlanner(
             "Advanced",
             ManagementServer.class,
@@ -1318,7 +1199,7 @@ public enum Config {
             Long.class,
             "max.account.templates",
             "20",
-            "The default maximum number of templates that can be deployed for an account",
+            "The default maximum number of Templates that can be deployed for an account",
             null),
     DefaultMaxAccountSnapshots(
             "Account Defaults",
@@ -1376,6 +1257,14 @@ public enum Config {
             "200",
             "The default maximum primary storage space (in GiB) that can be used for an account",
             null),
+    DefaultMaxAccountProjects(
+                "Account Defaults",
+                ManagementServer.class,
+                Long.class,
+                "max.account.projects",
+                "10",
+                "The default maximum number of projects that can be created for an account",
+                null),
 
     //disabling lb as cluster sync does not work with distributed cluster
     SubDomainNetworkAccess(
@@ -1414,17 +1303,18 @@ public enum Config {
             "Percentage (as a value between 0 and 1) of connected agents after which agent load balancing will start happening",
             null),
 
-    DefaultMaxDomainUserVms("Domain Defaults", ManagementServer.class, Long.class, "max.domain.user.vms", "40", "The default maximum number of user VMs that can be deployed for a domain", null),
+    DefaultMaxDomainUserVms("Domain Defaults", ManagementServer.class, Long.class, "max.domain.user.vms", "40", "The default maximum number of user Instances that can be deployed for a domain", null),
     DefaultMaxDomainPublicIPs("Domain Defaults", ManagementServer.class, Long.class, "max.domain.public.ips", "40", "The default maximum number of public IPs that can be consumed by a domain", null),
-    DefaultMaxDomainTemplates("Domain Defaults", ManagementServer.class, Long.class, "max.domain.templates", "40", "The default maximum number of templates that can be deployed for a domain", null),
-    DefaultMaxDomainSnapshots("Domain Defaults", ManagementServer.class, Long.class, "max.domain.snapshots", "40", "The default maximum number of snapshots that can be created for a domain", null),
-    DefaultMaxDomainVolumes("Domain Defaults", ManagementServer.class, Long.class, "max.domain.volumes", "40", "The default maximum number of volumes that can be created for a domain", null),
-    DefaultMaxDomainNetworks("Domain Defaults", ManagementServer.class, Long.class, "max.domain.networks", "40", "The default maximum number of networks that can be created for a domain", null),
-    DefaultMaxDomainVpcs("Domain Defaults", ManagementServer.class, Long.class, "max.domain.vpcs", "40", "The default maximum number of vpcs that can be created for a domain", null),
-    DefaultMaxDomainCpus("Domain Defaults", ManagementServer.class, Long.class, "max.domain.cpus", "80", "The default maximum number of cpu cores that can be used for a domain", null),
+    DefaultMaxDomainTemplates("Domain Defaults", ManagementServer.class, Long.class, "max.domain.templates", "40", "The default maximum number of Templates that can be deployed for a domain", null),
+    DefaultMaxDomainSnapshots("Domain Defaults", ManagementServer.class, Long.class, "max.domain.snapshots", "40", "The default maximum number of Snapshots that can be created for a domain", null),
+    DefaultMaxDomainVolumes("Domain Defaults", ManagementServer.class, Long.class, "max.domain.volumes", "40", "The default maximum number of Volumes that can be created for a domain", null),
+    DefaultMaxDomainNetworks("Domain Defaults", ManagementServer.class, Long.class, "max.domain.networks", "40", "The default maximum number of Networks that can be created for a domain", null),
+    DefaultMaxDomainVpcs("Domain Defaults", ManagementServer.class, Long.class, "max.domain.vpcs", "40", "The default maximum number of VPCs that can be created for a domain", null),
+    DefaultMaxDomainCpus("Domain Defaults", ManagementServer.class, Long.class, "max.domain.cpus", "80", "The default maximum number of CPU cores that can be used for a domain", null),
     DefaultMaxDomainMemory("Domain Defaults", ManagementServer.class, Long.class, "max.domain.memory", "81920", "The default maximum memory (in MB) that can be used for a domain", null),
     DefaultMaxDomainPrimaryStorage("Domain Defaults", ManagementServer.class, Long.class, "max.domain.primary.storage", "400", "The default maximum primary storage space (in GiB) that can be used for a domain", null),
     DefaultMaxDomainSecondaryStorage("Domain Defaults", ManagementServer.class, Long.class, "max.domain.secondary.storage", "800", "The default maximum secondary storage space (in GiB) that can be used for a domain", null),
+    DefaultMaxDomainProjects("Domain Defaults",ManagementServer.class,Long.class,"max.domain.projects","50","The default maximum number of projects that can be created for a domain",null),
 
     DefaultMaxProjectUserVms(
             "Project Defaults",
@@ -1448,7 +1338,7 @@ public enum Config {
             Long.class,
             "max.project.templates",
             "20",
-            "The default maximum number of templates that can be deployed for a project",
+            "The default maximum number of Templates that can be deployed for a project",
             null),
     DefaultMaxProjectSnapshots(
             "Project Defaults",
@@ -1557,14 +1447,6 @@ public enum Config {
             "Password for SMTP authentication (applies only if project.smtp.useAuth is true)",
             null),
     ProjectSMTPPort("Project Defaults", ManagementServer.class, Integer.class, "project.smtp.port", "465", "Port the SMTP server is listening on", null),
-    ProjectSMTPUseAuth(
-            "Project Defaults",
-            ManagementServer.class,
-            String.class,
-            "project.smtp.useAuth",
-            null,
-            "If true, use SMTP authentication when sending emails",
-            null),
     ProjectSMTPUsername(
             "Project Defaults",
             ManagementServer.class,
@@ -1597,14 +1479,6 @@ public enum Config {
             "eip.use.multiple.netscalers",
             "false",
             "Should be set to true, if there will be multiple NetScaler devices providing EIP service in a zone",
-            null),
-    ConsoleProxyServiceOffering(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "consoleproxy.service.offering",
-            null,
-            "Uuid of the service offering used by console proxy; if NULL - system offering will be used",
             null),
     SecondaryStorageServiceOffering(
             "Advanced",
@@ -1750,7 +1624,6 @@ public enum Config {
                     null),
 
     // VMSnapshots
-    VMSnapshotMax("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.max", "10", "Maximum vm snapshots for a vm", null),
     VMSnapshotCreateWait("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.create.wait", "1800", "In second, timeout for create vm snapshot", null),
 
     CloudDnsName("Advanced", ManagementServer.class, String.class, "cloud.dns.name", null, "DNS name of the cloud for the GSLB service", null),
@@ -1811,6 +1684,7 @@ public enum Config {
 
     SSVMPSK("Hidden", ManagementServer.class, String.class, "upload.post.secret.key", "", "PSK with SSVM", null);
 
+
     private final String _category;
     private final Class<?> _componentClass;
     private final Class<?> _type;
@@ -1818,47 +1692,45 @@ public enum Config {
     private final String _defaultValue;
     private final String _description;
     private final String _range;
-    private final String _scope; // Parameter can be at different levels (Zone/cluster/pool/account), by default every parameter is at global
+    private final int _scope; // Parameter can be at different levels (Zone/cluster/pool/account), by default every parameter is at global
     private final ConfigKey.Kind _kind;
     private final String _options;
 
-    private static final HashMap<String, List<Config>> s_scopeLevelConfigsMap = new HashMap<String, List<Config>>();
+    private static final HashMap<Integer, List<Config>> s_scopeLevelConfigsMap = new HashMap<>();
     static {
-        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Zone.toString(), new ArrayList<Config>());
-        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Cluster.toString(), new ArrayList<Config>());
-        s_scopeLevelConfigsMap.put(ConfigKey.Scope.StoragePool.toString(), new ArrayList<Config>());
-        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Account.toString(), new ArrayList<Config>());
-        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Global.toString(), new ArrayList<Config>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Zone.getBitValue(), new ArrayList<>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Cluster.getBitValue(), new ArrayList<>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.StoragePool.getBitValue(), new ArrayList<>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Account.getBitValue(), new ArrayList<>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Global.getBitValue(), new ArrayList<>());
 
         for (Config c : Config.values()) {
             //Creating group of parameters per each level (zone/cluster/pool/account)
-            StringTokenizer tokens = new StringTokenizer(c.getScope(), ",");
-            while (tokens.hasMoreTokens()) {
-                String scope = tokens.nextToken().trim();
-                List<Config> currentConfigs = s_scopeLevelConfigsMap.get(scope);
+            List<ConfigKey.Scope> scopes = ConfigKey.Scope.decode(c.getScope());
+            for (ConfigKey.Scope scope : scopes) {
+                List<Config> currentConfigs = s_scopeLevelConfigsMap.get(scope.getBitValue());
                 currentConfigs.add(c);
-                s_scopeLevelConfigsMap.put(scope, currentConfigs);
+                s_scopeLevelConfigsMap.put(scope.getBitValue(), currentConfigs);
             }
         }
     }
 
-    private static final HashMap<String, List<Config>> Configs = new HashMap<String, List<Config>>();
+    private static final HashMap<String, List<Config>> Configs = new HashMap<>();
     static {
         // Add categories
-        Configs.put("Alert", new ArrayList<Config>());
-        Configs.put("Storage", new ArrayList<Config>());
-        Configs.put("Snapshots", new ArrayList<Config>());
-        Configs.put("Network", new ArrayList<Config>());
-        Configs.put("Usage", new ArrayList<Config>());
-        Configs.put("Console Proxy", new ArrayList<Config>());
-        Configs.put("Advanced", new ArrayList<Config>());
-        Configs.put("Usage", new ArrayList<Config>());
-        Configs.put("Developer", new ArrayList<Config>());
-        Configs.put("Hidden", new ArrayList<Config>());
-        Configs.put("Account Defaults", new ArrayList<Config>());
-        Configs.put("Domain Defaults", new ArrayList<Config>());
-        Configs.put("Project Defaults", new ArrayList<Config>());
-        Configs.put("Secure", new ArrayList<Config>());
+        Configs.put("Account Defaults", new ArrayList<>());
+        Configs.put("Advanced", new ArrayList<>());
+        Configs.put("Alert", new ArrayList<>());
+        Configs.put("Console Proxy", new ArrayList<>());
+        Configs.put("Developer", new ArrayList<>());
+        Configs.put("Domain Defaults", new ArrayList<>());
+        Configs.put("Hidden", new ArrayList<>());
+        Configs.put("Network", new ArrayList<>());
+        Configs.put("Secure", new ArrayList<>());
+        Configs.put("Snapshots", new ArrayList<>());
+        Configs.put("Storage", new ArrayList<>());
+        Configs.put("Usage", new ArrayList<>());
+        Configs.put("Project Defaults", new ArrayList<>());
 
         // Add values into HashMap
         for (Config c : Config.values()) {
@@ -1869,11 +1741,11 @@ public enum Config {
         }
     }
 
-    private Config(String category, Class<?> componentClass, Class<?> type, String name, String defaultValue, String description, String range) {
+    Config(String category, Class<?> componentClass, Class<?> type, String name, String defaultValue, String description, String range) {
         this(category, componentClass, type, name, defaultValue, description, range, null, null);
     }
 
-    private Config(String category, Class<?> componentClass, Class<?> type, String name, String defaultValue, String description, String range, ConfigKey.Kind kind, String options) {
+    Config(String category, Class<?> componentClass, Class<?> type, String name, String defaultValue, String description, String range, ConfigKey.Kind kind, String options) {
         _category = category;
         _componentClass = componentClass;
         _type = type;
@@ -1881,7 +1753,7 @@ public enum Config {
         _defaultValue = defaultValue;
         _description = description;
         _range = range;
-        _scope = ConfigKey.Scope.Global.toString();
+        _scope = ConfigKey.Scope.Global.getBitValue();
         _kind = kind;
         _options = options;
     }
@@ -1906,7 +1778,7 @@ public enum Config {
         return _type;
     }
 
-    public String getScope() {
+    public int getScope() {
         return _scope;
     }
 
@@ -1978,7 +1850,7 @@ public enum Config {
 
     public static List<String> getCategories() {
         Object[] keys = Configs.keySet().toArray();
-        List<String> categories = new ArrayList<String>();
+        List<String> categories = new ArrayList<>();
         for (Object key : keys) {
             categories.add((String)key);
         }

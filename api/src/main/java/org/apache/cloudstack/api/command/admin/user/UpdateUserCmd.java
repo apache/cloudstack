@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.admin.user;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -45,16 +46,16 @@ public class UpdateUserCmd extends BaseCmd {
     @Parameter(name = ApiConstants.USER_API_KEY, type = CommandType.STRING, description = "The API key for the user. Must be specified with userSecretKey")
     private String apiKey;
 
-    @Parameter(name = ApiConstants.EMAIL, type = CommandType.STRING, description = "email")
+    @Parameter(name = ApiConstants.EMAIL, type = CommandType.STRING, description = "Email")
     private String email;
 
-    @Parameter(name = ApiConstants.FIRSTNAME, type = CommandType.STRING, description = "first name")
+    @Parameter(name = ApiConstants.FIRSTNAME, type = CommandType.STRING, description = "First name")
     private String firstname;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserResponse.class, required = true, description = "User uuid")
     private Long id;
 
-    @Parameter(name = ApiConstants.LASTNAME, type = CommandType.STRING, description = "last name")
+    @Parameter(name = ApiConstants.LASTNAME, type = CommandType.STRING, description = "Last name")
     private String lastname;
 
     @Parameter(name = ApiConstants.PASSWORD,
@@ -66,8 +67,11 @@ public class UpdateUserCmd extends BaseCmd {
     @Parameter(name = ApiConstants.CURRENT_PASSWORD, type = CommandType.STRING, description = "Current password that was being used by the user. You must inform the current password when updating the password.", acceptedOnAdminPort = false)
     private String currentPassword;
 
-    @Parameter(name = ApiConstants.SECRET_KEY, type = CommandType.STRING, description = "The secret key for the user. Must be specified with userApiKey")
+    @Parameter(name = ApiConstants.USER_SECRET_KEY, type = CommandType.STRING, description = "The secret key for the user. Must be specified with userApiKey")
     private String secretKey;
+
+    @Parameter(name = ApiConstants.API_KEY_ACCESS, type = CommandType.STRING, description = "Determines if Api key access for this user is enabled, disabled or inherits the value from its parent, the owning account", since = "4.20.1.0", authorized = {RoleType.Admin})
+    private String apiKeyAccess;
 
     @Parameter(name = ApiConstants.TIMEZONE,
             type = CommandType.STRING,
@@ -118,6 +122,10 @@ public class UpdateUserCmd extends BaseCmd {
 
     public String getSecretKey() {
         return secretKey;
+    }
+
+    public String getApiKeyAccess() {
+        return apiKeyAccess;
     }
 
     public String getTimezone() {

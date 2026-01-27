@@ -1,4 +1,4 @@
-﻿// Licensed to the Apache Software Foundation (ASF) under one
+// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -66,7 +66,7 @@ namespace ServerResource.Tests
 
         /// <summary>
         /// Test WmiCalls to which incoming HTTP POST requests are dispatched.
-        /// 
+        ///
         /// TODO: revise beyond first approximation
         /// First approximation is a quick port of the existing Java tests for Hyper-V server resource.
         /// A second approximation would use the AgentShell settings files directly.
@@ -117,10 +117,10 @@ namespace ServerResource.Tests
 
             // Clean up old test files in local storage folder
             FileInfo testVolWorks = new FileInfo(Path.Combine(testLocalStorePath, testSampleVolumeWorkingUUID));
-            // Assert.True(testVolWorks.Exists, "Create a working virtual disk at " + testVolWorks.FullName);           
-            
+            // Assert.True(testVolWorks.Exists, "Create a working virtual disk at " + testVolWorks.FullName);
+
             testSampleTemplateURLJSON = JsonConvert.SerializeObject(testSampleTemplateUUID);
-            s_logger.Info("Created " + testSampleTemplateURLJSON + " in local storage.");           
+            s_logger.Info("Created " + testSampleTemplateURLJSON + " in local storage.");
 
 
             // Capture other JSON encoded paths
@@ -150,7 +150,7 @@ namespace ServerResource.Tests
 
             return JsonConvert.SerializeObject(newFileInfo.FullName);
         }
-        
+
         [Fact]
         public void TestCreateCommand()
         {
@@ -267,7 +267,7 @@ namespace ServerResource.Tests
             Assert.NotNull(startAns[0][CloudStackTypes.StartAnswer]);
             Assert.True((bool)startAns[0][CloudStackTypes.StartAnswer].result, "StartCommand did not succeed " + startAns[0][CloudStackTypes.StartAnswer].details);
 
-            Assert.Null((string)startAns[0][CloudStackTypes.StartAnswer].details);            
+            Assert.Null((string)startAns[0][CloudStackTypes.StartAnswer].details);
         }
 
         [Fact]
@@ -323,7 +323,7 @@ namespace ServerResource.Tests
                         "\"volumeId\":10," +
                 //                            "\"vmName\":\"i-3-5-VM\"," +  // TODO: do we have to fill in the vmName?
                         "\"accountId\":3,\"id\":10}" +
-                    "}";  // end of destTO 
+                    "}";  // end of destTO
             return sampleVolumeObjectTO;
         }
 
@@ -345,6 +345,6 @@ namespace ServerResource.Tests
                                     "\"broadcastUri\":\"vlan://261\",\"isolationUri\":\"vlan://261\",\"isSecurityGroupEnabled\":false}" +
                             "]},\"contextMap\":{},\"wait\":0}";
             return sample;
-        }        
+        }
     }
 }

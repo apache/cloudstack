@@ -98,7 +98,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
             return;
         }
         if (_schedulerDisabled) {
-            logger.debug("Security Group Mgr v2: scheduler disabled, doing nothing for " + affectedVms.size() + " vms");
+            logger.debug("Security Group Mgr v2: scheduler disabled, doing nothing for " + affectedVms.size() + " Instances");
             return;
         }
         Set<Long> workItems = new TreeSet<Long>();
@@ -106,7 +106,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
         workItems.removeAll(_disabledVms);
 
         if (logger.isDebugEnabled()) {
-            logger.debug("Security Group Mgr v2: scheduling ruleset updates for " + affectedVms.size() + " vms " + " (unique=" + workItems.size() +
+            logger.debug("Security Group Mgr v2: scheduling ruleset updates for " + affectedVms.size() + " Instances " + " (unique=" + workItems.size() +
                 "), current queue size=" + _workQueue.size());
         }
 
@@ -123,7 +123,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
         _mBean.logScheduledDetails(workItems);
         p.stop();
         if (logger.isDebugEnabled()) {
-            logger.debug("Security Group Mgr v2: done scheduling ruleset updates for " + workItems.size() + " vms: num new jobs=" + newJobs +
+            logger.debug("Security Group Mgr v2: done scheduling ruleset updates for " + workItems.size() + " Instances: num new jobs=" + newJobs +
                 " num rows insert or updated=" + updated + " time taken=" + p.getDurationInMillis());
         }
     }
@@ -172,7 +172,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
 
         if (vm != null && vm.getState() == State.Running) {
             if (logger.isTraceEnabled()) {
-                logger.trace("SecurityGroupManager v2: found vm, " + userVmId + " state=" + vm.getState());
+                logger.trace("SecurityGroupManager v2: found vm {}, state={}", vm, vm.getState());
             }
             Map<PortAndProto, Set<String>> ingressRules = generateRulesForVM(userVmId, SecurityRuleType.IngressRule);
             Map<PortAndProto, Set<String>> egressRules = generateRulesForVM(userVmId, SecurityRuleType.EgressRule);
@@ -192,18 +192,17 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
                         ingressRules, egressRules, nicSecIps);
                 cmd.setMsId(_serverId);
                 if (logger.isDebugEnabled()) {
-                    logger.debug("SecurityGroupManager v2: sending ruleset update for vm " + vm.getInstanceName() + ":ingress num rules=" +
-                        cmd.getIngressRuleSet().size() + ":egress num rules=" + cmd.getEgressRuleSet().size() + " num cidrs=" + cmd.getTotalNumCidrs() + " sig=" +
-                        cmd.getSignature());
+                    logger.debug("SecurityGroupManager v2: sending ruleset update for vm {} ingress num rules={} egress num rules={} num cidrs={} sig={}",
+                            vm, cmd.getIngressRuleSet().size(), cmd.getEgressRuleSet().size(), cmd.getTotalNumCidrs(), cmd.getSignature());
                 }
                 Commands cmds = new Commands(cmd);
                 try {
                     _agentMgr.send(agentId, cmds, _answerListener);
                     if (logger.isTraceEnabled()) {
-                        logger.trace("SecurityGroupManager v2: sent ruleset updates for " + vm.getInstanceName() + " curr queue size=" + _workQueue.size());
+                        logger.trace("SecurityGroupManager v2: sent ruleset updates for {} curr queue size={}", vm, _workQueue.size());
                     }
                 } catch (AgentUnavailableException e) {
-                    logger.debug("Unable to send updates for vm: " + userVmId + "(agentid=" + agentId + ")");
+                    logger.debug("Unable to send updates for vm: {} (agent={})", vm, hostDao.findByIdIncludingRemoved(agentId));
                     _workTracker.handleException(agentId);
                 }
             }
@@ -250,6 +249,9 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
                         //did a join with the nics table
                         String cidr = ngmapVO.getGuestIpAddress() + "/32";
                         cidrs.add(cidr);
+                        if (ngmapVO.getGuestIpv6Address() != null) {
+                            cidrs.add(ngmapVO.getGuestIpv6Address() + "/64");
+                        }
                     }
                 } else if (rule.getAllowedSourceIpCidr() != null) {
                     cidrs.add(rule.getAllowedSourceIpCidr());

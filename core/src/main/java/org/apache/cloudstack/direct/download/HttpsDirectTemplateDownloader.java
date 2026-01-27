@@ -39,9 +39,7 @@ import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
 
-import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
@@ -55,6 +53,7 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.ssl.SSLContexts;
 import org.apache.http.util.EntityUtils;
 
 import com.cloud.utils.Pair;
@@ -68,20 +67,26 @@ public class HttpsDirectTemplateDownloader extends DirectTemplateDownloaderImpl 
     protected CloseableHttpClient httpsClient;
     private HttpUriRequest req;
 
-    protected HttpsDirectTemplateDownloader(String url, Integer connectTimeout, Integer connectionRequestTimeout, Integer socketTimeout) {
-        this(url, null, null, null, null, connectTimeout, socketTimeout, connectionRequestTimeout, null);
+    protected HttpsDirectTemplateDownloader(String url, Integer connectTimeout, Integer connectionRequestTimeout, Integer socketTimeout, boolean followRedirects) {
+        this(url, null, null, null, null, connectTimeout, socketTimeout, connectionRequestTimeout, null, followRedirects);
     }
 
-    public HttpsDirectTemplateDownloader(String url, Long templateId, String destPoolPath, String checksum, Map<String, String> headers,
-                                         Integer connectTimeout, Integer soTimeout, Integer connectionRequestTimeout, String temporaryDownloadPath) {
-        super(url, destPoolPath, templateId, checksum, temporaryDownloadPath);
+    public HttpsDirectTemplateDownloader(String url, Long templateId, String destPoolPath, String checksum,
+                 Map<String, String> headers, Integer connectTimeout, Integer soTimeout,
+                 Integer connectionRequestTimeout, String temporaryDownloadPath, boolean followRedirects) {
+        super(url, destPoolPath, templateId, checksum, temporaryDownloadPath, followRedirects);
         SSLContext sslcontext = getSSLContext();
         SSLConnectionSocketFactory factory = new SSLConnectionSocketFactory(sslcontext, SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
         RequestConfig config = RequestConfig.custom()
                 .setConnectTimeout(connectTimeout == null ? 5000 : connectTimeout)
                 .setConnectionRequestTimeout(connectionRequestTimeout == null ? 5000 : connectionRequestTimeout)
-                .setSocketTimeout(soTimeout == null ? 5000 : soTimeout).build();
-        httpsClient = HttpClients.custom().setSSLSocketFactory(factory).setDefaultRequestConfig(config).build();
+                .setSocketTimeout(soTimeout == null ? 5000 : soTimeout)
+                .setRedirectsEnabled(followRedirects)
+                .build();
+        httpsClient = HttpClients.custom()
+                .setSSLSocketFactory(factory)
+                .setDefaultRequestConfig(config)
+                .build();
         createUriRequest(url, headers);
         String downloadDir = getDirectDownloadTempPath(templateId);
         File tempFile = createTemporaryDirectoryAndFile(downloadDir);
@@ -90,9 +95,10 @@ public class HttpsDirectTemplateDownloader extends DirectTemplateDownloaderImpl 
 
     protected void createUriRequest(String downloadUrl, Map<String, String> headers) {
         req = new HttpGet(downloadUrl);
+        setFollowRedirects(this.isFollowRedirects());
         if (MapUtils.isNotEmpty(headers)) {
-            for (String headerKey: headers.keySet()) {
-                req.setHeader(headerKey, headers.get(headerKey));
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                req.setHeader(entry.getKey(), entry.getValue());
             }
         }
     }
@@ -113,10 +119,10 @@ public class HttpsDirectTemplateDownloader extends DirectTemplateDownloaderImpl 
                 String password = "changeit";
                 defaultKeystore.load(is, password.toCharArray());
             }
-            TrustManager[] tm = HttpsMultiTrustManager.getTrustManagersFromKeyStores(customKeystore, defaultKeystore);
-            SSLContext sslContext = SSLUtils.getSSLContext();
-            sslContext.init(null, tm, null);
-            return sslContext;
+            return SSLContexts.custom()
+                    .loadTrustMaterial(customKeystore, null)
+                    .loadTrustMaterial(defaultKeystore, null)
+                    .build();
         } catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException | KeyManagementException e) {
             logger.error(String.format("Failure getting SSL context for HTTPS downloader, using default SSL context: %s", e.getMessage()), e);
             try {
@@ -143,7 +149,7 @@ public class HttpsDirectTemplateDownloader extends DirectTemplateDownloaderImpl 
      * Consume response and persist it on getDownloadedFilePath() file
      */
     protected Pair<Boolean, String> consumeResponse(CloseableHttpResponse response) {
-        logger.info("Downloading template " + getTemplateId() + " from " + getUrl() + " to: " + getDownloadedFilePath());
+        logger.info("Downloading Template " + getTemplateId() + " from " + getUrl() + " to: " + getDownloadedFilePath());
         if (response.getStatusLine().getStatusCode() != 200) {
             throw new CloudRuntimeException("Error on HTTPS response");
         }
@@ -153,7 +159,7 @@ public class HttpsDirectTemplateDownloader extends DirectTemplateDownloaderImpl 
             OutputStream out = new FileOutputStream(getDownloadedFilePath());
             IOUtils.copy(in, out);
         } catch (Exception e) {
-            logger.error("Error parsing response for template " + getTemplateId() + " due to: " + e.getMessage());
+            logger.error("Error parsing response for Template " + getTemplateId() + " due to: " + e.getMessage());
             return new Pair<>(false, null);
         }
         return new Pair<>(true, getDownloadedFilePath());
@@ -164,8 +170,9 @@ public class HttpsDirectTemplateDownloader extends DirectTemplateDownloaderImpl 
         HttpHead httpHead = new HttpHead(url);
         try {
             CloseableHttpResponse response = httpsClient.execute(httpHead);
-            if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                logger.error(String.format("Invalid URL: %s", url));
+            int responseCode = response.getStatusLine().getStatusCode();
+            if (responseCode != HttpStatus.SC_OK) {
+                logger.error(String.format("HTTP HEAD request to URL: %s failed, response code: %d", url, responseCode));
                 return false;
             }
             return true;

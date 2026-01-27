@@ -47,6 +47,8 @@ public interface ProjectAccountDao extends GenericDao<ProjectAccountVO, Long> {
 
     void removeAccountFromProjects(long accountId);
 
+    void removeUserFromProjects(long userId);
+
     boolean canUserModifyProject(long projectId, long accountId, long userId);
 
     List<ProjectAccountVO> listUsersOrAccountsByRole(long id);

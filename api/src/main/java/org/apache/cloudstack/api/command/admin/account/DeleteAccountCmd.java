@@ -35,7 +35,7 @@ import org.apache.cloudstack.region.RegionService;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteAccount", description = "Deletes a account, and all users associated with this account", responseObject = SuccessResponse.class, entityType = {Account.class},
+@APICommand(name = "deleteAccount", description = "Deletes an Account and all Users associated with this Account", responseObject = SuccessResponse.class, entityType = {Account.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteAccountCmd extends BaseAsyncCmd {
 
@@ -79,8 +79,8 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         Account account = _accountService.getAccount(getId());
-        return (account != null ? "Deleting user account " + account.getAccountName() + " (ID: " + account.getUuid() + ") and all corresponding users"
-            : "Account delete, but this account does not exist in the system");
+        return (account != null ? "Deleting user Account " + account.getAccountName() + " (ID: " + account.getUuid() + ") and all corresponding users"
+            : "Cannot delete Account - it does not exist in the system");
     }
 
     @Override
@@ -89,12 +89,11 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
         CallContext.current().setEventDetails("Account ID: " + (account != null ? account.getUuid() : getId())); // Account not found is already handled by service
 
         boolean result = _regionService.deleteUserAccount(this);
-        if (result) {
-            SuccessResponse response = new SuccessResponse(getCommandName());
-            setResponseObject(response);
-        } else {
+        if (!result) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete user account and all corresponding users");
         }
+        SuccessResponse response = new SuccessResponse(getCommandName());
+        setResponseObject(response);
     }
 
     @Override

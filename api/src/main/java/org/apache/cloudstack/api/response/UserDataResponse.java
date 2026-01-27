@@ -24,32 +24,44 @@ import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 
 @EntityReference(value = UserData.class)
-public class UserDataResponse extends BaseResponseWithAnnotations {
+public class UserDataResponse extends BaseResponseWithAnnotations implements ControlledEntityResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "ID of the ssh keypair")
+    @Param(description = "ID of the User Data")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "Name of the userdata")
+    @Param(description = "Name of the User Data")
     private String name;
 
-    @SerializedName(ApiConstants.ACCOUNT_ID) @Param(description="the owner id of the userdata")
+    @SerializedName(ApiConstants.ACCOUNT_ID) @Param(description="The owner id of the User Data")
     private String accountId;
 
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the owner of the userdata")
+    @SerializedName(ApiConstants.ACCOUNT) @Param(description="The owner of the User Data")
     private String accountName;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the userdata owner")
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "The project id of the User Data", since = "4.19.1")
+    private String projectId;
+
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "The project name of the User Data", since = "4.19.1")
+    private String projectName;
+
+    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="The domain id of the User Data owner")
     private String domainId;
 
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the userdata owner")
+    @SerializedName(ApiConstants.DOMAIN) @Param(description="The domain name of the User Data owner")
     private String domain;
 
-    @SerializedName(ApiConstants.USER_DATA) @Param(description="base64 encoded userdata content")
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "Path of the domain to which the User Data owner belongs", since = "4.19.2.0")
+    private String domainPath;
+
+    @SerializedName(ApiConstants.USER_DATA) @Param(description="Base64 encoded User Data content")
     private String userData;
 
-    @SerializedName(ApiConstants.PARAMS) @Param(description="list of parameters which contains the list of keys or string parameters that are needed to be passed for any variables declared in userdata")
+    @SerializedName(ApiConstants.PARAMS) @Param(description="List of parameters which contains the list of keys or string parameters that are needed to be passed for any variables declared in the User Data")
     private String params;
 
     public UserDataResponse() {
@@ -118,11 +130,26 @@ public class UserDataResponse extends BaseResponseWithAnnotations {
         this.accountName = accountName;
     }
 
+    @Override
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
+    }
+
+    @Override
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
+    }
+
     public String getDomainName() {
         return domain;
     }
 
     public void setDomainName(String domain) {
         this.domain = domain;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 }

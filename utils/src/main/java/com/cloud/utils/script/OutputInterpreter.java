@@ -139,6 +139,11 @@ public abstract class OutputInterpreter {
         public String getLines() {
             return allLines;
         }
+
+        @Override
+        public boolean drain() {
+            return true;
+        }
     }
 
     public static class LineByLineOutputLogger extends OutputInterpreter {

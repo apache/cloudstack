@@ -214,9 +214,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
                 if (reservationId != null) {
                     return reservationId;
                 } else {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Cannot finalize the VM reservation for this destination found, retrying");
-                    }
+                    logger.debug("Cannot finalize the VM reservation for this destination found, retrying");
                     exclude.addHost(dest.getHost().getId());
                     continue;
                 }

@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
@@ -71,6 +72,7 @@ public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implem
     private final HttpMethodRetryHandler retryHandler;
 
     private HashMap<String, String> urlFileMap;
+    private boolean followRedirects = false;
 
     public SimpleHttpMultiFileDownloader(StorageLayer storageLayer, String[] downloadUrls, String toDir,
                                          DownloadCompleteCallback callback, long maxTemplateSizeInBytes,
@@ -92,7 +94,7 @@ public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implem
     private GetMethod createRequest(String downloadUrl) {
         GetMethod request = new GetMethod(downloadUrl);
         request.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, retryHandler);
-        request.setFollowRedirects(true);
+        request.setFollowRedirects(followRedirects);
         return request;
     }
 
@@ -168,7 +170,7 @@ public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implem
             urlFileMap.put(downloadUrl, currentToFile);
             file = new File(currentToFile);
             long localFileSize = checkLocalFileSizeForResume(resume, file);
-            if (checkServerResponse(localFileSize)) return 0;
+            if (checkServerResponse(localFileSize, downloadUrl)) return 0;
             if (!tryAndGetRemoteSize()) return 0;
             if (!canHandleDownloadSize()) return 0;
             checkAndSetDownloadSize();
@@ -315,7 +317,7 @@ public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implem
         return true;
     }
 
-    private boolean checkServerResponse(long localFileSize) throws IOException {
+    private boolean checkServerResponse(long localFileSize, String downloadUrl) throws IOException {
         int responseCode = 0;
 
         if (localFileSize > 0) {
@@ -329,6 +331,12 @@ public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implem
         } else if ((responseCode = client.executeMethod(request)) != HttpStatus.SC_OK) {
             currentStatus = Status.UNRECOVERABLE_ERROR;
             errorString = " HTTP Server returned " + responseCode + " (expected 200 OK) ";
+            if (List.of(HttpStatus.SC_MOVED_PERMANENTLY, HttpStatus.SC_MOVED_TEMPORARILY).contains(responseCode)
+                    && !followRedirects) {
+                errorString = String.format("Failed to download %s due to redirection, response code: %d",
+                        downloadUrl, responseCode);
+                logger.error(errorString);
+            }
             return true; //FIXME: retry?
         }
         return false;
@@ -475,5 +483,13 @@ public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implem
 
     public Map<String, String> getDownloadedFilesMap() {
         return urlFileMap;
+    }
+
+    @Override
+    public void setFollowRedirects(boolean followRedirects) {
+        this.followRedirects = followRedirects;
+        if (this.request != null) {
+            this.request.setFollowRedirects(followRedirects);
+        }
     }
 }

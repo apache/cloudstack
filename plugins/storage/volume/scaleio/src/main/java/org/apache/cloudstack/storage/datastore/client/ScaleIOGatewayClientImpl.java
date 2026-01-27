@@ -34,6 +34,7 @@ import java.util.Map;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
 
+import org.apache.cloudstack.storage.datastore.api.StorageConfiguration;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
@@ -530,15 +531,15 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
                 boolean revertStatus = revertSnapshot(sourceSnapshotVolumeId, destVolumeId);
                 if (!revertStatus) {
                     revertSnapshotResult = false;
-                    logger.warn("Failed to revert snapshot for volume id: " + sourceSnapshotVolumeId);
-                    throw new CloudRuntimeException("Failed to revert snapshot for volume id: " + sourceSnapshotVolumeId);
+                    logger.warn("Failed to revert Snapshot for volume id: " + sourceSnapshotVolumeId);
+                    throw new CloudRuntimeException("Failed to revert Snapshot for volume id: " + sourceSnapshotVolumeId);
                 } else {
                     revertStatusIndex++;
                 }
             }
         } catch (final Exception e) {
-            logger.error("Failed to revert vm snapshot due to: " + e.getMessage(), e);
-            throw new CloudRuntimeException("Failed to revert vm snapshot due to: " + e.getMessage());
+            logger.error("Failed to revert Instance Snapshot due to: " + e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to revert Instance Snapshot due to: " + e.getMessage());
         } finally {
             if (!revertSnapshotResult) {
                 //revert to volume with last state and delete the snapshot group, for already reverted volumes
@@ -1004,6 +1005,17 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
         return new ArrayList<>();
     }
 
+    @Override
+    public List<Volume> listVolumesMappedToSdc(String sdcId) {
+        Preconditions.checkArgument(StringUtils.isNotEmpty(sdcId), "SDC id cannot be null");
+
+        Volume[] volumes = get("/instances/Sdc::" + sdcId + "/relationships/Volume", Volume[].class);
+        if (volumes != null) {
+            return Arrays.asList(volumes);
+        }
+        return new ArrayList<>();
+    }
+
     ///////////////////////////////////////////////
     //////////////// SDC APIs /////////////////////
     ///////////////////////////////////////////////
@@ -1063,6 +1075,21 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
     }
 
     @Override
+    public int getConnectedSdcsCount() {
+        List<Sdc> sdcs = listSdcs();
+        int connectedSdcsCount = 0;
+        if(sdcs != null) {
+            for (Sdc sdc : sdcs) {
+                if (MDM_CONNECTED_STATE.equalsIgnoreCase(sdc.getMdmConnectionState())) {
+                    connectedSdcsCount++;
+                }
+            }
+        }
+
+        return connectedSdcsCount;
+    }
+
+    @Override
     public boolean haveConnectedSdcs() {
         List<Sdc> sdcs = listSdcs();
         if(sdcs != null) {
@@ -1098,6 +1125,15 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
         }
 
         return false;
+    }
+
+    @Override
+    public List<String> getMdmAddresses() {
+        StorageConfiguration storageConfiguration = get("/Configuration", StorageConfiguration.class);
+        if (storageConfiguration != null && storageConfiguration.getMdmAddresses().length > 0) {
+            return Arrays.asList(storageConfiguration.getMdmAddresses());
+        }
+        return new ArrayList<>();
     }
 
     private String getConnectionManagerStats() {

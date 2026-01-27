@@ -35,31 +35,31 @@ public class LoginCmdResponse extends AuthenticationCmdResponse {
     private String domainId;
 
     @SerializedName(value = ApiConstants.TIMEOUT)
-    @Param(description = "the time period before the session has expired")
+    @Param(description = "The time period before the session has expired")
     private Integer timeout;
 
     @SerializedName(value = ApiConstants.ACCOUNT)
-    @Param(description = "the account name the user belongs to")
+    @Param(description = "The Account name the User belongs to")
     private String account;
 
     @SerializedName(value = ApiConstants.FIRSTNAME)
-    @Param(description = "first name of the user")
+    @Param(description = "First name of the user")
     private String firstName;
 
     @SerializedName(value = ApiConstants.LASTNAME)
-    @Param(description = "last name of the user")
+    @Param(description = "Last name of the user")
     private String lastName;
 
     @SerializedName(value = ApiConstants.TYPE)
-    @Param(description = "the account type (admin, domain-admin, read-only-admin, user)")
+    @Param(description = "The Account type (admin, domain-admin, read-only-admin, user)")
     private String type;
 
     @SerializedName(value = ApiConstants.TIMEZONE)
-    @Param(description = "user time zone")
+    @Param(description = "User time zone")
     private String timeZone;
 
     @SerializedName(value = ApiConstants.TIMEZONEOFFSET)
-    @Param(description = "user time zoneoffset")
+    @Param(description = "User time zoneoffset")
     private String timeZoneOffset;
 
     @SerializedName(value = ApiConstants.REGISTERED)
@@ -85,6 +85,10 @@ public class LoginCmdResponse extends AuthenticationCmdResponse {
     @SerializedName(value = ApiConstants.ISSUER_FOR_2FA)
     @Param(description = "Two factor authentication issuer", since = "4.18.0.0")
     private String issuerFor2FA;
+
+    @SerializedName(value = ApiConstants.MANAGEMENT_SERVER_ID)
+    @Param(description = "Management Server ID that the user logged to", since = "4.21.0.0")
+    private String managementServerId;
 
     public String getUsername() {
         return username;
@@ -210,5 +214,13 @@ public class LoginCmdResponse extends AuthenticationCmdResponse {
 
     public void setIssuerFor2FA(String issuerFor2FA) {
         this.issuerFor2FA = issuerFor2FA;
+    }
+
+    public String getManagementServerId() {
+        return managementServerId;
+    }
+
+    public void setManagementServerId(String managementServerId) {
+        this.managementServerId = managementServerId;
     }
 }

@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.firewall;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.collections.CollectionUtils;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -40,6 +41,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.net.NetUtils;
 
 @APICommand(name = "createFirewallRule", description = "Creates a firewall rule for a given IP address", responseObject = FirewallResponse.class, entityType = {FirewallRule.class},
@@ -55,34 +57,34 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
                type = CommandType.UUID,
                entityType = IPAddressResponse.class,
                required = true,
-               description = "the IP address id of the port forwarding rule")
+               description = "The IP address ID of the port forwarding rule")
     private Long ipAddressId;
 
     @Parameter(name = ApiConstants.PROTOCOL,
                type = CommandType.STRING,
                required = true,
-               description = "the protocol for the firewall rule. Valid values are TCP/UDP/ICMP.")
+               description = "The protocol for the firewall rule. Valid values are TCP/UDP/ICMP.")
     private String protocol;
 
-    @Parameter(name = ApiConstants.START_PORT, type = CommandType.INTEGER, description = "the starting port of firewall rule")
+    @Parameter(name = ApiConstants.START_PORT, type = CommandType.INTEGER, description = "The starting port of firewall rule")
     private Integer publicStartPort;
 
-    @Parameter(name = ApiConstants.END_PORT, type = CommandType.INTEGER, description = "the ending port of firewall rule")
+    @Parameter(name = ApiConstants.END_PORT, type = CommandType.INTEGER, description = "The ending port of firewall rule")
     private Integer publicEndPort;
 
-    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the CIDR list to forward traffic from. Multiple entries must be separated by a single comma character (,).")
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "The CIDR list to forward traffic from. Multiple entries must be separated by a single comma character (,).")
     private List<String> cidrlist;
 
-    @Parameter(name = ApiConstants.ICMP_TYPE, type = CommandType.INTEGER, description = "type of the ICMP message being sent")
+    @Parameter(name = ApiConstants.ICMP_TYPE, type = CommandType.INTEGER, description = "Type of the ICMP message being sent")
     private Integer icmpType;
 
-    @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "error code for this icmp message")
+    @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "Error code for this icmp message")
     private Integer icmpCode;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "type of firewallrule: system/user")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "Type of firewallrule: system/user")
     private String type;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the rule to the end User or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     // ///////////////////////////////////////////////////
@@ -94,21 +96,44 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
         return ipAddressId;
     }
 
+    public void setIpAddressId(Long ipAddressId) {
+        this.ipAddressId = ipAddressId;
+    }
+
     @Override
     public String getProtocol() {
         return protocol.trim();
     }
 
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
+    }
+
+    public Integer getPublicStartPort() {
+        return publicStartPort;
+    }
+
+    public void setPublicStartPort(Integer publicStartPort) {
+        this.publicStartPort = publicStartPort;
+    }
+
+    public Integer getPublicEndPort() {
+        return publicEndPort;
+    }
+
+    public void setPublicEndPort(Integer publicEndPort) {
+        this.publicEndPort = publicEndPort;
+    }
+
     @Override
     public List<String> getSourceCidrList() {
-        if (cidrlist != null) {
+        if (CollectionUtils.isNotEmpty(cidrlist) && !(cidrlist.size() == 1 && StringUtils.isBlank(cidrlist.get(0)))) {
             return cidrlist;
         } else {
-            List<String> oneCidrList = new ArrayList<String>();
+            List<String> oneCidrList = new ArrayList<>();
             oneCidrList.add(NetUtils.ALL_IP4_CIDRS);
             return oneCidrList;
         }
-
     }
 
     // ///////////////////////////////////////////////////
@@ -146,7 +171,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
 
     @Override
     public long getId() {
-        throw new UnsupportedOperationException("database ID can only provided by VO objects");
+        throw new UnsupportedOperationException("Database ID can only provided by VO objects");
     }
 
     @Override

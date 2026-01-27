@@ -22,10 +22,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.inject.Inject;
 
@@ -97,15 +99,15 @@ public class DataMigrationUtility {
         boolean isReady = true;
         for (TemplateDataStoreVO template : templates) {
             isReady &= (Arrays.asList(validStates).contains(template.getState()));
-            logger.trace(String.format("template state: %s", template.getState()));
+            logger.trace("template state: {}", template.getState());
         }
         for (SnapshotDataStoreVO snapshot : snapshots) {
             isReady &= (Arrays.asList(validStates).contains(snapshot.getState()));
-            logger.trace(String.format("snapshot state: %s", snapshot.getState()));
+            logger.trace("snapshot state: {}", snapshot.getState());
         }
         for (VolumeDataStoreVO volume : volumes) {
             isReady &= (Arrays.asList(validStates).contains(volume.getState()));
-            logger.trace(String.format("volume state: %s", volume.getState()));
+            logger.trace("volume state: {}", volume.getState());
         }
         return isReady;
     }
@@ -206,14 +208,22 @@ public class DataMigrationUtility {
 
     protected List<DataObject> getAllReadyTemplates(DataStore srcDataStore, Map<DataObject, Pair<List<TemplateInfo>, Long>> childTemplates, List<TemplateDataStoreVO> templates) {
         List<TemplateInfo> files = new LinkedList<>();
+        Set<Long> idsForMigration = new HashSet<>();
+
         for (TemplateDataStoreVO template : templates) {
-            VMTemplateVO templateVO = templateDao.findById(template.getTemplateId());
-            if (template.getState() == ObjectInDataStoreStateMachine.State.Ready && templateVO != null &&
-                    (!templateVO.isPublicTemplate() || (templateVO.isPublicTemplate() && templateVO.getUrl() == null)) &&
-                    templateVO.getHypervisorType() != Hypervisor.HypervisorType.Simulator && templateVO.getParentTemplateId() == null) {
-                files.add(templateFactory.getTemplate(template.getTemplateId(), srcDataStore));
+            long templateId = template.getTemplateId();
+            if (idsForMigration.contains(templateId)) {
+                logger.warn("Template store reference [{}] is duplicated; not considering it for migration.", template);
+                continue;
             }
+            VMTemplateVO templateVO = templateDao.findById(templateId);
+            if (!shouldMigrateTemplate(template, templateVO)) {
+                continue;
+            }
+            files.add(templateFactory.getTemplate(template.getTemplateId(), srcDataStore));
+            idsForMigration.add(templateId);
         }
+
         for (TemplateInfo template: files) {
             List<VMTemplateVO> children = templateDao.listByParentTemplatetId(template.getId());
             List<TemplateInfo> temps = new ArrayList<>();
@@ -223,6 +233,7 @@ public class DataMigrationUtility {
             }
             childTemplates.put(template, new Pair<>(temps, getTotalChainSize(temps)));
         }
+
         return (List<DataObject>) (List<?>) files;
     }
 
@@ -231,22 +242,71 @@ public class DataMigrationUtility {
         return getAllReadyTemplates(srcDataStore, childTemplates, templates);
     }
 
+    /**
+     * Returns whether a template should be migrated. A template should be migrated if:
+     * <ol>
+     * <li>its state is ready, and</li>
+     * <li>its hypervisor type is not simulator, and</li>
+     * <li>it is not a child template.</li>
+     * </ol>
+     */
+    protected boolean shouldMigrateTemplate(TemplateDataStoreVO template, VMTemplateVO templateVO) {
+        if (template.getState() != State.Ready) {
+            logger.debug("Template [{}] should not be migrated as it is not ready.", template);
+            return false;
+        }
+
+        if (templateVO.getHypervisorType() == Hypervisor.HypervisorType.Simulator) {
+            logger.debug("Template [{}] should not be migrated as its hypervisor type is simulator.", template);
+            return false;
+        }
+
+        if (templateVO.getParentTemplateId() != null) {
+            logger.debug("Template [{}] should not be migrated as it has a parent template.", template);
+            return false;
+        }
+
+        logger.debug("Template [{}] should be migrated.", template);
+        return true;
+    }
+
     /** Returns parent snapshots and snapshots that do not have any children; snapshotChains comprises of the snapshot chain info
      * for each parent snapshot and the cumulative size of the chain - this is done to ensure that all the snapshots in a chain
      * are migrated to the same datastore
      */
     protected List<DataObject> getAllReadySnapshotsAndChains(DataStore srcDataStore, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains, List<SnapshotDataStoreVO> snapshots) {
         List<SnapshotInfo> files = new LinkedList<>();
+        Set<Long> idsForMigration = new HashSet<>();
+
         for (SnapshotDataStoreVO snapshot : snapshots) {
-            SnapshotVO snapshotVO = snapshotDao.findById(snapshot.getSnapshotId());
-            if (snapshot.getState() == ObjectInDataStoreStateMachine.State.Ready &&
-                    snapshotVO != null && snapshotVO.getHypervisorType() != Hypervisor.HypervisorType.Simulator
-                    && snapshot.getParentSnapshotId() == 0 ) {
-                SnapshotInfo snap = snapshotFactory.getSnapshot(snapshotVO.getSnapshotId(), snapshot.getDataStoreId(), snapshot.getRole());
-                if (snap != null) {
-                    files.add(snap);
-                }
+            long snapshotId = snapshot.getSnapshotId();
+            if (idsForMigration.contains(snapshotId)) {
+                logger.warn("Snapshot store reference [{}] is duplicated; not considering it for migration.", snapshot);
+                continue;
             }
+            if (snapshot.getState() != ObjectInDataStoreStateMachine.State.Ready) {
+                logger.warn("Not migrating snapshot [{}] because its state is not ready.", snapshot);
+                continue;
+            }
+            SnapshotVO snapshotVO = snapshotDao.findById(snapshotId);
+            if (snapshotVO == null) {
+                logger.debug("Not migrating snapshot [{}] because we could not find its database entry.", snapshot);
+                continue;
+            }
+            if (snapshotVO.getHypervisorType() == Hypervisor.HypervisorType.Simulator) {
+                logger.debug("Not migrating snapshot [{}] because its hypervisor type is simulator.", snapshot);
+                continue;
+            }
+            if (snapshot.getParentSnapshotId() != 0) {
+                continue; // The child snapshot will be migrated in the for loop below.
+            }
+            SnapshotInfo snap = snapshotFactory.getSnapshot(snapshotVO.getSnapshotId(), snapshot.getDataStoreId(), snapshot.getRole());
+            if (snap == null) {
+                logger.debug("Not migrating snapshot [{}] because we could not get its information.", snapshot);
+                continue;
+            }
+            files.add(snap);
+            idsForMigration.add(snapshotId);
         }
 
         for (SnapshotInfo parent : files) {
@@ -259,7 +319,7 @@ public class DataMigrationUtility {
                     chain.addAll(children);
                 }
             }
-            snapshotChains.put(parent, new Pair<List<SnapshotInfo>, Long>(chain, getTotalChainSize(chain)));
+            snapshotChains.put(parent, new Pair<>(chain, getTotalChainSize(chain)));
         }
 
         return (List<DataObject>) (List<?>) files;
@@ -280,14 +340,31 @@ public class DataMigrationUtility {
 
     protected List<DataObject> getAllReadyVolumes(DataStore srcDataStore, List<VolumeDataStoreVO> volumes) {
         List<DataObject> files = new LinkedList<>();
+        Set<Long> idsForMigration = new HashSet<>();
+
         for (VolumeDataStoreVO volume : volumes) {
-            if (volume.getState() == ObjectInDataStoreStateMachine.State.Ready) {
-                VolumeInfo volumeInfo = volumeFactory.getVolume(volume.getVolumeId(), srcDataStore);
-                if (volumeInfo != null && volumeInfo.getHypervisorType() != Hypervisor.HypervisorType.Simulator) {
-                    files.add(volumeInfo);
-                }
+            long volumeId = volume.getVolumeId();
+            if (idsForMigration.contains(volumeId)) {
+                logger.warn("Volume store reference [{}] is duplicated; not considering it for migration.", volume);
+                continue;
             }
+            if (volume.getState() != ObjectInDataStoreStateMachine.State.Ready) {
+                logger.debug("Not migrating volume [{}] because its state is not ready.", volume);
+                continue;
+            }
+            VolumeInfo volumeInfo = volumeFactory.getVolume(volume.getVolumeId(), srcDataStore);
+            if (volumeInfo == null) {
+                logger.debug("Not migrating volume [{}] because we could not get its information.", volume);
+                continue;
+            }
+            if (volumeInfo.getHypervisorType() == Hypervisor.HypervisorType.Simulator) {
+                logger.debug("Not migrating volume [{}] because its hypervisor type is simulator.", volume);
+                continue;
+            }
+            files.add(volumeInfo);
+            idsForMigration.add(volumeId);
         }
+
         return files;
     }
 
@@ -299,10 +376,9 @@ public class DataMigrationUtility {
     /** Returns the count of active SSVMs - SSVM with agents in connected state, so as to dynamically increase the thread pool
      * size when SSVMs scale
      */
-    protected int activeSSVMCount(DataStore dataStore) {
-        long datacenterId = dataStore.getScope().getScopeId();
+    protected int activeSSVMCount(Long zoneId) {
         List<SecondaryStorageVmVO> ssvms =
-                secStorageVmDao.getSecStorageVmListInStates(null, datacenterId, VirtualMachine.State.Running, VirtualMachine.State.Migrating);
+                secStorageVmDao.getSecStorageVmListInStates(null, zoneId, VirtualMachine.State.Running, VirtualMachine.State.Migrating);
         int activeSSVMs = 0;
         for (SecondaryStorageVmVO vm : ssvms) {
             String name = "s-"+vm.getId()+"-VM";

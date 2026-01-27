@@ -27,6 +27,7 @@ import java.util.Random;
 
 import javax.inject.Inject;
 
+import com.cloud.network.dao.PhysicalNetworkDao;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -124,6 +125,8 @@ public class LoadBalanceRuleHandler {
     @Inject
     private IpAddressManager _ipAddrMgr;
     @Inject
+    private PhysicalNetworkDao physicalNetworkDao;
+    @Inject
     protected NetworkDao _networkDao;
     @Inject
     protected NetworkOfferingDao _networkOfferingDao;
@@ -163,7 +166,7 @@ public class LoadBalanceRuleHandler {
     public void handleDeleteLoadBalancerRule(final LoadBalancer lb, final long userId, final Account caller) {
         final List<LoadBalancerVO> remainingLbs = _loadBalancerDao.listByIpAddress(lb.getSourceIpAddressId());
         if (remainingLbs.size() == 0) {
-            logger.debug("ELB mgr: releasing ip " + lb.getSourceIpAddressId() + " since  no LB rules remain for this ip address");
+            logger.debug("ELB mgr: releasing IP " + lb.getSourceIpAddressId() + " since no LB rules remain for this IP address");
             releaseIp(lb.getSourceIpAddressId(), userId, caller);
         }
     }
@@ -182,8 +185,8 @@ public class LoadBalanceRuleHandler {
 
         account = _accountDao.acquireInLockTable(account.getId());
         if (account == null) {
-            logger.warn("ELB: CreateLoadBalancer: Failed to acquire lock on account");
-            throw new CloudRuntimeException("Failed to acquire lock on account");
+            logger.warn("ELB: CreateLoadBalancer: Failed to acquire lock on Account");
+            throw new CloudRuntimeException("Failed to acquire lock on Account");
         }
         try {
             return handleCreateLoadBalancerRuleWithLock(lb, account, networkId);
@@ -203,19 +206,19 @@ public class LoadBalanceRuleHandler {
         params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
         final Account owner = _accountService.getActiveAccountByName("system", new Long(1));
         final DeployDestination dest = new DeployDestination(dc, pod, null, null);
-        logger.debug("About to deploy ELB vm ");
+        logger.debug("About to deploy ELB Instance ");
 
         try {
             final DomainRouterVO elbVm = deployELBVm(network, dest, owner, params);
             if (elbVm == null) {
-                throw new InvalidParameterValueException("Could not deploy or find existing ELB VM");
+                throw new InvalidParameterValueException("Could not deploy or find existing ELB Instance");
             }
-            logger.debug("Deployed ELB  vm = " + elbVm);
+            logger.debug("Deployed ELB  Instance = " + elbVm);
 
             return elbVm;
 
         } catch (final Throwable t) {
-            logger.warn("Error while deploying ELB VM:  ", t);
+            logger.warn("Error while deploying ELB Instance:  ", t);
             return null;
         }
 
@@ -230,7 +233,7 @@ public class LoadBalanceRuleHandler {
         guestNetwork = _networkDao.acquireInLockTable(guestNetworkId);
 
         if (guestNetwork == null) {
-            throw new ConcurrentOperationException("Unable to acquire network lock: " + guestNetworkId);
+            throw new ConcurrentOperationException(String.format("Unable to acquire lock for the network: %s", guestNetwork));
         }
 
         try {
@@ -272,11 +275,12 @@ public class LoadBalanceRuleHandler {
                 final Long physicalNetworkId = _networkModel.getPhysicalNetworkId(guestNetwork);
                 final PhysicalNetworkServiceProvider provider = _physicalProviderDao.findByServiceProvider(physicalNetworkId, typeString);
                 if (provider == null) {
-                    throw new CloudRuntimeException("Cannot find service provider " + typeString + " in physical network " + physicalNetworkId);
+                    throw new CloudRuntimeException(String.format("Cannot find service provider %s in physical network %s with id %d",
+                            typeString, physicalNetworkDao.findById(physicalNetworkId), physicalNetworkId));
                 }
                 final VirtualRouterProvider vrProvider = _vrProviderDao.findByNspIdAndType(provider.getId(), Type.ElasticLoadBalancerVm);
                 if (vrProvider == null) {
-                    throw new CloudRuntimeException("Cannot find virtual router provider " + typeString + " as service provider " + provider.getId());
+                    throw new CloudRuntimeException(String.format("Cannot find virtual router provider %s as service provider %s", typeString, provider));
                 }
 
                 long userId = CallContext.current().getCallingUserId();
@@ -293,7 +297,7 @@ public class LoadBalanceRuleHandler {
                         elasticLbVmOffering.isOfferHA(), false, null);
                 elbVm.setRole(Role.LB);
                 elbVm = _routerDao.persist(elbVm);
-                _itMgr.allocate(elbVm.getInstanceName(), template, elasticLbVmOffering, networks, plan, null);
+                _itMgr.allocate(elbVm.getInstanceName(), template, elasticLbVmOffering, networks, plan, null, null, null);
                 elbVm = _routerDao.findById(elbVm.getId());
                 //TODO: create usage stats
             }
@@ -314,7 +318,7 @@ public class LoadBalanceRuleHandler {
         final IPAddressVO ipvo = _ipAddressDao.findById(ipId);
         ipvo.setAssociatedWithNetworkId(null);
         _ipAddressDao.update(ipvo.getId(), ipvo);
-        _ipAddrMgr.disassociatePublicIpAddress(ipId, userId, caller);
+        _ipAddrMgr.disassociatePublicIpAddress(ipvo, userId, caller);
         _ipAddressDao.unassignIpAddress(ipId);
     }
 
@@ -338,14 +342,14 @@ public class LoadBalanceRuleHandler {
                 if (lb.getSourceIpAddressId() != null) {
                     throwExceptionIfSuppliedlLbNameIsNotAssociatedWithIpAddress(lb);
                 } else {
-                    logger.debug("Could not find any existing frontend ips for this account for this LB rule, acquiring a new frontent IP for ELB");
+                    logger.debug("Could not find any existing frontend IPs for this Account for this LB rule, acquiring a new frontent IP for ELB");
                     final PublicIp ip = allocDirectIp(account, networkId);
                     ipId = ip.getId();
                     newIp = true;
                 }
             } else {
                 ipId = existingLbs.get(0).getSourceIpAddressId();
-                logger.debug("ELB: Found existing frontend ip for this account for this LB rule " + ipId);
+                logger.debug("ELB: Found existing frontend IP for this Account for this LB rule " + ipId);
             }
         } else {
             logger.warn("ELB: Found existing load balancers matching requested new LB");
@@ -376,7 +380,7 @@ public class LoadBalanceRuleHandler {
                 elbVm = deployLoadBalancerVM(networkId, ipAddr);
                 if (elbVm == null) {
                     final Network network = _networkModel.getNetwork(networkId);
-                    logger.warn("Failed to deploy a new ELB vm for ip " + ipAddr + " in network " + network + "lb name=" + lb.getName());
+                    logger.warn("Failed to deploy a new ELB Instance for IP " + ipAddr + " in Network " + network + "LB name=" + lb.getName());
                     if (newIp) {
                         releaseIp(ipId, CallContext.current().getCallingUserId(), account);
                     }
@@ -392,7 +396,7 @@ public class LoadBalanceRuleHandler {
 
         if (elbVm == null) {
             logger.warn("No ELB VM can be found or deployed");
-            logger.warn("Deleting LB since we failed to deploy ELB VM");
+            logger.warn("Deleting LB since we failed to deploy ELB Instance");
             _lbDao.remove(result.getId());
             return null;
         }

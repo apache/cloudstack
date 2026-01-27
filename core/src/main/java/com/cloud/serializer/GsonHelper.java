@@ -21,6 +21,8 @@ package com.cloud.serializer;
 
 import java.util.List;
 
+import com.cloud.hypervisor.Hypervisor;
+import org.apache.cloudstack.transport.HypervisorTypeAdaptor;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -60,7 +62,7 @@ public class GsonHelper {
         LOGGER.info("Default Builder inited.");
     }
 
-    static Gson setDefaultGsonConfig(GsonBuilder builder) {
+    public static Gson setDefaultGsonConfig(GsonBuilder builder) {
         builder.setVersion(1.5);
         InterfaceTypeAdaptor<DataStoreTO> dsAdaptor = new InterfaceTypeAdaptor<DataStoreTO>();
         builder.registerTypeAdapter(DataStoreTO.class, dsAdaptor);
@@ -75,6 +77,7 @@ public class GsonHelper {
         builder.registerTypeAdapter(new TypeToken<Pair<Long, Long>>() {
         }.getType(), new NwGroupsCommandTypeAdaptor());
         builder.registerTypeAdapter(Storage.StoragePoolType.class, new StoragePoolTypeAdaptor());
+        builder.registerTypeAdapter(Hypervisor.HypervisorType.class, new HypervisorTypeAdaptor());
         Gson gson = builder.create();
         dsAdaptor.initGson(gson);
         dtAdaptor.initGson(gson);

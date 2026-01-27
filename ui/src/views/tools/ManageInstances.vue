@@ -19,19 +19,33 @@
   <a-row :gutter="12" v-if="isPageAllowed">
     <a-col :md="24">
       <a-card class="breadcrumb-card">
-        <a-col :md="24" style="display: flex">
-          <breadcrumb style="padding-top: 6px; padding-left: 8px" />
-          <a-button
-            style="margin-left: 12px; margin-top: 4px"
-            :loading="viewLoading"
-            size="small"
-            shape="round"
-            @click="fetchData()" >
-            <template #icon><reload-outlined /></template>
-            {{ $t('label.refresh') }}
-          </a-button>
+      <a-row>
+        <a-col
+          :span="device === 'mobile' ? 24 : 12"
+          style="padding-left: 12px; margin-top: 10px"
+        >
+          <breadcrumb :resource="resource">
+            <template #end>
+              <a-tooltip placement="bottom">
+                <template #title>{{ $t('label.refresh') }}</template>
+                <a-button
+                  style="margin-top: 4px"
+                  :loading="viewLoading"
+                  shape="round"
+                  size="small"
+                  @click="fetchData()"
+                >
+                  <template #icon>
+                    <ReloadOutlined />
+                  </template>
+                  {{ $t('label.refresh') }}
+                </a-button>
+              </a-tooltip>
+            </template>
+          </breadcrumb>
         </a-col>
-      </a-card>
+      </a-row>
+    </a-card>
     </a-col>
     <a-col
       :md="24">
@@ -319,166 +333,185 @@
             </a-col>
           </a-row>
           <a-divider />
-          <a-row :gutter="12">
-            <a-col v-if="!isDiskImport" :md="24" :lg="(!isMigrateFromVmware && showManagedInstances) ? 12 : 24">
-              <a-card class="instances-card">
-                <template #title>
-                  {{ (isMigrateFromVmware && vmwareVcenterType === 'existing') ? $t('label.instances') : $t('label.unmanaged.instances') }}
-                  <a-tooltip :title="(isMigrateFromVmware && vmwareVcenterType === 'existing') ? $t('message.instances.migrate.vmware') : $t('message.instances.unmanaged')">
-                    <info-circle-outlined />
-                  </a-tooltip>
-                  <a-button
-                    style="margin-left: 12px; margin-top: 4px"
-                    :loading="unmanagedInstancesLoading"
-                    size="small"
-                    shape="round"
-                    @click="fetchUnmanagedInstances()" >
-                    <template #icon><reload-outlined /></template>
-                  </a-button>
-                  <span style="float: right; width: 50%">
-                    <search-view
-                      :searchFilters="searchFilters.unmanaged"
-                      :searchParams="searchParams.unmanaged"
-                      :apiName="listInstancesApi.unmanaged"
-                      @search="searchUnmanagedInstances"
-                    />
-                  </span>
-                </template>
-                <a-table
-                  v-if="!isExternal"
-                  class="instances-card-table"
-                  :loading="unmanagedInstancesLoading"
-                  :rowSelection="unmanagedInstanceSelection"
-                  :rowKey="(record, index) => index"
-                  :columns="unmanagedInstancesColumns"
-                  :data-source="unmanagedInstances"
-                  :pagination="false"
-                  size="middle"
-                  :rowClassName="getRowClassName"
-                >
-                  <template #bodyCell="{ column, text }">
-                    <template v-if="column.key === 'state'">
-                      <status :text="text ? text : ''" displayText />
-                    </template>
-                  </template>
-                </a-table>
-                <a-table
-                  v-if="isExternal"
-                  class="instances-card-table"
-                  :loading="unmanagedInstancesLoading"
-                  :rowSelection="unmanagedInstanceSelection"
-                  :rowKey="(record, index) => index"
-                  :columns="externalInstancesColumns"
-                  :data-source="unmanagedInstances"
-                  :pagination="false"
-                  size="middle"
-                  :rowClassName="getRowClassName"
-                >
-                  <template #bodyCell="{ column, text }">
-                      <template v-if="column.key === 'state'">
-                          <status :text="text ? text : ''" displayText />
-                      </template>
-                  </template>
-                </a-table>
-                <div class="instances-card-footer">
-                  <a-pagination
-                    class="row-element"
-                    size="small"
-                    :current="page.unmanaged"
-                    :pageSize="pageSize.unmanaged"
-                    :total="itemCount.unmanaged"
-                    :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1+((page.unmanaged-1)*pageSize.unmanaged))}-${Math.min(page.unmanaged*pageSize.unmanaged, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
-                    @change="fetchUnmanagedInstances"
-                    showQuickJumper>
-                    <template #buildOptionText="props">
-                      <span>{{ props.value }} / {{ $t('label.page') }}</span>
-                    </template>
-                  </a-pagination>
-                  <div :span="24" class="action-button-right">
-                    <a-button
-                      :loading="importUnmanagedInstanceLoading"
-                      :disabled="!(('importUnmanagedInstance' in $store.getters.apis) && unmanagedInstancesSelectedRowKeys.length > 0)"
-                      type="primary"
-                      @click="onManageInstanceAction">
-                      <template #icon><import-outlined /></template>
-                      {{ $t('label.import.instance') }}
-                    </a-button>
-                  </div>
-                </div>
-              </a-card>
-            </a-col>
-            <a-col :md="24" :lg="12" v-if="!isMigrateFromVmware && showManagedInstances">
-              <a-card class="instances-card">
-                <template #title>
-                  {{ $t('label.managed.instances') }}
-                  <a-tooltip :title="$t('message.instances.managed')">
-                    <info-circle-outlined />
-                  </a-tooltip>
-                  <a-button
-                    style="margin-left: 12px; margin-top: 4px"
-                    :loading="managedInstancesLoading"
-                    size="small"
-                    shape="round"
-                    @click="fetchManagedInstances()" >
-                    <template #icon><reload-outlined /></template>
-                  </a-button>
-                  <span style="float: right; width: 50%">
-                    <search-view
-                      :searchFilters="searchFilters.managed"
-                      :searchParams="searchParams.managed"
-                      :apiName="listInstancesApi.managed"
-                      @search="searchManagedInstances"
-                    />
-                  </span>
-                </template>
-                <a-table
-                  class="instances-card-table"
-                  :loading="managedInstancesLoading"
-                  :rowSelection="managedInstanceSelection"
-                  :rowKey="(record, index) => index"
-                  :columns="managedInstancesColumns"
-                  :data-source="managedInstances"
-                  :pagination="false"
-                  size="middle"
-                  :rowClassName="getRowClassName"
-                >
-                  <template #bodyCell="{ column, text, record }">
-                    <template v-if="column.key === 'name'">
-                      <router-link :to="{ path: '/vm/' + record.id }">{{ text }}</router-link>
-                    </template>
-                    <template v-if="column.key === 'state'">
-                      <status :text="text ? text : ''" displayText />
-                    </template>
-                  </template>
-                </a-table>
-                <div class="instances-card-footer">
-                  <a-pagination
-                    class="row-element"
-                    size="small"
-                    :current="page.managed"
-                    :pageSize="pageSize.managed"
-                    :total="itemCount.managed"
-                    :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1+((page.managed-1)*pageSize.managed))}-${Math.min(page.managed*pageSize.managed, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
-                    @change="fetchManagedInstances"
-                    showQuickJumper>
-                    <template #buildOptionText="props">
-                      <span>{{ props.value }} / {{ $t('label.page') }}</span>
-                    </template>
-                  </a-pagination>
-                  <div :span="24" class="action-button-right">
-                    <a-button
 
-                      :disabled="!(('unmanageVirtualMachine' in $store.getters.apis) && managedInstancesSelectedRowKeys.length > 0)"
-                      type="primary"
-                      @click="onUnmanageInstanceAction">
-                      <template #icon><disconnect-outlined /></template>
-                      {{ managedInstancesSelectedRowKeys.length > 1 ? $t('label.action.unmanage.instances') : $t('label.action.unmanage.instance') }}
-                    </a-button>
-                  </div>
-                </div>
-              </a-card>
-            </a-col>
-          </a-row>
+          <a-tabs v-model:activeKey="activeTabKey" @change="onTabChange">
+            <a-tab-pane :key=1 tab="Instances Listing">
+              <a-row :gutter="12">
+                <a-col v-if="!isDiskImport" :md="24" :lg="(!isMigrateFromVmware && showManagedInstances) ? 12 : 24">
+                  <a-card class="instances-card">
+                    <template #title>
+                      {{ (isMigrateFromVmware && vmwareVcenterType === 'existing') ? $t('label.instances') : $t('label.unmanaged.instances') }}
+                      <a-tooltip :title="(isMigrateFromVmware && vmwareVcenterType === 'existing') ? $t('message.instances.migrate.vmware') : $t('message.instances.unmanaged')">
+                        <info-circle-outlined />
+                      </a-tooltip>
+                      <a-button
+                        style="margin-left: 12px; margin-top: 4px"
+                        :loading="unmanagedInstancesLoading"
+                        size="small"
+                        shape="round"
+                        @click="fetchUnmanagedInstances()" >
+                        <template #icon><reload-outlined /></template>
+                      </a-button>
+                      <span style="float: right; width: 50%">
+                        <search-view
+                          :searchFilters="searchFilters.unmanaged"
+                          :searchParams="searchParams.unmanaged"
+                          :apiName="listInstancesApi.unmanaged"
+                          @search="searchUnmanagedInstances"
+                        />
+                      </span>
+                    </template>
+                    <a-table
+                      v-if="!isExternal"
+                      class="instances-card-table"
+                      :loading="unmanagedInstancesLoading"
+                      :rowSelection="unmanagedInstanceSelection"
+                      :rowKey="(record, index) => index"
+                      :columns="unmanagedInstancesColumns"
+                      :data-source="unmanagedInstances"
+                      :pagination="false"
+                      size="middle"
+                      :rowClassName="getRowClassName"
+                    >
+                      <template #bodyCell="{ column, text }">
+                        <template v-if="column.key === 'state'">
+                          <status :text="text ? text : ''" displayText />
+                        </template>
+                      </template>
+                    </a-table>
+                    <a-table
+                      v-if="isExternal"
+                      class="instances-card-table"
+                      :loading="unmanagedInstancesLoading"
+                      :rowSelection="unmanagedInstanceSelection"
+                      :rowKey="(record, index) => index"
+                      :columns="externalInstancesColumns"
+                      :data-source="unmanagedInstances"
+                      :pagination="false"
+                      size="middle"
+                      :rowClassName="getRowClassName"
+                    >
+                      <template #bodyCell="{ column, text }">
+                          <template v-if="column.key === 'state'">
+                              <status :text="text ? text : ''" displayText />
+                          </template>
+                      </template>
+                    </a-table>
+                    <div class="instances-card-footer">
+                      <a-pagination
+                        class="row-element"
+                        size="small"
+                        :current="page.unmanaged"
+                        :pageSize="pageSize.unmanaged"
+                        :total="itemCount.unmanaged"
+                        :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1+((page.unmanaged-1)*pageSize.unmanaged))}-${Math.min(page.unmanaged*pageSize.unmanaged, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
+                        @change="fetchUnmanagedInstances"
+                        showQuickJumper>
+                        <template #buildOptionText="props">
+                          <span>{{ props.value }} / {{ $t('label.page') }}</span>
+                        </template>
+                      </a-pagination>
+                      <div :span="24" class="action-button-right">
+                        <a-button
+                          :loading="importUnmanagedInstanceLoading"
+                          :disabled="!(('importUnmanagedInstance' in $store.getters.apis) && unmanagedInstancesSelectedRowKeys.length > 0)"
+                          type="primary"
+                          @click="onManageInstanceAction">
+                          <template #icon><import-outlined /></template>
+                          {{ $t('label.import.instance') }}
+                        </a-button>
+                      </div>
+                    </div>
+                  </a-card>
+                </a-col>
+                <a-col :md="24" :lg="12" v-if="!isMigrateFromVmware && showManagedInstances">
+                  <a-card class="instances-card">
+                    <template #title>
+                      {{ $t('label.managed.instances') }}
+                      <a-tooltip :title="$t('message.instances.managed')">
+                        <info-circle-outlined />
+                      </a-tooltip>
+                      <a-button
+                        style="margin-left: 12px; margin-top: 4px"
+                        :loading="managedInstancesLoading"
+                        size="small"
+                        shape="round"
+                        @click="fetchManagedInstances()" >
+                        <template #icon><reload-outlined /></template>
+                      </a-button>
+                      <span style="float: right; width: 50%">
+                        <search-view
+                          :searchFilters="searchFilters.managed"
+                          :searchParams="searchParams.managed"
+                          :apiName="listInstancesApi.managed"
+                          @search="searchManagedInstances"
+                        />
+                      </span>
+                    </template>
+                    <a-table
+                      class="instances-card-table"
+                      :loading="managedInstancesLoading"
+                      :rowSelection="managedInstanceSelection"
+                      :rowKey="(record, index) => index"
+                      :columns="managedInstancesColumns"
+                      :data-source="managedInstances"
+                      :pagination="false"
+                      size="middle"
+                      :rowClassName="getRowClassName"
+                    >
+                      <template #bodyCell="{ column, text, record }">
+                        <template v-if="column.key === 'name'">
+                          <router-link :to="{ path: '/vm/' + record.id }">{{ text }}</router-link>
+                        </template>
+                        <template v-if="column.key === 'state'">
+                          <status :text="text ? text : ''" displayText />
+                        </template>
+                      </template>
+                    </a-table>
+                    <div class="instances-card-footer">
+                      <a-pagination
+                        class="row-element"
+                        size="small"
+                        :current="page.managed"
+                        :pageSize="pageSize.managed"
+                        :total="itemCount.managed"
+                        :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1+((page.managed-1)*pageSize.managed))}-${Math.min(page.managed*pageSize.managed, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
+                        @change="fetchManagedInstances"
+                        showQuickJumper>
+                        <template #buildOptionText="props">
+                          <span>{{ props.value }} / {{ $t('label.page') }}</span>
+                        </template>
+                      </a-pagination>
+                      <div :span="24" class="action-button-right">
+                        <a-button
+
+                          :disabled="!(('unmanageVirtualMachine' in $store.getters.apis) && managedInstancesSelectedRowKeys.length > 0)"
+                          type="primary"
+                          @click="onUnmanageInstanceAction">
+                          <template #icon><disconnect-outlined /></template>
+                          {{ managedInstancesSelectedRowKeys.length > 1 ? $t('label.action.unmanage.instances') : $t('label.action.unmanage.instance') }}
+                        </a-button>
+                      </div>
+                    </div>
+                  </a-card>
+                </a-col>
+              </a-row>
+            </a-tab-pane>
+            <a-tab-pane :key=2 :tab="$t('label.import.vm.tasks')" v-if="isMigrateFromVmware">
+              <ImportVmTasks
+                :tasks="importVmTasks"
+                :loading="loadingImportVmTasks"
+                :filter="importVmTasksFilter"
+                :total="itemCount.tasks || 0"
+                :page="page.tasks"
+                :pageSize="pageSize.tasks"
+                @fetch-import-vm-tasks="fetchImportVmTasks"
+                @change-pagination="onChangeImportTasksPagination"
+                @change-filter="onChangeImportTasksFilter"
+              />
+            </a-tab-pane>
+          </a-tabs>
+
         </a-card>
 
         <a-modal
@@ -523,7 +556,7 @@
 <script>
 import { message } from 'ant-design-vue'
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI, getAPI } from '@/api'
 import _ from 'lodash'
 import Breadcrumb from '@/components/widgets/Breadcrumb'
 import Status from '@/components/widgets/Status'
@@ -532,6 +565,7 @@ import ImportUnmanagedInstances from '@/views/tools/ImportUnmanagedInstance'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import SelectVmwareVcenter from '@/views/tools/SelectVmwareVcenter'
 import TooltipLabel from '@/components/widgets/TooltipLabel.vue'
+import ImportVmTasks from '@/views/tools/ImportVmTasks.vue'
 
 export default {
   components: {
@@ -541,7 +575,8 @@ export default {
     SearchView,
     ImportUnmanagedInstances,
     ResourceIcon,
-    SelectVmwareVcenter
+    SelectVmwareVcenter,
+    ImportVmTasks
   },
   name: 'ManageVms',
   data () {
@@ -675,11 +710,13 @@ export default {
       },
       page: {
         unmanaged: 1,
-        managed: 1
+        managed: 1,
+        tasks: 1
       },
       pageSize: {
         unmanaged: 10,
-        managed: 10
+        managed: 10,
+        tasks: 10
       },
       searchFilters: {
         unmanaged: [],
@@ -733,12 +770,17 @@ export default {
       selectedUnmanagedInstance: {},
       query: {},
       vmwareVcenterType: undefined,
-      selectedVmwareVcenter: undefined
+      selectedVmwareVcenter: undefined,
+      activeTabKey: 1,
+      loadingImportVmTasks: false,
+      importVmTasks: [],
+      importVmTasksFilter: 'running'
     }
   },
   created () {
     this.page.unmanaged = parseInt(this.$route.query.unmanagedpage || 1)
     this.page.managed = parseInt(this.$route.query.managedpage || 1)
+    this.page.tasks = parseInt(this.$route.query.tasks || 1)
     this.initForm()
     this.fetchData()
   },
@@ -826,7 +868,8 @@ export default {
           options: {
             zoneid: _.get(this.zone, 'id'),
             podid: this.podId,
-            hypervisor: this.destinationHypervisor
+            hypervisor: this.destinationHypervisor,
+            allocationstate: 'Enabled'
           },
           field: 'clusterid'
         },
@@ -986,7 +1029,7 @@ export default {
       if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'pools'].includes(name)) {
         options.listall = true
       }
-      api(param.list, options).then((response) => {
+      getAPI(param.list, options).then((response) => {
         param.loading = false
         _.map(response, (responseItem, responseKey) => {
           if (Object.keys(responseItem).length === 0) {
@@ -1069,11 +1112,14 @@ export default {
       this.page.managed = 1
       this.managedInstances = []
       this.managedInstancesSelectedRowKeys = []
+      this.page.tasks = 1
+      this.activeTabKey = 1
     },
     onSelectHypervisor (value) {
       this.sourceHypervisor = value
       this.sourceActions = this.AllSourceActions.filter(x => x.sourceDestHypervisors[value])
       this.form.sourceAction = this.sourceActions[0].name || ''
+      this.selectedVmwareVcenter = undefined
       this.onSelectSourceAction(this.form.sourceAction)
     },
     onSelectSourceAction (value) {
@@ -1138,6 +1184,37 @@ export default {
       this.updateQuery('scope', value)
       this.fetchOptions(this.params.pools, 'pools', value)
     },
+    onTabChange (e) {
+      if (e === 2) {
+        this.fetchImportVmTasks()
+      }
+    },
+    onChangeImportTasksPagination (page, pagesize) {
+      this.page.tasks = page
+      this.pageSize.tasks = pagesize
+      this.fetchImportVmTasks()
+    },
+    onChangeImportTasksFilter (filter) {
+      this.importVmTasksFilter = filter
+      this.fetchImportVmTasks()
+    },
+    fetchImportVmTasks () {
+      this.loadingImportVmTasks = true
+      const params = {
+        zoneid: this.zoneId,
+        page: this.page.tasks,
+        pagesize: this.pageSize.tasks,
+        tasksfilter: this.importVmTasksFilter
+      }
+      getAPI('listImportVmTasks', params).then(response => {
+        this.itemCount.tasks = response.listimportvmtasksresponse.count
+        this.importVmTasks = response.listimportvmtasksresponse.importvmtask || []
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.loadingImportVmTasks = false
+      })
+    },
     fetchInstances () {
       this.fetchUnmanagedInstances()
       if (this.isUnmanaged) {
@@ -1184,7 +1261,7 @@ export default {
         }
       }
 
-      api(apiName, params).then(json => {
+      getAPI(apiName, params).then(json => {
         const response = this.isMigrateFromVmware ? json.listvmwaredcvmsresponse : json.listunmanagedinstancesresponse
         const listUnmanagedInstances = response.unmanagedinstance
         if (this.arrayHasItems(listUnmanagedInstances)) {
@@ -1228,7 +1305,7 @@ export default {
         }
       }
       this.searchParams.unmanaged = params
-      api(this.listInstancesApi.external, params).then(json => {
+      getAPI(this.listInstancesApi.external, params).then(json => {
         const listUnmanagedInstances = json.listvmsforimportresponse.unmanagedinstance
         if (this.arrayHasItems(listUnmanagedInstances)) {
           this.unmanagedInstances = this.unmanagedInstances.concat(listUnmanagedInstances)
@@ -1265,7 +1342,7 @@ export default {
       }
       this.managedInstancesLoading = true
       this.searchParams.managed = params
-      api(this.listInstancesApi.managed, params).then(json => {
+      getAPI(this.listInstancesApi.managed, params).then(json => {
         const listManagedInstances = json.listvirtualmachinesresponse.virtualmachine
         if (this.arrayHasItems(listManagedInstances)) {
           this.managedInstances = this.managedInstances.concat(listManagedInstances)
@@ -1300,6 +1377,31 @@ export default {
         this.fetchInstances()
       }
     },
+    fetchVmwareInstanceForKVMMigration (vmname, hostname) {
+      const params = {}
+      if (this.isMigrateFromVmware && this.selectedVmwareVcenter) {
+        if (this.selectedVmwareVcenter.vcenter) {
+          params.datacentername = this.selectedVmwareVcenter.datacentername
+          params.vcenter = this.selectedVmwareVcenter.vcenter
+          params.username = this.selectedVmwareVcenter.username
+          params.password = this.selectedVmwareVcenter.password
+        } else {
+          params.existingvcenterid = this.selectedVmwareVcenter.existingvcenterid
+        }
+        params.instancename = vmname
+        params.hostname = hostname
+      }
+      getAPI('listVmwareDcVms', params).then(json => {
+        const response = json.listvmwaredcvmsresponse
+        this.selectedUnmanagedInstance = response.unmanagedinstance[0]
+        this.selectedUnmanagedInstance.ostypename = this.selectedUnmanagedInstance.osdisplayname
+        this.selectedUnmanagedInstance.state = this.selectedUnmanagedInstance.powerstate
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.loading = false
+      })
+    },
     onManageInstanceAction () {
       this.selectedUnmanagedInstance = {}
       if (this.unmanagedInstances.length > 0 &&
@@ -1317,6 +1419,9 @@ export default {
           }
         })
         this.showUnmanageForm = false
+      } else if (this.isMigrateFromVmware) {
+        this.fetchVmwareInstanceForKVMMigration(this.selectedUnmanagedInstance.name, this.selectedUnmanagedInstance.hostname)
+        this.showUnmanageForm = true
       } else {
         this.showUnmanageForm = true
       }
@@ -1384,7 +1489,7 @@ export default {
       for (var index of this.managedInstancesSelectedRowKeys) {
         const vm = this.managedInstances[index]
         var params = { id: vm.id }
-        api('unmanageVirtualMachine', params).then(json => {
+        postAPI('unmanageVirtualMachine', params).then(json => {
           const jobId = json.unmanagevirtualmachineresponse.jobid
           this.$pollJob({
             jobId,

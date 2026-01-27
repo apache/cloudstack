@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpc;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -51,71 +52,83 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the account associated with the VPC. " +
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "The Account associated with the VPC. " +
             "Must be used with the domainId parameter.")
     private String accountName;
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
-               description = "the domain ID associated with the VPC. " +
-            "If used with the account parameter returns the VPC associated with the account for the specified domain.")
+               description = "The domain ID associated with the VPC. " +
+            "If used with the Account parameter returns the VPC associated with the Account for the specified domain.")
     private Long domainId;
 
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class,
-               description = "create VPC for the project")
+               description = "Create VPC for the project")
     private Long projectId;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class,
-            required = true, description = "the ID of the availability zone")
+            required = true, description = "The ID of the availability zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the VPC")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "The name of the VPC")
     private String vpcName;
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "The display text of the VPC, defaults to its 'name'.")
 
     private String displayText;
 
-    @Parameter(name = ApiConstants.CIDR, type = CommandType.STRING, required = true, description = "the cidr of the VPC. All VPC " +
-            "guest networks' cidrs should be within this CIDR")
+    @Parameter(name = ApiConstants.CIDR, type = CommandType.STRING,
+            description = "The CIDR of the VPC. All VPC Guest Network's CIDRs should be within this CIDR")
     private String cidr;
 
+    @Parameter(name = ApiConstants.CIDR_SIZE, type = CommandType.INTEGER,
+            description = "the CIDR size of VPC. For regular users, this is required for VPC with ROUTED mode.",
+            since = "4.20.0")
+    private Integer cidrSize;
+
     @Parameter(name = ApiConstants.VPC_OFF_ID, type = CommandType.UUID, entityType = VpcOfferingResponse.class,
-               required = true, description = "the ID of the VPC offering")
+               required = true, description = "The ID of the VPC offering")
     private Long vpcOffering;
 
     @Parameter(name = ApiConstants.NETWORK_DOMAIN, type = CommandType.STRING,
-               description = "VPC network domain. All networks inside the VPC will belong to this domain")
+               description = "VPC Network domain. All Networks inside the VPC will belong to this domain")
     private String networkDomain;
 
     @Parameter(name = ApiConstants.START, type = CommandType.BOOLEAN,
-               description = "If set to false, the VPC won't start (VPC VR will not get allocated) until its first network gets implemented. " +
+               description = "If set to false, the VPC won't start (VPC VR will not get allocated) until its first Network gets implemented. " +
                    "True by default.", since = "4.3")
     private Boolean start;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the vpc to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the VPC to the end User or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     @Parameter(name = ApiConstants.PUBLIC_MTU, type = CommandType.INTEGER,
-            description = "MTU to be configured on the network VR's public facing interfaces", since = "4.18.0")
+            description = "MTU to be configured on the Network VR's public facing interfaces", since = "4.18.0")
     private Integer publicMtu;
 
-    @Parameter(name = ApiConstants.DNS1, type = CommandType.STRING, description = "the first IPv4 DNS for the VPC", since = "4.18.0")
+    @Parameter(name = ApiConstants.DNS1, type = CommandType.STRING, description = "The first IPv4 DNS for the VPC", since = "4.18.0")
     private String ip4Dns1;
 
-    @Parameter(name = ApiConstants.DNS2, type = CommandType.STRING, description = "the second IPv4 DNS for the VPC", since = "4.18.0")
+    @Parameter(name = ApiConstants.DNS2, type = CommandType.STRING, description = "The second IPv4 DNS for the VPC", since = "4.18.0")
     private String ip4Dns2;
 
-    @Parameter(name = ApiConstants.IP6_DNS1, type = CommandType.STRING, description = "the first IPv6 DNS for the VPC", since = "4.18.0")
+    @Parameter(name = ApiConstants.IP6_DNS1, type = CommandType.STRING, description = "The first IPv6 DNS for the VPC", since = "4.18.0")
     private String ip6Dns1;
 
-    @Parameter(name = ApiConstants.IP6_DNS2, type = CommandType.STRING, description = "the second IPv6 DNS for the VPC", since = "4.18.0")
+    @Parameter(name = ApiConstants.IP6_DNS2, type = CommandType.STRING, description = "The second IPv6 DNS for the VPC", since = "4.18.0")
     private String ip6Dns2;
 
-    @Parameter(name = ApiConstants.SOURCE_NAT_IP, type = CommandType.STRING, description = "IPV4 address to be assigned to the public interface of the network router." +
-            "This address will be used as source NAT address for the networks in ths VPC. " +
-            "\nIf an address is given and it cannot be acquired, an error will be returned and the network won´t be implemented,",
+    @Parameter(name = ApiConstants.SOURCE_NAT_IP, type = CommandType.STRING, description = "IPv4 address to be assigned to the public interface of the Network router." +
+            "This address will be used as source NAT address for the Networks in ths VPC. " +
+            "\nIf an address is given and it cannot be acquired, an error will be returned and the Network won´t be implemented,",
             since = "4.19")
     private String sourceNatIP;
+
+    @Parameter(name=ApiConstants.AS_NUMBER, type=CommandType.LONG, since = "4.20.0", description="the AS Number of the VPC tiers")
+    private Long asNumber;
+
+    @Parameter(name=ApiConstants.USE_VIRTUAL_ROUTER_IP_RESOLVER, type=CommandType.BOOLEAN,
+            description="(optional) for NSX based VPCs: when set to true, use the VR IP as nameserver, otherwise use DNS1 and DNS2")
+    private Boolean useVrIpResolver;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -139,6 +152,10 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     public String getCidr() {
         return cidr;
+    }
+
+    public Integer getCidrSize() {
+        return cidrSize;
     }
 
     public String getDisplayText() {
@@ -189,6 +206,14 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
         return sourceNatIP;
     }
 
+    public Long getAsNumber() {
+        return asNumber;
+    }
+
+    public boolean getUseVrIpResolver() {
+        return BooleanUtils.toBoolean(useVrIpResolver);
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -208,11 +233,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
     public void execute() {
         Vpc vpc = null;
         try {
-            if (isStart()) {
-                _vpcService.startVpc(getEntityId(), true);
-            } else {
-                logger.debug("Not starting VPC as " + ApiConstants.START + "=false was passed to the API");
-             }
+            _vpcService.startVpc(this);
             vpc = _entityMgr.findById(Vpc.class, getEntityId());
         } catch (ResourceUnavailableException ex) {
             logger.warn("Exception: ", ex);

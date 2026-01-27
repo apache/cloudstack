@@ -26,9 +26,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -61,12 +63,15 @@ import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo.DiskType;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo.DriverType;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo.Source;
+import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.to.DpdkTO;
+import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.gpu.GpuDevice;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LibvirtMigrateCommandWrapperTest {
@@ -130,6 +135,7 @@ public class LibvirtMigrateCommandWrapperTest {
 "    </disk>\n" +
 "    <disk type='file' device='cdrom'>\n" +
 "      <driver name='qemu' type='raw' cache='none'/>\n" +
+"      <source file='/mnt/ec8dfdd8-f341-3b0a-988f-cfbc93e46fc4/251-2-2b2071a4-21c7-340e-a861-1bd30fb5cbed.iso'/>\n" +
 "      <backingStore/>\n" +
 "      <target dev='hdc' bus='ide'/>\n" +
 "      <readonly/>\n" +
@@ -247,6 +253,7 @@ public class LibvirtMigrateCommandWrapperTest {
 "    </disk>\n" +
 "    <disk type='file' device='cdrom'>\n" +
 "      <driver name='qemu' type='raw' cache='none'/>\n" +
+"      <source file='/mnt/ec8dfdd8-f341-3b0a-988f-cfbc93e46fc4/251-2-2b2071a4-21c7-340e-a861-1bd30fb5cbed.iso'/>\n" +
 "      <backingStore/>\n" +
 "      <target dev='hdc' bus='ide'/>\n" +
 "      <readonly/>\n" +
@@ -574,10 +581,84 @@ public class LibvirtMigrateCommandWrapperTest {
             "  </devices>\n" +
             "</domain>\n";
 
+    private String xmlWithGpuDevices =
+            "<domain type='kvm' id='3'>\n" +
+            "  <name>i-2-3-VM</name>\n" +
+            "  <uuid>91860126-7dda-4876-ac1e-48d06cd4b2eb</uuid>\n" +
+            "  <memory unit='KiB'>524288</memory>\n" +
+            "  <currentMemory unit='KiB'>524288</currentMemory>\n" +
+            "  <vcpu placement='static'>1</vcpu>\n" +
+            "  <devices>\n" +
+            "    <emulator>/usr/libexec/qemu-kvm</emulator>\n" +
+            "    <disk type='file' device='disk'>\n" +
+            "      <driver name='qemu' type='qcow2' cache='none'/>\n" +
+            "      <source file='/mnt/storage/disk.qcow2'/>\n" +
+            "      <target dev='vda' bus='virtio'/>\n" +
+            "    </disk>\n" +
+            "    <hostdev mode='subsystem' type='pci' managed='yes' display='off'>\n" +
+            "      <driver name='vfio'/>\n" +
+            "      <source>\n" +
+            "        <address domain='0x0000' bus='0x01' slot='0x00' function='0x0'/>\n" +
+            "      </source>\n" +
+            "    </hostdev>\n" +
+            "    <hostdev mode='subsystem' type='mdev' managed='no' display='on'>\n" +
+            "      <source>\n" +
+            "        <address uuid='4b20d080-1b54-4048-85b3-a6a62d165c01'/>\n" +
+            "      </source>\n" +
+            "    </hostdev>\n" +
+            "    <interface type='bridge'>\n" +
+            "      <mac address='02:00:4c:5f:00:01'/>\n" +
+            "      <source bridge='breth1-511'/>\n" +
+            "      <target dev='vnet6'/>\n" +
+            "      <model type='e1000'/>\n" +
+            "    </interface>\n" +
+            "  </devices>\n" +
+            "</domain>";
+
+    private String xmlWithoutGpuDevices =
+            "<domain type='kvm' id='3'>\n" +
+            "  <name>i-2-3-VM</name>\n" +
+            "  <uuid>91860126-7dda-4876-ac1e-48d06cd4b2eb</uuid>\n" +
+            "  <memory unit='KiB'>524288</memory>\n" +
+            "  <currentMemory unit='KiB'>524288</currentMemory>\n" +
+            "  <vcpu placement='static'>1</vcpu>\n" +
+            "  <devices>\n" +
+            "    <emulator>/usr/libexec/qemu-kvm</emulator>\n" +
+            "    <disk type='file' device='disk'>\n" +
+            "      <driver name='qemu' type='qcow2' cache='none'/>\n" +
+            "      <source file='/mnt/storage/disk.qcow2'/>\n" +
+            "      <target dev='vda' bus='virtio'/>\n" +
+            "    </disk>\n" +
+            "    <interface type='bridge'>\n" +
+            "      <mac address='02:00:4c:5f:00:01'/>\n" +
+            "      <source bridge='breth1-511'/>\n" +
+            "      <target dev='vnet6'/>\n" +
+            "      <model type='e1000'/>\n" +
+            "    </interface>\n" +
+            "  </devices>\n" +
+            "</domain>";
+
+    private String xmlNoDevicesSection =
+            "<domain type='kvm' id='3'>\n" +
+            "  <name>i-2-3-VM</name>\n" +
+            "  <uuid>91860126-7dda-4876-ac1e-48d06cd4b2eb</uuid>\n" +
+            "  <memory unit='KiB'>524288</memory>\n" +
+            "  <currentMemory unit='KiB'>524288</currentMemory>\n" +
+            "  <vcpu placement='static'>1</vcpu>\n" +
+            "</domain>";
+
+    private Map<String, MigrateDiskInfo> createMapMigrateStorage(String sourceText, String path) {
+        Map<String, MigrateDiskInfo> mapMigrateStorage = new HashMap<String, MigrateDiskInfo>();
+
+        MigrateDiskInfo diskInfo = new MigrateDiskInfo("123456", DiskType.BLOCK, DriverType.RAW, Source.FILE, sourceText);
+        mapMigrateStorage.put(path, diskInfo);
+        return mapMigrateStorage;
+    }
+
     @Test
     public void testReplaceIpForVNCInDescFile() {
         final String targetIp = "192.168.22.21";
-        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFileAndNormalizePassword(fullfile, targetIp, null, "");
+        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFileAndNormalizePassword(fullfile, targetIp, "vncSecretPwd", "");
         assertEquals("transformation does not live up to expectation:\n" + result, targetfile, result);
     }
 
@@ -692,7 +773,7 @@ public class LibvirtMigrateCommandWrapperTest {
 
     @Test
     public void deleteOrDisconnectDisksOnSourcePoolTest() {
-        LibvirtMigrateCommandWrapper spyLibvirtMigrateCmdWrapper = Mockito.spy(libvirtMigrateCmdWrapper);
+        LibvirtMigrateCommandWrapper spyLibvirtMigrateCmdWrapper = libvirtMigrateCmdWrapper;
         Mockito.doNothing().when(spyLibvirtMigrateCmdWrapper).deleteLocalVolume("volPath");
 
         List<MigrateDiskInfo> migrateDiskInfoList = new ArrayList<>();
@@ -750,10 +831,8 @@ public class LibvirtMigrateCommandWrapperTest {
 
     @Test
     public void testReplaceStorage() throws Exception {
-        Map<String, MigrateDiskInfo> mapMigrateStorage = new HashMap<String, MigrateDiskInfo>();
+        Map<String, MigrateDiskInfo> mapMigrateStorage = createMapMigrateStorage("sourceTest", "/mnt/812ea6a3-7ad0-30f4-9cab-01e3f2985b98/4650a2f7-fce5-48e2-beaa-bcdf063194e6");
 
-        MigrateDiskInfo diskInfo = new MigrateDiskInfo("123456", DiskType.BLOCK, DriverType.RAW, Source.FILE, "sourctest");
-        mapMigrateStorage.put("/mnt/812ea6a3-7ad0-30f4-9cab-01e3f2985b98/4650a2f7-fce5-48e2-beaa-bcdf063194e6", diskInfo);
         final String result = libvirtMigrateCmdWrapper.replaceStorage(fullfile, mapMigrateStorage, true);
 
         InputStream in = IOUtils.toInputStream(result, "UTF-8");
@@ -767,7 +846,6 @@ public class LibvirtMigrateCommandWrapperTest {
 
     @Test
     public void testReplaceStorageWithSecrets() throws Exception {
-        Map<String, MigrateDiskInfo> mapMigrateStorage = new HashMap<String, MigrateDiskInfo>();
 
         final String xmlDesc =
             "<domain type='kvm' id='3'>" +
@@ -788,8 +866,7 @@ public class LibvirtMigrateCommandWrapperTest {
 
         final String volumeFile = "3530f749-82fd-458e-9485-a357e6e541db";
         String newDiskPath = "/mnt/2d0435e1-99e0-4f1d-94c0-bee1f6f8b99e/" + volumeFile;
-        MigrateDiskInfo diskInfo = new MigrateDiskInfo("123456", DiskType.BLOCK, DriverType.RAW, Source.FILE, newDiskPath);
-        mapMigrateStorage.put("/mnt/07eb495b-5590-3877-9fb7-23c6e9a40d40/bf8621b3-027c-497d-963b-06319650f048", diskInfo);
+        Map<String, MigrateDiskInfo> mapMigrateStorage = createMapMigrateStorage(newDiskPath, "/mnt/07eb495b-5590-3877-9fb7-23c6e9a40d40/bf8621b3-027c-497d-963b-06319650f048");
         final String result = libvirtMigrateCmdWrapper.replaceStorage(xmlDesc, mapMigrateStorage, false);
         final String expectedSecretUuid = LibvirtComputingResource.generateSecretUUIDFromString(volumeFile);
 
@@ -940,5 +1017,249 @@ public class LibvirtMigrateCommandWrapperTest {
         int updateShares = Integer.parseInt(sharesNode.getTextContent());
 
         Assert.assertEquals(updateShares, newVmCpuShares);
+    }
+
+    @Test
+    public void getMigrateStorageDeviceLabelsTestNoDiskDefinitions() {
+        Map<String, MigrateDiskInfo> mapMigrateStorage = createMapMigrateStorage("sourceTest", "/mnt/812ea6a3-7ad0-30f4-9cab-01e3f2985b98/4650a2f7-fce5-48e2-beaa-bcdf063194e6");
+
+        Set<String> result = libvirtMigrateCmdWrapper.getMigrateStorageDeviceLabels(new ArrayList<>(), mapMigrateStorage);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void getMigrateStorageDeviceLabelsTestNoMapMigrateStorage() {
+        List<DiskDef> disks = new ArrayList<>();
+        DiskDef diskDef0 = new DiskDef();
+
+        diskDef0.setDiskPath("volPath");
+        disks.add(diskDef0);
+
+        Set<String> result = libvirtMigrateCmdWrapper.getMigrateStorageDeviceLabels(disks, new HashMap<>());
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void getMigrateStorageDeviceLabelsTestPathIsNotFound() {
+        List<DiskDef> disks = new ArrayList<>();
+        DiskDef diskDef0 = new DiskDef();
+
+        diskDef0.setDiskPath("volPath");
+        disks.add(diskDef0);
+
+        Map<String, MigrateDiskInfo> mapMigrateStorage = createMapMigrateStorage("sourceTest", "/mnt/812ea6a3-7ad0-30f4-9cab-01e3f2985b98/4650a2f7-fce5-48e2-beaa-bcdf063194e6");
+
+        Set<String> result = libvirtMigrateCmdWrapper.getMigrateStorageDeviceLabels(disks, mapMigrateStorage);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void getMigrateStorageDeviceLabelsTestFindPathAndLabels() {
+        List<DiskDef> disks = new ArrayList<>();
+        DiskDef diskDef0 = new DiskDef();
+        DiskDef diskDef1 = new DiskDef();
+
+        diskDef0.setDiskPath("volPath1");
+        diskDef0.setDiskLabel("vda");
+        disks.add(diskDef0);
+
+        diskDef1.setDiskPath("volPath2");
+        diskDef1.setDiskLabel("vdb");
+        disks.add(diskDef1);
+
+        Map<String, MigrateDiskInfo> mapMigrateStorage = createMapMigrateStorage("sourceTest", "volPath1");
+        mapMigrateStorage.put("volPath2", new MigrateDiskInfo("123457", DiskType.BLOCK, DriverType.RAW, Source.FILE, "sourceText"));
+
+        Set<String> result = libvirtMigrateCmdWrapper.getMigrateStorageDeviceLabels(disks, mapMigrateStorage);
+
+        assertTrue(result.containsAll(Arrays.asList("vda", "vdb")));
+    }
+
+    @Test
+    public void replaceCdromIsoPathTest() throws ParserConfigurationException, IOException, TransformerException,
+            SAXException {
+        String oldIsoVolumePath = "/mnt/ec8dfdd8-f341-3b0a-988f-cfbc93e46fc4/251-2-2b2071a4-21c7-340e-a861-1bd30fb5cbed.iso";
+        String newIsoVolumePath = "/mnt/50bf9d15-1b0f-3cc1-9e8a-55df3e17e0c4/251-2-2b2071a4-21c7-340e-a861-1bd30fb5cbed.iso";
+
+        String finalXml = libvirtMigrateCmdWrapper.replaceCdromIsoPath(fullfile, null, oldIsoVolumePath, newIsoVolumePath);
+
+        Assert.assertTrue(finalXml.contains(newIsoVolumePath));
+    }
+
+    @Test
+    public void testMaskVncPwdDomain() {
+        // Test case 1: Single quotes
+        String xml1 = "<graphics type='vnc' port='5900' passwd='secret123'/>";
+        String expected1 = "<graphics type='vnc' port='5900' passwd='*****'/>";
+        assertEquals(expected1, LibvirtMigrateCommandWrapper.maskSensitiveInfoInXML(xml1));
+
+        // Test case 2: Double quotes
+        String xml2 = "<graphics type=\"vnc\" port=\"5901\" passwd=\"mypassword\"/>";
+        String expected2 = "<graphics type=\"vnc\" port=\"5901\" passwd=\"*****\"/>";
+        assertEquals(expected2, LibvirtMigrateCommandWrapper.maskSensitiveInfoInXML(xml2));
+
+        // Test case 3: Non-VNC graphics (should remain unchanged)
+        String xml3 = "<graphics type='spice' port='5902' passwd='notvnc'/>";
+        assertEquals(xml3, LibvirtMigrateCommandWrapper.maskSensitiveInfoInXML(xml3));
+
+        // Test case 4: Multiple VNC entries in one string
+        String xml4 = "<graphics type='vnc' port='5900' passwd='a'/>\n" +
+                "<graphics type='vnc' port='5901' passwd='b'/>";
+        String expected4 = "<graphics type='vnc' port='5900' passwd='*****'/>\n" +
+                "<graphics type='vnc' port='5901' passwd='*****'/>";
+        assertEquals(expected4, LibvirtMigrateCommandWrapper.maskSensitiveInfoInXML(xml4));
+    }
+
+    @Test
+    public void updateGpuDevicesIfNeededTestNoGpuDevice() throws Exception {
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(null).when(virtualMachineTOMock).getGpuDevice();
+
+        String result = libvirtMigrateCmdWrapper.updateGpuDevicesIfNeeded(migrateCommandMock, xmlWithoutGpuDevices, libvirtComputingResourceMock);
+
+        Assert.assertEquals("XML should remain unchanged when no GPU device is present", xmlWithoutGpuDevices, result);
+    }
+
+    @Test
+    public void updateGpuDevicesIfNeededTestNoDevicesSection() throws Exception {
+        List<VgpuTypesInfo> gpuDevices = createTestMixedGpuDevices();
+        GPUDeviceTO gpuDeviceTO = Mockito.mock(GPUDeviceTO.class);
+        Mockito.doReturn(gpuDevices).when(gpuDeviceTO).getGpuDevices();
+
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(gpuDeviceTO).when(virtualMachineTOMock).getGpuDevice();
+
+        String result = libvirtMigrateCmdWrapper.updateGpuDevicesIfNeeded(migrateCommandMock, xmlNoDevicesSection, libvirtComputingResourceMock);
+
+        Assert.assertEquals("XML should remain unchanged when no devices section is found", xmlNoDevicesSection, result);
+    }
+
+    @Test
+    public void updateGpuDevicesIfNeededTestWithPciDevice() throws Exception {
+        List<VgpuTypesInfo> gpuDevices = createTestPciGpuDevice();
+        GPUDeviceTO gpuDeviceTO = Mockito.mock(GPUDeviceTO.class);
+        Mockito.doReturn(gpuDevices).when(gpuDeviceTO).getGpuDevices();
+
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(gpuDeviceTO).when(virtualMachineTOMock).getGpuDevice();
+
+        String result = libvirtMigrateCmdWrapper.updateGpuDevicesIfNeeded(migrateCommandMock, xmlWithGpuDevices, libvirtComputingResourceMock);
+
+        // Verify that old GPU devices are removed and new ones are added
+        Assert.assertFalse("Old PCI device should be removed", result.contains("bus='0x01' slot='0x00'"));
+        Assert.assertFalse("Old MDEV device should be removed", result.contains("4b20d080-1b54-4048-85b3-a6a62d165c01"));
+        Assert.assertTrue("New PCI device should be added", result.contains("bus=\"0x02\""));
+        Assert.assertTrue("New PCI device should be added", result.contains("slot=\"0x00\""));
+        Assert.assertTrue("PCI device should have vfio driver", result.contains("name=\"vfio\""));
+    }
+
+    @Test
+    public void updateGpuDevicesIfNeededTestWithMdevDevice() throws Exception {
+        List<VgpuTypesInfo> gpuDevices = createTestMdevGpuDevice();
+        GPUDeviceTO gpuDeviceTO = Mockito.mock(GPUDeviceTO.class);
+        Mockito.doReturn(gpuDevices).when(gpuDeviceTO).getGpuDevices();
+
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(gpuDeviceTO).when(virtualMachineTOMock).getGpuDevice();
+
+        String result = libvirtMigrateCmdWrapper.updateGpuDevicesIfNeeded(migrateCommandMock, xmlWithGpuDevices, libvirtComputingResourceMock);
+
+        // Verify that old GPU devices are removed and new ones are added
+        Assert.assertFalse("Old PCI device should be removed", result.contains("bus='0x01' slot='0x00'"));
+        Assert.assertFalse("Old MDEV device should be removed", result.contains("4b20d080-1b54-4048-85b3-a6a62d165c01"));
+        Assert.assertTrue("New MDEV device should be added", result.contains("6f20d080-1b54-4048-85b3-a6a62d165c01"));
+        Assert.assertTrue("MDEV device should have display=off", result.contains("display=\"off\""));
+    }
+
+    @Test
+    public void updateGpuDevicesIfNeededTestWithMixedDevices() throws Exception {
+        List<VgpuTypesInfo> gpuDevices = createTestMixedGpuDevices();
+        GPUDeviceTO gpuDeviceTO = Mockito.mock(GPUDeviceTO.class);
+        Mockito.doReturn(gpuDevices).when(gpuDeviceTO).getGpuDevices();
+
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(gpuDeviceTO).when(virtualMachineTOMock).getGpuDevice();
+
+        String result = libvirtMigrateCmdWrapper.updateGpuDevicesIfNeeded(migrateCommandMock, xmlWithGpuDevices, libvirtComputingResourceMock);
+
+        // Verify both PCI and MDEV devices are added
+        Assert.assertTrue("PCI device should be added", result.contains("bus=\"0x02\""));
+        Assert.assertTrue("PCI device should be added", result.contains("slot=\"0x00\""));
+        Assert.assertTrue("MDEV device should be added", result.contains("6f20d080-1b54-4048-85b3-a6a62d165c01"));
+
+        // Count hostdev elements to ensure we have both
+        long hostdevCount = result.lines().filter(line -> line.contains("<hostdev")).count();
+        Assert.assertEquals("Should have 2 hostdev elements", 2, hostdevCount);
+    }
+
+    @Test
+    public void updateGpuDevicesIfNeededTestRemoveAllGpuDevices() throws Exception {
+        List<VgpuTypesInfo> gpuDevices = new ArrayList<>(); // Empty list
+        GPUDeviceTO gpuDeviceTO = Mockito.mock(GPUDeviceTO.class);
+        Mockito.doReturn(gpuDevices).when(gpuDeviceTO).getGpuDevices();
+
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(gpuDeviceTO).when(virtualMachineTOMock).getGpuDevice();
+
+        String result = libvirtMigrateCmdWrapper.updateGpuDevicesIfNeeded(migrateCommandMock, xmlWithoutGpuDevices, libvirtComputingResourceMock);
+
+        // Verify all GPU devices are removed
+        Assert.assertFalse("Old PCI device should be removed", result.contains("bus=\"0x01\""));
+        Assert.assertFalse("Old PCI device should be removed", result.contains("slot=\"0x00\""));
+        Assert.assertFalse("Old MDEV device should be removed", result.contains("4b20d080-1b54-4048-85b3-a6a62d165c01"));
+
+        // Verify no hostdev elements remain
+        long hostdevCount = result.lines().filter(line -> line.contains("<hostdev")).count();
+        Assert.assertEquals("Should have no hostdev elements", 0, hostdevCount);
+    }
+
+    // Helper methods for creating test GPU devices
+    private List<VgpuTypesInfo> createTestPciGpuDevice() {
+        List<VgpuTypesInfo> devices = new ArrayList<>();
+        VgpuTypesInfo pciDevice = new VgpuTypesInfo(
+                GpuDevice.DeviceType.PCI,
+                "NVIDIA Corporation Tesla T4",
+                "passthrough",
+                "02:00.0", // New bus address for destination host
+                "10de",
+                "NVIDIA Corporation",
+                "1eb8",
+                "Tesla T4"
+        );
+        pciDevice.setDisplay(false);
+        devices.add(pciDevice);
+        return devices;
+    }
+
+    private List<VgpuTypesInfo> createTestMdevGpuDevice() {
+        List<VgpuTypesInfo> devices = new ArrayList<>();
+        VgpuTypesInfo mdevDevice = new VgpuTypesInfo(
+                GpuDevice.DeviceType.MDEV,
+                "nvidia-63",
+                "GRID T4-2Q",
+                "6f20d080-1b54-4048-85b3-a6a62d165c01", // New UUID for destination host
+                "10de",
+                "NVIDIA Corporation",
+                "1eb8",
+                "Tesla T4"
+        );
+        mdevDevice.setDisplay(false);
+        devices.add(mdevDevice);
+        return devices;
+    }
+
+    private List<VgpuTypesInfo> createTestMixedGpuDevices() {
+        List<VgpuTypesInfo> devices = new ArrayList<>();
+
+        // Add PCI device
+        devices.addAll(createTestPciGpuDevice());
+
+        // Add MDEV device
+        devices.addAll(createTestMdevGpuDevice());
+
+        return devices;
     }
 }

@@ -586,7 +586,7 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
         ip6s = []
 
     if secIpSet == "1":
-        logging.debug("Adding ipset for secondary ipv4 addresses")
+        logging.debug("Adding IPset for secondary IPv4 addresses")
         ip4s, ip6s = split_ips_by_family(ips)
 
         add_to_ipset(vmipsetName, ip4s, action)
@@ -938,7 +938,7 @@ def cleanup_rules():
                 vmpresent = False
 
                 for vm in vmsInHost:
-                    if vm_name  in vm:
+                    if vm_name in vm:
                         vmpresent = True
                         break
 
@@ -958,7 +958,7 @@ def cleanup_rules():
                 vm_name = chain
                 vmpresent = False
                 for vm in vmsInHost:
-                    if vm_name  in vm:
+                    if vm_name in vm:
                         vmpresent = True
                         break
 
@@ -1102,7 +1102,7 @@ def add_network_rules(vm_name, vm_id, vm_ip, vm_ip6, signature, seqno, vmMac, ru
 
         changes = check_rule_log_for_vm(vmName, vm_id, vm_ip, domId, signature, seqno)
 
-        if not 1 in changes:
+        if 1 not in changes:
             logging.debug("Rules already programmed for vm " + vm_name)
             return True
 

@@ -540,7 +540,7 @@ public class SolidFireUtil {
 
                         if (sfVag.getInitiators().length < MAX_NUM_INITIATORS_PER_VAG) {
                             if (!hostSupports_iScsi(host)) {
-                                String errMsg = "Host with ID " + host.getId() + " does not support iSCSI.";
+                                String errMsg = String.format("Host %s does not support iSCSI.", host);
 
                                 LOGGER.warn(errMsg);
 
@@ -562,7 +562,7 @@ public class SolidFireUtil {
 
             if (numVags > 0) {
                 if (!hostSupports_iScsi(host)) {
-                    String errMsg = "Host with ID " + host.getId() + " does not support iSCSI.";
+                    String errMsg = String.format("Host %s does not support iSCSI.", host);
 
                     LOGGER.warn(errMsg);
 
@@ -1067,7 +1067,7 @@ public class SolidFireUtil {
         }
 
         if (snapshotName == null) {
-            throw new CloudRuntimeException("Could not find SolidFire snapshot ID: " + snapshotId + " for the following SolidFire volume ID: " + volumeId);
+            throw new CloudRuntimeException("Could not find SolidFire Snapshot ID: " + snapshotId + " for the following SolidFire volume ID: " + volumeId);
         }
 
         return new SolidFireSnapshot(snapshotId, snapshotName, totalSize);

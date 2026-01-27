@@ -19,7 +19,7 @@ package com.cloud.network;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.dc.DataCenter;
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
@@ -38,13 +38,16 @@ import org.apache.cloudstack.api.command.user.network.UpdateNetworkCmd;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
 import org.apache.cloudstack.api.response.AcquirePodIpCmdResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 
+import com.cloud.agent.api.to.NicTO;
+import com.cloud.dc.DataCenter;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
@@ -56,7 +59,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
-import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 
 /**
  * The NetworkService interface is the "public" api to entities that make requests to the orchestration engine
@@ -79,7 +81,7 @@ public interface NetworkService {
             true, ConfigKey.Scope.Zone);
 
     public static final ConfigKey<Boolean> AllowUsersToSpecifyVRMtu = new ConfigKey<>("Advanced", Boolean.class,
-            "allow.end.users.to.specify.vr.mtu", "false", "Allow end users to specify VR MTU",
+            "allow.end.users.to.specify.vr.mtu", "false", "Allow end Users to specify VR MTU",
             true, ConfigKey.Scope.Zone);
 
     List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner);
@@ -101,6 +103,10 @@ public interface NetworkService {
     boolean releasePortableIpAddress(long ipAddressId);
 
     Network createGuestNetwork(CreateNetworkCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException;
+
+    Network createGuestNetwork(long networkOfferingId, String name, String displayText, Account owner,
+           PhysicalNetwork physicalNetwork, long zoneId, ControlledEntity.ACLType aclType) throws
+            InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException;
 
     Pair<List<? extends Network>, Integer> searchForNetworks(ListNetworksCmd cmd);
 
@@ -263,4 +269,10 @@ public interface NetworkService {
     InternalLoadBalancerElementService getInternalLoadBalancerElementByNetworkServiceProviderId(long networkProviderId);
     InternalLoadBalancerElementService getInternalLoadBalancerElementById(long providerId);
     List<InternalLoadBalancerElementService> getInternalLoadBalancerElements();
+
+    boolean handleCksIsoOnNetworkVirtualRouter(Long virtualRouterId, boolean mount) throws ResourceUnavailableException;
+
+    IpAddresses getIpAddressesFromIps(String ipAddress, String ip6Address, String macAddress);
+
+    String getNicVlanValueForExternalVm(NicTO nic);
 }

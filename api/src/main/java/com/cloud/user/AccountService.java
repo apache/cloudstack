@@ -19,12 +19,13 @@ package com.cloud.user;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
-import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
+import org.apache.cloudstack.api.command.admin.user.RegisterUserKeyCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 
 import com.cloud.dc.DataCenter;
@@ -86,13 +87,15 @@ public interface AccountService {
 
     boolean isDomainAdmin(Long accountId);
 
+    boolean isResourceDomainAdmin(Long accountId);
+
     boolean isNormalUser(long accountId);
 
     User getActiveUserByRegistrationToken(String registrationToken);
 
     void markUserRegistered(long userId);
 
-    public String[] createApiKeyAndSecretKey(RegisterCmd cmd);
+    public String[] createApiKeyAndSecretKey(RegisterUserKeyCmd cmd);
 
     public String[] createApiKeyAndSecretKey(final long userId);
 
@@ -116,6 +119,8 @@ public interface AccountService {
 
     void checkAccess(Account account, AccessType accessType, boolean sameOwner, String apiName, ControlledEntity... entities) throws PermissionDeniedException;
 
+    void validateAccountHasAccessToResource(Account account, AccessType accessType, Object resource);
+
     Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly);
 
     /**
@@ -125,9 +130,9 @@ public interface AccountService {
      */
     UserAccount getUserAccountById(Long userId);
 
-    public Map<String, String> getKeys(GetUserKeysCmd cmd);
+    public Pair<Boolean, Map<String, String>> getKeys(GetUserKeysCmd cmd);
 
-    public Map<String, String> getKeys(Long userId);
+    public Pair<Boolean, Map<String, String>> getKeys(Long userId);
 
     /**
      * Lists user two-factor authentication provider plugins

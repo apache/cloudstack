@@ -203,6 +203,9 @@ public class NetworkVO implements Network {
     @Column(name = "private_mtu")
     Integer privateMtu;
 
+    @Transient
+    Integer networkCidrSize;
+
     public NetworkVO() {
         uuid = UUID.randomUUID().toString();
     }
@@ -444,6 +447,7 @@ public class NetworkVO implements Network {
         return gateway;
     }
 
+    @Override
     public void setGateway(String gateway) {
         this.gateway = gateway;
     }
@@ -457,6 +461,7 @@ public class NetworkVO implements Network {
         return cidr;
     }
 
+    @Override
     public void setCidr(String cidr) {
         this.cidr = cidr;
     }
@@ -758,5 +763,14 @@ public class NetworkVO implements Network {
 
     public void setPrivateMtu(Integer privateMtu) {
         this.privateMtu = privateMtu;
+    }
+
+    @Override
+    public Integer getNetworkCidrSize() {
+        return networkCidrSize;
+    }
+
+    public void setNetworkCidrSize(Integer networkCidrSize) {
+        this.networkCidrSize = networkCidrSize;
     }
 }

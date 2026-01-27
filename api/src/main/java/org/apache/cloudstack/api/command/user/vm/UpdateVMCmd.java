@@ -16,18 +16,19 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.user.Account;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.cloudstack.api.response.UserDataResponse;
-
+import com.cloud.utils.net.Dhcp;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -38,19 +39,21 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.vm.lease.VMLeaseManager;
+import org.apache.commons.lang3.EnumUtils;
+import org.apache.commons.lang3.StringUtils;
 
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.user.Account;
-import com.cloud.uservm.UserVm;
-import com.cloud.utils.net.Dhcp;
-import com.cloud.vm.VirtualMachine;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-@APICommand(name = "updateVirtualMachine", description="Updates properties of a virtual machine. The VM has to be stopped and restarted for the " +
-        "new properties to take effect. UpdateVirtualMachine does not first check whether the VM is stopped. " +
-        "Therefore, stop the VM manually before issuing this call.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
+@APICommand(name = "updateVirtualMachine", description = "Updates properties of an Instance. The Instance has to be stopped and restarted for the " +
+        "new properties to take effect. UpdateVirtualMachine does not first check whether the Instance is stopped. " +
+        "Therefore, stop the Instance manually before issuing this call.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction, UserCmd {
     private static final String s_name = "updatevirtualmachineresponse";
@@ -59,55 +62,55 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.DISPLAY_NAME, type = CommandType.STRING, description = "user generated name")
+    @Parameter(name = ApiConstants.DISPLAY_NAME, type = CommandType.STRING, description = "User generated name")
     private String displayName;
 
-    @Parameter(name = ApiConstants.GROUP, type = CommandType.STRING, description = "group of the virtual machine")
+    @Parameter(name = ApiConstants.GROUP, type = CommandType.STRING, description = "Group of the Instance")
     private String group;
 
-    @Parameter(name = ApiConstants.HA_ENABLE, type = CommandType.BOOLEAN, description = "true if high-availability is enabled for the virtual machine, false otherwise")
+    @Parameter(name = ApiConstants.HA_ENABLE, type = CommandType.BOOLEAN, description = "True if high-availability is enabled for the Instance, false otherwise")
     private Boolean haEnable;
 
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserVmResponse.class,
-            required=true, description="The ID of the virtual machine")
+            required=true, description = "The ID of the Instance")
     private Long id;
 
     @Parameter(name = ApiConstants.OS_TYPE_ID,
                type = CommandType.UUID,
                entityType = GuestOSResponse.class,
-               description = "the ID of the OS type that best represents this VM.")
+               description = "The ID of the OS type that best represents this Instance.")
     private Long osTypeId;
 
     @Parameter(name = ApiConstants.USER_DATA,
                type = CommandType.STRING,
-               description = "an optional binary data that can be sent to the virtual machine upon a successful deployment. " +
+               description = "An optional binary data that can be sent to the Instance upon a successful deployment. " +
                        "This binary data must be base64 encoded before adding it to the request. " +
                        "Using HTTP GET (via querystring), you can send up to 4KB of data after base64 encoding. " +
-                       "Using HTTP POST(via POST body), you can send up to 1MB of data after base64 encoding." +
+                       "Using HTTP POST (via POST body), you can send up to 1MB of data after base64 encoding. " +
                        "You also need to change vm.userdata.max.length value",
                length = 1048576,
                since = "4.16.0")
     private String userData;
 
-    @Parameter(name = ApiConstants.USER_DATA_ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "the ID of the userdata", since = "4.18")
+    @Parameter(name = ApiConstants.USER_DATA_ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "The ID of the userdata", since = "4.18")
     private Long userdataId;
 
-    @Parameter(name = ApiConstants.USER_DATA_DETAILS, type = CommandType.MAP, description = "used to specify the parameters values for the variables in userdata.", since = "4.18")
+    @Parameter(name = ApiConstants.USER_DATA_DETAILS, type = CommandType.MAP, description = "Used to specify the parameters values for the variables in userdata.", since = "4.18")
     private Map userdataDetails;
 
-    @Parameter(name = ApiConstants.DISPLAY_VM, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the vm to the end user or not.", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.DISPLAY_VM, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the Instance to the end User or not.", authorized = {RoleType.Admin})
     private Boolean displayVm;
 
     @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE,
                type = CommandType.BOOLEAN,
-               description = "true if VM contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory. This can be updated only when dynamic scaling is enabled on template, service offering and the corresponding global setting")
+               description = "True if Instance contains XS/VMWare tools in order to support dynamic scaling of Instance cpu/memory. This can be updated only when dynamic scaling is enabled on Template, service offering and the corresponding global setting")
     protected Boolean isDynamicallyScalable;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "new host name of the vm. The VM has to be stopped/started for this update to take affect", since = "4.4")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "New host name of the Instance. The Instance has to be stopped/started for this update to take affect", validations = {ApiArgValidator.RFCComplianceDomainName}, since = "4.4")
     private String name;
 
-    @Parameter(name = ApiConstants.INSTANCE_NAME, type = CommandType.STRING, description = "instance name of the user vm", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.INSTANCE_NAME, type = CommandType.STRING, description = "Instance name of the User Instance", since = "4.4", authorized = {RoleType.Admin})
     private String instanceName;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "Details in key/value pairs. 'extraconfig' is not allowed to be passed in details.")
@@ -118,7 +121,7 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
                type = CommandType.LIST,
                collectionType = CommandType.UUID,
                entityType = SecurityGroupResponse.class,
-               description = "list of security group ids to be applied on the virtual machine.")
+               description = "List of security group ids to be applied on the Instance.")
     private List<Long> securityGroupIdList;
 
     @ACL
@@ -126,23 +129,39 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
                type = CommandType.LIST,
                collectionType = CommandType.STRING,
                entityType = SecurityGroupResponse.class,
-               description = "comma separated list of security groups names that going to be applied to the virtual machine. " +
-                       "Should be passed only when vm is created from a zone with Basic Network support. " +
+               description = "Comma separated list of security groups names that going to be applied to the Instance. " +
+                       "Should be passed only when Instance is created from a zone with Basic Network support. " +
                        "Mutually exclusive with securitygroupids parameter"
             )
     private List<String> securityGroupNameList;
 
     @Parameter(name = ApiConstants.CLEAN_UP_DETAILS,
             type = CommandType.BOOLEAN,
-            description = "optional boolean field, which indicates if details should be cleaned up or not (if set to true, details removed for this resource, details field ignored; if false or not set, no action)")
+            description = "Optional boolean field, which indicates if details should be cleaned up or not (if set to true, details removed for this resource, details field ignored; if false or not set, no action)")
     private Boolean cleanupDetails;
 
-    @Parameter(name = ApiConstants.DHCP_OPTIONS_NETWORK_LIST, type = CommandType.MAP, description = "DHCP options which are passed to the VM on start up"
+    @Parameter(name = ApiConstants.DHCP_OPTIONS_NETWORK_LIST, type = CommandType.MAP, description = "DHCP options which are passed to the Instance on start up"
             + " Example: dhcpoptionsnetworklist[0].dhcp:114=url&dhcpoptionsetworklist[0].networkid=networkid&dhcpoptionsetworklist[0].dhcp:66=www.test.com")
     private Map dhcpOptionsNetworkList;
 
-    @Parameter(name = ApiConstants.EXTRA_CONFIG, type = CommandType.STRING, since = "4.12", description = "an optional URL encoded string that can be passed to the virtual machine upon successful deployment", authorized = { RoleType.Admin }, length = 5120)
+    @Parameter(name = ApiConstants.EXTRA_CONFIG, type = CommandType.STRING, since = "4.12", description = "An optional URL encoded string that can be passed to the Instance upon successful deployment", length = 5120)
     private String extraConfig;
+
+    @Parameter(name = ApiConstants.DELETE_PROTECTION,
+            type = CommandType.BOOLEAN, since = "4.20.0",
+            description = "Set delete protection for the virtual machine. If " +
+                    "true, the instance will be protected from deletion. " +
+                    "Note: If the instance is managed by another service like" +
+                    " autoscaling groups or CKS, delete protection will be ignored.")
+    private Boolean deleteProtection;
+
+    @Parameter(name = ApiConstants.INSTANCE_LEASE_DURATION, type = CommandType.INTEGER, since = "4.21.0",
+            description = "Number of days to lease the instance from now onward. Use -1 to remove the existing lease")
+    private Integer leaseDuration;
+
+    @Parameter(name = ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION, type = CommandType.STRING, since = "4.21.0",
+            description = "Lease expiry action, valid values are STOP and DESTROY")
+    private String leaseExpiryAction;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -213,6 +232,10 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
         return cleanupDetails == null ? false : cleanupDetails.booleanValue();
     }
 
+    public Boolean getDeleteProtection() {
+        return deleteProtection;
+    }
+
     public Map<String, Map<Integer, String>> getDhcpOptionsMap() {
         Map<String, Map<Integer, String>> dhcpOptionsMap = new HashMap<>();
         if (dhcpOptionsNetworkList != null && !dhcpOptionsNetworkList.isEmpty()) {
@@ -222,7 +245,7 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
                 String networkId = dhcpNetworkOptions.get(ApiConstants.NETWORK_ID);
 
                 if(networkId == null) {
-                    throw new IllegalArgumentException("No networkid specified when providing extra dhcp options.");
+                    throw new IllegalArgumentException("No networkid specified when providing extra DHCP options.");
                 }
 
                 Map<Integer, String> dhcpOptionsForNetwork = new HashMap<>();
@@ -277,19 +300,19 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException {
-        CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
+        CallContext.current().setEventDetails("Instance Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
         UserVm result = null;
         try {
             result = _userVmService.updateVirtualMachine(this);
         } catch (CloudRuntimeException e) {
-            throw new CloudRuntimeException(String.format("Failed to update VM, due to: %s", e.getLocalizedMessage()), e);
+            throw new CloudRuntimeException(String.format("Failed to update Instance, due to: %s", e.getLocalizedMessage()), e);
         }
         if (result != null) {
             UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", result).get(0);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update vm");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update Instance");
         }
     }
 
@@ -310,4 +333,21 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
     public ApiCommandResourceType getApiResourceType() {
         return ApiCommandResourceType.VirtualMachine;
     }
+
+    public Integer getLeaseDuration() {
+        return leaseDuration;
+    }
+
+    public VMLeaseManager.ExpiryAction getLeaseExpiryAction() {
+        if (StringUtils.isBlank(leaseExpiryAction)) {
+            return null;
+        }
+        VMLeaseManager.ExpiryAction action = EnumUtils.getEnumIgnoreCase(VMLeaseManager.ExpiryAction.class, leaseExpiryAction);
+        if (action == null) {
+            throw new InvalidParameterValueException("Invalid value configured for leaseexpiryaction, valid values are: " +
+                    com.cloud.utils.EnumUtils.listValues(VMLeaseManager.ExpiryAction.values()));
+        }
+        return action;
+    }
+
 }

@@ -17,12 +17,15 @@
 package com.cloud.network.router;
 
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.routing.SetBgpPeersCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.dc.ASNumberVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.network.NetworkModel;
@@ -43,6 +46,8 @@ import com.cloud.utils.net.Ip;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.NicDao;
+import org.apache.cloudstack.network.BgpPeerVO;
+import org.apache.cloudstack.network.dao.BgpPeerDetailsDao;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -55,9 +60,12 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CommandSetupHelperTest {
@@ -88,6 +96,10 @@ public class CommandSetupHelperTest {
     RouterControlHelper routerControlHelper;
     @Mock
     DataCenterDao dcDao;
+    @Mock
+    ASNumberDao asNumberDao;
+    @Mock
+    BgpPeerDetailsDao bgpPeerDetailsDao;
 
     @Before
     public void setUp() {
@@ -173,24 +185,90 @@ public class CommandSetupHelperTest {
         VpcVO vpc = new VpcVO();
         DataCenterVO dc = new DataCenterVO(1L, null, null, null, null, null, null, null, null, null, DataCenter.NetworkType.Advanced, null, null);
 
-        Mockito.when(router.getId()).thenReturn(14L);
-        Mockito.when(router.getDataCenterId()).thenReturn(4L);
-        Mockito.when(nicDao.listByVmId(ArgumentMatchers.anyLong())).thenReturn(List.of(nicVO));
-        Mockito.when(networkDao.findById(ArgumentMatchers.anyLong())).thenReturn(networkVO);
-        Mockito.when(ipAddressDao.listByAssociatedVpc(ArgumentMatchers.anyLong(), ArgumentMatchers.nullable(Boolean.class))).thenReturn(userIps);
-        Mockito.when(vlanDao.findById(ArgumentMatchers.anyLong())).thenReturn(vlanVO);
-        Mockito.when(networkModel.getNetworkRate(ArgumentMatchers.anyLong(), ArgumentMatchers.anyLong())).thenReturn(1200);
-        Mockito.when(networkModel.getNetwork(ArgumentMatchers.anyLong())).thenReturn(networkVO);
-        Mockito.when(networkOfferingDao.findById(ArgumentMatchers.anyLong())).thenReturn(networkOfferingVO);
-        Mockito.when(configurationManager.getNetworkOfferingNetworkRate(ArgumentMatchers.anyLong(), ArgumentMatchers.anyLong())).thenReturn(1200);
-        Mockito.when(networkModel.isSecurityGroupSupportedInNetwork(networkVO)).thenReturn(false);
-        Mockito.when(networkOfferingDetailsDao.getNtwkOffDetails(ArgumentMatchers.anyLong())).thenReturn(details);
-        Mockito.when(networkDetailsDao.findDetail(ArgumentMatchers.anyLong(), ArgumentMatchers.anyString())).thenReturn(null);
-        Mockito.when(vpcDao.findById(ArgumentMatchers.anyLong())).thenReturn(vpc);
-        Mockito.when(routerControlHelper.getRouterControlIp(ArgumentMatchers.anyLong())).thenReturn("10.1.11.101");
-        Mockito.when(dcDao.findById(ArgumentMatchers.anyLong())).thenReturn(dc);
+        when(router.getId()).thenReturn(14L);
+        when(router.getDataCenterId()).thenReturn(4L);
+        when(nicDao.listByVmId(ArgumentMatchers.anyLong())).thenReturn(List.of(nicVO));
+        when(networkDao.findById(ArgumentMatchers.anyLong())).thenReturn(networkVO);
+        when(ipAddressDao.listByAssociatedVpc(ArgumentMatchers.anyLong(), ArgumentMatchers.nullable(Boolean.class))).thenReturn(userIps);
+        when(vlanDao.findById(ArgumentMatchers.anyLong())).thenReturn(vlanVO);
+        when(networkModel.getNetworkRate(ArgumentMatchers.anyLong(), ArgumentMatchers.anyLong())).thenReturn(1200);
+        when(networkModel.getNetwork(ArgumentMatchers.anyLong())).thenReturn(networkVO);
+        when(networkOfferingDao.findById(ArgumentMatchers.anyLong())).thenReturn(networkOfferingVO);
+        when(configurationManager.getNetworkOfferingNetworkRate(ArgumentMatchers.anyLong(), ArgumentMatchers.anyLong())).thenReturn(1200);
+        when(networkModel.isSecurityGroupSupportedInNetwork(networkVO)).thenReturn(false);
+        when(networkOfferingDetailsDao.getNtwkOffDetails(ArgumentMatchers.anyLong())).thenReturn(details);
+        when(networkDetailsDao.findDetail(ArgumentMatchers.anyLong(), ArgumentMatchers.anyString())).thenReturn(null);
+        when(vpcDao.findById(ArgumentMatchers.anyLong())).thenReturn(vpc);
+        when(routerControlHelper.getRouterControlIp(ArgumentMatchers.anyLong())).thenReturn("10.1.11.101");
+        when(dcDao.findById(ArgumentMatchers.anyLong())).thenReturn(dc);
 
         commandSetupHelper.createVpcAssociatePublicIPCommands(router, pubIpList, commands, vlanMacAddress);
         Assert.assertEquals(2, commands.size());
+    }
+
+    @Test
+    public void testCreateBgpPeersCommandsForNetwork() {
+        BgpPeerVO bgpPeer1 = Mockito.mock(BgpPeerVO.class);
+        BgpPeerVO bgpPeer2 = Mockito.mock(BgpPeerVO.class);
+        List<BgpPeerVO> bgpPeers = Arrays.asList(bgpPeer1, bgpPeer2);
+        Commands cmds = new Commands(Command.OnError.Stop);
+        VirtualRouter router = Mockito.mock(VirtualRouter.class);
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+
+        long zoneId = 10L;
+        long networkId = 11L;
+        when(router.getDataCenterId()).thenReturn(zoneId);
+        when(router.getVpcId()).thenReturn(null);
+        when(network.getId()).thenReturn(networkId);
+        ASNumberVO asNumberVO = Mockito.mock(ASNumberVO.class);
+        when(asNumberDao.findByZoneAndNetworkId(zoneId, networkId)).thenReturn(asNumberVO);
+        DataCenterVO dc = Mockito.mock(DataCenterVO.class);
+        when(dcDao.findById(zoneId)).thenReturn(dc);
+        when(dc.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
+
+        commandSetupHelper.createBgpPeersCommands(bgpPeers, router, cmds, network);
+
+        Assert.assertEquals(1, cmds.size());
+        Command cmd = cmds.toCommands()[0];
+        Assert.assertTrue(cmd instanceof SetBgpPeersCommand);
+        Assert.assertEquals(2, ((SetBgpPeersCommand) cmd).getBpgPeers().length);
+    }
+
+    @Test
+    public void testCreateBgpPeersCommandsForVpc() {
+        BgpPeerVO bgpPeer1 = Mockito.mock(BgpPeerVO.class);
+        BgpPeerVO bgpPeer2 = Mockito.mock(BgpPeerVO.class);
+        List<BgpPeerVO> bgpPeers = Arrays.asList(bgpPeer1, bgpPeer2);
+        Commands cmds = new Commands(Command.OnError.Stop);
+        VirtualRouter router = Mockito.mock(VirtualRouter.class);
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+
+        long zoneId = 10L;
+        long vpcId = 11L;
+        when(router.getDataCenterId()).thenReturn(zoneId);
+        when(router.getVpcId()).thenReturn(vpcId);
+        ASNumberVO asNumberVO = Mockito.mock(ASNumberVO.class);
+        when(asNumberDao.findByZoneAndVpcId(zoneId, vpcId)).thenReturn(asNumberVO);
+
+        long networkOfferingId = 12L;
+        NetworkOfferingVO offering = Mockito.mock(NetworkOfferingVO.class);
+        when(networkOfferingDao.findByIdIncludingRemoved(networkOfferingId)).thenReturn(offering);
+        when(offering.getRoutingMode()).thenReturn(NetworkOffering.RoutingMode.Dynamic);
+        NetworkVO network1 = Mockito.mock(NetworkVO.class);
+        when(network1.getNetworkOfferingId()).thenReturn(networkOfferingId);
+        NetworkVO network2 = Mockito.mock(NetworkVO.class);
+        when(network2.getNetworkOfferingId()).thenReturn(networkOfferingId);
+        when(networkDao.listByVpc(vpcId)).thenReturn(Arrays.asList(network1, network2));
+
+        DataCenterVO dc = Mockito.mock(DataCenterVO.class);
+        when(dcDao.findById(zoneId)).thenReturn(dc);
+        when(dc.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
+
+        commandSetupHelper.createBgpPeersCommands(bgpPeers, router, cmds, network);
+
+        Assert.assertEquals(1, cmds.size());
+        Command cmd = cmds.toCommands()[0];
+        Assert.assertTrue(cmd instanceof SetBgpPeersCommand);
+        Assert.assertEquals(4, ((SetBgpPeersCommand) cmd).getBpgPeers().length);
     }
 }

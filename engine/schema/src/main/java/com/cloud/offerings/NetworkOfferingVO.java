@@ -32,6 +32,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "network_offerings")
@@ -133,14 +134,8 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name = "for_vpc")
     boolean forVpc;
 
-    @Column(name = "for_tungsten")
-    boolean forTungsten = false;
-
-    @Column(name = "for_nsx")
-    boolean forNsx = false;
-
-    @Column(name = "nsx_mode")
-    String nsxMode;
+    @Column(name = "network_mode")
+    NetworkMode networkMode;
 
     @Column(name = "egress_default_policy")
     boolean egressdefaultpolicy;
@@ -174,6 +169,13 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name="service_package_id")
     String servicePackageUuid = null;
 
+    @Column(name="routing_mode")
+    @Enumerated(value = EnumType.STRING)
+    private RoutingMode routingMode;
+
+    @Column(name = "specify_as_number")
+    private Boolean specifyAsNumber = false;
+
     @Override
     public boolean isKeepAliveEnabled() {
         return keepAliveEnabled;
@@ -193,30 +195,12 @@ public class NetworkOfferingVO implements NetworkOffering {
     }
 
     @Override
-    public boolean isForTungsten() {
-        return forTungsten;
+    public NetworkMode getNetworkMode() {
+        return networkMode;
     }
 
-    public void setForTungsten(boolean forTungsten) {
-        this.forTungsten = forTungsten;
-    }
-
-    @Override
-    public boolean isForNsx() {
-        return forNsx;
-    }
-
-    public void setForNsx(boolean forNsx) {
-        this.forNsx = forNsx;
-    }
-
-    @Override
-    public String getNsxMode() {
-        return nsxMode;
-    }
-
-    public void setNsxMode(String nsxMode) {
-        this.nsxMode = nsxMode;
+    public void setNetworkMode(NetworkMode networkMode) {
+        this.networkMode = networkMode;
     }
 
     @Override
@@ -464,8 +448,8 @@ public class NetworkOfferingVO implements NetworkOffering {
 
     @Override
     public String toString() {
-        StringBuilder buf = new StringBuilder("[Network Offering [");
-        return buf.append(id).append("-").append(trafficType).append("-").append(name).append("]").toString();
+        return String.format("NetworkOffering %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                this, "id", "uuid", "name", "trafficType"));
     }
 
     @Override
@@ -581,5 +565,22 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Override
     public boolean isSupportsVmAutoScaling() {
         return supportsVmAutoScaling;
+    }
+
+    @Override
+    public RoutingMode getRoutingMode() {
+        return routingMode;
+    }
+
+    public void setRoutingMode(RoutingMode routingMode) {
+        this.routingMode = routingMode;
+    }
+
+    public Boolean isSpecifyAsNumber() {
+        return specifyAsNumber;
+    }
+
+    public void setSpecifyAsNumber(Boolean specifyAsNumber) {
+        this.specifyAsNumber = specifyAsNumber;
     }
 }

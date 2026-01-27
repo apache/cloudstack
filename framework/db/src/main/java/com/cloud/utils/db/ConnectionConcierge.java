@@ -145,7 +145,7 @@ public class ConnectionConcierge {
         protected String testValidity(String name, Connection conn) {
             if (conn != null) {
                 synchronized (conn) {
-                    try (PreparedStatement pstmt = conn.prepareStatement("SELECT 1");) {
+                    try (PreparedStatement pstmt = conn.prepareStatement("/* ping */ SELECT 1");) {
                         pstmt.executeQuery();
                     } catch (Throwable th) {
                         logger.error("Unable to keep the db connection for " + name, th);

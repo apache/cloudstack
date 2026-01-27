@@ -20,6 +20,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -53,7 +54,7 @@ public class DeleteKubernetesClusterCmd extends BaseAsyncCmd {
             type = CommandType.UUID,
             entityType = KubernetesClusterResponse.class,
             required = true,
-            description = "the ID of the Kubernetes cluster")
+            description = "The ID of the Kubernetes cluster")
     private Long id;
 
     @Parameter(name = ApiConstants.CLEANUP,
@@ -92,7 +93,8 @@ public class DeleteKubernetesClusterCmd extends BaseAsyncCmd {
     public void execute() throws ServerApiException, ConcurrentOperationException {
         try {
             if (!kubernetesClusterService.deleteKubernetesCluster(this)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to delete Kubernetes cluster ID: %d", getId()));
+                KubernetesCluster cluster = kubernetesClusterService.findById(getId());
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to delete Kubernetes cluster %s with id: %d", cluster, getId()));
             }
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
@@ -110,6 +112,16 @@ public class DeleteKubernetesClusterCmd extends BaseAsyncCmd {
     @Override
     public String getEventType() {
         return KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_DELETE;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.KubernetesCluster;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return getId();
     }
 
     @Override

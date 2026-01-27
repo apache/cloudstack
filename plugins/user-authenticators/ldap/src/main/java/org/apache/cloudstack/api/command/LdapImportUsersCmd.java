@@ -72,7 +72,7 @@ public class LdapImportUsersCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ROLE_ID, type = CommandType.UUID, entityType = RoleResponse.class, description = "Creates the account under the specified role.")
     private Long roleId;
 
-    @Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "details for account used to store specific parameters")
+    @Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "Details for account used to store specific parameters")
     private Map<String, String> details;
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "Specifies the domain to which the ldap users are to be "
@@ -117,7 +117,7 @@ public class LdapImportUsersCmd extends BaseListCmd {
                 _accountService.createUser(user.getUsername(), generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone, accountName, domain.getId(),
                         UUID.randomUUID().toString(), User.Source.LDAP);
             } else {
-                logger.debug("Account [name=%s] and user [name=%s] already exist in CloudStack. Executing the user update.");
+                logger.debug("Account [name={}] and user [name={}] already exist in CloudStack. Executing the user update.", account, csuser);
 
                 UpdateUserCmd updateUserCmd = new UpdateUserCmd();
                 updateUserCmd.setId(csuser.getId());

@@ -26,7 +26,7 @@ public interface RouterHealthCheckResult {
 
     String getCheckType();
 
-    boolean getCheckResult();
+    VirtualNetworkApplianceService.RouterHealthStatus getCheckResult();
 
     Date getLastUpdateTime();
 

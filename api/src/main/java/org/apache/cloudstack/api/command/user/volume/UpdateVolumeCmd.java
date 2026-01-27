@@ -47,7 +47,7 @@ public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd implements UserCmd {
     /////////////////////////////////////////////////////
 
     @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VolumeResponse.class, description="the ID of the disk volume")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VolumeResponse.class, description = "The ID of the disk volume")
     private Long id;
 
     @Parameter(name = ApiConstants.PATH, type = CommandType.STRING, description = "The path of the volume", authorized = {RoleType.Admin})
@@ -71,11 +71,19 @@ public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.DISPLAY_VOLUME,
                type = CommandType.BOOLEAN,
- description = "an optional field, whether to the display the volume to the end user or not.", authorized = {RoleType.Admin})
+ description = "An optional field, whether to the display the volume to the end User or not.", authorized = {RoleType.Admin})
     private Boolean displayVolume;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "new name of the volume", since = "4.16")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "New name of the volume", since = "4.16")
     private String name;
+
+    @Parameter(name = ApiConstants.DELETE_PROTECTION,
+            type = CommandType.BOOLEAN,  since = "4.20.0",
+            description = "Set delete protection for the volume. If true, The volume " +
+                    "will be protected from deletion. Note: If the volume is managed by " +
+                    "another service like autoscaling groups or CKS, delete protection will be " +
+                    "ignored.")
+    private Boolean deleteProtection;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -107,6 +115,10 @@ public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd implements UserCmd {
 
     public String getName() {
         return name;
+    }
+
+    public Boolean getDeleteProtection() {
+        return deleteProtection;
     }
 
     /////////////////////////////////////////////////////
@@ -168,7 +180,7 @@ public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd implements UserCmd {
     public void execute() {
         CallContext.current().setEventDetails("Volume Id: " + this._uuidMgr.getUuid(Volume.class, getId()));
         Volume result = _volumeService.updateVolume(getId(), getPath(), getState(), getStorageId(), getDisplayVolume(),
-                getCustomId(), getEntityOwnerId(), getChainInfo(), getName());
+                getDeleteProtection(), getCustomId(), getEntityOwnerId(), getChainInfo(), getName());
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(getResponseView(), result);
             response.setResponseName(getCommandName());

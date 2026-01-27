@@ -48,7 +48,7 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
 
     List<VolumeVO> findIncludingRemovedByInstanceAndType(long id, Volume.Type vType);
 
-    List<VolumeVO> findByInstanceIdAndPoolId(long instanceId, long poolId);
+    List<VolumeVO> findNonDestroyedVolumesByInstanceIdAndPoolId(long instanceId, long poolId);
 
     List<VolumeVO> findByInstanceIdDestroyed(long vmId);
 
@@ -70,11 +70,11 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
 
     List<VolumeVO> findCreatedByInstance(long id);
 
-    List<VolumeVO> findByPoolId(long poolId);
+    List<VolumeVO> findNonDestroyedVolumesByPoolId(long poolId);
 
     VolumeVO findByPoolIdName(long poolId, String name);
 
-    List<VolumeVO> findByPoolId(long poolId, Volume.Type volumeType);
+    List<VolumeVO> findNonDestroyedVolumesByPoolId(long poolId, Volume.Type volumeType);
 
     List<VolumeVO> findByPoolIdAndState(long poolid, Volume.State state);
 
@@ -112,7 +112,8 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
     /**
      * Gets the Total Primary Storage space allocated for an account
      *
-     * @param list of ids of virtual router VMs under this account
+     * @param accountId
+     * @param virtualRouters list of ids of virtual router VMs under this account
      * @return total Primary Storage space (in bytes) used
      */
     long primaryStorageUsedForAccount(long accountId, List<Long> virtualRouters);
@@ -158,4 +159,11 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
 
     List<VolumeVO> listAllocatedVolumesForAccountDiskOfferingIdsAndNotForVms(long accountId, List<Long> diskOfferingIds, List<Long> vmIds);
 
+    List<VolumeVO> searchRemovedByVms(List<Long> vmIds, Long batchSize);
+
+    VolumeVO findOneByIScsiName(String iScsiName);
+
+    int getVolumeCountByOfferingId(long diskOfferingId);
+
+    VolumeVO findByLastIdAndState(long lastVolumeId, Volume.State...states);
 }

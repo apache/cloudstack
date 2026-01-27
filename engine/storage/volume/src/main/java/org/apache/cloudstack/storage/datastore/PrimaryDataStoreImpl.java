@@ -46,7 +46,6 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -127,7 +126,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Override
     public List<VolumeInfo> getVolumes() {
-        List<VolumeVO> volumes = volumeDao.findByPoolId(getId());
+        List<VolumeVO> volumes = volumeDao.findNonDestroyedVolumesByPoolId(getId());
         List<VolumeInfo> volumeInfos = new ArrayList<VolumeInfo>();
         for (VolumeVO volume : volumes) {
             volumeInfos.add(VolumeObject.getVolumeObject(this, volume));
@@ -335,6 +334,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
             VolumeVO vol = volumeDao.findById(obj.getId());
             if (vol != null) {
                 vol.setPoolId(getId());
+                vol.setPoolType(getPoolType());
                 volumeDao.update(vol.getId(), vol);
             }
         }
@@ -469,6 +469,6 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Override
     public String toString() {
-        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "name", "uuid");
+        return pdsv.toString();
     }
 }

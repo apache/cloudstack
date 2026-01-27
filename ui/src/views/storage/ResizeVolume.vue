@@ -47,6 +47,15 @@
           :checked="shrinkOk"
           @change="val => { shrinkOk = val }"/>
       </a-form-item>
+      <a-form-item name="autoMigrate" ref="autoMigrate" :label="$t('label.automigrate.volume')">
+        <template #label>
+          <tooltip-label :title="$t('label.automigrate.volume')" :tooltip="apiParams.automigrate.description"/>
+        </template>
+        <a-switch
+          v-model:checked="form.autoMigrate"
+          :checked="autoMigrate"
+          @change="val => { autoMigrate = val }"/>
+      </a-form-item>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
         <a-button :loading="loading" type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -56,11 +65,15 @@
 </template>
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'ResizeVolume',
+  components: {
+    TooltipLabel
+  },
   mixins: [mixinForm],
   props: {
     resource: {
@@ -92,7 +105,7 @@ export default {
     },
     fetchData () {
       this.loading = true
-      api('listDiskOfferings', {
+      getAPI('listDiskOfferings', {
         zoneid: this.resource.zoneid,
         listall: true
       }).then(json => {
@@ -111,7 +124,7 @@ export default {
         const values = this.handleRemoveFields(formRaw)
         this.loading = true
         values.id = this.resource.id
-        api('resizeVolume', values).then(response => {
+        postAPI('resizeVolume', values).then(response => {
           this.$pollJob({
             jobId: response.resizevolumeresponse.jobid,
             title: this.$t('label.action.resize.volume'),

@@ -51,7 +51,7 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
     /////////////////////////////////////////////////////
 
     @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name = ApiConstants.ID, entityType = VolumeResponse.class, required = true, type = CommandType.UUID, description = "the ID of the disk volume")
+    @Parameter(name = ApiConstants.ID, entityType = VolumeResponse.class, required = true, type = CommandType.UUID, description = "The ID of the disk volume")
     private Long id;
 
     @Parameter(name = ApiConstants.MIN_IOPS, type = CommandType.LONG, required = false, description = "New minimum number of IOPS")
@@ -70,8 +70,12 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
                entityType = DiskOfferingResponse.class,
                type = CommandType.UUID,
                required = false,
-               description = "new disk offering id")
+               description = "New disk offering ID")
     private Long newDiskOfferingId;
+
+    @Parameter(name = ApiConstants.AUTO_MIGRATE, type = CommandType.BOOLEAN, required = false,
+            description = "Flag to allow automatic migration of the volume to another suitable storage pool that accommodates the new size", since = "4.20.1")
+    private Boolean autoMigrate;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -101,6 +105,10 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
         return getEntityId();
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public Long getMinIops() {
         return minIops;
     }
@@ -113,12 +121,20 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
         return size;
     }
 
+    public void setSize(Long size) {
+        this.size = size;
+    }
+
     public boolean isShrinkOk() {
         return shrinkOk;
     }
 
     public Long getNewDiskOfferingId() {
         return newDiskOfferingId;
+    }
+
+    public boolean getAutoMigrate() {
+        return autoMigrate == null ? false : autoMigrate;
     }
 
     /////////////////////////////////////////////////////

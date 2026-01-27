@@ -31,6 +31,8 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 
 import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 
 @SuppressWarnings("rawtypes")
 @APICommand(name = "updateStoragePool", description = "Updates a storage pool.", responseObject = StoragePoolResponse.class, since = "3.0.0",
@@ -42,22 +44,22 @@ public class UpdateStoragePoolCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, required = true, description = "the Id of the storage pool")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, required = true, description = "The Id of the storage pool")
     private Long id;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, entityType = StoragePoolResponse.class, description = "Change the name of the storage pool", since = "4.15")
     private String name;
 
-    @Parameter(name = ApiConstants.TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "comma-separated list of tags for the storage pool")
+    @Parameter(name = ApiConstants.TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "Comma-separated list of tags for the storage pool")
     private List<String> tags;
 
     @Parameter(name = ApiConstants.CAPACITY_IOPS, type = CommandType.LONG, required = false, description = "IOPS CloudStack can provision from this storage pool")
     private Long capacityIops;
 
-    @Parameter(name = ApiConstants.CAPACITY_BYTES, type = CommandType.LONG, required = false, description = "bytes CloudStack can provision from this storage pool")
+    @Parameter(name = ApiConstants.CAPACITY_BYTES, type = CommandType.LONG, required = false, description = "Bytes CloudStack can provision from this storage pool")
     private Long capacityBytes;
 
-    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, required = false, description = "false to disable the pool for allocation of new volumes, true to" +
+    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, required = false, description = "False to disable the pool for allocation of new volumes, true to" +
             " enable it back.")
     private Boolean enabled;
 
@@ -147,7 +149,19 @@ public class UpdateStoragePoolCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        StoragePool result = _storageService.updateStoragePool(this);
+        StoragePool result = null;
+        if (ObjectUtils.anyNotNull(name, capacityIops, capacityBytes, url, isTagARule, tags) ||
+                MapUtils.isNotEmpty(details)) {
+            result = _storageService.updateStoragePool(this);
+        } else {
+            result = _storageService.getStoragePool(getId());
+        }
+
+        if (enabled != null) {
+            result = enabled ? _storageService.enablePrimaryStoragePool(id)
+                    : _storageService.disablePrimaryStoragePool(id);
+        }
+
         if (result != null) {
             StoragePoolResponse response = _responseGenerator.createStoragePoolResponse(result);
             response.setResponseName(getCommandName());

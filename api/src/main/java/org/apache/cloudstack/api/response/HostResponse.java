@@ -29,228 +29,254 @@ import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
 
 import com.cloud.host.Host;
 import com.cloud.host.Status;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = Host.class)
 public class HostResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the host")
+    @Param(description = "The ID of the host")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the host")
+    @Param(description = "The name of the host")
     private String name;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "the state of the host")
+    @Param(description = "The state of the host")
     private Status state;
 
     @SerializedName("disconnected")
-    @Param(description = "true if the host is disconnected. False otherwise.")
+    @Param(description = "True if the host is disconnected. False otherwise.")
     private Date disconnectedOn;
 
     @SerializedName(ApiConstants.TYPE)
-    @Param(description = "the host type")
+    @Param(description = "The host type")
     private Host.Type hostType;
 
     @SerializedName("oscategoryid")
-    @Param(description = "the OS category ID of the host")
+    @Param(description = "The OS category ID of the host")
     private String osCategoryId;
 
     @SerializedName("oscategoryname")
-    @Param(description = "the OS category name of the host")
+    @Param(description = "The OS category name of the host")
     private String osCategoryName;
 
     @SerializedName(ApiConstants.IP_ADDRESS)
-    @Param(description = "the IP address of the host")
+    @Param(description = "The IP address of the host")
     private String ipAddress;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the Zone ID of the host")
+    @Param(description = "The Zone ID of the host")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "the Zone name of the host")
+    @Param(description = "The Zone name of the host")
     private String zoneName;
 
     @SerializedName(ApiConstants.POD_ID)
-    @Param(description = "the Pod ID of the host")
+    @Param(description = "The Pod ID of the host")
     private String podId;
 
     @SerializedName("podname")
-    @Param(description = "the Pod name of the host")
+    @Param(description = "The Pod name of the host")
     private String podName;
 
     @SerializedName("version")
-    @Param(description = "the host version")
+    @Param(description = "The host version")
     private String version;
 
     @SerializedName(ApiConstants.HYPERVISOR)
-    @Param(description = "the host hypervisor")
+    @Param(description = "The host hypervisor")
     private String hypervisor;
-
     @SerializedName("cpusockets")
-    @Param(description = "the number of CPU sockets on the host")
+    @Param(description = "The number of CPU sockets on the host")
     private Integer cpuSockets;
 
     @SerializedName("cpunumber")
-    @Param(description = "the CPU number of the host")
+    @Param(description = "The CPU number of the host")
     private Integer cpuNumber;
 
     @SerializedName("cpuspeed")
-    @Param(description = "the CPU speed of the host")
+    @Param(description = "The CPU speed of the host")
     private Long cpuSpeed;
 
     @Deprecated
     @SerializedName("cpuallocated")
-    @Param(description = "the amount of the host's CPU currently allocated")
+    @Param(description = "The amount of the host's CPU currently allocated")
     private String cpuAllocated;
 
     @SerializedName("cpuallocatedvalue")
-    @Param(description = "the amount of the host's CPU currently allocated in MHz")
+    @Param(description = "The amount of the host's CPU currently allocated in MHz")
     private Long cpuAllocatedValue;
 
     @SerializedName("cpuallocatedpercentage")
-    @Param(description = "the amount of the host's CPU currently allocated in percentage")
+    @Param(description = "The amount of the host's CPU currently allocated in percentage")
     private String cpuAllocatedPercentage;
 
     @SerializedName("cpuallocatedwithoverprovisioning")
-    @Param(description = "the amount of the host's CPU currently allocated after applying the cpu.overprovisioning.factor")
+    @Param(description = "The amount of the host's CPU currently allocated after applying the cpu.overprovisioning.factor")
     private String cpuAllocatedWithOverprovisioning;
 
     @SerializedName("cpuused")
-    @Param(description = "the amount of the host's CPU currently used")
+    @Param(description = "The amount of the host's CPU currently used")
     private String cpuUsed;
 
     @SerializedName("cpuwithoverprovisioning")
-    @Param(description = "the amount of the host's CPU after applying the cpu.overprovisioning.factor")
+    @Param(description = "The amount of the host's CPU after applying the cpu.overprovisioning.factor")
     private String cpuWithOverprovisioning;
 
     @SerializedName(ApiConstants.CPU_LOAD_AVERAGE)
-    @Param(description = "the cpu average load on the host")
+    @Param(description = "The average CPU load on the host")
     private Double cpuloadaverage;
 
     @SerializedName("networkkbsread")
-    @Param(description = "the incoming network traffic on the host")
+    @Param(description = "The incoming Network traffic on the host")
     private Long networkKbsRead;
 
     @SerializedName("networkkbswrite")
-    @Param(description = "the outgoing network traffic on the host")
+    @Param(description = "The outgoing Network traffic on the host")
     private Long networkKbsWrite;
 
     @Deprecated
     @SerializedName("memorytotal")
-    @Param(description = "the memory total of the host, this parameter is deprecated use memorywithoverprovisioning")
+    @Param(description = "The memory total of the host, this parameter is deprecated use memorywithoverprovisioning")
     private Long memoryTotal;
 
     @SerializedName("memorywithoverprovisioning")
-    @Param(description = "the amount of the host's memory after applying the mem.overprovisioning.factor")
+    @Param(description = "The amount of the host's memory after applying the mem.overprovisioning.factor")
     private String memWithOverprovisioning;
 
     @Deprecated
     @SerializedName("memoryallocated")
-    @Param(description = "the amount of the host's memory currently allocated")
+    @Param(description = "The amount of the host's memory currently allocated")
     private long memoryAllocated;
 
     @SerializedName("memoryallocatedpercentage")
-    @Param(description = "the amount of the host's memory currently allocated in percentage")
+    @Param(description = "The amount of the host's memory currently allocated in percentage")
     private String memoryAllocatedPercentage;
 
     @SerializedName("memoryallocatedbytes")
-    @Param(description = "the amount of the host's memory currently allocated in bytes")
+    @Param(description = "The amount of the host's memory currently allocated in bytes")
     private Long memoryAllocatedBytes;
 
     @SerializedName("memoryused")
-    @Param(description = "the amount of the host's memory currently used")
+    @Param(description = "The amount of the host's memory currently used")
     private Long memoryUsed;
+
+    @SerializedName("gputotal")
+    @Param(description = "Total GPUs on the Host", responseObject = Long.class, since = "4.21")
+    private Long gpuTotal;
+
+    @SerializedName("gpuused")
+    @Param(description = "Used GPUs on the Host", responseObject = Long.class, since = "4.21")
+    private Long gpuUsed;
 
     @SerializedName(ApiConstants.GPUGROUP)
     @Param(description = "GPU cards present in the host", responseObject = GpuResponse.class, since = "4.4")
     private List<GpuResponse> gpuGroup;
 
     @SerializedName("disksizetotal")
-    @Param(description = "the total disk size of the host")
+    @Param(description = "The total disk size of the host")
     private Long diskSizeTotal;
 
     @SerializedName("disksizeallocated")
-    @Param(description = "the host's currently allocated disk size")
+    @Param(description = "The host's currently allocated disk size")
     private Long diskSizeAllocated;
 
     @SerializedName("capabilities")
-    @Param(description = "capabilities of the host")
+    @Param(description = "Capabilities of the host")
     private String capabilities;
 
     @SerializedName("lastpinged")
-    @Param(description = "the date and time the host was last pinged")
+    @Param(description = "The date and time the host was last pinged")
     private Date lastPinged;
 
-    @SerializedName("managementserverid")
-    @Param(description = "the management server ID of the host")
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
+    @Param(description = "the virtual machine id for host type ConsoleProxy and SecondaryStorageVM", since = "4.21.0")
+    private String virtualMachineId;
+
+    @SerializedName(ApiConstants.MANAGEMENT_SERVER_ID)
+    @Param(description = "The management server ID of the host")
     private String managementServerId;
 
+    @SerializedName(ApiConstants.MANAGEMENT_SERVER_NAME)
+    @Param(description = "the management server name of the host", since = "4.21.0")
+    private String managementServerName;
+
+    private transient long clusterInternalId;
+
     @SerializedName("clusterid")
-    @Param(description = "the cluster ID of the host")
+    @Param(description = "The cluster ID of the host")
     private String clusterId;
 
     @SerializedName("clustername")
-    @Param(description = "the cluster name of the host")
+    @Param(description = "The cluster name of the host")
     private String clusterName;
 
     @SerializedName("clustertype")
-    @Param(description = "the cluster type of the cluster that host belongs to")
+    @Param(description = "The cluster type of the cluster that host belongs to")
     private String clusterType;
 
     @SerializedName("islocalstorageactive")
-    @Param(description = "true if local storage is active, false otherwise")
+    @Param(description = "True if local storage is active, false otherwise")
     private Boolean localStorageActive;
 
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "the date and time the host was created")
+    @Param(description = "The date and time the host was created")
     private Date created;
 
     @SerializedName("removed")
-    @Param(description = "the date and time the host was removed")
+    @Param(description = "The date and time the host was removed")
     private Date removed;
 
     @SerializedName("events")
-    @Param(description = "events available for the host")
+    @Param(description = "Events available for the host")
     private String events;
 
     @SerializedName("hosttags")
-    @Param(description = "comma-separated list of tags for the host")
+    @Param(description = "Comma-separated list of tags for the host")
     private String hostTags;
+
+    @SerializedName("explicithosttags")
+    @Param(description = "comma-separated list of explicit host tags for the host", since = "4.20.0")
+    private String explicitHostTags;
+
+    @SerializedName("implicithosttags")
+    @Param(description = "comma-separated list of implicit host tags for the host", since = "4.20.0")
+    private String implicitHostTags;
 
     @SerializedName(ApiConstants.IS_TAG_A_RULE)
     @Param(description = ApiConstants.PARAMETER_DESCRIPTION_IS_TAG_A_RULE)
     private Boolean isTagARule;
 
     @SerializedName("hasenoughcapacity")
-    @Param(description = "true if this host has enough CPU and RAM capacity to migrate a VM to it, false otherwise")
+    @Param(description = "True if this host has enough CPU and RAM capacity to migrate an Instance to it, false otherwise")
     private Boolean hasEnoughCapacity;
 
     @SerializedName("suitableformigration")
-    @Param(description = "true if this host is suitable(has enough capacity and satisfies all conditions like hosttags, max guests vm limit etc) to migrate a VM to it , false otherwise")
+    @Param(description = "True if this host is suitable(has enough capacity and satisfies all conditions like hosttags, max guests Instance limit etc) to migrate an Instance to it , false otherwise")
     private Boolean suitableForMigration;
 
     @SerializedName("hostha")
-    @Param(description = "the host HA information information")
+    @Param(description = "The host HA information information")
     private HostHAResponse hostHAResponse;
 
     @SerializedName("outofbandmanagement")
-    @Param(description = "the host out-of-band management information")
+    @Param(description = "The host out-of-band management information")
     private OutOfBandManagementResponse outOfBandManagementResponse;
 
     @SerializedName("resourcestate")
-    @Param(description = "the resource state of the host")
+    @Param(description = "The resource state of the host")
     private String resourceState;
 
     @SerializedName(ApiConstants.HYPERVISOR_VERSION)
-    @Param(description = "the hypervisor version")
+    @Param(description = "The hypervisor version")
     private String hypervisorVersion;
 
     @SerializedName(ApiConstants.HA_HOST)
-    @Param(description = "true if the host is Ha host (dedicated to vms started by HA process; false otherwise")
+    @Param(description = "True if the host is Ha host (dedicated to Instances started by HA process; false otherwise")
     private Boolean haHost;
 
     @SerializedName(ApiConstants.DETAILS)
@@ -258,24 +284,56 @@ public class HostResponse extends BaseResponseWithAnnotations {
     private Map details;
 
     @SerializedName(ApiConstants.ANNOTATION)
-    @Param(description = "the last annotation set on this host by an admin", since = "4.11")
+    @Param(description = "The last annotation set on this host by an admin", since = "4.11")
     private String annotation;
 
     @SerializedName(ApiConstants.LAST_ANNOTATED)
-    @Param(description = "the last time this host was annotated", since = "4.11")
+    @Param(description = "The last time this host was annotated", since = "4.11")
     private Date lastAnnotated;
 
     @SerializedName(ApiConstants.USERNAME)
-    @Param(description = "the admin that annotated this host", since = "4.11")
+    @Param(description = "The admin that annotated this host", since = "4.11")
     private String username;
 
     @SerializedName("ueficapability")
-    @Param(description = "true if the host has capability to support UEFI boot")
-    private Boolean uefiCapabilty;
+    @Param(description = "True if the host has capability to support UEFI boot")
+    private Boolean uefiCapability;
 
     @SerializedName(ApiConstants.ENCRYPTION_SUPPORTED)
-    @Param(description = "true if the host supports encryption", since = "4.18")
+    @Param(description = "True if the host supports encryption", since = "4.18")
     private Boolean encryptionSupported;
+
+    @SerializedName(ApiConstants.INSTANCE_CONVERSION_SUPPORTED)
+    @Param(description = "true if the host supports instance conversion (using virt-v2v)", since = "4.19.1")
+    private Boolean instanceConversionSupported;
+
+    @SerializedName(ApiConstants.ARCH)
+    @Param(description = "CPU Arch of the host", since = "4.20")
+    private String arch;
+
+    @SerializedName(ApiConstants.STORAGE_ACCESS_GROUPS)
+    @Param(description = "comma-separated list of storage access groups for the host", since = "4.21.0")
+    private String storageAccessGroups;
+
+    @SerializedName(ApiConstants.CLUSTER_STORAGE_ACCESS_GROUPS)
+    @Param(description = "comma-separated list of storage access groups on the cluster", since = "4.21.0")
+    private String clusterStorageAccessGroups;
+
+    @SerializedName(ApiConstants.POD_STORAGE_ACCESS_GROUPS)
+    @Param(description = "comma-separated list of storage access groups on the pod", since = "4.21.0")
+    private String podStorageAccessGroups;
+
+    @SerializedName(ApiConstants.ZONE_STORAGE_ACCESS_GROUPS)
+    @Param(description = "comma-separated list of storage access groups on the zone", since = "4.21.0")
+    private String zoneStorageAccessGroups;
+
+    @SerializedName(ApiConstants.EXTENSION_ID)
+    @Param(description="The ID of extension for this cluster", since = "4.21.0")
+    private String extensionId;
+
+    @SerializedName(ApiConstants.EXTENSION_NAME)
+    @Param(description="The name of extension for this cluster", since = "4.21.0")
+    private String extensionName;
 
     @Override
     public String getObjectId() {
@@ -398,6 +456,14 @@ public class HostResponse extends BaseResponseWithAnnotations {
         this.memoryUsed = memoryUsed;
     }
 
+    public void setGpuTotal(Long gpuTotal) {
+        this.gpuTotal = gpuTotal;
+    }
+
+    public void setGpuUsed(Long gpuUsed) {
+        this.gpuUsed = gpuUsed;
+    }
+
     public void setGpuGroup(List<GpuResponse> gpuGroup) {
         this.gpuGroup = gpuGroup;
     }
@@ -418,8 +484,24 @@ public class HostResponse extends BaseResponseWithAnnotations {
         this.lastPinged = lastPinged;
     }
 
+    public void setVirtualMachineId(String virtualMachineId) {
+        this.virtualMachineId = virtualMachineId;
+    }
+
     public void setManagementServerId(String managementServerId) {
         this.managementServerId = managementServerId;
+    }
+
+    public void setManagementServerName(String managementServerName) {
+        this.managementServerName = managementServerName;
+    }
+
+    public long getClusterInternalId() {
+        return clusterInternalId;
+    }
+
+    public void setClusterInternalId(long clusterInternalId) {
+        this.clusterInternalId = clusterInternalId;
     }
 
     public void setClusterId(String clusterId) {
@@ -456,6 +538,54 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     public void setHostTags(String hostTags) {
         this.hostTags = hostTags;
+    }
+
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
+    }
+
+    public void setStorageAccessGroups(String storageAccessGroups) {
+        this.storageAccessGroups = storageAccessGroups;
+    }
+
+    public String getClusterStorageAccessGroups() {
+        return clusterStorageAccessGroups;
+    }
+
+    public void setClusterStorageAccessGroups(String clusterStorageAccessGroups) {
+        this.clusterStorageAccessGroups = clusterStorageAccessGroups;
+    }
+
+    public String getPodStorageAccessGroups() {
+        return podStorageAccessGroups;
+    }
+
+    public void setPodStorageAccessGroups(String podStorageAccessGroups) {
+        this.podStorageAccessGroups = podStorageAccessGroups;
+    }
+
+    public String getZoneStorageAccessGroups() {
+        return zoneStorageAccessGroups;
+    }
+
+    public void setZoneStorageAccessGroups(String zoneStorageAccessGroups) {
+        this.zoneStorageAccessGroups = zoneStorageAccessGroups;
+    }
+
+    public String getExplicitHostTags() {
+        return explicitHostTags;
+    }
+
+    public void setExplicitHostTags(String explicitHostTags) {
+        this.explicitHostTags = explicitHostTags;
+    }
+
+    public String getImplicitHostTags() {
+        return implicitHostTags;
+    }
+
+    public void setImplicitHostTags(String implicitHostTags) {
+        this.implicitHostTags = implicitHostTags;
     }
 
     public void setHasEnoughCapacity(Boolean hasEnoughCapacity) {
@@ -526,7 +656,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
         this.username = username;
     }
 
-    public void setDetails(Map details) {
+    public void setDetails(Map details, Hypervisor.HypervisorType hypervisorType) {
 
         if (details == null) {
             return;
@@ -545,6 +675,15 @@ public class HostResponse extends BaseResponseWithAnnotations {
             detailsCopy.remove(Host.HOST_VOLUME_ENCRYPTION);
         } else {
             this.setEncryptionSupported(new Boolean(false)); // default
+        }
+
+        if (Hypervisor.HypervisorType.KVM.equals(hypervisorType)) {
+            if (detailsCopy.containsKey(Host.HOST_INSTANCE_CONVERSION)) {
+                this.setInstanceConversionSupported(Boolean.parseBoolean((String) detailsCopy.get(Host.HOST_INSTANCE_CONVERSION)));
+                detailsCopy.remove(Host.HOST_INSTANCE_CONVERSION);
+            } else {
+                this.setInstanceConversionSupported(new Boolean(false)); // default
+            }
         }
 
         this.details = detailsCopy;
@@ -681,8 +820,16 @@ public class HostResponse extends BaseResponseWithAnnotations {
         return lastPinged;
     }
 
+    public String getVirtualMachineId() {
+        return virtualMachineId;
+    }
+
     public String getManagementServerId() {
         return managementServerId;
+    }
+
+    public String getManagementServerName() {
+        return managementServerName;
     }
 
     public String getClusterId() {
@@ -697,7 +844,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
         return clusterType;
     }
 
-    public Boolean isLocalStorageActive() {
+    public Boolean getLocalStorageActive() {
         return localStorageActive;
     }
 
@@ -717,7 +864,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
         return hasEnoughCapacity;
     }
 
-    public Boolean isSuitableForMigration() {
+    public Boolean getSuitableForMigration() {
         return suitableForMigration;
     }
 
@@ -729,12 +876,16 @@ public class HostResponse extends BaseResponseWithAnnotations {
         return haHost;
     }
 
-    public void setUefiCapabilty(Boolean hostCapability) {
-        this.uefiCapabilty = hostCapability;
+    public void setUefiCapability(Boolean hostCapability) {
+        this.uefiCapability = hostCapability;
     }
 
     public void setEncryptionSupported(Boolean encryptionSupported) {
         this.encryptionSupported = encryptionSupported;
+    }
+
+    public void setInstanceConversionSupported(Boolean instanceConversionSupported) {
+        this.instanceConversionSupported = instanceConversionSupported;
     }
 
     public Boolean getIsTagARule() {
@@ -743,5 +894,109 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     public void setIsTagARule(Boolean tagARule) {
         isTagARule = tagARule;
+    }
+
+    public void setArch(String arch) {
+        this.arch = arch;
+    }
+
+    public String getArch() {
+        return arch;
+    }
+
+    public Long getCpuAllocatedValue() {
+        return cpuAllocatedValue;
+    }
+
+    public String getCpuAllocatedPercentage() {
+        return cpuAllocatedPercentage;
+    }
+
+    public String getCpuAllocatedWithOverprovisioning() {
+        return cpuAllocatedWithOverprovisioning;
+    }
+
+    public Double getCpuloadaverage() {
+        return cpuloadaverage;
+    }
+
+    public void setCpuloadaverage(Double cpuloadaverage) {
+        this.cpuloadaverage = cpuloadaverage;
+    }
+
+    public String getMemWithOverprovisioning() {
+        return memWithOverprovisioning;
+    }
+
+    public String getMemoryAllocatedPercentage() {
+        return memoryAllocatedPercentage;
+    }
+
+    public Long getMemoryAllocatedBytes() {
+        return memoryAllocatedBytes;
+    }
+
+    public Long getGpuTotal() {
+        return gpuTotal;
+    }
+
+    public Long getGpuUsed() {
+        return gpuUsed;
+    }
+
+    public Boolean getTagARule() {
+        return isTagARule;
+    }
+
+    public void setTagARule(Boolean tagARule) {
+        isTagARule = tagARule;
+    }
+
+    public Boolean getHasEnoughCapacity() {
+        return hasEnoughCapacity;
+    }
+
+    public void setDetails(Map details) {
+        this.details = details;
+    }
+
+    public String getAnnotation() {
+        return annotation;
+    }
+
+    public Date getLastAnnotated() {
+        return lastAnnotated;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public Boolean getUefiCapability() {
+        return uefiCapability;
+    }
+
+    public Boolean getEncryptionSupported() {
+        return encryptionSupported;
+    }
+
+    public Boolean getInstanceConversionSupported() {
+        return instanceConversionSupported;
+    }
+
+    public void setExtensionId(String extensionId) {
+        this.extensionId = extensionId;
+    }
+
+    public String getExtensionId() {
+        return extensionId;
+    }
+
+    public void setExtensionName(String extensionName) {
+        this.extensionName = extensionName;
+    }
+
+    public String getExtensionName() {
+        return extensionName;
     }
 }

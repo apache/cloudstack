@@ -24,13 +24,13 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://pmd.sf.net/ruleset/1.0.0 http://pmd.sf.net/ruleset_xml_schema.xsd"
   xsi:noNamespaceSchemaLocation="http://pmd.sf.net/ruleset_xml_schema.xsd">
-  
+
   <description>
     Ruleset that brings all the rulesets we want from the pmd jar, because
     the maven-pmd-plugin doesn't find them otherwise. This is also the place
     to add our own future rulesets, if any.
   </description>
-  
+
   <rule ref="rulesets/java/basic.xml"/>
   <rule ref="rulesets/java/braces.xml"/>
   <rule ref="rulesets/java/clone.xml"/>

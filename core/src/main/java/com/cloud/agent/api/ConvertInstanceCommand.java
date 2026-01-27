@@ -20,40 +20,74 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.RemoteInstanceTO;
 import com.cloud.hypervisor.Hypervisor;
 
-import java.util.List;
-
 public class ConvertInstanceCommand extends Command {
 
     private RemoteInstanceTO sourceInstance;
+    private String originalVMName;
     private Hypervisor.HypervisorType destinationHypervisorType;
-    private List<String> destinationStoragePools;
     private DataStoreTO conversionTemporaryLocation;
+    private String templateDirOnConversionLocation;
+    private boolean checkConversionSupport;
+    private boolean exportOvfToConversionLocation;
+    private int threadsCountToExportOvf = 0;
+    private String extraParams;
 
     public ConvertInstanceCommand() {
     }
 
-    public ConvertInstanceCommand(RemoteInstanceTO sourceInstance, Hypervisor.HypervisorType destinationHypervisorType,
-                                  List<String> destinationStoragePools, DataStoreTO conversionTemporaryLocation) {
+    public ConvertInstanceCommand(RemoteInstanceTO sourceInstance, Hypervisor.HypervisorType destinationHypervisorType, DataStoreTO conversionTemporaryLocation,
+                                  String templateDirOnConversionLocation, boolean checkConversionSupport, boolean exportOvfToConversionLocation, String sourceVMName) {
         this.sourceInstance = sourceInstance;
         this.destinationHypervisorType = destinationHypervisorType;
-        this.destinationStoragePools = destinationStoragePools;
         this.conversionTemporaryLocation = conversionTemporaryLocation;
+        this.templateDirOnConversionLocation = templateDirOnConversionLocation;
+        this.checkConversionSupport = checkConversionSupport;
+        this.exportOvfToConversionLocation = exportOvfToConversionLocation;
+        this.originalVMName = sourceVMName;
     }
 
     public RemoteInstanceTO getSourceInstance() {
         return sourceInstance;
     }
 
+    public String getOriginalVMName() {
+        return originalVMName;
+    }
+
     public Hypervisor.HypervisorType getDestinationHypervisorType() {
         return destinationHypervisorType;
     }
 
-    public List<String> getDestinationStoragePools() {
-        return destinationStoragePools;
-    }
-
     public DataStoreTO getConversionTemporaryLocation() {
         return conversionTemporaryLocation;
+    }
+
+    public String getTemplateDirOnConversionLocation() {
+        return templateDirOnConversionLocation;
+    }
+
+    public boolean getCheckConversionSupport() {
+        return checkConversionSupport;
+    }
+
+    public boolean getExportOvfToConversionLocation() {
+        return exportOvfToConversionLocation;
+    }
+
+    public int getThreadsCountToExportOvf() {
+        return threadsCountToExportOvf;
+    }
+
+    public void setThreadsCountToExportOvf(int threadsCountToExportOvf) {
+        this.threadsCountToExportOvf = threadsCountToExportOvf;
+    }
+
+    public String getExtraParams() {
+        return extraParams;
+    }
+
+    public void setExtraParams(String extraParams) {
+        this.extraParams = extraParams;
     }
 
     @Override

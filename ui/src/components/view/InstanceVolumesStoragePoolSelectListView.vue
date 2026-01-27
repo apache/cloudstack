@@ -63,7 +63,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import VolumeStoragePoolSelectForm from '@/components/view/VolumeStoragePoolSelectForm'
 
 export default {
@@ -102,8 +102,13 @@ export default {
           title: this.$t('label.size')
         },
         {
+          key: 'storage',
+          title: this.$t('label.current.storage'),
+          dataIndex: 'storage'
+        },
+        {
           key: 'selectedstorage',
-          title: this.$t('label.storage')
+          title: this.$t('label.selected.storage')
         },
         {
           key: 'select',
@@ -163,7 +168,7 @@ export default {
     fetchVolumes () {
       this.volumesLoading = true
       this.volumes = []
-      api('listVolumes', {
+      getAPI('listVolumes', {
         listAll: true,
         virtualmachineid: this.resource.id
       }).then(response => {
@@ -201,13 +206,19 @@ export default {
     closeVolumeStoragePoolSelector () {
       this.selectedVolumeForStoragePoolSelection = {}
     },
-    handleVolumeStoragePoolSelection (volumeId, storagePool) {
+    handleVolumeStoragePoolSelection (volumeId, storagePool, applyToAll) {
       for (const volume of this.volumes) {
-        if (volume.id === volumeId) {
+        if (applyToAll) {
           volume.selectedstorageid = storagePool.id
           volume.selectedstoragename = storagePool.name
           volume.selectedstorageclusterid = storagePool.clusterid
-          break
+        } else {
+          if (volume.id === volumeId) {
+            volume.selectedstorageid = storagePool.id
+            volume.selectedstoragename = storagePool.name
+            volume.selectedstorageclusterid = storagePool.clusterid
+            break
+          }
         }
       }
       this.updateVolumeToStoragePoolSelection()

@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.storage.template;
 
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -43,16 +41,19 @@ import java.util.concurrent.Executors;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.ConvertSnapshotCommand;
 import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType;
+import org.apache.cloudstack.storage.resource.IpTablesHelper;
 import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
+import org.apache.cloudstack.storage.formatinspector.Qcow2HeaderField;
+import org.apache.cloudstack.storage.formatinspector.Qcow2Inspector;
 import org.apache.cloudstack.utils.security.ChecksumValue;
 import org.apache.cloudstack.utils.security.DigestHelper;
-import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -85,13 +86,17 @@ import com.cloud.storage.template.TemplateProp;
 import com.cloud.storage.template.VhdProcessor;
 import com.cloud.storage.template.VmdkProcessor;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Proxy;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.script.Script;
-import com.cloud.utils.storage.QCOW2Utils;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class DownloadManagerImpl extends ManagerBase implements DownloadManager {
     protected static Logger LOGGER = LogManager.getLogger(DownloadManagerImpl.class);
@@ -365,11 +370,17 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             // The QCOW2 is the only format with a header,
             // and as such can be easily read.
 
-            try (InputStream inputStream = td.getS3ObjectInputStream();) {
-                dnld.setTemplatesize(QCOW2Utils.getVirtualSize(inputStream, false));
-            }
-            catch (IOException e) {
-                result = "Couldn't read QCOW2 virtual size. Error: " + e.getMessage();
+            try (InputStream inputStream = td.getS3ObjectInputStream()) {
+                Map<String, byte[]> qcow2HeaderFieldsAndValues = Qcow2Inspector.unravelQcow2Header(inputStream, td.getDownloadUrl());
+                Qcow2Inspector.validateQcow2HeaderFields(qcow2HeaderFieldsAndValues, td.getDownloadUrl());
+
+                dnld.setTemplatesize(NumbersUtil.bytesToLong(qcow2HeaderFieldsAndValues.get(Qcow2HeaderField.SIZE.name())));
+            } catch (IOException ex) {
+                result = String.format("Unable to read QCOW2 metadata. Error: %s", ex.getMessage());
+                LOGGER.error(result, ex);
+            } catch (SecurityException ex) {
+                result = String.format("[%s] is not a valid QCOW2:", td.getDownloadUrl());
+                LOGGER.error(result, ex);
             }
 
         }
@@ -398,6 +409,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         }
         String[] items = uri.getPath().split("/");
         name = items[items.length - 1];
+        name = name.replace(ConvertSnapshotCommand.TEMP_SNAPSHOT_NAME, "");
         if (items.length < 2) {
             return name;
         }
@@ -515,8 +527,19 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             return result;
         }
 
+        String finalFilename = resourcePath + "/" + templateFilename;
+
+        if (ImageFormat.QCOW2.equals(dnld.getFormat())) {
+            try {
+                Qcow2Inspector.validateQcow2File(finalFilename);
+            } catch (RuntimeException e) {
+                LOGGER.error(String.format("The downloaded file [%s] is not a valid QCOW2.", finalFilename), e);
+                return "The downloaded file is not a valid QCOW2. Ask the administrator to check the logs for more details.";
+            }
+        }
+
         // Set permissions for the downloaded template
-        File downloadedTemplate = new File(resourcePath + "/" + templateFilename);
+        File downloadedTemplate = new File(finalFilename);
 
         _storage.setWorldReadableAndWriteable(downloadedTemplate);
         setPermissionsForTheDownloadedTemplate(resourcePath, resourceType);
@@ -525,7 +548,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         try {
             loc.create(dnld.getId(), true, dnld.getTmpltName());
         } catch (IOException e) {
-            logger.warn("Something is wrong with template location " + resourcePath, e);
+            logger.warn("Something is wrong with Template location " + resourcePath, e);
             loc.purge();
             return "Unable to download due to " + e.getMessage();
         }
@@ -573,7 +596,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         if (extension.equals("iso")) {
             templateName = jobs.get(jobId).getTmpltName().trim().replace(" ", "_");
         } else {
-            templateName = UUID.nameUUIDFromBytes((jobs.get(jobId).getTmpltName() + System.currentTimeMillis()).getBytes(com.cloud.utils.StringUtils.getPreferredCharset())).toString();
+            templateName = UuidUtils.nameUUIDFromBytes((jobs.get(jobId).getTmpltName() + System.currentTimeMillis()).getBytes(com.cloud.utils.StringUtils.getPreferredCharset())).toString();
         }
         return templateName;
     }
@@ -609,7 +632,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         }
         String checksum = newValue.toString();
         if (checksum == null) {
-            logger.warn("Something wrong happened when try to calculate the checksum of downloaded template!");
+            logger.warn("Something wrong happened when try to calculate the checksum of downloaded Template!");
         }
         dnld.setCheckSum(checksum);
         return null;
@@ -662,8 +685,9 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     }
 
     @Override
-    public String downloadS3Template(S3TO s3, long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum,
-            String installPathPrefix, String user, String password, long maxTemplateSizeInBytes, Proxy proxy, ResourceType resourceType) {
+    public String downloadS3Template(S3TO s3, long id, String url, String name, ImageFormat format, boolean hvm,
+            Long accountId, String descr, String cksum, String installPathPrefix, String user, String password,
+            long maxTemplateSizeInBytes, Proxy proxy, ResourceType resourceType, boolean followRedirects) {
         UUID uuid = UUID.randomUUID();
         String jobId = uuid.toString();
 
@@ -683,6 +707,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         } else {
             throw new CloudRuntimeException("Unable to download from URL: " + url);
         }
+        td.setFollowRedirects(followRedirects);
         DownloadJob dj = new DownloadJob(td, jobId, id, name, format, hvm, accountId, descr, cksum, installPathPrefix, resourceType);
         dj.setTmpltPath(installPathPrefix);
         jobs.put(jobId, dj);
@@ -718,8 +743,10 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     }
 
     @Override
-    public String downloadPublicTemplate(long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum,
-            String installPathPrefix, String templatePath, String user, String password, long maxTemplateSizeInBytes, Proxy proxy, ResourceType resourceType) {
+    public String downloadPublicTemplate(long id, String url, String name, ImageFormat format, boolean hvm,
+            Long accountId, String descr, String cksum, String installPathPrefix, String templatePath, String user,
+            String password, long maxTemplateSizeInBytes, Proxy proxy, ResourceType resourceType,
+            boolean followRedirects) {
         UUID uuid = UUID.randomUUID();
         String jobId = uuid.toString();
         String tmpDir = installPathPrefix;
@@ -766,6 +793,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     throw new CloudRuntimeException("Unable to download from URL: " + url);
                 }
             }
+            td.setFollowRedirects(followRedirects);
             // NOTE the difference between installPathPrefix and templatePath
             // here. instalPathPrefix is the absolute path for template
             // including mount directory
@@ -902,12 +930,16 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         String jobId = null;
         if (dstore instanceof S3TO) {
             jobId =
-                    downloadS3Template((S3TO)dstore, cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.isHvm(), cmd.getAccountId(), cmd.getDescription(),
-                            cmd.getChecksum(), installPathPrefix, user, password, maxDownloadSizeInBytes, cmd.getProxy(), resourceType);
+                    downloadS3Template((S3TO)dstore, cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(),
+                            cmd.isHvm(), cmd.getAccountId(), cmd.getDescription(), cmd.getChecksum(),
+                            installPathPrefix, user, password, maxDownloadSizeInBytes, cmd.getProxy(), resourceType,
+                            cmd.isFollowRedirects());
         } else {
             jobId =
-                    downloadPublicTemplate(cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.isHvm(), cmd.getAccountId(), cmd.getDescription(),
-                            cmd.getChecksum(), installPathPrefix, cmd.getInstallPath(), user, password, maxDownloadSizeInBytes, cmd.getProxy(), resourceType);
+                    downloadPublicTemplate(cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.isHvm(),
+                            cmd.getAccountId(), cmd.getDescription(), cmd.getChecksum(), installPathPrefix,
+                            cmd.getInstallPath(), user, password, maxDownloadSizeInBytes, cmd.getProxy(), resourceType,
+                            cmd.isFollowRedirects());
         }
         sleep();
         if (jobId == null) {
@@ -1006,7 +1038,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             throw new CloudRuntimeException("Error while executing script " + script.toString());
         }
         result.addAll(zpp.getPaths());
-        logger.info("found " + zpp.getPaths().size() + " templates" + zpp.getPaths());
+        logger.info("Found " + zpp.getPaths().size() + " Templates" + zpp.getPaths());
         return result;
     }
 
@@ -1031,7 +1063,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     continue;
                 }
             } catch (IOException e) {
-                logger.warn("Unable to load template location " + path, e);
+                logger.warn("Unable to load Template location " + path, e);
                 continue;
             }
 
@@ -1046,12 +1078,12 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     loc.updateVirtualSize(vSize);
                     loc.save();
                 } catch (Exception e) {
-                    logger.error("Unable to get the virtual size of the template: " + tInfo.getInstallPath() + " due to " + e.getMessage());
+                    logger.error("Unable to get the virtual size of the Template: " + tInfo.getInstallPath() + " due to " + e.getMessage());
                 }
             }
 
             result.put(tInfo.getTemplateName(), tInfo);
-            logger.debug("Added template name: " + tInfo.getTemplateName() + ", path: " + tmplt);
+            logger.debug("Added Template name: " + tInfo.getTemplateName() + ", path: " + tmplt);
         }
         return result;
     }
@@ -1217,17 +1249,14 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     }
 
     private void blockOutgoingOnPrivate() {
-        Script command = new Script("/bin/bash", logger);
-        String intf = "eth1";
-        command.add("-c");
-        command.add("iptables -A OUTPUT -o " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "80" + " -j REJECT;" + "iptables -A OUTPUT -o " + intf +
-                " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j REJECT;");
-
-        String result = command.execute();
-        if (result != null) {
-            logger.warn("Error in blocking outgoing to port 80/443 err=" + result);
-            return;
-        }
+        IpTablesHelper.addConditionally(IpTablesHelper.OUTPUT_CHAIN
+                , false
+                , "-o " + TemplateConstants.TMPLT_COPY_INTF_PRIVATE + " -p tcp -m state --state NEW -m tcp --dport 80 -j REJECT;"
+                , "Error in blocking outgoing to port 80");
+        IpTablesHelper.addConditionally(IpTablesHelper.OUTPUT_CHAIN
+                , false
+                , "-o " + TemplateConstants.TMPLT_COPY_INTF_PRIVATE + " -p tcp -m state --state NEW -m tcp --dport 443 -j REJECT;"
+                , "Error in blocking outgoing to port 443");
     }
 
     @Override
@@ -1253,17 +1282,19 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         if (result != null) {
             logger.warn("Error in stopping httpd service err=" + result);
         }
-        String port = Integer.toString(TemplateConstants.DEFAULT_TMPLT_COPY_PORT);
-        String intf = TemplateConstants.DEFAULT_TMPLT_COPY_INTF;
 
-        command = new Script("/bin/bash", logger);
-        command.add("-c");
-        command.add("iptables -I INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j ACCEPT;" + "iptables -I INPUT -i " + intf +
-                " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j ACCEPT;");
-
-        result = command.execute();
+        result = IpTablesHelper.addConditionally(IpTablesHelper.INPUT_CHAIN
+                , true
+                , "-i " + TemplateConstants.DEFAULT_TMPLT_COPY_INTF + " -p tcp -m state --state NEW -m tcp --dport " + TemplateConstants.DEFAULT_TMPLT_COPY_PORT + " -j ACCEPT"
+                , "Error in opening up apache2 port " + TemplateConstants.TMPLT_COPY_INTF_PRIVATE);
         if (result != null) {
-            logger.warn("Error in opening up apache2 port err=" + result);
+            return;
+        }
+        result = IpTablesHelper.addConditionally(IpTablesHelper.INPUT_CHAIN
+                , true
+                , "-i " + TemplateConstants.DEFAULT_TMPLT_COPY_INTF + " -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT;"
+                , "Error in opening up apache2 port 443");
+        if (result != null) {
             return;
         }
 

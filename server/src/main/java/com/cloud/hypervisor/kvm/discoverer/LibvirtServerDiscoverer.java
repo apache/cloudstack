@@ -16,6 +16,28 @@
 // under the License.
 package com.cloud.hypervisor.kvm.discoverer;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.ADD_HOST_ON_SERVICE_RESTART_KVM;
+
+import java.net.InetAddress;
+import java.net.URI;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.agent.lb.IndirectAgentLB;
+import org.apache.cloudstack.ca.CAManager;
+import org.apache.cloudstack.ca.SetupCertificateCommand;
+import org.apache.cloudstack.direct.download.DirectDownloadManager;
+import org.apache.cloudstack.framework.ca.Certificate;
+import org.apache.cloudstack.utils.cache.LazyCache;
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -32,6 +54,7 @@ import com.cloud.exception.DiscoveredWithErrorException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
+import com.cloud.host.HostInfo;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -45,31 +68,18 @@ import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.trilead.ssh2.Connection;
-import org.apache.cloudstack.agent.lb.IndirectAgentLB;
-import org.apache.cloudstack.ca.CAManager;
-import org.apache.cloudstack.ca.SetupCertificateCommand;
-import org.apache.cloudstack.direct.download.DirectDownloadManager;
-import org.apache.cloudstack.framework.ca.Certificate;
-import org.apache.cloudstack.utils.security.KeyStoreUtils;
 
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.net.InetAddress;
-import java.net.URI;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import static com.cloud.configuration.ConfigurationManagerImpl.ADD_HOST_ON_SERVICE_RESTART_KVM;
 
 public abstract class LibvirtServerDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
     private final int _waitTime = 5; /* wait for 5 minutes */
+
+    private final static HashSet<String> COMPATIBLE_HOST_OSES = new HashSet<>(Arrays.asList("Rocky", "Rocky Linux",
+            "Red", "Red Hat Enterprise Linux", "Oracle", "Oracle Linux Server", "AlmaLinux"));
+
     private String _kvmPrivateNic;
     private String _kvmPublicNic;
     private String _kvmGuestNic;
@@ -83,6 +93,16 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
     private IndirectAgentLB indirectAgentLB;
     @Inject
     private HostDao hostDao;
+
+    private LazyCache<Long, HostVO> clusterExistingHostCache;
+
+    private HostVO getExistingHostForCluster(long clusterId) {
+        HostVO existingHostInCluster = _hostDao.findAnyStateHypervisorHostInCluster(clusterId);
+        if (existingHostInCluster != null) {
+            _hostDao.loadDetails(existingHostInCluster);
+        }
+        return existingHostInCluster;
+    }
 
     @Override
     public abstract Hypervisor.HypervisorType getHypervisorType();
@@ -151,7 +171,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
 
     private void setupAgentSecurity(final Connection sshConnection, final String agentIp, final String agentHostname) {
         if (sshConnection == null) {
-            throw new CloudRuntimeException("Cannot secure agent communication because ssh connection is invalid for host ip=" + agentIp);
+            throw new CloudRuntimeException("Cannot secure agent communication because SSH connection is invalid for host IP=" + agentIp);
         }
 
         Integer validityPeriod = CAManager.CertValidityPeriod.value();
@@ -221,7 +241,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
 
         // Set cluster GUID based on cluster ID if null
         if (cluster.getGuid() == null) {
-            cluster.setGuid(UUID.nameUUIDFromBytes(String.valueOf(clusterId).getBytes()).toString());
+            cluster.setGuid(UuidUtils.nameUUIDFromBytes(String.valueOf(clusterId).getBytes()).toString());
             _clusterDao.update(clusterId, cluster);
         }
 
@@ -239,7 +259,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             String hostname = uri.getHost();
             InetAddress ia = InetAddress.getByName(hostname);
             agentIp = ia.getHostAddress();
-            String guid = UUID.nameUUIDFromBytes(agentIp.getBytes()).toString();
+            String guid = UuidUtils.nameUUIDFromBytes(agentIp.getBytes()).toString();
 
             List<HostVO> existingHosts = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.Routing, dcId);
             if (existingHosts != null) {
@@ -259,10 +279,10 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             final String privateKey = _configDao.getValue("ssh.privatekey");
             if (!SSHCmdHelper.acquireAuthorizedConnectionWithPublicKey(sshConnection, username, privateKey)) {
                 if (org.apache.commons.lang3.StringUtils.isEmpty(password)) {
-                    logger.error("Failed to authenticate with ssh key");
-                    throw new DiscoveredWithErrorException("Authentication error with ssh private key");
+                    logger.error("Failed to authenticate with SSH key");
+                    throw new DiscoveredWithErrorException("Authentication error with SSH private key");
                 }
-                logger.info("Failed to authenticate with ssh key, retrying with password");
+                logger.info("Failed to authenticate with SSH key, retrying with password");
                 if (!sshConnection.authenticateWithPassword(username, password)) {
                     logger.error("Failed to authenticate with password");
                     throw new DiscoveredWithErrorException("Authentication error with host password");
@@ -420,6 +440,9 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             _kvmGuestNic = _kvmPrivateNic;
         }
 
+        clusterExistingHostCache = new LazyCache<>(32, 30,
+                this::getExistingHostForCluster);
+
         agentMgr.registerForHostEvents(this, true, false, false);
         _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
@@ -462,13 +485,11 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             throw new IllegalArgumentException("cannot add host, due to can't find cluster: " + host.getClusterId());
         }
 
-        List<HostVO> hostsInCluster = _resourceMgr.listAllHostsInCluster(clusterVO.getId());
-        if (!hostsInCluster.isEmpty()) {
-            HostVO oneHost = hostsInCluster.get(0);
-            _hostDao.loadDetails(oneHost);
-            String hostOsInCluster = oneHost.getDetail("Host.OS");
-            String hostOs = ssCmd.getHostDetails().get("Host.OS");
-            if (!hostOsInCluster.equalsIgnoreCase(hostOs)) {
+        HostVO existingHostInCluster = clusterExistingHostCache.get(clusterVO.getId());
+        if (existingHostInCluster != null) {
+            String hostOsInCluster = existingHostInCluster.getDetail(HostInfo.HOST_OS);
+            String hostOs = ssCmd.getHostDetails().get(HostInfo.HOST_OS);
+            if (!isHostOsCompatibleWithOtherHost(hostOsInCluster, hostOs)) {
                 String msg = String.format("host: %s with hostOS, \"%s\"into a cluster, in which there are \"%s\" hosts added", firstCmd.getPrivateIpAddress(), hostOs, hostOsInCluster);
                 if (hostOs != null && hostOs.startsWith(hostOsInCluster)) {
                     logger.warn(String.format("Adding %s. This may or may not be ok!", msg));
@@ -481,6 +502,17 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
         _hostDao.loadDetails(host);
 
         return _resourceMgr.fillRoutingHostVO(host, ssCmd, getHypervisorType(), host.getDetails(), null);
+    }
+
+    protected boolean isHostOsCompatibleWithOtherHost(String hostOsInCluster, String hostOs) {
+        if (hostOsInCluster.equalsIgnoreCase(hostOs)) {
+            return true;
+        }
+        if (COMPATIBLE_HOST_OSES.contains(hostOsInCluster) && COMPATIBLE_HOST_OSES.contains(hostOs)) {
+            logger.info(String.format("The host OS (%s) is compatible with the existing host OS (%s) in the cluster.", hostOs, hostOsInCluster));
+            return true;
+        }
+        return false;
     }
 
     @Override

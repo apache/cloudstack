@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.LinkAccountToLdapResponse;
 import org.apache.cloudstack.api.response.LinkDomainToLdapResponse;
+import org.apache.cloudstack.api.response.RoleResponse;
 import org.apache.cloudstack.ldap.LdapManager;
 import org.apache.cloudstack.ldap.LdapUser;
 import org.apache.cloudstack.ldap.NoLdapUserMatchingQueryException;
@@ -42,28 +43,31 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 
-@APICommand(name = "linkAccountToLdap", description = "link a cloudstack account to a group or OU in ldap", responseObject = LinkDomainToLdapResponse.class, since = "4.11.0",
+@APICommand(name = "linkAccountToLdap", description = "Link a cloudstack account to a group or OU in ldap", responseObject = LinkDomainToLdapResponse.class, since = "4.11.0",
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin,RoleType.DomainAdmin})
 public class LinkAccountToLdapCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = true, entityType = DomainResponse.class, description = "The id of the domain that is to contain the linked account.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = false, description = "type of the ldap name. GROUP or OU, defaults to GROUP")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = false, description = "Type of the ldap name. GROUP or OU, defaults to GROUP")
     private String type;
 
-    @Parameter(name = ApiConstants.LDAP_DOMAIN, type = CommandType.STRING, required = true, description = "name of the group or OU in LDAP")
+    @Parameter(name = ApiConstants.LDAP_DOMAIN, type = CommandType.STRING, required = true, description = "Name of the group or OU in LDAP")
     private String ldapDomain;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = true, description = "name of the account, it will be created if it does not exist")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = true, description = "Name of the account, it will be created if it does not exist")
     private String accountName;
 
-    @Parameter(name = ApiConstants.ADMIN, type = CommandType.STRING, required = false, description = "domain admin username in LDAP ")
+    @Parameter(name = ApiConstants.ADMIN, type = CommandType.STRING, required = false, description = "Domain admin username in LDAP ")
     private String admin;
 
-    @Parameter(name = ApiConstants.ACCOUNT_TYPE, type = CommandType.INTEGER, required = true, description = "Type of the account to auto import. Specify 0 for user and 2 for "
+    @Parameter(name = ApiConstants.ACCOUNT_TYPE, type = CommandType.INTEGER, required = false, description = "Type of the account to auto import. Specify 0 for user and 2 for "
             + "domain admin")
-    private int accountType;
+    private Integer accountType;
+
+    @Parameter(name = ApiConstants.ROLE_ID, type = CommandType.UUID, entityType = RoleResponse.class, required = false, description = "Creates the account under the specified role.", since="4.19.1")
+    private Long roleId;
 
     @Inject
     private LdapManager _ldapManager;
@@ -87,12 +91,12 @@ public class LinkAccountToLdapCmd extends BaseCmd {
                                     .createUserAccount(admin, "", ldapUser.getFirstname(), ldapUser.getLastname(), ldapUser.getEmail(), null, admin, Account.Type.DOMAIN_ADMIN, RoleType.DomainAdmin.getId(), domainId, null, null, UUID.randomUUID().toString(),
                                             UUID.randomUUID().toString(), User.Source.LDAP);
                             response.setAdminId(String.valueOf(userAccount.getAccountId()));
-                            logger.info("created an account with name " + admin + " in the given domain " + domainId);
+                            logger.info("created an account with name {} in the given domain {} with id {}", admin, _domainService.getDomain(domainId), domainId);
                         } catch (Exception e) {
-                            logger.info("an exception occurred while creating account with name " + admin + " in domain " + domainId, e);
+                            logger.info("an exception occurred while creating account with name {} in domain {} with id {}", admin, _domainService.getDomain(domainId), domainId, e);
                         }
                     } else {
-                        logger.debug("an account with name " + admin + " already exists in the domain " + domainId);
+                        logger.debug("an account with name {} already exists in the domain {} with id {}", admin, _domainService.getDomain(domainId), domainId);
                     }
                 } else {
                     logger.debug("ldap user with username " + admin + " is disabled in the given group/ou");
@@ -132,7 +136,14 @@ public class LinkAccountToLdapCmd extends BaseCmd {
     }
 
     public Account.Type getAccountType() {
-        return Account.Type.getFromValue(accountType);
+        if (accountType == null) {
+            return RoleType.getAccountTypeByRole(roleService.findRole(roleId), null);
+        }
+        return RoleType.getAccountTypeByRole(roleService.findRole(roleId), Account.Type.getFromValue(accountType.intValue()));
+    }
+
+    public Long getRoleId() {
+        return RoleType.getRoleByAccountType(roleId, getAccountType());
     }
 
     @Override

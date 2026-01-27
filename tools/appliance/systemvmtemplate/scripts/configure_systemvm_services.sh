@@ -19,7 +19,7 @@
 set -e
 set -x
 
-CLOUDSTACK_RELEASE=4.20.0
+CLOUDSTACK_RELEASE=4.22.0
 
 function configure_apache2() {
    # Enable ssl, rewrite and auth
@@ -41,7 +41,7 @@ function configure_issue() {
 
    __?.o/  Apache CloudStack SystemVM $CLOUDSTACK_RELEASE
   (  )#    https://cloudstack.apache.org
- (___(_)   Debian GNU/Linux 11 \n \l
+ (___(_)   Debian GNU/Linux 12 \n \l
 
 EOF
 }
@@ -78,7 +78,7 @@ function install_cloud_scripts() {
 function do_signature() {
   mkdir -p /var/cache/cloud/ /usr/share/cloud/
   (cd ./cloud_scripts/; tar -cvf - * | gzip > /usr/share/cloud/cloud-scripts.tgz)
-  md5sum /usr/share/cloud/cloud-scripts.tgz | awk '{print $1}' > /var/cache/cloud/cloud-scripts-signature
+  sha512sum /usr/share/cloud/cloud-scripts.tgz | awk '{print $1}' > /var/cache/cloud/cloud-scripts-signature
   echo "Cloudstack Release $CLOUDSTACK_RELEASE $(date)" > /etc/cloudstack-release
 }
 
@@ -111,12 +111,14 @@ function configure_services() {
   systemctl disable haproxy
   systemctl disable keepalived
   systemctl disable radvd
+  systemctl disable frr
   systemctl disable strongswan-starter
   systemctl disable x11-common
   systemctl disable xl2tpd
   systemctl disable vgauth
   systemctl disable sshd
   systemctl disable nfs-common
+  systemctl disable nfs-server
   systemctl disable portmap
 
   # Disable guest services which will selectively be started based on hypervisor
@@ -131,7 +133,7 @@ function configure_services() {
   systemctl disable containerd
 
   # Disable cloud init by default
-cat <<EOF > /etc/cloud/cloud.cfg.d/cloudstack.cfg
+  cat <<EOF > /etc/cloud/cloud.cfg.d/cloudstack.cfg
 datasource_list: ['CloudStack']
 datasource:
   CloudStack:

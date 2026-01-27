@@ -49,27 +49,20 @@ public interface ResourceCountDao extends GenericDao<ResourceCountVO, Long> {
 
     ResourceCountVO findByOwnerAndTypeAndTag(long ownerId, ResourceOwnerType ownerType, ResourceType type, String tag);
 
+    List<ResourceCountVO> findByOwnersAndTypeAndTag(List<Long> ownerIdList, ResourceOwnerType ownerType,
+            ResourceType type, String tag);
+
     List<ResourceCountVO> listResourceCountByOwnerType(ResourceOwnerType ownerType);
 
     Set<Long> listAllRowsToUpdate(long ownerId, ResourceOwnerType ownerType, ResourceType type, String tag);
+
+    boolean updateCountByDeltaForIds(List<Long> ids, boolean increment, long delta);
 
     Set<Long> listRowsToUpdateForDomain(long domainId, ResourceType type, String tag);
 
     long removeEntriesByOwner(long ownerId, ResourceOwnerType ownerType);
 
-    /**
-     * Counts the number of CPU cores allocated for the given account.
-     *
-     * Side note: This method is not using the "resource_count" table. It is executing the actual count instead.
-     */
-    long countCpuNumberAllocatedToAccount(long accountId);
-
-    /**
-     * Counts the amount of memory allocated for the given account.
-     *
-     * Side note: This method is not using the "resource_count" table. It is executing the actual count instead.
-     */
-    long countMemoryAllocatedToAccount(long accountId);
-
     void removeResourceCountsForNonMatchingTags(Long ownerId, ResourceOwnerType ownerType, List<ResourceType> types, List<String> tags);
+
+    List<ResourceCountVO> lockRows(Set<Long> ids);
 }

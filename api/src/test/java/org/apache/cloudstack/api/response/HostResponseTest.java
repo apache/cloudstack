@@ -23,6 +23,8 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.cloud.hypervisor.Hypervisor;
+
 public final class HostResponseTest extends TestCase {
 
     private static final String VALID_KEY = "validkey";
@@ -32,7 +34,7 @@ public final class HostResponseTest extends TestCase {
     public void testSetDetailsNull() {
 
         final HostResponse hostResponse = new HostResponse();
-        hostResponse.setDetails(null);
+        hostResponse.setDetails(null, null);
 
         assertEquals(null, hostResponse.getDetails());
 
@@ -51,7 +53,7 @@ public final class HostResponseTest extends TestCase {
         final Map expectedDetails = new HashedMap();
         expectedDetails.put(VALID_KEY, VALID_VALUE);
 
-        hostResponse.setDetails(details);
+        hostResponse.setDetails(details, Hypervisor.HypervisorType.KVM);
         final Map actualDetails = hostResponse.getDetails();
 
         assertTrue(details != actualDetails);
@@ -70,7 +72,7 @@ public final class HostResponseTest extends TestCase {
         final Map expectedDetails = new HashedMap();
         expectedDetails.put(VALID_KEY, VALID_VALUE);
 
-        hostResponse.setDetails(details);
+        hostResponse.setDetails(details, Hypervisor.HypervisorType.KVM);
         final Map actualDetails = hostResponse.getDetails();
 
         assertTrue(details != actualDetails);

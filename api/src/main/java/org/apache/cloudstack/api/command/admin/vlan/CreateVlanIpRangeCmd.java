@@ -16,7 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vlan;
 
+import com.cloud.configuration.ConfigurationService;
+import com.cloud.network.Network;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.StringUtils;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -39,7 +42,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-import java.util.Objects;
 
 @APICommand(name = "createVlanIpRange", description = "Creates a VLAN IP range.", responseObject = VlanIpRangeResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -52,70 +54,70 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.ACCOUNT,
                type = CommandType.STRING,
-               description = "account who will own the VLAN. If VLAN is Zone wide, this parameter should be omitted")
+               description = "Account who will own the VLAN. If VLAN is Zone wide, this parameter should be omitted")
     private String accountName;
 
     @Parameter(name = ApiConstants.PROJECT_ID,
                type = CommandType.UUID,
                entityType = ProjectResponse.class,
-               description = "project who will own the VLAN. If VLAN is Zone wide, this parameter should be omitted")
+               description = "Project who will own the VLAN. If VLAN is Zone wide, this parameter should be omitted")
     private Long projectId;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "domain ID of the account owning a VLAN")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "Domain ID of the Account owning a VLAN")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.END_IP, type = CommandType.STRING, description = "the ending IP address in the VLAN IP range")
+    @Parameter(name = ApiConstants.END_IP, type = CommandType.STRING, description = "The ending IP address in the VLAN IP range")
     private String endIp;
 
-    @Parameter(name = ApiConstants.FOR_VIRTUAL_NETWORK, type = CommandType.BOOLEAN, description = "true if VLAN is of Virtual type, false if Direct")
+    @Parameter(name = ApiConstants.FOR_VIRTUAL_NETWORK, type = CommandType.BOOLEAN, description = "True if VLAN is of Virtual type, false if Direct")
     private Boolean forVirtualNetwork;
 
-    @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, description = "the gateway of the VLAN IP range")
+    @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, description = "The gateway of the VLAN IP range")
     private String gateway;
 
-    @Parameter(name = ApiConstants.NETMASK, type = CommandType.STRING, description = "the netmask of the VLAN IP range")
+    @Parameter(name = ApiConstants.NETMASK, type = CommandType.STRING, description = "The netmask of the VLAN IP range")
     private String netmask;
 
     @Parameter(name = ApiConstants.POD_ID,
                type = CommandType.UUID,
                entityType = PodResponse.class,
-               description = "optional parameter. Have to be specified for Direct Untagged vlan only.")
+               description = "Optional parameter. Have to be specified for Direct Untagged vlan only.")
     private Long podId;
 
-    @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, description = "the beginning IP address in the VLAN IP range")
+    @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, description = "The beginning IP address in the VLAN IP range")
     private String startIp;
 
-    @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "the ID or VID of the VLAN. If not specified,"
+    @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "The ID or VID of the VLAN. If not specified,"
         + " will be defaulted to the vlan of the network or if vlan of the network is null - to Untagged")
     private String vlan;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the Zone ID of the VLAN IP range")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The Zone ID of the VLAN IP range")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "the network id")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "The Network ID")
     private Long networkID;
 
-    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "the physical network id")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "The physical network ID")
     private Long physicalNetworkId;
 
-    @Parameter(name = ApiConstants.START_IPV6, type = CommandType.STRING, description = "the beginning IPv6 address in the IPv6 network range")
+    @Parameter(name = ApiConstants.START_IPV6, type = CommandType.STRING, description = "The beginning IPv6 address in the IPv6 network range")
     private String startIpv6;
 
-    @Parameter(name = ApiConstants.END_IPV6, type = CommandType.STRING, description = "the ending IPv6 address in the IPv6 network range")
+    @Parameter(name = ApiConstants.END_IPV6, type = CommandType.STRING, description = "The ending IPv6 address in the IPv6 network range")
     private String endIpv6;
 
-    @Parameter(name = ApiConstants.IP6_GATEWAY, type = CommandType.STRING, description = "the gateway of the IPv6 network. Required "
+    @Parameter(name = ApiConstants.IP6_GATEWAY, type = CommandType.STRING, description = "The gateway of the IPv6 network. Required "
         + "for Shared networks and Isolated networks when it belongs to VPC")
     private String ip6Gateway;
 
-    @Parameter(name = ApiConstants.IP6_CIDR, type = CommandType.STRING, description = "the CIDR of IPv6 network, must be at least /64")
+    @Parameter(name = ApiConstants.IP6_CIDR, type = CommandType.STRING, description = "The CIDR of IPv6 network, must be at least /64")
     private String ip6Cidr;
 
-    @Parameter(name = ApiConstants.FOR_SYSTEM_VMS, type = CommandType.BOOLEAN, description = "true if IP range is set to system vms, false if not")
+    @Parameter(name = ApiConstants.FOR_SYSTEM_VMS, type = CommandType.BOOLEAN, description = "True if IP range is set to System VMs, false if not")
     private Boolean forSystemVms;
 
-    @Parameter(name = ApiConstants.FOR_NSX, type = CommandType.BOOLEAN, description = "true if the IP range is used for NSX resource", since = "4.20.0")
-    private boolean forNsx;
+    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "Provider name for which the IP range is reserved for", since = "4.21.0")
+    private String provider;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -157,12 +159,12 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
         return startIp;
     }
 
-    public boolean isForNsx() {
-        return !Objects.isNull(forNsx) && forNsx;
+    public Network.Provider getProvider() {
+        return Network.Provider.getProvider(provider);
     }
 
     public String getVlan() {
-        if ((vlan == null || vlan.isEmpty()) && !isForNsx()) {
+        if (StringUtils.isBlank(vlan) && !ConfigurationService.IsIpRangeForProvider(getProvider())) {
             vlan = "untagged";
         }
         return vlan;
@@ -230,7 +232,7 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create vlan ip range");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create VLAN IP range");
             }
         } catch (ConcurrentOperationException ex) {
             logger.warn("Exception: ", ex);

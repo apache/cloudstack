@@ -46,7 +46,6 @@ import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Volume;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 
 @ResourceWrapper(handles =  PrepareForMigrationCommand.class)
 public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapper<PrepareForMigrationCommand, Answer, LibvirtComputingResource> {
@@ -57,6 +56,7 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
         final VirtualMachineTO vm = command.getVirtualMachine();
 
         if (command.isRollback()) {
+            logger.info("Handling rollback for PrepareForMigration of VM {}", vm.getName());
             return handleRollback(command, libvirtComputingResource);
         }
 
@@ -84,6 +84,7 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
                 if (interfaceDef != null && interfaceDef.getNetType() == GuestNetType.VHOSTUSER) {
                     DpdkTO to = new DpdkTO(interfaceDef.getDpdkOvsPath(), interfaceDef.getDpdkSourcePort(), interfaceDef.getInterfaceMode());
                     dpdkInterfaceMapping.put(nic.getMac(), to);
+                    logger.debug("Configured DPDK interface for VM {}", vm.getName());
                 }
             }
 
@@ -119,17 +120,16 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
 
             skipDisconnect = true;
 
-            if (!storagePoolMgr.connectPhysicalDisksViaVmSpec(vm)) {
+            if (!storagePoolMgr.connectPhysicalDisksViaVmSpec(vm, true)) {
                 return new PrepareForMigrationAnswer(command, "failed to connect physical disks to host");
             }
 
+            logger.info("Successfully prepared destination host for migration of VM {}", vm.getName());
             return createPrepareForMigrationAnswer(command, dpdkInterfaceMapping, libvirtComputingResource, vm);
         } catch (final LibvirtException | CloudRuntimeException | InternalErrorException | URISyntaxException e) {
             if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {
                 for (DpdkTO to : dpdkInterfaceMapping.values()) {
-                    String cmd = String.format("ovs-vsctl del-port %s", to.getPort());
-                    logger.debug("Removing DPDK port: " + to.getPort());
-                    Script.runSimpleBashScript(cmd);
+                    removeDpdkPort(to.getPort());
                 }
             }
             return new PrepareForMigrationAnswer(command, e.toString());
@@ -160,6 +160,7 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
         KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
         VirtualMachineTO vmTO = command.getVirtualMachine();
 
+        logger.info("Rolling back PrepareForMigration for VM {}: disconnecting physical disks", vmTO.getName());
         if (!storagePoolMgr.disconnectPhysicalDisksViaVmSpec(vmTO)) {
             return new PrepareForMigrationAnswer(command, "failed to disconnect physical disks from host");
         }

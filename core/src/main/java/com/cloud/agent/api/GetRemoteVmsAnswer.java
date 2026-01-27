@@ -22,10 +22,10 @@ import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import java.util.HashMap;
 import java.util.List;
 
-@LogLevel(LogLevel.Log4jLevel.Trace)
 public class GetRemoteVmsAnswer extends Answer {
 
     private String remoteIp;
+    @LogLevel(LogLevel.Log4jLevel.Trace)
     private HashMap<String, UnmanagedInstanceTO> unmanagedInstances;
 
     List<String> vmNames;

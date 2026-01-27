@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
+import org.apache.commons.lang3.BooleanUtils;
 
 @APICommand(name = "listManagementServers", description = "Lists management servers.", responseObject = ManagementServerResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -33,11 +34,16 @@ public class ListMgmtsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ManagementServerResponse.class, description = "the id of the management server")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ManagementServerResponse.class, description = "The ID of the management server")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the management server")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the management server")
     private String hostName;
+
+    @Parameter(name = ApiConstants.PEERS, type = CommandType.BOOLEAN,
+            description = "Whether to return the management server peers or not. By default, the management server peers will not be returned.",
+            since = "4.20.1.0")
+    private Boolean peers;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -49,6 +55,10 @@ public class ListMgmtsCmd extends BaseListCmd {
 
     public String getHostName() {
         return hostName;
+    }
+
+    public Boolean getPeers() {
+        return BooleanUtils.toBooleanDefaultIfNull(peers, false);
     }
 
     /////////////////////////////////////////////////////

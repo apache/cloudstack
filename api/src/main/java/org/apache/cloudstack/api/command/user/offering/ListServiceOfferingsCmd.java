@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.offering;
 
+import static com.cloud.offering.ServiceOffering.State.Active;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
@@ -24,7 +26,12 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VgpuProfileResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.commons.lang3.EnumUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import com.cloud.offering.ServiceOffering.State;
 
 @APICommand(name = "listServiceOfferings", description = "Lists all available service offerings.", responseObject = ServiceOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -38,51 +45,51 @@ public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesC
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, description = "ID of the service offering")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the service offering")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Name of the service offering")
     private String serviceOfferingName;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
                type = CommandType.UUID,
                entityType = UserVmResponse.class,
-               description = "the ID of the virtual machine. Pass this in if you want to see the available service offering that a virtual machine can be changed to.")
+               description = "The ID of the Instance. Pass this in if you want to see the available service offering that an Instance can be changed to.")
     private Long virtualMachineId;
 
-    @Parameter(name=ApiConstants.IS_SYSTEM_OFFERING, type=CommandType.BOOLEAN, description="is this a system vm offering")
+    @Parameter(name=ApiConstants.IS_SYSTEM_OFFERING, type=CommandType.BOOLEAN, description = " Is this a System VM offering")
     private Boolean isSystem;
 
     @Parameter(name = ApiConstants.SYSTEM_VM_TYPE,
                type = CommandType.STRING,
-               description = "the system VM type. Possible types are \"consoleproxy\", \"secondarystoragevm\" or \"domainrouter\".")
+               description = "The system Instance type. Possible types are \"consoleproxy\", \"secondarystoragevm\" or \"domainrouter\".")
     private String systemVmType;
 
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.UUID,
             entityType = ZoneResponse.class,
-            description = "id of zone disk offering is associated with",
+            description = "ID of zone disk offering is associated with",
             since = "4.13")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.CPU_NUMBER,
             type = CommandType.INTEGER,
-            description = "the CPU number that listed offerings must support",
+            description = "The CPU number that listed offerings must support",
             since = "4.15")
     private Integer cpuNumber;
 
     @Parameter(name = ApiConstants.MEMORY,
             type = CommandType.INTEGER,
-            description = "the RAM memory that listed offering must support",
+            description = "The RAM memory that listed offering must support",
             since = "4.15")
     private Integer memory;
 
     @Parameter(name = ApiConstants.CPU_SPEED,
             type = CommandType.INTEGER,
-            description = "the CPU speed that listed offerings must support",
+            description = "The CPU speed that listed offerings must support",
             since = "4.15")
     private Integer cpuSpeed;
 
     @Parameter(name = ApiConstants.ENCRYPT_ROOT,
         type = CommandType.BOOLEAN,
-        description = "listed offerings support root disk encryption",
+        description = "Listed offerings support root disk encryption",
         since = "4.18")
     private Boolean encryptRoot;
 
@@ -92,6 +99,11 @@ public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesC
             since = "4.19")
     private String storageType;
 
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING,
+               description = "Filter by state of the service offering. Defaults to 'Active'. If set to 'all' shows both Active & Inactive offerings.",
+               since = "4.19")
+    private String serviceOfferingState;
+
     @Parameter(name = ApiConstants.TEMPLATE_ID,
             type = CommandType.UUID,
             entityType = TemplateResponse.class,
@@ -99,6 +111,18 @@ public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesC
             since = "4.20.0")
     private Long templateId;
 
+    @Parameter(name = ApiConstants.VGPU_PROFILE_ID,
+            type = CommandType.UUID,
+            entityType = VgpuProfileResponse.class,
+            description = "The ID of the vGPU profile that listed offerings must support",
+            since = "4.21.0")
+    private Long vgpuProfileId;
+
+    @Parameter(name = ApiConstants.GPU_ENABLED,
+            type = CommandType.BOOLEAN,
+            description = "Flag to indicate if the service offering supports GPU. If set to true, only service offerings that support GPU will be returned.",
+            since = "4.21.0")
+    private Boolean gpuEnabled;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -146,8 +170,27 @@ public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesC
         return storageType;
     }
 
+    public State getState() {
+        if (StringUtils.isBlank(serviceOfferingState)) {
+            return Active;
+        }
+        State state = EnumUtils.getEnumIgnoreCase(State.class, serviceOfferingState);
+        if (!serviceOfferingState.equalsIgnoreCase("all") && state == null) {
+            throw new IllegalArgumentException("Invalid state value: " + serviceOfferingState);
+        }
+        return state;
+    }
+
     public Long getTemplateId() {
         return templateId;
+    }
+
+    public Long getVgpuProfileId() {
+        return vgpuProfileId;
+    }
+
+    public Boolean getGpuEnabled() {
+        return gpuEnabled;
     }
 
     /////////////////////////////////////////////////////

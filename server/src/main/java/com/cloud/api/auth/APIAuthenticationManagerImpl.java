@@ -31,6 +31,8 @@ import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 
+import static org.apache.cloudstack.user.UserPasswordResetManager.UserPasswordResetEnabled;
+
 @SuppressWarnings("unchecked")
 public class APIAuthenticationManagerImpl extends ManagerBase implements APIAuthenticationManager {
 
@@ -75,6 +77,10 @@ public class APIAuthenticationManagerImpl extends ManagerBase implements APIAuth
         List<Class<?>> cmdList = new ArrayList<Class<?>>();
         cmdList.add(DefaultLoginAPIAuthenticatorCmd.class);
         cmdList.add(DefaultLogoutAPIAuthenticatorCmd.class);
+        if (UserPasswordResetEnabled.value()) {
+            cmdList.add(DefaultForgotPasswordAPIAuthenticatorCmd.class);
+            cmdList.add(DefaultResetPasswordAPIAuthenticatorCmd.class);
+        }
 
         cmdList.add(ListUserTwoFactorAuthenticatorProvidersCmd.class);
         cmdList.add(ValidateUserTwoFactorAuthenticationCodeCmd.class);

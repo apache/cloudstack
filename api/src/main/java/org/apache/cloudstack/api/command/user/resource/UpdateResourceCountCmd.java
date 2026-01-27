@@ -34,8 +34,11 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateResourceCount", description = "Recalculate and update resource count for an account or domain.", responseObject = ResourceCountResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "updateResourceCount",
+            description = "Recalculate and update resource count for an account or domain. " +
+                    "This also executes some cleanup tasks before calculating resource counts.",
+            responseObject = ResourceCountResponse.class,
+            requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateResourceCountCmd extends BaseCmd {
 
 
@@ -58,11 +61,11 @@ public class UpdateResourceCountCmd extends BaseCmd {
     @Parameter(name = ApiConstants.RESOURCE_TYPE,
                type = CommandType.INTEGER,
                description = "Type of resource to update. If specifies valid values are 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 and 11. If not specified will update all resource counts"
-                   + "0 - Instance. Number of instances a user can create. "
+                   + "0 - Instance. Number of Instances a user can create. "
                    + "1 - IP. Number of public IP addresses a user can own. "
                    + "2 - Volume. Number of disk volumes a user can create. "
-                   + "3 - Snapshot. Number of snapshots a user can create. "
-                   + "4 - Template. Number of templates that a user can register/create. "
+                   + "3 - Snapshot. Number of Snapshots a user can create. "
+                   + "4 - Template. Number of Templates that a user can register/create. "
                    + "5 - Project. Number of projects that a user can create. "
                    + "6 - Network. Number of guest network a user can create. "
                    + "7 - VPC. Number of VPC a user can create. "
