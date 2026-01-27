@@ -1156,8 +1156,6 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             return ImageFormat.OVA;
         } else if (hyperType == HypervisorType.Ovm) {
             return ImageFormat.RAW;
-        } else if (hyperType == HypervisorType.Hyperv) {
-            return ImageFormat.VHDX;
         } else {
             return null;
         }
@@ -1165,15 +1163,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     private boolean isSupportedImageFormatForCluster(VolumeInfo volume, HypervisorType rootDiskHyperType) {
         ImageFormat volumeFormat = volume.getFormat();
-        if (rootDiskHyperType == HypervisorType.Hyperv) {
-            if (volumeFormat.equals(ImageFormat.VHDX) || volumeFormat.equals(ImageFormat.VHD)) {
-                return true;
-            } else {
-                return false;
-            }
-        } else {
-            return volume.getFormat().equals(getSupportedImageFormatForCluster(rootDiskHyperType));
-        }
+        return volume.getFormat().equals(getSupportedImageFormatForCluster(rootDiskHyperType));
     }
 
     private VolumeInfo copyVolume(StoragePool rootDiskPool, VolumeInfo volumeInfo, VirtualMachine vm, VirtualMachineTemplate rootDiskTmplt, DataCenter dcVO, Pod pod, DiskOffering diskVO,

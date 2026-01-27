@@ -31,7 +31,6 @@ import java.util.Set;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-import static com.cloud.hypervisor.Hypervisor.HypervisorType.Hyperv;
 import static com.cloud.hypervisor.Hypervisor.HypervisorType.KVM;
 import static com.cloud.hypervisor.Hypervisor.HypervisorType.LXC;
 import static com.cloud.hypervisor.Hypervisor.HypervisorType.Ovm3;
@@ -85,12 +84,8 @@ public class Upgrade41500to41510 extends DbUpgradeAbstractImpl implements DbUpgr
                     hypervisorsListInUse.add(KVM);
                 } else if (type.equals(VMware)) {
                     hypervisorsListInUse.add(VMware);
-                } else if (type.equals(Hyperv)) {
-                    hypervisorsListInUse.add(Hyperv);
                 } else if (type.equals(LXC)) {
                     hypervisorsListInUse.add(LXC);
-                } else if (type.equals(Ovm3)) {
-                    hypervisorsListInUse.add(Ovm3);
                 }
             }
         } catch (final SQLException e) {
@@ -103,7 +98,6 @@ public class Upgrade41500to41510 extends DbUpgradeAbstractImpl implements DbUpgr
                 put(KVM, "systemvm-kvm-4.15.1");
                 put(VMware, "systemvm-vmware-4.15.1");
                 put(XenServer, "systemvm-xenserver-4.15.1");
-                put(Hyperv, "systemvm-hyperv-4.15.1");
                 put(LXC, "systemvm-lxc-4.15.1");
                 put(Ovm3, "systemvm-ovm3-4.15.1");
             }
@@ -114,7 +108,6 @@ public class Upgrade41500to41510 extends DbUpgradeAbstractImpl implements DbUpgr
                 put(KVM, "router.template.kvm");
                 put(VMware, "router.template.vmware");
                 put(XenServer, "router.template.xenserver");
-                put(Hyperv, "router.template.hyperv");
                 put(LXC, "router.template.lxc");
                 put(Ovm3, "router.template.ovm3");
             }
@@ -125,7 +118,6 @@ public class Upgrade41500to41510 extends DbUpgradeAbstractImpl implements DbUpgr
                 put(KVM, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-kvm.qcow2.bz2");
                 put(VMware, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-vmware.ova");
                 put(XenServer, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-xen.vhd.bz2");
-                put(Hyperv, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-hyperv.vhd.zip");
                 put(LXC, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-kvm.qcow2.bz2");
                 put(Ovm3, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-ovm.raw.bz2");
             }
@@ -136,7 +128,6 @@ public class Upgrade41500to41510 extends DbUpgradeAbstractImpl implements DbUpgr
                 put(KVM, "0e9f9a7d0957c3e0a2088e41b2da2cec");
                 put(XenServer, "86373992740b1eca8aff8b08ebf3aea5");
                 put(VMware, "4006982765846d373eb3719b2fe4d720");
-                put(Hyperv, "0b9514e4b6cba1f636fea2125f0f7a5f");
                 put(LXC, "0e9f9a7d0957c3e0a2088e41b2da2cec");
                 put(Ovm3, "ae3977e696b3e6c81bdcbb792d514d29");
             }

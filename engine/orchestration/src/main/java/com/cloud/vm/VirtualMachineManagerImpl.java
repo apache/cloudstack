@@ -2010,7 +2010,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return ExecuteInSequence.value();
         }
 
-        if (Set.of(HypervisorType.KVM, HypervisorType.XenServer, HypervisorType.Hyperv, HypervisorType.LXC).contains(hypervisorType)) {
+        if (Set.of(HypervisorType.KVM, HypervisorType.XenServer, HypervisorType.LXC).contains(hypervisorType)) {
             return false;
         } else if (hypervisorType.equals(HypervisorType.VMware)) {
             return StorageManager.shouldExecuteInSequenceOnVmware();
@@ -5406,8 +5406,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             , vm, vm.getState(), vm.getPowerState());
             if((HighAvailabilityManager.ForceHA.value() || vm.isHaEnabled()) && vm.getState() == State.Running
                     && HaVmRestartHostUp.value()
-                    && vm.getHypervisorType() != HypervisorType.VMware
-                    && vm.getHypervisorType() != HypervisorType.Hyperv) {
+                    && vm.getHypervisorType() != HypervisorType.VMware) {
                 logger.info("Detected out-of-band stop of a HA enabled VM {}, will schedule restart.", vm);
                 if (!_haMgr.hasPendingHaWork(vm.getId())) {
                     _haMgr.scheduleRestart(vm, true);

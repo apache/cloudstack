@@ -1954,7 +1954,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 buf.append(createRedundantRouterArgs(controlNic, router));
 
                 // DOMR control command is sent over management server in VMware
-                if (dest.getHost().getHypervisorType() == HypervisorType.VMware || dest.getHost().getHypervisorType() == HypervisorType.Hyperv) {
+                if (HypervisorType.VMware.equals(dest.getHost().getHypervisorType())) {
                     logger.info("Check if we need to add management server explicit route to DomR. pod cidr: " + dest.getPod().getCidrAddress() + "/"
                             + dest.getPod().getCidrSize() + ", pod gateway: " + dest.getPod().getGateway() + ", management host: "
                             + ApiServiceConfiguration.ManagementServerAddresses.value());
@@ -2034,10 +2034,6 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         final String domain_suffix = dc.getDetail(ZoneConfig.DnsSearchOrder.getName());
         if (domain_suffix != null) {
             buf.append(" dnssearchorder=").append(domain_suffix);
-        }
-
-        if (profile.getHypervisorType() == HypervisorType.Hyperv) {
-            buf.append(" extra_pubnics=").append(_routerExtraPublicNics);
         }
 
         /*
@@ -3353,9 +3349,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         return new ConfigKey<?>[] {
                 RouterTemplateKvm,
                 RouterTemplateVmware,
-                RouterTemplateHyperV,
                 RouterTemplateLxc,
-                RouterTemplateOvm3,
                 UseExternalDnsServers,
                 RouterVersionCheckEnabled,
                 SetServiceMonitor,

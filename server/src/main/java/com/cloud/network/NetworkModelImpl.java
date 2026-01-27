@@ -1336,10 +1336,6 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                     label = mgmtTraffic.getKvmNetworkLabel();
                 } else if (hypervisorType.equals(HypervisorType.VMware)) {
                     label = mgmtTraffic.getVmwareNetworkLabel();
-                } else if (hypervisorType.equals(HypervisorType.Hyperv)) {
-                    label = mgmtTraffic.getHypervNetworkLabel();
-                } else if (hypervisorType.equals(HypervisorType.Ovm3)) {
-                    label = mgmtTraffic.getOvm3NetworkLabel();
                 }
                 return label;
             }
@@ -1366,10 +1362,6 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                     label = storageTraffic.getKvmNetworkLabel();
                 } else if (hypervisorType.equals(HypervisorType.VMware)) {
                     label = storageTraffic.getVmwareNetworkLabel();
-                } else if (hypervisorType.equals(HypervisorType.Hyperv)) {
-                    label = storageTraffic.getHypervNetworkLabel();
-                } else if (hypervisorType.equals(HypervisorType.Ovm3)) {
-                    label = storageTraffic.getOvm3NetworkLabel();
                 }
                 return label;
             }
@@ -1892,10 +1884,6 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                     label = publicTraffic.getKvmNetworkLabel();
                 } else if (hypervisorType.equals(HypervisorType.VMware)) {
                     label = publicTraffic.getVmwareNetworkLabel();
-                } else if (hypervisorType.equals(HypervisorType.Hyperv)) {
-                    label = publicTraffic.getHypervNetworkLabel();
-                } else if (hypervisorType.equals(HypervisorType.Ovm3)) {
-                    label = publicTraffic.getOvm3NetworkLabel();
                 }
                 return label;
             }
@@ -1922,10 +1910,6 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                     label = guestTraffic.getKvmNetworkLabel();
                 } else if (hypervisorType.equals(HypervisorType.VMware)) {
                     label = guestTraffic.getVmwareNetworkLabel();
-                } else if (hypervisorType.equals(HypervisorType.Hyperv)) {
-                    label = guestTraffic.getHypervNetworkLabel();
-                } else if (hypervisorType.equals(HypervisorType.Ovm3)) {
-                    label = guestTraffic.getOvm3NetworkLabel();
                 }
                 return label;
             }

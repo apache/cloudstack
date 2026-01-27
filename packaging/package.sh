@@ -36,7 +36,7 @@ Optional arguments:
    -s, --simulator string                  Build package for Simulator ("default"|"DEFAULT"|"simulator"|"SIMULATOR") (default "default")
    -b, --brand string                      Set branding to be used in package name (it will override any branding string in POM version)
    -T, --use-timestamp                     Use epoch timestamp instead of SNAPSHOT in the package name (if not provided, use "SNAPSHOT")
-   -t --templates                          Passes necessary flag to package the required templates. Comma separated string - kvm,xen,vmware,ovm,hyperv
+   -t --templates                          Passes necessary flag to package the required templates. Comma separated string - kvm,xen,vmware
 
 Other arguments:
    -h, --help                              Display this help message and exit

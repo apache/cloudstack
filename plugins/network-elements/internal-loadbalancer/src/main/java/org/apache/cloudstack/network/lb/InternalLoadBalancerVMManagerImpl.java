@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.network.lb;
 
-import static com.cloud.hypervisor.Hypervisor.HypervisorType.Hyperv;
 import static com.cloud.hypervisor.Hypervisor.HypervisorType.KVM;
 import static com.cloud.hypervisor.Hypervisor.HypervisorType.LXC;
 import static com.cloud.hypervisor.Hypervisor.HypervisorType.VMware;
@@ -763,8 +762,6 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
             templateName = VirtualNetworkApplianceManager.RouterTemplateKvm.valueIn(dataCenterId);
         } else if (VMware.equals(hypervisorType)) {
             templateName = VirtualNetworkApplianceManager.RouterTemplateVmware.valueIn(dataCenterId);
-        } else if (Hyperv.equals(hypervisorType)) {
-            templateName = VirtualNetworkApplianceManager.RouterTemplateHyperV.valueIn(dataCenterId);
         } else if (LXC.equals(hypervisorType)) {
             templateName = VirtualNetworkApplianceManager.RouterTemplateLxc.valueIn(dataCenterId);
         }

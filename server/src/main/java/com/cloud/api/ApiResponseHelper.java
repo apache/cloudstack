@@ -18,6 +18,7 @@ package com.cloud.api;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
+import java.lang.reflect.InvocationTargetException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.text.DecimalFormat;
@@ -190,7 +191,6 @@ import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.BackupRepository;
 import org.apache.cloudstack.backup.BackupSchedule;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
-import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.config.ConfigurationGroup;
 import org.apache.cloudstack.config.ConfigurationSubGroup;
@@ -404,7 +404,6 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
-import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.storage.snapshot.SnapshotSchedule;
 import com.cloud.tags.dao.ResourceTagDao;
@@ -446,6 +445,7 @@ import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
+import org.jetbrains.annotations.NotNull;
 import sun.security.x509.X509CertImpl;
 
 public class ApiResponseHelper implements ResponseGenerator {
@@ -467,8 +467,6 @@ public class ApiResponseHelper implements ResponseGenerator {
     ConfigurationManager _configMgr;
     @Inject
     SnapshotDataFactory snapshotfactory;
-    @Inject
-    private VolumeDao _volumeDao;
     @Inject
     private DataStoreManager _dataStoreMgr;
     @Inject
@@ -513,8 +511,6 @@ public class ApiResponseHelper implements ResponseGenerator {
     UserDataDao userDataDao;
     @Inject
     VlanDetailsDao vlanDetailsDao;
-    @Inject
-    BackupRepositoryDao backupRepositoryDao;
     @Inject
     private ASNumberRangeDao asNumberRangeDao;
     @Inject
@@ -756,7 +752,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         if (snapshotInfo == null) {
-            logger.debug("Unable to find info for image store snapshot with uuid " + snapshot.getUuid());
+            logger.debug("Unable to find info for image store snapshot with uuid {}", snapshot.getUuid());
             snapshotResponse.setRevertable(false);
         } else {
         snapshotResponse.setRevertable(snapshotInfo.isRevertable());
@@ -765,7 +761,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         // set tag information
         List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(ResourceObjectType.Snapshot, snapshot.getId());
-        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        List<ResourceTagResponse> tagResponses = new ArrayList<>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
             CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
@@ -795,7 +791,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         if (mapCapabilities != null) {
             String value = mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
-            Boolean supportsStorageSystemSnapshots = new Boolean(value);
+            boolean supportsStorageSystemSnapshots = Boolean.parseBoolean(value);
 
             if (supportsStorageSystemSnapshots) {
                 return DataStoreRole.Primary;
@@ -835,7 +831,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         populateOwner(vmSnapshotResponse, vmSnapshot);
 
         List<? extends ResourceTag> tags = _resourceTagDao.listBy(vmSnapshot.getId(), ResourceObjectType.VMSnapshot);
-        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        List<ResourceTagResponse> tagResponses = new ArrayList<>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, false);
             CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
@@ -867,7 +863,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         policyResponse.setObjectName("snapshotpolicy");
 
         List<? extends ResourceTag> tags = _resourceTagDao.listBy(policy.getId(), ResourceObjectType.SnapshotPolicy);
-        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        List<ResourceTagResponse> tagResponses = new ArrayList<>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, false);
             CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
@@ -932,7 +928,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         try {
             Long podId = ApiDBUtils.getPodIdForVlan(vlan.getId());
 
-            VlanIpRangeResponse vlanResponse = subClass.newInstance();
+            VlanIpRangeResponse vlanResponse = subClass.getDeclaredConstructor().newInstance();
             vlanResponse.setId(vlan.getUuid());
             if (vlan.getVlanType() != null) {
                 vlanResponse.setForVirtualNetwork(vlan.getVlanType().equals(VlanType.VirtualNetwork));
@@ -996,7 +992,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                     if (networkId != null) {
                         Network network = _ntwkModel.getNetwork(networkId);
                         if (network != null && TrafficType.Guest.equals(network.getTrafficType())) {
-                            Long accountId = network.getAccountId();
+                            long accountId = network.getAccountId();
                             populateAccount(vlanResponse, accountId);
                             populateDomain(vlanResponse, ApiDBUtils.findAccountById(accountId).getDomainId());
                         }
@@ -1014,7 +1010,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             vlanResponse.setProvider(getProviderFromVlanDetailKey(vlan));
             vlanResponse.setObjectName("vlan");
             return vlanResponse;
-        } catch (InstantiationException | IllegalAccessException e) {
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             throw new CloudRuntimeException("Failed to create Vlan IP Range response", e);
         }
     }
@@ -1203,7 +1199,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         //set tag information
         List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(ResourceObjectType.PublicIpAddress, ipAddr.getId());
-        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        List<ResourceTagResponse> tagResponses = new ArrayList<>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
             CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
@@ -1309,7 +1305,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         //set tag information
         List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(ResourceObjectType.LoadBalancer, loadBalancer.getId());
-        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        List<ResourceTagResponse> tagResponses = new ArrayList<>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
             CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
@@ -1339,7 +1335,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         populateOwner(response, globalLoadBalancerRule);
         response.setObjectName("globalloadbalancer");
 
-        List<LoadBalancerResponse> siteLbResponses = new ArrayList<LoadBalancerResponse>();
+        List<LoadBalancerResponse> siteLbResponses = new ArrayList<>();
         List<? extends LoadBalancer> siteLoadBalaners = ApiDBUtils.listSiteLoadBalancers(globalLoadBalancerRule.getId());
         for (LoadBalancer siteLb : siteLoadBalaners) {
             LoadBalancerResponse siteLbResponse = createLoadBalancerResponse(siteLb);
@@ -1360,15 +1356,14 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public PodResponse createPodResponse(Pod pod, Boolean showCapacities) {
-        String[] ipRange = new String[2];
-        List<String> startIps = new ArrayList<String>();
-        List<String> endIps = new ArrayList<String>();
-        List<String> forSystemVms = new ArrayList<String>();
-        List<String> vlanIds = new ArrayList<String>();
+        List<String> startIps = new ArrayList<>();
+        List<String> endIps = new ArrayList<>();
+        List<String> forSystemVms = new ArrayList<>();
+        List<String> vlanIds = new ArrayList<>();
 
         List<IpRangeResponse> ipRanges = new ArrayList<>();
 
-        if (pod.getDescription() != null && pod.getDescription().length() > 0) {
+        if (pod.getDescription() != null && !pod.getDescription().isEmpty()) {
             final String[] existingPodIpRanges = pod.getDescription().split(",");
 
             for(String podIpRange: existingPodIpRanges) {
@@ -1418,7 +1413,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         podResponse.setZoneStorageAccessGroups(zone.getStorageAccessGroups());
         if (showCapacities != null && showCapacities) {
             List<SummedCapacity> capacities = ApiDBUtils.getCapacityByClusterPodZone(null, pod.getId(), null);
-            Set<CapacityResponse> capacityResponses = new HashSet<CapacityResponse>();
+            Set<CapacityResponse> capacityResponses = new HashSet<>();
             for (SummedCapacity capacity : capacities) {
                 CapacityResponse capacityResponse = new CapacityResponse();
                 capacityResponse.setCapacityType(capacity.getCapacityType());
@@ -1440,7 +1435,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             // Do it for stats as well.
             capacityResponses.addAll(getStatsCapacityresponse(null, null, pod.getId(), pod.getDataCenterId()));
-            podResponse.setCapacities(new ArrayList<CapacityResponse>(capacityResponses));
+            podResponse.setCapacities(new ArrayList<>(capacityResponses));
         }
 
         podResponse.setHasAnnotation(annotationDao.hasAnnotations(pod.getUuid(), AnnotationService.EntityType.POD.name(),
@@ -1457,7 +1452,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     public static List<CapacityResponse> getDataCenterCapacityResponse(Long zoneId) {
         List<SummedCapacity> capacities = ApiDBUtils.getCapacityByClusterPodZone(zoneId, null, null);
-        Set<CapacityResponse> capacityResponses = new HashSet<CapacityResponse>();
+        Set<CapacityResponse> capacityResponses = new HashSet<>();
 
         for (SummedCapacity capacity : capacities) {
             CapacityResponse capacityResponse = new CapacityResponse();
@@ -1481,18 +1476,18 @@ public class ApiResponseHelper implements ResponseGenerator {
         // Do it for stats as well.
         capacityResponses.addAll(getStatsCapacityresponse(null, null, null, zoneId));
 
-        return new ArrayList<CapacityResponse>(capacityResponses);
+        return new ArrayList<>(capacityResponses);
     }
 
     private static List<CapacityResponse> getStatsCapacityresponse(Long poolId, Long clusterId, Long podId, Long zoneId) {
-        List<CapacityVO> capacities = new ArrayList<CapacityVO>();
+        List<CapacityVO> capacities = new ArrayList<>();
         capacities.add(ApiDBUtils.getStoragePoolUsedStats(poolId, clusterId, podId, zoneId));
         if (clusterId == null && podId == null) {
             capacities.add(ApiDBUtils.getSecondaryStorageUsedStats(poolId, zoneId));
             capacities.add(ApiDBUtils.getObjectStorageUsedStats(zoneId));
         }
 
-        List<CapacityResponse> capacityResponses = new ArrayList<CapacityResponse>();
+        List<CapacityResponse> capacityResponses = new ArrayList<>();
         for (CapacityVO capacity : capacities) {
             CapacityResponse capacityResponse = new CapacityResponse();
             capacityResponse.setCapacityType(capacity.getCapacityType());
@@ -1610,7 +1605,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         if (showCapacities != null && showCapacities) {
             List<SummedCapacity> capacities = ApiDBUtils.getCapacityByClusterPodZone(null, null, cluster.getId());
-            Set<CapacityResponse> capacityResponses = new HashSet<CapacityResponse>();
+            Set<CapacityResponse> capacityResponses = new HashSet<>();
 
             for (SummedCapacity capacity : capacities) {
                 CapacityResponse capacityResponse = new CapacityResponse();
@@ -1634,7 +1629,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             // Do it for stats as well.
             capacityResponses.addAll(getStatsCapacityresponse(null, cluster.getId(), pod.getId(), pod.getDataCenterId()));
-            clusterResponse.setCapacities(new ArrayList<CapacityResponse>(capacityResponses));
+            clusterResponse.setCapacities(new ArrayList<>(capacityResponses));
         }
         clusterResponse.setHasAnnotation(annotationDao.hasAnnotations(cluster.getUuid(), AnnotationService.EntityType.CLUSTER.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
@@ -1688,7 +1683,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         // set tag information
         List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(ResourceObjectType.PortForwardingRule, fwRule.getId());
-        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        List<ResourceTagResponse> tagResponses = new ArrayList<>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
             CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
@@ -1738,18 +1733,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setObjectName("ipforwardingrule");
         return response;
     }
-
-    /*
-    @Override
-    public List<UserVmResponse> createUserVmResponse(String objectName, UserVm... userVms) {
-        return createUserVmResponse(null, objectName, userVms);
-    }
-
-    @Override
-    public List<UserVmResponse> createUserVmResponse(String objectName, EnumSet<VMDetails> details, UserVm... userVms) {
-        return createUserVmResponse(null, objectName, userVms);
-    }
-    */
 
     @Override
     public List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, EnumSet<VMDetails> details, UserVm... userVms) {
@@ -2146,7 +2129,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public List<CapacityResponse> createCapacityResponse(List<? extends Capacity> result, DecimalFormat format) {
-        List<CapacityResponse> capacityResponses = new ArrayList<CapacityResponse>();
+        List<CapacityResponse> capacityResponses = new ArrayList<>();
 
         for (Capacity summedCapacity : result) {
             if (summedCapacity.getTotalCapacity() == 0 &&
@@ -2273,12 +2256,12 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         // Set accounts
-        List<String> projectIds = new ArrayList<String>();
-        List<String> regularAccounts = new ArrayList<String>();
+        List<String> projectIds = new ArrayList<>();
+        List<String> regularAccounts = new ArrayList<>();
         for (String accountName : accountNames) {
             Account account = ApiDBUtils.findAccountByNameDomain(accountName, templateOwner.getDomainId());
             if (account == null) {
-                logger.error("Missing Account " + accountName + " in domain " + templateOwner.getDomainId());
+                logger.error("Missing Account {} in domain {}", accountName, templateOwner.getDomainId());
                 continue;
             }
 
@@ -2341,7 +2324,6 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public SecurityGroupResponse createSecurityGroupResponseFromSecurityGroupRule(List<? extends SecurityRule> securityRules) {
         SecurityGroupResponse response = new SecurityGroupResponse();
-        Map<Long, Account> securiytGroupAccounts = new HashMap<Long, Account>();
 
         if ((securityRules != null) && !securityRules.isEmpty()) {
             SecurityGroupJoinVO securityGroup = ApiDBUtils.findSecurityGroupViewById(securityRules.get(0).getSecurityGroupId()).get(0);
@@ -2367,7 +2349,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 Long allowedSecurityGroupId = securityRule.getAllowedNetworkId();
                 if (allowedSecurityGroupId != null) {
                     List<SecurityGroupJoinVO> sgs = ApiDBUtils.findSecurityGroupViewById(allowedSecurityGroupId);
-                    if (sgs != null && sgs.size() > 0) {
+                    if (sgs != null && !sgs.isEmpty()) {
                         SecurityGroupJoinVO sg = sgs.get(0);
                         securityGroupData.setSecurityGroupName(sg.getName());
                         securityGroupData.setAccountName(sg.getAccountName());
@@ -2410,7 +2392,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
         Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listNetworkOfferingServices(offering.getId());
-        List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
+        List<ServiceResponse> serviceResponses = new ArrayList<>();
         for (Map.Entry<Service,Set<Provider>> entry : serviceProviderMap.entrySet()) {
             Service service = entry.getKey();
             Set<Provider> srvc_providers = entry.getValue();
@@ -2420,7 +2402,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 continue;
             }
             svcRsp.setName(service.getName());
-            List<ProviderResponse> providers = new ArrayList<ProviderResponse>();
+            List<ProviderResponse> providers = new ArrayList<>();
             for (Provider provider : srvc_providers) {
                 if (provider != null) {
                     ProviderResponse providerRsp = new ProviderResponse();
@@ -2430,54 +2412,15 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             svcRsp.setProviders(providers);
             if (Service.Lb == service) {
-                List<CapabilityResponse> lbCapResponse = new ArrayList<CapabilityResponse>();
-
-                CapabilityResponse lbIsoaltion = new CapabilityResponse();
-                lbIsoaltion.setName(Capability.SupportedLBIsolation.getName());
-                lbIsoaltion.setValue(offering.isDedicatedLB() ? "dedicated" : "shared");
-                lbCapResponse.add(lbIsoaltion);
-
-                CapabilityResponse eLb = new CapabilityResponse();
-                eLb.setName(Capability.ElasticLb.getName());
-                eLb.setValue(offering.isElasticLb() ? "true" : "false");
-                lbCapResponse.add(eLb);
-
-                CapabilityResponse inline = new CapabilityResponse();
-                inline.setName(Capability.InlineMode.getName());
-                inline.setValue(offering.isInline() ? "true" : "false");
-                lbCapResponse.add(inline);
-
-                CapabilityResponse vmAutoScaling = new CapabilityResponse();
-                vmAutoScaling.setName(Capability.VmAutoScaling.getName());
-                vmAutoScaling.setValue(offering.isSupportsVmAutoScaling() ? "true" : "false");
-                lbCapResponse.add(vmAutoScaling);
+                List<CapabilityResponse> lbCapResponse = getCapabilityResponses(offering);
 
                 svcRsp.setCapabilities(lbCapResponse);
             } else if (Service.SourceNat == service) {
-                List<CapabilityResponse> capabilities = new ArrayList<CapabilityResponse>();
-                CapabilityResponse sharedSourceNat = new CapabilityResponse();
-                sharedSourceNat.setName(Capability.SupportedSourceNatTypes.getName());
-                sharedSourceNat.setValue(offering.isSharedSourceNat() ? "perzone" : "peraccount");
-                capabilities.add(sharedSourceNat);
-
-                CapabilityResponse redundantRouter = new CapabilityResponse();
-                redundantRouter.setName(Capability.RedundantRouter.getName());
-                redundantRouter.setValue(offering.isRedundantRouter() ? "true" : "false");
-                capabilities.add(redundantRouter);
+                List<CapabilityResponse> capabilities = getResponses(offering);
 
                 svcRsp.setCapabilities(capabilities);
             } else if (service == Service.StaticNat) {
-                List<CapabilityResponse> staticNatCapResponse = new ArrayList<CapabilityResponse>();
-
-                CapabilityResponse eIp = new CapabilityResponse();
-                eIp.setName(Capability.ElasticIp.getName());
-                eIp.setValue(offering.isElasticIp() ? "true" : "false");
-                staticNatCapResponse.add(eIp);
-
-                CapabilityResponse associatePublicIp = new CapabilityResponse();
-                associatePublicIp.setName(Capability.AssociatePublicIP.getName());
-                associatePublicIp.setValue(offering.isAssociatePublicIP() ? "true" : "false");
-                staticNatCapResponse.add(associatePublicIp);
+                List<CapabilityResponse> staticNatCapResponse = getCapabilityResponseList(offering);
 
                 svcRsp.setCapabilities(staticNatCapResponse);
             }
@@ -2498,6 +2441,63 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setHasAnnotation(annotationDao.hasAnnotations(offering.getUuid(), AnnotationService.EntityType.NETWORK_OFFERING.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
         return response;
+    }
+
+    @NotNull
+    private static List<CapabilityResponse> getCapabilityResponseList(NetworkOffering offering) {
+        List<CapabilityResponse> staticNatCapResponse = new ArrayList<>();
+
+        CapabilityResponse eIp = new CapabilityResponse();
+        eIp.setName(Capability.ElasticIp.getName());
+        eIp.setValue(offering.isElasticIp() ? "true" : "false");
+        staticNatCapResponse.add(eIp);
+
+        CapabilityResponse associatePublicIp = new CapabilityResponse();
+        associatePublicIp.setName(Capability.AssociatePublicIP.getName());
+        associatePublicIp.setValue(offering.isAssociatePublicIP() ? "true" : "false");
+        staticNatCapResponse.add(associatePublicIp);
+        return staticNatCapResponse;
+    }
+
+    @NotNull
+    private static List<CapabilityResponse> getResponses(NetworkOffering offering) {
+        List<CapabilityResponse> capabilities = new ArrayList<>();
+        CapabilityResponse sharedSourceNat = new CapabilityResponse();
+        sharedSourceNat.setName(Capability.SupportedSourceNatTypes.getName());
+        sharedSourceNat.setValue(offering.isSharedSourceNat() ? "perzone" : "peraccount");
+        capabilities.add(sharedSourceNat);
+
+        CapabilityResponse redundantRouter = new CapabilityResponse();
+        redundantRouter.setName(Capability.RedundantRouter.getName());
+        redundantRouter.setValue(offering.isRedundantRouter() ? "true" : "false");
+        capabilities.add(redundantRouter);
+        return capabilities;
+    }
+
+    @NotNull
+    private static List<CapabilityResponse> getCapabilityResponses(NetworkOffering offering) {
+        List<CapabilityResponse> lbCapResponse = new ArrayList<>();
+
+        CapabilityResponse lbIsoaltion = new CapabilityResponse();
+        lbIsoaltion.setName(Capability.SupportedLBIsolation.getName());
+        lbIsoaltion.setValue(offering.isDedicatedLB() ? "dedicated" : "shared");
+        lbCapResponse.add(lbIsoaltion);
+
+        CapabilityResponse eLb = new CapabilityResponse();
+        eLb.setName(Capability.ElasticLb.getName());
+        eLb.setValue(offering.isElasticLb() ? "true" : "false");
+        lbCapResponse.add(eLb);
+
+        CapabilityResponse inline = new CapabilityResponse();
+        inline.setName(Capability.InlineMode.getName());
+        inline.setValue(offering.isInline() ? "true" : "false");
+        lbCapResponse.add(inline);
+
+        CapabilityResponse vmAutoScaling = new CapabilityResponse();
+        vmAutoScaling.setName(Capability.VmAutoScaling.getName());
+        vmAutoScaling.setValue(offering.isSupportsVmAutoScaling() ? "true" : "false");
+        lbCapResponse.add(vmAutoScaling);
+        return lbCapResponse;
     }
 
     private void createCapabilityResponse(List<CapabilityResponse> capabilityResponses,
@@ -2571,8 +2571,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             String[] guestVmCidrPair = cidr.split("\\/");
             String[] guestCidrPair = network.getNetworkCidr().split("\\/");
 
-            Long guestVmCidrSize = Long.valueOf(guestVmCidrPair[1]);
-            Long guestCidrSize = Long.valueOf(guestCidrPair[1]);
+            long guestVmCidrSize = Long.parseLong(guestVmCidrPair[1]);
+            long guestCidrSize = Long.parseLong(guestCidrPair[1]);
 
             String[] guestVmIpRange = NetUtils.getIpRangeFromCidr(guestVmCidrPair[0], guestVmCidrSize);
             String[] guestIpRange = NetUtils.getIpRangeFromCidr(guestCidrPair[0], guestCidrSize);
@@ -2669,7 +2669,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         // populate capability
         Map<Service, Map<Capability, String>> serviceCapabilitiesMap = ApiDBUtils.getNetworkCapabilities(network.getId(), network.getDataCenterId());
         Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listNetworkOfferingServices(network.getNetworkOfferingId());
-        List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
+        List<ServiceResponse> serviceResponses = new ArrayList<>();
         if (serviceCapabilitiesMap != null) {
             for (Map.Entry<Service, Map<Capability, String>>entry : serviceCapabilitiesMap.entrySet()) {
                 Service service = entry.getKey();
@@ -2766,7 +2766,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         // set tag information
         List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(ResourceObjectType.Network, network.getId());
-        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        List<ResourceTagResponse> tagResponses = new ArrayList<>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
             CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
@@ -2785,8 +2785,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setStrechedL2Subnet(network.isStrechedL2Network());
         if (network.isStrechedL2Network()) {
-            Set<String> networkSpannedZones = new  HashSet<String>();
-            List<VMInstanceVO> vmInstances = new ArrayList<VMInstanceVO>();
+            Set<String> networkSpannedZones = new HashSet<>();
+            List<VMInstanceVO> vmInstances = new ArrayList<>();
             vmInstances.addAll(ApiDBUtils.listUserVMsByNetworkId(network.getId()));
             vmInstances.addAll(ApiDBUtils.listDomainRoutersByNetworkId(network.getId()));
             for (VirtualMachine vm : vmInstances) {
@@ -2800,8 +2800,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setCreated(network.getCreated());
         response.setSupportsVmAutoScaling(networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId()).isSupportsVmAutoScaling());
 
-        Long bytesReceived = 0L;
-        Long bytesSent = 0L;
+        long bytesReceived = 0L;
+        long bytesSent = 0L;
         SearchBuilder<UserStatisticsVO> sb = userStatsDao.createSearchBuilder();
         sb.and("networkId", sb.entity().getNetworkId(), Op.EQ);
         SearchCriteria<UserStatisticsVO> sc = sb.create();
@@ -2856,7 +2856,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     private void setResponseAssociatedNetworkInformation(BaseResponseWithAssociatedNetwork response, Long networkId) {
         final NetworkDetailVO detail = networkDetailsDao.findDetail(networkId, Network.AssociatedNetworkId);
         if (detail != null) {
-            Long associatedNetworkId = Long.valueOf(detail.getValue());
+            long associatedNetworkId = Long.parseLong(detail.getValue());
             NetworkVO associatedNetwork = ApiDBUtils.findNetworkById(associatedNetworkId);
             if (associatedNetwork != null) {
                 response.setAssociatedNetworkId(associatedNetwork.getUuid());
@@ -2927,7 +2927,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         // set tag information
         List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(ResourceObjectType.FirewallRule, fwRule.getId());
-        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        List<ResourceTagResponse> tagResponses = new ArrayList<>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
             CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
@@ -2979,7 +2979,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         //set tag information
         List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(ResourceObjectType.NetworkACL, aclItem.getId());
-        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        List<ResourceTagResponse> tagResponses = new ArrayList<>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
             CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
@@ -3068,7 +3068,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     private void populateAccount(ControlledEntityResponse response, long accountId) {
         Account account = ApiDBUtils.findAccountById(accountId);
         if (account == null) {
-            logger.debug("Unable to find account with id: " + accountId);
+            logger.debug("Unable to find account with id: {}", accountId);
         } else if (account.getType() == Account.Type.PROJECT) {
             // find the project
             Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
@@ -3077,7 +3077,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 response.setProjectName(project.getName());
                 response.setAccountName(account.getAccountName());
             } else {
-                logger.debug("Unable to find project with id: " + account.getId());
+                logger.debug("Unable to find project with id: {}", account.getId());
             }
         } else {
             response.setAccountName(account.getAccountName());
@@ -3201,7 +3201,26 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setName(service.getName());
 
         // set list of capabilities required for the service
-        List<CapabilityResponse> capabilityResponses = new ArrayList<CapabilityResponse>();
+        List<CapabilityResponse> capabilityResponses = getCapabilityResponses(service);
+        response.setCapabilities(capabilityResponses);
+
+        // set list of providers providing this service
+        List<? extends Network.Provider> serviceProviders = ApiDBUtils.getProvidersForService(service);
+        List<ProviderResponse> serviceProvidersResponses = new ArrayList<>();
+        for (Network.Provider serviceProvider : serviceProviders) {
+            ProviderResponse serviceProviderResponse = createServiceProviderResponse(serviceProvider);
+            serviceProvidersResponses.add(serviceProviderResponse);
+        }
+        response.setProviders(serviceProvidersResponses);
+
+        response.setObjectName("networkservice");
+        return response;
+
+    }
+
+    @NotNull
+    private static List<CapabilityResponse> getCapabilityResponses(Service service) {
+        List<CapabilityResponse> capabilityResponses = new ArrayList<>();
         Capability[] capabilities = service.getCapabilities();
         for (Capability cap : capabilities) {
             CapabilityResponse capabilityResponse = new CapabilityResponse();
@@ -3215,20 +3234,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             capabilityResponses.add(capabilityResponse);
         }
-        response.setCapabilities(capabilityResponses);
-
-        // set list of providers providing this service
-        List<? extends Network.Provider> serviceProviders = ApiDBUtils.getProvidersForService(service);
-        List<ProviderResponse> serviceProvidersResponses = new ArrayList<ProviderResponse>();
-        for (Network.Provider serviceProvider : serviceProviders) {
-            ProviderResponse serviceProviderResponse = createServiceProviderResponse(serviceProvider);
-            serviceProvidersResponses.add(serviceProviderResponse);
-        }
-        response.setProviders(serviceProvidersResponses);
-
-        response.setObjectName("networkservice");
-        return response;
-
+        return capabilityResponses;
     }
 
     private ProviderResponse createServiceProviderResponse(Provider serviceProvider) {
@@ -3255,7 +3261,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setState(result.getState().toString());
 
         // set enabled services
-        List<String> services = new ArrayList<String>();
+        List<String> services = new ArrayList<>();
         for (Service service : result.getEnabledServices()) {
             services.add(service.getName());
         }
@@ -3287,8 +3293,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setXenLabel(result.getXenNetworkLabel());
         response.setKvmLabel(result.getKvmNetworkLabel());
         response.setVmwareLabel(result.getVmwareNetworkLabel());
-        response.setHypervLabel(result.getHypervNetworkLabel());
-        response.setOvm3Label(result.getOvm3NetworkLabel());
         response.setVlan(result.getVlan());
 
         response.setObjectName("traffictype");
@@ -3343,7 +3347,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
-        List<LBStickinessPolicyResponse> responses = new ArrayList<LBStickinessPolicyResponse>();
+        List<LBStickinessPolicyResponse> responses = new ArrayList<>();
         LBStickinessPolicyResponse ruleResponse = new LBStickinessPolicyResponse(stickinessPolicy);
         responses.add(ruleResponse);
 
@@ -3371,7 +3375,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
-        List<LBStickinessPolicyResponse> responses = new ArrayList<LBStickinessPolicyResponse>();
+        List<LBStickinessPolicyResponse> responses = new ArrayList<>();
         for (StickinessPolicy stickinessPolicy : stickinessPolicies) {
             LBStickinessPolicyResponse ruleResponse = new LBStickinessPolicyResponse(stickinessPolicy);
             responses.add(ruleResponse);
@@ -3400,7 +3404,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
-        List<LBHealthCheckPolicyResponse> responses = new ArrayList<LBHealthCheckPolicyResponse>();
+        List<LBHealthCheckPolicyResponse> responses = new ArrayList<>();
         for (HealthCheckPolicy healthcheckPolicy : healthcheckPolicies) {
             LBHealthCheckPolicyResponse ruleResponse = new LBHealthCheckPolicyResponse(healthcheckPolicy);
             responses.add(ruleResponse);
@@ -3426,7 +3430,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
-        List<LBHealthCheckPolicyResponse> responses = new ArrayList<LBHealthCheckPolicyResponse>();
+        List<LBHealthCheckPolicyResponse> responses = new ArrayList<>();
         LBHealthCheckPolicyResponse ruleResponse = new LBHealthCheckPolicyResponse(healthcheckPolicy);
         responses.add(ruleResponse);
         hcResponse.setRules(responses);
@@ -3477,29 +3481,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         VpcOfferingResponse response = ApiDBUtils.newVpcOfferingResponse(offering);
         Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listVpcOffServices(offering.getId());
-        List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
-        for (Map.Entry<Service, Set<Provider>> entry : serviceProviderMap.entrySet()) {
-            Service service = entry.getKey();
-            Set<Provider> srvc_providers = entry.getValue();
-
-            ServiceResponse svcRsp = new ServiceResponse();
-            // skip gateway service
-            if (service == Service.Gateway) {
-                continue;
-            }
-            svcRsp.setName(service.getName());
-            List<ProviderResponse> providers = new ArrayList<ProviderResponse>();
-            for (Provider provider : srvc_providers) {
-                if (provider != null) {
-                    ProviderResponse providerRsp = new ProviderResponse();
-                    providerRsp.setName(provider.getName());
-                    providers.add(providerRsp);
-                }
-            }
-            svcRsp.setProviders(providers);
-
-            serviceResponses.add(svcRsp);
-        }
+        List<ServiceResponse> serviceResponses = getServiceResponses(serviceProviderMap);
         response.setServices(serviceResponses);
         return response;
     }
@@ -3530,30 +3512,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setAsNumber(asNumberVO.getAsNumber());
         }
         Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listVpcOffServices(vpc.getVpcOfferingId());
-        List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
-        for (Map.Entry<Service,Set<Provider>>entry : serviceProviderMap.entrySet()) {
-            Service service = entry.getKey();
-            Set<Provider> serviceProviders = entry.getValue();
-            ServiceResponse svcRsp = new ServiceResponse();
-            // skip gateway service
-            if (service == Service.Gateway) {
-                continue;
-            }
-            svcRsp.setName(service.getName());
-            List<ProviderResponse> providers = new ArrayList<ProviderResponse>();
-            for (Provider provider : serviceProviders) {
-                if (provider != null) {
-                    ProviderResponse providerRsp = new ProviderResponse();
-                    providerRsp.setName(provider.getName());
-                    providers.add(providerRsp);
-                }
-            }
-            svcRsp.setProviders(providers);
+        List<ServiceResponse> serviceResponses = getServiceResponses(serviceProviderMap);
 
-            serviceResponses.add(svcRsp);
-        }
-
-        List<NetworkResponse> networkResponses = new ArrayList<NetworkResponse>();
+        List<NetworkResponse> networkResponses = new ArrayList<>();
         List<? extends Network> networks = ApiDBUtils.listVpcNetworks(vpc.getId());
         for (Network network : networks) {
             NetworkResponse ntwkRsp = createNetworkResponse(view, network);
@@ -3573,7 +3534,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         // set tag information
         List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(ResourceObjectType.Vpc, vpc.getId());
-        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        List<ResourceTagResponse> tagResponses = new ArrayList<>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
             CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
@@ -3613,6 +3574,33 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setObjectName("vpc");
         return response;
+    }
+
+    @NotNull
+    private static List<ServiceResponse> getServiceResponses(Map<Service, Set<Provider>> serviceProviderMap) {
+        List<ServiceResponse> serviceResponses = new ArrayList<>();
+        for (Map.Entry<Service,Set<Provider>>entry : serviceProviderMap.entrySet()) {
+            Service service = entry.getKey();
+            Set<Provider> serviceProviders = entry.getValue();
+            ServiceResponse svcRsp = new ServiceResponse();
+            // skip gateway service
+            if (service == Service.Gateway) {
+                continue;
+            }
+            svcRsp.setName(service.getName());
+            List<ProviderResponse> providers = new ArrayList<>();
+            for (Provider provider : serviceProviders) {
+                if (provider != null) {
+                    ProviderResponse providerRsp = new ProviderResponse();
+                    providerRsp.setName(provider.getName());
+                    providers.add(providerRsp);
+                }
+            }
+            svcRsp.setProviders(providers);
+
+            serviceResponses.add(svcRsp);
+        }
+        return serviceResponses;
     }
 
     @Override
@@ -3744,7 +3732,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setQuietTime(policy.getQuietTime());
         response.setAction(policy.getAction().toString());
         List<ConditionVO> vos = ApiDBUtils.getAutoScalePolicyConditions(policy.getId());
-        ArrayList<ConditionResponse> conditions = new ArrayList<ConditionResponse>(vos.size());
+        ArrayList<ConditionResponse> conditions = new ArrayList<>(vos.size());
         for (ConditionVO vo : vos) {
             conditions.add(createConditionResponse(vo));
         }
@@ -3800,15 +3788,15 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
-        List<AutoScalePolicyResponse> scaleUpPoliciesResponse = new ArrayList<AutoScalePolicyResponse>();
-        List<AutoScalePolicyResponse> scaleDownPoliciesResponse = new ArrayList<AutoScalePolicyResponse>();
+        List<AutoScalePolicyResponse> scaleUpPoliciesResponse = new ArrayList<>();
+        List<AutoScalePolicyResponse> scaleDownPoliciesResponse = new ArrayList<>();
         response.setScaleUpPolicies(scaleUpPoliciesResponse);
         response.setScaleDownPolicies(scaleDownPoliciesResponse);
         response.setObjectName("autoscalevmgroup");
 
         // Fetch policies for vmgroup
-        List<AutoScalePolicy> scaleUpPolicies = new ArrayList<AutoScalePolicy>();
-        List<AutoScalePolicy> scaleDownPolicies = new ArrayList<AutoScalePolicy>();
+        List<AutoScalePolicy> scaleUpPolicies = new ArrayList<>();
+        List<AutoScalePolicy> scaleDownPolicies = new ArrayList<>();
         ApiDBUtils.getAutoScaleVmGroupPolicies(vmGroup.getId(), scaleUpPolicies, scaleDownPolicies);
         // populate policies
         for (AutoScalePolicy autoScalePolicy : scaleUpPolicies) {
@@ -3857,7 +3845,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         // set tag information
         List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(ResourceObjectType.StaticRoute, result.getId());
-        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        List<ResourceTagResponse> tagResponses = new ArrayList<>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
             CollectionUtils.addIgnoreNull(tagResponses,tagResponse);
@@ -4138,7 +4126,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         Long resourceId = null;
         if (usageRecord.getUsageType() == UsageTypes.RUNNING_VM || usageRecord.getUsageType() == UsageTypes.ALLOCATED_VM) {
             ServiceOfferingVO svcOffering = _entityMgr.findByIdIncludingRemoved(ServiceOfferingVO.class, usageRecord.getOfferingId().toString());
-            //Service Offering Id
+            //Service Offering ID
             if(svcOffering != null) {
                 usageRecResponse.setOfferingId(svcOffering.getUuid());
             }
@@ -4213,9 +4201,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                 usageRecResponse.setUsageId(ip.getUuid());
             }
             //isSourceNAT
-            usageRecResponse.setSourceNat((usageRecord.getType().equals("SourceNat")) ? true : false);
+            usageRecResponse.setSourceNat(usageRecord.getType().equals("SourceNat"));
             //isSystem
-            usageRecResponse.setSystem((usageRecord.getSize() == 1) ? true : false);
+            usageRecResponse.setSystem(usageRecord.getSize() == 1);
         } else if (usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_SENT || usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_RECEIVED) {
             //Device Type
             resourceType = ResourceObjectType.UserVm;
@@ -4223,14 +4211,14 @@ public class ApiResponseHelper implements ResponseGenerator {
             VMInstanceVO vm = null;
             HostVO host = null;
             if (usageRecord.getType().equals("DomainRouter") || usageRecord.getType().equals("UserVm")) {
-                //Domain Router Id
+                //Domain Router ID
                 vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getUsageId().toString());
                 if (vm != null) {
                     resourceId = vm.getId();
                     usageRecResponse.setUsageId(vm.getUuid());
                 }
             } else {
-                //External Device Host Id
+                //External Device Host ID
                 host = _entityMgr.findByIdIncludingRemoved(HostVO.class, usageRecord.getUsageId().toString());
                 if (host != null) {
                     usageRecResponse.setUsageId(host.getUuid());
@@ -4268,7 +4256,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                     if (network.getUuid() != null){
                         builder.append(" (").append(network.getUuid()).append(") ");
                     }
-                    builder.append(" " + toHumanReadableSize(usageRecord.getRawUsage().longValue())  + " ");
+                    builder.append(" ").append(toHumanReadableSize(usageRecord.getRawUsage().longValue())).append(" ");
                 }
                 if (vm != null) {
                     builder.append("using router ").append(vm.getInstanceName()).append(" (").append(vm.getUuid()).append(")");
@@ -4306,7 +4294,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                     builder.append(" and volume ").append(volume.getName()).append(" (").append(volume.getUuid()).append(")");
                 }
                 if (usageRecord.getRawUsage()!= null){
-                    builder.append(" " + toHumanReadableSize(usageRecord.getRawUsage().longValue()));
+                    builder.append(" ").append(toHumanReadableSize(usageRecord.getRawUsage().longValue()));
                 }
                 usageRecResponse.setDescription(builder.toString());
             }
@@ -4342,7 +4330,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                     builder.append(" and template ").append(template.getName()).append(" (").append(template.getUuid()).append(")");
                 }
                 if (usageRecord.getSize() != null) {
-                    builder.append(" and size " + toHumanReadableSize(usageRecord.getSize()));
+                    builder.append(" and size ").append(toHumanReadableSize(usageRecord.getSize()));
                 }
                 usageRecResponse.setDescription(builder.toString());
             }
@@ -4427,7 +4415,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 usageRecResponse.setDescription(builder.toString());
             }
         } else if (usageRecord.getUsageType() == UsageTypes.NETWORK_OFFERING) {
-            //Network Offering Id
+            //Network Offering ID
             NetworkOfferingVO netOff = _entityMgr.findByIdIncludingRemoved(NetworkOfferingVO.class, usageRecord.getOfferingId().toString());
             usageRecResponse.setOfferingId(netOff.getUuid());
             //is Default
@@ -4458,7 +4446,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 usageRecResponse.setDescription(builder.toString());
             }
         } else if (usageRecord.getUsageType() == UsageTypes.SECURITY_GROUP) {
-            //Security Group Id
+            //Security Group ID
             SecurityGroupVO sg = _entityMgr.findByIdIncludingRemoved(SecurityGroupVO.class, usageRecord.getUsageId().toString());
             resourceType = ResourceObjectType.SecurityGroup;
             if (sg != null) {
@@ -4538,7 +4526,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                     builder.append(" using disk offering ").append(diskOff.getName()).append(" (").append(diskOff.getUuid()).append(")");
                 }
                 if (usageRecord.getSize() != null){
-                    builder.append(" and size " + toHumanReadableSize(usageRecord.getSize()));
+                    builder.append(" and size ").append(toHumanReadableSize(usageRecord.getSize()));
                 }
                 usageRecResponse.setDescription(builder.toString());
             }
@@ -4788,7 +4776,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (result.getSecondaryIp()) {
             List<NicSecondaryIpVO> secondaryIps = ApiDBUtils.findNicSecondaryIps(result.getId());
             if (secondaryIps != null) {
-                List<NicSecondaryIpResponse> ipList = new ArrayList<NicSecondaryIpResponse>();
+                List<NicSecondaryIpResponse> ipList = new ArrayList<>();
                 for (NicSecondaryIpVO ip : secondaryIps) {
                     NicSecondaryIpResponse ipRes = new NicSecondaryIpResponse();
                     ipRes.setId(ip.getUuid());
@@ -4851,21 +4839,30 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         //set load balancer rules information (only one rule per load balancer in this release)
-        List<ApplicationLoadBalancerRuleResponse> ruleResponses = new ArrayList<ApplicationLoadBalancerRuleResponse>();
-        ApplicationLoadBalancerRuleResponse ruleResponse = new ApplicationLoadBalancerRuleResponse();
-        ruleResponse.setInstancePort(lb.getDefaultPortStart());
-        ruleResponse.setSourcePort(lb.getSourcePortStart());
-        FirewallRule.State stateToSet = lb.getState();
-        if (stateToSet.equals(FirewallRule.State.Revoke)) {
-            stateToSet = FirewallRule.State.Deleting;
-        }
-        ruleResponse.setState(stateToSet.toString());
-        ruleResponse.setObjectName("loadbalancerrule");
-        ruleResponses.add(ruleResponse);
+        List<ApplicationLoadBalancerRuleResponse> ruleResponses = getApplicationLoadBalancerRuleResponses(lb);
         lbResponse.setLbRules(ruleResponses);
 
         //set Lb instances information
-        List<ApplicationLoadBalancerInstanceResponse> instanceResponses = new ArrayList<ApplicationLoadBalancerInstanceResponse>();
+        List<ApplicationLoadBalancerInstanceResponse> instanceResponses = getApplicationLoadBalancerInstanceResponses(lbInstances);
+
+        lbResponse.setLbInstances(instanceResponses);
+
+        //set tag information
+        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(ResourceObjectType.LoadBalancer, lb.getId());
+        List<ResourceTagResponse> tagResponses = new ArrayList<>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+            CollectionUtils.addIgnoreNull(tagResponses,tagResponse);
+        }
+        lbResponse.setTags(tagResponses);
+
+        lbResponse.setObjectName("loadbalancer");
+        return lbResponse;
+    }
+
+    @NotNull
+    private static List<ApplicationLoadBalancerInstanceResponse> getApplicationLoadBalancerInstanceResponses(Map<Ip, UserVm> lbInstances) {
+        List<ApplicationLoadBalancerInstanceResponse> instanceResponses = new ArrayList<>();
         for (Map.Entry<Ip,UserVm> entry : lbInstances.entrySet()) {
             Ip ip = entry.getKey();
             UserVm vm = entry.getValue();
@@ -4876,20 +4873,23 @@ public class ApiResponseHelper implements ResponseGenerator {
             instanceResponse.setObjectName("loadbalancerinstance");
             instanceResponses.add(instanceResponse);
         }
+        return instanceResponses;
+    }
 
-        lbResponse.setLbInstances(instanceResponses);
-
-        //set tag information
-        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(ResourceObjectType.LoadBalancer, lb.getId());
-        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
-        for (ResourceTag tag : tags) {
-            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
-            CollectionUtils.addIgnoreNull(tagResponses,tagResponse);
+    @NotNull
+    private static List<ApplicationLoadBalancerRuleResponse> getApplicationLoadBalancerRuleResponses(ApplicationLoadBalancerRule lb) {
+        List<ApplicationLoadBalancerRuleResponse> ruleResponses = new ArrayList<>();
+        ApplicationLoadBalancerRuleResponse ruleResponse = new ApplicationLoadBalancerRuleResponse();
+        ruleResponse.setInstancePort(lb.getDefaultPortStart());
+        ruleResponse.setSourcePort(lb.getSourcePortStart());
+        FirewallRule.State stateToSet = lb.getState();
+        if (stateToSet.equals(FirewallRule.State.Revoke)) {
+            stateToSet = FirewallRule.State.Deleting;
         }
-        lbResponse.setTags(tagResponses);
-
-        lbResponse.setObjectName("loadbalancer");
-        return lbResponse;
+        ruleResponse.setState(stateToSet.toString());
+        ruleResponse.setObjectName("loadbalancerrule");
+        ruleResponses.add(ruleResponse);
+        return ruleResponses;
     }
 
     @Override
@@ -5026,8 +5026,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public ListResponse<UpgradeRouterTemplateResponse> createUpgradeRouterTemplateResponse(List<Long> jobIds) {
-        ListResponse<UpgradeRouterTemplateResponse> response = new ListResponse<UpgradeRouterTemplateResponse>();
-        List<UpgradeRouterTemplateResponse> responses = new ArrayList<UpgradeRouterTemplateResponse>();
+        ListResponse<UpgradeRouterTemplateResponse> response = new ListResponse<>();
+        List<UpgradeRouterTemplateResponse> responses = new ArrayList<>();
         for (Long jobId : jobIds) {
             UpgradeRouterTemplateResponse routerResponse = new UpgradeRouterTemplateResponse();
             AsyncJob job = _entityMgr.findById(AsyncJob.class, jobId);
@@ -5175,11 +5175,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             guestVlanResponse.setPhysicalNetworkId(pnw.getUuid());
             guestVlanResponse.setPhysicalNetworkName(pnw.getName());
         }
-        if (guestVlan.getAccountGuestVlanMapId() != null) {
-            guestVlanResponse.setDedicated(true);
-        } else {
-            guestVlanResponse.setDedicated(false);
-        }
+        guestVlanResponse.setDedicated(guestVlan.getAccountGuestVlanMapId() != null);
         if (guestVlan.getTakenAt() != null) {
             guestVlanResponse.setAllocationState("Allocated");
             guestVlanResponse.setTaken(guestVlan.getTakenAt());
@@ -5188,7 +5184,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         List<NetworkVO> networks = networkDao.listByZoneAndUriAndGuestType(guestVlan.getDataCenterId(), guestVlan.getVnet(), null);
-        List<NetworkResponse> networkResponses = new ArrayList<NetworkResponse>();
+        List<NetworkResponse> networkResponses = new ArrayList<>();
         for (Network network : networks) {
             NetworkResponse ntwkRsp = createNetworkResponse(ResponseView.Full, network);
             networkResponses.add(ntwkRsp);
@@ -5249,7 +5245,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 response.setValidity(String.format("From: [%s] - To: [%s]", certificate.getNotBefore(), certificate.getNotAfter()));
             }
         } catch (CertificateException e) {
-            logger.error("Error parsing direct download certificate: " + certStr, e);
+            logger.error("Error parsing direct download certificate: {}", certStr, e);
         }
     }
 
@@ -5345,7 +5341,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         // set tag information
         List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(ResourceObjectType.FirewallRule, fwRule.getId());
-        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        List<ResourceTagResponse> tagResponses = new ArrayList<>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
             CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
@@ -5533,7 +5529,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             String rangeText = String.format("%s-%s", range.getStartASNumber(), range.getEndASNumber());
             response.setAsNumberRange(rangeText);
         } else {
-            logger.info("Range is null for AS number: "+ asn.getAsNumber());
+            logger.info("Range is null for AS number: {}", asn.getAsNumber());
         }
         response.setAllocated(asn.getAllocatedTime());
         response.setAllocationState(asn.isAllocated() ? "Allocated" : "Free");
@@ -5617,7 +5613,7 @@ protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<Templat
     public GuiThemeResponse createGuiThemeResponse(GuiThemeJoin guiThemeJoin) {
         GuiThemeResponse guiThemeResponse = new GuiThemeResponse();
 
-        Long callerId = CallContext.current().getCallingAccount().getAccountId();
+        long callerId = CallContext.current().getCallingAccount().getAccountId();
         if (callerId != Account.ACCOUNT_ID_SYSTEM && _accountMgr.isRootAdmin(callerId)) {
             guiThemeResponse.setId(guiThemeJoin.getUuid());
             guiThemeResponse.setName(guiThemeJoin.getName());

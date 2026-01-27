@@ -309,9 +309,7 @@ public class SystemVmTemplateRegistration {
             new Pair<>(Hypervisor.HypervisorType.KVM, CPU.CPUArch.arm64),
             new Pair<>(Hypervisor.HypervisorType.VMware, CPU.CPUArch.amd64),
             new Pair<>(Hypervisor.HypervisorType.XenServer, CPU.CPUArch.amd64),
-            new Pair<>(Hypervisor.HypervisorType.Hyperv, CPU.CPUArch.amd64),
-            new Pair<>(Hypervisor.HypervisorType.LXC, CPU.CPUArch.amd64),
-            new Pair<>(Hypervisor.HypervisorType.Ovm3, CPU.CPUArch.amd64)
+            new Pair<>(Hypervisor.HypervisorType.LXC, CPU.CPUArch.amd64)
     );
 
     protected static final List<MetadataTemplateDetails> METADATA_TEMPLATE_LIST = new ArrayList<>();
@@ -321,9 +319,7 @@ public class SystemVmTemplateRegistration {
             put(Hypervisor.HypervisorType.KVM, "router.template.kvm");
             put(Hypervisor.HypervisorType.VMware, "router.template.vmware");
             put(Hypervisor.HypervisorType.XenServer, "router.template.xenserver");
-            put(Hypervisor.HypervisorType.Hyperv, "router.template.hyperv");
             put(Hypervisor.HypervisorType.LXC, "router.template.lxc");
-            put(Hypervisor.HypervisorType.Ovm3, "router.template.ovm3");
         }
     };
 
@@ -332,20 +328,16 @@ public class SystemVmTemplateRegistration {
             put(Hypervisor.HypervisorType.KVM, ImageFormat.QCOW2);
             put(Hypervisor.HypervisorType.XenServer, ImageFormat.VHD);
             put(Hypervisor.HypervisorType.VMware, ImageFormat.OVA);
-            put(Hypervisor.HypervisorType.Hyperv, ImageFormat.VHD);
             put(Hypervisor.HypervisorType.LXC, ImageFormat.QCOW2);
-            put(Hypervisor.HypervisorType.Ovm3, ImageFormat.RAW);
         }
     };
 
-    protected static Map<Hypervisor.HypervisorType, Integer> hypervisorGuestOsMap = new HashMap<>() {
+    public static Map<Hypervisor.HypervisorType, Integer> hypervisorGuestOsMap = new HashMap<>() {
         {
             put(Hypervisor.HypervisorType.KVM, LINUX_12_ID);
             put(Hypervisor.HypervisorType.XenServer, OTHER_LINUX_ID);
             put(Hypervisor.HypervisorType.VMware, OTHER_LINUX_ID);
-            put(Hypervisor.HypervisorType.Hyperv, LINUX_12_ID);
             put(Hypervisor.HypervisorType.LXC, LINUX_12_ID);
-            put(Hypervisor.HypervisorType.Ovm3, LINUX_12_ID);
         }
     };
 
@@ -400,7 +392,7 @@ public class SystemVmTemplateRegistration {
     }
 
     protected static void cleanupStore(Long templateId, String filePath) {
-        String destTempFolder = filePath + PARTIAL_TEMPLATE_FOLDER + String.valueOf(templateId);
+        String destTempFolder = filePath + PARTIAL_TEMPLATE_FOLDER + templateId;
         try {
             Files.deleteIfExists(Paths.get(destTempFolder));
         } catch (IOException e) {
@@ -411,8 +403,8 @@ public class SystemVmTemplateRegistration {
     protected static Pair<Long, Long> readTemplatePropertiesSizes(String path) {
         File tmpFile = new File(path);
         Long size = null;
-        Long physicalSize = 0L;
-        try (FileReader fr = new FileReader(tmpFile); BufferedReader brf = new BufferedReader(fr);) {
+        long physicalSize = 0L;
+        try (FileReader fr = new FileReader(tmpFile); BufferedReader brf = new BufferedReader(fr)) {
             String line = null;
             while ((line = brf.readLine()) != null) {
                 if (line.startsWith("size=")) {
@@ -543,7 +535,7 @@ public class SystemVmTemplateRegistration {
             try {
                 Files.deleteIfExists(Paths.get(filePath));
             } catch (IOException e) {
-                LOGGER.error(String.format("Failed to cleanup mounted store at: %s", filePath), e);
+                LOGGER.error("Failed to cleanup mounted store at: {}", filePath, e);
             }
         } catch (Exception e) {
             String msg = String.format("Failed to unmount store mounted at %s", filePath);
@@ -597,7 +589,7 @@ public class SystemVmTemplateRegistration {
         Long templateId = vmTemplateDao.getNextInSequence(Long.class, "id");
         VMTemplateVO template = new VMTemplateVO();
         template.setUuid(details.getUuid());
-        template.setUniqueName(String.format("routing-%s" , String.valueOf(templateId)));
+        template.setUniqueName(String.format("routing-%s" , templateId));
         template.setName(details.getName());
         template.setPublicTemplate(false);
         template.setFeatured(false);
@@ -707,9 +699,7 @@ public class SystemVmTemplateRegistration {
             LOGGER.debug("Updating system VM Template guest OS [{}] ID", DEFAULT_SYSTEM_VM_GUEST_OS_NAME);
             SystemVmTemplateRegistration.LINUX_12_ID = Math.toIntExact(guestOS.getId());
             hypervisorGuestOsMap.put(Hypervisor.HypervisorType.KVM, LINUX_12_ID);
-            hypervisorGuestOsMap.put(Hypervisor.HypervisorType.Hyperv, LINUX_12_ID);
             hypervisorGuestOsMap.put(Hypervisor.HypervisorType.LXC, LINUX_12_ID);
-            hypervisorGuestOsMap.put(Hypervisor.HypervisorType.Ovm3, LINUX_12_ID);
         } catch (Exception e) {
             LOGGER.warn("Couldn't update System VM template guest OS ID, due to {}", e.getMessage());
         }
@@ -932,7 +922,6 @@ public class SystemVmTemplateRegistration {
 
     /**
      * Validate that templates for the provided hypervisor/architecture pairs which are in use and are valid.
-     *
      * If a template is missing or validation fails for any required pair, a
      * {@link CloudRuntimeException} is thrown to abort the upgrade. If system VM Template for a hypervisor/arch is
      * not considered available then validation is skipped for that pair.
@@ -965,7 +954,6 @@ public class SystemVmTemplateRegistration {
 
     /**
      * Register or ensure system VM Templates are present on the NFS store for a given zone.
-     *
      * Mounts the zone image store, enumerates hypervisors and architectures in the zone,
      * and for each template either adds an existing template to the store or registers
      * a new template as required.
@@ -1263,7 +1251,6 @@ public class SystemVmTemplateRegistration {
 
     /**
      * Update or register system VM Templates based on metadata.
-     *
      * Runs the registration logic inside a database transaction: obtains the
      * set of hypervisors/architectures in use, iterates over metadata entries
      * and attempts to register or update each template.

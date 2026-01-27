@@ -47,7 +47,6 @@ public class Hypervisor {
         public static final HypervisorType XenServer = new HypervisorType("XenServer", ImageFormat.VHD, EnumSet.of(RootDiskSizeOverride, VmStorageMigration));
         public static final HypervisorType KVM = new HypervisorType("KVM", ImageFormat.QCOW2, EnumSet.of(DirectDownloadTemplate, RootDiskSizeOverride, VmStorageMigration));
         public static final HypervisorType VMware = new HypervisorType("VMware", ImageFormat.OVA, EnumSet.of(RootDiskSizeOverride, VmStorageMigration, VmStorageMigrationWithSnapshots));
-        public static final HypervisorType Hyperv = new HypervisorType("Hyperv");
         public static final HypervisorType VirtualBox = new HypervisorType("VirtualBox");
         public static final HypervisorType Parralels = new HypervisorType("Parralels");
         public static final HypervisorType BareMetal = new HypervisorType("BareMetal");

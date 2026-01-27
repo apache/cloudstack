@@ -44,7 +44,7 @@ import common.opt.StringOption;
 public class Client {
 
     enum Protocol {
-        NONE, VNC, RDP, HYPERV
+        NONE, VNC, RDP
     }
 
     // Common options
@@ -124,15 +124,6 @@ public class Client {
         }
     };
 
-    private final IntOption hyperVPort = new IntOption() {
-        {
-            name = "--port";
-            alias = "-p";
-            value = 2179;
-            description = "Port of HyperV server to connect to.";
-        }
-    };
-
     private final StringOption password = new StringOption() {
         {
             name = "--password";
@@ -169,14 +160,6 @@ public class Client {
         }
     };
 
-    private final StringOption hyperVInstanceId = new StringOption() {
-        {
-            name = "--instance";
-            alias = "-i";
-            required = true;
-            description = "HyperV instance ID to use.";
-        }
-    };
     private final StringEnumerationOption sslImplementation = new StringEnumerationOption() {
         {
             name = "--ssl-implementation";
@@ -190,7 +173,7 @@ public class Client {
     private final Option[] commonOptions = new Option[] {help, debugLink, debugElement, debugPipeline, hostName, canvasWidth, canvasHeight};
     private final Option[] vncOptions = new Option[] {vncPort, password};
     private final Option[] rdpOptions = new Option[] {sslImplementation, rdpPort, domain, userName, rdpPassword};
-    private final Option[] hyperVOptions = new Option[] {sslImplementation, hyperVPort, hyperVInstanceId, domain, userName, password};
+    private final Option[] hyperVOptions = new Option[] {sslImplementation, domain, userName, password};
 
     private static Frame frame;
     private static SocketWrapper socket;
@@ -200,11 +183,10 @@ public class Client {
     private InetSocketAddress address;
 
     private void help() {
-        System.out.println("Usage: \n  java common.Client vnc|rdp|hyperv OPTIONS\n");
+        System.out.println("Usage: \n  java common.Client vnc|rdp OPTIONS\n");
         System.out.println(Option.toHelp("Common options", commonOptions));
         System.out.println(Option.toHelp("VNC options", vncOptions));
         System.out.println(Option.toHelp("RDP options", rdpOptions));
-        System.out.println(Option.toHelp("HyperV options", hyperVOptions));
     }
 
     public void runClient(String[] args) {
@@ -285,10 +267,6 @@ public class Client {
             address = new InetSocketAddress(hostName.value, rdpPort.value);
             main = new RdpClient("client", hostName.value, domain.value, userName.value, rdpPassword.value, null, screen, canvas, sslState);
             break;
-        case HYPERV:
-            address = new InetSocketAddress(hostName.value, hyperVPort.value);
-            main = new RdpClient("client", hostName.value, domain.value, userName.value, password.value, hyperVInstanceId.value, screen, canvas, sslState);
-            break;
         default:
             address = null;
             main = null;
@@ -308,9 +286,6 @@ public class Client {
         } else if (protocolName.equals("rdp")) {
             protocol = Protocol.RDP;
             options = join(commonOptions, rdpOptions);
-        } else if (protocolName.equals("hyperv")) {
-            protocol = Protocol.HYPERV;
-            options = join(commonOptions, hyperVOptions);
         } else {
             help();
             return Protocol.NONE;

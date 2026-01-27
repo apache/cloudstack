@@ -1551,9 +1551,7 @@ public class SystemVmTemplateRegistrationTest {
         verify(guestOSDao).findOneByDisplayName(DEFAULT_SYSTEM_VM_GUEST_OS_NAME);
         assertEquals(10, SystemVmTemplateRegistration.LINUX_12_ID.intValue());
         assertEquals(10, SystemVmTemplateRegistration.hypervisorGuestOsMap.get(Hypervisor.HypervisorType.KVM).intValue());
-        assertEquals(10, SystemVmTemplateRegistration.hypervisorGuestOsMap.get(Hypervisor.HypervisorType.Hyperv).intValue());
         assertEquals(10, SystemVmTemplateRegistration.hypervisorGuestOsMap.get(Hypervisor.HypervisorType.LXC).intValue());
-        assertEquals(10, SystemVmTemplateRegistration.hypervisorGuestOsMap.get(Hypervisor.HypervisorType.Ovm3).intValue());
     }
 
     @Test

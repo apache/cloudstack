@@ -4094,14 +4094,14 @@ public class UserVmManagerImplTest {
         when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
         when(userVmDao.acquireInLockTable(vmId)).thenReturn(userVmVoMock);
         when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Stopped);
-        when(userVmVoMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.Hyperv);
-        unmanagedVMsManagerMockedStatic.when(() -> UnmanagedVMsManager.isSupported(Hypervisor.HypervisorType.Hyperv)).thenReturn(false);
+        when(userVmVoMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.XenServer);
+        unmanagedVMsManagerMockedStatic.when(() -> UnmanagedVMsManager.isSupported(Hypervisor.HypervisorType.XenServer)).thenReturn(false);
 
         CloudRuntimeException exception = assertThrows(CloudRuntimeException.class, () -> {
             userVmManagerImpl.unmanageUserVM(vmId, null);
         });
 
-        assertEquals("Unmanaging a VM is currently not supported on hypervisor Hyperv", exception.getMessage());
+        assertEquals("Unmanaging a VM is currently not supported on hypervisor XenServer", exception.getMessage());
         verify(userVmDao, times(1)).releaseFromLockTable(vmId);
     }
 

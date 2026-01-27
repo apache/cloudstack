@@ -546,32 +546,6 @@ public class ConsoleAccessManagerImplTest {
     }
 
     @Test
-    public void getConsoleConnectionDetailsReturnsDetailsWithRDPForHyperV() {
-        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
-        HostVO host = Mockito.mock(HostVO.class);
-        String hostAddress = "192.168.1.100";
-        Pair<String, Integer> hostPortInfo = new Pair<>(hostAddress, -9);
-
-        Mockito.when(vm.getUuid()).thenReturn("vm-uuid");
-        Mockito.when(vm.getHostName()).thenReturn("vm-hostname");
-        Mockito.when(vm.getVncPassword()).thenReturn("vnc-password");
-        Mockito.when(host.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.Hyperv);
-        Mockito.when(vmInstanceDetailsDao.listDetailsKeyPairs(Mockito.anyLong(), Mockito.anyList())).thenReturn(Map.of());
-        Mockito.when(managementServer.getVncPort(vm)).thenReturn(hostPortInfo);
-        int port = 3389;
-        DetailVO detailVO = Mockito.mock(DetailVO.class);
-        Mockito.when(detailVO.getValue()).thenReturn(String.valueOf(port));
-        Mockito.when(managementServer.findDetail(Mockito.anyLong(), Mockito.eq("rdp.server.port"))).thenReturn(detailVO);
-        Mockito.doReturn(new Ternary<>(hostAddress, null, null)).when(consoleAccessManager).parseHostInfo(Mockito.anyString());
-
-        ConsoleConnectionDetails result = consoleAccessManager.getConsoleConnectionDetails(vm, host);
-
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.isUsingRDP());
-        Assert.assertEquals(port, result.getPort());
-    }
-
-    @Test
     public void getConsoleConnectionDetailsReturnsNullHostInvalidPortWhenVncPortInfoIsMissing() {
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         HostVO host = Mockito.mock(HostVO.class);

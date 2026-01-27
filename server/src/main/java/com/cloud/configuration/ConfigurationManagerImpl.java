@@ -1683,7 +1683,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     /**
-     * Valid values are XenServer, KVM, VMware, Hyperv, VirtualBox, Parralels, BareMetal, Simulator, Ovm, Ovm3, LXC.
+     * Valid values are XenServer, KVM, VMware, VirtualBox, Parralels, BareMetal, Simulator, LXC.
      * Inputting "Any" will return the hypervisor type Any, other inputs will result in the hypervisor type none.
      * Both of these are invalid values and will return an error message.
      */

@@ -344,15 +344,8 @@ public class VolumeApiServiceImplTest {
             stoppedVm.setDataCenterId(1L);
             when(userVmDaoMock.findById(2L)).thenReturn(stoppedVm);
 
-            // volume of hyperV vm id=3
-            UserVmVO hyperVVm = new UserVmVO(3L, "vm", "vm", 1, HypervisorType.Hyperv, 1L, false, false, 1L, 1L, 1, 1L, null, null, null, "vm");
-            hyperVVm.setState(State.Stopped);
-            hyperVVm.setDataCenterId(1L);
-            when(userVmDaoMock.findById(3L)).thenReturn(hyperVVm);
-
             VolumeVO volumeOfStoppeHyperVVm = new VolumeVO("root", 1L, 1L, 1L, 1L, 3L, "root", "root", Storage.ProvisioningType.THIN, 1, null, null, "root", Volume.Type.ROOT);
             volumeOfStoppeHyperVVm.setPoolId(1L);
-            when(volumeDaoMock.findById(3L)).thenReturn(volumeOfStoppeHyperVVm);
 
             StoragePoolVO unmanagedPool = new StoragePoolVO();
 
@@ -476,14 +469,6 @@ public class VolumeApiServiceImplTest {
         Field dedicateIdField = _detachCmdClass.getDeclaredField("id");
         dedicateIdField.setAccessible(true);
         dedicateIdField.set(detachCmd, 1L);
-        volumeApiServiceImpl.detachVolumeFromVM(detachCmd);
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
-    public void testDetachVolumeFromStoppedHyperVVm() throws NoSuchFieldException, IllegalAccessException {
-        Field dedicateIdField = _detachCmdClass.getDeclaredField("id");
-        dedicateIdField.setAccessible(true);
-        dedicateIdField.set(detachCmd, 3L);
         volumeApiServiceImpl.detachVolumeFromVM(detachCmd);
     }
 

@@ -213,7 +213,7 @@ public class SecondaryStorageManagerTest {
     @Test
     public void validateVerifySshAccessOnManagementNicForSystemVm() {
         Hypervisor.HypervisorType[] hypervisorTypesArray = Hypervisor.HypervisorType.values();
-        List<Hypervisor.HypervisorType> hypervisorTypesThatMustReturnManagementNic = new ArrayList<>(Arrays.asList(Hypervisor.HypervisorType.Hyperv));
+        List<Hypervisor.HypervisorType> hypervisorTypesThatMustReturnManagementNic = new ArrayList<>(Arrays.asList());
 
         for (Hypervisor.HypervisorType hypervisorType: hypervisorTypesArray) {
             VirtualMachineProfile virtualMachineProfileMock = Mockito.mock(VirtualMachineProfile.class);

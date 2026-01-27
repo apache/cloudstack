@@ -46,8 +46,6 @@ labelPRBasedOnFilePath:
   "component:dpdk":
     - server/src/main/java/com/cloud/hypervisor/kvm/dpdk/*
     - plugins/hypervisors/kvm/src/main/java/com/cloud/hypervisor/kvm/dpdk/*
-  "component:hyperv":
-    - plugins/hypervisors/hyperv/*
   "component:integration-test":
     - test/integration/*
   "component:ipv6":

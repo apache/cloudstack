@@ -28,4 +28,13 @@ CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.usage_volume','vm_id', '
 
 DELETE FROM `cloud`.`configuration` WHERE name = 'ucs.sync.blade.interval';
 
+UPDATE `cloud`.`configuration` SET value = 'KVM,VMware,XenServer,Hyperv,BareMetal,Ovm,LXC,Ovm3,External' WHERE name = 'hypervisor.list';
+UPDATE `cloud`.`configuration` SET value = 'Hypervisor type used to create system vm, valid values are: XenServer, KVM, VMware, VirtualBox, Parralels, BareMetal, Any' WHERE name = 'system.vm.default.hypervisor';
+DELETE FROM `cloud`.`configuration` WHERE name = 'hyperv.public.network.device';
+DELETE FROM `cloud`.`configuration` WHERE name = 'hyperv.private.network.device'
+DELETE FROM `cloud`.`configuration` WHERE name = 'hyperv.guest.network.device'
+
+DELETE FROM `cloud`.`configuration` WHERE name = 'router.template.hyperv';
+DELETE FROM `cloud`.`configuration` WHERE name = 'router.template.ovm3';
+
 ALTER TABLE `cloud`.`template_store_ref` MODIFY COLUMN `download_url` varchar(2048);
