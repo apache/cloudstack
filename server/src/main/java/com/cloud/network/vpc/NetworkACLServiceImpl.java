@@ -109,6 +109,8 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     private NsxProviderDao nsxProviderDao;
     @Inject
     private NetrisProviderDao netrisProviderDao;
+    @Inject
+    private VpcManager vpcManager;
 
     private String supportedProtocolsForAclRules = "tcp,udp,icmp,all";
 
@@ -1037,13 +1039,20 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             if (Objects.isNull(vpc)) {
                 return networkACLItem;
             }
+            List<NetworkVO> networks = _networkDao.listByAclId(lockedAcl.getId());
+            if (networks.isEmpty()) {
+                return networkACLItem;
+            }
+
             final DataCenter dc = _entityMgr.findById(DataCenter.class, vpc.getZoneId());
             final NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(dc.getId());
             final NetrisProviderVO netrisProvider = netrisProviderDao.findByZoneId(dc.getId());
-            List<NetworkVO> networks = _networkDao.listByAclId(lockedAcl.getId());
-            if (ObjectUtils.anyNotNull(nsxProvider, netrisProvider) && !networks.isEmpty()) {
+            boolean isVpcNetworkACLProvider = vpcManager.isProviderSupportServiceInVpc(vpc.getId(), Network.Service.NetworkACL, Network.Provider.VPCVirtualRouter);
+
+            if (ObjectUtils.anyNotNull(nsxProvider, netrisProvider) || isVpcNetworkACLProvider) {
                 allAclRules = getAllAclRulesSortedByNumber(lockedAcl.getId());
-                Network.Provider networkProvider = nsxProvider != null ? Network.Provider.Nsx : Network.Provider.Netris;
+                Network.Provider networkProvider = isVpcNetworkACLProvider ? Network.Provider.VPCVirtualRouter
+                                : (nsxProvider != null ? Network.Provider.Nsx : Network.Provider.Netris);
                 _networkAclMgr.reorderAclRules(vpc, networks, allAclRules, networkProvider);
             }
             return networkACLItem;
