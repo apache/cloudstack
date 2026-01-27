@@ -147,13 +147,15 @@ export default {
         let tabs = this.$route.meta.tabs.filter(tab => tab.name !== 'firewall')
 
         const network = await this.fetchNetwork()
-        if ((network && network.networkofferingconservemode) || !network && this.resource.issourcenat) {
+        if (network && network.networkofferingconservemode) {
           this.tabs = tabs
           return
-        } else if (this.resource.issourcenat) {
-          // VPC IPs with Source Nat have only VPN when conserve_mode = false
-          this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
-          return
+        } else {
+          // VPC IPs with source nat have only VPN when conserve mode = false
+          if (this.resource.issourcenat) {
+            this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
+            return
+          }
         }
 
         this.portFWRuleCount = await this.fetchPortFWRule()

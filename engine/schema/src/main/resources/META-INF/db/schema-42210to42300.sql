@@ -49,3 +49,6 @@ CREATE TABLE IF NOT EXISTS `cloud`.`webhook_filter` (
     INDEX `i_webhook_filter__webhook_id`(`webhook_id`),
     CONSTRAINT `fk_webhook_filter__webhook_id` FOREIGN KEY(`webhook_id`) REFERENCES `webhook`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings','conserve_mode', 'tinyint(1) unsigned NULL DEFAULT 0');
+UPDATE `cloud`.`vpc_offerings` SET conserve_mode=1 WHERE name='Default VPC offering';

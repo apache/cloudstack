@@ -30,6 +30,8 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.vpc.VpcOfferingVO;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.stereotype.Component;
 
@@ -159,6 +161,8 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     IpAddressManager _ipAddrMgr;
     @Inject
     RoutedIpv4Manager routedIpv4Manager;
+    @Inject
+    VpcOfferingDao vpcOfferingDao;
 
     private boolean _elbEnabled = false;
     static Boolean rulesContinueOnErrFlag = true;
@@ -400,6 +404,11 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             throw new InvalidParameterValueException("Unable to create firewall rule as cannot find network by id=" + newRule.getNetworkId());
         }
         boolean isNewRuleOnVpcNetwork = newRuleNetwork.getVpcId() != null;
+        boolean isVpcConserveModeEnabled = false;
+        if (isNewRuleOnVpcNetwork) {
+            VpcOfferingVO vpcOffering = vpcOfferingDao.findById(newRuleNetwork.getVpcId());
+            isVpcConserveModeEnabled = vpcOffering != null && vpcOffering.isConserveMode();
+        }
 
         for (FirewallRuleVO rule : rules) {
             if (rule.getId() == newRule.getId()) {
@@ -448,9 +457,15 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                 }
             }
 
-            // Checking if the rule applied is to the same network that is passed in the rule. (except for VPC networks)
-            if (!isNewRuleOnVpcNetwork && rule.getNetworkId() != newRule.getNetworkId() && rule.getState() != State.Revoke) {
-                throw new NetworkRuleConflictException("New rule is for a different network than what's specified in rule " + rule.getXid());
+            // Checking if the rule applied is to the same network that is passed in the rule.
+            // (except for VPCs with conserve mode = true)
+            if ((!isNewRuleOnVpcNetwork || !isVpcConserveModeEnabled)
+                    && rule.getNetworkId() != newRule.getNetworkId() && rule.getState() != State.Revoke) {
+                String errMsg = String.format("New rule is for a different network than what's specified in rule %s", rule.getXid());
+                if (isNewRuleOnVpcNetwork) {
+                    errMsg += String.format(" - VPC id=%s is not using conserve mode", newRuleNetwork.getVpcId());
+                }
+                throw new NetworkRuleConflictException(errMsg);
             }
 
             //Check for the ICMP protocol. This has to be done separately from other protocols as we need to check the ICMP codes and ICMP type also.

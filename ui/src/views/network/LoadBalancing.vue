@@ -97,7 +97,7 @@
             {{ $t('label.add') }}
           </a-button>
         </div>
-        <div class="form__item" v-else-if="newRule.autoscale === 'yes' && ('vpcid' in this.resource)">
+        <div class="form__item" v-else-if="newRule.autoscale === 'yes' && ('vpcid' in this.resource && !this.associatednetworkid)">
           <div class="form__label" style="white-space: nowrap;">{{ $t('label.select.tier') }}</div>
           <a-button :disabled="!('createLoadBalancerRule' in $store.getters.apis)" type="primary" @click="handleOpenAddNetworkModal">
             {{ $t('label.add') }}
@@ -487,10 +487,10 @@
     >
       <div @keyup.ctrl.enter="handleAddNewRule">
         <span
-          v-if="'vpcid' in resource">
+          v-if="'vpcid' in resource && (!('associatednetworkid' in resource) || this.vpcConserveMode)">
           <strong>{{ $t('label.select.tier') }} </strong>
           <a-select
-            v-focus="'vpcid' in resource"
+            v-focus="'vpcid' in resource && (!('associatednetworkid' in resource) || this.vpcConserveMode)"
             v-model:value="selectedTier"
             @change="fetchVirtualMachines()"
             :placeholder="$t('label.select.tier')"
@@ -1022,7 +1022,8 @@ export default {
         urlpath: '/'
       },
       healthMonitorLoading: false,
-      isNetrisZone: false
+      isNetrisZone: false,
+      vpcConserveMode: false
     }
   },
   computed: {
@@ -1079,9 +1080,23 @@ export default {
       })
     },
     fetchData () {
+      this.fetchVpc()
       this.fetchListTiers()
       this.fetchLBRules()
       this.fetchZone()
+    },
+    fetchVpc () {
+      if (!this.resource.vpcid) {
+        return
+      }
+      this.vpcConserveMode = false
+      getAPI('listVPCs', {
+        id: this.resource.vpcid
+      }).then(json => {
+        this.vpcConserveMode = json.listvpcsresponse?.vpc?.[0].vpcofferingconservemode || false
+      }).catch(error => {
+        this.$notifyError(error)
+      })
     },
     fetchListTiers () {
       this.tiers.loading = true
@@ -1830,7 +1845,7 @@ export default {
 
       getAPI('listNics', {
         virtualmachineid: e.target.value,
-        networkid: ('vpcid' in this.resource) ? this.selectedTier : this.resource.associatednetworkid
+        networkid: ('vpcid' in this.resource && (!('associatednetworkid' in this.resource) || this.vpcConserveMode)) ? this.selectedTier : this.resource.associatednetworkid
       }).then(response => {
         if (!response || !response.listnicsresponse || !response.listnicsresponse.nic[0]) return
         const newItem = []
@@ -1850,7 +1865,7 @@ export default {
       this.vmCount = 0
       this.vms = []
       this.addVmModalLoading = true
-      const networkId = ('vpcid' in this.resource) ? this.selectedTier : this.resource.associatednetworkid
+      const networkId = ('vpcid' in this.resource && (!('associatednetworkid' in this.resource) || this.vpcConserveMode)) ? this.selectedTier : this.resource.associatednetworkid
       if (!networkId) {
         this.addVmModalLoading = false
         return
@@ -1999,7 +2014,7 @@ export default {
       }
 
       const networkId = this.selectedTierForAutoScaling != null ? this.selectedTierForAutoScaling
-        : ('vpcid' in this.resource) ? this.selectedTier : this.resource.associatednetworkid
+        : ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
       postAPI('createLoadBalancerRule', {
         openfirewall: false,
         networkid: networkId,
