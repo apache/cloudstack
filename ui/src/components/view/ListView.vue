@@ -966,7 +966,7 @@
           @onClick="$resetConfigurationValueConfirm(item, resetConfig)"
           v-if="editableValueKey !== record.key"
           icon="reload-outlined"
-          :disabled="!('updateConfiguration' in $store.getters.apis)"
+          :disabled="!('resetConfiguration' in $store.getters.apis) || record.value === record.defaultvalue"
         />
       </template>
       <template v-if="column.key === 'gpuDeviceActions'">
