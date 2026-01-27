@@ -1901,7 +1901,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             return;
         }
         for (SnapshotPolicyVO policy : policies) {
-            if (_volsDao.findByIdIncludingRemoved(policy.getVolumeId()) == null) {
+            VolumeVO volume = _volsDao.findByIdIncludingRemoved(policy.getVolumeId());
+            if (volume == null || volume.getState() == Volume.State.Expunged) {
                 logger.info("Removing orphan snapshot policy {} for non-existent volume {}", policy.getId(), policy.getVolumeId());
                 deletePolicy(policy.getId());
             }
