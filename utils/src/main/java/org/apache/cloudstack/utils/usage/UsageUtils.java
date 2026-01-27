@@ -46,8 +46,15 @@ public class UsageUtils {
             logger.warn("Unable to parse configuration 'usage.stats.job.exec.time'.");
             return null;
         }
-        int hourOfDay = Integer.parseInt(execTimeSegments[0]);
-        int minutes = Integer.parseInt(execTimeSegments[1]);
+        int hourOfDay;
+        int minutes;
+        try {
+            hourOfDay = Integer.parseInt(execTimeSegments[0]);
+            minutes = Integer.parseInt(execTimeSegments[1]);
+        } catch (NumberFormatException e) {
+            logger.warn("Unable to parse configuration 'usage.stats.job.exec.time' due to non-numeric values in [{}].", jobExecTimeConfig, e);
+            return null;
+        }
 
         Date currentDate = DateUtil.currentGMTTime();
         Calendar jobExecTime = Calendar.getInstance(usageTimeZone);
@@ -58,9 +65,9 @@ public class UsageUtils {
         jobExecTime.set(Calendar.MILLISECOND, 0);
 
         if (next && jobExecTime.getTime().before(currentDate)) {
-            jobExecTime.roll(Calendar.DAY_OF_YEAR, true);
+            jobExecTime.add(Calendar.DAY_OF_YEAR, 1);
         } else if (!next && jobExecTime.getTime().after(currentDate)) {
-            jobExecTime.roll(Calendar.DAY_OF_YEAR, false);
+            jobExecTime.add(Calendar.DAY_OF_YEAR, -1);
         }
 
         return jobExecTime.getTime();

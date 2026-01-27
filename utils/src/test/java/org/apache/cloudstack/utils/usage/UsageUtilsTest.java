@@ -102,4 +102,34 @@ public class UsageUtilsTest extends TestCase {
         }
     }
 
+    @Test
+    public void getJobExecutionTimeTestReturnsExpectedDateWhenNextExecutionIsOnNextYear() {
+        Date currentDate = new Date();
+        currentDate.setTime(1767236340000L);
+
+        try (MockedStatic<DateUtil> dateUtilMockedStatic = Mockito.mockStatic(DateUtil.class)) {
+            dateUtilMockedStatic.when(DateUtil::currentGMTTime).thenReturn(currentDate);
+
+            Date result = UsageUtils.getJobExecutionTime(usageTimeZone, "00:00", true);
+
+            Assert.assertNotNull(result);
+            Assert.assertEquals(1767236400000L, result.getTime());
+        }
+    }
+
+    @Test
+    public void getJobExecutionTimeTestReturnsExpectedDateWhenPreviousExecutionWasOnPreviousYear() {
+        Date currentDate = new Date();
+        currentDate.setTime(1767236460000L);
+
+        try (MockedStatic<DateUtil> dateUtilMockedStatic = Mockito.mockStatic(DateUtil.class)) {
+            dateUtilMockedStatic.when(DateUtil::currentGMTTime).thenReturn(currentDate);
+
+            Date result = UsageUtils.getJobExecutionTime(usageTimeZone, "23:59", false);
+
+            Assert.assertNotNull(result);
+            Assert.assertEquals(1767236340000L, result.getTime());
+        }
+    }
+
 }
