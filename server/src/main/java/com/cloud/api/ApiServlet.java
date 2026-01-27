@@ -679,38 +679,34 @@ public class ApiServlet extends HttpServlet {
         }
         return false;
     }
-    boolean doUseForwardHeaders() {
+    static boolean doUseForwardHeaders() {
         return Boolean.TRUE.equals(ApiServer.useForwardHeader.value());
     }
 
-    String[] proxyNets() {
+    static String[] proxyNets() {
         return ApiServer.proxyForwardList.value().split(",");
     }
     //This method will try to get login IP of user even if servlet is behind reverseProxy or loadBalancer
-    public InetAddress getClientAddress(final HttpServletRequest request) throws UnknownHostException {
-        String ip = null;
-        InetAddress pretender = InetAddress.getByName(request.getRemoteAddr());
-        if(doUseForwardHeaders()) {
-            if (NetUtils.isIpInCidrList(pretender, proxyNets())) {
+    public static InetAddress getClientAddress(final HttpServletRequest request) throws UnknownHostException {
+        final String remote = request.getRemoteAddr();
+        if (doUseForwardHeaders()) {
+            final InetAddress remoteAddr = InetAddress.getByName(remote);
+            if (NetUtils.isIpInCidrList(remoteAddr, proxyNets())) {
                 for (String header : getClientAddressHeaders()) {
                     header = header.trim();
-                    ip = getCorrectIPAddress(request.getHeader(header));
+                    final String ip = getCorrectIPAddress(request.getHeader(header));
                     if (StringUtils.isNotBlank(ip)) {
-                        LOGGER.debug(String.format("found ip %s in header %s ", ip, header));
-                        break;
+                        LOGGER.debug("found ip {} in header {}", ip, header);
+                        return InetAddress.getByName(ip);
                     }
-                } // no address found in header so ip is blank and use remote addr
-            } // else not an allowed proxy address, ip is blank and use remote addr
+                }
+            }
         }
-        if (StringUtils.isBlank(ip)) {
-            LOGGER.trace(String.format("no ip found in headers, returning remote address %s.", pretender.getHostAddress()));
-            return pretender;
-        }
-
-        return InetAddress.getByName(ip);
+        LOGGER.trace("no ip found in headers, returning remote address {}.", remote);
+        return InetAddress.getByName(remote);
     }
 
-    private String[] getClientAddressHeaders() {
+    private static String[] getClientAddressHeaders() {
         return ApiServer.listOfForwardHeaders.value().split(",");
     }
 

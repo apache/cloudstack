@@ -435,7 +435,7 @@ public class ConfigDriveBuilderTest {
 
             Mockito.verify(genIsoFileMock, Mockito.times(2)).exists();
             Mockito.verify(genIsoFileMock).canExecute();
-            Mockito.verify(genIsoFileMock).getCanonicalPath();
+            Mockito.verify(genIsoFileMock).getAbsolutePath();
         }
     }
 
@@ -475,11 +475,11 @@ public class ConfigDriveBuilderTest {
 
             Mockito.verify(genIsoFileMock, Mockito.times(1)).exists();
             Mockito.verify(genIsoFileMock, Mockito.times(0)).canExecute();
-            Mockito.verify(genIsoFileMock, Mockito.times(0)).getCanonicalPath();
+            Mockito.verify(genIsoFileMock, Mockito.times(0)).getAbsolutePath();
 
             Mockito.verify(mkIsoProgramInLinuxFileMock, Mockito.times(2)).exists();
             Mockito.verify(mkIsoProgramInLinuxFileMock, Mockito.times(1)).canExecute();
-            Mockito.verify(mkIsoProgramInLinuxFileMock, Mockito.times(1)).getCanonicalPath();
+            Mockito.verify(mkIsoProgramInLinuxFileMock, Mockito.times(1)).getAbsolutePath();
         }
     }
 
@@ -509,15 +509,15 @@ public class ConfigDriveBuilderTest {
 
             Mockito.verify(genIsoFileMock, Mockito.times(1)).exists();
             Mockito.verify(genIsoFileMock, Mockito.times(0)).canExecute();
-            Mockito.verify(genIsoFileMock, Mockito.times(0)).getCanonicalPath();
+            Mockito.verify(genIsoFileMock, Mockito.times(0)).getAbsolutePath();
 
             Mockito.verify(mkIsoProgramInLinuxFileMock, Mockito.times(1)).exists();
             Mockito.verify(mkIsoProgramInLinuxFileMock, Mockito.times(0)).canExecute();
-            Mockito.verify(mkIsoProgramInLinuxFileMock, Mockito.times(0)).getCanonicalPath();
+            Mockito.verify(mkIsoProgramInLinuxFileMock, Mockito.times(0)).getAbsolutePath();
 
             Mockito.verify(mkIsoProgramInMacOsFileMock, Mockito.times(1)).exists();
             Mockito.verify(mkIsoProgramInMacOsFileMock, Mockito.times(1)).canExecute();
-            Mockito.verify(mkIsoProgramInMacOsFileMock, Mockito.times(1)).getCanonicalPath();
+            Mockito.verify(mkIsoProgramInMacOsFileMock, Mockito.times(1)).getAbsolutePath();
         }
     }
 

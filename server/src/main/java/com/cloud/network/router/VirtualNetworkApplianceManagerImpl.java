@@ -1747,8 +1747,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             scvm.setParameters("networkId", routerJoinVO.getNetworkId());
             scvm.setParameters("state", VirtualMachine.State.Running);
             List<UserVmJoinVO> vms = userVmJoinDao.search(scvm, null);
-            boolean isDhcpSupported = _ntwkSrvcDao.areServicesSupportedInNetwork(routerJoinVO.getNetworkId(), Service.Dhcp);
-            boolean isDnsSupported = _ntwkSrvcDao.areServicesSupportedInNetwork(routerJoinVO.getNetworkId(), Service.Dns);
+            Provider provider = routerJoinVO.getVpcId() != 0 ? Provider.VPCVirtualRouter : Provider.VirtualRouter;
+            boolean isDhcpSupported = _ntwkSrvcDao.canProviderSupportServiceInNetwork(routerJoinVO.getNetworkId(), Service.Dhcp, provider);
+            boolean isDnsSupported = _ntwkSrvcDao.canProviderSupportServiceInNetwork(routerJoinVO.getNetworkId(), Service.Dns, provider);
             for (UserVmJoinVO vm : vms) {
                 vmsData.append("vmName=").append(vm.getName())
                         .append(",macAddress=").append(vm.getMacAddress())
@@ -3336,6 +3337,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 jobIds.add(jobId);
             } else {
                 logger.debug("Router: {} is already at the latest version. No upgrade required", router);
+                throw new CloudRuntimeException("Router is already at the latest version. No upgrade required");
             }
         }
         return jobIds;

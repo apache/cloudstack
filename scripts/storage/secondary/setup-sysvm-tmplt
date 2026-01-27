@@ -19,6 +19,7 @@
 
 # Usage: e.g. failed $? "this is an error"
 set -x
+umask 0022 # ensure we have the proper permissions even on hardened deployments
 
 failed() {
   local returnval=$1

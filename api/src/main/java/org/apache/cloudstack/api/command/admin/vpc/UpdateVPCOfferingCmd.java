@@ -65,6 +65,7 @@ public class UpdateVPCOfferingCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.STRING,
             description = "The ID of the containing zone(s) as comma separated string, all for all zones offerings",
+            length = 4096,
             since = "4.13")
     private String zoneIds;
 
