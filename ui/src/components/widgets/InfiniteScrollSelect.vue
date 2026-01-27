@@ -274,7 +274,7 @@ export default {
         return
       }
       if (Array.isArray(this.preselectedOptionValue) && this.preselectedOptionValue.length > 1) {
-        this.preselectedOptionValue = this.preselectedOptionValue.filter(o => o !== match)
+        this.preselectedOptionValue = this.preselectedOptionValue.filter(o => o !== this.preselectedMatchValue)
       } else {
         this.resetPreselectedOptionValue()
       }
