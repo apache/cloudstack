@@ -502,7 +502,7 @@ public class UriUtils {
                 Credentials defaultcreds = new UsernamePasswordCredentials(user, password);
                 httpclient.getState().setCredentials(
                         new AuthScope(hostAndPort.first(), hostAndPort.second(), AuthScope.ANY_REALM), defaultcreds);
-                LOGGER.info("Added username={}, password=****** for host {}:{}"
+                LOGGER.info("Added username={} along with password for host {}:{}"
                     , user
                     , hostAndPort.first()
                     , hostAndPort.second());
