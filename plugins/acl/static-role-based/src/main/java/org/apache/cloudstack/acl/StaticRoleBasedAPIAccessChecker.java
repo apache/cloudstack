@@ -26,6 +26,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.exception.UnavailableCommandException;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
 
 import org.apache.cloudstack.api.APICommand;
 
@@ -90,7 +91,7 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
     }
 
     @Override
-    public boolean checkAccess(User user, String commandName) throws PermissionDeniedException {
+    public boolean checkAccess(User user, String commandName, ApiKeyPairPermission... apiKeyPairPermissions) throws PermissionDeniedException {
         if (!isEnabled()) {
             return true;
         }
@@ -104,7 +105,7 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
     }
 
     @Override
-    public boolean checkAccess(Account account, String commandName) {
+    public boolean checkAccess(Account account, String commandName, ApiKeyPairPermission... apiKeyPairPermissions) {
         if (!isEnabled()) {
             return true;
         }
@@ -161,6 +162,11 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
             }
         }
         return super.start();
+    }
+
+    @Override
+    public List<RolePermissionEntity> getImplicitRolePermissions(RoleType roleType) {
+        return List.of();
     }
 
     private void processMapping(Map<String, String> configMap) {

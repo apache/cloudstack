@@ -75,6 +75,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     private RolePermissionsDao rolePermissionsDao;
     @Inject
     private AccountManager accountManager;
+    private List<APIChecker> apiAccessCheckers;
 
     public void checkCallerAccess() {
         if (!isEnabled()) {
@@ -449,20 +450,21 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     /**
      *  Removes roles from the given list if the role has different or more permissions than the user's calling the method role
      */
-    protected int removeRolesIfNeeded(List<? extends Role> roles) {
+    @Override
+    public int removeRolesIfNeeded(List<? extends Role> roles) {
         if (roles.isEmpty()) {
             return 0;
         }
 
         Long callerRoleId = getCurrentAccount().getRoleId();
-        Map<String, Permission> callerRolePermissions = getRoleRulesAndPermissions(callerRoleId);
+        Map<String, Permission> callerRolePermissions = getRoleRulesAndPermissions(findAllRolePermissionsEntityBy(callerRoleId, false));
 
         int count = 0;
         Iterator<? extends Role> rolesIterator = roles.iterator();
         while (rolesIterator.hasNext()) {
             Role role = rolesIterator.next();
 
-            if (role.getId() == callerRoleId || roleHasPermission(callerRolePermissions, role)) {
+            if (role.getId() == callerRoleId || roleHasPermission(callerRolePermissions, findAllRolePermissionsEntityBy(role.getId(), false))) {
                 continue;
             }
 
@@ -473,17 +475,11 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
         return count;
     }
 
-    /**
-     * Checks if the role of the caller account has compatible permissions of the specified role.
-     * For each permission of the role of the caller, the target role needs to contain the same permission.
-     *
-     * @param sourceRolePermissions the permissions of the caller role.
-     * @param targetRole the role that the caller role wants to access.
-     * @return True if the role can be accessed with the given permissions; false otherwise.
-     */
-    protected boolean roleHasPermission(Map<String, Permission> sourceRolePermissions, Role targetRole) {
+
+    @Override
+    public boolean roleHasPermission(Map<String, Permission> rolePermissions, List<RolePermissionEntity> rolePermissionsToAccess) {
         Set<String> rulesAlreadyCompared = new HashSet<>();
-        for (RolePermission rolePermission : findAllPermissionsBy(targetRole.getId())) {
+        for (RolePermissionEntity rolePermission : rolePermissionsToAccess) {
             boolean permissionIsRegex = rolePermission.getRule().getRuleString().contains("*");
 
             for (String apiName : accountManager.getApiNameList()) {
@@ -491,7 +487,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
                     continue;
                 }
 
-                if (rolePermission.getPermission() == Permission.ALLOW && (!sourceRolePermissions.containsKey(apiName) || sourceRolePermissions.get(apiName) == Permission.DENY)) {
+                if (rolePermission.getPermission() == Permission.ALLOW && (!rolePermissions.containsKey(apiName) || rolePermissions.get(apiName) == Permission.DENY)) {
                     return false;
                 }
 
@@ -506,32 +502,32 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
         return true;
     }
 
-    /**
-     * Given a role ID, returns a {@link Map} containing the API name as the key and the {@link Permission} for the API as the value.
-     *
-     * @param roleId ID from role.
-     */
-    public Map<String, Permission> getRoleRulesAndPermissions(Long roleId) {
+    @Override
+    public Map<String, Permission> getRoleRulesAndPermissions(List<RolePermissionEntity> rolePermissions) {
         Map<String, Permission> roleRulesAndPermissions = new HashMap<>();
 
-        for (RolePermission rolePermission : findAllPermissionsBy(roleId)) {
+        for (RolePermissionEntity rolePermission : rolePermissions) {
             boolean permissionIsRegex = rolePermission.getRule().getRuleString().contains("*");
 
-            for (String apiName : accountManager.getApiNameList()) {
-                if (!rolePermission.getRule().matches(apiName)) {
-                    continue;
-                }
-
-                if (!roleRulesAndPermissions.containsKey(apiName)) {
-                    roleRulesAndPermissions.put(apiName, rolePermission.getPermission());
-                }
-
-                if (!permissionIsRegex) {
-                    break;
-                }
-            }
+            mapRolePermissionToApiNames(rolePermission, roleRulesAndPermissions, permissionIsRegex);
         }
         return roleRulesAndPermissions;
+    }
+
+    private void mapRolePermissionToApiNames(RolePermissionEntity rolePermission, Map<String, Permission> roleRulesAndPermissions, boolean permissionIsRegex) {
+        for (String apiName : accountManager.getApiNameList()) {
+            if (!rolePermission.getRule().matches(apiName)) {
+                continue;
+            }
+
+            if (!roleRulesAndPermissions.containsKey(apiName)) {
+                roleRulesAndPermissions.put(apiName, rolePermission.getPermission());
+            }
+
+            if (!permissionIsRegex) {
+                break;
+            }
+        }
     }
 
     @Override
@@ -569,6 +565,43 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
             return new ArrayList<>(permissions);
         }
         return Collections.emptyList();
+    }
+
+    @Override
+    public List<RolePermissionEntity> findAllRolePermissionsEntityBy(final Long roleId, final boolean considerImplicitRules) {
+        List<RolePermissionVO> rolePermissions = rolePermissionsDao.findAllByRoleIdSorted(roleId);
+        if (!considerImplicitRules) {
+            return new ArrayList<>(rolePermissions);
+        }
+
+        List<RolePermissionEntity> permissions = new ArrayList<>();
+        List<RolePermissionEntity> implicitPermissions = getImplicitRolePermissions(roleId);
+        for (RolePermissionEntity implicitPermission : implicitPermissions) {
+            boolean implicitPermissionAlreadyDefinedByExplicitPermissions = rolePermissions.stream()
+                    .anyMatch(permission -> permission.getRule().matches(implicitPermission.getRule().getRuleString()));
+            if (!implicitPermissionAlreadyDefinedByExplicitPermissions) {
+                permissions.add(implicitPermission);
+            }
+        }
+
+        permissions.addAll(rolePermissions);
+        return permissions;
+    }
+
+    private List<RolePermissionEntity> getImplicitRolePermissions(Long roleId) {
+        Role role = roleDao.findById(roleId);
+        if (role == null) {
+            return List.of();
+        }
+
+        for (APIChecker apiChecker : apiAccessCheckers) {
+            List<RolePermissionEntity> implicitPermissions = apiChecker.getImplicitRolePermissions(role.getRoleType());
+            if (apiChecker.isEnabled() && !CollectionUtils.isEmpty(implicitPermissions)) {
+                return implicitPermissions;
+            }
+        }
+
+        return List.of();
     }
 
     private boolean isCallerRootAdmin() {
@@ -612,5 +645,10 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
         cmdList.add(EnableRoleCmd.class);
         cmdList.add(DisableRoleCmd.class);
         return cmdList;
+    }
+
+    @Inject
+    public void setApiAccessCheckers(List<APIChecker> apiAccessCheckers) {
+        this.apiAccessCheckers = apiAccessCheckers;
     }
 }

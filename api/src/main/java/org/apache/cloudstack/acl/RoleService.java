@@ -104,5 +104,26 @@ public interface RoleService {
 
     List<RolePermission> findAllPermissionsBy(Long roleId);
 
+    List<RolePermissionEntity> findAllRolePermissionsEntityBy(Long roleId, boolean considerImplicitRules);
+
     Permission getRolePermission(String permission);
+
+    int removeRolesIfNeeded(List<? extends Role> roles);
+
+    /**
+     * Checks if the role of the caller account has compatible permissions of the specified role permissions.
+     * For each permission of the roleToAccess, the role of the caller needs to contain the same permission.
+     *
+     * @param rolePermissions the permissions of the caller role.
+     * @param rolePermissionsToAccess the permissions for the role that the caller role wants to access.
+     * @return True if the role can be accessed with the given permissions; false otherwise.
+     */
+    boolean roleHasPermission(Map<String, Permission> rolePermissions, List<RolePermissionEntity> rolePermissionsToAccess);
+
+    /**
+     * Given a list of role permissions, returns a {@link Map} containing the API name as the key and the {@link Permission} for the API as the value.
+     *
+     * @param rolePermissions Permissions for the role from role.
+     */
+    Map<String, Permission> getRoleRulesAndPermissions(List<RolePermissionEntity> rolePermissions);
 }

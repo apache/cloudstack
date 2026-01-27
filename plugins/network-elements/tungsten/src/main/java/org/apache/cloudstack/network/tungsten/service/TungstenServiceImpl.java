@@ -19,6 +19,7 @@ package org.apache.cloudstack.network.tungsten.service;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
@@ -114,6 +115,7 @@ import net.juniper.tungsten.api.types.TagType;
 import net.juniper.tungsten.api.types.VirtualMachine;
 import net.juniper.tungsten.api.types.VirtualMachineInterface;
 import net.juniper.tungsten.api.types.VirtualNetwork;
+import org.apache.cloudstack.acl.ApiKeyPairVO;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -1182,9 +1184,10 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
             int listenerPort = NetUtils.HTTPS_PORT;
 
             User callerUser = accountMgr.getActiveUser(CallContext.current().getCallingUserId());
-            String apiKey = callerUser.getApiKey();
-            String secretKey = callerUser.getSecretKey();
-            if (apiKey != null && secretKey != null) {
+            ApiKeyPairVO latestKeypair = ApiDBUtils.searchForLatestUserKeyPair(callerUser.getId());
+            if (latestKeypair != null) {
+                String apiKey = latestKeypair.getApiKey();
+                String secretKey = latestKeypair.getSecretKey();
                 String url;
                 try {
                     String data = "apiKey=" + URLEncoder.encode(apiKey, StandardCharsets.UTF_8.name()).replace("\\+", "%20") + "&command"
