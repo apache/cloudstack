@@ -549,9 +549,14 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
         Date limit = DateUtils.addDays(new Date(), -days);
         sc.setParameters("endDate", limit);
 
-        logger.debug("Removing all cloud_usage records older than [{}].", limit);
-        int totalRemoved = Transaction.execute(TransactionLegacy.USAGE_DB, (TransactionCallback<Integer>) status -> batchExpunge(sc, limitPerQuery));
-        logger.info("Removed a total of [{}] cloud_usage records older than [{}].", totalRemoved, limit);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+        try {
+            logger.debug("Removing all cloud_usage records older than [{}].", limit);
+            int totalExpunged = batchExpunge(sc, limitPerQuery);
+            logger.info("Removed a total of [{}] cloud_usage records older than [{}].", totalExpunged, limit);
+        } finally {
+            txn.close();
+        }
     }
 
     public UsageVO persistUsage(final UsageVO usage) {
