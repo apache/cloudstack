@@ -47,10 +47,6 @@ public class Client {
         NONE, VNC, RDP, HYPERV
     }
 
-    private static final String VNC = "vnc";
-    private static final String RDP = "rdp";
-    private static final String HYPERV = "hyperv";
-
     // Common options
     private final Option help = new Option() {
         {
@@ -214,7 +210,6 @@ public class Client {
     public void runClient(String[] args) {
 
         try {
-
             Protocol protocol = parseOptions(args);
             if (protocol == Protocol.NONE)
                 return;
@@ -306,17 +301,20 @@ public class Client {
         Protocol protocol;
 
         Option[] options;
-        switch (protocolName) {
+        try {
+            protocol = Protocol.valueOf(protocolName);
+        } catch (IllegalArgumentException e) {
+            protocol = Protocol.NONE;
+        }
+
+        switch (protocol) {
             case VNC:
-                protocol = Protocol.VNC;
                 options = join(commonOptions, vncOptions);
                 break;
             case RDP:
-                protocol = Protocol.RDP;
                 options = join(commonOptions, rdpOptions);
                 break;
             case HYPERV:
-                protocol = Protocol.HYPERV;
                 options = join(commonOptions, hyperVOptions);
                 break;
             default:
