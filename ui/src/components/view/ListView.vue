@@ -739,6 +739,20 @@
         >{{ text }}</router-link>
         <span v-else>{{ text }}</span>
       </template>
+      <template v-if="column.key === 'parentname' && ['snapshot'].includes($route.path.split('/')[1])">
+        <router-link
+          v-if="record.parent && $router.resolve('/snapshot/' + record.parent).matched[0].redirect !== '/exception/404'"
+          :to="{ path: '/snapshot/' + record.parent }"
+        >{{ text }}</router-link>
+        <span v-else>{{ text }}</span>
+      </template>
+      <template v-if="column.key === 'parentName' && ['vmsnapshot'].includes($route.path.split('/')[1])">
+        <router-link
+          v-if="record.parent && $router.resolve('/vmsnapshot/' + record.parent).matched[0].redirect !== '/exception/404'"
+          :to="{ path: '/vmsnapshot/' + record.parent }"
+        >{{ text }}</router-link>
+        <span v-else>{{ text }}</span>
+      </template>
       <template v-if="column.key === 'templateversion'">
         <span> {{ record.version }} </span>
       </template>
