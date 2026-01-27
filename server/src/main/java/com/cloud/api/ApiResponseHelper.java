@@ -39,19 +39,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.bgp.ASNumber;
-import com.cloud.bgp.ASNumberRange;
-import com.cloud.configuration.ConfigurationService;
-import com.cloud.dc.ASNumberRangeVO;
-import com.cloud.dc.ASNumberVO;
-import com.cloud.dc.VlanDetailsVO;
-import com.cloud.dc.dao.ASNumberDao;
-import com.cloud.dc.dao.ASNumberRangeDao;
-import com.cloud.dc.dao.VlanDetailsDao;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.network.vpc.VpcGateway;
-import com.cloud.network.vpn.Site2SiteVpnManager;
-import com.cloud.storage.BucketVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -277,14 +264,19 @@ import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.api.query.vo.VpcOfferingJoinVO;
 import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.bgp.ASNumber;
+import com.cloud.bgp.ASNumberRange;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.ConfigurationService;
 import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceLimit;
+import com.cloud.dc.ASNumberRangeVO;
+import com.cloud.dc.ASNumberVO;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
@@ -295,7 +287,11 @@ import com.cloud.dc.Pod;
 import com.cloud.dc.StorageNetworkIpRange;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.ASNumberDao;
+import com.cloud.dc.dao.ASNumberRangeDao;
+import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.Event;
@@ -304,6 +300,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.ControlState;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.network.GuestVlan;
 import com.cloud.network.GuestVlanRange;
@@ -367,9 +364,11 @@ import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcGateway;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
+import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Detail;
@@ -388,6 +387,7 @@ import com.cloud.server.ResourceIconManager;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.storage.BucketVO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
@@ -586,6 +586,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (domain.getChildCount() > 0) {
             domainResponse.setHasChild(true);
         }
+        populateDomainTags(domain.getUuid(), domainResponse);
         domainResponse.setObjectName("domain");
         return domainResponse;
     }
@@ -3046,6 +3047,20 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDomainId(object.getDomainUuid());
         response.setDomainName(object.getDomainName());
         response.setDomainPath(getPrettyDomainPath(object.getDomainPath()));
+    }
+
+    public static void populateDomainTags(String domainUuid, DomainResponse domainResponse) {
+        List<ResourceTagJoinVO> tags = ApiDBUtils.listResourceTagViewByResourceUUID(domainUuid,
+                ResourceTag.ResourceObjectType.Domain);
+        if (CollectionUtils.isEmpty(tags)) {
+            return;
+        }
+        Set<ResourceTagResponse> tagResponses = new HashSet<>();
+        for (ResourceTagJoinVO tag : tags) {
+            ResourceTagResponse tagResponse = ApiDBUtils.newResourceTagResponse(tag, true);
+            tagResponses.add(tagResponse);
+        }
+        domainResponse.setTags(tagResponses);
     }
 
     private void populateAccount(ControlledEntityResponse response, long accountId) {
