@@ -183,17 +183,22 @@ public class UserPasswordResetManagerImpl extends ManagerBase implements UserPas
         final String subject = "Password Reset Request";
         String domainUrl = UserPasswordResetDomainURL.value();
         if (StringUtils.isBlank(domainUrl)) {
-            domainUrl = ManagementServerAddresses.value().split(",")[0];
-        }
-        domainUrl = domainUrl.replaceAll("/+$", "");
-
-        if (!domainUrl.startsWith("http://") && !domainUrl.startsWith("https://")) {
+            String mgmtServerAddr = ManagementServerAddresses.value().split(",")[0];
+            if (ServerProperties.isHttpsEnabled()) {
+                domainUrl = "https://" + mgmtServerAddr + ":" + ServerProperties.getHttpsPort();
+            } else {
+                domainUrl = "http://" + mgmtServerAddr + ":" + ServerProperties.getHttpPort();
+            }
+        } else if (!domainUrl.startsWith("http://") && !domainUrl.startsWith("https://")) {
             if (ServerProperties.isHttpsEnabled()) {
                 domainUrl = "https://" + domainUrl;
             } else {
                 domainUrl = "http://" + domainUrl;
             }
         }
+
+        domainUrl = domainUrl.replaceAll("/+$", "");
+
         String resetLink = String.format("%s/client/#/user/resetPassword?username=%s&token=%s",
                 domainUrl, username, resetToken);
         String content = getMessageBody(userAccount, resetToken, resetLink);
