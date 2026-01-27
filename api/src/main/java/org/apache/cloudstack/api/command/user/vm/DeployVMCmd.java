@@ -64,6 +64,10 @@ public class DeployVMCmd extends BaseDeployVMCmd {
     @Parameter(name = ApiConstants.SNAPSHOT_ID, type = CommandType.UUID, entityType = SnapshotResponse.class, since = "4.21")
     private Long snapshotId;
 
+    @Parameter(name = ApiConstants.DUMMY, type = CommandType.BOOLEAN, since = "4.23", description = "Deploy a dummy VM without any disk. False by default. This supports KVM only.")
+    private Boolean dummy;
+
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -82,6 +86,10 @@ public class DeployVMCmd extends BaseDeployVMCmd {
 
     public Long getSnapshotId() {
         return snapshotId;
+    }
+
+    public boolean getDummy() {
+        return dummy != null && dummy;
     }
 
     public boolean isVolumeOrSnapshotProvided() {
@@ -132,7 +140,7 @@ public class DeployVMCmd extends BaseDeployVMCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        if (Stream.of(templateId, snapshotId, volumeId).filter(Objects::nonNull).count() != 1) {
+        if (!getDummy() && Stream.of(templateId, snapshotId, volumeId).filter(Objects::nonNull).count() != 1) {
             throw new CloudRuntimeException("Please provide only one of the following parameters - template ID, volume ID or snapshot ID");
         }
 

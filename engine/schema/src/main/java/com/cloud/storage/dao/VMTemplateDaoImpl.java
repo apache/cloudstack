@@ -945,4 +945,12 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         }
         return rows > 0;
     }
+
+    @Override
+    public VMTemplateVO findByAccountAndName(Long accountId, String templateName) {
+        SearchCriteria<VMTemplateVO> sc = NameAccountIdSearch.create();
+        sc.setParameters("name", templateName);
+        sc.setParameters("accountId", accountId);
+        return findOneBy(sc);
+    }
 }
