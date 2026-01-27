@@ -24,6 +24,7 @@ import com.cloud.api.query.dao.SnapshotJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.configuration.Resource;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InvalidParameterValueException;
@@ -207,6 +208,8 @@ public class TemplateManagerImplTest {
     VnfTemplateManager vnfTemplateManager;
     @Inject
     SnapshotJoinDao snapshotJoinDao;
+    @Inject
+    TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao;
 
     @Inject
     HeuristicRuleHelper heuristicRuleHelperMock;
@@ -753,6 +756,26 @@ public class TemplateManagerImplTest {
         Assert.assertNull(type);
     }
 
+    @Test
+    public void verifyHeuristicRulesForZoneTestTemplateIsISOFormatShouldCheckForISOHeuristicType() {
+        VMTemplateVO vmTemplateVOMock = Mockito.mock(VMTemplateVO.class);
+
+        Mockito.when(vmTemplateVOMock.getFormat()).thenReturn(Storage.ImageFormat.ISO);
+        templateManager.verifyHeuristicRulesForZone(vmTemplateVOMock, 1L);
+
+        Mockito.verify(heuristicRuleHelperMock, Mockito.times(1)).getImageStoreIfThereIsHeuristicRule(1L, HeuristicType.ISO, vmTemplateVOMock);
+    }
+
+    @Test
+    public void verifyHeuristicRulesForZoneTestTemplateNotISOFormatShouldCheckForTemplateHeuristicType() {
+        VMTemplateVO vmTemplateVOMock = Mockito.mock(VMTemplateVO.class);
+
+        Mockito.when(vmTemplateVOMock.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        templateManager.verifyHeuristicRulesForZone(vmTemplateVOMock, 1L);
+
+        Mockito.verify(heuristicRuleHelperMock, Mockito.times(1)).getImageStoreIfThereIsHeuristicRule(1L, HeuristicType.TEMPLATE, vmTemplateVOMock);
+    }
+
     @Configuration
     @ComponentScan(basePackageClasses = {TemplateManagerImpl.class},
             includeFilters = {@ComponentScan.Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)},
@@ -957,6 +980,11 @@ public class TemplateManagerImplTest {
         @Bean
         public VnfTemplateManager vnfTemplateManager() {
             return Mockito.mock(VnfTemplateManager.class);
+        }
+
+        @Bean
+        public TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao() {
+            return Mockito.mock(TemplateDeployAsIsDetailsDao.class);
         }
 
         @Bean
