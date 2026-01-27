@@ -27,8 +27,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.cloudstack.veeam.RouteHandler;
 import org.apache.cloudstack.veeam.VeeamControlServlet;
 import org.apache.cloudstack.veeam.adapter.UserResourceAdapter;
-import org.apache.cloudstack.veeam.api.dto.Disk;
-import org.apache.cloudstack.veeam.api.dto.Disks;
+import org.apache.cloudstack.veeam.api.dto.ImageTransfer;
+import org.apache.cloudstack.veeam.api.dto.ImageTransfers;
 import org.apache.cloudstack.veeam.utils.Negotiation;
 import org.apache.cloudstack.veeam.utils.PathUtil;
 
@@ -38,8 +38,8 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-public class DisksRouteHandler extends ManagerBase implements RouteHandler {
-    public static final String BASE_ROUTE = "/api/disks";
+public class ImageTransfersRouteHandler extends ManagerBase implements RouteHandler {
+    public static final String BASE_ROUTE = "/api/imagetransfers";
 
     @Inject
     UserResourceAdapter userResourceAdapter;
@@ -80,7 +80,7 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
         }
         Pair<String, String> idAndSubPath = PathUtil.extractIdAndSubPath(sanitizedPath, BASE_ROUTE);
         if (idAndSubPath != null) {
-            // /api/disks/{id}
+            // /api/imagetransfers/{id}
             if (idAndSubPath.first() != null) {
                 if (idAndSubPath.second() == null) {
                     handleGetById(idAndSubPath.first(), resp, outFormat, io);
@@ -94,19 +94,20 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
 
     public void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
                           Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
-        final List<Disk> result = userResourceAdapter.listAllDisks();
-        final Disks response = new Disks(result);
+        final List<ImageTransfer> result = userResourceAdapter.listAllImageTransfers();
+        final ImageTransfers response = new ImageTransfers();
+        response.setImageTransfer(result);
 
-        io.getWriter().write(resp, 200, response, outFormat);
+        io.getWriter().write(resp, 400, response, outFormat);
     }
 
     public void handlePost(final HttpServletRequest req, final HttpServletResponse resp,
-                          Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
+                           Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
         String data = RouteHandler.getRequestData(req);
-        logger.info("Received POST request on /api/disks endpoint, but method: POST is not supported atm. Request-data: {}", data);
+        logger.info("Received POST request on /api/imagetransfers endpoint, but method: POST is not supported atm. Request-data: {}", data);
         try {
-            Disk request = io.getMapper().jsonMapper().readValue(data, Disk.class);
-            Disk response = userResourceAdapter.handleCreateDisk(request);
+            ImageTransfer request = io.getMapper().jsonMapper().readValue(data, ImageTransfer.class);
+            ImageTransfer response = userResourceAdapter.handleCreateImageTransfer(request);
             io.getWriter().write(resp, 201, response, outFormat);
         } catch (JsonProcessingException | CloudRuntimeException e) {
             io.getWriter().write(resp, 400, e.getMessage(), outFormat);
@@ -116,7 +117,7 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
     public void handleGetById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
                               final VeeamControlServlet io) throws IOException {
         try {
-            Disk response = userResourceAdapter.getDisk(id);
+            ImageTransfer response = userResourceAdapter.getImageTransfer(id);
             io.getWriter().write(resp, 200, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.getWriter().write(resp, 404, e.getMessage(), outFormat);

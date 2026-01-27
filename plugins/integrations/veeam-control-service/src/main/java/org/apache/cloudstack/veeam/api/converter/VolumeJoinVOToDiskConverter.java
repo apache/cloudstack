@@ -97,8 +97,8 @@ public class VolumeJoinVOToDiskConverter {
 
         // Disk profile (optional)
         disk.diskProfile = Ref.of(
-                basePath + "/diskprofiles/" + vol.getDiskOfferingId(),
-                String.valueOf(vol.getDiskOfferingId())
+                basePath + "/diskprofiles/" + vol.getDiskOfferingUuid(),
+                String.valueOf(vol.getDiskOfferingUuid())
         );
 
         // Storage domains

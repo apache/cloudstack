@@ -639,21 +639,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return null;
     }
 
-    private Long getCustomDiskOfferingIdForVolumeUpload(Account owner, DataCenter zone) {
-        Long offeringId = getDefaultCustomOfferingId(owner, zone);
-        if (offeringId != null) {
-            return offeringId;
-        }
-        List<DiskOfferingVO> offerings = _diskOfferingDao.findCustomDiskOfferings();
-        for (DiskOfferingVO offering : offerings) {
-            try {
-                _configMgr.checkDiskOfferingAccess(owner, offering, zone);
-                return offering.getId();
-            } catch (PermissionDeniedException ignored) {}
-        }
-        return null;
-    }
-
     @DB
     protected VolumeVO persistVolume(final Account owner, final Long zoneId, final String volumeName, final String url, final String format, final Long diskOfferingId, final Volume.State state) {
         return Transaction.execute(new TransactionCallbackWithException<VolumeVO, CloudRuntimeException>() {
@@ -719,17 +704,31 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      * If the retrieved volume name is null, empty or blank, then A random name
      * will be generated using getRandomVolumeName method.
      *
-     * @param cmd
+     * @param userSpecifiedName
      * @return Either the retrieved name or a random name.
      */
-    public String getVolumeNameFromCommand(CreateVolumeCmd cmd) {
-        String userSpecifiedName = cmd.getVolumeName();
-
-        if (StringUtils.isBlank(userSpecifiedName)) {
-            userSpecifiedName = getRandomVolumeName();
+    public String getVolumeNameFromCommand(String userSpecifiedName) {
+        if (StringUtils.isNotBlank(userSpecifiedName)) {
+            return userSpecifiedName;
         }
 
-        return userSpecifiedName;
+        return getRandomVolumeName();
+    }
+
+    @Override
+    public Long getCustomDiskOfferingIdForVolumeUpload(Account owner, DataCenter zone) {
+        Long offeringId = getDefaultCustomOfferingId(owner, zone);
+        if (offeringId != null) {
+            return offeringId;
+        }
+        List<DiskOfferingVO> offerings = _diskOfferingDao.findCustomDiskOfferings();
+        for (DiskOfferingVO offering : offerings) {
+            try {
+                _configMgr.checkDiskOfferingAccess(owner, offering, zone);
+                return offering.getId();
+            } catch (PermissionDeniedException ignored) {}
+        }
+        return null;
     }
 
     /*
@@ -741,11 +740,20 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating volume", create = true)
     public VolumeVO allocVolume(CreateVolumeCmd cmd) throws ResourceAllocationException {
+        return allocVolume(cmd.getEntityOwnerId(), cmd.getZoneId(), cmd.getDiskOfferingId(), cmd.getVirtualMachineId(),
+                cmd.getSnapshotId(), getVolumeNameFromCommand(cmd.getVolumeName()), cmd.getSize(),
+                cmd.getDisplayVolume(), cmd.getMinIops(), cmd.getMaxIops(), cmd.getCustomId());
+    }
+
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating volume", create = true)
+    public VolumeVO allocVolume(long ownerId, Long zoneId, Long diskOfferingId, Long vmId, Long snapshotId,
+            String name, Long cmdSize, Boolean displayVolume, Long cmdMinIops, Long cmdMaxIops, String customId)
+            throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
 
-        long ownerId = cmd.getEntityOwnerId();
         Account owner = _accountMgr.getActiveAccountById(ownerId);
-        Boolean displayVolume = cmd.getDisplayVolume();
 
         // permission check
         _accountMgr.checkAccess(caller, null, true, _accountMgr.getActiveAccountById(ownerId));
@@ -758,8 +766,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
-        Long zoneId = cmd.getZoneId();
-        Long diskOfferingId = null;
         DiskOfferingVO diskOffering = null;
         Long size = null;
         Long minIops = null;
@@ -768,13 +774,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         VolumeVO parentVolume = null;
 
         // validate input parameters before creating the volume
-        if (cmd.getSnapshotId() == null && cmd.getDiskOfferingId() == null) {
+        if (snapshotId == null && diskOfferingId == null) {
             throw new InvalidParameterValueException("At least one of disk Offering ID or snapshot ID must be passed whilst creating volume");
         }
 
         // disallow passing disk offering ID with DATA disk volume snapshots
-        if (cmd.getSnapshotId() != null && cmd.getDiskOfferingId() != null) {
-            SnapshotVO snapshot = _snapshotDao.findById(cmd.getSnapshotId());
+        if (snapshotId != null && diskOfferingId != null) {
+            SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
             if (snapshot != null) {
                 parentVolume = _volsDao.findByIdIncludingRemoved(snapshot.getVolumeId());
                 if (parentVolume != null && parentVolume.getVolumeType() != Volume.Type.ROOT)
@@ -784,10 +790,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         Map<String, String> details = new HashMap<>();
-        if (cmd.getDiskOfferingId() != null) { // create a new volume
-
-            diskOfferingId = cmd.getDiskOfferingId();
-            size = cmd.getSize();
+        if (diskOfferingId != null) { // create a new volume
+            size = cmdSize;
             Long sizeInGB = size;
             if (size != null) {
                 if (size > 0) {
@@ -833,8 +837,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             if (isCustomizedIops != null) {
                 if (isCustomizedIops) {
-                    minIops = cmd.getMinIops();
-                    maxIops = cmd.getMaxIops();
+                    minIops = cmdMinIops;
+                    maxIops = cmdMaxIops;
 
                     if (minIops == null && maxIops == null) {
                         minIops = 0L;
@@ -866,8 +870,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
-        if (cmd.getSnapshotId() != null) { // create volume from snapshot
-            Long snapshotId = cmd.getSnapshotId();
+        if (snapshotId != null) { // create volume from snapshot
             SnapshotVO snapshotCheck = _snapshotDao.findById(snapshotId);
             if (snapshotCheck == null) {
                 throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId);
@@ -918,7 +921,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             // one step operation - create volume in VM's cluster and attach it
             // to the VM
-            Long vmId = cmd.getVirtualMachineId();
             if (vmId != null) {
                 // Check that the virtual machine ID is valid and it's a user vm
                 UserVmVO vm = _userVmDao.findById(vmId);
@@ -960,10 +962,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Zone is not configured to use local storage but volume's disk offering " + diskOffering.getName() + " uses it");
         }
 
-        String userSpecifiedName = getVolumeNameFromCommand(cmd);
+        String userSpecifiedName = getVolumeNameFromCommand(name);
 
-        return commitVolume(cmd.getSnapshotId(), caller, owner, displayVolume, zoneId, diskOfferingId, provisioningType, size, minIops, maxIops, parentVolume, userSpecifiedName,
-                _uuidMgr.generateUuid(Volume.class, cmd.getCustomId()), details);
+        return commitVolume(snapshotId, caller, owner, displayVolume, zoneId, diskOfferingId, provisioningType, size, minIops, maxIops, parentVolume, userSpecifiedName,
+                _uuidMgr.generateUuid(Volume.class, customId), details);
     }
 
     @Override
@@ -1075,25 +1077,33 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating volume", async = true)
     public VolumeVO createVolume(CreateVolumeCmd cmd) {
-        VolumeVO volume = _volsDao.findById(cmd.getEntityId());
+        return createVolume(cmd.getEntityId(), cmd.getVirtualMachineId(), cmd.getSnapshotId(), cmd.getStorageId(),
+                cmd.getDisplayVolume());
+    }
+
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating volume", async = true)
+    public VolumeVO createVolume(long volumeId, Long vmId, Long snapshotId, Long storageId, Boolean display) {
+        VolumeVO volume = _volsDao.findById(volumeId);
         boolean created = true;
 
         try {
-            if (cmd.getSnapshotId() != null) {
-                volume = createVolumeFromSnapshot(volume, cmd.getSnapshotId(), cmd.getVirtualMachineId());
+            if (snapshotId != null) {
+                volume = createVolumeFromSnapshot(volume, snapshotId, vmId);
                 if (volume.getState() != Volume.State.Ready) {
                     created = false;
                 }
 
                 // if VM Id is provided, attach the volume to the VM
-                if (cmd.getVirtualMachineId() != null) {
+                if (vmId != null) {
                     try {
-                        attachVolumeToVM(cmd.getVirtualMachineId(), volume.getId(), volume.getDeviceId(), false);
+                        attachVolumeToVM(vmId, volume.getId(), volume.getDeviceId(), false);
                     } catch (Exception ex) {
                         StringBuilder message = new StringBuilder("Volume: ");
                         message.append(volume.getUuid());
                         message.append(" created successfully, but failed to attach the newly created volume to VM: ");
-                        message.append(cmd.getVirtualMachineId());
+                        message.append(vmId);
                         message.append(" due to error: ");
                         message.append(ex.getMessage());
                         if (logger.isDebugEnabled()) {
@@ -1102,20 +1112,20 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                         throw new CloudRuntimeException(message.toString());
                     }
                 }
-            } else if (cmd.getStorageId() != null) {
-                allocateVolumeOnStorage(cmd.getEntityId(), cmd.getStorageId());
+            } else if (storageId != null) {
+                allocateVolumeOnStorage(volumeId, storageId);
             }
             return volume;
         } catch (Exception e) {
             created = false;
-            VolumeInfo vol = volFactory.getVolume(cmd.getEntityId());
+            VolumeInfo vol = volFactory.getVolume(volumeId);
             vol.stateTransit(Volume.Event.DestroyRequested);
             throw new CloudRuntimeException(String.format("Failed to create volume: %s", volume), e);
         } finally {
             if (!created) {
                 VolumeVO finalVolume = volume;
                 logger.trace("Decrementing volume resource count for account {} as volume failed to create on the backend", () -> _accountMgr.getAccount(finalVolume.getAccountId()));
-                _resourceLimitMgr.decrementVolumeResourceCount(volume.getAccountId(), cmd.getDisplayVolume(),
+                _resourceLimitMgr.decrementVolumeResourceCount(volume.getAccountId(), display,
                         volume.getSize(), _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()));
             }
         }

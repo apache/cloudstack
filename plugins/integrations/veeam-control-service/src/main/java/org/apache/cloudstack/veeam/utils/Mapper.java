@@ -23,11 +23,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 
-public class ResponseMapper {
+public class Mapper {
     private final ObjectMapper json;
     private final XmlMapper xml;
 
-    public ResponseMapper() {
+    public Mapper() {
         this.json = new ObjectMapper();
         this.xml = new XmlMapper();
 

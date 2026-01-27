@@ -30,9 +30,9 @@ import org.apache.logging.log4j.Logger;
 public final class ResponseWriter {
     private static final Logger LOGGER = LogManager.getLogger(ResponseWriter.class);
 
-    private final ResponseMapper mapper;
+    private final Mapper mapper;
 
-    public ResponseWriter(final ResponseMapper mapper) {
+    public ResponseWriter(final Mapper mapper) {
         this.mapper = mapper;
     }
 

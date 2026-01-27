@@ -17,23 +17,20 @@
 
 package org.apache.cloudstack.veeam.api.dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public final class ActionLink {
-    public String rel;     // start/stop/reboot/shutdown...
-    public String href;    // /api/vms/{id}/start
-    public String method;  // "post"
+public class Backup {
 
-    public ActionLink() {}
+    @JsonProperty("creation_date")
+    @JacksonXmlProperty(localName = "creation_date")
+    private String creationDate;
 
-    public ActionLink(final String rel, final String href, final String method) {
-        this.rel = rel;
-        this.href = href;
-        this.method = method;
+    public String getCreationDate() {
+        return creationDate;
     }
 
-    public static ActionLink post(final String rel, final String href) {
-        return new ActionLink(rel, href, "post");
+    public void setCreationDate(String creationDate) {
+        this.creationDate = creationDate;
     }
 }

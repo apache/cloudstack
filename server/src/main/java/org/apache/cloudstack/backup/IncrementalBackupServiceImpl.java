@@ -273,8 +273,8 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         }
     }
 
-    private ImageTransferVO createDownloadImageTransfer(CreateImageTransferCmd cmd, VolumeVO volume) {
-        Long backupId = cmd.getBackupId();
+    private ImageTransferVO createDownloadImageTransfer(Long backupId, VolumeVO volume) {
+        final String direction = ImageTransfer.Direction.download.toString();
         BackupVO backup = backupDao.findById(backupId);
         if (backup == null) {
             throw new CloudRuntimeException("Backup not found: " + backupId);
@@ -288,7 +288,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
                 host.getPrivateIpAddress(),
                 volume.getUuid(),
                 backup.getNbdPort(),
-                cmd.getDirection().toString()
+                direction
         );
 
         try {
@@ -339,7 +339,8 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         return hosts.get(0);
     }
 
-    private ImageTransferVO createUploadImageTransfer(CreateImageTransferCmd cmd, VolumeVO volume) {
+    private ImageTransferVO createUploadImageTransfer(VolumeVO volume) {
+        final String direction = ImageTransfer.Direction.upload.toString();
         String transferId = UUID.randomUUID().toString();
 
         int nbdPort = allocateNbdPort();
@@ -356,7 +357,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
                 volume.getUuid(),
                 volumePath,
                 nbdPort,
-                cmd.getDirection().toString()
+                direction
         );
 
         try {
@@ -374,14 +375,14 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
                 host.getPrivateIpAddress(),
                 volume.getUuid(),
                 nbdPort,
-                cmd.getDirection().toString()
+                direction
         );
 
         EndPoint ssvm = _epSelector.findSsvm(volume.getDataCenterId());
         transferAnswer = (CreateImageTransferAnswer) ssvm.sendMessage(transferCmd);
 
         if (!transferAnswer.getResult()) {
-            StopNBDServerCommand stopNbdServerCommand = new StopNBDServerCommand(transferId, cmd.getDirection().toString(), nbdPort);
+            StopNBDServerCommand stopNbdServerCommand = new StopNBDServerCommand(transferId, direction, nbdPort);
             throw new CloudRuntimeException("Failed to create image transfer: " + transferAnswer.getDetails());
         }
 
@@ -407,26 +408,33 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
 
     @Override
     public ImageTransferResponse createImageTransfer(CreateImageTransferCmd cmd) {
+        ImageTransfer imageTransfer = createImageTransfer(cmd.getVolumeId(), cmd.getBackupId(), cmd.getDirection());
+        if (imageTransfer instanceof ImageTransferVO) {
+            ImageTransferVO imageTransferVO = (ImageTransferVO) imageTransfer;
+            return toImageTransferResponse(imageTransferVO);
+        }
+        return toImageTransferResponse(imageTransferDao.findById(imageTransfer.getId()));
+    }
+
+    @Override
+    public ImageTransfer createImageTransfer(long volumeId, Long backupId, ImageTransfer.Direction direction) {
         ImageTransfer imageTransfer;
-        Long volumeId = cmd.getVolumeId();
-        VolumeVO volume = volumeDao.findById(cmd.getVolumeId());
+        VolumeVO volume = volumeDao.findById(volumeId);
 
         ImageTransferVO existingTransfer = imageTransferDao.findByVolume(volume.getId());
         if (existingTransfer != null) {
             throw new CloudRuntimeException("Image transfer already in progress for volume: " + volume.getUuid());
         }
 
-        if (cmd.getDirection().equals(ImageTransfer.Direction.upload)) {
-            imageTransfer = createUploadImageTransfer(cmd, volume);
-        } else if (cmd.getDirection().equals(ImageTransfer.Direction.download)) {
-            imageTransfer = createDownloadImageTransfer(cmd, volume);
+        if (ImageTransfer.Direction.upload.equals(direction)) {
+            imageTransfer = createUploadImageTransfer(volume);
+        } else if (ImageTransfer.Direction.download.equals(direction)) {
+            imageTransfer = createDownloadImageTransfer(backupId, volume);
         } else {
-            throw new CloudRuntimeException("Invalid direction: " + cmd.getDirection());
+            throw new CloudRuntimeException("Invalid direction: " + direction);
         }
 
-        ImageTransferVO imageTransferVO = imageTransferDao.findById(imageTransfer.getId());
-        ImageTransferResponse response = toImageTransferResponse(imageTransferVO);
-        return response;
+        return imageTransferDao.findById(imageTransfer.getId());
     }
 
     private void finalizeDownloadImageTransfer(ImageTransferVO imageTransfer) {

@@ -45,6 +45,9 @@ public final class Disk {
     @JsonProperty("propagate_errors")
     public String propagateErrors;
 
+    @JsonProperty("initial_size")
+    public String initialSize;
+
     @JsonProperty("provisioned_size")
     public String provisionedSize;
 

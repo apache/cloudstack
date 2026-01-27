@@ -55,6 +55,8 @@ public interface IncrementalBackupService extends PluggableService {
      */
     ImageTransferResponse createImageTransfer(CreateImageTransferCmd cmd);
 
+    ImageTransfer createImageTransfer(long volumeId, Long backupId, ImageTransfer.Direction direction);
+
     /**
      * Finalize an image transfer
      * Marks transfer as complete (NBD is closed globally in finalize backup)

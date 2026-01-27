@@ -22,6 +22,7 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.VolumeResponse;
 
 import com.cloud.api.query.vo.VolumeJoinVO;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.Volume;
 import com.cloud.utils.db.GenericDao;
 
@@ -36,4 +37,6 @@ public interface VolumeJoinDao extends GenericDao<VolumeJoinVO, Long> {
     List<VolumeJoinVO> searchByIds(Long... ids);
 
     List<VolumeJoinVO> listByInstanceId(long instanceId);
+
+    List<VolumeJoinVO> listByHypervisor(Hypervisor.HypervisorType hypervisorType);
 }

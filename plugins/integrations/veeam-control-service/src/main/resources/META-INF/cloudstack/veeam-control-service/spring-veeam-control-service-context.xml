@@ -31,6 +31,7 @@
         <property name="typeClass" value="org.apache.cloudstack.veeam.RouteHandler" />
     </bean>
 
+    <bean id="veeamControlSsoService" class="org.apache.cloudstack.veeam.sso.SsoService"/>
     <bean id="veeamControlApiService" class="org.apache.cloudstack.veeam.api.ApiService" />
     <bean id="dataCentersRouteHandler" class="org.apache.cloudstack.veeam.api.DataCentersRouteHandler"/>
     <bean id="clustersRouteHandler" class="org.apache.cloudstack.veeam.api.ClustersRouteHandler"/>
@@ -39,9 +40,12 @@
     <bean id="vnicProfilesRouteHandler" class="org.apache.cloudstack.veeam.api.VnicProfilesRouteHandler"/>
     <bean id="vmsRouteHandler" class="org.apache.cloudstack.veeam.api.VmsRouteHandler"/>
     <bean id="disksRouteHandler" class="org.apache.cloudstack.veeam.api.DisksRouteHandler"/>
-    <bean id="veeamControlSsoService" class="org.apache.cloudstack.veeam.sso.SsoService"/>
+    <bean id="imageTransfersRouteHandler" class="org.apache.cloudstack.veeam.api.ImageTransfersRouteHandler"/>
 
     <bean id="veeamControlService" class="org.apache.cloudstack.veeam.VeeamControlServiceImpl" >
         <property name="routeHandlers" value="#{routeHandlerRegistry.registered}" />
     </bean>
+
+    <bean id="userResourceAdapter" class="org.apache.cloudstack.veeam.adapter.UserResourceAdapter"/>
+
 </beans>

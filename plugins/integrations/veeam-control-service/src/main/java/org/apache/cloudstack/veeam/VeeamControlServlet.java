@@ -28,7 +28,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.cloudstack.veeam.utils.Negotiation;
-import org.apache.cloudstack.veeam.utils.ResponseMapper;
+import org.apache.cloudstack.veeam.utils.Mapper;
 import org.apache.cloudstack.veeam.utils.ResponseWriter;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
@@ -38,16 +38,21 @@ public class VeeamControlServlet extends HttpServlet {
     private static final Logger LOGGER = LogManager.getLogger(VeeamControlServlet.class);
 
     private final ResponseWriter writer;
+    private final Mapper mapper;
     private final List<RouteHandler> routeHandlers;
 
     public VeeamControlServlet(List<RouteHandler> routeHandlers) {
         this.routeHandlers = routeHandlers;
-        ResponseMapper mapper = new ResponseMapper();
+        mapper = new Mapper();
         writer = new ResponseWriter(mapper);
     }
 
     public ResponseWriter getWriter() {
         return writer;
+    }
+
+    public Mapper getMapper() {
+        return mapper;
     }
 
     @Override

@@ -45,6 +45,7 @@ import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.user.dao.VmDiskStatisticsDao;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.vm.VirtualMachine;
 
 @Component
 public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJoinVO, VolumeResponse> implements VolumeJoinDao {
@@ -376,6 +377,18 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
     public List<VolumeJoinVO> listByInstanceId(long instanceId) {
         SearchCriteria<VolumeJoinVO> sc = createSearchCriteria();
         sc.addAnd("vmId", SearchCriteria.Op.EQ, instanceId);
+        return search(sc, null);
+    }
+
+    @Override
+    public List<VolumeJoinVO> listByHypervisor(Hypervisor.HypervisorType hypervisorType) {
+        SearchBuilder<VolumeJoinVO> sb = createSearchBuilder();
+        sb.and("vmType", sb.entity().getVmType(), SearchCriteria.Op.EQ);
+        sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<VolumeJoinVO> sc = sb.create();
+        sc.setParameters("vmType", VirtualMachine.Type.User);
+        sc.setParameters("hypervisorType", hypervisorType);
         return search(sc, null);
     }
 

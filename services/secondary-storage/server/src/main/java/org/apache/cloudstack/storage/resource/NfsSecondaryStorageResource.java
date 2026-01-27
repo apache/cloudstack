@@ -54,8 +54,6 @@ import java.util.stream.Stream;
 
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.api.ConvertSnapshotCommand;
-
 import org.apache.cloudstack.backup.CreateImageTransferAnswer;
 import org.apache.cloudstack.backup.CreateImageTransferCommand;
 import org.apache.cloudstack.backup.FinalizeImageTransferCommand;
@@ -101,8 +99,8 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
 
@@ -112,6 +110,7 @@ import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ComputeChecksumCommand;
+import com.cloud.agent.api.ConvertSnapshotCommand;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
@@ -3827,7 +3826,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         // Open firewall port for image server
         if (_inSystemVM) {
             String rule = String.format("-p tcp -m state --state NEW -m tcp --dport %d -j ACCEPT", imageServerPort);
-            IpTablesHelper.addConditionally(IpTablesHelper.INPUT_CHAIN, true, rule, 
+            IpTablesHelper.addConditionally(IpTablesHelper.INPUT_CHAIN, true, rule,
                     String.format("Error in opening up image server port %d", imageServerPort));
         }
 

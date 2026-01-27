@@ -20,14 +20,20 @@ package org.apache.cloudstack.veeam.api.dto;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public final class Actions {
-    public List<Link> link;
+@JacksonXmlRootElement(localName = "image_transfers")
+public class ImageTransfers {
+    @JsonProperty("image_transfer")
+    private List<ImageTransfer> imageTransfer;
 
-    public Actions() {}
+    public List<ImageTransfer> getImageTransfer() {
+        return imageTransfer;
+    }
 
-    public Actions(final List<Link> link) {
-        this.link = link;
+    public void setImageTransfer(List<ImageTransfer> imageTransfer) {
+        this.imageTransfer = imageTransfer;
     }
 }
