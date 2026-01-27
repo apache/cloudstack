@@ -109,6 +109,9 @@ public class ListHostsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING, description = "CPU Arch of the host", since = "4.20.1")
     private String arch;
 
+    @Parameter(name = ApiConstants.VERSION, type = CommandType.STRING, description = "the host version", since = "4.20.3")
+    private String version;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -195,6 +198,10 @@ public class ListHostsCmd extends BaseListCmd {
 
     public CPU.CPUArch getArch() {
         return StringUtils.isBlank(arch) ? null : CPU.CPUArch.fromType(arch);
+    }
+
+    public String getVersion() {
+        return version;
     }
 
     /////////////////////////////////////////////////////
