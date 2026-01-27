@@ -54,5 +54,4 @@ public interface AlertManager extends Manager, AlertService {
     void recalculateCapacity();
 
     void sendAlert(AlertType alertType, long dataCenterId, Long podId, String subject, String body);
-
 }
