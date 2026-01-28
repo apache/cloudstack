@@ -45,6 +45,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.trilead.ssh2.Connection;
 import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
 import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.junit.After;
 import org.junit.Assert;
@@ -61,6 +62,7 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -152,6 +154,12 @@ public class ResourceManagerImplTest {
     private MockedConstruction<GetVncPortCommand> getVncPortCommandMockedConstruction;
     private AutoCloseable closeable;
 
+    private void overrideDefaultConfigValue(final ConfigKey configKey, final String name, final Object o) throws IllegalAccessException, NoSuchFieldException {
+        Field f = ConfigKey.class.getDeclaredField(name);
+        f.setAccessible(true);
+        f.set(configKey, o);
+    }
+
     @Before
     public void setup() throws Exception {
         closeable = MockitoAnnotations.openMocks(this);
@@ -194,7 +202,7 @@ public class ResourceManagerImplTest {
                 eq("service cloudstack-agent restart"))).
                 willReturn(new SSHCmdHelper.SSHCmdResult(0,"",""));
 
-        when(configurationDao.getValue(ResourceManager.KvmSshToAgentEnabled.key())).thenReturn("true");
+        overrideDefaultConfigValue(ResourceManager.KvmSshToAgentEnabled, "_defaultValue", "true");
 
         rootDisks = Arrays.asList(rootDisk1, rootDisk2);
         dataDisks = Collections.singletonList(dataDisk);
@@ -372,9 +380,9 @@ public class ResourceManagerImplTest {
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void testHandleAgentSSHDisabledNotConnectedAgent() {
+    public void testHandleAgentSSHDisabledNotConnectedAgent() throws NoSuchFieldException, IllegalAccessException {
         when(host.getStatus()).thenReturn(Status.Disconnected);
-        when(configurationDao.getValue(ResourceManager.KvmSshToAgentEnabled.key())).thenReturn("false");
+        overrideDefaultConfigValue(ResourceManager.KvmSshToAgentEnabled, "_defaultValue", "false");
         resourceManager.handleAgentIfNotConnected(host, false);
     }
 
