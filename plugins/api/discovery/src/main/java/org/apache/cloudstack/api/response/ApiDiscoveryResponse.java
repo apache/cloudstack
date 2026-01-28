@@ -60,7 +60,7 @@ public class ApiDiscoveryResponse extends BaseResponse {
     private String type;
 
     @SerializedName(ApiConstants.HTTP_REQUEST_TYPE)
-    @Param(description = "Preferred HTTP request type for the API", since = "4.22.0")
+    @Param(description = "Preferred HTTP request type for the API", since = "4.23.0")
     private String httpRequestType;
 
     public ApiDiscoveryResponse() {
