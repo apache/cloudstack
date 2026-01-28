@@ -578,8 +578,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
 
         if (ObjectUtils.anyNull(chosenStore, snapshotDataStoreReference)) {
-            logger.error("Snapshot [{}] not found in any secondary storage.", snapshot);
-            throw new InvalidParameterValueException("Snapshot not found.");
+            String errorMessage = String.format("Snapshot [%s] not found in any secondary storage. The snapshot may be on primary storage, where it cannot be downloaded.", snapshot.getUuid());
+            logger.error(errorMessage);
+            throw new InvalidParameterValueException(errorMessage);
         }
 
         snapshotSrv.syncVolumeSnapshotsToRegionStore(snapshot.getVolumeId(), chosenStore);
