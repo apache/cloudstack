@@ -135,6 +135,7 @@
                   return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }"
                 :placeholder="apiParams.provider.description" >
+                <a-select-option key="" >{{ }}</a-select-option>
                 <a-select-option :value="'NSX'" :label="$t('label.nsx')"> {{ $t('label.nsx') }} </a-select-option>
                 <a-select-option :value="'Netris'" :label="$t('label.netris')"> {{ $t('label.netris') }} </a-select-option>
               </a-select>

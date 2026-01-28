@@ -35,7 +35,7 @@ import com.cloud.exception.ResourceInUseException;
 import com.cloud.network.as.Condition;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteCondition", description = "Removes a condition for VM auto scaling", responseObject = SuccessResponse.class, entityType = {Condition.class},
+@APICommand(name = "deleteCondition", description = "Removes a condition for Instance auto scaling", responseObject = SuccessResponse.class, entityType = {Condition.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteConditionCmd extends BaseAsyncCmd {
 
@@ -44,7 +44,7 @@ public class DeleteConditionCmd extends BaseAsyncCmd {
     // ///////////////////////////////////////////////////
 
     @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ConditionResponse.class, required = true, description = "the ID of the condition.")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ConditionResponse.class, required = true, description = "The ID of the condition.")
     private Long id;
 
     // ///////////////////////////////////////////////////
@@ -64,7 +64,7 @@ public class DeleteConditionCmd extends BaseAsyncCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            logger.warn("Failed to delete condition " + getId());
+            logger.warn("Failed to delete condition {}", getId());
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete condition.");
         }
     }

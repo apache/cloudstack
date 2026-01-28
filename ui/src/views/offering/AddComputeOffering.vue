@@ -467,6 +467,9 @@
                 <a-radio-button value="writethrough">
                   {{ $t('label.writethrough') }}
                 </a-radio-button>
+                <a-radio-button value="hypervisor_default">
+                  {{ $t('label.hypervisor.default') }}
+                </a-radio-button>
               </a-radio-group>
             </a-form-item>
             <a-form-item :label="$t('label.qostype')" name="qostype" ref="qostype">
@@ -711,7 +714,7 @@ export default {
       domainLoading: false,
       zones: [],
       zoneLoading: false,
-      selectedDeployementPlanner: null,
+      selectedDeploymentPlanner: null,
       storagePolicies: null,
       storageTags: [],
       storageTagLoading: false,
@@ -1018,9 +1021,9 @@ export default {
       this.qosType = val
     },
     handleDeploymentPlannerChange (planner) {
-      this.selectedDeployementPlanner = planner
+      this.selectedDeploymentPlanner = planner
       this.plannerModeVisible = false
-      if (this.selectedDeployementPlanner === 'ImplicitDedicationPlanner') {
+      if (this.selectedDeploymentPlanner === 'ImplicitDedicationPlanner') {
         this.plannerModeVisible = isAdmin()
       }
     },

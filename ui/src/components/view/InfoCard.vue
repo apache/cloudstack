@@ -259,26 +259,6 @@
                 </span>
               </div>
             </div>
-            <div class="resource-detail-item" v-if="'gpucardname' in resource && resource.gpucardname !== ''">
-              <div class="resource-detail-item__label">{{ $t('label.gpu') }}</div>
-              <div class="resource-detail-item__details">
-                <font-awesome-icon
-                  :icon="['fa-solid', 'fa-microchip']"
-                  class="anticon"
-                  :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
-                <span>
-                  {{ resource.gpucount ? resource.gpucount + ' x ' : '' }}
-                  <router-link v-if="resource.gpucardid" :to="{ path: '/gpucard/' + resource.gpucardid }">{{ resource.gpucardname}} </router-link>
-                  <span v-else>{{ resource.gpucardname }}</span>
-                  <router-link v-if="resource.vgpuprofilename !== 'passthrough' && resource.vgpuprofileid" :to="{ path: '/vgpuprofile/' + resource.vgpuprofileid }">{{ ' (' + resource.vgpuprofilename + ')' }}</router-link>
-                  <span v-else-if="resource.vgpuprofilename !== 'passthrough' &&resource.vgpuprofilename">{{ ' (' + resource.vgpuprofilename + ')' }}</span>
-                  <span v-if="resource.videoram || (resource.maxresolutionx || resource.maxresolutiony)">
-                    <br/>{{ ' [' + (resource.videoram ? (resource.videoram + 'MB') : '') +  ((resource.videoram && resource.maxresolutionx && resource.maxresolutiony) ? ', ' : '') +
-                    (resource.maxresolutionx && resource.maxresolutiony ? resource.maxresolutionx + 'x' + resource.maxresolutiony : '') + ']' }}
-                  </span>
-                </span>
-              </div>
-            </div>
             <div class="resource-detail-item" v-else-if="resource.memorytotalgb">
               <div class="resource-detail-item__label">{{ $t('label.memory') }}</div>
               <div class="resource-detail-item__details">
@@ -342,6 +322,26 @@
                   </div>
                 </div>
 
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="'gpucardname' in resource && resource.gpucardname !== ''">
+              <div class="resource-detail-item__label">{{ $t('label.gpu') }}</div>
+              <div class="resource-detail-item__details">
+                <font-awesome-icon
+                  :icon="['fa-solid', 'fa-microchip']"
+                  class="anticon"
+                  :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
+                <span>
+                  {{ resource.gpucount ? resource.gpucount + ' x ' : '' }}
+                  <router-link v-if="resource.gpucardid" :to="{ path: '/gpucard/' + resource.gpucardid }">{{ resource.gpucardname}} </router-link>
+                  <span v-else>{{ resource.gpucardname }}</span>
+                  <router-link v-if="resource.vgpuprofilename !== 'passthrough' && resource.vgpuprofileid" :to="{ path: '/vgpuprofile/' + resource.vgpuprofileid }">{{ ' (' + resource.vgpuprofilename + ')' }}</router-link>
+                  <span v-else-if="resource.vgpuprofilename !== 'passthrough' &&resource.vgpuprofilename">{{ ' (' + resource.vgpuprofilename + ')' }}</span>
+                  <span v-if="resource.videoram || (resource.maxresolutionx || resource.maxresolutiony)">
+                    <br/>{{ ' [' + (resource.videoram ? (resource.videoram + 'MB') : '') +  ((resource.videoram && resource.maxresolutionx && resource.maxresolutiony) ? ', ' : '') +
+                    (resource.maxresolutionx && resource.maxresolutiony ? resource.maxresolutionx + 'x' + resource.maxresolutiony : '') + ']' }}
+                  </span>
+                </span>
               </div>
             </div>
             <div class="resource-detail-item" v-if="resource.gputotal">
@@ -709,7 +709,7 @@
               <div class="resource-detail-item__label">{{ $t('label.storagepool') }}</div>
               <div class="resource-detail-item__details">
                 <database-outlined />
-                <router-link v-if="!isStatic && $router.resolve('/storagepool/' + resource.storageid).matched[0].redirect !== '/exception/404'" :to="{ path: '/storagepool/' + resource.storageid }">{{ resource.storage || resource.storageid }} </router-link>
+                <router-link v-if="!isStatic && $router.resolve('/storagepool/' + encodeURIComponent(resource.storageid)).matched[0].redirect !== '/exception/404'" :to="{ path: '/storagepool/' + encodeURIComponent(resource.storageid) }">{{ resource.storage || resource.storageid }} </router-link>
                 <span v-else>{{ resource.storage || resource.storageid }}</span>
                 <a-tag style="margin-left: 5px;" v-if="resource.storagetype">
                   {{ resource.storagetype }}
@@ -1094,7 +1094,7 @@ export default {
       return ['UserVm', 'Template', 'ISO', 'Volume', 'Snapshot', 'Backup', 'Network',
         'LoadBalancer', 'PortForwardingRule', 'FirewallRule', 'SecurityGroup', 'SecurityGroupRule',
         'PublicIpAddress', 'Project', 'Account', 'Vpc', 'NetworkACL', 'StaticRoute', 'VMSnapshot',
-        'RemoteAccessVpn', 'User', 'SnapshotPolicy', 'VpcOffering']
+        'RemoteAccessVpn', 'User', 'SnapshotPolicy', 'VpcOffering', 'Domain']
     },
     name () {
       return this.resource.displayname || this.resource.name || this.resource.displaytext || this.resource.username ||

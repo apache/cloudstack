@@ -171,4 +171,5 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
 
     List<StoragePoolVO> findPoolsByStorageTypeAndZone(Storage.StoragePoolType storageType, Long zoneId);
 
+    List<StoragePoolVO> listByDataCenterIds(List<Long> dataCenterIds);
 }

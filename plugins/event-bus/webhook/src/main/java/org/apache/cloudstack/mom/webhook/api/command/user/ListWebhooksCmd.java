@@ -25,17 +25,15 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.mom.webhook.WebhookApiService;
 import org.apache.cloudstack.mom.webhook.Webhook;
+import org.apache.cloudstack.mom.webhook.WebhookApiService;
 import org.apache.cloudstack.mom.webhook.api.response.WebhookResponse;
 
 @APICommand(name = "listWebhooks",
         description = "Lists Webhooks",
         responseObject = WebhookResponse.class,
-        responseView = ResponseObject.ResponseView.Restricted,
         entityType = {Webhook.class},
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         since = "4.20.0")

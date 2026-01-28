@@ -32,7 +32,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteCounter", description = "Deletes a counter for VM auto scaling", responseObject = SuccessResponse.class,
+@APICommand(name = "deleteCounter", description = "Deletes a counter for Instance auto scaling", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteCounterCmd extends BaseAsyncCmd {
 
@@ -40,7 +40,7 @@ public class DeleteCounterCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = CounterResponse.class, required = true, description = "the ID of the counter")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = CounterResponse.class, required = true, description = "The ID of the counter")
     private Long id;
 
     // ///////////////////////////////////////////////////
@@ -61,7 +61,7 @@ public class DeleteCounterCmd extends BaseAsyncCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            logger.warn("Failed to delete counter with Id: " + getId());
+            logger.warn("Failed to delete counter with Id: {}", getId());
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete counter.");
         }
     }

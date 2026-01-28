@@ -47,7 +47,7 @@ public interface TemplateManager {
     static final String TemplatePreloaderPoolSizeCK = "template.preloader.pool.size";
 
     static final ConfigKey<Boolean> AllowPublicUserTemplates = new ConfigKey<Boolean>("Advanced", Boolean.class, AllowPublicUserTemplatesCK, "true",
-        "If false, users will not be able to create public templates.", true, ConfigKey.Scope.Account);
+        "If false, users will not be able to create public Templates.", true, ConfigKey.Scope.Account);
 
     static final ConfigKey<Integer> TemplatePreloaderPoolSize = new ConfigKey<Integer>("Advanced", Integer.class, TemplatePreloaderPoolSizeCK, "8",
             "Size of the TemplateManager threadpool", false, ConfigKey.Scope.Global);
@@ -56,6 +56,13 @@ public interface TemplateManager {
             "validate.url.is.resolvable.before.registering.template", "true", "Indicates whether CloudStack "
             + "will validate if the provided URL is resolvable during the register of templates/ISOs before persisting them in the database.",
             true);
+
+    ConfigKey<Boolean> TemplateDeleteFromPrimaryStorage = new ConfigKey<Boolean>("Advanced",
+            Boolean.class,
+            "template.delete.from.primary.storage", "true",
+            "Template when deleted will be instantly deleted from the Primary Storage",
+            true,
+            ConfigKey.Scope.Global);
 
     static final String VMWARE_TOOLS_ISO = "vmware-tools.iso";
     static final String XS_TOOLS_ISO = "xs-tools.iso";
@@ -104,6 +111,8 @@ public interface TemplateManager {
      */
     List<VMTemplateStoragePoolVO> getUnusedTemplatesInPool(StoragePoolVO pool);
 
+    void evictTemplateFromStoragePoolsForZones(Long templateId, List<Long> zoneId);
+
     /**
      * Deletes a template in the specified storage pool.
      *
@@ -143,6 +152,8 @@ public interface TemplateManager {
     public static final String MESSAGE_RESET_TEMPLATE_PERMISSION_EVENT = "Message.ResetTemplatePermission.Event";
 
     TemplateType validateTemplateType(BaseCmd cmd, boolean isAdmin, boolean isCrossZones, Hypervisor.HypervisorType hypervisorType);
+
+    DataStore verifyHeuristicRulesForZone(VMTemplateVO template, Long zoneId);
 
     List<DatadiskTO> getTemplateDisksOnImageStore(VirtualMachineTemplate template, DataStoreRole role, String configurationId);
 

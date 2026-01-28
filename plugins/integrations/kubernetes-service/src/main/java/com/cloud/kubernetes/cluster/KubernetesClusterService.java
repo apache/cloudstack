@@ -61,7 +61,7 @@ public interface KubernetesClusterService extends PluggableService, Configurable
             "cloud.kubernetes.cluster.network.offering",
             "DefaultNetworkOfferingforKubernetesService",
             "Name of the network offering that will be used to create isolated network in which Kubernetes cluster VMs will be launched",
-            false,
+            true,
             KubernetesServiceEnabled.key());
     static final ConfigKey<Long> KubernetesClusterStartTimeout = new ConfigKey<Long>("Advanced", Long.class,
             "cloud.kubernetes.cluster.start.timeout",

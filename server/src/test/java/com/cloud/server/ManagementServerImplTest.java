@@ -23,9 +23,25 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
+import org.springframework.test.util.ReflectionTestUtils;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -51,24 +67,11 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.userdata.UserDataManager;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.mockito.stubbing.Answer;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.cpu.CPU;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
@@ -103,6 +106,7 @@ import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
+import com.cloud.agent.manager.allocator.HostAllocator;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ManagementServerImplTest {
@@ -129,10 +133,10 @@ public class ManagementServerImplTest {
     IpAddressManagerImpl ipAddressManagerImpl;
 
     @Mock
-    AccountManager _accountMgr;
+    AccountManager accountManager;
 
     @Mock
-    UserDataDao _userDataDao;
+    UserDataDao userDataDao;
 
     @Mock
     VMTemplateDao templateDao;
@@ -141,7 +145,7 @@ public class ManagementServerImplTest {
     AnnotationDao annotationDao;
 
     @Mock
-    UserVmDao _userVmDao;
+    UserVmDao userVmDao;
 
     @Mock
     UserDataManager userDataManager;
@@ -162,10 +166,10 @@ public class ManagementServerImplTest {
     DomainDao domainDao;
 
     @Mock
-    GuestOSCategoryDao _guestOSCategoryDao;
+    GuestOSCategoryDao guestOSCategoryDao;
 
     @Mock
-    GuestOSDao _guestOSDao;
+    GuestOSDao guestOSDao;
 
     @Mock
     ExtensionsManager extensionManager;
@@ -174,16 +178,38 @@ public class ManagementServerImplTest {
     @InjectMocks
     ManagementServerImpl spy = new ManagementServerImpl();
 
+    @Mock
+    HostAllocator hostAllocator;
+
     private AutoCloseable closeable;
+    private MockedStatic<ApiDBUtils> apiDBUtilsMock;
 
     @Before
     public void setup() throws IllegalAccessException, NoSuchFieldException {
         closeable = MockitoAnnotations.openMocks(this);
         CallContext.register(Mockito.mock(User.class), Mockito.mock(Account.class));
+        spy._accountMgr = accountManager;
+        spy.userDataDao = userDataDao;
+        spy.templateDao = templateDao;
+        spy._userVmDao = userVmDao;
+        spy.annotationDao = annotationDao;
+        spy._detailsDao = hostDetailsDao;
+        spy.userDataManager = userDataManager;
+
+        spy.setHostAllocators(List.of(hostAllocator));
+
+        // Mock ApiDBUtils static method
+        apiDBUtilsMock = Mockito.mockStatic(ApiDBUtils.class);
+        // Return empty list to avoid architecture filtering in most tests
+        apiDBUtilsMock.when(() -> ApiDBUtils.listZoneClustersArchs(Mockito.anyLong()))
+            .thenReturn(new ArrayList<>());
     }
 
     @After
     public void tearDown() throws Exception {
+        if (apiDBUtilsMock != null) {
+            apiDBUtilsMock.close();
+        }
         CallContext.unregister();
         closeable.close();
     }
@@ -258,14 +284,14 @@ public class ManagementServerImplTest {
         Mockito.when(cmd.getId()).thenReturn(null);
         Mockito.when(cmd.isSourceNat()).thenReturn(null);
         Mockito.when(cmd.isStaticNat()).thenReturn(null);
-        Mockito.when(cmd.getState()).thenReturn(IpAddress.State.Free.name());
         Mockito.when(cmd.getTags()).thenReturn(null);
-        spy.setParameters(sc, cmd, VlanType.VirtualNetwork, Boolean.FALSE);
+        List<IpAddress.State> states = Collections.singletonList(IpAddress.State.Free);
+        spy.setParameters(sc, cmd, VlanType.VirtualNetwork, Boolean.FALSE, states);
 
         Mockito.verify(sc, Mockito.times(1)).setJoinParameters("vlanSearch", "vlanType", VlanType.VirtualNetwork);
         Mockito.verify(sc, Mockito.times(1)).setParameters("display", false);
         Mockito.verify(sc, Mockito.times(1)).setParameters("sourceNetworkId", 10L);
-        Mockito.verify(sc, Mockito.times(1)).setParameters("state", "Free");
+        Mockito.verify(sc, Mockito.times(1)).setParameters("state", states.toArray());
         Mockito.verify(sc, Mockito.times(1)).setParameters("forsystemvms", false);
     }
 
@@ -281,14 +307,14 @@ public class ManagementServerImplTest {
         Mockito.when(cmd.getId()).thenReturn(null);
         Mockito.when(cmd.isSourceNat()).thenReturn(null);
         Mockito.when(cmd.isStaticNat()).thenReturn(null);
-        Mockito.when(cmd.getState()).thenReturn(IpAddress.State.Free.name());
         Mockito.when(cmd.getTags()).thenReturn(null);
-        spy.setParameters(sc, cmd, VlanType.VirtualNetwork, Boolean.FALSE);
+        List<IpAddress.State> states = Collections.singletonList(IpAddress.State.Free);
+        spy.setParameters(sc, cmd, VlanType.VirtualNetwork, Boolean.FALSE, states);
 
         Mockito.verify(sc, Mockito.times(1)).setJoinParameters("vlanSearch", "vlanType", VlanType.VirtualNetwork);
         Mockito.verify(sc, Mockito.times(1)).setParameters("display", false);
         Mockito.verify(sc, Mockito.times(1)).setParameters("sourceNetworkId", 10L);
-        Mockito.verify(sc, Mockito.times(1)).setParameters("state", "Free");
+        Mockito.verify(sc, Mockito.times(1)).setParameters("state", states.toArray());
         Mockito.verify(sc, Mockito.times(1)).setParameters("forsystemvms", false);
     }
 
@@ -304,13 +330,13 @@ public class ManagementServerImplTest {
         Mockito.when(cmd.getId()).thenReturn(null);
         Mockito.when(cmd.isSourceNat()).thenReturn(null);
         Mockito.when(cmd.isStaticNat()).thenReturn(null);
-        Mockito.when(cmd.getState()).thenReturn(null);
         Mockito.when(cmd.getTags()).thenReturn(null);
-        spy.setParameters(sc, cmd, VlanType.VirtualNetwork, Boolean.TRUE);
+        spy.setParameters(sc, cmd, VlanType.VirtualNetwork, Boolean.TRUE, Collections.emptyList());
 
         Mockito.verify(sc, Mockito.times(1)).setJoinParameters("vlanSearch", "vlanType", VlanType.VirtualNetwork);
         Mockito.verify(sc, Mockito.times(1)).setParameters("display", false);
         Mockito.verify(sc, Mockito.times(1)).setParameters("sourceNetworkId", 10L);
+        Mockito.verify(sc, Mockito.times(1)).setParameters("state", IpAddress.State.Allocated);
         Mockito.verify(sc, Mockito.times(1)).setParameters("forsystemvms", false);
     }
 
@@ -326,13 +352,13 @@ public class ManagementServerImplTest {
         Mockito.when(cmd.getId()).thenReturn(null);
         Mockito.when(cmd.isSourceNat()).thenReturn(null);
         Mockito.when(cmd.isStaticNat()).thenReturn(null);
-        Mockito.when(cmd.getState()).thenReturn(null);
         Mockito.when(cmd.getTags()).thenReturn(null);
-        spy.setParameters(sc, cmd, VlanType.VirtualNetwork, Boolean.TRUE);
+        spy.setParameters(sc, cmd, VlanType.VirtualNetwork, Boolean.TRUE, Collections.emptyList());
 
         Mockito.verify(sc, Mockito.times(1)).setJoinParameters("vlanSearch", "vlanType", VlanType.VirtualNetwork);
         Mockito.verify(sc, Mockito.times(1)).setParameters("display", false);
         Mockito.verify(sc, Mockito.times(1)).setParameters("sourceNetworkId", 10L);
+        Mockito.verify(sc, Mockito.times(1)).setParameters("state", IpAddress.State.Allocated);
         Mockito.verify(sc, Mockito.times(1)).setParameters("forsystemvms", false);
     }
 
@@ -344,7 +370,7 @@ public class ManagementServerImplTest {
             when(account.getAccountId()).thenReturn(1L);
             when(account.getDomainId()).thenReturn(2L);
             when(callContextMock.getCallingAccount()).thenReturn(account);
-            when(_accountMgr.finalizeOwner(nullable(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(account);
+            when(accountManager.finalizeOwner(nullable(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(account);
 
             String testUserData = "testUserdata";
             RegisterUserDataCmd cmd = Mockito.mock(RegisterUserDataCmd.class);
@@ -352,8 +378,8 @@ public class ManagementServerImplTest {
             when(cmd.getName()).thenReturn("testName");
             when(cmd.getHttpMethod()).thenReturn(BaseCmd.HTTPMethod.GET);
 
-            when(_userDataDao.findByName(account.getAccountId(), account.getDomainId(), "testName")).thenReturn(null);
-            when(_userDataDao.findByUserData(account.getAccountId(), account.getDomainId(), testUserData)).thenReturn(null);
+            when(userDataDao.findByName(account.getAccountId(), account.getDomainId(), "testName")).thenReturn(null);
+            when(userDataDao.findByUserData(account.getAccountId(), account.getDomainId(), testUserData)).thenReturn(null);
             when(userDataManager.validateUserData(testUserData, BaseCmd.HTTPMethod.GET)).thenReturn(testUserData);
 
             UserData userData = spy.registerUserData(cmd);
@@ -372,15 +398,15 @@ public class ManagementServerImplTest {
             when(account.getAccountId()).thenReturn(1L);
             when(account.getDomainId()).thenReturn(2L);
             when(callContextMock.getCallingAccount()).thenReturn(account);
-            when(_accountMgr.finalizeOwner(nullable(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(account);
+            when(accountManager.finalizeOwner(nullable(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(account);
 
             RegisterUserDataCmd cmd = Mockito.mock(RegisterUserDataCmd.class);
             when(cmd.getUserData()).thenReturn("testUserdata");
             when(cmd.getName()).thenReturn("testName");
 
             UserDataVO userData = Mockito.mock(UserDataVO.class);
-            when(_userDataDao.findByName(account.getAccountId(), account.getDomainId(), "testName")).thenReturn(null);
-            when(_userDataDao.findByUserData(account.getAccountId(), account.getDomainId(), "testUserdata")).thenReturn(userData);
+            when(userDataDao.findByName(account.getAccountId(), account.getDomainId(), "testName")).thenReturn(null);
+            when(userDataDao.findByUserData(account.getAccountId(), account.getDomainId(), "testUserdata")).thenReturn(userData);
 
             spy.registerUserData(cmd);
         }
@@ -394,13 +420,13 @@ public class ManagementServerImplTest {
             when(account.getAccountId()).thenReturn(1L);
             when(account.getDomainId()).thenReturn(2L);
             Mockito.when(callContextMock.getCallingAccount()).thenReturn(account);
-            when(_accountMgr.finalizeOwner(nullable(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(account);
+            when(accountManager.finalizeOwner(nullable(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(account);
 
             RegisterUserDataCmd cmd = Mockito.mock(RegisterUserDataCmd.class);
             when(cmd.getName()).thenReturn("testName");
 
             UserDataVO userData = Mockito.mock(UserDataVO.class);
-            when(_userDataDao.findByName(account.getAccountId(), account.getDomainId(), "testName")).thenReturn(userData);
+            when(userDataDao.findByName(account.getAccountId(), account.getDomainId(), "testName")).thenReturn(userData);
 
             spy.registerUserData(cmd);
         }
@@ -412,7 +438,7 @@ public class ManagementServerImplTest {
             CallContext callContextMock = Mockito.mock(CallContext.class);
             when(CallContext.current()).thenReturn(callContextMock);
             when(callContextMock.getCallingAccount()).thenReturn(account);
-            when(_accountMgr.finalizeOwner(nullable(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(account);
+            when(accountManager.finalizeOwner(nullable(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(account);
 
             DeleteUserDataCmd cmd = Mockito.mock(DeleteUserDataCmd.class);
             when(cmd.getAccountName()).thenReturn("testAccountName");
@@ -422,10 +448,10 @@ public class ManagementServerImplTest {
             UserDataVO userData = Mockito.mock(UserDataVO.class);
 
             Mockito.when(userData.getId()).thenReturn(1L);
-            when(_userDataDao.findById(1L)).thenReturn(userData);
+            when(userDataDao.findById(1L)).thenReturn(userData);
             when(templateDao.findTemplatesLinkedToUserdata(1L)).thenReturn(new ArrayList<VMTemplateVO>());
-            when(_userVmDao.findByUserDataId(1L)).thenReturn(new ArrayList<UserVmVO>());
-            when(_userDataDao.remove(1L)).thenReturn(true);
+            when(userVmDao.findByUserDataId(1L)).thenReturn(new ArrayList<UserVmVO>());
+            when(userDataDao.remove(1L)).thenReturn(true);
 
             boolean result = spy.deleteUserData(cmd);
             Assert.assertEquals(true, result);
@@ -438,7 +464,7 @@ public class ManagementServerImplTest {
             CallContext callContextMock = Mockito.mock(CallContext.class);
             when(CallContext.current()).thenReturn(callContextMock);
             when(callContextMock.getCallingAccount()).thenReturn(account);
-            when(_accountMgr.finalizeOwner(nullable(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(account);
+            when(accountManager.finalizeOwner(nullable(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(account);
 
             DeleteUserDataCmd cmd = Mockito.mock(DeleteUserDataCmd.class);
             when(cmd.getAccountName()).thenReturn("testAccountName");
@@ -448,7 +474,7 @@ public class ManagementServerImplTest {
 
             UserDataVO userData = Mockito.mock(UserDataVO.class);
             Mockito.when(userData.getId()).thenReturn(1L);
-            when(_userDataDao.findById(1L)).thenReturn(userData);
+            when(userDataDao.findById(1L)).thenReturn(userData);
 
             VMTemplateVO vmTemplateVO = Mockito.mock(VMTemplateVO.class);
             List<VMTemplateVO> linkedTemplates = new ArrayList<>();
@@ -465,7 +491,7 @@ public class ManagementServerImplTest {
             CallContext callContextMock = Mockito.mock(CallContext.class);
             when(CallContext.current()).thenReturn(callContextMock);
             when(callContextMock.getCallingAccount()).thenReturn(account);
-            when(_accountMgr.finalizeOwner(nullable(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(account);
+            when(accountManager.finalizeOwner(nullable(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(account);
 
             DeleteUserDataCmd cmd = Mockito.mock(DeleteUserDataCmd.class);
             when(cmd.getAccountName()).thenReturn("testAccountName");
@@ -475,14 +501,14 @@ public class ManagementServerImplTest {
 
             UserDataVO userData = Mockito.mock(UserDataVO.class);
             Mockito.when(userData.getId()).thenReturn(1L);
-            when(_userDataDao.findById(1L)).thenReturn(userData);
+            when(userDataDao.findById(1L)).thenReturn(userData);
 
             when(templateDao.findTemplatesLinkedToUserdata(1L)).thenReturn(new ArrayList<VMTemplateVO>());
 
             UserVmVO userVmVO = Mockito.mock(UserVmVO.class);
             List<UserVmVO> vms = new ArrayList<>();
             vms.add(userVmVO);
-            when(_userVmDao.findByUserDataId(1L)).thenReturn(vms);
+            when(userVmDao.findByUserDataId(1L)).thenReturn(vms);
 
             spy.deleteUserData(cmd);
         }
@@ -503,7 +529,7 @@ public class ManagementServerImplTest {
             UserDataVO userData = Mockito.mock(UserDataVO.class);
 
             SearchBuilder<UserDataVO> sb = Mockito.mock(SearchBuilder.class);
-            when(_userDataDao.createSearchBuilder()).thenReturn(sb);
+            when(userDataDao.createSearchBuilder()).thenReturn(sb);
             when(sb.entity()).thenReturn(userData);
 
             SearchCriteria<UserDataVO> sc = Mockito.mock(SearchCriteria.class);
@@ -512,7 +538,7 @@ public class ManagementServerImplTest {
             List<UserDataVO> userDataList = new ArrayList<UserDataVO>();
             userDataList.add(userData);
             Pair<List<UserDataVO>, Integer> result = new Pair(userDataList, 1);
-            when(_userDataDao.searchAndCount(nullable(SearchCriteria.class), nullable(Filter.class))).thenReturn(result);
+            when(userDataDao.searchAndCount(nullable(SearchCriteria.class), nullable(Filter.class))).thenReturn(result);
 
             Pair<List<? extends UserData>, Integer> userdataResultList = spy.listUserDatas(cmd, false);
 
@@ -536,7 +562,7 @@ public class ManagementServerImplTest {
             UserDataVO userData = Mockito.mock(UserDataVO.class);
 
             SearchBuilder<UserDataVO> sb = Mockito.mock(SearchBuilder.class);
-            when(_userDataDao.createSearchBuilder()).thenReturn(sb);
+            when(userDataDao.createSearchBuilder()).thenReturn(sb);
             when(sb.entity()).thenReturn(userData);
 
             SearchCriteria<UserDataVO> sc = Mockito.mock(SearchCriteria.class);
@@ -545,7 +571,7 @@ public class ManagementServerImplTest {
             List<UserDataVO> userDataList = new ArrayList<UserDataVO>();
             userDataList.add(userData);
             Pair<List<UserDataVO>, Integer> result = new Pair(userDataList, 1);
-            when(_userDataDao.searchAndCount(nullable(SearchCriteria.class), nullable(Filter.class))).thenReturn(result);
+            when(userDataDao.searchAndCount(nullable(SearchCriteria.class), nullable(Filter.class))).thenReturn(result);
 
             Pair<List<? extends UserData>, Integer> userdataResultList = spy.listUserDatas(cmd, false);
 
@@ -569,7 +595,7 @@ public class ManagementServerImplTest {
             UserDataVO userData = Mockito.mock(UserDataVO.class);
 
             SearchBuilder<UserDataVO> sb = Mockito.mock(SearchBuilder.class);
-            when(_userDataDao.createSearchBuilder()).thenReturn(sb);
+            when(userDataDao.createSearchBuilder()).thenReturn(sb);
             when(sb.entity()).thenReturn(userData);
 
             SearchCriteria<UserDataVO> sc = Mockito.mock(SearchCriteria.class);
@@ -578,7 +604,7 @@ public class ManagementServerImplTest {
             List<UserDataVO> userDataList = new ArrayList<UserDataVO>();
             userDataList.add(userData);
             Pair<List<UserDataVO>, Integer> result = new Pair(userDataList, 1);
-            when(_userDataDao.searchAndCount(nullable(SearchCriteria.class), nullable(Filter.class))).thenReturn(result);
+            when(userDataDao.searchAndCount(nullable(SearchCriteria.class), nullable(Filter.class))).thenReturn(result);
 
             Pair<List<? extends UserData>, Integer> userdataResultList = spy.listUserDatas(cmd, false);
 
@@ -763,12 +789,12 @@ public class ManagementServerImplTest {
         boolean featured = true;
         Mockito.when(addCmd.getName()).thenReturn(name);
         Mockito.when(addCmd.isFeatured()).thenReturn(featured);
-        Mockito.doAnswer((Answer<GuestOSCategoryVO>) invocation -> (GuestOSCategoryVO)invocation.getArguments()[0]).when(_guestOSCategoryDao).persist(Mockito.any(GuestOSCategoryVO.class));
+        Mockito.doAnswer((Answer<GuestOSCategoryVO>) invocation -> (GuestOSCategoryVO)invocation.getArguments()[0]).when(guestOSCategoryDao).persist(Mockito.any(GuestOSCategoryVO.class));
         GuestOsCategory result = spy.addGuestOsCategory(addCmd);
         Assert.assertNotNull(result);
         Assert.assertEquals(name, result.getName());
         Assert.assertEquals(featured, result.isFeatured());
-        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).persist(any(GuestOSCategoryVO.class));
+        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).persist(any(GuestOSCategoryVO.class));
     }
 
     @Test
@@ -783,14 +809,14 @@ public class ManagementServerImplTest {
         Mockito.when(updateCmd.getName()).thenReturn(name);
         Mockito.when(updateCmd.isFeatured()).thenReturn(featured);
         Mockito.when(updateCmd.getSortKey()).thenReturn(sortKey);
-        Mockito.when(_guestOSCategoryDao.findById(id)).thenReturn(guestOSCategory);
-        Mockito.when(_guestOSCategoryDao.update(Mockito.eq(id), any(GuestOSCategoryVO.class))).thenReturn(true);
+        Mockito.when(guestOSCategoryDao.findById(id)).thenReturn(guestOSCategory);
+        Mockito.when(guestOSCategoryDao.update(Mockito.eq(id), any(GuestOSCategoryVO.class))).thenReturn(true);
         GuestOsCategory result = spy.updateGuestOsCategory(updateCmd);
         Assert.assertNotNull(result);
         Assert.assertEquals(name, result.getName());
         Assert.assertEquals(featured, result.isFeatured());
-        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).findById(id);
-        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).update(Mockito.eq(id), any(GuestOSCategoryVO.class));
+        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).findById(id);
+        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).update(Mockito.eq(id), any(GuestOSCategoryVO.class));
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -798,7 +824,7 @@ public class ManagementServerImplTest {
         UpdateGuestOsCategoryCmd updateCmd = Mockito.mock(UpdateGuestOsCategoryCmd.class);
         long id = 1L;
         when(updateCmd.getId()).thenReturn(id);
-        when(_guestOSCategoryDao.findById(id)).thenReturn(null);
+        when(guestOSCategoryDao.findById(id)).thenReturn(null);
         spy.updateGuestOsCategory(updateCmd);
     }
 
@@ -811,13 +837,13 @@ public class ManagementServerImplTest {
         when(updateCmd.getName()).thenReturn(null);
         when(updateCmd.isFeatured()).thenReturn(null);
         when(updateCmd.getSortKey()).thenReturn(null);
-        when(_guestOSCategoryDao.findById(id)).thenReturn(guestOSCategory);
+        when(guestOSCategoryDao.findById(id)).thenReturn(guestOSCategory);
         GuestOsCategory result = spy.updateGuestOsCategory(updateCmd);
         Assert.assertNotNull(result);
         Assert.assertNotNull(result.getName());
         Assert.assertFalse(result.isFeatured());
-        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).findById(id);
-        Mockito.verify(_guestOSCategoryDao, Mockito.never()).update(Mockito.eq(id), any(GuestOSCategoryVO.class));
+        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).findById(id);
+        Mockito.verify(guestOSCategoryDao, Mockito.never()).update(Mockito.eq(id), any(GuestOSCategoryVO.class));
     }
 
     @Test
@@ -830,14 +856,14 @@ public class ManagementServerImplTest {
         Mockito.when(updateCmd.getName()).thenReturn(name);
         Mockito.when(updateCmd.isFeatured()).thenReturn(null);
         Mockito.when(updateCmd.getSortKey()).thenReturn(null);
-        Mockito.when(_guestOSCategoryDao.findById(id)).thenReturn(guestOSCategory);
-        Mockito.when(_guestOSCategoryDao.update(Mockito.eq(id), any(GuestOSCategoryVO.class))).thenReturn(true);
+        Mockito.when(guestOSCategoryDao.findById(id)).thenReturn(guestOSCategory);
+        Mockito.when(guestOSCategoryDao.update(Mockito.eq(id), any(GuestOSCategoryVO.class))).thenReturn(true);
         GuestOsCategory result = spy.updateGuestOsCategory(updateCmd);
         Assert.assertNotNull(result);
         Assert.assertEquals(name, result.getName());
         Assert.assertFalse(result.isFeatured());
-        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).findById(id);
-        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).update(Mockito.eq(id), any(GuestOSCategoryVO.class));
+        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).findById(id);
+        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).update(Mockito.eq(id), any(GuestOSCategoryVO.class));
     }
 
     @Test
@@ -846,14 +872,14 @@ public class ManagementServerImplTest {
         GuestOSCategoryVO guestOSCategory = Mockito.mock(GuestOSCategoryVO.class);
         long id = 1L;
         Mockito.when(deleteCmd.getId()).thenReturn(id);
-        Mockito.when(_guestOSCategoryDao.findById(id)).thenReturn(guestOSCategory);
-        Mockito.when(_guestOSDao.listIdsByCategoryId(id)).thenReturn(Arrays.asList());
-        Mockito.when(_guestOSCategoryDao.remove(id)).thenReturn(true);
+        Mockito.when(guestOSCategoryDao.findById(id)).thenReturn(guestOSCategory);
+        Mockito.when(guestOSDao.listIdsByCategoryId(id)).thenReturn(Arrays.asList());
+        Mockito.when(guestOSCategoryDao.remove(id)).thenReturn(true);
         boolean result = spy.deleteGuestOsCategory(deleteCmd);
         Assert.assertTrue(result);
-        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).findById(id);
-        Mockito.verify(_guestOSDao, Mockito.times(1)).listIdsByCategoryId(id);
-        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).remove(id);
+        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).findById(id);
+        Mockito.verify(guestOSDao, Mockito.times(1)).listIdsByCategoryId(id);
+        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).remove(id);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -861,7 +887,7 @@ public class ManagementServerImplTest {
         DeleteGuestOsCategoryCmd deleteCmd = Mockito.mock(DeleteGuestOsCategoryCmd.class);
         long id = 1L;
         Mockito.when(deleteCmd.getId()).thenReturn(id);
-        Mockito.when(_guestOSCategoryDao.findById(id)).thenReturn(null);
+        Mockito.when(guestOSCategoryDao.findById(id)).thenReturn(null);
         spy.deleteGuestOsCategory(deleteCmd);
     }
 
@@ -871,8 +897,8 @@ public class ManagementServerImplTest {
         GuestOSCategoryVO guestOSCategory = Mockito.mock(GuestOSCategoryVO.class);
         long id = 1L;
         Mockito.when(deleteCmd.getId()).thenReturn(id);
-        Mockito.when(_guestOSCategoryDao.findById(id)).thenReturn(guestOSCategory);
-        Mockito.when(_guestOSDao.listIdsByCategoryId(id)).thenReturn(Arrays.asList(1L));
+        Mockito.when(guestOSCategoryDao.findById(id)).thenReturn(guestOSCategory);
+        Mockito.when(guestOSDao.listIdsByCategoryId(id)).thenReturn(Arrays.asList(1L));
         spy.deleteGuestOsCategory(deleteCmd);
     }
 
@@ -880,7 +906,7 @@ public class ManagementServerImplTest {
         GuestOSVO vo = mock(GuestOSVO.class);
         SearchBuilder<GuestOSVO> sb = mock(SearchBuilder.class);
         when(sb.entity()).thenReturn(vo);
-        when(_guestOSDao.createSearchBuilder()).thenReturn(sb);
+        when(guestOSDao.createSearchBuilder()).thenReturn(sb);
     }
 
     @Test
@@ -907,19 +933,19 @@ public class ManagementServerImplTest {
         SearchBuilder<GuestOSCategoryVO> searchBuilder = Mockito.mock(SearchBuilder.class);
         Mockito.when(searchBuilder.entity()).thenReturn(guestOSCategory);
         SearchCriteria<GuestOSCategoryVO> searchCriteria = Mockito.mock(SearchCriteria.class);
-        Mockito.when(_guestOSCategoryDao.createSearchBuilder()).thenReturn(searchBuilder);
+        Mockito.when(guestOSCategoryDao.createSearchBuilder()).thenReturn(searchBuilder);
         Mockito.when(searchBuilder.create()).thenReturn(searchCriteria);
         Mockito.when(templateDao.listTemplateIsoByArchVnfAndZone(zoneId, arch, isIso, isVnf)).thenReturn(Arrays.asList(1L, 2L));
         Pair<List<GuestOSCategoryVO>, Integer> mockResult = new Pair<>(Arrays.asList(guestOSCategory), 1);
         mockGuestOsJoin();
-        Mockito.when(_guestOSCategoryDao.searchAndCount(Mockito.eq(searchCriteria), Mockito.any())).thenReturn(mockResult);
+        Mockito.when(guestOSCategoryDao.searchAndCount(Mockito.eq(searchCriteria), Mockito.any())).thenReturn(mockResult);
         Pair<List<? extends GuestOsCategory>, Integer> result = spy.listGuestOSCategoriesByCriteria(listCmd);
         Assert.assertNotNull(result);
         Assert.assertEquals(1, result.second().intValue());
         Assert.assertEquals(1, result.first().size());
-        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).createSearchBuilder();
+        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).createSearchBuilder();
         Mockito.verify(templateDao, Mockito.times(1)).listTemplateIsoByArchVnfAndZone(zoneId, arch, isIso, isVnf);
-        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).searchAndCount(Mockito.eq(searchCriteria), Mockito.any());
+        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).searchAndCount(Mockito.eq(searchCriteria), Mockito.any());
     }
 
     @Test
@@ -945,19 +971,19 @@ public class ManagementServerImplTest {
         SearchBuilder<GuestOSCategoryVO> searchBuilder = Mockito.mock(SearchBuilder.class);
         Mockito.when(searchBuilder.entity()).thenReturn(guestOSCategory);
         SearchCriteria<GuestOSCategoryVO> searchCriteria = Mockito.mock(SearchCriteria.class);
-        Mockito.when(_guestOSCategoryDao.createSearchBuilder()).thenReturn(searchBuilder);
+        Mockito.when(guestOSCategoryDao.createSearchBuilder()).thenReturn(searchBuilder);
         Mockito.when(searchBuilder.create()).thenReturn(searchCriteria);
         Mockito.when(templateDao.listTemplateIsoByArchVnfAndZone(zoneId, arch, isIso, isVnf)).thenReturn(Arrays.asList(1L, 2L));
         Pair<List<GuestOSCategoryVO>, Integer> mockResult = new Pair<>(Arrays.asList(), 0);
-        Mockito.when(_guestOSCategoryDao.searchAndCount(Mockito.eq(searchCriteria), Mockito.any())).thenReturn(mockResult);
+        Mockito.when(guestOSCategoryDao.searchAndCount(Mockito.eq(searchCriteria), Mockito.any())).thenReturn(mockResult);
         mockGuestOsJoin();
         Pair<List<? extends GuestOsCategory>, Integer> result = spy.listGuestOSCategoriesByCriteria(listCmd);
         Assert.assertNotNull(result);
         Assert.assertEquals(0, result.second().intValue());
         Assert.assertEquals(0, result.first().size());
-        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).createSearchBuilder();
+        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).createSearchBuilder();
         Mockito.verify(templateDao, Mockito.times(1)).listTemplateIsoByArchVnfAndZone(zoneId, arch, isIso, isVnf);
-        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).searchAndCount(Mockito.eq(searchCriteria), Mockito.any());
+        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).searchAndCount(Mockito.eq(searchCriteria), Mockito.any());
     }
 
     @Test
@@ -983,19 +1009,19 @@ public class ManagementServerImplTest {
         SearchBuilder<GuestOSCategoryVO> searchBuilder = Mockito.mock(SearchBuilder.class);
         Mockito.when(searchBuilder.entity()).thenReturn(guestOSCategory);
         SearchCriteria<GuestOSCategoryVO> searchCriteria = Mockito.mock(SearchCriteria.class);
-        Mockito.when(_guestOSCategoryDao.createSearchBuilder()).thenReturn(searchBuilder);
+        Mockito.when(guestOSCategoryDao.createSearchBuilder()).thenReturn(searchBuilder);
         Mockito.when(searchBuilder.create()).thenReturn(searchCriteria);
         Mockito.when(templateDao.listTemplateIsoByArchVnfAndZone(zoneId, arch, isIso, isVnf)).thenReturn(Arrays.asList(1L, 2L));
         Pair<List<GuestOSCategoryVO>, Integer> mockResult = new Pair<>(Arrays.asList(), 0);
-        when(_guestOSCategoryDao.searchAndCount(Mockito.eq(searchCriteria), Mockito.any())).thenReturn(mockResult);
+        when(guestOSCategoryDao.searchAndCount(Mockito.eq(searchCriteria), Mockito.any())).thenReturn(mockResult);
         mockGuestOsJoin();
         Pair<List<? extends GuestOsCategory>, Integer> result = spy.listGuestOSCategoriesByCriteria(listCmd);
         Assert.assertNotNull(result);
         Assert.assertEquals(0, result.second().intValue());
         Assert.assertEquals(0, result.first().size());
-        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).createSearchBuilder();
+        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).createSearchBuilder();
         Mockito.verify(templateDao, Mockito.times(1)).listTemplateIsoByArchVnfAndZone(zoneId, arch, isIso, isVnf);
-        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).searchAndCount(Mockito.eq(searchCriteria), Mockito.any());
+        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).searchAndCount(Mockito.eq(searchCriteria), Mockito.any());
     }
 
     @Test
@@ -1010,18 +1036,18 @@ public class ManagementServerImplTest {
         SearchBuilder<GuestOSCategoryVO> searchBuilder = Mockito.mock(SearchBuilder.class);
         Mockito.when(searchBuilder.entity()).thenReturn(guestOSCategory);
         SearchCriteria<GuestOSCategoryVO> searchCriteria = Mockito.mock(SearchCriteria.class);
-        Mockito.when(_guestOSCategoryDao.createSearchBuilder()).thenReturn(searchBuilder);
+        Mockito.when(guestOSCategoryDao.createSearchBuilder()).thenReturn(searchBuilder);
         Mockito.when(searchBuilder.create()).thenReturn(searchCriteria);
         Pair<List<GuestOSCategoryVO>, Integer> mockResult = new Pair<>(Arrays.asList(guestOSCategory), 1);
-        Mockito.when(_guestOSCategoryDao.searchAndCount(Mockito.eq(searchCriteria), Mockito.any())).thenReturn(mockResult);
+        Mockito.when(guestOSCategoryDao.searchAndCount(Mockito.eq(searchCriteria), Mockito.any())).thenReturn(mockResult);
         mockGuestOsJoin();
         Pair<List<? extends GuestOsCategory>, Integer> result = spy.listGuestOSCategoriesByCriteria(listCmd);
         Assert.assertNotNull(result);
         Assert.assertEquals(1, result.second().intValue());
         Assert.assertEquals(1, result.first().size());
-        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).createSearchBuilder();
+        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).createSearchBuilder();
         Mockito.verify(searchCriteria, Mockito.times(1)).setParameters("id", id);
-        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).searchAndCount(Mockito.eq(searchCriteria), Mockito.any());
+        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).searchAndCount(Mockito.eq(searchCriteria), Mockito.any());
 
     }
 

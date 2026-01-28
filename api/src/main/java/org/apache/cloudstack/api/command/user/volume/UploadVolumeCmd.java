@@ -53,36 +53,36 @@ public class UploadVolumeCmd extends BaseAsyncCmd implements UserCmd {
     @Parameter(name = ApiConstants.FORMAT,
                type = CommandType.STRING,
                required = true,
-               description = "the format for the volume. Possible values include QCOW2, OVA, and VHD.")
+               description = "The format for the volume. Possible values include QCOW2, OVA, and VHD.")
     private String format;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the volume")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "The name of the volume")
     private String volumeName;
 
     @Parameter(name = ApiConstants.URL,
                type = CommandType.STRING,
                required = true,
                length = 2048,
-               description = "the URL of where the volume is hosted. Possible URL include http:// and https://")
+               description = "The URL of where the volume is hosted. Possible URL include http:// and https://")
     private String url;
 
     @Parameter(name = ApiConstants.ZONE_ID,
                type = CommandType.UUID,
                entityType = ZoneResponse.class,
                required = true,
-               description = "the ID of the zone the volume is to be hosted on")
+               description = "The ID of the zone the volume is to be hosted on")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
                entityType = DomainResponse.class,
-               description = "an optional domainId. If the account parameter is used, domainId must also be used. If account is NOT provided then volume will be assigned to the caller account and domain.")
+               description = "An optional domainId. If the Account parameter is used, domainId must also be used. If Account is NOT provided then volume will be assigned to the caller Account and domain.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional accountName. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "An optional accountName. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.CHECKSUM, type = CommandType.STRING, description = "the checksum value of this volume. " + ApiConstants.CHECKSUM_PARAMETER_PREFIX_DESCRIPTION)
+    @Parameter(name = ApiConstants.CHECKSUM, type = CommandType.STRING, description = "The checksum value of this volume. " + ApiConstants.CHECKSUM_PARAMETER_PREFIX_DESCRIPTION)
     private String checksum;
 
     @Parameter(name = ApiConstants.IMAGE_STORE_UUID, type = CommandType.STRING, description = "Image store uuid")
@@ -91,7 +91,7 @@ public class UploadVolumeCmd extends BaseAsyncCmd implements UserCmd {
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Upload volume for the project")
     private Long projectId;
 
-    @Parameter(name = ApiConstants.DISK_OFFERING_ID, required = false, type = CommandType.UUID, entityType = DiskOfferingResponse.class, description = "the ID of the disk offering. This must be a custom sized offering since during uploadVolume volume size is unknown.")
+    @Parameter(name = ApiConstants.DISK_OFFERING_ID, required = false, type = CommandType.UUID, entityType = DiskOfferingResponse.class, description = "The ID of the disk offering. This must be a custom sized offering since during uploadVolume volume size is unknown.")
     private Long diskOfferingId;
 
     /////////////////////////////////////////////////////
@@ -159,7 +159,7 @@ public class UploadVolumeCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }

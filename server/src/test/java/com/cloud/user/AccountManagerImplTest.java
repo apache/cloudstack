@@ -1368,6 +1368,22 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         accountManagerImpl.validateRoleChange(account, newRole, caller);
     }
 
+    @Test(expected = PermissionDeniedException.class)
+    public void testValidateRoleAdminCannotChangeDefaultAdmin() {
+        Account account = Mockito.mock(Account.class);
+        Mockito.when(account.isDefault()).thenReturn(true);
+        Mockito.when(account.getRoleId()).thenReturn(1L);
+        Role newRole = Mockito.mock(Role.class);
+        Mockito.when(newRole.getRoleType()).thenReturn(RoleType.User);
+        Role callerRole = Mockito.mock(Role.class);
+        Mockito.when(callerRole.getRoleType()).thenReturn(RoleType.Admin);
+        Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getRoleId()).thenReturn(2L);
+        Mockito.when(roleService.findRole(1L)).thenReturn(Mockito.mock(Role.class));
+        Mockito.when(roleService.findRole(2L)).thenReturn(callerRole);
+        accountManagerImpl.validateRoleChange(account, newRole, caller);
+    }
+
     @Test
     public void checkIfAccountManagesProjectsTestNotThrowExceptionWhenTheAccountIsNotAProjectAdministrator() {
         long accountId = 1L;

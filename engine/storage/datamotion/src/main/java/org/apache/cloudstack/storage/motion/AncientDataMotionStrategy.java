@@ -18,9 +18,11 @@
  */
 package org.apache.cloudstack.storage.motion;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.inject.Inject;
 
@@ -45,10 +47,12 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
+import org.apache.cloudstack.storage.heuristics.HeuristicRuleHelper;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.logging.log4j.Logger;
@@ -67,6 +71,7 @@ import com.cloud.configuration.Config;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.Snapshot.Type;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StorageManager;
@@ -85,6 +90,11 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     protected Logger logger = LogManager.getLogger(getClass());
     private static final String NO_REMOTE_ENDPOINT_SSVM = "No remote endpoint to send command, check if host or ssvm is down?";
     private static final String NO_REMOTE_ENDPOINT_WITH_ENCRYPTION = "No remote endpoint to send command, unable to find a valid endpoint. Requires encryption support: %s";
+    private static final List<StoragePoolType> SUPPORTED_POOL_TYPES_TO_BYPASS_SECONDARY_STORE = Arrays.asList(
+            StoragePoolType.NetworkFilesystem,
+            StoragePoolType.Filesystem,
+            StoragePoolType.RBD
+    );
 
     @Inject
     EndPointSelector selector;
@@ -103,6 +113,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     StorageManager storageManager;
     @Inject
     SnapshotDao snapshotDao;
+
+    @Inject
+    HeuristicRuleHelper heuristicRuleHelper;
 
     @Override
     public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
@@ -240,7 +253,6 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         return dataTO;
     }
 
-
     protected Answer copyObject(DataObject srcData, DataObject destData) {
         return copyObject(srcData, destData, null);
     }
@@ -352,14 +364,12 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
         Scope destScope = getZoneScope(destData.getDataStore().getScope());
         DataStore cacheStore = cacheMgr.getCacheStorage(destScope);
-        boolean bypassSecondaryStorage = false;
-        if (srcData instanceof VolumeInfo && ((VolumeInfo)srcData).isDirectDownload()) {
-            bypassSecondaryStorage = true;
-        }
+        boolean bypassSecondaryStorage = canBypassSecondaryStorage(srcData, destData);
         boolean encryptionRequired = anyVolumeRequiresEncryption(srcData, destData);
 
         if (cacheStore == null) {
             if (bypassSecondaryStorage) {
+                logger.debug("Secondary storage is bypassed, copy volume between pools directly");
                 CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _copyvolumewait, VirtualMachineManager.ExecuteInSequence.value());
                 EndPoint ep = selector.select(srcData, destData, encryptionRequired);
                 Answer answer = null;
@@ -374,7 +384,13 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             }
             // need to find a nfs or cifs image store, assuming that can't copy volume
             // directly to s3
-            ImageStoreEntity imageStore = (ImageStoreEntity)dataStoreMgr.getImageStoreWithFreeCapacity(destScope.getScopeId());
+            Long zoneId = destScope.getScopeId();
+            ImageStoreEntity imageStore = (ImageStoreEntity) heuristicRuleHelper.getImageStoreIfThereIsHeuristicRule(zoneId, HeuristicType.VOLUME, destData);
+            if (imageStore == null) {
+                logger.debug("Secondary storage selector did not direct volume migration to a specific secondary storage; using secondary storage with the most free capacity.");
+                imageStore = (ImageStoreEntity) dataStoreMgr.getImageStoreWithFreeCapacity(zoneId);
+            }
+
             if (imageStore == null || !imageStore.getProtocol().equalsIgnoreCase("nfs") && !imageStore.getProtocol().equalsIgnoreCase("cifs")) {
                 String errMsg = "can't find a nfs (or cifs) image store to satisfy the need for a staging store";
                 Answer answer = new Answer(null, false, errMsg);
@@ -388,15 +404,15 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 answer = copyObject(srcData, objOnImageStore);
 
                 if (answer == null || !answer.getResult()) {
-                    if (answer != null) {
-                        if (logger.isDebugEnabled()) logger.debug("copy to image store failed: " + answer.getDetails());
+                    if (answer != null && logger.isDebugEnabled()) {
+                        logger.debug("copy to image store failed: {}", answer.getDetails());
                     }
                     objOnImageStore.processEvent(Event.OperationFailed);
                     imageStore.delete(objOnImageStore);
                     return answer;
                 }
 
-                objOnImageStore.processEvent(Event.OperationSuccessed, answer);
+                objOnImageStore.processEvent(Event.OperationSucceeded, answer);
 
                 objOnImageStore.processEvent(Event.CopyingRequested);
 
@@ -411,8 +427,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 }
 
                 if (answer == null || !answer.getResult()) {
-                    if (answer != null) {
-                        if (logger.isDebugEnabled()) logger.debug("copy to primary store failed: " + answer.getDetails());
+                    if (answer != null && logger.isDebugEnabled()) {
+                        logger.debug("copy to primary store failed: {}", answer.getDetails());
                     }
                     objOnImageStore.processEvent(Event.OperationFailed);
                     imageStore.delete(objOnImageStore);
@@ -423,11 +439,11 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                     objOnImageStore.processEvent(Event.OperationFailed);
                     imageStore.delete(objOnImageStore);
                 }
-                logger.error("Failed to perform operation: "+ e.getLocalizedMessage());
+                logger.error("Failed to perform operation: {}", e.getLocalizedMessage());
                 throw e;
             }
 
-            objOnImageStore.processEvent(Event.OperationSuccessed);
+            objOnImageStore.processEvent(Event.OperationSucceeded);
             deleteVolumeOnSecondaryStore(objOnImageStore);
             return answer;
         } else {
@@ -448,7 +464,78 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             }
             return answer;
         }
+    }
 
+    private boolean canBypassSecondaryStorage(DataObject srcData, DataObject destData) {
+        if (srcData instanceof VolumeInfo) {
+            if (((VolumeInfo)srcData).isDirectDownload()) {
+                return true;
+            }
+
+            if (destData instanceof VolumeInfo) {
+                Scope srcDataStoreScope = srcData.getDataStore().getScope();
+                Scope destDataStoreScope = destData.getDataStore().getScope();
+                logger.info("srcDataStoreScope: {}, srcData pool type: {}; destDataStoreScope: {}, destData pool type: {}",
+                        srcDataStoreScope, ((VolumeInfo)srcData).getStoragePoolType(), destDataStoreScope, ((VolumeInfo)destData).getStoragePoolType());
+
+                if (srcDataStoreScope != null && destDataStoreScope != null &&
+                        SUPPORTED_POOL_TYPES_TO_BYPASS_SECONDARY_STORE.contains(((VolumeInfo)srcData).getStoragePoolType()) &&
+                        SUPPORTED_POOL_TYPES_TO_BYPASS_SECONDARY_STORE.contains(((VolumeInfo)destData).getStoragePoolType())) {
+
+                    return canDirectlyCopyBetweenDataStoreScopes(srcDataStoreScope, destDataStoreScope);
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private boolean canDirectlyCopyBetweenDataStoreScopes(Scope srcDataStoreScope, Scope destDataStoreScope) {
+        if (srcDataStoreScope == null || destDataStoreScope == null) {
+            return false;
+        }
+
+        if (srcDataStoreScope.isSameScope(destDataStoreScope)) {
+            return true;
+        }
+
+        if (srcDataStoreScope.getScopeType() == ScopeType.HOST) {
+            if (destDataStoreScope.getScopeType() == ScopeType.CLUSTER &&
+                    (Objects.equals(((HostScope) srcDataStoreScope).getClusterId(), ((ClusterScope) destDataStoreScope).getScopeId()))) {
+                return true;
+            }
+            if (destDataStoreScope.getScopeType() == ScopeType.ZONE &&
+                    (Objects.equals(((HostScope) srcDataStoreScope).getZoneId(), ((ZoneScope) destDataStoreScope).getScopeId()))) {
+                return true;
+            }
+        }
+
+        if (destDataStoreScope.getScopeType() == ScopeType.HOST) {
+            if (srcDataStoreScope.getScopeType() == ScopeType.CLUSTER &&
+                    (Objects.equals(((ClusterScope) srcDataStoreScope).getScopeId(), ((HostScope) destDataStoreScope).getClusterId()))) {
+                return true;
+            }
+            if (srcDataStoreScope.getScopeType() == ScopeType.ZONE &&
+                    (Objects.equals(((ZoneScope) srcDataStoreScope).getScopeId(), ((HostScope) destDataStoreScope).getZoneId()))) {
+                return true;
+            }
+        }
+
+        if (srcDataStoreScope.getScopeType() == ScopeType.CLUSTER) {
+            if (destDataStoreScope.getScopeType() == ScopeType.ZONE &&
+                    (Objects.equals(((ClusterScope) srcDataStoreScope).getZoneId(), ((ZoneScope) destDataStoreScope).getScopeId()))) {
+                return true;
+            }
+        }
+
+        if (destDataStoreScope.getScopeType() == ScopeType.CLUSTER) {
+            if (srcDataStoreScope.getScopeType() == ScopeType.ZONE &&
+                    (Objects.equals(((ZoneScope) srcDataStoreScope).getScopeId(), ((ClusterScope) destDataStoreScope).getZoneId()))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     protected Answer migrateVolumeToPool(DataObject srcData, DataObject destData) {
@@ -492,6 +579,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             }
             volumeVo.setPodId(destPool.getPodId());
             volumeVo.setPoolId(destPool.getId());
+            volumeVo.setPoolType(destPool.getPoolType());
             volumeVo.setLastPoolId(oldPoolId);
             // For SMB, pool credentials are also stored in the uri query string.  We trim the query string
             // part  here to make sure the credentials do not get stored in the db unencrypted.

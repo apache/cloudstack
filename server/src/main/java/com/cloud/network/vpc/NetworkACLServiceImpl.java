@@ -109,6 +109,8 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     private NsxProviderDao nsxProviderDao;
     @Inject
     private NetrisProviderDao netrisProviderDao;
+    @Inject
+    private VpcManager vpcManager;
 
     private String supportedProtocolsForAclRules = "tcp,udp,icmp,all";
 
@@ -488,6 +490,8 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             throw new InvalidParameterValueException("Cannot create Network ACL Item. ACL Id or network Id is required");
         }
         Network network = networkModel.getNetwork(createNetworkACLCmd.getNetworkId());
+        Account caller = CallContext.current().getCallingAccount();
+        _accountMgr.checkAccess(caller, null, true, network);
         if (network.getVpcId() == null) {
             throw new InvalidParameterValueException("Network: " + network.getUuid() + " does not belong to VPC");
         }
@@ -749,6 +753,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
         if (networkId != null) {
             final Network network = _networkDao.findById(networkId);
+            _accountMgr.checkAccess(caller, null, true, network);
             aclId = network.getNetworkACLId();
             if (aclId == null) {
                 // No aclId associated with the network.
@@ -1034,13 +1039,20 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             if (Objects.isNull(vpc)) {
                 return networkACLItem;
             }
+            List<NetworkVO> networks = _networkDao.listByAclId(lockedAcl.getId());
+            if (networks.isEmpty()) {
+                return networkACLItem;
+            }
+
             final DataCenter dc = _entityMgr.findById(DataCenter.class, vpc.getZoneId());
             final NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(dc.getId());
             final NetrisProviderVO netrisProvider = netrisProviderDao.findByZoneId(dc.getId());
-            List<NetworkVO> networks = _networkDao.listByAclId(lockedAcl.getId());
-            if (ObjectUtils.anyNotNull(nsxProvider, netrisProvider) && !networks.isEmpty()) {
+            boolean isVpcNetworkACLProvider = vpcManager.isProviderSupportServiceInVpc(vpc.getId(), Network.Service.NetworkACL, Network.Provider.VPCVirtualRouter);
+
+            if (ObjectUtils.anyNotNull(nsxProvider, netrisProvider) || isVpcNetworkACLProvider) {
                 allAclRules = getAllAclRulesSortedByNumber(lockedAcl.getId());
-                Network.Provider networkProvider = nsxProvider != null ? Network.Provider.Nsx : Network.Provider.Netris;
+                Network.Provider networkProvider = isVpcNetworkACLProvider ? Network.Provider.VPCVirtualRouter
+                                : (nsxProvider != null ? Network.Provider.Nsx : Network.Provider.Netris);
                 _networkAclMgr.reorderAclRules(vpc, networks, allAclRules, networkProvider);
             }
             return networkACLItem;

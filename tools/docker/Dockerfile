@@ -19,7 +19,7 @@
 
 FROM ubuntu:22.04
 
-LABEL Vendor="Apache.org" License="ApacheV2" Version="4.22.0.0-SNAPSHOT" Author="Apache CloudStack <dev@cloudstack.apache.org>"
+LABEL Vendor="Apache.org" License="ApacheV2" Version="4.23.0.0-SNAPSHOT" Author="Apache CloudStack <dev@cloudstack.apache.org>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 

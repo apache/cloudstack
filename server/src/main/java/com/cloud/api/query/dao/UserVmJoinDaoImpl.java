@@ -194,21 +194,13 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             userVmResponse.setDisplayName(userVm.getName());
         }
 
-        if (userVm.getAccountType() == Account.Type.PROJECT) {
-            userVmResponse.setProjectId(userVm.getProjectUuid());
-            userVmResponse.setProjectName(userVm.getProjectName());
-        } else {
-            userVmResponse.setAccountName(userVm.getAccountName());
-        }
+        ApiResponseHelper.populateOwner(userVmResponse, userVm);
 
         User user = _userDao.getUser(userVm.getUserId());
         if (user != null) {
             userVmResponse.setUserId(user.getUuid());
             userVmResponse.setUserName(user.getUsername());
         }
-        userVmResponse.setDomainId(userVm.getDomainUuid());
-        userVmResponse.setDomainName(userVm.getDomainName());
-        userVmResponse.setDomainPath(userVm.getDomainPath());
 
         userVmResponse.setCreated(userVm.getCreated());
         userVmResponse.setLastUpdated(userVm.getLastUpdated());

@@ -270,8 +270,7 @@ public class QuotaManagerImplTest {
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("account"), Mockito.anyString());
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("domain"), Mockito.anyString());
         Mockito.verify(jsInterpreterMock, Mockito.never()).injectVariable(Mockito.eq("project"), Mockito.anyString());
-        Mockito.verify(jsInterpreterMock, Mockito.never()).injectVariable(Mockito.eq("configuration"), Mockito.anyString());
-        Mockito.verify(jsInterpreterMock).injectStringVariable(Mockito.eq("resourceType"), Mockito.anyString());
+        Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("resourceType"), Mockito.anyString());
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("value"), Mockito.anyString());
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("zone"), Mockito.anyString());
     }
@@ -292,7 +291,7 @@ public class QuotaManagerImplTest {
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("account"), Mockito.anyString());
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("domain"), Mockito.anyString());
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("project"), Mockito.anyString());
-        Mockito.verify(jsInterpreterMock).injectStringVariable(Mockito.eq("resourceType"), Mockito.anyString());
+        Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("resourceType"), Mockito.anyString());
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("value"), Mockito.anyString());
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("zone"), Mockito.anyString());
     }

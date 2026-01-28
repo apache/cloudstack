@@ -37,7 +37,7 @@ import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "attachVolume", description = "Attaches a disk volume to a virtual machine.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
+@APICommand(name = "attachVolume", description = "Attaches a disk volume to  an Instance.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AttachVolumeCmd extends BaseAsyncCmd implements UserCmd {
     private static final String s_name = "attachvolumeresponse";
@@ -52,12 +52,12 @@ public class AttachVolumeCmd extends BaseAsyncCmd implements UserCmd {
         + "Please refer to the docs of your hypervisor for the correct mapping of the deviceID and the actual logical disk structure.")
     private Long deviceId;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "the ID of the disk volume")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "The ID of the disk volume")
     private Long id;
 
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType=UserVmResponse.class,
-            required=true, description="    the ID of the virtual machine")
+            required=true, description = "    the ID of the Instance")
     private Long virtualMachineId;
 
     /////////////////////////////////////////////////////
@@ -111,12 +111,12 @@ public class AttachVolumeCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return  "attaching volume: " + this._uuidMgr.getUuid(Volume.class, getId()) + " to vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getVirtualMachineId());
+        return  "Attaching volume: " + this._uuidMgr.getUuid(Volume.class, getId()) + " to Instance: " + this._uuidMgr.getUuid(VirtualMachine.class, getVirtualMachineId());
     }
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Volume Id: " + this._uuidMgr.getUuid(Volume.class, getId()) + " VmId: " + this._uuidMgr.getUuid(VirtualMachine.class, getVirtualMachineId()));
+        CallContext.current().setEventDetails("Volume Id: " + this._uuidMgr.getUuid(Volume.class, getId()) + " Instance Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getVirtualMachineId()));
         Volume result = _volumeService.attachVolumeToVM(this);
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(getResponseView(), result);

@@ -564,9 +564,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                 _accountMgr.checkAccess(vmOwner, SecurityChecker.AccessType.UseEntry, false, network);
 
                 //is static nat is for vm secondary ip
-                //dstIp = guestNic.getIp4Address();
                 if (vmGuestIp != null) {
-                    //dstIp = guestNic.getIp4Address();
 
                     if (!dstIp.equals(vmGuestIp)) {
                         //check whether the secondary ip set to the vm or not
@@ -667,7 +665,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             }
         } else if (ipAddress.getAssociatedWithVmId() != null && ipAddress.getAssociatedWithVmId().longValue() != vmId) {
             throw new NetworkRuleConflictException("Failed to enable static for the ip address " + ipAddress + " and vm id=" + vmId +
-                " as it's already assigned to antoher vm");
+                " as it's already assigned to another vm");
         }
 
         //check whether the vm ip is already associated with any public ip address

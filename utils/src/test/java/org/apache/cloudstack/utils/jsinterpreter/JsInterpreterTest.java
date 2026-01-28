@@ -20,6 +20,7 @@ package org.apache.cloudstack.utils.jsinterpreter;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -27,7 +28,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 
-import com.cloud.utils.exception.CloudRuntimeException;
+import javax.script.ScriptEngine;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -36,9 +38,10 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.openjdk.nashorn.api.scripting.ClassFilter;
 import org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory;
 
-import javax.script.ScriptEngine;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @RunWith(MockitoJUnitRunner.class)
 public class JsInterpreterTest {
@@ -59,30 +62,6 @@ public class JsInterpreterTest {
 
         jsInterpreterSpy.close();
         Assert.assertTrue(executor.isShutdown());
-    }
-
-    @Test
-    public void addVariablesToScriptTestVariablesMapIsEmptyReturnScript() {
-        String script = "a + b";
-        jsInterpreterSpy.variables = new LinkedHashMap<>();
-
-        String result = jsInterpreterSpy.addVariablesToScript(script);
-
-        Assert.assertEquals(script, result);
-    }
-
-    @Test
-    public void addVariablesToScriptTestVariablesMapIsNotEmptyInjectVariableToScript() {
-        String script = "a + b";
-        String var1 = "{test: \"test\"}";
-        jsInterpreterSpy.injectVariable("var1", var1);
-        jsInterpreterSpy.injectVariable("var2", var1);
-
-        String expected = String.format(" var1 = %s; var2 = %s; %s", var1, var1, script);
-
-        String result = jsInterpreterSpy.addVariablesToScript(script);
-
-        Assert.assertEquals(expected, result);
     }
 
     @Test
@@ -154,7 +133,7 @@ public class JsInterpreterTest {
 
     @Test
     public void discardCurrentVariablesTestInstantiateNewMap() {
-        Map<String, String> variables = new LinkedHashMap<>();
+        Map<String, Object> variables = new LinkedHashMap<>();
         variables.put("a", "b");
         variables.put("b", null);
 
@@ -170,12 +149,14 @@ public class JsInterpreterTest {
         NashornScriptEngineFactory nashornScriptEngineFactoryMock = Mockito.spy(NashornScriptEngineFactory.class);
         ScriptEngine scriptEngineMock = Mockito.mock(ScriptEngine.class);
 
-        Mockito.doReturn(scriptEngineMock).when(nashornScriptEngineFactoryMock).getScriptEngine(Mockito.anyString());
+        Mockito.doReturn(scriptEngineMock).when(nashornScriptEngineFactoryMock).getScriptEngine(Mockito.any(),
+                Mockito.any(ClassLoader.class), Mockito.any(ClassFilter.class));
 
         jsInterpreterSpy.setScriptEngineDisablingJavaLanguage(nashornScriptEngineFactoryMock);
 
         Assert.assertEquals(scriptEngineMock, jsInterpreterSpy.interpreter);
-        Mockito.verify(nashornScriptEngineFactoryMock).getScriptEngine("--no-java");
+        Mockito.verify(nashornScriptEngineFactoryMock).getScriptEngine(Mockito.any(),
+                Mockito.any(ClassLoader.class), Mockito.any(ClassFilter.class));
     }
 
     @Test
@@ -193,6 +174,46 @@ public class JsInterpreterTest {
 
         jsInterpreterSpy.injectStringVariable("a", "b");
 
-        Assert.assertEquals(jsInterpreterSpy.variables.get("a"), "\"b\"");
+        Assert.assertEquals(jsInterpreterSpy.variables.get("a"), "b");
+    }
+
+    @Test
+    public void executeScriptTestValidScriptShouldPassWithMixedVariables() {
+        try (JsInterpreter jsInterpreter = new JsInterpreter(1000)) {
+            jsInterpreter.injectVariable("x", 10);
+            jsInterpreter.injectVariable("y", "hello");
+            jsInterpreter.injectVariable("z", true);
+            String validScript = "var result = x + (z ? 1 : 0); y + '-' + result;";
+            Object result = jsInterpreter.executeScript(validScript);
+            Assert.assertEquals("hello-11", result);
+        } catch (IOException exception) {
+            Assert.fail("IOException not expected here");
+        }
+    }
+
+    private void runMaliciousScriptFileTest(String script, String filename) {
+        try (JsInterpreter jsInterpreter = new JsInterpreter(1000)) {
+            jsInterpreter.executeScript(script);
+        } catch (CloudRuntimeException ex) {
+            Assert.assertTrue(ex.getMessage().contains("Unable to execute script"));
+            java.io.File f = new java.io.File(filename);
+            Assert.assertFalse(f.exists());
+        } catch (IOException exception) {
+            Assert.fail("IOException not expected here");
+        }
+    }
+
+    @Test
+    public void executeScriptTestMaliciousScriptShouldThrowException1() {
+        String filename = "/tmp/hack1-" + UUID.randomUUID();
+        String maliciousScript = "Java.type('java.lang.Runtime').getRuntime().exec('touch " + filename + "')";
+        runMaliciousScriptFileTest(maliciousScript, filename);
+    }
+
+    @Test
+    public void executeScriptTestMaliciousScriptShouldThrowException2() {
+        String filename = "/tmp/hack2-" + UUID.randomUUID();
+        String maliciousScript = "var e=this.engine.getFactory().getScriptEngine('-Dnashorn.args=--no-java=False'); e.eval(\"java.lang.Runtime.getRuntime().exec(['/bin/bash','-c','touch " + filename + "']);\");";
+        runMaliciousScriptFileTest(maliciousScript, filename);
     }
 }

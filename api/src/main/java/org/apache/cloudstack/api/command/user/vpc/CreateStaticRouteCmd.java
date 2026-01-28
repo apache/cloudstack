@@ -46,7 +46,8 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.GATEWAY_ID,
                type = CommandType.UUID,
                entityType = PrivateGatewayResponse.class,
-               description = "the gateway id we are creating static route for. Mutually exclusive with the nexthop parameter")
+               required = true,
+               description = "The gateway ID we are creating static route for. Mutually exclusive with the nexthop parameter")
     private Long gatewayId;
 
     @Parameter(name = ApiConstants.VPC_ID,
@@ -62,7 +63,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
             since = "4.21.0")
     private String nextHop;
 
-    @Parameter(name = ApiConstants.CIDR, required = true, type = CommandType.STRING, description = "static route cidr")
+    @Parameter(name = ApiConstants.CIDR, required = true, type = CommandType.STRING, description = "Static route CIDR")
     private String cidr;
 
     /////////////////////////////////////////////////////
@@ -94,7 +95,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());
         } catch (NetworkRuleConflictException ex) {
-            logger.info("Network rule conflict: " + ex.getMessage());
+            logger.info("Network rule conflict: {}", ex.getMessage());
             logger.trace("Network rule conflict: ", ex);
             throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage());
         }
@@ -128,7 +129,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
         } finally {
             if (!success || route == null) {
                 _entityMgr.remove(StaticRoute.class, getEntityId());
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create static route");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create a static route");
             }
         }
     }

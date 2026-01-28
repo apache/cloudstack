@@ -43,6 +43,64 @@ public class ConfigKey<T> {
     public static final String CATEGORY_NETWORK = "Network";
     public static final String CATEGORY_SYSTEM = "System";
 
+    // Configuration Groups to be used to define group for a config key
+    // Group name, description, precedence
+    public static final Ternary<String, String, Long> GROUP_MISCELLANEOUS = new Ternary<>("Miscellaneous", "Miscellaneous configuration", 999L);
+    public static final Ternary<String, String, Long> GROUP_ACCESS = new Ternary<>("Access", "Identity and Access management configuration", 1L);
+    public static final Ternary<String, String, Long> GROUP_COMPUTE = new Ternary<>("Compute", "Compute configuration", 2L);
+    public static final Ternary<String, String, Long> GROUP_STORAGE = new Ternary<>("Storage", "Storage configuration", 3L);
+    public static final Ternary<String, String, Long> GROUP_NETWORK = new Ternary<>("Network", "Network configuration", 4L);
+    public static final Ternary<String, String, Long> GROUP_HYPERVISOR = new Ternary<>("Hypervisor", "Hypervisor specific configuration", 5L);
+    public static final Ternary<String, String, Long> GROUP_MANAGEMENT_SERVER = new Ternary<>("Management Server", "Management Server configuration", 6L);
+    public static final Ternary<String, String, Long> GROUP_SYSTEM_VMS = new Ternary<>("System VMs", "System VMs related configuration", 7L);
+    public static final Ternary<String, String, Long> GROUP_INFRASTRUCTURE = new Ternary<>("Infrastructure", "Infrastructure configuration", 8L);
+    public static final Ternary<String, String, Long> GROUP_USAGE_SERVER = new Ternary<>("Usage Server", "Usage Server related configuration", 9L);
+
+    // Configuration Subgroups to be used to define subgroup for a config key
+    // Subgroup name, description, precedence
+    public static final Pair<String, Long> SUBGROUP_OTHERS = new Pair<>("Others", 999L);
+    public static final Pair<String, Long> SUBGROUP_ACCOUNT = new Pair<>("Account", 1L);
+    public static final Pair<String, Long> SUBGROUP_DOMAIN = new Pair<>("Domain", 2L);
+    public static final Pair<String, Long> SUBGROUP_PROJECT = new Pair<>("Project", 3L);
+    public static final Pair<String, Long> SUBGROUP_LDAP = new Pair<>("LDAP", 4L);
+    public static final Pair<String, Long> SUBGROUP_SAML = new Pair<>("SAML", 5L);
+    public static final Pair<String, Long> SUBGROUP_VIRTUAL_MACHINE = new Pair<>("Virtual Machine", 1L);
+    public static final Pair<String, Long> SUBGROUP_KUBERNETES = new Pair<>("Kubernetes", 2L);
+    public static final Pair<String, Long> SUBGROUP_HIGH_AVAILABILITY = new Pair<>("High Availability", 3L);
+    public static final Pair<String, Long> SUBGROUP_IMAGES = new Pair<>("Images", 1L);
+    public static final Pair<String, Long> SUBGROUP_VOLUME = new Pair<>("Volume", 2L);
+    public static final Pair<String, Long> SUBGROUP_SNAPSHOT = new Pair<>("Snapshot", 3L);
+    public static final Pair<String, Long> SUBGROUP_VM_SNAPSHOT = new Pair<>("VM Snapshot", 4L);
+    public static final Pair<String, Long> SUBGROUP_NETWORK = new Pair<>("Network", 1L);
+    public static final Pair<String, Long> SUBGROUP_DHCP = new Pair<>("DHCP", 2L);
+    public static final Pair<String, Long> SUBGROUP_VPC = new Pair<>("VPC", 3L);
+    public static final Pair<String, Long> SUBGROUP_LOADBALANCER = new Pair<>("LoadBalancer", 4L);
+    public static final Pair<String, Long> SUBGROUP_API = new Pair<>("API", 1L);
+    public static final Pair<String, Long> SUBGROUP_ALERTS = new Pair<>("Alerts", 2L);
+    public static final Pair<String, Long> SUBGROUP_EVENTS = new Pair<>("Events", 3L);
+    public static final Pair<String, Long> SUBGROUP_SECURITY = new Pair<>("Security", 4L);
+    public static final Pair<String, Long> SUBGROUP_USAGE = new Pair<>("Usage", 1L);
+    public static final Pair<String, Long> SUBGROUP_LIMITS = new Pair<>("Limits", 6L);
+    public static final Pair<String, Long> SUBGROUP_JOBS = new Pair<>("Jobs", 7L);
+    public static final Pair<String, Long> SUBGROUP_AGENT = new Pair<>("Agent", 8L);
+    public static final Pair<String, Long> SUBGROUP_HYPERVISOR = new Pair<>("Hypervisor", 1L);
+    public static final Pair<String, Long> SUBGROUP_KVM = new Pair<>("KVM", 2L);
+    public static final Pair<String, Long> SUBGROUP_VMWARE = new Pair<>("VMware", 3L);
+    public static final Pair<String, Long> SUBGROUP_XENSERVER = new Pair<>("XenServer", 4L);
+    public static final Pair<String, Long> SUBGROUP_OVM = new Pair<>("OVM", 5L);
+    public static final Pair<String, Long> SUBGROUP_BAREMETAL = new Pair<>("Baremetal", 6L);
+    public static final Pair<String, Long> SUBGROUP_CONSOLE_PROXY_VM = new Pair<>("ConsoleProxyVM", 1L);
+    public static final Pair<String, Long> SUBGROUP_SEC_STORAGE_VM = new Pair<>("SecStorageVM", 2L);
+    public static final Pair<String, Long> SUBGROUP_VIRTUAL_ROUTER = new Pair<>("VirtualRouter", 3L);
+    public static final Pair<String, Long> SUBGROUP_DIAGNOSTICS = new Pair<>("Diagnostics", 4L);
+    public static final Pair<String, Long> SUBGROUP_PRIMARY_STORAGE = new Pair<>("Primary Storage", 1L);
+    public static final Pair<String, Long> SUBGROUP_SECONDARY_STORAGE = new Pair<>("Secondary Storage", 2L);
+    public static final Pair<String, Long> SUBGROUP_BACKUP_AND_RECOVERY = new Pair<>("Backup & Recovery", 1L);
+    public static final Pair<String, Long> SUBGROUP_CERTIFICATE_AUTHORITY = new Pair<>("Certificate Authority", 2L);
+    public static final Pair<String, Long> SUBGROUP_QUOTA = new Pair<>("Quota", 3L);
+    public static final Pair<String, Long> SUBGROUP_CLOUDIAN = new Pair<>("Cloudian", 4L);
+    public static final Pair<String, Long> SUBGROUP_DRS = new Pair<>("DRS", 4L);
+
     public enum Scope {
         Global(null, 1),
         Zone(Global, 1 << 1),
@@ -209,8 +267,16 @@ public class ConfigKey<T> {
 
     static ConfigDepotImpl s_depot = null;
 
-    static public void init(ConfigDepotImpl depot) {
+    private String _defaultValueIfEmpty = null;
+
+    public static void init(ConfigDepotImpl depot) {
         s_depot = depot;
+    }
+
+    public ConfigKey(Class<T> type, String name, String category, String defaultValue, String description, boolean isDynamic, Scope scope, T multiplier,
+                     String displayText, String parent, Ternary<String, String, Long> group, Pair<String, Long> subGroup, Kind kind, String options, String defaultValueIfEmpty) {
+        this(type, name, category, defaultValue, description, isDynamic, scope, multiplier, displayText, parent, group, subGroup, kind, options);
+        this._defaultValueIfEmpty = defaultValueIfEmpty;
     }
 
     public ConfigKey(String category, Class<T> type, String name, String defaultValue, String description, boolean isDynamic, Scope scope) {
@@ -322,7 +388,19 @@ public class ConfigKey<T> {
     public T value() {
         if (_value == null || isDynamic()) {
             String value = s_depot != null ? s_depot.getConfigStringValue(_name, Scope.Global, null) : null;
-            _value = valueOf((value == null) ? defaultValue() : value);
+
+            String effective;
+            if (value != null) {
+                if (value.isEmpty() && _defaultValueIfEmpty != null) {
+                    effective = _defaultValueIfEmpty;
+                } else {
+                    effective = value;
+                }
+            } else {
+                effective = _defaultValueIfEmpty != null ? _defaultValueIfEmpty : defaultValue();
+            }
+
+            _value = valueOf(effective);
         }
         return _value;
     }
@@ -351,6 +429,10 @@ public class ConfigKey<T> {
             return valueInGlobalOrAvailableParentScope(scope, id);
         }
         logger.trace("Scope({}) value for config ({}): {}", scope, _name, _value);
+
+        if (value.isEmpty() && _defaultValueIfEmpty != null) {
+            return valueOf(_defaultValueIfEmpty);
+        }
         return valueOf(value);
     }
 

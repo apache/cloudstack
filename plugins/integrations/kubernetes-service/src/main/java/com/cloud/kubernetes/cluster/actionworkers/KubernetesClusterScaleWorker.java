@@ -341,9 +341,9 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             VMTemplateVO clusterTemplate = templateDao.findById(kubernetesCluster.getTemplateId());
             try {
                 if (originalState.equals(KubernetesCluster.State.Running)) {
-                    plan(newVmRequiredCount, zone, clusterServiceOffering, kubernetesCluster.getDomainId(), kubernetesCluster.getAccountId(), clusterTemplate.getHypervisorType());
+                    plan(newVmRequiredCount, zone, clusterServiceOffering, kubernetesCluster.getDomainId(), kubernetesCluster.getAccountId(), clusterTemplate.getHypervisorType(), clusterTemplate.getArch());
                 } else {
-                    plan(kubernetesCluster.getTotalNodeCount() + newVmRequiredCount, zone, clusterServiceOffering, kubernetesCluster.getDomainId(), kubernetesCluster.getAccountId(), clusterTemplate.getHypervisorType());
+                    plan(kubernetesCluster.getTotalNodeCount() + newVmRequiredCount, zone, clusterServiceOffering, kubernetesCluster.getDomainId(), kubernetesCluster.getAccountId(), clusterTemplate.getHypervisorType(), clusterTemplate.getArch());
                 }
             } catch (InsufficientCapacityException e) {
                 logTransitStateToFailedIfNeededAndThrow(Level.WARN, String.format("Scaling failed for Kubernetes cluster : %s in zone : %s, insufficient capacity", kubernetesCluster.getName(), zone.getName()));
@@ -441,14 +441,28 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         if (this.nodeIds != null) {
             vmList = getKubernetesClusterVMMapsForNodes(this.nodeIds).stream().filter(vm -> !vm.isExternalNode()).collect(Collectors.toList());
         } else {
-            vmList  = getKubernetesClusterVMMaps();
-            vmList  = vmList.stream()
-                        .filter(vm -> !vm.isExternalNode() && !vm.isControlNode() && !vm.isEtcdNode())
-                        .collect(Collectors.toList());
-            vmList = vmList.subList((int) (kubernetesCluster.getControlNodeCount() + clusterSize - 1), vmList.size());
+            vmList = getWorkerNodesToRemove();
+            if (vmList.isEmpty()) {
+                logger.info("No nodes to remove from Kubernetes cluster: {}", kubernetesCluster);
+                return;
+            }
         }
         Collections.reverse(vmList);
         removeNodesFromCluster(vmList);
+    }
+
+    public List<KubernetesClusterVmMapVO> getWorkerNodesToRemove() {
+        List<KubernetesClusterVmMapVO> workerVMsMap = getKubernetesClusterVMMaps().stream()
+                .filter(vm -> !vm.isExternalNode() && !vm.isControlNode() && !vm.isEtcdNode())
+                .collect(Collectors.toList());
+        int totalWorkerNodes = workerVMsMap.size();
+        int desiredWorkerNodes = clusterSize == null ? (int) kubernetesCluster.getNodeCount() : clusterSize.intValue();
+        int toRemoveCount = Math.max(0, totalWorkerNodes - desiredWorkerNodes);
+        if (toRemoveCount == 0) {
+            return new ArrayList<>();
+        }
+        int startIndex = Math.max(0, totalWorkerNodes - toRemoveCount);
+        return new ArrayList<>(workerVMsMap.subList(startIndex, totalWorkerNodes));
     }
 
     private void scaleUpKubernetesClusterSize(final long newVmCount) throws CloudRuntimeException {

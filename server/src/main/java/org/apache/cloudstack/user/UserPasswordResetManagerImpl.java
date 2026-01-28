@@ -92,6 +92,8 @@ public class UserPasswordResetManagerImpl extends ManagerBase implements UserPas
                 UserPasswordResetSMTPHost,
                 UserPasswordResetSMTPPort,
                 UserPasswordResetSMTPUseAuth,
+                UserPasswordResetSMTPUseStartTLS,
+                UserPasswordResetSMTPEnabledSecurityProtocols,
                 UserPasswordResetSMTPUsername,
                 UserPasswordResetSMTPPassword,
                 UserPasswordResetDomainURL,
@@ -106,6 +108,8 @@ public class UserPasswordResetManagerImpl extends ManagerBase implements UserPas
         Boolean useAuth = UserPasswordResetSMTPUseAuth.value();
         String username = UserPasswordResetSMTPUsername.value();
         String password = UserPasswordResetSMTPPassword.value();
+        Boolean useStartTLS = UserPasswordResetSMTPUseStartTLS.value();
+        String enabledSecurityProtocols = UserPasswordResetSMTPEnabledSecurityProtocols.value();
 
         if (!StringUtils.isEmpty(smtpHost) && smtpPort != null && smtpPort > 0) {
             String namespace = "password.reset.smtp";
@@ -117,6 +121,8 @@ public class UserPasswordResetManagerImpl extends ManagerBase implements UserPas
             configs.put(getKey(namespace, SMTPMailSender.CONFIG_USE_AUTH), useAuth.toString());
             configs.put(getKey(namespace, SMTPMailSender.CONFIG_USERNAME), username);
             configs.put(getKey(namespace, SMTPMailSender.CONFIG_PASSWORD), password);
+            configs.put(getKey(namespace, SMTPMailSender.CONFIG_USE_STARTTLS), useStartTLS.toString());
+            configs.put(getKey(namespace, SMTPMailSender.CONFIG_ENABLED_SECURITY_PROTOCOLS), enabledSecurityProtocols);
 
             mailSender = new SMTPMailSender(configs, namespace);
         }

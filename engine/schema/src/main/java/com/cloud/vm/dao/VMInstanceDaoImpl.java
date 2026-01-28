@@ -104,6 +104,8 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> LastHostAndStatesSearch;
     protected SearchBuilder<VMInstanceVO> VmsNotInClusterUsingPool;
     protected SearchBuilder<VMInstanceVO> IdsPowerStateSelectSearch;
+    GenericSearchBuilder<VMInstanceVO, Integer> CountByOfferingId;
+    GenericSearchBuilder<VMInstanceVO, Integer> CountUserVmNotInDomain;
 
     @Inject
     ResourceTagDao tagsDao;
@@ -116,17 +118,17 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
     protected Attribute _updateTimeAttr;
 
-    private static final String ORDER_CLUSTERS_NUMBER_OF_VMS_FOR_ACCOUNT_PART1 = "SELECT host.cluster_id, SUM(IF(vm.state='Running' AND vm.account_id = ?, 1, 0)) " +
+    private static final String ORDER_CLUSTERS_NUMBER_OF_VMS_FOR_ACCOUNT_PART1 = "SELECT host.cluster_id, SUM(IF(vm.state IN ('Running', 'Starting') AND vm.account_id = ?, 1, 0)) " +
         "FROM `cloud`.`host` host LEFT JOIN `cloud`.`vm_instance` vm ON host.id = vm.host_id WHERE ";
     private static final String ORDER_CLUSTERS_NUMBER_OF_VMS_FOR_ACCOUNT_PART2 = " AND host.type = 'Routing' AND host.removed is null GROUP BY host.cluster_id " +
         "ORDER BY 2 ASC ";
 
-    private static final String ORDER_PODS_NUMBER_OF_VMS_FOR_ACCOUNT = "SELECT pod.id, SUM(IF(vm.state='Running' AND vm.account_id = ?, 1, 0)) FROM `cloud`.`" +
+    private static final String ORDER_PODS_NUMBER_OF_VMS_FOR_ACCOUNT = "SELECT pod.id, SUM(IF(vm.state IN ('Running', 'Starting') AND vm.account_id = ?, 1, 0)) FROM `cloud`.`" +
         "host_pod_ref` pod LEFT JOIN `cloud`.`vm_instance` vm ON pod.id = vm.pod_id WHERE pod.data_center_id = ? AND pod.removed is null "
         + " GROUP BY pod.id ORDER BY 2 ASC ";
 
     private static final String ORDER_HOSTS_NUMBER_OF_VMS_FOR_ACCOUNT =
-        "SELECT host.id, SUM(IF(vm.state='Running' AND vm.account_id = ?, 1, 0)) FROM `cloud`.`host` host LEFT JOIN `cloud`.`vm_instance` vm ON host.id = vm.host_id " +
+        "SELECT host.id, SUM(IF(vm.state IN ('Running', 'Starting') AND vm.account_id = ?, 1, 0)) FROM `cloud`.`host` host LEFT JOIN `cloud`.`vm_instance` vm ON host.id = vm.host_id " +
             "WHERE host.data_center_id = ? AND host.type = 'Routing' AND host.removed is null ";
 
     private static final String ORDER_HOSTS_NUMBER_OF_VMS_FOR_ACCOUNT_PART2 = " GROUP BY host.id ORDER BY 2 ASC ";
@@ -354,6 +356,18 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
                 IdsPowerStateSelectSearch.entity().getPowerStateUpdateCount(),
                 IdsPowerStateSelectSearch.entity().getPowerStateUpdateTime());
         IdsPowerStateSelectSearch.done();
+
+        CountByOfferingId = createSearchBuilder(Integer.class);
+        CountByOfferingId.select(null, Func.COUNT, CountByOfferingId.entity().getId());
+        CountByOfferingId.and("serviceOfferingId", CountByOfferingId.entity().getServiceOfferingId(), Op.EQ);
+        CountByOfferingId.done();
+
+        CountUserVmNotInDomain = createSearchBuilder(Integer.class);
+        CountUserVmNotInDomain.select(null, Func.COUNT, CountUserVmNotInDomain.entity().getId());
+        CountUserVmNotInDomain.and("serviceOfferingId", CountUserVmNotInDomain.entity().getServiceOfferingId(), Op.EQ);
+        CountUserVmNotInDomain.and("domainIdsNotIn", CountUserVmNotInDomain.entity().getDomainId(), Op.NIN);
+        CountUserVmNotInDomain.done();
+
     }
 
     @Override
@@ -886,7 +900,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
                 return rs.getLong(1);
             }
         } catch (Exception e) {
-            logger.warn(String.format("Error counting vms by host tag for dcId= %s, hostTag= %s", dcId, hostTag), e);
+            logger.warn("Error counting Instances by host tag for dcId = {}, hostTag = {}", dcId, hostTag, e);
         }
         return 0L;
     }
@@ -1245,6 +1259,29 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         List<VMInstanceVO> vms = customSearch(sc, null);
         return vms.stream()
                 .collect(Collectors.toMap(VMInstanceVO::getInstanceName, VMInstanceVO::getId));
+    }
+
+    @Override
+    public int getVmCountByOfferingId(Long serviceOfferingId) {
+        if (serviceOfferingId == null) {
+            return 0;
+        }
+        SearchCriteria<Integer> sc = CountByOfferingId.create();
+        sc.setParameters("serviceOfferingId", serviceOfferingId);
+        List<Integer> count = customSearch(sc, null);
+        return count.get(0);
+    }
+
+    @Override
+    public int getVmCountByOfferingNotInDomain(Long serviceOfferingId, List<Long> domainIds) {
+        if (serviceOfferingId == null || CollectionUtils.isEmpty(domainIds)) {
+            return 0;
+        }
+        SearchCriteria<Integer> sc = CountUserVmNotInDomain.create();
+        sc.setParameters("serviceOfferingId", serviceOfferingId);
+        sc.setParameters("domainIdsNotIn", domainIds.toArray());
+        List<Integer> count = customSearch(sc, null);
+        return count.get(0);
     }
 
     @Override

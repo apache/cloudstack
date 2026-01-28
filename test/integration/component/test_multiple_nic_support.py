@@ -293,8 +293,8 @@ class TestMultipleNicSupport(cloudstackTestCase):
                 host.password,
                 command)
             if len(result) > 0:
-                self.logger.debug(f"the verification of the ip tables rules returned : {result}")
-                self.fail("The iptables/ebtables rules for nic %s on vm %s on host %s are not correct" %(nic.ipaddress, vm.instancename, host.name))
+                self.logger.debug(f"the verification of the IP tables rules returned : {result}")
+                self.fail("The iptables/ebtables rules for NIC %s on Instance %s on host %s are not correct" %(nic.ipaddress, vm.instancename, host.name))
 
     @attr(tags=["advancedsg"], required_hardware="false")
     def test_01_create_vm_with_multiple_nics(self):

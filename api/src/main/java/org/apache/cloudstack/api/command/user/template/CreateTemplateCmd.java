@@ -51,8 +51,8 @@ import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 
-@APICommand(name = "createTemplate", responseObject = TemplateResponse.class, description = "Creates a template of a virtual machine. " + "The virtual machine must be in a STOPPED state. "
-        + "A template created from this command is automatically designated as a private template visible to the account that created it.", responseView = ResponseView.Restricted,
+@APICommand(name = "createTemplate", responseObject = TemplateResponse.class, description = "Creates a Template of an Instance. " + "The Instance must be in a STOPPED state. "
+        + "A Template created from this command is automatically designated as a private Template visible to the account that created it.", responseView = ResponseView.Restricted,
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
     private static final String s_name = "createtemplateresponse";
@@ -66,60 +66,60 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT,
                type = CommandType.STRING,
-               description = "The display text of the template, defaults to the 'name'.",
+               description = "The display text of the Template, defaults to the 'name'.",
                length = 4096)
     private String displayText;
 
-    @Parameter(name = ApiConstants.IS_FEATURED, type = CommandType.BOOLEAN, description = "true if this template is a featured template, false otherwise")
+    @Parameter(name = ApiConstants.IS_FEATURED, type = CommandType.BOOLEAN, description = "True if this Template is a featured Template, false otherwise")
     private Boolean featured;
 
-    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "true if this template is a public template, false otherwise")
+    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "True if this Template is a public Template, false otherwise")
     private Boolean publicTemplate;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the template")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "The name of the Template")
     private String templateName;
 
     @Parameter(name = ApiConstants.OS_TYPE_ID,
                type = CommandType.UUID,
                entityType = GuestOSResponse.class,
                required = true,
-               description = "the ID of the OS Type that best represents the OS of this template.")
+               description = "The ID of the OS Type that best represents the OS of this Template.")
     private Long osTypeId;
 
     @Parameter(name = ApiConstants.PASSWORD_ENABLED,
                type = CommandType.BOOLEAN,
-               description = "true if the template supports the password reset feature; default is false")
+               description = "True if the Template supports the password reset feature; default is false")
     private Boolean passwordEnabled;
 
-    @Parameter(name = ApiConstants.SSHKEY_ENABLED, type = CommandType.BOOLEAN, description = "true if the template supports the sshkey upload feature; default is false")
+    @Parameter(name = ApiConstants.SSHKEY_ENABLED, type = CommandType.BOOLEAN, description = "True if the Template supports the SSHkey upload feature; default is false")
     private Boolean sshKeyEnabled;
 
-    @Parameter(name = ApiConstants.REQUIRES_HVM, type = CommandType.BOOLEAN, description = "true if the template requires HVM, false otherwise")
+    @Parameter(name = ApiConstants.REQUIRES_HVM, type = CommandType.BOOLEAN, description = "True if the Template requires HVM, false otherwise")
     private Boolean requiresHvm;
 
     @Parameter(name = ApiConstants.SNAPSHOT_ID,
                type = CommandType.UUID,
                entityType = SnapshotResponse.class,
-            description = "the ID of the snapshot the template is being created from. Either this parameter, or volumeId has to be passed in")
+            description = "The ID of the Snapshot the Template is being created from. Either this parameter, or volumeId has to be passed in")
     protected Long snapshotId;
 
     @Parameter(name = ApiConstants.VOLUME_ID,
                type = CommandType.UUID,
                entityType = VolumeResponse.class,
-            description = "the ID of the disk volume the template is being created from. Either this parameter, or snapshotId has to be passed in")
+            description = "The ID of the disk volume the Template is being created from. Either this parameter, or snapshotId has to be passed in")
     protected Long volumeId;
 
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType = UserVmResponse.class,
-            description="Optional, VM ID. If this presents, it is going to create a baremetal template for VM this ID refers to. This is only for VM whose hypervisor type is BareMetal")
+            description = "Optional, Instance ID. If this presents, it is going to create a baremetal Template for Instance this ID refers to. This is only for Instance whose hypervisor type is BareMetal")
     protected Long vmId;
 
     @Parameter(name = ApiConstants.URL,
                type = CommandType.STRING,
                length = 2048,
-               description = "Optional, only for baremetal hypervisor. The directory name where template stored on CIFS server")
+               description = "Optional, only for baremetal hypervisor. The directory name where Template stored on CIFS server")
     private String url;
 
-    @Parameter(name = ApiConstants.TEMPLATE_TAG, type = CommandType.STRING, description = "the tag for this template.")
+    @Parameter(name = ApiConstants.TEMPLATE_TAG, type = CommandType.STRING, description = "The tag for this Template.")
     private String templateTag;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "Template details in key/value pairs using format details[i].keyname=keyvalue. Example: details[0].hypervisortoolsversion=xenserver61")
@@ -127,10 +127,10 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE,
                type = CommandType.BOOLEAN,
-               description = "true if template contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
+               description = "True if Template contains XS/VMWare tools in order to support dynamic scaling of Instance CPU/memory")
     protected Boolean isDynamicallyScalable;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "create template for the project")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Create Template for the project")
     private Long projectId;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the zone for the template. Can be specified with snapshot only", since = "4.19.0")
@@ -150,7 +150,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
     private String accountName;
 
     @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
-            description = "the CPU arch of the template. Valid options are: x86_64, aarch64. Defaults to x86_64",
+            description = "the CPU arch of the template. Valid options are: x86_64, aarch64, s390x. Defaults to x86_64",
             since = "4.20.2")
     private String arch;
 
@@ -211,7 +211,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
     }
 
     public String getTemplateTag() {
-        return templateTag;
+        return StringUtils.isBlank(templateTag) ? null : templateTag;
     }
 
     public Map getDetails() {
@@ -272,7 +272,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return "creating template: " + getTemplateName();
+        return "Creating Template: " + getTemplateName();
     }
 
     @Override
@@ -293,7 +293,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
             setEntityId(template.getId());
             setEntityUuid(template.getUuid());
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create a template");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create a Template");
         }
 
     }
@@ -301,7 +301,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
     @Override
     public void execute() {
         CallContext.current().setEventDetails(
-            "Template Id: " + getEntityUuid() + ((getSnapshotId() == null) ? " from volume Id: " + this._uuidMgr.getUuid(Volume.class, getVolumeId()) : " from snapshot Id: " + this._uuidMgr.getUuid(Snapshot.class, getSnapshotId())));
+            "Template Id: " + getEntityUuid() + ((getSnapshotId() == null) ? " from volume Id: " + this._uuidMgr.getUuid(Volume.class, getVolumeId()) : " from Snapshot Id: " + this._uuidMgr.getUuid(Snapshot.class, getSnapshotId())));
         VirtualMachineTemplate template = _templateService.createPrivateTemplate(this);
 
         if (template != null) {
@@ -318,7 +318,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create private template");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create private Template");
         }
 
     }
@@ -354,14 +354,12 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
     private Long findAccountIdToUse(Account callingAccount) {
         Long accountIdToUse = null;
         try {
-            accountIdToUse = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+            accountIdToUse = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
         } catch (InvalidParameterValueException | PermissionDeniedException ex) {
-            if (logger.isDebugEnabled()) {
-                logger.debug(String.format("An exception occurred while finalizing account id with accountName, domainId and projectId" +
-                      "using callingAccountId=%s", callingAccount.getUuid()), ex);
-            }
-            logger.warn("Unable to find accountId associated with accountName=" + accountName + " and domainId="
-                  + domainId + " or projectId=" + projectId + ", using callingAccountId=" + callingAccount.getUuid());
+            logger.error("Unable to find accountId associated with accountName={} and domainId={} or projectId={}" +
+                    ", using callingAccountId={}", accountName, domainId, projectId, callingAccount.getUuid());
+            logger.debug("An exception occurred while finalizing account id with accountName, domainId and projectId" +
+                    "using callingAccountId={}", callingAccount.getUuid(), ex);
         }
         return accountIdToUse != null ? accountIdToUse : callingAccount.getAccountId();
     }

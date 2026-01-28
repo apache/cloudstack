@@ -29,7 +29,7 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.network.Network;
 import com.cloud.user.Account;
 
-@APICommand(name = "resetNetworkPermissions", description = "Resets network permissions.",
+@APICommand(name = "resetNetworkPermissions", description = "Resets Network permissions.",
         responseObject = SuccessResponse.class,
         entityType = {Network.class},
         requestHasSensitiveInfo = false,
@@ -43,7 +43,7 @@ public class ResetNetworkPermissionsCmd extends BaseCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, required = true, description = "the network ID")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, required = true, description = "The Network ID")
     private Long networkId;
 
     // ///////////////////////////////////////////////////
@@ -65,7 +65,7 @@ public class ResetNetworkPermissionsCmd extends BaseCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update network permissions");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update Network permissions");
         }
     }
 

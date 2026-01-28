@@ -365,7 +365,10 @@ public class CommandSetupHelper {
             final List<LbDestination> destinations = rule.getDestinations();
             final List<LbStickinessPolicy> stickinessPolicies = rule.getStickinessPolicies();
             final LoadBalancerTO lb = new LoadBalancerTO(uuid, srcIp, srcPort, protocol, algorithm, revoked, false, inline, destinations, stickinessPolicies);
-            lb.setCidrList(rule.getCidrList());
+            String cidrList = rule.getCidrList();
+            if (cidrList != null && !cidrList.isEmpty()) {
+                lb.setCidrList(String.join(" ", cidrList.split(",")));
+            }
             lb.setLbProtocol(lb_protocol);
             lb.setLbSslCert(rule.getLbSslCert());
             lbs[i++] = lb;

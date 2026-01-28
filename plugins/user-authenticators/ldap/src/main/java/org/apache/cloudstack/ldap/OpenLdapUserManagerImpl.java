@@ -58,15 +58,15 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
     protected LdapUser createUser(final SearchResult result, Long domainId) throws NamingException {
         final Attributes attributes = result.getAttributes();
 
-        final String username = LdapUtils.getAttributeValue(attributes, _ldapConfiguration.getUsernameAttribute(domainId));
-        final String email = LdapUtils.getAttributeValue(attributes, _ldapConfiguration.getEmailAttribute(domainId));
-        final String firstname = LdapUtils.getAttributeValue(attributes, _ldapConfiguration.getFirstnameAttribute(domainId));
-        final String lastname = LdapUtils.getAttributeValue(attributes, _ldapConfiguration.getLastnameAttribute(domainId));
+        final String username = LdapUtils.getAttributeValue(attributes, LdapConfiguration.getUsernameAttribute(domainId));
+        final String email = LdapUtils.getAttributeValue(attributes, LdapConfiguration.getEmailAttribute(domainId));
+        final String firstname = LdapUtils.getAttributeValue(attributes, LdapConfiguration.getFirstnameAttribute(domainId));
+        final String lastname = LdapUtils.getAttributeValue(attributes, LdapConfiguration.getLastnameAttribute(domainId));
         final String principal = result.getNameInNamespace();
         final List<String> memberships = LdapUtils.getAttributeValues(attributes, getMemberOfAttribute(domainId));
 
-        String domain = principal.replace("cn=" + LdapUtils.getAttributeValue(attributes, _ldapConfiguration.getCommonNameAttribute()) + ",", "");
-        domain = domain.replace("," + _ldapConfiguration.getBaseDn(domainId), "");
+        String domain = principal.replace("cn=" + LdapUtils.getAttributeValue(attributes, LdapConfiguration.getCommonNameAttribute()) + ",", "");
+        domain = domain.replace("," + LdapConfiguration.getBaseDn(domainId), "");
         domain = domain.replace("ou=", "");
 
         boolean disabled = isUserDisabled(result);
@@ -75,23 +75,15 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
     }
 
     private String generateSearchFilter(final String username, Long domainId) {
-        final StringBuilder userObjectFilter = new StringBuilder();
-        userObjectFilter.append("(objectClass=");
-        userObjectFilter.append(_ldapConfiguration.getUserObject(domainId));
-        userObjectFilter.append(")");
+        final StringBuilder userObjectFilter = getUserObjectFilter(domainId);
 
-        final StringBuilder usernameFilter = new StringBuilder();
-        usernameFilter.append("(");
-        usernameFilter.append(_ldapConfiguration.getUsernameAttribute(domainId));
-        usernameFilter.append("=");
-        usernameFilter.append((username == null ? "*" : LdapUtils.escapeLDAPSearchFilter(username)));
-        usernameFilter.append(")");
+        final StringBuilder usernameFilter = getUsernameFilter(username, domainId);
 
         String memberOfAttribute = getMemberOfAttribute(domainId);
         StringBuilder ldapGroupsFilter = new StringBuilder();
         // this should get the trustmaps for this domain
         List<String> ldapGroups = getMappedLdapGroups(domainId);
-        if (null != ldapGroups && ldapGroups.size() > 0) {
+        if (CollectionUtils.isNotEmpty(ldapGroups)) {
             ldapGroupsFilter.append("(|");
             for (String ldapGroup : ldapGroups) {
                 ldapGroupsFilter.append(getMemberOfGroupString(ldapGroup, memberOfAttribute));
@@ -104,19 +96,33 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         if (null != pricipleGroup) {
             principleGroupFilter.append(getMemberOfGroupString(pricipleGroup, memberOfAttribute));
         }
-        final StringBuilder result = new StringBuilder();
-        result.append("(&");
-        result.append(userObjectFilter);
-        result.append(usernameFilter);
-        result.append(ldapGroupsFilter);
-        result.append(principleGroupFilter);
-        result.append(")");
 
-        String returnString = result.toString();
-        if (logger.isTraceEnabled()) {
-            logger.trace("constructed ldap query: " + returnString);
-        }
+        String returnString = "(&" +
+                userObjectFilter +
+                usernameFilter +
+                ldapGroupsFilter +
+                principleGroupFilter +
+                ")";
+        logger.trace("constructed ldap query: {}", returnString);
         return returnString;
+    }
+
+    private StringBuilder getUsernameFilter(String username, Long domainId) {
+        final StringBuilder usernameFilter = new StringBuilder();
+        usernameFilter.append("(");
+        usernameFilter.append(LdapConfiguration.getUsernameAttribute(domainId));
+        usernameFilter.append("=");
+        usernameFilter.append((username == null ? "*" : LdapUtils.escapeLDAPSearchFilter(username)));
+        usernameFilter.append(")");
+        return usernameFilter;
+    }
+
+    StringBuilder getUserObjectFilter(Long domainId) {
+        final StringBuilder userObjectFilter = new StringBuilder();
+        userObjectFilter.append("(objectClass=");
+        userObjectFilter.append(LdapConfiguration.getUserObject(domainId));
+        userObjectFilter.append(")");
+        return userObjectFilter;
     }
 
     private List<String> getMappedLdapGroups(Long domainId) {
@@ -134,37 +140,31 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
     private String getMemberOfGroupString(String group, String memberOfAttribute) {
         final StringBuilder memberOfFilter = new StringBuilder();
         if (null != group) {
-            if(logger.isDebugEnabled()) {
-                logger.debug("adding search filter for '" + group +
-                "', using '" + memberOfAttribute + "'");
-            }
-            memberOfFilter.append("(" + memberOfAttribute + "=");
-            memberOfFilter.append(group);
-            memberOfFilter.append(")");
+            logger.debug("adding search filter for '{}', using '{}'", group, memberOfAttribute);
+            memberOfFilter.append("(")
+                    .append(memberOfAttribute)
+                    .append("=")
+                    .append(group)
+                    .append(")");
         }
         return memberOfFilter.toString();
     }
 
     private String generateGroupSearchFilter(final String groupName, Long domainId) {
-        final StringBuilder groupObjectFilter = new StringBuilder();
-        groupObjectFilter.append("(objectClass=");
-        groupObjectFilter.append(_ldapConfiguration.getGroupObject(domainId));
-        groupObjectFilter.append(")");
+        String groupObjectFilter = "(objectClass=" +
+                LdapConfiguration.getGroupObject(domainId) +
+                ")";
 
-        final StringBuilder groupNameFilter = new StringBuilder();
-        groupNameFilter.append("(");
-        groupNameFilter.append(_ldapConfiguration.getCommonNameAttribute());
-        groupNameFilter.append("=");
-        groupNameFilter.append((groupName == null ? "*" : LdapUtils.escapeLDAPSearchFilter(groupName)));
-        groupNameFilter.append(")");
+        String groupNameFilter = "(" +
+                LdapConfiguration.getCommonNameAttribute() +
+                "=" +
+                (groupName == null ? "*" : LdapUtils.escapeLDAPSearchFilter(groupName)) +
+                ")";
 
-        final StringBuilder result = new StringBuilder();
-        result.append("(&");
-        result.append(groupObjectFilter);
-        result.append(groupNameFilter);
-        result.append(")");
-
-        return result.toString();
+        return "(&" +
+                groupObjectFilter +
+                groupNameFilter +
+                ")";
     }
 
     @Override
@@ -183,20 +183,12 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         if("OU".equals(type)) {
             basedn = name;
         } else {
-            basedn = _ldapConfiguration.getBaseDn(domainId);
+            basedn = LdapConfiguration.getBaseDn(domainId);
         }
 
-        final StringBuilder userObjectFilter = new StringBuilder();
-        userObjectFilter.append("(objectClass=");
-        userObjectFilter.append(_ldapConfiguration.getUserObject(domainId));
-        userObjectFilter.append(")");
+        final StringBuilder userObjectFilter = getUserObjectFilter(domainId);
 
-        final StringBuilder usernameFilter = new StringBuilder();
-        usernameFilter.append("(");
-        usernameFilter.append(_ldapConfiguration.getUsernameAttribute(domainId));
-        usernameFilter.append("=");
-        usernameFilter.append((username == null ? "*" : LdapUtils.escapeLDAPSearchFilter(username)));
-        usernameFilter.append(")");
+        final StringBuilder usernameFilter = getUsernameFilter(username, domainId);
 
         final StringBuilder memberOfFilter = new StringBuilder();
         if ("GROUP".equals(type)) {
@@ -205,18 +197,17 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
             memberOfFilter.append(")");
         }
 
-        final StringBuilder searchQuery = new StringBuilder();
-        searchQuery.append("(&");
-        searchQuery.append(userObjectFilter);
-        searchQuery.append(usernameFilter);
-        searchQuery.append(memberOfFilter);
-        searchQuery.append(")");
+        String searchQuery = "(&" +
+                userObjectFilter +
+                usernameFilter +
+                memberOfFilter +
+                ")";
 
-        return searchUser(basedn, searchQuery.toString(), context, domainId);
+        return searchUser(basedn, searchQuery, context, domainId);
     }
 
     protected String getMemberOfAttribute(final Long domainId) {
-        return _ldapConfiguration.getUserMemberOfAttribute(domainId);
+        return LdapConfiguration.getUserMemberOfAttribute(domainId);
     }
 
     @Override
@@ -236,14 +227,14 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
 
     @Override
     public List<LdapUser> getUsersInGroup(String groupName, LdapContext context, Long domainId) throws NamingException {
-        String attributeName = _ldapConfiguration.getGroupUniqueMemberAttribute(domainId);
+        String attributeName = LdapConfiguration.getGroupUniqueMemberAttribute(domainId);
         final SearchControls controls = new SearchControls();
         controls.setSearchScope(_ldapConfiguration.getScope());
         controls.setReturningAttributes(new String[] {attributeName});
 
-        NamingEnumeration<SearchResult> result = context.search(_ldapConfiguration.getBaseDn(domainId), generateGroupSearchFilter(groupName, domainId), controls);
+        NamingEnumeration<SearchResult> result = context.search(LdapConfiguration.getBaseDn(domainId), generateGroupSearchFilter(groupName, domainId), controls);
 
-        final List<LdapUser> users = new ArrayList<LdapUser>();
+        final List<LdapUser> users = new ArrayList<>();
         //Expecting only one result which has all the users
         if (result.hasMoreElements()) {
             Attribute attribute = result.nextElement().getAttributes().get(attributeName);
@@ -254,7 +245,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
                 try{
                     users.add(getUserForDn(userdn, context, domainId));
                 } catch (NamingException e){
-                    logger.info("Userdn: " + userdn + " Not Found:: Exception message: " + e.getMessage());
+                    logger.info("Userdn: {} Not Found:: Exception message: {}", userdn, e.getMessage());
                 }
             }
         }
@@ -269,7 +260,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         controls.setSearchScope(_ldapConfiguration.getScope());
         controls.setReturningAttributes(_ldapConfiguration.getReturnAttributes(domainId));
 
-        NamingEnumeration<SearchResult> result = context.search(userdn, "(objectClass=" + _ldapConfiguration.getUserObject(domainId) + ")", controls);
+        NamingEnumeration<SearchResult> result = context.search(userdn, "(objectClass=" + LdapConfiguration.getUserObject(domainId) + ")", controls);
         if (result.hasMoreElements()) {
             return createUser(result.nextElement(), domainId);
         } else {
@@ -286,17 +277,15 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         return false;
     }
 
-    public LdapUser searchUser(final String basedn, final String searchString, final LdapContext context, Long domainId) throws NamingException, IOException {
+    public LdapUser searchUser(final String basedn, final String searchString, final LdapContext context, Long domainId) throws NamingException {
         final SearchControls searchControls = new SearchControls();
 
         searchControls.setSearchScope(_ldapConfiguration.getScope());
         searchControls.setReturningAttributes(_ldapConfiguration.getReturnAttributes(domainId));
 
         NamingEnumeration<SearchResult> results = context.search(basedn, searchString, searchControls);
-        if(logger.isDebugEnabled()) {
-            logger.debug("searching user(s) with filter: \"" + searchString + "\"");
-        }
-        final List<LdapUser> users = new ArrayList<LdapUser>();
+        logger.debug("searching user(s) with filter: \"{}\"", searchString);
+        final List<LdapUser> users = new ArrayList<>();
         while (results.hasMoreElements()) {
             final SearchResult result = results.nextElement();
                 users.add(createUser(result, domainId));
@@ -317,14 +306,14 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         searchControls.setSearchScope(_ldapConfiguration.getScope());
         searchControls.setReturningAttributes(_ldapConfiguration.getReturnAttributes(domainId));
 
-        String basedn = _ldapConfiguration.getBaseDn(domainId);
+        String basedn = LdapConfiguration.getBaseDn(domainId);
         if (StringUtils.isBlank(basedn)) {
             throw new IllegalArgumentException(String.format("ldap basedn is not configured (for domain: %s)", domainId));
         }
         byte[] cookie = null;
-        int pageSize = _ldapConfiguration.getLdapPageSize(domainId);
+        int pageSize = LdapConfiguration.getLdapPageSize(domainId);
         context.setRequestControls(new Control[]{new PagedResultsControl(pageSize, Control.NONCRITICAL)});
-        final List<LdapUser> users = new ArrayList<LdapUser>();
+        final List<LdapUser> users = new ArrayList<>();
         NamingEnumeration<SearchResult> results;
         do {
             results = context.search(basedn, generateSearchFilter(username, domainId), searchControls);

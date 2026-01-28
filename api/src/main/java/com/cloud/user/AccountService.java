@@ -25,7 +25,7 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
-import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
+import org.apache.cloudstack.api.command.admin.user.RegisterUserKeyCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 
 import com.cloud.dc.DataCenter;
@@ -36,6 +36,7 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
+import org.apache.cloudstack.backup.BackupOffering;
 
 public interface AccountService {
 
@@ -95,7 +96,7 @@ public interface AccountService {
 
     void markUserRegistered(long userId);
 
-    public String[] createApiKeyAndSecretKey(RegisterCmd cmd);
+    public String[] createApiKeyAndSecretKey(RegisterUserKeyCmd cmd);
 
     public String[] createApiKeyAndSecretKey(final long userId);
 
@@ -115,13 +116,15 @@ public interface AccountService {
 
     void checkAccess(Account account, VpcOffering vof, DataCenter zone) throws PermissionDeniedException;
 
+    void checkAccess(Account account, BackupOffering bof) throws PermissionDeniedException;
+
     void checkAccess(User user, ControlledEntity entity);
 
     void checkAccess(Account account, AccessType accessType, boolean sameOwner, String apiName, ControlledEntity... entities) throws PermissionDeniedException;
 
     void validateAccountHasAccessToResource(Account account, AccessType accessType, Object resource);
 
-    Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly);
+    Long finalizeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly);
 
     /**
      * returns the user account object for a given user id

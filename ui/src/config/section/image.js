@@ -18,6 +18,7 @@
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 import { isZoneCreated } from '@/utils/zone'
+import kubernetesIcon from '@/assets/icons/kubernetes.svg?inline'
 
 export default {
   name: 'image',
@@ -60,9 +61,9 @@ export default {
       details: () => {
         var fields = ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'arch', 'format', 'externalprovisioner', 'ostypename', 'size', 'physicalsize', 'isready', 'passwordenabled',
           'crossZones', 'templatetype', 'directdownload', 'deployasis', 'ispublic', 'isfeatured', 'isextractable', 'isdynamicallyscalable', 'crosszones', 'type',
-          'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy', 'forcks']
+          'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy', 'url', 'forcks']
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
-          fields.push('templatetag', 'templatetype', 'url')
+          fields.push('templatetag', 'templatetype')
         }
         return fields
       },
@@ -367,12 +368,12 @@ export default {
     {
       name: 'kubernetesiso',
       title: 'label.kubernetes.isos',
-      icon: ['fa-solid', 'fa-dharmachakra'],
+      icon: kubernetesIcon,
       docHelp: 'plugins/cloudstack-kubernetes-service.html#kubernetes-supported-versions',
       permission: ['listKubernetesSupportedVersions'],
       searchFilters: ['zoneid', 'minimumsemanticversion', 'arch'],
       columns: ['name', 'state', 'semanticversion', 'isostate', 'mincpunumber', 'minmemory', 'arch', 'zonename'],
-      details: ['name', 'semanticversion', 'supportsautoscaling', 'zoneid', 'zonename', 'isoid', 'isoname', 'isostate', 'arch', 'mincpunumber', 'minmemory', 'supportsha', 'state', 'created'],
+      details: ['name', 'semanticversion', 'supportsautoscaling', 'zoneid', 'zonename', 'isoid', 'isoname', 'isostate', 'arch', 'mincpunumber', 'minmemory', 'supportsha', 'state', 'created', 'isourl'],
       tabs: [
         {
           name: 'details',
@@ -390,6 +391,15 @@ export default {
           api: 'addKubernetesSupportedVersion',
           icon: 'plus-outlined',
           label: 'label.kubernetes.version.add',
+          listView: true,
+          popup: true,
+          show: isZoneCreated,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/image/AddKubernetesSupportedVersion.vue')))
+        },
+        {
+          api: 'getUploadParamsForKubernetesSupportedVersion',
+          icon: 'cloud-upload-outlined',
+          label: 'label.kubernetes.version.from.local',
           listView: true,
           popup: true,
           show: isZoneCreated,

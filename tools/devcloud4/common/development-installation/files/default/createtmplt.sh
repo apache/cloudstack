@@ -75,6 +75,8 @@ is_compressed() {
          ;;
   ZIP)  ctype="zip"
         ;;
+  XZ)  ctype="xz"
+        ;;
     *) echo "File $1 does not appear to be compressed" >&2
         return 1
 	;;
@@ -93,6 +95,8 @@ uncompress() {
   bzip2)  bunzip2 -q -c $1 > $tmpfile
          ;;
   ZIP)  unzip -q -p $1 | cat > $tmpfile
+        ;;
+  XZ)   xz -d -c $1 > $tmpfile
         ;;
     *) printf "$1"
        return 0

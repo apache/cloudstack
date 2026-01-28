@@ -126,7 +126,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Override
     public List<VolumeInfo> getVolumes() {
-        List<VolumeVO> volumes = volumeDao.findByPoolId(getId());
+        List<VolumeVO> volumes = volumeDao.findNonDestroyedVolumesByPoolId(getId());
         List<VolumeInfo> volumeInfos = new ArrayList<VolumeInfo>();
         for (VolumeVO volume : volumes) {
             volumeInfos.add(VolumeObject.getVolumeObject(this, volume));
@@ -334,6 +334,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
             VolumeVO vol = volumeDao.findById(obj.getId());
             if (vol != null) {
                 vol.setPoolId(getId());
+                vol.setPoolType(getPoolType());
                 volumeDao.update(vol.getId(), vol);
             }
         }

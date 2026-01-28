@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.response.ResourceLimitAndCountResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.ViewResponseHelper;
 import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
@@ -74,9 +75,7 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         accountResponse.setAccountType(account.getType().ordinal());
         accountResponse.setDomainId(account.getDomainUuid());
         accountResponse.setDomainName(account.getDomainName());
-        StringBuilder domainPath = new StringBuilder("ROOT");
-        (domainPath.append(account.getDomainPath())).deleteCharAt(domainPath.length() - 1);
-        accountResponse.setDomainPath(domainPath.toString());
+        accountResponse.setDomainPath(ApiResponseHelper.getPrettyDomainPath(account.getDomainPath()));
         accountResponse.setState(account.getState().toString());
         accountResponse.setCreated(account.getCreated());
         accountResponse.setNetworkDomain(account.getNetworkDomain());

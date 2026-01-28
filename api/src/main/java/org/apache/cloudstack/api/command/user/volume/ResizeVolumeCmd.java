@@ -51,7 +51,7 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
     /////////////////////////////////////////////////////
 
     @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name = ApiConstants.ID, entityType = VolumeResponse.class, required = true, type = CommandType.UUID, description = "the ID of the disk volume")
+    @Parameter(name = ApiConstants.ID, entityType = VolumeResponse.class, required = true, type = CommandType.UUID, description = "The ID of the disk volume")
     private Long id;
 
     @Parameter(name = ApiConstants.MIN_IOPS, type = CommandType.LONG, required = false, description = "New minimum number of IOPS")
@@ -70,7 +70,7 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
                entityType = DiskOfferingResponse.class,
                type = CommandType.UUID,
                required = false,
-               description = "new disk offering id")
+               description = "New disk offering ID")
     private Long newDiskOfferingId;
 
     @Parameter(name = ApiConstants.AUTO_MIGRATE, type = CommandType.BOOLEAN, required = false,

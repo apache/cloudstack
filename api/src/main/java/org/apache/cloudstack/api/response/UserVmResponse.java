@@ -41,145 +41,145 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = {VirtualMachine.class, UserVm.class, VirtualRouter.class})
-public class UserVmResponse extends BaseResponseWithTagInformation implements ControlledEntityResponse, SetResourceIconResponse {
+public class UserVmResponse extends BaseResponseWithTagInformation implements ControlledViewEntityResponse, SetResourceIconResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the virtual machine")
+    @Param(description = "The ID of the Instance")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the virtual machine")
+    @Param(description = "The name of the Instance")
     private String name;
 
     @SerializedName("displayname")
-    @Param(description = "user generated name. The name of the virtual machine is returned if no displayname exists.")
+    @Param(description = "User generated name. The name of the Instance is returned if no displayname exists.")
     private String displayName;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account associated with the virtual machine")
+    @Param(description = "The Account associated with the Instance")
     private String accountName;
 
     @SerializedName(ApiConstants.USER_ID)
-    @Param(description = "the user's ID who deployed the virtual machine")
+    @Param(description = "The User's ID who deployed the Instance")
     private String userId;
 
     @SerializedName(ApiConstants.USERNAME)
-    @Param(description = "the user's name who deployed the virtual machine")
+    @Param(description = "The User's name who deployed the Instance")
     private String userName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the vm")
+    @Param(description = "The project ID of the Instance")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the vm")
+    @Param(description = "The project name of the Instance")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the ID of the domain in which the virtual machine exists")
+    @Param(description = "The ID of the domain in which the Instance exists")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the name of the domain in which the virtual machine exists")
+    @Param(description = "The name of the domain in which the Instance exists")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the domain in which the virtual machine exists", since = "4.19.2.0")
+    @Param(description = "Path of the domain in which the virtual machine exists", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "the date when this virtual machine was created")
+    @Param(description = "The date when this Instance was created")
     private Date created;
 
     @SerializedName("lastupdated")
-    @Param(description="the date when this virtual machine was updated last time", since="4.16.0")
+    @Param(description = "The date when this Instance was updated last time", since="4.16.0")
     private Date lastUpdated;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "the state of the virtual machine")
+    @Param(description = "The state of the Instance")
     private String state;
 
     @SerializedName(ApiConstants.HA_ENABLE)
-    @Param(description = "true if high-availability is enabled, false otherwise")
+    @Param(description = "True if high-availability is enabled, false otherwise")
     private Boolean haEnable;
 
     @SerializedName(ApiConstants.GROUP_ID)
-    @Param(description = "the group ID of the virtual machine")
+    @Param(description = "The group ID of the Instance")
     private String groupId;
 
     @SerializedName(ApiConstants.GROUP)
-    @Param(description = "the group name of the virtual machine")
+    @Param(description = "The group name of the Instance")
     private String group;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the ID of the availability zone for the virtual machine")
+    @Param(description = "The ID of the availability zone for the Instance")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "the name of the availability zone for the virtual machine")
+    @Param(description = "The name of the availability zone for the Instance")
     private String zoneName;
 
     @SerializedName(ApiConstants.HOST_ID)
-    @Param(description = "the ID of the host for the virtual machine")
+    @Param(description = "The ID of the host for the Instance")
     private String hostId;
 
     @SerializedName("hostname")
-    @Param(description = "the name of the host for the virtual machine")
+    @Param(description = "The name of the host for the Instance")
     private String hostName;
 
     @SerializedName(ApiConstants.HOST_CONTROL_STATE)
-    @Param(description = "the control state of the host for the virtual machine")
+    @Param(description = "The control state of the host for the Instance")
     private String hostControlState;
 
     @SerializedName(ApiConstants.TEMPLATE_ID)
-    @Param(description = "the ID of the template for the virtual machine. A -1 is returned if the virtual machine was created from an ISO file.")
+    @Param(description = "The ID of the Template for the Instance. A -1 is returned if the Instance was created from an ISO file.")
     private String templateId;
 
     @SerializedName("templatename")
-    @Param(description = "the name of the template for the virtual machine")
+    @Param(description = "The name of the Template for the Instance")
     private String templateName;
 
     @SerializedName(ApiConstants.TEMPLATE_TYPE)
-    @Param(description = "the type of the template for the virtual machine", since = "4.19.0")
+    @Param(description = "The type of the template for the virtual machine", since = "4.19.0")
     private String templateType;
 
     @SerializedName(ApiConstants.TEMPLATE_FORMAT)
-    @Param(description = "the format of the template for the virtual machine", since = "4.19.1")
+    @Param(description = "The format of the template for the virtual machine", since = "4.19.1")
     private String templateFormat;
 
     @SerializedName("templatedisplaytext")
-    @Param(description = " an alternate display text of the template for the virtual machine")
+    @Param(description = "An alternate display text of the Template for the Instance")
     private String templateDisplayText;
 
     @SerializedName(ApiConstants.PASSWORD_ENABLED)
-    @Param(description = "true if the password rest feature is enabled, false otherwise")
+    @Param(description = "True if the password rest feature is enabled, false otherwise")
     private Boolean passwordEnabled;
 
     @SerializedName("isoid")
-    @Param(description = "the ID of the ISO attached to the virtual machine")
+    @Param(description = "The ID of the ISO attached to the Instance")
     private String isoId;
 
     @SerializedName("isoname")
-    @Param(description = "the name of the ISO attached to the virtual machine")
+    @Param(description = "The name of the ISO attached to the Instance")
     private String isoName;
 
     @SerializedName("isodisplaytext")
-    @Param(description = "an alternate display text of the ISO attached to the virtual machine")
+    @Param(description = "An alternate display text of the ISO attached to the Instance")
     private String isoDisplayText;
 
     @SerializedName(ApiConstants.SERVICE_OFFERING_ID)
-    @Param(description = "the ID of the service offering of the virtual machine")
+    @Param(description = "The ID of the service offering of the Instance")
     private String serviceOfferingId;
 
     @SerializedName("serviceofferingname")
-    @Param(description = "the name of the service offering of the virtual machine")
+    @Param(description = "The name of the service offering of the Instance")
     private String serviceOfferingName;
 
     @SerializedName(ApiConstants.DISK_OFFERING_ID)
-    @Param(description = "the ID of the disk offering of the virtual machine. This parameter should not be used for retrieving disk offering details of DATA volumes. Use listVolumes API instead", since = "4.4")
+    @Param(description = "The ID of the disk offering of the Instance. This parameter should not be used for retrieving disk offering details of DATA volumes. Use listVolumes API instead", since = "4.4")
     private String diskOfferingId;
 
     @SerializedName("diskofferingname")
-    @Param(description = "the name of the disk offering of the virtual machine. This parameter should not be used for retrieving disk offering details of DATA volumes. Use listVolumes API instead", since = "4.4")
+    @Param(description = "The name of the disk offering of the Instance. This parameter should not be used for retrieving disk offering details of DATA volumes. Use listVolumes API instead", since = "4.4")
     private String diskOfferingName;
 
     @SerializedName(ApiConstants.GPU_CARD_ID)
@@ -219,99 +219,99 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private Integer gpuCount;
 
     @SerializedName(ApiConstants.BACKUP_OFFERING_ID)
-    @Param(description = "the ID of the backup offering of the virtual machine", since = "4.14")
+    @Param(description = "The ID of the backup offering of the Instance", since = "4.14")
     private String backupOfferingId;
 
     @SerializedName(ApiConstants.BACKUP_OFFERING_NAME)
-    @Param(description = "the name of the backup offering of the virtual machine", since = "4.14")
+    @Param(description = "The name of the backup offering of the Instance", since = "4.14")
     private String backupOfferingName;
 
     @SerializedName("forvirtualnetwork")
-    @Param(description = "the virtual network for the service offering")
+    @Param(description = "The virtual Network for the service offering")
     private Boolean forVirtualNetwork;
 
     @SerializedName(ApiConstants.CPU_NUMBER)
-    @Param(description = "the number of vCPUs this virtual machine is using")
+    @Param(description = "The number of vCPUs this Instance is using")
     private Integer cpuNumber;
 
     @SerializedName(ApiConstants.CPU_SPEED)
-    @Param(description = "the speed of each vCPU")
+    @Param(description = "The speed of each vCPU")
     private Integer cpuSpeed;
 
     @SerializedName(ApiConstants.MEMORY)
-    @Param(description = "the memory allocated for the virtual machine")
+    @Param(description = "The memory allocated for the Instance")
     private Integer memory;
 
     @SerializedName(ApiConstants.VGPU)
-    @Param(description = "the vGPU type used by the virtual machine", since = "4.4")
+    @Param(description = "The vGPU type used by the Instance", since = "4.4")
     private String vgpu;
 
     @SerializedName("cpuused")
-    @Param(description = "the amount of the vm's CPU currently used")
+    @Param(description = "The amount of the Instance's CPU currently used")
     private String cpuUsed;
 
     @SerializedName("networkkbsread")
-    @Param(description = "the incoming network traffic on the VM in KiB")
+    @Param(description = "The incoming Network traffic on the Instance in KiB")
     private Long networkKbsRead;
 
     @SerializedName("networkkbswrite")
-    @Param(description = "the outgoing network traffic on the host in KiB")
+    @Param(description = "The outgoing Network traffic on the host in KiB")
     private Long networkKbsWrite;
 
     @SerializedName(ApiConstants.DISK_KBS_READ)
-    @Param(description = "the VM's disk read in KiB")
+    @Param(description = "The Instance's disk read in KiB")
     private Long diskKbsRead;
 
     @SerializedName(ApiConstants.DISK_KBS_WRITE)
-    @Param(description = "the VM's disk write in KiB")
+    @Param(description = "The Instance's disk write in KiB")
     private Long diskKbsWrite;
 
     @SerializedName("memorykbs")
-    @Param(description = "the memory used by the VM in KiB")
+    @Param(description = "The memory used by the Instance in KiB")
     private Long memoryKBs;
 
     @SerializedName("memoryintfreekbs")
-    @Param(description = "the internal memory (KiB) that's free in VM or zero if it can not be calculated")
+    @Param(description = "The internal memory (KiB) that's free in Instance or zero if it can not be calculated")
     private Long memoryIntFreeKBs;
 
     @SerializedName("memorytargetkbs")
-    @Param(description = "the target memory in VM (KiB)")
+    @Param(description = "The target memory in Instance (KiB)")
     private Long memoryTargetKBs;
 
     @SerializedName(ApiConstants.DISK_IO_READ)
-    @Param(description = "the read (IO) of disk on the VM")
+    @Param(description = "The read (IO) of disk on the Instance")
     private Long diskIORead;
 
     @SerializedName(ApiConstants.DISK_IO_WRITE)
-    @Param(description = "the write (IO) of disk on the VM")
+    @Param(description = "The write (IO) of disk on the Instance")
     private Long diskIOWrite;
 
     @SerializedName("guestosid")
-    @Param(description = "Os type ID of the virtual machine")
+    @Param(description = "OS type ID of the Instance")
     private String guestOsId;
 
     @SerializedName("rootdeviceid")
-    @Param(description = "device ID of the root volume")
+    @Param(description = "Device ID of the root volume")
     private Long rootDeviceId;
 
     @SerializedName("rootdevicetype")
-    @Param(description = "device type of the root volume")
+    @Param(description = "Device type of the root volume")
     private String rootDeviceType;
 
     @SerializedName("securitygroup")
-    @Param(description = "list of security groups associated with the virtual machine", responseObject = SecurityGroupResponse.class)
+    @Param(description = "List of security groups associated with the Instance", responseObject = SecurityGroupResponse.class)
     private Set<SecurityGroupResponse> securityGroupList;
 
     @SerializedName(ApiConstants.PASSWORD)
-    @Param(description = "the password (if exists) of the virtual machine", isSensitive = true)
+    @Param(description = "The password (if exists) of the Instance", isSensitive = true)
     private String password;
 
     @SerializedName("nic")
-    @Param(description = "the list of nics associated with vm", responseObject = NicResponse.class)
+    @Param(description = "The list of NICs associated with Instance", responseObject = NicResponse.class)
     private Set<NicResponse> nics;
 
     @SerializedName("hypervisor")
-    @Param(description = "the hypervisor on which the template runs")
+    @Param(description = "The hypervisor on which the Template runs")
     private String hypervisor;
 
     @SerializedName(ApiConstants.IP_ADDRESS)
@@ -319,41 +319,41 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private String ipAddress;
 
     @SerializedName(ApiConstants.PUBLIC_IP_ID)
-    @Param(description = "public IP address id associated with vm via Static nat rule")
+    @Param(description = "Public IP address id associated with Instance via Static NAT rule")
     private String publicIpId;
 
     @SerializedName(ApiConstants.PUBLIC_IP)
-    @Param(description = "public IP address id associated with vm via Static nat rule")
+    @Param(description = "Public IP address id associated with Instance via Static NAT rule")
     private String publicIp;
 
     @SerializedName(ApiConstants.INSTANCE_NAME)
-    @Param(description = "instance name of the user vm; this parameter is returned to the ROOT admin only", since = "3.0.1")
+    @Param(description = "Instance name of the user Instance; this parameter is returned to the ROOT admin only", since = "3.0.1")
     private String instanceName;
 
     transient Set<Long> tagIds;
 
     @SerializedName(ApiConstants.DETAILS)
-    @Param(description = "Vm details in key/value pairs.", since = "4.2.1")
+    @Param(description = "Instance details in key/value pairs.", since = "4.2.1")
     private Map details;
 
     @SerializedName("readonlydetails")
-    @Param(description = "List of read-only Vm details as comma separated string.", since = "4.16.0")
+    @Param(description = "List of read-only Instance details as comma separated string.", since = "4.16.0")
     private String readOnlyDetails;
 
     @SerializedName(ApiConstants.SSH_KEYPAIRS)
-    @Param(description = "ssh key-pairs")
+    @Param(description = "SSH key-pairs")
     private String keyPairNames;
 
     @SerializedName("affinitygroup")
-    @Param(description = "list of affinity groups associated with the virtual machine", responseObject = AffinityGroupResponse.class)
+    @Param(description = "List of Affinity groups associated with the Instance", responseObject = AffinityGroupResponse.class)
     private Set<AffinityGroupResponse> affinityGroupList;
 
     @SerializedName(ApiConstants.DISPLAY_VM)
-    @Param(description = "an optional field whether to the display the vm to the end user or not.", authorized = {RoleType.Admin})
+    @Param(description = "An optional field whether to the display the Instance to the end user or not.", authorized = {RoleType.Admin})
     private Boolean displayVm;
 
     @SerializedName(ApiConstants.IS_DYNAMICALLY_SCALABLE)
-    @Param(description = "true if vm contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory.")
+    @Param(description = "True if Instance contains XS/VMWare tools in order to support dynamic scaling of Instance CPU/memory.")
     private Boolean isDynamicallyScalable;
 
     @SerializedName(ApiConstants.DELETE_PROTECTION)
@@ -365,31 +365,31 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private String serviceState;
 
     @SerializedName(ApiConstants.OS_TYPE_ID)
-    @Param(description = "OS type id of the vm", since = "4.4")
+    @Param(description = "OS type id of the Instance", since = "4.4")
     private String osTypeId;
 
     @SerializedName(ApiConstants.OS_DISPLAY_NAME)
-    @Param(description = "OS name of the vm", since = "4.13.2")
+    @Param(description = "OS name of the Instance", since = "4.13.2")
     private String osDisplayName;
 
     @SerializedName(ApiConstants.BOOT_MODE)
-    @Param(description = "Guest vm Boot Mode")
+    @Param(description = "Guest Instance Boot Mode")
     private String bootMode;
 
     @SerializedName(ApiConstants.BOOT_TYPE)
-    @Param(description = "Guest vm Boot Type")
+    @Param(description = "Guest Instance Boot Type")
     private String bootType;
 
     @SerializedName(ApiConstants.POOL_TYPE)
-    @Param(description = "the pool type of the virtual machine", since = "4.16")
+    @Param(description = "The pool type of the Instance", since = "4.16")
     private String poolType;
 
     @SerializedName(ApiConstants.RECEIVED_BYTES)
-    @Param(description = "the total number of network traffic bytes received")
+    @Param(description = "The total number of Network traffic bytes received")
     private Long bytesReceived;
 
     @SerializedName(ApiConstants.SENT_BYTES)
-    @Param(description = "the total number of network traffic bytes sent")
+    @Param(description = "The total number of Network traffic bytes sent")
     private Long bytesSent;
 
     @SerializedName(ApiConstants.RESOURCE_ICON)
@@ -397,27 +397,27 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     ResourceIconResponse resourceIconResponse;
 
     @SerializedName(ApiConstants.AUTOSCALE_VMGROUP_ID)
-    @Param(description = "ID of AutoScale VM group", since = "4.18.0")
+    @Param(description = "ID of AutoScale Instance group", since = "4.18.0")
     String autoScaleVmGroupId;
 
     @SerializedName(ApiConstants.AUTOSCALE_VMGROUP_NAME)
-    @Param(description = "Name of AutoScale VM group", since = "4.18.0")
+    @Param(description = "Name of AutoScale Instance group", since = "4.18.0")
     String autoScaleVmGroupName;
 
     @SerializedName(ApiConstants.USER_DATA)
     @Param(description = "Base64 string containing the user data", since = "4.18.0.0")
     private String userData;
 
-    @SerializedName(ApiConstants.USER_DATA_ID) @Param(description="the id of userdata used for the VM", since = "4.18.0")
+    @SerializedName(ApiConstants.USER_DATA_ID) @Param(description = "The ID of userdata used for the Instance", since = "4.18.0")
     private String userDataId;
 
-    @SerializedName(ApiConstants.USER_DATA_NAME) @Param(description="the name of userdata used for the VM", since = "4.18.0")
+    @SerializedName(ApiConstants.USER_DATA_NAME) @Param(description = "The name of userdata used for the Instance", since = "4.18.0")
     private String userDataName;
 
-    @SerializedName(ApiConstants.USER_DATA_POLICY) @Param(description="the userdata override policy with the userdata provided while deploying VM", since = "4.18.0")
+    @SerializedName(ApiConstants.USER_DATA_POLICY) @Param(description = "The userdata override policy with the userdata provided while deploying Instance", since = "4.18.0")
     private String userDataPolicy;
 
-    @SerializedName(ApiConstants.USER_DATA_DETAILS) @Param(description="list of variables and values for the variables declared in userdata", since = "4.18.0")
+    @SerializedName(ApiConstants.USER_DATA_DETAILS) @Param(description = "List of variables and values for the variables declared in userdata", since = "4.18.0")
     private String userDataDetails;
 
     @SerializedName(ApiConstants.VNF_NICS)

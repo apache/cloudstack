@@ -103,10 +103,11 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
             BASE_EXTERNAL_PROVISIONER_SCRIPTS_DIR + "/provisioner.sh";
 
     private static final String PROPERTIES_FILE = "server.properties";
+    private static final String EXTENSIONS = "extensions";
     private static final String EXTENSIONS_DEPLOYMENT_MODE_NAME = "extensions.deployment.mode";
     private static final String EXTENSIONS_DIRECTORY_PROD = "/usr/share/cloudstack-management/extensions";
-    private static final String EXTENSIONS_DATA_DIRECTORY_PROD = "/var/lib/cloudstack/management/extensions";
-    private static final String EXTENSIONS_DIRECTORY_DEV = "extensions";
+    private static final String EXTENSIONS_DATA_DIRECTORY_PROD = System.getProperty("user.home") + File.separator + EXTENSIONS;
+    private static final String EXTENSIONS_DIRECTORY_DEV = EXTENSIONS;
     private static final String EXTENSIONS_DATA_DIRECTORY_DEV = "client/target/extensions-data";
 
     @Inject
@@ -630,18 +631,18 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
             }
             if (!Files.isDirectory(filePath) && !Files.isRegularFile(filePath)) {
                 throw new CloudRuntimeException(
-                        String.format("Failed to cleanup extension entry-point: %s for extension: %s as it either " +
+                        String.format("Failed to cleanup path: %s for extension: %s as it either " +
                                         "does not exist or is not a regular file/directory",
                                 extensionName, extensionRelativePath));
             }
             if (!FileUtil.deleteRecursively(filePath)) {
                 throw new CloudRuntimeException(
-                        String.format("Failed to delete extension entry-point: %s for extension: %s",
+                        String.format("Failed to delete path: %s for extension: %s",
                                 extensionName, filePath));
             }
         } catch (IOException e) {
             throw new CloudRuntimeException(
-                    String.format("Failed to cleanup extension entry-point: %s for extension: %s due to: %s",
+                    String.format("Failed to cleanup path: %s for extension: %s due to: %s",
                             extensionName, normalizedPath, e.getMessage()), e);
         }
     }

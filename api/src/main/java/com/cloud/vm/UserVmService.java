@@ -64,6 +64,7 @@ import com.cloud.storage.StoragePool;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.ExecutionException;
 
 public interface UserVmService {
@@ -538,9 +539,10 @@ public interface UserVmService {
 
     /**
      * Unmanage a guest VM from CloudStack
-     * @return true if the VM is successfully unmanaged, false if not.
+     *
+     * @return (true if successful, false if not, hostUuid) if the VM is successfully unmanaged.
      */
-    boolean unmanageUserVM(Long vmId);
+    Pair<Boolean, String> unmanageUserVM(Long vmId, Long targetHostId);
 
     UserVm allocateVMFromBackup(CreateVMFromBackupCmd cmd) throws InsufficientCapacityException, ResourceAllocationException, ResourceUnavailableException;
 

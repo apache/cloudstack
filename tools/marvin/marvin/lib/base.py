@@ -401,7 +401,8 @@ class VirtualMachine:
             self.ssh_port = 22
         self.ssh_client = None
         # extract out the ipaddress
-        self.ipaddress = self.nic[0].ipaddress
+        if self.nic:
+            self.ipaddress = self.nic[0].ipaddress
 
     @classmethod
     def ssh_access_group(cls, apiclient, cmd):
@@ -1083,7 +1084,7 @@ class VirtualMachine:
         return apiclient.scaleVirtualMachine(cmd)
 
     def unmanage(self, apiclient):
-        """Unmanage a VM from CloudStack (currently VMware only)"""
+        """Unmanage a VM from CloudStack"""
         cmd = unmanageVirtualMachine.unmanageVirtualMachineCmd()
         cmd.id = self.id
         return apiclient.unmanageVirtualMachine(cmd)
@@ -1724,11 +1725,12 @@ class Template:
                 # If template is ready,
                 # template.status = Download Complete
                 # Downloading - x% Downloaded
+                # Processing - Initial status
                 # Error - Any other string
                 if template.status == 'Download Complete' and template.isready:
                     return
 
-                elif 'Downloaded' in template.status:
+                elif 'Downloaded' in template.status or template.status == 'Processing':
                     retries = retries - 1
                     continue
 

@@ -22,6 +22,7 @@ import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.backup.BackupAnswer;
 import org.apache.cloudstack.backup.RestoreBackupCommand;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -65,6 +66,8 @@ public class LibvirtRestoreBackupCommandWrapperTest {
         when(command.getMountOptions()).thenReturn("rw");
         when(command.isVmExists()).thenReturn(null);
         when(command.getDiskType()).thenReturn("root");
+        PrimaryDataStoreTO primaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+        when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(primaryDataStore));
         when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("/var/lib/libvirt/images/volume-123"));
         when(command.getRestoreVolumeUUID()).thenReturn("volume-123");
         when(command.getVmState()).thenReturn(VirtualMachine.State.Running);
@@ -105,6 +108,8 @@ public class LibvirtRestoreBackupCommandWrapperTest {
         when(command.getMountOptions()).thenReturn("rw");
         when(command.isVmExists()).thenReturn(true);
         when(command.getDiskType()).thenReturn("root");
+        PrimaryDataStoreTO primaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+        when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(primaryDataStore));
         when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("/var/lib/libvirt/images/volume-123"));
         when(command.getBackupVolumesUUIDs()).thenReturn(Arrays.asList("volume-123"));
         when(command.getMountTimeout()).thenReturn(30);
@@ -141,6 +146,8 @@ public class LibvirtRestoreBackupCommandWrapperTest {
         when(command.getMountOptions()).thenReturn("rw");
         when(command.isVmExists()).thenReturn(false);
         when(command.getDiskType()).thenReturn("root");
+        PrimaryDataStoreTO primaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+        when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(primaryDataStore));
         when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("/var/lib/libvirt/images/volume-123"));
         when(command.getMountTimeout()).thenReturn(30);
 
@@ -176,6 +183,8 @@ public class LibvirtRestoreBackupCommandWrapperTest {
         when(command.getMountOptions()).thenReturn("username=user,password=pass");
         when(command.isVmExists()).thenReturn(null);
         when(command.getDiskType()).thenReturn("root");
+        PrimaryDataStoreTO primaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+        when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(primaryDataStore));
         when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("/var/lib/libvirt/images/volume-123"));
         when(command.getRestoreVolumeUUID()).thenReturn("volume-123");
         when(command.getVmState()).thenReturn(VirtualMachine.State.Running);
@@ -215,6 +224,8 @@ public class LibvirtRestoreBackupCommandWrapperTest {
         lenient().when(command.getMountOptions()).thenReturn("rw");
         lenient().when(command.isVmExists()).thenReturn(null);
         lenient().when(command.getDiskType()).thenReturn("root");
+        PrimaryDataStoreTO primaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+        when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(primaryDataStore));
         lenient().when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("/var/lib/libvirt/images/volume-123"));
         lenient().when(command.getRestoreVolumeUUID()).thenReturn("volume-123");
         lenient().when(command.getVmState()).thenReturn(VirtualMachine.State.Running);
@@ -249,6 +260,8 @@ public class LibvirtRestoreBackupCommandWrapperTest {
         when(command.getMountOptions()).thenReturn("rw");
         when(command.isVmExists()).thenReturn(null);
         when(command.getDiskType()).thenReturn("root");
+        PrimaryDataStoreTO primaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+        when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(primaryDataStore));
         when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("/var/lib/libvirt/images/volume-123"));
         when(command.getRestoreVolumeUUID()).thenReturn("volume-123");
         when(command.getVmState()).thenReturn(VirtualMachine.State.Running);
@@ -293,6 +306,8 @@ public class LibvirtRestoreBackupCommandWrapperTest {
         when(command.getMountOptions()).thenReturn("rw");
         when(command.isVmExists()).thenReturn(null);
         when(command.getDiskType()).thenReturn("root");
+        PrimaryDataStoreTO primaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+        when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(primaryDataStore));
         when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("/var/lib/libvirt/images/volume-123"));
         when(command.getRestoreVolumeUUID()).thenReturn("volume-123");
         when(command.getVmState()).thenReturn(VirtualMachine.State.Running);
@@ -339,6 +354,8 @@ public class LibvirtRestoreBackupCommandWrapperTest {
         when(command.getMountOptions()).thenReturn("rw");
         when(command.isVmExists()).thenReturn(null);
         when(command.getDiskType()).thenReturn("root");
+        PrimaryDataStoreTO primaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+        when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(primaryDataStore));
         when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("/var/lib/libvirt/images/volume-123"));
         when(command.getRestoreVolumeUUID()).thenReturn("volume-123");
         when(command.getVmState()).thenReturn(VirtualMachine.State.Running);
@@ -387,6 +404,8 @@ public class LibvirtRestoreBackupCommandWrapperTest {
         when(command.getMountOptions()).thenReturn("rw");
         when(command.isVmExists()).thenReturn(null);
         when(command.getDiskType()).thenReturn("root");
+        PrimaryDataStoreTO primaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+        when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(primaryDataStore));
         when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("/var/lib/libvirt/images/volume-123"));
         when(command.getRestoreVolumeUUID()).thenReturn("volume-123");
         when(command.getVmState()).thenReturn(VirtualMachine.State.Running);
@@ -439,6 +458,8 @@ public class LibvirtRestoreBackupCommandWrapperTest {
         lenient().when(command.getMountOptions()).thenReturn("rw");
         lenient().when(command.isVmExists()).thenReturn(null);
         lenient().when(command.getDiskType()).thenReturn("root");
+        PrimaryDataStoreTO primaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+        when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(primaryDataStore));
         lenient().when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("/var/lib/libvirt/images/volume-123"));
         lenient().when(command.getRestoreVolumeUUID()).thenReturn("volume-123");
         lenient().when(command.getVmState()).thenReturn(VirtualMachine.State.Running);
@@ -467,6 +488,12 @@ public class LibvirtRestoreBackupCommandWrapperTest {
         when(command.getMountOptions()).thenReturn("rw");
         when(command.isVmExists()).thenReturn(true);
         when(command.getDiskType()).thenReturn("root");
+        PrimaryDataStoreTO primaryDataStore1 = Mockito.mock(PrimaryDataStoreTO.class);
+        PrimaryDataStoreTO primaryDataStore2 = Mockito.mock(PrimaryDataStoreTO.class);
+        when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(
+                primaryDataStore1,
+                primaryDataStore2
+        ));
         when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList(
                 "/var/lib/libvirt/images/volume-123",
                 "/var/lib/libvirt/images/volume-456"

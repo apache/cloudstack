@@ -57,68 +57,68 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the network")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "The name of the network")
     private String name;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the network")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "The display text of the network")
     private String displayText;
 
     @Parameter(name = ApiConstants.NETWORK_OFFERING_ID,
                type = CommandType.UUID,
                entityType = NetworkOfferingResponse.class,
                required = true,
-               description = "the network offering ID")
+               description = "The network offering ID")
     private Long networkOfferingId;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the zone ID for the network")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The zone ID for the network")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID,
                type = CommandType.UUID,
                entityType = PhysicalNetworkResponse.class,
-               description = "the physical network ID the network belongs to")
+               description = "The physical Network ID the network belongs to")
     private Long physicalNetworkId;
 
-    @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, description = "the gateway of the network. Required "
+    @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, description = "The gateway of the Network. Required "
         + "for shared networks and isolated networks when it belongs to VPC")
     private String gateway;
 
-    @Parameter(name = ApiConstants.NETMASK, type = CommandType.STRING, description = "the netmask of the network. Required "
+    @Parameter(name = ApiConstants.NETMASK, type = CommandType.STRING, description = "The netmask of the Network. Required "
         + "for shared networks and isolated networks when it belongs to VPC")
     private String netmask;
 
-    @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, description = "the beginning IP address in the network IP range")
+    @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, description = "The beginning IP address in the Network IP range")
     private String startIp;
 
-    @Parameter(name = ApiConstants.END_IP, type = CommandType.STRING, description = "the ending IP address in the network IP"
+    @Parameter(name = ApiConstants.END_IP, type = CommandType.STRING, description = "The ending IP address in the Network IP"
         + " range. If not specified, will be defaulted to startIP")
     private String endIp;
 
-    @Parameter(name = ApiConstants.ISOLATED_PVLAN, type = CommandType.STRING, description = "the isolated private VLAN for this network")
+    @Parameter(name = ApiConstants.ISOLATED_PVLAN, type = CommandType.STRING, description = "The isolated private VLAN for this Network")
     private String isolatedPvlan;
 
     @Parameter(name = ApiConstants.ISOLATED_PVLAN_TYPE, type = CommandType.STRING,
-            description = "the isolated private VLAN type for this network")
+            description = "The isolated private VLAN type for this network")
     private String isolatedPvlanType;
 
-    @Parameter(name = ApiConstants.NETWORK_DOMAIN, type = CommandType.STRING, description = "network domain")
+    @Parameter(name = ApiConstants.NETWORK_DOMAIN, type = CommandType.STRING, description = "Network domain")
     private String networkDomain;
 
     @Parameter(name = ApiConstants.ACL_TYPE, type = CommandType.STRING, description = "Access control type; supported values"
-        + " are account and domain. In 3.0 all shared networks should have aclType=Domain, and all isolated networks"
-        + " - Account. Account means that only the account owner can use the network, domain - all accounts in the domain can use the network")
+        + " are Account and domain. In 3.0 all shared networks should have aclType=Domain, and all isolated networks"
+        + " - Account. Account means that only the Account owner can use the network, domain - all accounts in the domain can use the network")
     private String aclType;
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "Account that will own the network. Account should be under the selected domain")
     private String accountName;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the network")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "An optional project for the network")
     private Long projectId;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "domain ID of the account owning a network. " +
-            "If the account is not specified, but the acltype is Account or not specified, the network will be automatically assigned to the caller account and domain. " +
-            "To create a network under the domain without linking it to any account, make sure to include acltype=Domain parameter in the api call. " +
-            "If account is not specified, but acltype is Domain, the network will be created for the specified domain.")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "Domain ID of the account owning a network. " +
+            "If the Account is not specified, but the acltype is Account or not specified, the Network will be automatically assigned to the caller account and domain. " +
+            "To create a Network under the domain without linking it to any account, make sure to include acltype=Domain parameter in the api call. " +
+            "If Account is not specified, but acltype is Domain, the network will be created for the specified domain.")
     private Long domainId;
 
     @Parameter(name = ApiConstants.SUBDOMAIN_ACCESS,
@@ -127,22 +127,22 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
                    + " subdomains to use networks dedicated to their parent domain(s). Should be used with aclType=Domain, defaulted to allow.subdomain.network.access global config if not specified")
     private Boolean subdomainAccess;
 
-    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "the VPC network belongs to")
+    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "The VPC network belongs to")
     private Long vpcId;
 
     @Parameter(name = ApiConstants.TUNGSTEN_VIRTUAL_ROUTER_UUID, type = CommandType.STRING, description = "Tungsten-Fabric virtual router the network belongs to")
     private String tungstenVirtualRouterUuid;
 
-    @Parameter(name = ApiConstants.START_IPV6, type = CommandType.STRING, description = "the beginning IPv6 address in the IPv6 network range")
+    @Parameter(name = ApiConstants.START_IPV6, type = CommandType.STRING, description = "The beginning IPv6 address in the IPv6 network range")
     private String startIpv6;
 
-    @Parameter(name = ApiConstants.END_IPV6, type = CommandType.STRING, description = "the ending IPv6 address in the IPv6 network range")
+    @Parameter(name = ApiConstants.END_IPV6, type = CommandType.STRING, description = "The ending IPv6 address in the IPv6 network range")
     private String endIpv6;
 
-    @Parameter(name = ApiConstants.IP6_GATEWAY, type = CommandType.STRING, description = "the gateway of the IPv6 network. Required for Shared networks")
+    @Parameter(name = ApiConstants.IP6_GATEWAY, type = CommandType.STRING, description = "The gateway of the IPv6 network. Required for Shared networks")
     private String ip6Gateway;
 
-    @Parameter(name = ApiConstants.IP6_CIDR, type = CommandType.STRING, description = "the CIDR of IPv6 network, must be at least /64")
+    @Parameter(name = ApiConstants.IP6_CIDR, type = CommandType.STRING, description = "The CIDR of IPv6 network, must be at least /64")
     private String ip6Cidr;
 
     @Parameter(name = ApiConstants.EXTERNAL_ID, type = CommandType.STRING, description = "ID of the network in an external system.")
@@ -150,7 +150,7 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.DISPLAY_NETWORK,
                type = CommandType.BOOLEAN,
- description = "an optional field, whether to the display the network to the end user or not.", authorized = {RoleType.Admin})
+ description = "An optional field, whether to the display the network to the end User or not.", authorized = {RoleType.Admin})
     private Boolean displayNetwork;
 
     @Parameter(name = ApiConstants.ACL_ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, description = "Network ACL ID associated for the network")
@@ -171,16 +171,16 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
             description = "MTU to be configured on the network VR's private interface(s)", since = "4.18.0")
     private Integer privateMtu;
 
-    @Parameter(name = ApiConstants.DNS1, type = CommandType.STRING, description = "the first IPv4 DNS for the network", since = "4.18.0")
+    @Parameter(name = ApiConstants.DNS1, type = CommandType.STRING, description = "The first IPv4 DNS for the network", since = "4.18.0")
     private String ip4Dns1;
 
-    @Parameter(name = ApiConstants.DNS2, type = CommandType.STRING, description = "the second IPv4 DNS for the network", since = "4.18.0")
+    @Parameter(name = ApiConstants.DNS2, type = CommandType.STRING, description = "The second IPv4 DNS for the network", since = "4.18.0")
     private String ip4Dns2;
 
-    @Parameter(name = ApiConstants.IP6_DNS1, type = CommandType.STRING, description = "the first IPv6 DNS for the network", since = "4.18.0")
+    @Parameter(name = ApiConstants.IP6_DNS1, type = CommandType.STRING, description = "The first IPv6 DNS for the network", since = "4.18.0")
     private String ip6Dns1;
 
-    @Parameter(name = ApiConstants.IP6_DNS2, type = CommandType.STRING, description = "the second IPv6 DNS for the network", since = "4.18.0")
+    @Parameter(name = ApiConstants.IP6_DNS2, type = CommandType.STRING, description = "The second IPv6 DNS for the network", since = "4.18.0")
     private String ip6Dns2;
 
     @Parameter(name = ApiConstants.SOURCE_NAT_IP,
@@ -417,7 +417,7 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
