@@ -602,21 +602,26 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     public boolean isRootAdmin(Long accountId) {
         if (accountId != null) {
-            AccountVO acct = _accountDao.findById(accountId);
-            if (acct == null) {
-                return false;  //account is deleted or does not exist
-            }
-            for (SecurityChecker checker : _securityCheckers) {
-                try {
-                    if (checker.checkAccess(acct, null, null, "SystemCapability")) {
-                        if (logger.isTraceEnabled()) {
-                            logger.trace("Root Access granted to " + acct + " by " + checker.getName());
-                        }
-                        return true;
+            return isRootAdmin(_accountDao.findById(accountId));
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isRootAdmin(Account account) {
+        if (account == null) {
+            return false;  //account is deleted or does not exist
+        }
+        for (SecurityChecker checker : _securityCheckers) {
+            try {
+                if (checker.checkAccess(account, null, null, "SystemCapability")) {
+                    if (logger.isTraceEnabled()) {
+                        logger.trace("Root Access granted to " + account + " by " + checker.getName());
                     }
-                } catch (PermissionDeniedException ex) {
-                    return false;
+                    return true;
                 }
+            } catch (PermissionDeniedException ex) {
+                return false;
             }
         }
         return false;
