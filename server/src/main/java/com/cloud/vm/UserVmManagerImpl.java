@@ -2999,8 +2999,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 vmInstance.setDetails(details);
                 _vmDao.saveDetails(vmInstance);
             }
-            updateVmExtraConfig(userVm, extraConfig, cleanupExtraConfig);
         }
+        updateVmExtraConfig(userVm, extraConfig, cleanupExtraConfig);
 
         if (VMLeaseManager.InstanceLeaseEnabled.value() && cmd.getLeaseDuration() != null) {
             applyLeaseOnUpdateInstance(vmInstance, cmd.getLeaseDuration(), cmd.getLeaseExpiryAction());
