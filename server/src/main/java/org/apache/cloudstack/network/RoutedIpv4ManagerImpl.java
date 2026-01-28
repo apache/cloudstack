@@ -229,7 +229,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
         Long accountId = null;
         if (accountName != null || (projectId != null && projectId != -1L)) {
-            accountId = accountManager.finalyzeAccountId(accountName, domainId, projectId, false);
+            accountId = accountManager.finalizeAccountId(accountName, domainId, projectId, false);
         }
         if (accountId != null) {
             Account account = accountManager.getAccount(accountId);
@@ -371,7 +371,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
             sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
         }
         if (accountName != null || (projectId != null && projectId != -1L)) {
-            Long accountId= accountManager.finalyzeAccountId(accountName, domainId, projectId, false);
+            Long accountId= accountManager.finalizeAccountId(accountName, domainId, projectId, false);
             sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
         }
         // search via dataCenterIpv4GuestSubnetDao
@@ -394,7 +394,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         }
         Long accountId = null;
         if (accountName != null || (projectId != null && projectId != -1L)) {
-            accountId = accountManager.finalyzeAccountId(accountName, domainId, projectId, false);
+            accountId = accountManager.finalizeAccountId(accountName, domainId, projectId, false);
         }
         if (accountId != null) {
             Account account = accountManager.getAccount(accountId);
@@ -1094,7 +1094,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
         Long accountId = null;
         if (accountName != null || (projectId != null && projectId != -1L)) {
-            accountId = accountManager.finalyzeAccountId(accountName, domainId, projectId, false);
+            accountId = accountManager.finalizeAccountId(accountName, domainId, projectId, false);
         }
         if (accountId != null) {
             Account account = accountManager.getAccount(accountId);
@@ -1283,7 +1283,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         }
         Long accountId = null;
         if (accountName != null || (projectId != null && projectId != -1L)) {
-            accountId = accountManager.finalyzeAccountId(accountName, domainId, projectId, false);
+            accountId = accountManager.finalizeAccountId(accountName, domainId, projectId, false);
         }
         if (accountId != null) {
             Account account = accountManager.getAccount(accountId);
@@ -1350,7 +1350,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
         Long accountId = null;
         if (accountName != null || (projectId != null && projectId != -1L)) {
-            accountId = accountManager.finalyzeAccountId(accountName, domainId, projectId, false);
+            accountId = accountManager.finalizeAccountId(accountName, domainId, projectId, false);
         }
         if (isDedicated != null) {
             SearchCriteria sc1 = createSearchCriteriaForListBgpPeersCmd(id, zoneId, asNumber, keyword);
