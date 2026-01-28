@@ -415,7 +415,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             TemplateOrVolumePostUploadCommand firstCommand = payload.get(0);
 
             String ssvmUrlDomain = _configDao.getValue(Config.SecStorageSecureCopyCert.key());
-            String protocol = VolumeApiService.UseHttpsToUpload.value() ? "https" : "http";
+            String protocol = VolumeApiService.UseHttpsToUpload.valueIn(firstCommand.getZoneId()) ? "https" : "http";
 
             String url = ImageStoreUtil.generatePostUploadUrl(ssvmUrlDomain, firstCommand.getRemoteEndPoint(), firstCommand.getEntityUUID(), protocol);
             response.setPostURL(new URL(url));
