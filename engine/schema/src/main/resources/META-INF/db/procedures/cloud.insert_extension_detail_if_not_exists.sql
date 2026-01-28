@@ -15,7 +15,7 @@
 -- specific language governing permissions and limitations
 -- under the License.
 
-ROP PROCEDURE IF EXISTS `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`;
+DROP PROCEDURE IF EXISTS `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`;
 CREATE PROCEDURE `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`(
     IN ext_name VARCHAR(255),
     IN detail_key VARCHAR(255),
