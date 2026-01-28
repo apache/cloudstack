@@ -89,7 +89,7 @@
         <cs.log4j.extras.version>1.2.17</cs.log4j.extras.version>
 
         <!-- Apache Commons versions -->
-        <cs.codec.version>1.15</cs.codec.version>
+        <cs.codec.version>1.20.0</cs.codec.version>
         <cs.commons-cli.version>1.5.0</cs.commons-cli.version>
         <cs.commons-collections.version>4.4</cs.commons-collections.version>
         <cs.commons-compress.version>1.26.0</cs.commons-compress.version>

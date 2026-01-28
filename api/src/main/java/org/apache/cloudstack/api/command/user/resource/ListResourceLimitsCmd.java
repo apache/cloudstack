@@ -103,7 +103,7 @@ public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd
     @Override
     public void execute() {
         List<? extends ResourceLimit> result =
-                _resourceLimitService.searchForLimits(id, _accountService.finalyzeAccountId(this.getAccountName(), this.getDomainId(), this.getProjectId(), false), this.getDomainId(),
+                _resourceLimitService.searchForLimits(id, _accountService.finalizeAccountId(this.getAccountName(), this.getDomainId(), this.getProjectId(), false), this.getDomainId(),
                         getResourceTypeEnum(), getTag(), this.getStartIndex(), this.getPageSizeVal());
         ListResponse<ResourceLimitResponse> response = new ListResponse<ResourceLimitResponse>();
         List<ResourceLimitResponse> limitResponses = new ArrayList<ResourceLimitResponse>();

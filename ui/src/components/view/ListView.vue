@@ -975,7 +975,7 @@
           @onClick="$resetConfigurationValueConfirm(item, resetConfig)"
           v-if="editableValueKey !== record.key"
           icon="reload-outlined"
-          :disabled="!('updateConfiguration' in $store.getters.apis)"
+          :disabled="!('resetConfiguration' in $store.getters.apis) || record.value === record.defaultvalue"
         />
       </template>
       <template v-if="column.key === 'gpuDeviceActions'">
@@ -1261,15 +1261,7 @@ export default {
         this.editableValueKey = null
         this.$store.dispatch('RefreshFeatures')
         this.$messageConfigSuccess(`${this.$t('message.setting.updated')} ${record.name}`, record)
-        if (json.updateconfigurationresponse &&
-          json.updateconfigurationresponse.configuration &&
-          !json.updateconfigurationresponse.configuration.isdynamic &&
-          ['Admin'].includes(this.$store.getters.userInfo.roletype)) {
-          this.$notification.warning({
-            message: this.$t('label.status'),
-            description: this.$t('message.restart.mgmt.server')
-          })
-        }
+        this.$notifyConfigurationValueChange(json?.updateconfigurationresponse?.configuration || null)
       }).catch(error => {
         console.error(error)
         this.$message.error(this.$t('message.error.save.setting'))
