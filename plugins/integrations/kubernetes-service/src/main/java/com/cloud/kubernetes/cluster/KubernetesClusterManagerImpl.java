@@ -477,7 +477,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             logger.warn("Network offering: {} does not have necessary services to provision Kubernetes cluster", networkOffering);
             return false;
         }
-        if (!networkOffering.isEgressDefaultPolicy()) {
+        if (!networkOffering.isForVpc() && !networkOffering.isEgressDefaultPolicy()) {
             logger.warn("Network offering: {} has egress default policy turned off should be on to provision Kubernetes cluster", networkOffering);
             return false;
         }
