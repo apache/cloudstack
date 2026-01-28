@@ -3751,6 +3751,7 @@
 "message.resource.not.found": "Resource not found.",
 "message.restart.mgmt.server": "Please restart your management server(s) for your new settings to take effect.",
 "message.restart.network": "All services provided by this Network will be interrupted. Please confirm that you want to restart this Network.",
+"message.restart.usage.server": "Please restart your usage server(s) for your new settings to take effect.",
 "message.restart.vm.to.update.settings": "Update in fields other than name and display name will require the Instance to be restarted.",
 "message.restart.vpc": "Please confirm that you want to restart the VPC.",
 "message.restart.vpc.remark": "Please confirm that you want to restart the VPC <p><i>Remark: making a non-redundant VPC redundant will force a clean up. The Networks will not be available for a couple of minutes</i>.</p>",
