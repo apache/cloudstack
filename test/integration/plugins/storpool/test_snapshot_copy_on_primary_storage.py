@@ -257,7 +257,7 @@ class TestSnapshotCopy(cloudstackTestCase):
 
     @skipTestIf("testsNotSupported")
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
-    def test_07_take_snapshot_multi_zone_deply_vm_additional_zone(self):
+    def test_07_take_snapshot_multi_zone_deploy_vm_additional_zone(self):
         """Test to take volume snapshot in multiple StorPool primary storages in diff zones and deploy a VM from snapshot in one of the additional zones
         """
         snapshot = Snapshot.create(self.userapiclient, volume_id=self.volume.id, zoneids=[str(self.additional_zone.id)], usestoragereplication=True)
@@ -307,9 +307,9 @@ class TestSnapshotCopy(cloudstackTestCase):
                                                 volumeid=volume.id,
                                                 mode="basic",
                                                 )
-        self._cleanup.append(virtual_machine)
+        self.cleanup.append(virtual_machine)
         try:
-            ssh_client = virtual_machine.get_ssh_client()
+            virtual_machine.get_ssh_client()
         except Exception as e:
             self.fail("SSH failed for virtual machine: %s - %s" %
                       (virtual_machine.ipaddress, e))
@@ -325,9 +325,9 @@ class TestSnapshotCopy(cloudstackTestCase):
                                                 snapshotid=snapshot.id,
                                                 mode="basic",
                                                 )
-        self._cleanup.append(virtual_machine)
+        self.cleanup.append(virtual_machine)
         try:
-            ssh_client = virtual_machine.get_ssh_client()
+            virtual_machine.get_ssh_client()
         except Exception as e:
             self.fail("SSH failed for virtual machine: %s - %s" %
                       (virtual_machine.ipaddress, e))

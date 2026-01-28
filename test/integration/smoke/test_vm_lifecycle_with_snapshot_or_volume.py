@@ -183,7 +183,7 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
                                                 mode="basic",
                                                 )
         try:
-            ssh_client = virtual_machine.get_ssh_client()
+            virtual_machine.get_ssh_client()
         except Exception as e:
             self.fail("SSH failed for virtual machine: %s - %s" %
                       (virtual_machine.ipaddress, e))
@@ -221,7 +221,7 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
                                                 mode="basic",
                                                 )
         try:
-            ssh_client = virtual_machine.get_ssh_client()
+            virtual_machine.get_ssh_client()
         except Exception as e:
             self.fail("SSH failed for virtual machine: %s - %s" %
                       (virtual_machine.ipaddress, e))
