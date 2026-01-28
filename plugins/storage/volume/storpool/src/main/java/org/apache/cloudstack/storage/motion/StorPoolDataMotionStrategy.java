@@ -457,8 +457,8 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
             VolumeInfo destVolumeInfo = entry.getValue();
 
             if (success) {
-                srcVolumeInfo.processEvent(Event.OperationSuccessed);
-                destVolumeInfo.processEvent(Event.OperationSuccessed);
+                srcVolumeInfo.processEvent(Event.OperationSucceeded);
+                destVolumeInfo.processEvent(Event.OperationSucceeded);
 
                 _volumeDao.updateUuid(srcVolumeInfo.getId(), destVolumeInfo.getId());
 

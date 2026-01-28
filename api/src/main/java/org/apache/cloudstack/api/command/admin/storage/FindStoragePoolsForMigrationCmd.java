@@ -43,7 +43,7 @@ public class FindStoragePoolsForMigrationCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "the ID of the volume")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "The ID of the volume")
     private Long id;
 
     /////////////////////////////////////////////////////

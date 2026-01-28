@@ -26,9 +26,21 @@ or the developer [wiki](https://cwiki.apache.org/confluence/display/CLOUDSTACK/H
 Apache CloudStack developers use various platforms for development, this guide
 was tested against a CentOS 7 x86_64 setup.
 
-* [Setting up development environment](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Setting+up+CloudStack+Development+Environment) for Apache CloudStack.
-* [Building](https://cwiki.apache.org/confluence/display/CLOUDSTACK/How+to+build+CloudStack) Apache CloudStack.
-* [Appliance based development](https://github.com/rhtyd/monkeybox)
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+- [Setting up Development Environment](#setting-up-development-environment)
+  - [Using jenv and/or pyenv for Version Management](#using-jenv-andor-pyenv-for-version-management)
+- [Getting the Source Code](#getting-the-source-code)
+- [Building](#building)
+- [To bring up CloudStack UI](#to-bring-up-cloudstack-ui)
+- [Building with non-redistributable plugins](#building-with-non-redistributable-plugins)
+- [Packaging and Installation](#packaging-and-installation)
+  - [Debian/Ubuntu](#debianubuntu)
+  - [RHEL/CentOS](#rhelcentos)
+- [Notes](#notes)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## Setting up Development Environment
 

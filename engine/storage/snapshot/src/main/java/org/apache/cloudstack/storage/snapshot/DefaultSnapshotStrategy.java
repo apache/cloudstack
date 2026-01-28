@@ -148,7 +148,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
 
                 CreateObjectAnswer createSnapshotAnswer = new CreateObjectAnswer(snapTO);
 
-                snapshotOnImageStore.processEvent(Event.OperationSuccessed, createSnapshotAnswer);
+                snapshotOnImageStore.processEvent(Event.OperationSucceeded, createSnapshotAnswer);
                 SnapshotObject snapObj = castSnapshotInfoToSnapshotObject(snapshot);
                 try {
                     snapObj.processEvent(Snapshot.Event.OperationNotPerformed);
@@ -303,7 +303,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         }
 
         if (Snapshot.State.Error.equals(snapshotVO.getState())) {
-            List<SnapshotDataStoreVO> storeRefs = snapshotStoreDao.findBySnapshotId(snapshotId);
+            List<SnapshotDataStoreVO> storeRefs = snapshotStoreDao.findBySnapshotIdWithNonDestroyedState(snapshotId);
             List<Long> deletedRefs = new ArrayList<>();
             for (SnapshotDataStoreVO ref : storeRefs) {
                 boolean refZoneIdMatch = false;
@@ -670,6 +670,12 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                         "together for KVM. As restoring volume snapshots will erase the VM snapshots and cause data loss.", vm.getUuid());
                 return StrategyPriority.CANT_HANDLE;
             }
+        }
+
+        if (CollectionUtils.isNotEmpty(vmSnapshotDao.findByVmAndByType(volumeVO.getInstanceId(), VMSnapshot.Type.DiskAndMemory))) {
+            logger.debug("DefaultSnapshotStrategy cannot handle snapshot [{}] for volume [{}] as the volume is attached to a VM with disk-and-memory VM snapshots." +
+                    "Restoring the volume snapshot will corrupt any newer disk-and-memory VM snapshots.", snapshot);
+            return StrategyPriority.CANT_HANDLE;
         }
 
         return StrategyPriority.DEFAULT;

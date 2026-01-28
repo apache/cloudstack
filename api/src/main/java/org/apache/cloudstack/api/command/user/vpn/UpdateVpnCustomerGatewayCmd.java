@@ -32,7 +32,7 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.event.EventTypes;
 import com.cloud.network.Site2SiteCustomerGateway;
 
-@APICommand(name = "updateVpnCustomerGateway", description = "Update site to site vpn customer gateway", responseObject = Site2SiteCustomerGatewayResponse.class, entityType = {Site2SiteCustomerGateway.class},
+@APICommand(name = "updateVpnCustomerGateway", description = "Update site to site VPN customer gateway", responseObject = Site2SiteCustomerGatewayResponse.class, entityType = {Site2SiteCustomerGateway.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
 
@@ -44,16 +44,16 @@ public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = Site2SiteCustomerGatewayResponse.class,
                required = true,
-               description = "id of customer gateway")
+               description = "ID of customer gateway")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = false, description = "name of this customer gateway")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = false, description = "Name of this customer gateway")
     private String name;
 
-    @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, required = true, description = "public ip address id of the customer gateway")
+    @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, required = true, description = "Public IP address id of the customer gateway")
     private String gatewayIp;
 
-    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.STRING, required = true, description = "guest cidr of the customer gateway. Multiple entries must be separated by a single comma character (,).")
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.STRING, required = true, description = "Guest CIDR of the customer gateway. Multiple entries must be separated by a single comma character (,).")
     private String guestCidrList;
 
     @Parameter(name = ApiConstants.IPSEC_PSK, type = CommandType.STRING, required = true, description = "IPsec Preshared-Key of the customer gateway. Cannot contain newline or double quotes.")
@@ -83,14 +83,14 @@ public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.FORCE_ENCAP, type = CommandType.BOOLEAN, required = false, description = "Force encapsulation for Nat Traversal")
     private Boolean encap;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the account associated with the gateway. Must be used with the domainId parameter.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "The Account associated with the gateway. Must be used with the domainId parameter.")
     private String accountName;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
                entityType = DomainResponse.class,
-               description = "the domain ID associated with the gateway. If used with the account parameter returns the "
-                   + "gateway associated with the account for the specified domain.")
+               description = "The domain ID associated with the gateway. If used with the account parameter returns the "
+                   + "gateway associated with the Account for the specified domain.")
     private Long domainId;
 
     @Parameter(name = ApiConstants.SPLIT_CONNECTIONS, type = CommandType.BOOLEAN, required = false, description = "For IKEv2, whether to split multiple right subnet cidrs into multiple connection statements.",
@@ -161,7 +161,7 @@ public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, null, true);
+        Long accountId = _accountService.finalizeAccountId(accountName, domainId, null, true);
         if (accountId == null) {
             accountId = CallContext.current().getCallingAccount().getId();
         }

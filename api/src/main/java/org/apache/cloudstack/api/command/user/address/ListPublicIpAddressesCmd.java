@@ -50,59 +50,59 @@ public class ListPublicIpAddressesCmd extends BaseListRetrieveOnlyResourceCountC
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ALLOCATED_ONLY, type = CommandType.BOOLEAN, description = "limits search results to allocated public IP addresses")
+    @Parameter(name = ApiConstants.ALLOCATED_ONLY, type = CommandType.BOOLEAN, description = "Limits search results to allocated public IP addresses")
     private Boolean allocatedOnly;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "lists all public IP addresses by state")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "Lists all public IP addresses by state. A comma-separated list of states can be passed.")
     private String state;
 
-    @Parameter(name = ApiConstants.FOR_VIRTUAL_NETWORK, type = CommandType.BOOLEAN, description = "the virtual network for the IP address")
+    @Parameter(name = ApiConstants.FOR_VIRTUAL_NETWORK, type = CommandType.BOOLEAN, description = "The virtual Network for the IP address")
     private Boolean forVirtualNetwork;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = IPAddressResponse.class, description = "lists IP address by ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = IPAddressResponse.class, description = "Lists IP address by ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "lists the specified IP address")
+    @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "Lists the specified IP address")
     private String ipAddress;
 
-    @Parameter(name = ApiConstants.VLAN_ID, type = CommandType.UUID, entityType = VlanIpRangeResponse.class, description = "lists all public IP addresses by VLAN ID")
+    @Parameter(name = ApiConstants.VLAN_ID, type = CommandType.UUID, entityType = VlanIpRangeResponse.class, description = "Lists all public IP addresses by VLAN ID")
     private Long vlanId;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "lists all public IP addresses by zone ID")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "Lists all public IP addresses by zone ID")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.FOR_LOAD_BALANCING, type = CommandType.BOOLEAN, description = "list only IPs used for load balancing")
+    @Parameter(name = ApiConstants.FOR_LOAD_BALANCING, type = CommandType.BOOLEAN, description = "List only IPs used for load balancing")
     private Boolean forLoadBalancing;
 
     @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID,
                type = CommandType.UUID,
                entityType = PhysicalNetworkResponse.class,
-               description = "lists all public IP addresses by physical network ID")
+               description = "Lists all public IP addresses by physical Network ID")
     private Long physicalNetworkId;
 
     @Parameter(name = ApiConstants.ASSOCIATED_NETWORK_ID,
                type = CommandType.UUID,
                entityType = NetworkResponse.class,
-               description = "lists all public IP addresses associated to the network specified")
+               description = "Lists all public IP addresses associated to the Network specified")
     private Long associatedNetworkId;
 
     @Parameter(name = ApiConstants.NETWORK_ID,
             type = CommandType.UUID,
             entityType = NetworkResponse.class,
-            description = "lists all public IP addresses by source network ID",
+            description = "Lists all public IP addresses by source Network ID",
             since = "4.13.0")
     private Long networkId;
 
-    @Parameter(name = ApiConstants.IS_SOURCE_NAT, type = CommandType.BOOLEAN, description = "list only source NAT IP addresses")
+    @Parameter(name = ApiConstants.IS_SOURCE_NAT, type = CommandType.BOOLEAN, description = "List only source NAT IP addresses")
     private Boolean isSourceNat;
 
-    @Parameter(name = ApiConstants.IS_STATIC_NAT, type = CommandType.BOOLEAN, description = "list only static NAT IP addresses")
+    @Parameter(name = ApiConstants.IS_STATIC_NAT, type = CommandType.BOOLEAN, description = "List only static NAT IP addresses")
     private Boolean isStaticNat;
 
     @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "List IPs belonging to the VPC")
     private Long vpcId;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "List resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     @Parameter(name = ApiConstants.FOR_SYSTEM_VMS, type = CommandType.BOOLEAN, description = "true if range is dedicated for system VMs", since = "4.20.0")

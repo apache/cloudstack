@@ -38,7 +38,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.exception.ResourceAllocationException;
 
-@APICommand(name = "getUploadParamsForTemplate", description = "upload an existing template into the CloudStack cloud. ",
+@APICommand(name = "getUploadParamsForTemplate", description = "Upload an existing Template into the CloudStack cloud. ",
         responseObject = GetUploadParamsResponse.class, since = "4.6.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -46,18 +46,18 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
 
     private static final String s_name = "postuploadtemplateresponse";
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the template. This is usually used for display purposes.", length = 4096)
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "The display text of the Template. This is usually used for display purposes.", length = 4096)
     private String displayText;
 
-    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, required = true, description = "the target hypervisor for the template")
+    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, required = true, description = "The target hypervisor for the Template")
     private String hypervisor;
 
     @Parameter(name = ApiConstants.OS_TYPE_ID, type = CommandType.UUID, entityType = GuestOSResponse.class, required = false,
-            description = "the ID of the OS Type that best represents the OS of this template. Not required for VMware as the guest OS is obtained from the OVF file.")
+            description = "The ID of the OS Type that best represents the OS of this Template. Not required for VMware as the guest OS is obtained from the OVF file.")
     private Long osTypeId;
 
     @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
-            description = "the CPU arch of the template. Valid options are: x86_64, aarch64",
+            description = "the CPU arch of the template. Valid options are: x86_64, aarch64, s390x",
             since = "4.20")
     private String arch;
 
@@ -67,36 +67,36 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "Template details in key/value pairs.")
     private Map details;
 
-    @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE, type = CommandType.BOOLEAN, description = "true if template contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
+    @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE, type = CommandType.BOOLEAN, description = "True if Template contains XS/VMWare tools in order to support dynamic scaling of Instance CPU/memory")
     private Boolean isDynamicallyScalable;
 
-    @Parameter(name = ApiConstants.IS_EXTRACTABLE, type = CommandType.BOOLEAN, description = "true if the template or its derivatives are extractable; default is false")
+    @Parameter(name = ApiConstants.IS_EXTRACTABLE, type = CommandType.BOOLEAN, description = "True if the Template or its derivatives are extractable; default is false")
     private Boolean extractable;
 
-    @Parameter(name = ApiConstants.IS_FEATURED, type = CommandType.BOOLEAN, description = "true if this template is a featured template, false otherwise")
+    @Parameter(name = ApiConstants.IS_FEATURED, type = CommandType.BOOLEAN, description = "True if this Template is a featured Template, false otherwise")
     private Boolean featured;
 
-    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "true if the template is available to all accounts; default is true")
+    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "True if the Template is available to all accounts; default is true")
     private Boolean publicTemplate;
 
-    @Parameter(name = ApiConstants.ROUTING, type = CommandType.BOOLEAN, description = "true if the template type is routing i.e., if template is used to deploy router")
+    @Parameter(name = ApiConstants.ROUTING, type = CommandType.BOOLEAN, description = "True if the Template type is routing i.e., if Template is used to deploy router")
     private Boolean isRoutingType;
 
-    @Parameter(name = ApiConstants.PASSWORD_ENABLED, type = CommandType.BOOLEAN, description = "true if the template supports the password reset feature; default is false")
+    @Parameter(name = ApiConstants.PASSWORD_ENABLED, type = CommandType.BOOLEAN, description = "True if the Template supports the password reset feature; default is false")
     private Boolean passwordEnabled;
 
-    @Parameter(name = ApiConstants.REQUIRES_HVM, type = CommandType.BOOLEAN, description = "true if this template requires HVM")
+    @Parameter(name = ApiConstants.REQUIRES_HVM, type = CommandType.BOOLEAN, description = "True if this Template requires HVM")
     private Boolean requiresHvm;
 
-    @Parameter(name = ApiConstants.SSHKEY_ENABLED, type = CommandType.BOOLEAN, description = "true if the template supports the sshkey upload feature; default is false")
+    @Parameter(name = ApiConstants.SSHKEY_ENABLED, type = CommandType.BOOLEAN, description = "True if the Template supports the SSHkey upload feature; default is false")
     private Boolean sshKeyEnabled;
 
-    @Parameter(name = ApiConstants.TEMPLATE_TAG, type = CommandType.STRING, description = "the tag for this template.")
+    @Parameter(name = ApiConstants.TEMPLATE_TAG, type = CommandType.STRING, description = "The tag for this Template.")
     private String templateTag;
 
     @Parameter(name=ApiConstants.DEPLOY_AS_IS,
             type = CommandType.BOOLEAN,
-            description = "(VMware only) true if VM deployments should preserve all the configurations defined for this template", since = "4.15.1")
+            description = "(VMware only) true if Instance deployments should preserve all the configurations defined for this Template", since = "4.15.1")
     private Boolean deployAsIs;
 
     @Parameter(name=ApiConstants.FOR_CKS,
@@ -170,7 +170,7 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
     }
 
     public String getTemplateTag() {
-        return templateTag;
+        return StringUtils.isBlank(templateTag) ? null : templateTag;
     }
 
     public boolean isDeployAsIs() {
@@ -198,14 +198,14 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (ResourceAllocationException | MalformedURLException e) {
-            logger.error("exception while registering template", e);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "exception while registering template: " + e.getMessage());
+            logger.error("Exception while registering Template", e);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Exception while registering Template: " + e.getMessage());
         }
     }
 
     private void validateRequest() {
         if (getZoneId() <= 0) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "invalid zoneid");
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid zoneid");
         }
         if (!isDeployAsIs() && osTypeId == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Missing parameter ostypeid");
@@ -223,7 +223,7 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(getAccountName(), getDomainId(), getProjectId(), true);
+        Long accountId = _accountService.finalizeAccountId(getAccountName(), getDomainId(), getProjectId(), true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }

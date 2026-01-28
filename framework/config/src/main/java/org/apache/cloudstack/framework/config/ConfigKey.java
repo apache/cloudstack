@@ -267,8 +267,16 @@ public class ConfigKey<T> {
 
     static ConfigDepotImpl s_depot = null;
 
-    static public void init(ConfigDepotImpl depot) {
+    private String _defaultValueIfEmpty = null;
+
+    public static void init(ConfigDepotImpl depot) {
         s_depot = depot;
+    }
+
+    public ConfigKey(Class<T> type, String name, String category, String defaultValue, String description, boolean isDynamic, Scope scope, T multiplier,
+                     String displayText, String parent, Ternary<String, String, Long> group, Pair<String, Long> subGroup, Kind kind, String options, String defaultValueIfEmpty) {
+        this(type, name, category, defaultValue, description, isDynamic, scope, multiplier, displayText, parent, group, subGroup, kind, options);
+        this._defaultValueIfEmpty = defaultValueIfEmpty;
     }
 
     public ConfigKey(String category, Class<T> type, String name, String defaultValue, String description, boolean isDynamic, Scope scope) {
@@ -380,7 +388,19 @@ public class ConfigKey<T> {
     public T value() {
         if (_value == null || isDynamic()) {
             String value = s_depot != null ? s_depot.getConfigStringValue(_name, Scope.Global, null) : null;
-            _value = valueOf((value == null) ? defaultValue() : value);
+
+            String effective;
+            if (value != null) {
+                if (value.isEmpty() && _defaultValueIfEmpty != null) {
+                    effective = _defaultValueIfEmpty;
+                } else {
+                    effective = value;
+                }
+            } else {
+                effective = _defaultValueIfEmpty != null ? _defaultValueIfEmpty : defaultValue();
+            }
+
+            _value = valueOf(effective);
         }
         return _value;
     }
@@ -409,6 +429,10 @@ public class ConfigKey<T> {
             return valueInGlobalOrAvailableParentScope(scope, id);
         }
         logger.trace("Scope({}) value for config ({}): {}", scope, _name, _value);
+
+        if (value.isEmpty() && _defaultValueIfEmpty != null) {
+            return valueOf(_defaultValueIfEmpty);
+        }
         return valueOf(value);
     }
 

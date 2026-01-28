@@ -55,46 +55,46 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "the protocol for the ACL rule. Valid values are TCP/UDP/ICMP/ALL or valid protocol number (see /etc/protocols). ALL is default.")
+    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "The protocol for the ACL rule. Valid values are TCP/UDP/ICMP/ALL or valid protocol number (see /etc/protocols). ALL is default.")
     private String protocol;
 
-    @Parameter(name = ApiConstants.START_PORT, type = CommandType.INTEGER, description = "start port for this ingress rule")
+    @Parameter(name = ApiConstants.START_PORT, type = CommandType.INTEGER, description = "Start port for this ingress rule")
     private Integer startPort;
 
-    @Parameter(name = ApiConstants.END_PORT, type = CommandType.INTEGER, description = "end port for this ingress rule")
+    @Parameter(name = ApiConstants.END_PORT, type = CommandType.INTEGER, description = "End port for this ingress rule")
     private Integer endPort;
 
-    @Parameter(name = ApiConstants.ICMP_TYPE, type = CommandType.INTEGER, description = "type of the icmp message being sent")
+    @Parameter(name = ApiConstants.ICMP_TYPE, type = CommandType.INTEGER, description = "Type of the icmp message being sent")
     private Integer icmpType;
 
-    @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "error code for this icmp message")
+    @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "Error code for this icmp message")
     private Integer icmpCode;
 
-    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list associated. Multiple entries must be separated by a single comma character (,).")
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "The cidr list associated. Multiple entries must be separated by a single comma character (,).")
     private List<String> cidrList;
 
-    @Parameter(name = ApiConstants.USER_SECURITY_GROUP_LIST, type = CommandType.MAP, description = "user to security group mapping")
+    @Parameter(name = ApiConstants.USER_SECURITY_GROUP_LIST, type = CommandType.MAP, description = "User to security group mapping")
     private Map userSecurityGroupList;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
-               description = "an optional domainId for the security group. If the account parameter is used, domainId must also be used.",
+               description = "An optional domainId for the security group. If the account parameter is used, domainId must also be used.",
                entityType = DomainResponse.class)
     private Long domainId;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the security group. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "An optional account for the security group. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, description = "an optional project of the security group", entityType = ProjectResponse.class)
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, description = "An optional project of the security group", entityType = ProjectResponse.class)
     private Long projectId;
 
     @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name=ApiConstants.SECURITY_GROUP_ID, type=CommandType.UUID, description="The ID of the security group. Mutually exclusive with securityGroupName parameter", entityType=SecurityGroupResponse.class)
+    @Parameter(name=ApiConstants.SECURITY_GROUP_ID, type=CommandType.UUID, description = "The ID of the security group. Mutually exclusive with securityGroupName parameter", entityType=SecurityGroupResponse.class)
     private Long securityGroupId;
 
     // This @ACL will not work, since we don't have a way to convert this parameter to the entity like securityGroupId.
     //@ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name=ApiConstants.SECURITY_GROUP_NAME, type=CommandType.STRING, description="The name of the security group. Mutually exclusive with securityGroupId parameter")
+    @Parameter(name=ApiConstants.SECURITY_GROUP_NAME, type=CommandType.STRING, description = "The name of the security group. Mutually exclusive with securityGroupId parameter")
     private String securityGroupName;
 
     /////////////////////////////////////////////////////
@@ -166,7 +166,7 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }

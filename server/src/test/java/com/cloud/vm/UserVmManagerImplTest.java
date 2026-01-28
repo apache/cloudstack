@@ -59,6 +59,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
 
+import com.cloud.domain.Domain;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -1120,10 +1121,12 @@ public class UserVmManagerImplTest {
     public void recoverRootVolumeTestDestroyState() {
         Mockito.doReturn(Volume.State.Destroy).when(volumeVOMock).getState();
 
-        userVmManagerImpl.recoverRootVolume(volumeVOMock, vmId);
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
+            userVmManagerImpl.recoverRootVolume(volumeVOMock, vmId);
 
-        Mockito.verify(volumeApiService).recoverVolume(volumeVOMock.getId());
-        Mockito.verify(volumeDaoMock).attachVolume(volumeVOMock.getId(), vmId, UserVmManagerImpl.ROOT_DEVICE_ID);
+            Mockito.verify(volumeApiService).recoverVolume(volumeVOMock.getId());
+            Mockito.verify(volumeDaoMock).attachVolume(volumeVOMock.getId(), vmId, UserVmManagerImpl.ROOT_DEVICE_ID);
+        }
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -1133,7 +1136,7 @@ public class UserVmManagerImplTest {
         ReflectionTestUtils.setField(deployVMCmd, "serviceOfferingId", serviceOfferingId);
         deployVMCmd._accountService = accountService;
 
-        when(accountService.finalyzeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
+        when(accountService.finalizeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
         when(accountService.getActiveAccountById(accountId)).thenReturn(account);
         when(entityManager.findById(DataCenter.class, zoneId)).thenReturn(_dcMock);
         when(entityManager.findById(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOffering);
@@ -1150,7 +1153,7 @@ public class UserVmManagerImplTest {
         ReflectionTestUtils.setField(deployVMCmd, "serviceOfferingId", serviceOfferingId);
         deployVMCmd._accountService = accountService;
 
-        when(accountService.finalyzeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
+        when(accountService.finalizeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
         when(accountService.getActiveAccountById(accountId)).thenReturn(account);
         when(entityManager.findById(DataCenter.class, zoneId)).thenReturn(_dcMock);
         when(entityManager.findById(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOffering);
@@ -1161,7 +1164,7 @@ public class UserVmManagerImplTest {
         when(templateMock.isDeployAsIs()).thenReturn(false);
         when(templateMock.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
         when(templateMock.getUserDataId()).thenReturn(null);
-        Mockito.doNothing().when(vnfTemplateManager).validateVnfApplianceNics(any(), nullable(List.class));
+        Mockito.doNothing().when(vnfTemplateManager).validateVnfApplianceNics(any(), nullable(List.class), nullable(Map.class));
 
         ServiceOfferingJoinVO svcOfferingMock = Mockito.mock(ServiceOfferingJoinVO.class);
         when(serviceOfferingJoinDao.findById(anyLong())).thenReturn(svcOfferingMock);
@@ -1173,7 +1176,7 @@ public class UserVmManagerImplTest {
 
         UserVm result = userVmManagerImpl.createVirtualMachine(deployVMCmd);
         assertEquals(userVmVoMock, result);
-        Mockito.verify(vnfTemplateManager).validateVnfApplianceNics(templateMock, null);
+        Mockito.verify(vnfTemplateManager).validateVnfApplianceNics(templateMock, null, Collections.emptyMap());
         Mockito.verify(userVmManagerImpl).createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
                 any(), any(), any(), any(), eq(true), any(), any(), any());
@@ -1406,7 +1409,7 @@ public class UserVmManagerImplTest {
         ReflectionTestUtils.setField(deployVMCmd, "serviceOfferingId", serviceOfferingId);
         deployVMCmd._accountService = accountService;
 
-        when(accountService.finalyzeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
+        when(accountService.finalizeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
         when(accountService.getActiveAccountById(accountId)).thenReturn(account);
         when(entityManager.findById(DataCenter.class, zoneId)).thenReturn(_dcMock);
         when(entityManager.findById(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOffering);
@@ -1417,7 +1420,7 @@ public class UserVmManagerImplTest {
         when(templateMock.isDeployAsIs()).thenReturn(false);
         when(templateMock.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
         when(templateMock.getUserDataId()).thenReturn(null);
-        Mockito.doNothing().when(vnfTemplateManager).validateVnfApplianceNics(any(), nullable(List.class));
+        Mockito.doNothing().when(vnfTemplateManager).validateVnfApplianceNics(any(), nullable(List.class), nullable(Map.class));
 
         ServiceOfferingJoinVO svcOfferingMock = Mockito.mock(ServiceOfferingJoinVO.class);
         when(serviceOfferingJoinDao.findById(anyLong())).thenReturn(svcOfferingMock);
@@ -3105,7 +3108,7 @@ public class UserVmManagerImplTest {
 
         configureDoNothingForMethodsThatWeDoNotWantToTest();
 
-        doThrow(PermissionDeniedException.class).when(accountManager).checkAccess(Mockito.any(Account.class), Mockito.any());
+        doThrow(PermissionDeniedException.class).when(accountManager).checkAccess(Mockito.any(Account.class), Mockito.any(Domain.class));
 
         Assert.assertThrows(PermissionDeniedException.class, () -> userVmManagerImpl.moveVmToUser(assignVmCmdMock));
     }
@@ -3300,7 +3303,7 @@ public class UserVmManagerImplTest {
         CreateVMFromBackupCmd cmd = new CreateVMFromBackupCmd();
         cmd._accountService = accountService;
         cmd._entityMgr = entityManager;
-        when(accountService.finalyzeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
+        when(accountService.finalizeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
         when(accountService.getActiveAccountById(accountId)).thenReturn(account);
 
         ReflectionTestUtils.setField(cmd, "serviceOfferingId", serviceOfferingId);
@@ -3471,7 +3474,7 @@ public class UserVmManagerImplTest {
         CreateVMFromBackupCmd cmd = new CreateVMFromBackupCmd();
         cmd._accountService = accountService;
         cmd._entityMgr = entityManager;
-        when(accountService.finalyzeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
+        when(accountService.finalizeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
         when(accountService.getActiveAccountById(accountId)).thenReturn(account);
 
         ReflectionTestUtils.setField(cmd, "serviceOfferingId", serviceOfferingId);
@@ -3860,7 +3863,7 @@ public class UserVmManagerImplTest {
         ReflectionTestUtils.setField(deployVMCmd, "volumeId", volumeId);
         deployVMCmd._accountService = accountService;
 
-        when(accountService.finalyzeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
+        when(accountService.finalizeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
         when(accountService.getActiveAccountById(accountId)).thenReturn(account);
         when(entityManager.findById(DataCenter.class, zoneId)).thenReturn(_dcMock);
         when(entityManager.findById(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOffering);
@@ -3877,7 +3880,7 @@ public class UserVmManagerImplTest {
         when(templateMock.isDeployAsIs()).thenReturn(false);
         when(templateMock.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
         when(templateMock.getUserDataId()).thenReturn(null);
-        Mockito.doNothing().when(vnfTemplateManager).validateVnfApplianceNics(any(), nullable(List.class));
+        Mockito.doNothing().when(vnfTemplateManager).validateVnfApplianceNics(any(), nullable(List.class), any());
         when(_dcMock.isLocalStorageEnabled()).thenReturn(false);
         when(_dcMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
         Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
@@ -3896,7 +3899,7 @@ public class UserVmManagerImplTest {
         ReflectionTestUtils.setField(deployVMCmd, "snapshotId", snashotId);
         deployVMCmd._accountService = accountService;
 
-        when(accountService.finalyzeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
+        when(accountService.finalizeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
         when(accountService.getActiveAccountById(accountId)).thenReturn(account);
         when(entityManager.findById(DataCenter.class, zoneId)).thenReturn(_dcMock);
         when(entityManager.findById(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOffering);
@@ -3915,7 +3918,7 @@ public class UserVmManagerImplTest {
         when(templateMock.isDeployAsIs()).thenReturn(false);
         when(templateMock.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
         when(templateMock.getUserDataId()).thenReturn(null);
-        Mockito.doNothing().when(vnfTemplateManager).validateVnfApplianceNics(any(), nullable(List.class));
+        Mockito.doNothing().when(vnfTemplateManager).validateVnfApplianceNics(any(), nullable(List.class), any());
         when(_dcMock.isLocalStorageEnabled()).thenReturn(false);
         when(_dcMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
         Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
@@ -3934,7 +3937,7 @@ public class UserVmManagerImplTest {
         CreateVMFromBackupCmd cmd = new CreateVMFromBackupCmd();
         cmd._accountService = accountService;
         cmd._entityMgr = entityManager;
-        when(accountService.finalyzeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
+        when(accountService.finalizeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
         when(accountService.getActiveAccountById(accountId)).thenReturn(account);
 
         ReflectionTestUtils.setField(cmd, "serviceOfferingId", serviceOfferingId);
@@ -4000,7 +4003,7 @@ public class UserVmManagerImplTest {
         CreateVMFromBackupCmd cmd = new CreateVMFromBackupCmd();
         cmd._accountService = accountService;
         cmd._entityMgr = entityManager;
-        when(accountService.finalyzeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
+        when(accountService.finalizeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
         when(accountService.getActiveAccountById(accountId)).thenReturn(account);
 
         ReflectionTestUtils.setField(cmd, "serviceOfferingId", serviceOfferingId);

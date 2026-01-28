@@ -3328,7 +3328,7 @@
   "message.success.create.internallb": "正常に作成された内部LB",
   "message.success.create.isolated.network": "正常に作成された隔離ネットワーク",
   "message.success.create.keypair": "SSHキーペアが正常に作成されました",
-  "message.success.create.kubernetes.cluter": "正常に作成されたKubernetesクラスター",
+  "message.success.create.kubernetes.cluster": "正常に作成されたKubernetesクラスター",
   "message.success.create.l2.network": "正常に作成されたL2ネットワーク",
   "message.success.create.snapshot.from.vmsnapshot": "VMスナップショットからスナップショットを正常に作成しました",
   "message.success.create.user": "正常に作成されたユーザー",
