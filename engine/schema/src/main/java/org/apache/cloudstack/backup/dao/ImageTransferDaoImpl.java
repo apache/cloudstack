@@ -21,6 +21,7 @@ import java.util.List;
 
 import javax.annotation.PostConstruct;
 
+import org.apache.cloudstack.backup.ImageTransfer;
 import org.apache.cloudstack.backup.ImageTransferVO;
 import org.springframework.stereotype.Component;
 
@@ -35,6 +36,7 @@ public class ImageTransferDaoImpl extends GenericDaoBase<ImageTransferVO, Long> 
     private SearchBuilder<ImageTransferVO> uuidSearch;
     private SearchBuilder<ImageTransferVO> nbdPortSearch;
     private SearchBuilder<ImageTransferVO> volumeSearch;
+    private SearchBuilder<ImageTransferVO> phaseDirectionSearch;
 
     public ImageTransferDaoImpl() {
     }
@@ -56,6 +58,11 @@ public class ImageTransferDaoImpl extends GenericDaoBase<ImageTransferVO, Long> 
         volumeSearch = createSearchBuilder();
         volumeSearch.and("volumeId", volumeSearch.entity().getDiskId(), SearchCriteria.Op.EQ);
         volumeSearch.done();
+
+        phaseDirectionSearch = createSearchBuilder();
+        phaseDirectionSearch.and("phase", phaseDirectionSearch.entity().getPhase(), SearchCriteria.Op.EQ);
+        phaseDirectionSearch.and("direction", phaseDirectionSearch.entity().getDirection(), SearchCriteria.Op.EQ);
+        phaseDirectionSearch.done();
     }
 
     @Override
@@ -84,5 +91,13 @@ public class ImageTransferDaoImpl extends GenericDaoBase<ImageTransferVO, Long> 
         SearchCriteria<ImageTransferVO> sc = volumeSearch.create();
         sc.setParameters("volumeId", volumeId);
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<ImageTransferVO> listByPhaseAndDirection(ImageTransfer.Phase phase, ImageTransfer.Direction direction) {
+        SearchCriteria<ImageTransferVO> sc = phaseDirectionSearch.create();
+        sc.setParameters("phase", phase);
+        sc.setParameters("direction", direction);
+        return listBy(sc);
     }
 }

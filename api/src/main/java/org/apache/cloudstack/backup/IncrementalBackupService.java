@@ -29,13 +29,20 @@ import org.apache.cloudstack.api.command.admin.backup.StartBackupCmd;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.CheckpointResponse;
 import org.apache.cloudstack.api.response.ImageTransferResponse;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 
 import com.cloud.utils.component.PluggableService;
 
 /**
  * Service for managing oVirt-style incremental backups using libvirt checkpoints
  */
-public interface IncrementalBackupService extends PluggableService {
+public interface IncrementalBackupService extends Configurable, PluggableService {
+
+    ConfigKey<Long> ImageTransferPollingInterval = new ConfigKey<>("Advanced", Long.class,
+            "image.transfer.polling.interval",
+            "10",
+            "The image transfer progress polling interval in seconds.", true, ConfigKey.Scope.Global);
 
     /**
      * Start a backup session for a VM

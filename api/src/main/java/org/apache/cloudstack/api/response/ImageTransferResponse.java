@@ -62,6 +62,10 @@ public class ImageTransferResponse extends BaseResponse {
     @Param(description = "the image transfer direction: upload / download")
     private String direction;
 
+    @SerializedName("progress")
+    @Param(description = "progress in percentage for the upload image transfer")
+    private Integer progress;
+
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "the date created")
     private Date created;
@@ -96,6 +100,10 @@ public class ImageTransferResponse extends BaseResponse {
 
     public void setDirection(String direction) {
         this.direction = direction;
+    }
+
+    public void setProgress(Integer progress) {
+        this.progress = progress;
     }
 
     public void setCreated(Date created) {

@@ -3826,7 +3826,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         // Open firewall port for image server
         if (_inSystemVM) {
             String rule = String.format("-p tcp -m state --state NEW -m tcp --dport %d -j ACCEPT", imageServerPort);
-            IpTablesHelper.addConditionally(IpTablesHelper.INPUT_CHAIN, true, rule,
+            IpTablesHelper.addConditionally(IpTablesHelper.INPUT_CHAIN, false, rule,
                     String.format("Error in opening up image server port %d", imageServerPort));
         }
 

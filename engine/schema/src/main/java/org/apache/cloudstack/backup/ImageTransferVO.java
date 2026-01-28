@@ -68,6 +68,9 @@ public class ImageTransferVO implements ImageTransfer {
     @Column(name = "signed_ticket_id")
     private String signedTicketId;
 
+    @Column(name = "progress")
+    private Integer progress;
+
     @Column(name = "account_id")
     Long accountId;
 
@@ -187,6 +190,15 @@ public class ImageTransferVO implements ImageTransfer {
 
     public void setSignedTicketId(String signedTicketId) {
         this.signedTicketId = signedTicketId;
+    }
+
+    public Integer getProgress() {
+        return progress;
+    }
+
+    public void setProgress(Integer progress) {
+        this.progress = progress;
+        this.updated = new Date();
     }
 
     @Override

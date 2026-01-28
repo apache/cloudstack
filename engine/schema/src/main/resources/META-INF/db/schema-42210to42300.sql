@@ -143,6 +143,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`image_transfer`(
     `transfer_url` varchar(255) COMMENT 'ImageIO transfer URL',
     `phase` varchar(20) NOT NULL COMMENT 'Transfer phase: initializing, transferring, finished, failed',
     `direction` varchar(20) NOT NULL COMMENT 'Direction: upload, download',
+    `progress` int COMMENT 'Transfer progress percentage (0-100)',
     `signed_ticket_id` varchar(255) COMMENT 'Signed ticket ID from ImageIO',
     `created` datetime NOT NULL COMMENT 'date created',
     `updated` datetime COMMENT 'date updated if not null',

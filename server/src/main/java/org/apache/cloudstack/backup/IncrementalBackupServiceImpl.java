@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -41,6 +43,8 @@ import org.apache.cloudstack.api.response.ImageTransferResponse;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.ImageTransferDao;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -95,6 +99,8 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
 
     @Inject
     EndPointSelector _epSelector;
+
+    private Timer imageTransferTimer;
 
     private static final int NBD_PORT_RANGE_START = 10809;
     private static final int NBD_PORT_RANGE_END = 10909;
@@ -204,7 +210,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
 
         } catch (AgentUnavailableException | OperationTimedoutException e) {
             backupDao.remove(backup.getId());
-            throw new CloudRuntimeException("Failed to communicate with agent: " + e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to communicate with agent", e);
         }
     }
 
@@ -269,7 +275,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
             return true;
 
         } catch (AgentUnavailableException | OperationTimedoutException e) {
-            throw new CloudRuntimeException("Failed to communicate with agent: " + e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to communicate with agent", e);
         }
     }
 
@@ -324,7 +330,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
             return imageTransfer;
 
         } catch (AgentUnavailableException | OperationTimedoutException e) {
-            throw new CloudRuntimeException("Failed to communicate with agent: " + e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to communicate with agent", e);
         }
     }
 
@@ -363,7 +369,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         try {
             nbdServerAnswer = (StartNBDServerAnswer) agentManager.send(host.getId(), nbdServerCmd);
         } catch (AgentUnavailableException | OperationTimedoutException e) {
-            throw new CloudRuntimeException("Failed to communicate with agent: " + e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to communicate with agent", e);
         }
         if (!nbdServerAnswer.getResult()) {
             throw new CloudRuntimeException("Failed to start the NBD server");
@@ -392,7 +398,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
                 volume.getId(),
                 host.getId(),
                 nbdPort,
-                ImageTransferVO.Phase.initializing,
+                ImageTransferVO.Phase.transferring,
                 ImageTransfer.Direction.upload,
                 volume.getAccountId(),
                 volume.getDomainId(),
@@ -463,7 +469,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
             }
 
         } catch (AgentUnavailableException | OperationTimedoutException e) {
-            throw new CloudRuntimeException("Failed to communicate with agent: " + e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to communicate with agent", e);
         }
     }
 
@@ -477,7 +483,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         try {
             answer = agentManager.send(imageTransfer.getHostId(), stopNbdServerCommand);
         } catch (AgentUnavailableException | OperationTimedoutException e) {
-            throw new CloudRuntimeException("Failed to communicate with agent: " + e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to communicate with agent", e);
         }
         if (!answer.getResult()) {
             throw new CloudRuntimeException("Failed to stop the nbd server");
@@ -602,9 +608,131 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         Volume volume = volumeDao.findById(volumeId);
         response.setDiskId(volume.getUuid());
         response.setTransferUrl(imageTransferVO.getTransferUrl());
-        response.setPhase(ImageTransferVO.Phase.initializing.toString());
+        response.setPhase(imageTransferVO.getPhase().toString());
+        response.setProgress(imageTransferVO.getProgress());
         response.setDirection(imageTransferVO.getDirection().toString());
         response.setCreated(imageTransferVO.getCreated());
         return response;
+    }
+
+    @Override
+    public boolean start() {
+        final TimerTask imageTransferPollTask = new ManagedContextTimerTask() {
+            @Override
+            protected void runInContext() {
+                try {
+                    pollImageTransferProgress();
+                } catch (final Throwable t) {
+                    logger.warn("Catch throwable in image transfer poll task ", t);
+                }
+            }
+        };
+
+        imageTransferTimer = new Timer("ImageTransferPollTask");
+        long pollingInterval = ImageTransferPollingInterval.value() * 1000L;
+        imageTransferTimer.schedule(imageTransferPollTask, pollingInterval, pollingInterval);
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        if (imageTransferTimer != null) {
+            imageTransferTimer.cancel();
+            imageTransferTimer = null;
+        }
+        return true;
+    }
+
+    private void pollImageTransferProgress() {
+        try {
+            List<ImageTransferVO> transferringTransfers = imageTransferDao.listByPhaseAndDirection(
+                    ImageTransfer.Phase.transferring, ImageTransfer.Direction.upload);
+            if (transferringTransfers == null || transferringTransfers.isEmpty()) {
+                return;
+            }
+
+            Map<Long, List<ImageTransferVO>> transfersByHost = transferringTransfers.stream()
+                    .collect(Collectors.groupingBy(ImageTransferVO::getHostId));
+
+            for (Map.Entry<Long, List<ImageTransferVO>> entry : transfersByHost.entrySet()) {
+                Long hostId = entry.getKey();
+                List<ImageTransferVO> hostTransfers = entry.getValue();
+
+                try {
+                    List<String> transferIds = new ArrayList<>();
+                    Map<String, String> volumePaths = new HashMap<>();
+                    Map<String, Long> volumeSizes = new HashMap<>();
+
+                    for (ImageTransferVO transfer : hostTransfers) {
+                        VolumeVO volume = volumeDao.findById(transfer.getDiskId());
+                        if (volume == null) {
+                            logger.warn("Volume not found for image transfer: " + transfer.getUuid());
+                            continue;
+                        }
+
+                        String transferId = transfer.getUuid();
+                        transferIds.add(transferId);
+
+                        String volumePath = volume.getPath();
+                        if (volumePath == null) {
+                            logger.warn("Volume path is null for image transfer: " + transfer.getUuid());
+                            continue;
+                        }
+
+                        StoragePoolVO storagePool = primaryDataStoreDao.findById(volume.getPoolId());
+                        volumePath = String.format("/mnt/%s/%s", storagePool.getUuid(), volumePath);
+
+                        volumePaths.put(transferId, volumePath);
+                        volumeSizes.put(transferId, volume.getSize());
+                    }
+
+                    if (transferIds.isEmpty()) {
+                        continue;
+                    }
+
+                    GetImageTransferProgressCommand cmd = new GetImageTransferProgressCommand(transferIds, volumePaths, volumeSizes);
+                    GetImageTransferProgressAnswer answer = (GetImageTransferProgressAnswer) agentManager.send(hostId, cmd);
+
+                    if (answer != null && answer.getResult() && answer.getProgressMap() != null) {
+                        for (ImageTransferVO transfer : hostTransfers) {
+                            String transferId = transfer.getUuid();
+                            Integer progress = answer.getProgressMap().get(transferId);
+                            if (progress != null) {
+                                transfer.setProgress(progress);
+                                if (progress == 100) {
+                                    transfer.setPhase(ImageTransfer.Phase.finished);
+                                    logger.debug("Updated phase for image transfer {} to finished", transferId);
+                                }
+                                imageTransferDao.update(transfer.getId(), transfer);
+                                logger.debug("Updated progress for image transfer {}: {}%", transferId, progress);
+                            }
+                        }
+                    } else {
+                        logger.warn("Failed to get progress for transfers on host {}: {}", hostId,
+                                answer != null ? answer.getDetails() : "null answer");
+                    }
+
+                } catch (AgentUnavailableException | OperationTimedoutException e) {
+                    logger.warn("Failed to communicate with host {} for image transfer progress", hostId);
+                } catch (Exception e) {
+                    logger.error("Error polling image transfer progress for host " + hostId, e);
+                }
+            }
+
+        } catch (Exception e) {
+            logger.error("Error in pollImageTransferProgress", e);
+        }
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return IncrementalBackupService.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey[]{
+                ImageTransferPollingInterval
+        };
     }
 }

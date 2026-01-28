@@ -19,6 +19,7 @@ package org.apache.cloudstack.backup.dao;
 
 import java.util.List;
 
+import org.apache.cloudstack.backup.ImageTransfer;
 import org.apache.cloudstack.backup.ImageTransferVO;
 
 import com.cloud.utils.db.GenericDao;
@@ -27,6 +28,6 @@ public interface ImageTransferDao extends GenericDao<ImageTransferVO, Long> {
     List<ImageTransferVO> listByBackupId(Long backupId);
     ImageTransferVO findByUuid(String uuid);
     ImageTransferVO findByNbdPort(int port);
-
     ImageTransferVO findByVolume(Long volumeId);
+    List<ImageTransferVO> listByPhaseAndDirection(ImageTransfer.Phase phase, ImageTransfer.Direction direction);
 }
