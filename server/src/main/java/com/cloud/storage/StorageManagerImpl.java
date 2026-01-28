@@ -1558,17 +1558,21 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     protected String getStoragePoolNonDestroyedVolumesLog(long storagePoolId) {
         StringBuilder sb = new StringBuilder();
-        List<VolumeVO> nonDestroyedVols = volumeDao.findByPoolId(storagePoolId, null);
+        List<VolumeVO> nonDestroyedVols = volumeDao.findNonDestroyedVolumesByPoolId(storagePoolId, null);
         VMInstanceVO volInstance;
         List<String> logMessageInfo = new ArrayList<>();
 
         sb.append("[");
         for (VolumeVO vol : nonDestroyedVols) {
-            volInstance = _vmInstanceDao.findById(vol.getInstanceId());
-            if (volInstance != null) {
-                logMessageInfo.add(String.format("Volume [%s] (attached to VM [%s])", vol.getUuid(), volInstance.getUuid()));
+            if (vol.getInstanceId() != null) {
+                volInstance = _vmInstanceDao.findById(vol.getInstanceId());
+                if (volInstance != null) {
+                    logMessageInfo.add(String.format("Volume [%s] (attached to VM [%s])", vol.getUuid(), volInstance.getUuid()));
+                } else {
+                    logMessageInfo.add(String.format("Volume [%s] (attached VM with ID [%d] doesn't exists)", vol.getUuid(), vol.getInstanceId()));
+                }
             } else {
-                logMessageInfo.add(String.format("Volume [%s]", vol.getUuid()));
+                logMessageInfo.add(String.format("Volume [%s] (not attached to any VM)", vol.getUuid()));
             }
         }
         sb.append(String.join(", ", logMessageInfo));
@@ -2640,7 +2644,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         for (String childDatastoreUUID : childDatastoreUUIDs) {
             StoragePoolVO dataStoreVO = _storagePoolDao.findPoolByUUID(childDatastoreUUID);
-            List<VolumeVO> allVolumes = volumeDao.findByPoolId(dataStoreVO.getId());
+            List<VolumeVO> allVolumes = volumeDao.findNonDestroyedVolumesByPoolId(dataStoreVO.getId());
             allVolumes.removeIf(volumeVO -> volumeVO.getInstanceId() == null);
             allVolumes.removeIf(volumeVO -> volumeVO.getState() != Volume.State.Ready);
             for (VolumeVO volume : allVolumes) {
@@ -4202,7 +4206,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 DataStoreDownloadFollowRedirects,
                 AllowVolumeReSizeBeyondAllocation,
                 StoragePoolHostConnectWorkers,
-                COPY_PUBLIC_TEMPLATES_FROM_OTHER_STORAGES
+                COPY_TEMPLATES_FROM_OTHER_SECONDARY_STORAGES
         };
     }
 
