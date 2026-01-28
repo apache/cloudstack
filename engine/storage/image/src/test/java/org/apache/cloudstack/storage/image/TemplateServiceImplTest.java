@@ -223,7 +223,7 @@ public class TemplateServiceImplTest {
 
         DataCenterVO dstZoneMock = Mockito.mock(DataCenterVO.class);
         Mockito.doReturn(dstZoneMock).when(_dcDao).findById(1L);
-        Mockito.doReturn(true).when(_tmpltMgr).copy(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.doReturn(true).when(templateManagerMock).copy(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
 
         boolean result = templateService.tryCopyingTemplateToImageStore(tmpltMock, destStoreMock);
 
@@ -288,7 +288,7 @@ public class TemplateServiceImplTest {
         VMTemplateVO templateVoMock = Mockito.mock(VMTemplateVO.class);
         Mockito.doReturn(templateVoMock).when(templateDao).findById(100L);
 
-        Mockito.doReturn(true).when(_tmpltMgr).copy(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.doReturn(true).when(templateManagerMock).copy(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
 
         Account account = mock(Account.class);
         User user = mock(User.class);
