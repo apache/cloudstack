@@ -99,7 +99,7 @@ public class DatabaseCreator {
             String username = dbProperties.getProperty(String.format("db.%s.username", database));
             String password = dbProperties.getProperty(String.format("db.%s.password", database));
             String dbName = dbProperties.getProperty(String.format("db.%s.name", database));
-            System.out.println(String.format("========> Initializing database=%s with host=%s port=%s username=%s password=%s", dbName, host, port, username, password));
+            System.out.println(String.format("========> Initializing database=%s with host=%s port=%s username=%s password=******", dbName, host, port, username));
 
             List<String> queries = new ArrayList<String>();
             queries.add(String.format("drop database if exists `%s`", dbName));

@@ -578,8 +578,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
 
         if (ObjectUtils.anyNull(chosenStore, snapshotDataStoreReference)) {
-            logger.error("Snapshot [{}] not found in any secondary storage.", snapshot);
-            throw new InvalidParameterValueException("Snapshot not found.");
+            String errorMessage = String.format("Snapshot [%s] not found in any secondary storage. The snapshot may be on primary storage, where it cannot be downloaded.", snapshot.getUuid());
+            logger.error(errorMessage);
+            throw new InvalidParameterValueException(errorMessage);
         }
 
         snapshotSrv.syncVolumeSnapshotsToRegionStore(snapshot.getVolumeId(), chosenStore);
@@ -843,7 +844,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
     protected Pair<List<SnapshotDataStoreVO>, List<Long>> getStoreRefsAndZonesForSnapshotDelete(long snapshotId, Long zoneId) {
         List<SnapshotDataStoreVO> snapshotStoreRefs = new ArrayList<>();
-        List<SnapshotDataStoreVO> allSnapshotStoreRefs = _snapshotStoreDao.findBySnapshotId(snapshotId);
+        List<SnapshotDataStoreVO> allSnapshotStoreRefs = _snapshotStoreDao.findBySnapshotIdWithNonDestroyedState(snapshotId);
         List<Long> zoneIds = new ArrayList<>();
         if (zoneId != null) {
             DataCenterVO zone = dataCenterDao.findById(zoneId);
@@ -1782,23 +1783,23 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         if (asyncBackup) {
             backupSnapshotExecutor.schedule(new BackupSnapshotTask(snapshotOnPrimary, snapshotBackupRetries - 1, snapshotStrategy, zoneIds, poolIds), 0, TimeUnit.SECONDS);
         } else {
-            SnapshotInfo backupedSnapshot = snapshotStrategy.backupSnapshot(snapshotOnPrimary);
-            if (backupedSnapshot != null) {
+            SnapshotInfo backedUpSnapshot = snapshotStrategy.backupSnapshot(snapshotOnPrimary);
+            if (backedUpSnapshot != null) {
                 snapshotStrategy.postSnapshotCreation(snapshotOnPrimary);
             }
         }
     }
 
     protected class BackupSnapshotTask extends ManagedContextRunnable {
-        SnapshotInfo snapshot;
+        SnapshotInfo snapshotOnPrimary;
         int attempts;
         SnapshotStrategy snapshotStrategy;
 
         List<Long> zoneIds;
         List<Long> poolIds;
 
-        public BackupSnapshotTask(SnapshotInfo snap, int maxRetries, SnapshotStrategy strategy, List<Long> zoneIds, List<Long> poolIds) {
-            snapshot = snap;
+        public BackupSnapshotTask(SnapshotInfo snapshot, int maxRetries, SnapshotStrategy strategy, List<Long> zoneIds, List<Long> poolIds) {
+            snapshotOnPrimary = snapshot;
             attempts = maxRetries;
             snapshotStrategy = strategy;
             this.zoneIds = zoneIds;
@@ -1810,17 +1811,16 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             try {
                 logger.debug("Value of attempts is " + (snapshotBackupRetries - attempts));
                 if (Boolean.TRUE.equals(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value()) && CollectionUtils.isEmpty(poolIds)) {
-                    SnapshotInfo backupedSnapshot = snapshotStrategy.backupSnapshot(snapshot);
-
+                    SnapshotInfo backupedSnapshot = snapshotStrategy.backupSnapshot(snapshotOnPrimary);
                     if (backupedSnapshot != null) {
-                        snapshotStrategy.postSnapshotCreation(snapshot);
-                        copyNewSnapshotToZones(snapshot.getId(), snapshot.getDataCenterId(), zoneIds);
+                        snapshotStrategy.postSnapshotCreation(snapshotOnPrimary);
+                        copyNewSnapshotToZones(snapshotOnPrimary.getId(), snapshotOnPrimary.getDataCenterId(), zoneIds);
                     }
                 }
 
                 if (CollectionUtils.isNotEmpty(poolIds)) {
                     for (Long poolId: poolIds) {
-                        copySnapshotOnPool(snapshot, snapshotStrategy, poolId);
+                        copySnapshotOnPool(snapshotOnPrimary, snapshotStrategy, poolId);
                     }
                 }
             } catch (final Exception e) {
@@ -1830,11 +1830,11 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         private void decriseBackupSnapshotAttempts() {
             if (attempts >= 0) {
-                logger.debug("Backing up of snapshot failed, for snapshot {}, left with {} more attempts", snapshot, attempts);
-                backupSnapshotExecutor.schedule(new BackupSnapshotTask(snapshot, --attempts, snapshotStrategy, zoneIds, poolIds), snapshotBackupRetryInterval, TimeUnit.SECONDS);
+                logger.debug("Backing up of snapshot failed, for snapshot {}, left with {} more attempts", snapshotOnPrimary, attempts);
+                backupSnapshotExecutor.schedule(new BackupSnapshotTask(snapshotOnPrimary, --attempts, snapshotStrategy, zoneIds, poolIds), snapshotBackupRetryInterval, TimeUnit.SECONDS);
             } else {
-                logger.debug("Done with {} attempts in  backing up of snapshot {}", snapshotBackupRetries, snapshot.getSnapshotVO());
-                snapshotSrv.cleanupOnSnapshotBackupFailure(snapshot);
+                logger.debug("Done with {} attempts in  backing up of snapshot {}", snapshotBackupRetries, snapshotOnPrimary.getSnapshotVO());
+                snapshotSrv.cleanupOnSnapshotBackupFailure(snapshotOnPrimary);
             }
         }
     }
@@ -2058,7 +2058,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     public void markVolumeSnapshotsAsDestroyed(Volume volume) {
         List<SnapshotVO> snapshots = _snapshotDao.listByVolumeId(volume.getId());
         for (SnapshotVO snapshot: snapshots) {
-            List<SnapshotDataStoreVO> snapshotDataStoreVOs = _snapshotStoreDao.findBySnapshotId(snapshot.getId());
+            List<SnapshotDataStoreVO> snapshotDataStoreVOs = _snapshotStoreDao.findBySnapshotIdWithNonDestroyedState(snapshot.getId());
             if (CollectionUtils.isEmpty(snapshotDataStoreVOs)) {
                 snapshot.setState(Snapshot.State.Destroyed);
                 _snapshotDao.update(snapshot.getId(), snapshot);

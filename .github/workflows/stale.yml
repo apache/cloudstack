@@ -33,9 +33,11 @@ jobs:
           stale-issue-message: 'This issue is stale because it has been open for 120 days with no activity. It may be removed by administrators of this project at any time. Remove the stale label or comment to request for removal of it to prevent this.'
           stale-pr-message: 'This PR is stale because it has been open for 120 days with no activity. It may be removed by administrators of this project at any time. Remove the stale label or comment to request for removal of it to prevent this.'
           close-issue-message: 'This issue was closed because it has been stale for 120 days with no activity.'
-          close-pr-message: 'This PR was closed because it has been stale for 120 days with no activity.'
+          close-pr-message: 'This PR was closed because it has been stale for 240 days with no activity.'
           stale-issue-label: 'no-issue-activity'
           stale-pr-label: 'no-pr-activity'
           days-before-stale: 120
+          days-before-close: -1
+          days-before-pr-close: 240
           exempt-issue-labels: 'gsoc,good-first-issue,long-term-plan'
           exempt-pr-labels: 'status:ready-for-merge,status:needs-testing,status:on-hold'

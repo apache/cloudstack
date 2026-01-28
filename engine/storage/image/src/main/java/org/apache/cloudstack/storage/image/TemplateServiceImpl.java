@@ -291,21 +291,41 @@ public class TemplateServiceImpl implements TemplateService {
         }
     }
 
-    protected boolean isSkipTemplateStoreDownload(VMTemplateVO template, Long zoneId) {
+    protected boolean shouldDownloadTemplateToStore(VMTemplateVO template, DataStore store) {
+        Long zoneId = store.getScope().getScopeId();
+        DataStore directedStore = _tmpltMgr.verifyHeuristicRulesForZone(template, zoneId);
+        if (directedStore != null && store.getId() != directedStore.getId()) {
+            logger.info("Template [{}] will not be download to image store [{}], as a heuristic rule is directing it to another store.",
+                    template.getUniqueName(), store.getName());
+            return false;
+        }
+
         if (template.isPublicTemplate()) {
-            return false;
+            logger.debug("Download of template [{}] to image store [{}] cannot be skipped, as it is public.", template.getUniqueName(),
+                    store.getName());
+            return true;
         }
+
         if (template.isFeatured()) {
-            return false;
+            logger.debug("Download of template [{}] to image store [{}] cannot be skipped, as it is featured.", template.getUniqueName(),
+                    store.getName());
+            return true;
         }
+
         if (TemplateType.SYSTEM.equals(template.getTemplateType())) {
-            return false;
+            logger.debug("Download of template [{}] to image store [{}] cannot be skipped, as it is a system VM template.",
+                    template.getUniqueName(),store.getName());
+            return true;
         }
+
         if (zoneId != null &&  _vmTemplateStoreDao.findByTemplateZone(template.getId(), zoneId, DataStoreRole.Image) == null) {
-            logger.debug("Template {} is not present on any image store for the zone ID: {}, its download cannot be skipped", template, zoneId);
-            return false;
+            logger.debug("Download of template [{}] to image store [{}] cannot be skipped, as it is not present on any image store of zone [{}].",
+                    template.getUniqueName(), store.getName(), zoneId);
+            return true;
         }
-        return true;
+
+        logger.info("Skipping download of template [{}] to image store [{}].", template.getUniqueName(), store.getName());
+        return false;
     }
 
     @Override
@@ -533,8 +553,7 @@ public class TemplateServiceImpl implements TemplateService {
                         // download.
                         for (VMTemplateVO tmplt : toBeDownloaded) {
                             // if this is private template, skip sync to a new image store
-                            if (isSkipTemplateStoreDownload(tmplt, zoneId)) {
-                                logger.info("Skip sync downloading private template {} to a new image store", tmplt);
+                            if (!shouldDownloadTemplateToStore(tmplt, store)) {
                                 continue;
                             }
 
@@ -671,7 +690,7 @@ public class TemplateServiceImpl implements TemplateService {
         TemplateApiResult res = new TemplateApiResult(tmplt);
         if (result.isSuccess()) {
             logger.info("Copied template [{}] to image store [{}].", tmplt.getUniqueName(), tmplt.getDataStore().getName());
-            tmplt.processEvent(Event.OperationSuccessed, result.getAnswer());
+            tmplt.processEvent(Event.OperationSucceeded, result.getAnswer());
             publishTemplateCreation(tmplt);
         } else {
             logger.warn("Failed to copy template [{}] to image store [{}].", tmplt.getUniqueName(), tmplt.getDataStore().getName());
@@ -824,7 +843,7 @@ public class TemplateServiceImpl implements TemplateService {
         }
 
         try {
-            template.processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed);
+            template.processEvent(ObjectInDataStoreStateMachine.Event.OperationSucceeded);
         } catch (Exception e) {
             result.setResult(e.toString());
             if (parentCallback != null) {
@@ -1033,7 +1052,7 @@ public class TemplateServiceImpl implements TemplateService {
         CommandResult result = callback.getResult();
         TemplateObject vo = context.getTemplate();
         if (result.isSuccess()) {
-            vo.processEvent(Event.OperationSuccessed);
+            vo.processEvent(Event.OperationSucceeded);
         } else {
             vo.processEvent(Event.OperationFailed);
         }
@@ -1093,7 +1112,7 @@ public class TemplateServiceImpl implements TemplateService {
                 // no change to existing template_store_ref, will try to re-sync later if other call triggers this sync operation, like copy template
             } else {
                 // this will update install path properly, next time it will not sync anymore.
-                destTemplate.processEvent(Event.OperationSuccessed, result.getAnswer());
+                destTemplate.processEvent(Event.OperationSucceeded, result.getAnswer());
             }
             future.complete(res);
         } catch (Exception e) {
@@ -1273,7 +1292,7 @@ public class TemplateServiceImpl implements TemplateService {
                 res.setResult(result.getResult());
                 destTemplate.processEvent(Event.OperationFailed);
             } else {
-                destTemplate.processEvent(Event.OperationSuccessed, result.getAnswer());
+                destTemplate.processEvent(Event.OperationSucceeded, result.getAnswer());
             }
             future.complete(res);
         } catch (Exception e) {
@@ -1298,7 +1317,7 @@ public class TemplateServiceImpl implements TemplateService {
                 res.setResult(result.getResult());
                 destTemplate.processEvent(Event.OperationFailed);
             } else {
-                destTemplate.processEvent(Event.OperationSuccessed, result.getAnswer());
+                destTemplate.processEvent(Event.OperationSucceeded, result.getAnswer());
             }
             future.complete(res);
         } catch (Exception e) {
@@ -1320,9 +1339,10 @@ public class TemplateServiceImpl implements TemplateService {
                 if (_vmTemplateStoreDao.isTemplateMarkedForDirectDownload(tmplt.getId())) {
                     continue;
                 }
-                tmpltStore =
-                        new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null,
-                                TemplateConstants.DEFAULT_SYSTEM_VM_TEMPLATE_PATH + tmplt.getId() + '/', tmplt.getUrl());
+                String templateDirectoryPath = TemplateConstants.DEFAULT_TMPLT_ROOT_DIR + File.separator + TemplateConstants.DEFAULT_TMPLT_FIRST_LEVEL_DIR;
+                String installPath = templateDirectoryPath + tmplt.getAccountId() + File.separator + tmplt.getId() + File.separator;
+                tmpltStore = new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED,
+                        null, null, null, installPath, tmplt.getUrl());
                 tmpltStore.setSize(0L);
                 tmpltStore.setPhysicalSize(0); // no size information for
                 // pre-seeded system vm templates
@@ -1384,7 +1404,7 @@ public class TemplateServiceImpl implements TemplateService {
         TemplateApiResult dataDiskTemplateResult = new TemplateApiResult((TemplateObject)dataDiskTemplate);
         try {
             if (result.isSuccess()) {
-                dataDiskTemplate.processEvent(Event.OperationSuccessed, result.getAnswer());
+                dataDiskTemplate.processEvent(Event.OperationSucceeded, result.getAnswer());
             } else {
                 dataDiskTemplate.processEvent(Event.OperationFailed);
                 dataDiskTemplateResult.setResult(result.getResult());
