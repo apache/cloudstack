@@ -1889,7 +1889,23 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 logger.debug("Failed to delete snapshot in destroying state: {}", snapshotVO);
             }
         }
+        cleanupOrphanSnapshotPolicies();
+
         return true;
+    }
+
+    private void cleanupOrphanSnapshotPolicies() {
+        List<SnapshotPolicyVO> policies = _snapshotPolicyDao.listActivePolicies();
+        if (CollectionUtils.isEmpty(policies)) {
+            return;
+        }
+        for (SnapshotPolicyVO policy : policies) {
+            VolumeVO volume = _volsDao.findByIdIncludingRemoved(policy.getVolumeId());
+            if (volume == null || volume.getState() == Volume.State.Expunged) {
+                logger.info("Removing orphan snapshot policy {} for non-existent volume {}", policy.getId(), policy.getVolumeId());
+                deletePolicy(policy.getId());
+            }
+        }
     }
 
     @Override
@@ -1924,7 +1940,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             if (snapshotPolicyVO == null) {
                 throw new InvalidParameterValueException("Policy id given: " + policy + " does not exist");
             }
-            VolumeVO volume = _volsDao.findById(snapshotPolicyVO.getVolumeId());
+            VolumeVO volume = _volsDao.findByIdIncludingRemoved(snapshotPolicyVO.getVolumeId());
             if (volume == null) {
                 throw new InvalidParameterValueException("Policy id given: " + policy + " does not belong to a valid volume");
             }
