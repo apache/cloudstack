@@ -252,7 +252,7 @@ public class KubernetesServiceHelperImpl extends AdapterBase implements Kubernet
 
     protected void checkNodeTypeAffinityGroupEntryCompleteness(String nodeType, String affinityGroupUuids) {
         if (StringUtils.isAnyBlank(nodeType, affinityGroupUuids)) {
-            String error = String.format("Any Node Type to Affinity Group entry should have a valid '%s' and '%s' values",
+            String error = String.format("Any Node Type to Affinity Group entry should have valid '%s' and '%s' values",
                     VmDetailConstants.CKS_NODE_TYPE, VmDetailConstants.AFFINITY_GROUP);
             logger.error(error);
             throw new InvalidParameterValueException(error);
