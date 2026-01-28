@@ -190,7 +190,7 @@ public class KVMStoragePoolManager {
             result = adaptor.connectPhysicalDisk(vol.getPath(), pool, disk.getDetails(), isVMMigrate);
 
             if (!result) {
-                logger.error("Failed to connect disks via vm spec for vm: " + vmName + " volume:" + vol.toString());
+                logger.error("Failed to connect disks via Instance spec for Instance: " + vmName + " volume:" + vol.toString());
                 return result;
             }
         }
@@ -280,7 +280,7 @@ public class KVMStoragePoolManager {
                 boolean subResult = adaptor.disconnectPhysicalDisk(vol.getPath(), pool);
 
                 if (!subResult) {
-                    logger.error("Failed to disconnect disks via vm spec for vm: " + vmName + " volume:" + vol.toString());
+                    logger.error("Failed to disconnect disks via Instance spec for Instance: " + vmName + " volume:" + vol.toString());
 
                     result = false;
                 }
@@ -325,17 +325,19 @@ public class KVMStoragePoolManager {
         String uuid = null;
         String sourceHost = "";
         StoragePoolType protocol = null;
-        final String scheme = (storageUri.getScheme() != null) ? storageUri.getScheme().toLowerCase() : "";
         List<String> acceptedSchemes = List.of("nfs", "networkfilesystem", "filesystem");
-        if (acceptedSchemes.contains(scheme)) {
-            sourcePath = storageUri.getPath();
-            sourcePath = sourcePath.replace("//", "/");
-            sourceHost = storageUri.getHost();
-            uuid = UUID.nameUUIDFromBytes(new String(sourceHost + sourcePath).getBytes()).toString();
-            protocol = scheme.equals("filesystem") ? StoragePoolType.Filesystem: StoragePoolType.NetworkFilesystem;
+        if (storageUri.getScheme() == null || !acceptedSchemes.contains(storageUri.getScheme().toLowerCase())) {
+            throw new CloudRuntimeException("Empty or unsupported storage pool uri scheme");
         }
 
-        // secondary storage registers itself through here
+        final String scheme = storageUri.getScheme().toLowerCase();
+        sourcePath = storageUri.getPath();
+        sourcePath = sourcePath.replace("//", "/");
+        sourceHost = storageUri.getHost();
+        uuid = UUID.nameUUIDFromBytes(new String(sourceHost + sourcePath).getBytes()).toString();
+        protocol = scheme.equals("filesystem") ? StoragePoolType.Filesystem: StoragePoolType.NetworkFilesystem;
+
+        // storage registers itself through here
         return createStoragePool(uuid, sourceHost, 0, sourcePath, "", protocol, null, false);
     }
 

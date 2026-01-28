@@ -19,6 +19,7 @@ package com.cloud.usage.dao;
 import com.cloud.usage.UsageNetworksVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
@@ -26,6 +27,7 @@ import org.springframework.stereotype.Component;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.annotation.PostConstruct;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -40,6 +42,14 @@ public class UsageNetworksDaoImpl extends GenericDaoBase<UsageNetworksVO, Long> 
             " account_id = ? AND ((removed IS NULL AND created <= ?) OR (created BETWEEN ? AND ?) OR (removed BETWEEN ? AND ?) " +
             " OR ((created <= ?) AND (removed >= ?)))";
 
+    private SearchBuilder<UsageNetworksVO> usageNetworksSearch;
+
+    @PostConstruct
+    public void init() {
+        usageNetworksSearch = createSearchBuilder();
+        usageNetworksSearch.and("networkId", usageNetworksSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        usageNetworksSearch.done();
+    }
 
     @Override
     public void update(long networkId, long newNetworkOffering, String state) {
@@ -130,5 +140,12 @@ public class UsageNetworksDaoImpl extends GenericDaoBase<UsageNetworksVO, Long> 
         }
 
         return usageRecords;
+    }
+
+    @Override
+    public List<UsageNetworksVO> listAll(long networkId) {
+        SearchCriteria<UsageNetworksVO> sc = usageNetworksSearch.create();
+        sc.setParameters("networkId", networkId);
+        return listBy(sc);
     }
 }

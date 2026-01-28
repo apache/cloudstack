@@ -26,6 +26,7 @@ public class ApiConstants {
     public static final String ACTIVATION_RULE = "activationrule";
     public static final String ACTIVITY = "activity";
     public static final String ADAPTER_TYPE = "adaptertype";
+    public static final String ADDITONAL_CONFIG_ENABLED = "additionalconfigenabled";
     public static final String ADDRESS = "address";
     public static final String ALGORITHM = "algorithm";
     public static final String ALIAS = "alias";
@@ -448,6 +449,7 @@ public class ApiConstants {
     public static final String SENT = "sent";
     public static final String SENT_BYTES = "sentbytes";
     public static final String SERIAL = "serial";
+    public static final String SERVICE_IP = "serviceip";
     public static final String SERVICE_OFFERING_ID = "serviceofferingid";
     public static final String SESSIONKEY = "sessionkey";
     public static final String SHOW_CAPACITIES = "showcapacities";
@@ -477,12 +479,11 @@ public class ApiConstants {
     public static final String STATE = "state";
     public static final String STATS = "stats";
     public static final String STATUS = "status";
+    public static final String STORAGE_TYPE = "storagetype";
+    public static final String STORAGE_POLICY = "storagepolicy";
+    public static final String STORAGE_MOTION_ENABLED = "storagemotionenabled";
     public static final String STORAGE_CAPABILITIES = "storagecapabilities";
     public static final String STORAGE_CUSTOM_STATS = "storagecustomstats";
-    public static final String STORAGE_MOTION_ENABLED = "storagemotionenabled";
-    public static final String STORAGE_POLICY = "storagepolicy";
-    public static final String STORAGE_POOL = "storagepool";
-    public static final String STORAGE_TYPE = "storagetype";
     public static final String SUBNET = "subnet";
     public static final String OWNER = "owner";
     public static final String SWAP_OWNER = "swapowner";
@@ -1096,6 +1097,7 @@ public class ApiConstants {
     public static final String DOCKER_REGISTRY_EMAIL = "dockerregistryemail";
     public static final String ISO_NAME = "isoname";
     public static final String ISO_STATE = "isostate";
+    public static final String ISO_URL = "isourl";
     public static final String SEMANTIC_VERSION = "semanticversion";
     public static final String KUBERNETES_VERSION_ID = "kubernetesversionid";
     public static final String KUBERNETES_VERSION_NAME = "kubernetesversionname";

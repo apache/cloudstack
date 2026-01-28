@@ -372,6 +372,7 @@
                   <div>
                     <vnf-nics-selection
                       :items="templateVnfNics"
+                      :templateNics="templateNics"
                       :networks="networks"
                       @update-vnf-nic-networks="($event) => updateVnfNicNetworks($event)" />
                   </div>
@@ -564,7 +565,7 @@
                           @change="val => { dynamicscalingenabled = val }"/>
                       </a-form-item>
                     </a-form-item>
-                    <a-form-item :label="$t('label.userdata')">
+                    <a-form-item :label="$t('label.user.data')">
                       <a-card>
                         <div v-if="this.template && this.template.userdataid">
                           <a-text type="primary">
@@ -618,11 +619,11 @@
                         </div><br/><br/>
                         <div v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE' || userdataDefaultOverridePolicy === 'APPEND' || !userdataDefaultOverridePolicy">
                           <span v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE'" >
-                            {{ $t('label.userdata.do.override') }}
+                            {{ $t('label.user.data.do.override') }}
                             <a-switch v-model:checked="doUserdataOverride" style="margin-left: 10px"/>
                           </span>
                           <span v-if="userdataDefaultOverridePolicy === 'APPEND'">
-                            {{ $t('label.userdata.do.append') }}
+                            {{ $t('label.user.data.do.append') }}
                             <a-switch v-model:checked="doUserdataAppend" style="margin-left: 10px"/>
                           </span>
                           <a-step
@@ -818,36 +819,31 @@
                 </template>
               </a-step>
             </a-steps>
-            <div class="card-footer">
-              <a-form-item name="stayonpage" ref="stayonpage">
-                <a-switch
-                  class="form-item-hidden"
-                  v-model:checked="form.stayonpage" />
-              </a-form-item>
-              <!-- ToDo extract as component -->
-              <a-button @click="() => $router.back()" :disabled="loading.deploy">
-                {{ $t('label.cancel') }}
-              </a-button>
-              <a-dropdown-button style="margin-left: 10px" type="primary" ref="submit" @click="handleSubmit" :loading="loading.deploy">
-                <rocket-outlined />
-                {{ $t('label.launch.vnf.appliance') }}
-                <template #icon><down-outlined /></template>
-                <template #overlay>
-                  <a-menu type="primary" @click="handleSubmitAndStay" theme="dark" class="btn-stay-on-page">
-                    <a-menu-item type="primary" key="1">
-                      <rocket-outlined />
-                      {{ $t('label.launch.vnf.appliance.and.stay') }}
-                    </a-menu-item>
-                  </a-menu>
-                </template>
-              </a-dropdown-button>
+            <div class="card-footer" v-if="isMobile()">
+              <deploy-buttons
+                :loading="loading.deploy"
+                :deployButtonText="$t('label.launch.vnf.appliance')"
+                :deployButtonMenuOptions="deployMenuOptions"
+                @handle-cancel="() => $router.back()"
+                @handle-deploy="handleSubmit"
+                @handle-deploy-menu="(index, e) => handleSubmitAndStay(e)" />
             </div>
           </a-form>
         </a-card>
       </a-col>
       <a-col :md="24" :lg="7" v-if="!isMobile()">
         <a-affix :offsetTop="75" class="vm-info-card">
-          <info-card :resource="vm" :title="$t('label.vnf.appliance')" @change-resource="(data) => resource = data" />
+          <info-card :footerVisible="true" :resource="vm" :title="$t('label.vnf.appliance')" @change-resource="(data) => resource = data">
+            <template #footer-content>
+              <deploy-buttons
+                :loading="loading.deploy"
+                :deployButtonText="$t('label.launch.vnf.appliance')"
+                :deployButtonMenuOptions="deployMenuOptions"
+                @handle-cancel="() => $router.back()"
+                @handle-deploy="handleSubmit"
+                @handle-deploy-menu="(index, e) => handleSubmitAndStay(e)" />
+            </template>
+          </info-card>
         </a-affix>
       </a-col>
     </a-row>
@@ -863,6 +859,7 @@ import store from '@/store'
 import eventBus from '@/config/eventBus'
 
 import InfoCard from '@/components/view/InfoCard'
+import DeployButtons from '@views/compute/wizard/DeployButtons'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import ComputeOfferingSelection from '@views/compute/wizard/ComputeOfferingSelection'
 import ComputeSelection from '@views/compute/wizard/ComputeSelection'
@@ -883,6 +880,9 @@ import InstanceNicsNetworkSelectListView from '@/components/view/InstanceNicsNet
 export default {
   name: 'Wizard',
   components: {
+    InfoCard,
+    DeployButtons,
+    ResourceIcon,
     SshKeyPairSelection,
     UserDataSelection,
     NetworkConfiguration,
@@ -892,12 +892,10 @@ export default {
     DiskSizeSelection,
     MultiDiskSelection,
     DiskOfferingSelection,
-    InfoCard,
     ComputeOfferingSelection,
     ComputeSelection,
     SecurityGroupSelection,
     VnfNicsSelection,
-    ResourceIcon,
     TooltipLabel,
     InstanceNicsNetworkSelectListView
   },
@@ -960,8 +958,7 @@ export default {
         keyboards: [],
         bootTypes: [],
         bootModes: [],
-        ioPolicyTypes: [],
-        dynamicScalingVmConfig: false
+        ioPolicyTypes: []
       },
       rowCount: {},
       loading: {
@@ -1018,11 +1015,11 @@ export default {
       userDataValues: {},
       templateUserDataCols: [
         {
-          title: this.$t('label.userdata'),
+          title: this.$t('label.user.data'),
           dataIndex: 'userdata'
         },
         {
-          title: this.$t('label.userdatapolicy'),
+          title: this.$t('label.user.data.policy'),
           dataIndex: 'userdataoverridepolicy'
         }
       ],
@@ -1194,13 +1191,6 @@ export default {
             type: 'Routing'
           },
           field: 'hostid'
-        },
-        dynamicScalingVmConfig: {
-          list: 'listConfigurations',
-          options: {
-            zoneid: _.get(this.zone, 'id'),
-            name: 'enable.dynamic.scale.vm'
-          }
         }
       }
     },
@@ -1294,17 +1284,18 @@ export default {
       let tabList = []
       tabList = [{
         key: 'userdataregistered',
-        tab: this.$t('label.userdata.registered')
+        tab: this.$t('label.user.data.registered')
       },
       {
         key: 'userdatatext',
-        tab: this.$t('label.userdata.text')
+        tab: this.$t('label.user.data.text')
       }]
 
       return tabList
     },
     showVnfNicsSection () {
-      return this.networks && this.networks.length > 0 && this.vm.templateid && this.templateVnfNics && this.templateVnfNics.length > 0
+      return ((this.networks && this.networks.length > 0) || (this.templateNics && this.templateNics.length > 0)) &&
+        this.vm.templateid && this.templateVnfNics && this.templateVnfNics.length > 0
     },
     showVnfConfigureManagement () {
       const managementDeviceIds = []
@@ -1314,9 +1305,14 @@ export default {
         }
       }
       for (const deviceId of managementDeviceIds) {
+        if (this.templateNics && this.templateNics[deviceId] &&
+          ((this.templateNics[deviceId].selectednetworktype === 'Isolated' && this.templateNics[deviceId].selectednetworkvpcid === undefined) ||
+            (this.templateNics[deviceId].selectednetworktype === 'Shared' && this.templateNics[deviceId].selectednetworkwithsg))) {
+          return true
+        }
         if (this.vnfNicNetworks && this.vnfNicNetworks[deviceId] &&
           ((this.vnfNicNetworks[deviceId].type === 'Isolated' && this.vnfNicNetworks[deviceId].vpcid === undefined) ||
-            (this.vnfNicNetworks[deviceId].type === 'Shared' && this.zone.securitygroupsenabled))) {
+            (this.vnfNicNetworks[deviceId].type === 'Shared' && this.vnfNicNetworks[deviceId].service.filter(svc => svc.name === 'SecurityGroupProvider')))) {
           return true
         }
       }
@@ -1332,13 +1328,16 @@ export default {
       return Boolean('listUserData' in this.$store.getters.apis)
     },
     dynamicScalingVmConfigValue () {
-      return this.options.dynamicScalingVmConfig?.[0]?.value === 'true'
+      return this.$store.getters.features.dynamicscalingenabled
     },
     isCustomizedDiskIOPS () {
       return this.diskSelected?.iscustomizediops || false
     },
     isCustomizedIOPS () {
       return this.rootDiskSelected?.iscustomizediops || this.serviceOffering?.iscustomizediops || false
+    },
+    deployMenuOptions () {
+      return [this.$t('label.launch.vnf.appliance.and.stay')]
     }
   },
   watch: {
@@ -2013,7 +2012,7 @@ export default {
         // All checked networks should be used and only once.
         // Required NIC must be associated to a network
         // DeviceID must be consequent
-        if (this.templateVnfNics && this.templateVnfNics.length > 0) {
+        if (this.templateVnfNics && this.templateVnfNics.length > 0 && (!this.templateNics || this.templateNics.length === 0)) {
           let nextDeviceId = 0
           const usedNetworkIds = []
           const keys = Object.keys(this.vnfNicNetworks)
@@ -2403,7 +2402,7 @@ export default {
       param.loading = true
       param.opts = []
       const options = param.options || {}
-      if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'dynamicScalingVmConfig', 'hypervisors'].includes(name)) {
+      if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'hypervisors'].includes(name)) {
         options.listall = true
       }
       api(param.list, options).then((response) => {
@@ -2637,6 +2636,9 @@ export default {
             var network = this.options.networks[Math.min(i, this.options.networks.length - 1)]
             nic.selectednetworkid = network.id
             nic.selectednetworkname = network.name
+            nic.selectednetworktype = network.type
+            nic.selectednetworkvpcid = network.vpcid
+            nic.selectednetworkwithsg = network.service.filter(svc => svc.name === 'SecurityGroupProvider').length > 0
             this.nicToNetworkSelection.push({ nic: nic.id, network: network.id })
           }
         }
@@ -2887,7 +2889,7 @@ export default {
   .vm-info-card {
     .ant-card-body {
       min-height: 250px;
-      max-height: calc(100vh - 150px);
+      max-height: calc(100vh - 258px);
       overflow-y: auto;
       scroll-behavior: smooth;
     }
@@ -2907,13 +2909,5 @@ export default {
 
   .form-item-hidden {
     display: none;
-  }
-
-  .btn-stay-on-page {
-    &.ant-dropdown-menu-dark {
-      .ant-dropdown-menu-item:hover {
-        background: transparent !important;
-      }
-    }
   }
 </style>

@@ -78,4 +78,15 @@ public class ImageStoreDetailsUtil {
         return getGlobalDefaultNfsVersion();
     }
 
+    public boolean isCopyTemplatesFromOtherStoragesEnabled(Long storeId, Long zoneId) {
+        final Map<String, String> storeDetails = imageStoreDetailsDao.getDetails(storeId);
+        final String keyWithoutDots = StorageManager.COPY_TEMPLATES_FROM_OTHER_SECONDARY_STORAGES.key()
+                .replace(".", "");
+
+        if (storeDetails != null && storeDetails.containsKey(keyWithoutDots)) {
+            return Boolean.parseBoolean(storeDetails.get(keyWithoutDots));
+        }
+
+        return StorageManager.COPY_TEMPLATES_FROM_OTHER_SECONDARY_STORAGES.valueIn(zoneId);
+    }
 }

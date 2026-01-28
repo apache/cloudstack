@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.logging.log4j.Logger;
@@ -196,6 +197,30 @@ public class LinstorUtil {
         }
     }
 
+    public static Pair<Long, Long> getStorageStats(String linstorUrl, String rscGroupName) {
+        DevelopersApi linstorApi = getLinstorAPI(linstorUrl);
+        try {
+            List<StoragePool> storagePools = LinstorUtil.getRscGroupStoragePools(linstorApi, rscGroupName);
+
+            long capacity = storagePools.stream()
+                    .filter(sp -> sp.getProviderKind() != ProviderKind.DISKLESS)
+                    .mapToLong(sp -> sp.getTotalCapacity() != null ? sp.getTotalCapacity() : 0L)
+                    .sum() * 1024;  // linstor uses kiB
+
+            long used = storagePools.stream()
+                    .filter(sp -> sp.getProviderKind() != ProviderKind.DISKLESS)
+                    .mapToLong(sp -> sp.getTotalCapacity() != null && sp.getFreeCapacity() != null ?
+                            sp.getTotalCapacity() - sp.getFreeCapacity() : 0L)
+                    .sum() * 1024; // linstor uses Kib
+            LOGGER.debug(
+                    String.format("Linstor(%s;%s): storageStats -> %d/%d", linstorUrl, rscGroupName, capacity, used));
+            return new Pair<>(capacity, used);
+        } catch (ApiException apiEx) {
+            LOGGER.error(apiEx.getMessage());
+            throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+        }
+    }
+
     /**
      * Check if any resource of the given name is InUse on any host.
      *
@@ -240,6 +265,16 @@ public class LinstorUtil {
     }
 
     /**
+     * Format the device path for DRBD resources.
+     * @param rscName
+     * @return
+     */
+    public static String formatDrbdByResDevicePath(String rscName)
+    {
+        return String.format("/dev/drbd/by-res/%s/0", rscName);
+    }
+
+    /**
      * Try to get the device path for the given resource name.
      * This could be made a bit more direct after java-linstor api is fixed for layer data subtypes.
      * @param api developer api object to use
@@ -258,18 +293,31 @@ public class LinstorUtil {
                 null);
         for (ResourceWithVolumes rsc : resources) {
             if (!rsc.getVolumes().isEmpty()) {
-                // CloudStack resource always only have 1 volume
-                String devicePath = rsc.getVolumes().get(0).getDevicePath();
-                if (devicePath != null && !devicePath.isEmpty()) {
-                    LOGGER.debug("getDevicePath: {} -> {}", rscName, devicePath);
-                    return devicePath;
-                }
+                return LinstorUtil.getDevicePathFromResource(rsc);
             }
         }
 
         final String errMsg = "viewResources didn't return resources or volumes for " + rscName;
         LOGGER.error(errMsg);
         throw new CloudRuntimeException("Linstor: " + errMsg);
+    }
+
+    /**
+     * Check if the resource has DRBD or not and deliver the correct device path.
+     * @param rsc
+     * @return
+     */
+    public static String getDevicePathFromResource(ResourceWithVolumes rsc) {
+        if (!rsc.getVolumes().isEmpty()) {
+            // CloudStack resource always only have 1 volume
+            if (rsc.getLayerObject().getDrbd() != null) {
+                return formatDrbdByResDevicePath(rsc.getName());
+            } else {
+                return rsc.getVolumes().get(0).getDevicePath();
+            }
+        }
+        throw new CloudRuntimeException(
+                String.format("getDevicePath: Resource %s/%s doesn't have volumes", rsc.getNodeName(), rsc.getName()));
     }
 
     public static ApiCallRcList applyAuxProps(DevelopersApi api, String rscName, String dispName, String vmName)
@@ -304,7 +352,7 @@ public class LinstorUtil {
     public static List<ResourceDefinition> getRDListStartingWith(DevelopersApi api, String startWith)
             throws ApiException
     {
-        List<ResourceDefinition> rscDfns = api.resourceDefinitionList(null, null, null, null);
+        List<ResourceDefinition> rscDfns = api.resourceDefinitionList(null, false, null, null, null);
 
         return rscDfns.stream()
                 .filter(rscDfn -> rscDfn.getName().toLowerCase().startsWith(startWith.toLowerCase()))
@@ -387,7 +435,7 @@ public class LinstorUtil {
      */
     public static ResourceDefinition findResourceDefinition(DevelopersApi api, String rscName, String rscGrpName)
             throws ApiException {
-        List<ResourceDefinition> rscDfns = api.resourceDefinitionList(null, null, null, null);
+        List<ResourceDefinition> rscDfns = api.resourceDefinitionList(null, false, null, null, null);
 
         List<ResourceDefinition> rdsStartingWith = rscDfns.stream()
                 .filter(rscDfn -> rscDfn.getName().toLowerCase().startsWith(rscName.toLowerCase()))
@@ -402,5 +450,42 @@ public class LinstorUtil {
                 .findFirst();
 
         return rd.orElseGet(() -> rdsStartingWith.get(0));
+    }
+
+    public static boolean isRscDiskless(ResourceWithVolumes rsc) {
+        return rsc.getFlags() != null && rsc.getFlags().contains(ApiConsts.FLAG_DISKLESS);
+    }
+
+    /**
+     * Checks if all diskful resource are on a zeroed block device.
+     * @param pool Linstor pool to use
+     * @param resName Linstor resource name
+     * @return true if all resources are on a provider with zeroed blocks.
+     */
+    public static boolean resourceSupportZeroBlocks(KVMStoragePool pool, String resName) {
+        final DevelopersApi api = getLinstorAPI(pool.getSourceHost());
+        try {
+            List<ResourceWithVolumes> resWithVols = api.viewResources(
+                    Collections.emptyList(),
+                    Collections.singletonList(resName),
+                    Collections.emptyList(),
+                    Collections.emptyList(),
+                    null,
+                    null);
+
+            if (resWithVols != null) {
+                return resWithVols.stream()
+                        .allMatch(res -> {
+                            Volume vol0 = res.getVolumes().get(0);
+                            return vol0 != null && (vol0.getProviderKind() == ProviderKind.LVM_THIN ||
+                                    vol0.getProviderKind() == ProviderKind.ZFS ||
+                                    vol0.getProviderKind() == ProviderKind.ZFS_THIN ||
+                                    vol0.getProviderKind() == ProviderKind.DISKLESS);
+                        } );
+            }
+        } catch (ApiException apiExc) {
+            LOGGER.error(apiExc.getMessage());
+        }
+        return false;
     }
 }

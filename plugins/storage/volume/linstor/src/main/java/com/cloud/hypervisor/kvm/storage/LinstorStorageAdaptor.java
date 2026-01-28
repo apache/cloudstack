@@ -30,7 +30,6 @@ import javax.annotation.Nonnull;
 import com.cloud.storage.Storage;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
-
 import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
@@ -57,7 +56,6 @@ import com.linbit.linstor.api.model.ResourceGroupSpawn;
 import com.linbit.linstor.api.model.ResourceMakeAvailable;
 import com.linbit.linstor.api.model.ResourceWithVolumes;
 import com.linbit.linstor.api.model.StoragePool;
-import com.linbit.linstor.api.model.Volume;
 import com.linbit.linstor.api.model.VolumeDefinition;
 
 import java.io.File;
@@ -234,7 +232,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             makeResourceAvailable(api, foundRscName, false);
 
             if (!resources.isEmpty() && !resources.get(0).getVolumes().isEmpty()) {
-                final String devPath = resources.get(0).getVolumes().get(0).getDevicePath();
+                final String devPath = LinstorUtil.getDevicePathFromResource(resources.get(0));
                 logger.info("Linstor: Created drbd device: " + devPath);
                 final KVMPhysicalDisk kvmDisk = new KVMPhysicalDisk(devPath, name, pool);
                 kvmDisk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
@@ -457,8 +455,9 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     private Optional<ResourceWithVolumes> getResourceByPathOrName(
             final List<ResourceWithVolumes> resources, String path) {
         return resources.stream()
-            .filter(rsc -> getLinstorRscName(path).equalsIgnoreCase(rsc.getName()) || rsc.getVolumes().stream()
-                .anyMatch(v -> path.equals(v.getDevicePath())))
+            .filter(rsc -> getLinstorRscName(path).equalsIgnoreCase(rsc.getName()) ||
+                    path.equals(LinstorUtil.formatDrbdByResDevicePath(rsc.getName())) ||
+                    rsc.getVolumes().stream().anyMatch(v -> path.equals(v.getDevicePath())))
             .findFirst();
     }
 
@@ -574,40 +573,6 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     }
 
     /**
-     * Checks if all diskful resource are on a zeroed block device.
-     * @param destPool Linstor pool to use
-     * @param resName Linstor resource name
-     * @return true if all resources are on a provider with zeroed blocks.
-     */
-    private boolean resourceSupportZeroBlocks(KVMStoragePool destPool, String resName) {
-        final DevelopersApi api = getLinstorAPI(destPool);
-
-        try {
-            List<ResourceWithVolumes> resWithVols = api.viewResources(
-                    Collections.emptyList(),
-                    Collections.singletonList(resName),
-                    Collections.emptyList(),
-                    Collections.emptyList(),
-                    null,
-                    null);
-
-            if (resWithVols != null) {
-                return resWithVols.stream()
-                        .allMatch(res -> {
-                            Volume vol0 = res.getVolumes().get(0);
-                            return vol0 != null && (vol0.getProviderKind() == ProviderKind.LVM_THIN ||
-                                    vol0.getProviderKind() == ProviderKind.ZFS ||
-                                    vol0.getProviderKind() == ProviderKind.ZFS_THIN ||
-                                    vol0.getProviderKind() == ProviderKind.DISKLESS);
-                        } );
-            }
-        } catch (ApiException apiExc) {
-            logger.error(apiExc.getMessage());
-        }
-        return false;
-    }
-
-    /**
      * Checks if the given disk is the SystemVM template, by checking its properties file in the same directory.
      * The initial systemvm template resource isn't created on the management server, but
      * we now need to know if the systemvm template is used, while copying.
@@ -622,7 +587,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             try {
                 templateProps.load(new FileInputStream(propFile.toFile()));
                 String desc = templateProps.getProperty("description");
-                if (desc.startsWith("SystemVM Template")) {
+                if (desc != null && desc.startsWith("SystemVM Template")) {
                     return true;
                 }
             } catch (IOException e) {
@@ -677,7 +642,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         destFile.setFormat(dstDisk.getFormat());
         destFile.setSize(disk.getVirtualSize());
 
-        boolean zeroedDevice = resourceSupportZeroBlocks(destPools, getLinstorRscName(name));
+        boolean zeroedDevice = LinstorUtil.resourceSupportZeroBlocks(destPools, getLinstorRscName(name));
         try {
             final QemuImg qemu = new QemuImg(timeout, zeroedDevice, true);
             qemu.convert(srcFile, destFile);

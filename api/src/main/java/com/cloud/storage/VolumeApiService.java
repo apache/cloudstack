@@ -171,6 +171,13 @@ public interface VolumeApiService {
      *   </table>
      */
     boolean doesStoragePoolSupportDiskOffering(StoragePool destPool, DiskOffering diskOffering);
+
+    /**
+     * Checks if the storage pool supports the required disk offering tags
+     * destPool the storage pool to check the disk offering tags
+     * diskOfferingTags the tags that should be supported
+     * return whether the tags are supported in the storage pool
+     */
     boolean doesStoragePoolSupportDiskOfferingTags(StoragePool destPool, String diskOfferingTags);
 
     Volume destroyVolume(long volumeId, Account caller, boolean expunge, boolean forceExpunge);

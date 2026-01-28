@@ -522,7 +522,7 @@ export default {
         this.chartLabels.push(currentLabel)
 
         if (this.resourceIsVirtualMachine) {
-          cpuLine.data.push({ timestamp: currentLabel, stat: element.cpuused.split('%')[0] })
+          cpuLine.data.push({ timestamp: currentLabel, stat: element.cpuused.replace(',', '.').split('%')[0] })
 
           element.memoryusedkbs = element.memorykbs - element.memoryintfreekbs
           memFreeLinePercent.data.push({ timestamp: currentLabel, stat: this.calculateMemoryPercentage(false, element.memorykbs, element.memoryintfreekbs) })

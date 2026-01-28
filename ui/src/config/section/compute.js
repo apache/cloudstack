@@ -29,8 +29,7 @@ export default {
       title: 'label.instances',
       icon: 'cloud-server-outlined',
       docHelp: 'adminguide/virtual_machines.html',
-      permission: ['listVirtualMachines', 'listVirtualMachinesMetrics'],
-      getApiToCall: () => store.getters.metrics ? 'listVirtualMachinesMetrics' : 'listVirtualMachines',
+      permission: ['listVirtualMachinesMetrics'],
       resourceType: 'UserVm',
       params: () => {
         var params = { details: 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp,backoff' }
@@ -190,7 +189,13 @@ export default {
           label: 'label.action.vmsnapshot.create',
           docHelp: 'adminguide/virtual_machines.html#virtual-machine-snapshots',
           dataView: true,
-          args: ['virtualmachineid', 'name', 'description', 'snapshotmemory', 'quiescevm'],
+          args: (record, store) => {
+            var args = ['virtualmachineid', 'name', 'description', 'snapshotmemory']
+            if (['KVM', 'VMware'].includes(record.hypervisor)) {
+              args.push('quiescevm')
+            }
+            return args
+          },
           show: (record) => {
             return (((['Running'].includes(record.state) && record.hypervisor !== 'LXC') ||
               (['Stopped'].includes(record.state) && ((record.hypervisor !== 'KVM' && record.hypervisor !== 'LXC') ||
@@ -392,7 +397,7 @@ export default {
         {
           api: 'resetUserDataForVirtualMachine',
           icon: 'solution-outlined',
-          label: 'label.reset.userdata.on.vm',
+          label: 'label.reset.user.data.on.vm',
           message: 'message.desc.reset.userdata',
           docHelp: 'adminguide/virtual_machines.html#resetting-userdata',
           dataView: true,
@@ -904,7 +909,7 @@ export default {
     },
     {
       name: 'userdata',
-      title: 'label.user.data',
+      title: 'label.user.data.library',
       icon: 'solution-outlined',
       docHelp: 'adminguide/virtual_machines.html#user-data-and-meta-data',
       permission: ['listUserData'],
@@ -943,7 +948,7 @@ export default {
           api: 'registerUserData',
           icon: 'plus-outlined',
           label: 'label.register.user.data',
-          docHelp: 'adminguide/virtual_machines.html#creating-the-ssh-keypair',
+          docHelp: 'adminguide/virtual_machines.html#user-data-and-meta-data',
           listView: true,
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/RegisterUserData.vue')))

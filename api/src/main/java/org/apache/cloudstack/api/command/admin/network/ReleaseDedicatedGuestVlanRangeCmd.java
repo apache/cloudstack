@@ -44,7 +44,7 @@ public class ReleaseDedicatedGuestVlanRangeCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = GuestVlanRangeResponse.class,
                required = true,
-               description = "the ID of the dedicated guest vlan range")
+               description = "The ID of the dedicated guest VLAN range")
     private Long id;
 
     // ///////////////////////////////////////////////////

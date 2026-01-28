@@ -66,10 +66,13 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
 
         String sanitizedVmName = sanitizeBashCommandArgument(vmName);
         String networkCidr = command.getVmNetworkCidr();
+        String macAddress = command.getMacAddress();
 
-        ip = ipFromDomIf(sanitizedVmName, networkCidr);
+        init();
 
-        if (ip == null) {
+        ip = ipFromDomIf(sanitizedVmName, networkCidr, macAddress);
+
+        if (ip == null && networkCidr != null) {
             if(!command.isWindows()) {
                 ip = ipFromDhcpLeaseFile(sanitizedVmName, networkCidr);
             } else {
@@ -87,30 +90,54 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
         return new Answer(command, result, ip);
     }
 
-    private String ipFromDomIf(String sanitizedVmName, String networkCidr) {
+    private String ipFromDomIf(String sanitizedVmName, String networkCidr, String macAddress) {
         String ip = null;
         List<String[]> commands = new ArrayList<>();
         commands.add(new String[]{virsh_path, "domifaddr", sanitizedVmName, "--source", "agent"});
         Pair<Integer,String> response = executePipedCommands(commands, 0);
         if (response != null) {
             String output = response.second();
-            String[] lines = output.split("\n");
-            for (String line : lines) {
-                if (line.contains("ipv4")) {
-                    String[] parts = line.split(" ");
-                    String[] ipParts = parts[parts.length-1].split("/");
-                    if (ipParts.length > 1) {
-                        if (NetUtils.isIpWithInCidrRange(ipParts[0], networkCidr)) {
-                            ip = ipParts[0];
-                            break;
-                        }
-                    }
-                }
+            Pair<String, String> ipAddresses = getIpAddresses(output, macAddress);
+            String ipv4 = ipAddresses.first();
+            if (networkCidr == null || NetUtils.isIpWithInCidrRange(ipv4, networkCidr)) {
+                ip = ipv4;
             }
         } else {
             logger.error("ipFromDomIf: Command execution failed for VM: " + sanitizedVmName);
         }
         return ip;
+    }
+
+    private Pair<String, String> getIpAddresses(String output, String macAddress) {
+        String ipv4 = null;
+        String ipv6 = null;
+        boolean found = false;
+        String[] lines = output.split("\n");
+        for (String line : lines) {
+            String[] parts = line.replaceAll(" +", " ").trim().split(" ");
+            if (parts.length < 4) {
+                continue;
+            }
+            String device = parts[0];
+            String mac = parts[1];
+            if (found) {
+                if (!device.equals("-") || !mac.equals("-")) {
+                    break;
+                }
+            } else if (!mac.equals(macAddress)) {
+                continue;
+            }
+            found = true;
+            String ipFamily = parts[2];
+            String ipPart = parts[3].split("/")[0];
+            if (ipFamily.equals("ipv4")) {
+                ipv4 = ipPart;
+            } else if (ipFamily.equals("ipv6")) {
+                ipv6 = ipPart;
+            }
+        }
+        logger.debug(String.format("Found ipv4: %s and ipv6: %s with mac address %s", ipv4, ipv6, macAddress));
+        return new Pair<>(ipv4, ipv6);
     }
 
     private String ipFromDhcpLeaseFile(String sanitizedVmName, String networkCidr) {

@@ -351,7 +351,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     @Override
     public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback) {
         CreateCmdResult result = null;
-        logger.debug("Taking snapshot of "+ snapshot);
+        logger.debug("Taking Snapshot of "+ snapshot);
         try {
             SnapshotObjectTO snapshotTO = (SnapshotObjectTO) snapshot.getTO();
             Object payload = snapshot.getPayload();
@@ -365,7 +365,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
             EndPoint ep = epSelector.select(snapshot, StorageAction.TAKESNAPSHOT, encryptionRequired);
             Answer answer = null;
 
-            logger.debug("Taking snapshot of "+ snapshot + " and encryption required is " + encryptionRequired);
+            logger.debug("Taking Snapshot of "+ snapshot + " and encryption required is " + encryptionRequired);
 
             if (ep == null) {
                 String errMsg = "No remote endpoint to send createObjectCommand, check if host or ssvm is down?";
@@ -383,7 +383,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
             callback.complete(result);
             return;
         } catch (Exception e) {
-            logger.debug("Failed to take snapshot: {}", snapshot, e);
+            logger.debug("Failed to take Snapshot: {}", snapshot, e);
             result = new CreateCmdResult(null, null);
             result.setResult(e.toString());
         }
@@ -418,7 +418,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
                 }
             }
         } catch (Exception ex) {
-            logger.debug("Unable to revert snapshot {}", snapshot, ex);
+            logger.debug("Unable to revert Snapshot {}", snapshot, ex);
             result.setResult(ex.toString());
         }
         callback.complete(result);
@@ -432,9 +432,18 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         boolean encryptionRequired = anyVolumeRequiresEncryption(vol);
         long [] endpointsToRunResize = resizeParameter.hosts;
 
+        CreateCmdResult result = new CreateCmdResult(null, null);
+
         // if hosts are provided, they are where the VM last ran. We can use that.
         if (endpointsToRunResize == null || endpointsToRunResize.length == 0) {
             EndPoint ep = epSelector.select(data, encryptionRequired);
+            if (ep == null) {
+                String errMsg = String.format(NO_REMOTE_ENDPOINT_WITH_ENCRYPTION, encryptionRequired);
+                logger.error(errMsg);
+                result.setResult(errMsg);
+                callback.complete(result);
+                return;
+            }
             endpointsToRunResize = new long[] {ep.getId()};
         }
         ResizeVolumeCommand resizeCmd = new ResizeVolumeCommand(vol.getPath(), new StorageFilerTO(pool), vol.getSize(),
@@ -442,7 +451,6 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         if (pool.getParent() != 0) {
             resizeCmd.setContextParam(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
         }
-        CreateCmdResult result = new CreateCmdResult(null, null);
         try {
             ResizeVolumeAnswer answer = (ResizeVolumeAnswer) storageMgr.sendToPool(pool, endpointsToRunResize, resizeCmd);
             if (answer != null && answer.getResult()) {
@@ -459,7 +467,6 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
                 logger.debug("return a null answer, mark it as failed for unknown reason");
                 result.setResult("return a null answer, mark it as failed for unknown reason");
             }
-
         } catch (Exception e) {
             logger.debug("sending resize command failed", e);
             result.setResult(e.toString());

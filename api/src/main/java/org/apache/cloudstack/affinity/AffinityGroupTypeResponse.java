@@ -29,7 +29,7 @@ import com.cloud.serializer.Param;
 public class AffinityGroupTypeResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.TYPE)
-    @Param(description = "the type of the affinity group")
+    @Param(description = "The type of the affinity group")
     private String type;
 
     public AffinityGroupTypeResponse() {

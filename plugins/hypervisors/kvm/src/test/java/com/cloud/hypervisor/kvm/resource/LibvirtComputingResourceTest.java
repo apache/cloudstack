@@ -56,9 +56,6 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import com.cloud.utils.net.NetUtils;
-
-import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
@@ -217,13 +214,15 @@ import com.cloud.storage.template.TemplateLocation;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter.OneLineParser;
+import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.VmDetailConstants;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LibvirtComputingResourceTest {
@@ -240,6 +239,19 @@ public class LibvirtComputingResourceTest {
     Connect connMock;
     @Mock
     LibvirtDomainXMLParser parserMock;
+    @Mock
+    private DiskDef diskDef;
+    @Mock
+    private DiskTO volume;
+    @Mock
+    private KVMPhysicalDisk physicalDisk;
+    @Mock
+    private Map<String, String> details;
+
+    private static final String PHYSICAL_DISK_PATH = "/path/to/disk";
+    private static final int DEV_ID = 1;
+    private static final DiskDef.DiskBus DISK_BUS_TYPE = DiskDef.DiskBus.VIRTIO;
+    private static final DiskDef.DiskBus DISK_BUS_TYPE_DATA = DiskDef.DiskBus.SCSI;
 
     @Spy
     private LibvirtComputingResource libvirtComputingResourceSpy = Mockito.spy(new LibvirtComputingResource());
@@ -6540,5 +6552,74 @@ public class LibvirtComputingResourceTest {
         Mockito.when(virtualMachineTO.getDetails()).thenReturn(details);
         DiskDef.DiskBus diskBus = libvirtComputingResourceSpy.getDiskModelFromVMDetail(virtualMachineTO);
         assertEquals(DiskDef.DiskBus.VIRTIOBLK, diskBus);
+    }
+
+    @Test
+    public void testCreateTpmDef() {
+        VirtualMachineTO virtualMachineTO = Mockito.mock(VirtualMachineTO.class);
+        Map<String, String> details = new HashMap<>();
+        details.put(VmDetailConstants.VIRTUAL_TPM_MODEL, "tpm-tis");
+        details.put(VmDetailConstants.VIRTUAL_TPM_VERSION, "2.0");
+        Mockito.when(virtualMachineTO.getDetails()).thenReturn(details);
+        LibvirtVMDef.TpmDef tpmDef = libvirtComputingResourceSpy.createTpmDef(virtualMachineTO);
+        assertEquals(LibvirtVMDef.TpmDef.TpmModel.TIS, tpmDef.getModel());
+        assertEquals(LibvirtVMDef.TpmDef.TpmVersion.V2_0, tpmDef.getVersion());
+    }
+
+    @Test
+    public void testCreateTpmDefWithInvalidVersion() {
+        VirtualMachineTO virtualMachineTO = Mockito.mock(VirtualMachineTO.class);
+        Map<String, String> details = new HashMap<>();
+        details.put(VmDetailConstants.VIRTUAL_TPM_MODEL, "tpm-crb");
+        details.put(VmDetailConstants.VIRTUAL_TPM_VERSION, "3.0");
+        Mockito.when(virtualMachineTO.getDetails()).thenReturn(details);
+        LibvirtVMDef.TpmDef tpmDef = libvirtComputingResourceSpy.createTpmDef(virtualMachineTO);
+        assertEquals(LibvirtVMDef.TpmDef.TpmModel.CRB, tpmDef.getModel());
+        assertEquals(LibvirtVMDef.TpmDef.TpmVersion.V2_0, tpmDef.getVersion());
+    }
+
+    @Test
+    public void defineDiskForDefaultPoolTypeSkipsForceDiskController() {
+        Map<String, String> details = new HashMap<>();
+        details.put(VmDetailConstants.KVM_SKIP_FORCE_DISK_CONTROLLER, "true");
+        Mockito.when(volume.getType()).thenReturn(Volume.Type.DATADISK);
+        Mockito.when(physicalDisk.getPath()).thenReturn(PHYSICAL_DISK_PATH);
+        libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, false, false, false, physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, details);
+        Mockito.verify(diskDef).defFileBasedDisk(PHYSICAL_DISK_PATH, DEV_ID, DISK_BUS_TYPE_DATA, DiskDef.DiskFmtType.QCOW2);
+    }
+
+    @Test
+    public void defineDiskForDefaultPoolTypeUsesDiskBusTypeDataForDataDiskWithoutWindowsAndUefi() {
+        Map<String, String> details = new HashMap<>();
+        Mockito.when(volume.getType()).thenReturn(Volume.Type.DATADISK);
+        Mockito.when(physicalDisk.getPath()).thenReturn(PHYSICAL_DISK_PATH);
+        libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, false, false, false, physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, details);
+        Mockito.verify(diskDef).defFileBasedDisk(PHYSICAL_DISK_PATH, DEV_ID, DISK_BUS_TYPE_DATA, DiskDef.DiskFmtType.QCOW2);
+    }
+
+    @Test
+    public void defineDiskForDefaultPoolTypeUsesDiskBusTypeForRootDisk() {
+        Map<String, String> details = new HashMap<>();
+        Mockito.when(volume.getType()).thenReturn(Volume.Type.ROOT);
+        Mockito.when(physicalDisk.getPath()).thenReturn(PHYSICAL_DISK_PATH);
+        libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, false, false, false, physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, details);
+        Mockito.verify(diskDef).defFileBasedDisk(PHYSICAL_DISK_PATH, DEV_ID, DISK_BUS_TYPE, DiskDef.DiskFmtType.QCOW2);
+    }
+
+    @Test
+    public void defineDiskForDefaultPoolTypeUsesSecureBootConfiguration() {
+        Map<String, String> details = new HashMap<>();
+        Mockito.when(volume.getType()).thenReturn(Volume.Type.ROOT);
+        Mockito.when(physicalDisk.getPath()).thenReturn(PHYSICAL_DISK_PATH);
+        libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, true, true, true, physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, details);
+        Mockito.verify(diskDef).defFileBasedDisk(PHYSICAL_DISK_PATH, DEV_ID, DiskDef.DiskFmtType.QCOW2, true);
+    }
+
+    @Test
+    public void defineDiskForDefaultPoolTypeHandlesNullDetails() {
+        Mockito.when(volume.getType()).thenReturn(Volume.Type.DATADISK);
+        Mockito.when(physicalDisk.getPath()).thenReturn(PHYSICAL_DISK_PATH);
+        libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, false, false, false, physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, null);
+        Mockito.verify(diskDef).defFileBasedDisk(PHYSICAL_DISK_PATH, DEV_ID, DISK_BUS_TYPE_DATA, DiskDef.DiskFmtType.QCOW2);
     }
 }

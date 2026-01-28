@@ -562,7 +562,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     public ConsoleProxyVO startNew(long dataCenterId) throws ConcurrentOperationException {
 
         if (logger.isDebugEnabled()) {
-            logger.debug("Assign console proxy from a newly started instance for request from data center : " + dataCenterId);
+            logger.debug("Assign console proxy from a newly started Instance for request from data center : " + dataCenterId);
         }
 
         if (!allowToLaunchNew(dataCenterId)) {
@@ -575,7 +575,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         List<VMTemplateVO> templates = vmTemplateDao.findSystemVMReadyTemplates(dataCenterId, availableHypervisor,
                 ResourceManager.SystemVmPreferredArchitecture.valueIn(dataCenterId));
         if (CollectionUtils.isEmpty(templates)) {
-            throw new CloudRuntimeException("Not able to find the System templates or not downloaded in zone " + dataCenterId);
+            throw new CloudRuntimeException("Not able to find the System Templates or not downloaded in zone " + dataCenterId);
         }
 
         Map<String, Object> context = createProxyInstance(dataCenterId, templates);
@@ -583,7 +583,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         long proxyVmId = (Long)context.get("proxyVmId");
         if (proxyVmId == 0) {
             if (logger.isDebugEnabled()) {
-                logger.debug(String.format("Unable to create proxy instance in zone [%s].", dataCenterId));
+                logger.debug(String.format("Unable to create proxy Instance in zone [%s].", dataCenterId));
             }
             return null;
         }
@@ -734,7 +734,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                     logger.debug("Unable to allocate proxy {} with {} in {} due to [{}]. Retrying with another template", proxy, template, dc, e.getMessage(), e);
                     continue;
                 }
-                throw new CloudRuntimeException("Failed to allocate proxy [%s] in zone [%s] with available templates", e);
+                throw new CloudRuntimeException(String.format("Failed to allocate proxy [%s] in zone [%s] with available templates", proxy, dc), e);
             }
         }
 
@@ -1276,6 +1276,10 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             buf.append(" vmpassword=").append(configurationDao.getValue("system.vm.password"));
         }
 
+        if (StringUtils.isNotEmpty(NTPServerConfig.value())) {
+            buf.append(" ntpserverlist=").append(NTPServerConfig.value().replaceAll("\\s+",""));
+        }
+
         for (NicProfile nic : profile.getNics()) {
             int deviceId = nic.getDeviceId();
             if (nic.getIPv4Address() == null) {
@@ -1506,7 +1510,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     public Long[] getScannablePools() {
         List<Long> zoneIds = dataCenterDao.listEnabledNonEdgeZoneIds();
         if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Enabled non-edge zones available for scan: %s", org.apache.commons.lang3.StringUtils.join(zoneIds, ",")));
+            logger.debug(String.format("Enabled non-edge zones available for scan: %s", StringUtils.join(zoneIds, ",")));
         }
         return zoneIds.toArray(Long[]::new);
     }

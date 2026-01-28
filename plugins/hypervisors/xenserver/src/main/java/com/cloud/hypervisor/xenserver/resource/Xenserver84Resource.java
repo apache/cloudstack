@@ -14,25 +14,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package com.cloud.hypervisor.xenserver.resource;
 
-package org.apache.cloudstack.api.command.admin.zone;
-
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ResponseObject;
-import org.apache.cloudstack.api.response.ListResponse;
-
-public class VmwareRequestResponse<T extends ResponseObject> extends ListResponse<T> {
-    @SerializedName(ApiConstants.TOKEN)
-    @Param(description = "The Vmware API token to use for retrieving further responses with")
-    private String token;
-
-    public String getToken() {
-        return token;
-    }
-
-    public void setToken(String token) {
-        this.token = token;
+public class Xenserver84Resource extends XenServer650Resource {
+    @Override
+    protected String getPatchFilePath() {
+        return "scripts/vm/hypervisor/xenserver/xenserver84/patch";
     }
 }

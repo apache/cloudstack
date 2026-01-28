@@ -1658,11 +1658,12 @@ class Template:
                 # If template is ready,
                 # template.status = Download Complete
                 # Downloading - x% Downloaded
+                # Processing - Initial status
                 # Error - Any other string
                 if template.status == 'Download Complete' and template.isready:
                     return
 
-                elif 'Downloaded' in template.status:
+                elif 'Downloaded' in template.status or template.status == 'Processing':
                     retries = retries - 1
                     continue
 
@@ -4576,6 +4577,7 @@ class Project:
     def __init__(self, items):
         self.__dict__.update(items)
 
+
     @classmethod
     def create(cls, apiclient, services, account=None, domainid=None, userid=None, accountid=None):
         """Create project"""
@@ -6720,7 +6722,7 @@ class GuestOSCategory:
 class GuestOS:
     """Manage Guest OS"""
 
-    def __init__(self, items, services):
+    def __init__(self, items):
         self.__dict__.update(items)
 
     @classmethod
@@ -6735,7 +6737,7 @@ class GuestOS:
         if details is not None:
             cmd.details = details
 
-        return (apiclient.addGuestOs(cmd))
+        return GuestOS(apiclient.addGuestOs(cmd).__dict__)
 
     @classmethod
     def remove(cls, apiclient, id):
@@ -6772,10 +6774,13 @@ class GuestOS:
 
         return (apiclient.listOsTypes(cmd))
 
+    def delete(self, apiclient):
+        self.remove(apiclient, self.id)
+
 class GuestOsMapping:
     """Manage Guest OS Mappings"""
 
-    def __init__(self, items, services):
+    def __init__(self, items):
         self.__dict__.update(items)
 
     @classmethod
@@ -6793,7 +6798,7 @@ class GuestOsMapping:
         if forced is not None:
             cmd.forced = forced
 
-        return (apiclient.addGuestOsMapping(cmd))
+        return GuestOsMapping(apiclient.addGuestOsMapping(cmd).__dict__)
 
     @classmethod
     def remove(cls, apiclient, id):
@@ -6836,6 +6841,9 @@ class GuestOsMapping:
             cmd.hypervisorversion = hypervisorversion
 
         return (apiclient.listGuestOsMapping(cmd))
+
+    def delete(self, apiclient):
+        self.remove(apiclient, self.id)
 
 class VMSchedule:
 

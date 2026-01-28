@@ -36,7 +36,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listLoadBalancerRuleInstances", description = "List all virtual machine instances that are assigned to a load balancer rule.", responseObject = LoadBalancerRuleVmMapResponse.class, responseView = ResponseView.Restricted,
+@APICommand(name = "listLoadBalancerRuleInstances", description = "List all Instances that are assigned to a load balancer rule.", responseObject = LoadBalancerRuleVmMapResponse.class, responseView = ResponseView.Restricted,
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
 public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd implements UserCmd {
@@ -49,20 +49,20 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd implements Use
 
     @Parameter(name = ApiConstants.APPLIED,
                type = CommandType.BOOLEAN,
-               description = "true if listing all virtual machines currently applied to the load balancer rule; default is true")
+               description = "True if listing all Instances currently applied to the load balancer rule; default is true")
     private Boolean applied;
 
     @Parameter(name = ApiConstants.ID,
                type = CommandType.UUID,
                entityType = FirewallRuleResponse.class,
                required = true,
-               description = "the ID of the load balancer rule")
+               description = "The ID of the load balancer rule")
     private Long id;
 
 
     @Parameter(name = ApiConstants.LIST_LB_VMIPS,
             type = CommandType.BOOLEAN,
-            description = "true if load balancer rule VM IP information to be included; default is false")
+            description = "True if load balancer rule Instance IP information to be included; default is false")
     private boolean isListLbVmip;
 
 

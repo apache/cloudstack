@@ -126,7 +126,26 @@ public class ConfigDriveBuilder {
 
             File openStackFolder = new File(tempDirName + ConfigDrive.openStackConfigDriveName);
 
-            writeVendorEmptyJsonFile(openStackFolder);
+            /*
+            Try to find VM password in the vmData.
+            If it is found, then write it into vendor-data.json
+            */
+            String vmPassword = "";
+            for (String[] item : vmData) {
+                String dataType = item[CONFIGDATA_DIR];
+                String fileName = item[CONFIGDATA_FILE];
+                String content = item[CONFIGDATA_CONTENT];
+                if (PASSWORD_FILE.equals(fileName)) {
+                    vmPassword = content;
+                    break;
+                }
+            }
+            if (vmPassword.equals("")) {
+                writeVendorDataJsonFile(openStackFolder);
+            } else {
+                writeVendorDataJsonFile(openStackFolder, vmPassword);
+            }
+
             writeNetworkData(nics, supportedServices, openStackFolder);
             for (NicProfile nic: nics) {
                 if (supportedServices.get(nic.getId()).contains(Network.Service.UserData)) {
@@ -181,7 +200,7 @@ public class ConfigDriveBuilder {
         LOGGER.debug("Executing config drive creation command: " + command.toString());
         String result = command.execute();
         if (StringUtils.isNotBlank(result)) {
-            String errMsg = "Unable to create iso file: " + isoFileName + " due to ge" + result;
+            String errMsg = "Unable to create ISO file: " + isoFileName + " due to ge" + result;
             LOGGER.warn(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
@@ -209,12 +228,12 @@ public class ConfigDriveBuilder {
             }
         }
         if (!isoCreator.exists()) {
-            throw new CloudRuntimeException("Cannot create iso for config drive using any know tool. Known paths [/usr/bin/genisoimage, /usr/bin/mkisofs, /usr/local/bin/mkisofs]");
+            throw new CloudRuntimeException("Cannot create ISO for config drive using any know tool. Known paths [/usr/bin/genisoimage, /usr/bin/mkisofs, /usr/local/bin/mkisofs]");
         }
         if (!isoCreator.canExecute()) {
-            throw new CloudRuntimeException("Cannot create iso for config drive using: " + isoCreator.getCanonicalPath());
+            throw new CloudRuntimeException("Cannot create ISO for config drive using: " + isoCreator.getAbsolutePath());
         }
-        return isoCreator.getCanonicalPath();
+        return isoCreator.getAbsolutePath();
     }
 
     /**
@@ -253,9 +272,29 @@ public class ConfigDriveBuilder {
      *
      *  If the folder does not exist, and we cannot create it, we throw a {@link CloudRuntimeException}.
      */
-    static void writeVendorEmptyJsonFile(File openStackFolder) {
+    static void writeVendorDataJsonFile(File openStackFolder) {
         if (openStackFolder.exists() || openStackFolder.mkdirs()) {
             writeFile(openStackFolder, "vendor_data.json", "{}");
+        } else {
+            throw new CloudRuntimeException("Failed to create folder " + openStackFolder);
+        }
+    }
+
+    /**
+     *  Writes vendor data containing Cloudstack-generated password into vendor-data.json
+     *
+     *  If the folder does not exist, and we cannot create it, we throw a {@link CloudRuntimeException}.
+     */
+    static void writeVendorDataJsonFile(File openStackFolder, String password) {
+        if (openStackFolder.exists() || openStackFolder.mkdirs()) {
+            writeFile(
+                openStackFolder,
+                "vendor_data.json",
+                String.format(
+                    "{\"cloud-init\": \"#cloud-config\\npassword: %s\\nchpasswd:\\n  expire: False\"}",
+                    password
+                )
+            );
         } else {
             throw new CloudRuntimeException("Failed to create folder " + openStackFolder);
         }

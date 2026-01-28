@@ -22,6 +22,7 @@ import static com.cloud.utils.NumbersUtil.toReadableSize;
 import java.lang.reflect.InvocationTargetException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -32,8 +33,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.dc.ClusterVO;
-import com.cloud.utils.Ternary;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ListClustersMetricsCmd;
 import org.apache.cloudstack.api.ListDbMetricsCmd;
@@ -100,6 +99,7 @@ import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl;
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -112,6 +112,7 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.org.Cluster;
+import com.cloud.projects.Project;
 import com.cloud.server.DbStatsCollection;
 import com.cloud.server.ManagementServerHostStats;
 import com.cloud.server.StatsCollector;
@@ -124,6 +125,7 @@ import com.cloud.usage.dao.UsageJobDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.db.DbProperties;
 import com.cloud.utils.db.DbUtil;
 import com.cloud.utils.db.Filter;
@@ -184,6 +186,10 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
 
     private static Gson gson = new Gson();
 
+    private final List<Account.Type> AccountTypesWithRecursiveUsageAccess = Arrays.asList(
+            Account.Type.ADMIN, Account.Type.DOMAIN_ADMIN, Account.Type.READ_ONLY_ADMIN
+    );
+
     protected MetricsServiceImpl() {
         super();
     }
@@ -234,8 +240,32 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
     @Override
     public ListResponse<VolumeMetricsStatsResponse> searchForVolumeMetricsStats(ListVolumesUsageHistoryCmd cmd) {
         Pair<List<VolumeVO>, Integer> volumeList = searchForVolumesInternal(cmd);
-        Map<Long,List<VolumeStatsVO>> volumeStatsList = searchForVolumeMetricsStatsInternal(cmd, volumeList.first());
+        Map<Long, List<VolumeStatsVO>> volumeStatsList = searchForVolumeMetricsStatsInternal(cmd, volumeList.first());
         return createVolumeMetricsStatsResponse(volumeList, volumeStatsList);
+    }
+
+    /**
+     * Outputs the parameters that should be used for access control in the query of a resource to
+     * {@code permittedAccounts} and {@code domainIdRecursiveListProject}.
+     * @param isIdProvided indicates whether any ID was provided to the command
+     */
+    private void buildBaseACLSearchParametersForMetrics(boolean isIdProvided, List<Long> permittedAccounts, Ternary<Long, Boolean,
+            Project.ListProjectResourcesCriteria> domainIdRecursiveListProject) {
+        Account caller = CallContext.current().getCallingAccount();
+        Account.Type callerType = caller.getType();
+
+        boolean recursive = AccountTypesWithRecursiveUsageAccess.contains(callerType);
+        domainIdRecursiveListProject.second(recursive);
+
+        // If no ID was provided, then the listing will skip project resources (null); otherwise, project resources should
+        // be listed as well (any long allows this)
+        Long id = isIdProvided ? 1L : null;
+
+        // Allow users to also list metrics of resources owned by projects they belong to (-1L), and admins to list all
+        // metrics belonging to their domains recursively (null)
+        Long projectId = isIdProvided && callerType == Account.Type.NORMAL ? -1L : null;
+
+        accountMgr.buildACLSearchParameters(caller, id, null, projectId, permittedAccounts, domainIdRecursiveListProject, true, false);
     }
 
     /**
@@ -245,17 +275,30 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
      * @return the list of VMs.
      */
     protected Pair<List<UserVmVO>, Integer> searchForUserVmsInternal(ListVMsUsageHistoryCmd cmd) {
-        Filter searchFilter = new Filter(UserVmVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
+
+        boolean isIdProvided = CollectionUtils.isNotEmpty(ids);
+        List<Long> permittedAccounts = new ArrayList<>();
+        Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(null, null, null);
+        buildBaseACLSearchParametersForMetrics(isIdProvided, permittedAccounts, domainIdRecursiveListProject);
+
+        Long domainId = domainIdRecursiveListProject.first();
+        Boolean isRecursive = domainIdRecursiveListProject.second();
+        Project.ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+
+        Filter searchFilter = new Filter(UserVmVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         String name = cmd.getName();
         String keyword = cmd.getKeyword();
 
         SearchBuilder<UserVmVO> sb =  userVmDao.createSearchBuilder();
+        sb.select(null, SearchCriteria.Func.DISTINCT, sb.entity().getId()); // select distinct
+        accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
 
         SearchCriteria<UserVmVO> sc = sb.create();
+        accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         if (CollectionUtils.isNotEmpty(ids)) {
             sc.setParameters("idIN", ids.toArray());
         }
@@ -269,7 +312,14 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
             sc.addAnd("displayName", SearchCriteria.Op.SC, ssc);
         }
 
-        return userVmDao.searchAndCount(sc, searchFilter);
+        Pair<List<UserVmVO>, Integer> uniqueVmPair = userVmDao.searchAndCount(sc, searchFilter);
+        Integer count = uniqueVmPair.second();
+        if (count == 0) {
+            return new Pair<>(new ArrayList<>(), count);
+        }
+        List<Long> vmIds = uniqueVmPair.first().stream().map(UserVmVO::getId).collect(Collectors.toList());
+        List<UserVmVO> vms = userVmDao.listByIds(vmIds);
+        return new Pair<>(vms, count);
     }
 
     /**
@@ -331,17 +381,49 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
      * @return the list of VMs.
      */
     protected Pair<List<VolumeVO>, Integer> searchForVolumesInternal(ListVolumesUsageHistoryCmd cmd) {
-        Filter searchFilter = new Filter(VolumeVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
+
+        boolean isIdProvided = CollectionUtils.isNotEmpty(ids);
+        List<Long> permittedAccounts = new ArrayList<>();
+        Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(null, null, null);
+        buildBaseACLSearchParametersForMetrics(isIdProvided, permittedAccounts, domainIdRecursiveListProject);
+
+        Long domainId = domainIdRecursiveListProject.first();
+        Boolean isRecursive = domainIdRecursiveListProject.second();
+        Project.ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+
+        Filter searchFilter = new Filter(VolumeVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         String name = cmd.getName();
         String keyword = cmd.getKeyword();
 
         SearchBuilder<VolumeVO> sb =  volumeDao.createSearchBuilder();
+        sb.select(null, SearchCriteria.Func.DISTINCT, sb.entity().getId()); // select distinct
+        accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
 
+        boolean shouldListSystemVmVolumes = accountMgr.isRootAdmin(CallContext.current().getCallingAccountId());
+        List<Long> vmIds = new ArrayList<>();
+        if (!shouldListSystemVmVolumes) {
+            SearchBuilder<UserVmVO> vmSearch = userVmDao.createSearchBuilder();
+            vmSearch.select(null, SearchCriteria.Func.DISTINCT, vmSearch.entity().getId());
+            accountMgr.buildACLSearchBuilder(vmSearch, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+            SearchCriteria<UserVmVO> vmSc = vmSearch.create();
+            accountMgr.buildACLSearchCriteria(vmSc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+            List<UserVmVO> vms = userVmDao.search(vmSc, null);
+            vmIds = vms.stream().map(UserVmVO::getId).collect(Collectors.toList());
+            if (vmIds.isEmpty()) {
+                sb.and("instanceIdNull", sb.entity().getInstanceId(), SearchCriteria.Op.NULL);
+            } else {
+                sb.and().op("instanceIdNull", sb.entity().getInstanceId(), SearchCriteria.Op.NULL);
+                sb.or("instanceIds", sb.entity().getInstanceId(), SearchCriteria.Op.IN);
+                sb.cp();
+            }
+        }
+
         SearchCriteria<VolumeVO> sc = sb.create();
+        accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         if (CollectionUtils.isNotEmpty(ids)) {
             sc.setParameters("idIN", ids.toArray());
         }
@@ -354,8 +436,18 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
             ssc.addOr("state", SearchCriteria.Op.EQ, keyword);
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
+        if (!shouldListSystemVmVolumes && CollectionUtils.isNotEmpty(vmIds)) {
+            sc.setParameters("instanceIds", vmIds.toArray());
+        }
 
-        return volumeDao.searchAndCount(sc, searchFilter);
+        Pair<List<VolumeVO>, Integer> uniqueVolumePair = volumeDao.searchAndCount(sc, searchFilter);
+        Integer count = uniqueVolumePair.second();
+        if (count == 0) {
+            return new Pair<>(new ArrayList<>(), count);
+        }
+        List<Long> volumeIds = uniqueVolumePair.first().stream().map(VolumeVO::getId).collect(Collectors.toList());
+        List<VolumeVO> volumes = volumeDao.listByIds(volumeIds);
+        return new Pair<>(volumes, count);
     }
 
     /**
@@ -641,7 +733,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
             metricsResponse.setStorageUsedThreshold(poolResponse.getDiskSizeTotal(), poolResponse.getDiskSizeUsed(), poolResponse.getOverProvisionFactor(), storageThreshold);
             metricsResponse.setStorageUsedDisableThreshold(poolResponse.getDiskSizeTotal(), poolResponse.getDiskSizeUsed(), poolResponse.getOverProvisionFactor(), storageDisableThreshold);
             metricsResponse.setStorageAllocatedThreshold(poolResponse.getDiskSizeTotal(), poolResponse.getDiskSizeAllocated(), poolResponse.getOverProvisionFactor(), storageThreshold);
-            metricsResponse.setStorageAllocatedDisableThreshold(poolResponse.getDiskSizeTotal(), poolResponse.getDiskSizeUsed(), poolResponse.getOverProvisionFactor(), storageDisableThreshold);
+            metricsResponse.setStorageAllocatedDisableThreshold(poolResponse.getDiskSizeTotal(), poolResponse.getDiskSizeAllocated(), poolResponse.getOverProvisionFactor(), storageDisableThreshold);
             metricsResponses.add(metricsResponse);
         }
         return metricsResponses;

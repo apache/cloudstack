@@ -272,7 +272,9 @@ export default {
         }
         this.owner.projectid = OwnerOptions.selectedProject
       }
-      this.fetchData()
+      if (OwnerOptions.initialized) {
+        this.fetchData()
+      }
     },
     fetchData () {
       if (this.createVolumeFromSnapshot) {
@@ -388,6 +390,9 @@ export default {
           values.domainid = this.resource.domainid
           values.virtualmachineid = this.resource.id
           values.zoneid = this.resource.zoneid
+        }
+        if (this.customDiskOffering) {
+          values.size = values.size.trim()
         }
         if (this.createVolumeFromSnapshot) {
           values.snapshotid = this.resource.id
