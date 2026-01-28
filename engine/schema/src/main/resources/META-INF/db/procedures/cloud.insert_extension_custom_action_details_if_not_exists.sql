@@ -24,7 +24,7 @@ CREATE PROCEDURE `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_DETAILS_IF_NOT_EXISTS` 
 BEGIN
     DECLARE action_id BIGINT UNSIGNED
 ;   SELECT `eca`.`id` INTO action_id FROM `cloud`.`extension_custom_action` `eca`
-                                                          JOIN `cloud`.`extension` `e` ON `e`.`id` = `eca`.`extension_id`
+    JOIN `cloud`.`extension` `e` ON `e`.`id` = `eca`.`extension_id`
     WHERE `eca`.`name` = action_name AND `e`.`name` = ext_name LIMIT 1
 ;   IF NOT EXISTS (
         SELECT 1 FROM `cloud`.`extension_custom_action_details`

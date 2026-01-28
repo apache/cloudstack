@@ -23,7 +23,7 @@ BEGIN
 ;   SELECT `id` INTO category_id
     FROM `cloud`.`guest_os_category`
     WHERE `name` = category_name
-                    LIMIT 1
+    LIMIT 1
 ;   IF category_id IS NULL THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Category not found'
 ;   END IF
