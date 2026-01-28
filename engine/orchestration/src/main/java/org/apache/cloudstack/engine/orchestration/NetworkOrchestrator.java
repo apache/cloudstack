@@ -4867,7 +4867,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     public static final ConfigKey<Integer> NetworkGcWait = new ConfigKey<Integer>(Integer.class, "network.gc.wait", "Advanced", "600",
-            "Time (in seconds) to wait before shutting down a network that's not in used", false, Scope.Global, null);
+            "Time (in seconds) to wait before shutting down a network that's not in used", true, Scope.Global, null);
     public static final ConfigKey<Integer> NetworkGcInterval = new ConfigKey<Integer>(Integer.class, "network.gc.interval", "Advanced", "600",
             "Seconds to wait before checking for networks to shutdown", false, Scope.Global, null);
 
