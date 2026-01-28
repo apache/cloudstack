@@ -210,7 +210,6 @@ public class Client {
     public void runClient(String[] args) {
 
         try {
-
             Protocol protocol = parseOptions(args);
             if (protocol == Protocol.NONE)
                 return;
@@ -302,18 +301,25 @@ public class Client {
         Protocol protocol;
 
         Option[] options;
-        if (protocolName.equals(Protocol.VNC.name().toLowerCase())) {
-            protocol = Protocol.VNC;
-            options = join(commonOptions, vncOptions);
-        } else if (protocolName.equals(Protocol.RDP.name().toLowerCase())) {
-            protocol = Protocol.RDP;
-            options = join(commonOptions, rdpOptions);
-        } else if (protocolName.equals(Protocol.HYPERV.name().toLowerCase())) {
-            protocol = Protocol.HYPERV;
-            options = join(commonOptions, hyperVOptions);
-        } else {
-            help();
-            return Protocol.NONE;
+        try {
+            protocol = Protocol.valueOf(protocolName);
+        } catch (IllegalArgumentException e) {
+            protocol = Protocol.NONE;
+        }
+
+        switch (protocol) {
+            case VNC:
+                options = join(commonOptions, vncOptions);
+                break;
+            case RDP:
+                options = join(commonOptions, rdpOptions);
+                break;
+            case HYPERV:
+                options = join(commonOptions, hyperVOptions);
+                break;
+            default:
+                help();
+                return Protocol.NONE;
         }
 
         // Parse all options for given protocol

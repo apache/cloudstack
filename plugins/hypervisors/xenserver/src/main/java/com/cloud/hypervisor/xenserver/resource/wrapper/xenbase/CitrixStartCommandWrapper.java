@@ -97,6 +97,14 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
                 citrixResourceBase.createVGPU(conn, command, vm, gpuDevice);
             }
 
+            try {
+                if (citrixResourceBase.isVTPMSupported(conn, host)) {
+                    citrixResourceBase.configureVTPM(conn, vm, vmSpec);
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to configure vTPM for VM " + vmName + ", continuing without vTPM", e);
+            }
+
             Host.Record record = host.getRecord(conn);
             String xenBrand = record.softwareVersion.get("product_brand");
             String xenVersion = record.softwareVersion.get("product_version");
@@ -179,9 +187,9 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
                                     "vmID", Long.toString(vmSpec.getId()), "secIps", secIpsStr);
 
                             if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
-                                logger.warn("Failed to program default network rules for " + vmName + " on nic with ip:" + nic.getIp() + " mac:" + nic.getMac());
+                                logger.warn("Failed to program default Network rules for " + vmName + " on NIC with IP: " + nic.getIp() + " mac:" + nic.getMac());
                             } else {
-                                logger.info("Programmed default network rules for " + vmName + " on nic with ip:" + nic.getIp() + " mac:" + nic.getMac());
+                                logger.info("Programmed default Network rules for " + vmName + " on NIC with IP: " + nic.getIp() + " mac:" + nic.getMac());
                             }
                         }
                     }

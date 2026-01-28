@@ -1609,7 +1609,7 @@ export default {
 
       try {
         if (!this.stepData.stepMove.includes('createStoragePool')) {
-          this.stepData.primaryStorageRetunred = await this.createStoragePool(params)
+          this.stepData.primaryStorageReturned = await this.createStoragePool(params)
           this.stepData.stepMove.push('createStoragePool')
         }
         await this.stepAddSecondaryStorage()

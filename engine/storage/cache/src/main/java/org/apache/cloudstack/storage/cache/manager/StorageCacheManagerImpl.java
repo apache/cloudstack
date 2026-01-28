@@ -323,7 +323,7 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
             if (result.isFailed()) {
                 objOnCacheStore.processEvent(Event.OperationFailed);
             } else {
-                objOnCacheStore.processEvent(Event.OperationSuccessed, result.getAnswer());
+                objOnCacheStore.processEvent(Event.OperationSucceeded, result.getAnswer());
                 objOnCacheStore.incRefCount();
                 return objOnCacheStore;
             }

@@ -22,7 +22,7 @@ import org.apache.cloudstack.api.ApiConstants;
 
 public class RemoveVirtualMachinesFromKubernetesClusterResponse extends SuccessResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the id of the Kubernetes cluster")
+    @Param(description = "The ID of the Kubernetes cluster")
     private String vmId;
 
     public RemoveVirtualMachinesFromKubernetesClusterResponse() {
