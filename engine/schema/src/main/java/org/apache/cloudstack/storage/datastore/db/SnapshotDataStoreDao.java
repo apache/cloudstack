@@ -61,15 +61,22 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
 
     List<SnapshotDataStoreVO> listExtractedSnapshotsBeforeDate(Date beforeDate);
 
+    List<SnapshotDataStoreVO> listSnapshotsBySnapshotId(long snapshotId);
+
     List<SnapshotDataStoreVO> listReadyBySnapshot(long snapshotId, DataStoreRole role);
 
+    List<SnapshotDataStoreVO> listReadyBySnapshotId(long snapshotId);
     SnapshotDataStoreVO findBySourceSnapshot(long snapshotId, DataStoreRole role);
 
     List<SnapshotDataStoreVO> findBySnapshotIdAndNotInDestroyedHiddenState(long snapshotId);
 
+    SnapshotDataStoreVO findBySnapshotIdInAnyState(long snapshotId, DataStoreRole role);
+
     List<SnapshotDataStoreVO> listDestroyed(long storeId);
 
     List<SnapshotDataStoreVO> findBySnapshotId(long snapshotId);
+
+    List<SnapshotDataStoreVO> findBySnapshotIdWithNonDestroyedState(long snapshotId);
 
     void duplicateCacheRecordsOnRegionStore(long storeId);
 

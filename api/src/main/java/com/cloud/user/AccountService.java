@@ -25,7 +25,7 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
-import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
+import org.apache.cloudstack.api.command.admin.user.RegisterUserKeyCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 
 import com.cloud.dc.DataCenter;
@@ -87,13 +87,15 @@ public interface AccountService {
 
     boolean isDomainAdmin(Long accountId);
 
+    boolean isResourceDomainAdmin(Long accountId);
+
     boolean isNormalUser(long accountId);
 
     User getActiveUserByRegistrationToken(String registrationToken);
 
     void markUserRegistered(long userId);
 
-    public String[] createApiKeyAndSecretKey(RegisterCmd cmd);
+    public String[] createApiKeyAndSecretKey(RegisterUserKeyCmd cmd);
 
     public String[] createApiKeyAndSecretKey(final long userId);
 

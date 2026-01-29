@@ -23,8 +23,11 @@ import com.google.common.base.Enums;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 // Enum for default roles in CloudStack
 public enum RoleType {
@@ -100,15 +103,39 @@ public enum RoleType {
         return roleId;
     }
 
+    public static int toCombinedMask(Collection<RoleType> roles) {
+        int combinedMask = 0;
+        if (roles != null) {
+            for (RoleType role : roles) {
+                combinedMask |= role.getMask();
+            }
+        }
+        return combinedMask;
+    }
+
+    public static Set<RoleType> fromCombinedMask(int combinedMask) {
+        Set<RoleType> roles = EnumSet.noneOf(RoleType.class);
+        for (RoleType roleType : RoleType.values()) {
+            if ((combinedMask & roleType.getMask()) != 0) {
+                roles.add(roleType);
+            }
+        }
+        if (roles.isEmpty()) {
+            roles.add(Unknown);
+        }
+        return roles;
+    }
+
+
     /**
      * This method returns the role account type if the role isn't null, else it returns the default account type.
      * */
     public static Account.Type getAccountTypeByRole(final Role role, final Account.Type defautAccountType) {
         if (role != null) {
-            LOGGER.debug(String.format("Role [%s] is not null; therefore, we use its account type [%s].", role, defautAccountType));
+            LOGGER.debug(String.format("Role [%s] is not null; therefore, we use its Account type [%s].", role, defautAccountType));
             return role.getRoleType().getAccountType();
         }
-        LOGGER.debug(String.format("Role is null; therefore, we use the default account type [%s] value.", defautAccountType));
+        LOGGER.debug(String.format("Role is null; therefore, we use the default Account type [%s] value.", defautAccountType));
         return defautAccountType;
     }
 }

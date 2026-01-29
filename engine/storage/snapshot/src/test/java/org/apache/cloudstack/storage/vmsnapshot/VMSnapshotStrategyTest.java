@@ -25,6 +25,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotStrategy;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -281,6 +282,11 @@ public class VMSnapshotStrategyTest extends TestCase {
         @Bean
         public VMSnapshotDao vmSnapshotDao() {
             return Mockito.mock(VMSnapshotDao.class);
+        }
+
+        @Bean
+        public VMSnapshotDetailsDao vmSnapshotDetailsDao() {
+            return Mockito.mock(VMSnapshotDetailsDao.class);
         }
 
         @Bean

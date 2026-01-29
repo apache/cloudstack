@@ -88,7 +88,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import Status from '@/components/widgets/Status'
 
@@ -186,12 +186,12 @@ export default {
         params.payloadUrl = this.payloadUrl
       }
       if (this.sslVerification) {
-        params.payload = this.sslVerification
+        params.sslVerification = this.sslVerification
       }
       if (this.secretKey) {
         params.secretKey = this.secretKey
       }
-      api('executeWebhookDelivery', params).then(response => {
+      postAPI('executeWebhookDelivery', params).then(response => {
         this.response = response.executewebhookdeliveryresponse.webhookdelivery
         this.$emit('update-success', response.success)
       }).catch(error => {

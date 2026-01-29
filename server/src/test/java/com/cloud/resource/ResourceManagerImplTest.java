@@ -50,7 +50,7 @@ import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.utils.ssh.SshException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.trilead.ssh2.Connection;
 import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
@@ -105,7 +105,7 @@ public class ResourceManagerImplTest {
     @Mock
     private HighAvailabilityManager haManager;
     @Mock
-    private UserVmDetailsDao userVmDetailsDao;
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
     @Mock
     private AgentManager agentManager;
     @Mock
@@ -225,8 +225,8 @@ public class ResourceManagerImplTest {
 
         rootDisks = Arrays.asList(rootDisk1, rootDisk2);
         dataDisks = Collections.singletonList(dataDisk);
-        when(volumeDao.findByPoolId(poolId)).thenReturn(rootDisks);
-        when(volumeDao.findByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(dataDisks);
+        when(volumeDao.findNonDestroyedVolumesByPoolId(poolId)).thenReturn(rootDisks);
+        when(volumeDao.findNonDestroyedVolumesByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(dataDisks);
     }
 
     @After
@@ -341,10 +341,10 @@ public class ResourceManagerImplTest {
         verify(resourceManager).setKVMVncAccess(hostId, vms);
         verify(agentManager, times(vms.size())).easySend(eq(hostId), any(GetVncPortCommand.class));
         verify(agentManager).pullAgentToMaintenance(hostId);
-        verify(userVmDetailsDao).addDetail(eq(vm1Id), eq("kvm.vnc.address"), eq(vm1VncAddress), anyBoolean());
-        verify(userVmDetailsDao).addDetail(eq(vm1Id), eq("kvm.vnc.port"), eq(String.valueOf(vm1VncPort)), anyBoolean());
-        verify(userVmDetailsDao).addDetail(eq(vm2Id), eq("kvm.vnc.address"), eq(vm2VncAddress), anyBoolean());
-        verify(userVmDetailsDao).addDetail(eq(vm2Id), eq("kvm.vnc.port"), eq(String.valueOf(vm2VncPort)), anyBoolean());
+        verify(vmInstanceDetailsDao).addDetail(eq(vm1Id), eq("kvm.vnc.address"), eq(vm1VncAddress), anyBoolean());
+        verify(vmInstanceDetailsDao).addDetail(eq(vm1Id), eq("kvm.vnc.port"), eq(String.valueOf(vm1VncPort)), anyBoolean());
+        verify(vmInstanceDetailsDao).addDetail(eq(vm2Id), eq("kvm.vnc.address"), eq(vm2VncAddress), anyBoolean());
+        verify(vmInstanceDetailsDao).addDetail(eq(vm2Id), eq("kvm.vnc.port"), eq(String.valueOf(vm2VncPort)), anyBoolean());
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -591,22 +591,22 @@ public class ResourceManagerImplTest {
 
     @Test
     public void testDestroyLocalStoragePoolVolumesOnlyRootDisks() {
-        when(volumeDao.findByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(null);
+        when(volumeDao.findNonDestroyedVolumesByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(null);
         resourceManager.destroyLocalStoragePoolVolumes(poolId);
         verify(volumeDao, times(rootDisks.size())).updateAndRemoveVolume(any(VolumeVO.class));
     }
 
     @Test
     public void testDestroyLocalStoragePoolVolumesOnlyDataDisks() {
-        when(volumeDao.findByPoolId(poolId)).thenReturn(null);
+        when(volumeDao.findNonDestroyedVolumesByPoolId(poolId)).thenReturn(null);
         resourceManager.destroyLocalStoragePoolVolumes(poolId);
         verify(volumeDao, times(dataDisks.size())).updateAndRemoveVolume(any(VolumeVO.class));
     }
 
     @Test
     public void testDestroyLocalStoragePoolVolumesNoDisks() {
-        when(volumeDao.findByPoolId(poolId)).thenReturn(null);
-        when(volumeDao.findByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(null);
+        when(volumeDao.findNonDestroyedVolumesByPoolId(poolId)).thenReturn(null);
+        when(volumeDao.findNonDestroyedVolumesByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(null);
         resourceManager.destroyLocalStoragePoolVolumes(poolId);
         verify(volumeDao, never()).updateAndRemoveVolume(any(VolumeVO.class));
     }
@@ -944,7 +944,7 @@ public class ResourceManagerImplTest {
         Mockito.when(volume2.getInstanceId()).thenReturn(101L);
 
         List<VolumeVO> volumesInPool = Arrays.asList(volume1, volume2);
-        Mockito.doReturn(volumesInPool).when(volumeDao).findByPoolId(poolId);
+        Mockito.doReturn(volumesInPool).when(volumeDao).findNonDestroyedVolumesByPoolId(poolId);
 
         VMInstanceVO vmInstance1 = Mockito.mock(VMInstanceVO.class);
         VMInstanceVO vmInstance2 = Mockito.mock(VMInstanceVO.class);

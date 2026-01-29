@@ -35,7 +35,7 @@ import org.apache.cloudstack.api.response.SnapshotPolicyResponse;
 import org.apache.cloudstack.context.CallContext;
 
 
-@APICommand(name = "updateSnapshotPolicy", description = "Updates the snapshot policy.", responseObject = SnapshotPolicyResponse.class, responseView = ResponseObject.ResponseView.Restricted, entityType = {Volume.class},
+@APICommand(name = "updateSnapshotPolicy", description = "Updates the Snapshot policy.", responseObject = SnapshotPolicyResponse.class, responseView = ResponseObject.ResponseView.Restricted, entityType = {Volume.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateSnapshotPolicyCmd extends BaseAsyncCustomIdCmd {
 
@@ -44,12 +44,12 @@ public class UpdateSnapshotPolicyCmd extends BaseAsyncCustomIdCmd {
     /////////////////////////////////////////////////////
 
     @ACL(accessType = SecurityChecker.AccessType.OperateEntry)
-    @Parameter(name= ApiConstants.ID, type=CommandType.UUID, entityType=SnapshotPolicyResponse.class, description="the ID of the snapshot policy")
+    @Parameter(name= ApiConstants.ID, type=CommandType.UUID, entityType=SnapshotPolicyResponse.class, description = "The ID of the Snapshot policy")
     private Long id;
 
     @Parameter(name = ApiConstants.FOR_DISPLAY,
             type = CommandType.BOOLEAN,
-            description = "an optional field, whether to the display the snapshot policy to the end user or not.",
+            description = "An optional field, whether to the display the Snapshot policy to the end user or not.",
             since = "4.4",
             authorized = {RoleType.Admin})
     private Boolean display;
@@ -80,11 +80,11 @@ public class UpdateSnapshotPolicyCmd extends BaseAsyncCustomIdCmd {
 
         SnapshotPolicy policy = _entityMgr.findById(SnapshotPolicy.class, getId());
         if (policy == null) {
-            throw new InvalidParameterValueException("Invalid snapshot policy id was provided");
+            throw new InvalidParameterValueException("Invalid Snapshot policy ID was provided");
         }
         Volume volume = _responseGenerator.findVolumeById(policy.getVolumeId());
         if (volume == null) {
-            throw new InvalidParameterValueException("Snapshot policy's volume id doesn't exist");
+            throw new InvalidParameterValueException("Snapshot policy's volume ID doesn't exist");
         }else{
             return volume.getAccountId();
         }
@@ -97,21 +97,21 @@ public class UpdateSnapshotPolicyCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public String getEventDescription() {
-        StringBuilder desc = new StringBuilder("Updating snapshot policy: ");
+        StringBuilder desc = new StringBuilder("Updating Snapshot policy: ");
         desc.append(getId());
         return desc.toString();
     }
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("SnapshotPolicy Id: " + getId());
+        CallContext.current().setEventDetails("SnapshotPolicy ID: " + getId());
         SnapshotPolicy result = _snapshotService.updateSnapshotPolicy(this);
         if (result != null) {
             SnapshotPolicyResponse response = _responseGenerator.createSnapshotPolicyResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update snapshot policy");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update Snapshot policy");
         }
     }
 

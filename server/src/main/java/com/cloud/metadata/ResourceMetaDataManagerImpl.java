@@ -67,7 +67,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.vm.dao.NicDetailsDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 
 @Component
 public class ResourceMetaDataManagerImpl extends ManagerBase implements ResourceMetaDataService, ResourceMetaDataManager {
@@ -76,7 +76,7 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     @Inject
     NicDetailsDao _nicDetailDao;
     @Inject
-    UserVmDetailsDao _userVmDetailDao;
+    VMInstanceDetailsDao _userVmDetailDao;
     @Inject
     DataCenterDetailsDao _dcDetailsDao;
     @Inject

@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.HostPodDao;
@@ -34,6 +35,11 @@ import org.apache.cloudstack.api.command.admin.storage.ChangeStoragePoolScopeCmd
 import org.apache.cloudstack.api.command.admin.storage.UpdateObjectStoragePoolCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.api.command.admin.storage.ConfigureStorageAccessCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -48,6 +54,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.object.ObjectStoreEntity;
+import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.commons.collections.MapUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -63,7 +70,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
+import com.cloud.capacity.CapacityVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
@@ -161,6 +170,15 @@ public class StorageManagerImplTest {
     @Mock
     private ResourceManager resourceMgr;
 
+
+    @Mock
+    protected ObjectStoreDao objectStoreDao;
+
+    @Mock
+    DataStoreProviderManager dataStoreProviderMgr;
+
+    @Mock
+    DataStoreManager dataStoreMgr;
 
     @Test
     public void createLocalStoragePoolName() {
@@ -267,7 +285,7 @@ public class StorageManagerImplTest {
         volume.setState(Volume.State.Allocated);
         PrimaryDataStoreDao storagePoolDao = Mockito.mock(PrimaryDataStoreDao.class);
         storageManagerImpl._storagePoolDao = storagePoolDao;
-        assertTrue(storageManagerImpl.storagePoolCompatibleWithVolumePool(storagePool, volume));
+        Assert.assertTrue(storageManagerImpl.storagePoolCompatibleWithVolumePool(storagePool, volume));
 
     }
 
@@ -276,8 +294,8 @@ public class StorageManagerImplTest {
         String sfUrl = "MVIP=1.2.3.4;SVIP=6.7.8.9;clusterAdminUsername=admin;" +
                 "clusterAdminPassword=password;clusterDefaultMinIops=1000;" +
                 "clusterDefaultMaxIops=2000;clusterDefaultBurstIopsPercentOfMaxIops=2";
-        Map<String,String> uriParams = storageManagerImpl.extractUriParamsAsMap(sfUrl);
-        assertTrue(MapUtils.isEmpty(uriParams));
+        Map<String, String> uriParams = storageManagerImpl.extractUriParamsAsMap(sfUrl);
+        Assert.assertTrue(MapUtils.isEmpty(uriParams));
     }
 
     @Test
@@ -286,8 +304,8 @@ public class StorageManagerImplTest {
         String host = "HOST";
         String path = "/PATH";
         String sfUrl = String.format("%s://%s%s", scheme, host, path);
-        Map<String,String> uriParams = storageManagerImpl.extractUriParamsAsMap(sfUrl);
-        assertTrue(MapUtils.isNotEmpty(uriParams));
+        Map<String, String> uriParams = storageManagerImpl.extractUriParamsAsMap(sfUrl);
+        Assert.assertTrue(MapUtils.isNotEmpty(uriParams));
         Assert.assertEquals(scheme, uriParams.get("scheme"));
         Assert.assertEquals(host, uriParams.get("host"));
         Assert.assertEquals(path, uriParams.get("hostPath"));
@@ -445,7 +463,7 @@ public class StorageManagerImplTest {
         }
         try {
             Mockito.doReturn(new com.cloud.agent.api.Answer(
-                    Mockito.mock(CheckDataStoreStoragePolicyComplainceCommand.class)))
+                            Mockito.mock(CheckDataStoreStoragePolicyComplianceCommand.class)))
                     .when(storageManagerImpl).getCheckDatastorePolicyComplianceAnswer("policy", pool);
             assertTrue(storageManagerImpl.isStoragePoolCompliantWithStoragePolicy(1L, pool));
         } catch (StorageUnavailableException e) {
@@ -453,7 +471,7 @@ public class StorageManagerImplTest {
         }
         try {
             com.cloud.agent.api.Answer answer =
-                    new com.cloud.agent.api.Answer(Mockito.mock(CheckDataStoreStoragePolicyComplainceCommand.class),
+                    new com.cloud.agent.api.Answer(Mockito.mock(CheckDataStoreStoragePolicyComplianceCommand.class),
                             false, "");
             Mockito.doReturn(answer)
                     .when(storageManagerImpl).getCheckDatastorePolicyComplianceAnswer("policy", pool);
@@ -492,10 +510,9 @@ public class StorageManagerImplTest {
         Mockito.when(policy.getPolicyId()).thenReturn("some");
         Mockito.when(vsphereStoragePolicyDao.findById(Mockito.anyLong()))
                 .thenReturn(policy);
-        Mockito.doReturn(new ArrayList<>(List.of(1L, 2L)))
-                .when(storageManagerImpl).getUpHostsInPool(Mockito.anyLong());
+        Mockito.doReturn(new ArrayList<>(List.of(1L, 2L))).when(storageManagerImpl).getUpHostsInPool(Mockito.anyLong());
         Mockito.when(hvGuruMgr.getGuruProcessedCommandTargetHost(Mockito.anyLong(),
-                Mockito.any(CheckDataStoreStoragePolicyComplainceCommand.class))).thenReturn(1L);
+                Mockito.any(CheckDataStoreStoragePolicyComplianceCommand.class))).thenReturn(1L);
         try {
             Mockito.when(agentManager.send(Mockito.anyLong(), Mockito.any(Command.class)))
                     .thenThrow(AgentUnavailableException.class);
@@ -522,12 +539,12 @@ public class StorageManagerImplTest {
                 .thenReturn(policy);
         Mockito.doReturn(new ArrayList<>(List.of(1L, 2L))).when(storageManagerImpl).getUpHostsInPool(Mockito.anyLong());
         Mockito.when(hvGuruMgr.getGuruProcessedCommandTargetHost(Mockito.anyLong(),
-                Mockito.any(CheckDataStoreStoragePolicyComplainceCommand.class))).thenReturn(1L);
+                Mockito.any(CheckDataStoreStoragePolicyComplianceCommand.class))).thenReturn(1L);
         try {
             Mockito.when(agentManager.send(Mockito.anyLong(),
-                            Mockito.any(CheckDataStoreStoragePolicyComplainceCommand.class)))
+                            Mockito.any(CheckDataStoreStoragePolicyComplianceCommand.class)))
                     .thenReturn(new com.cloud.agent.api.Answer(
-                            Mockito.mock(CheckDataStoreStoragePolicyComplainceCommand.class)));
+                            Mockito.mock(CheckDataStoreStoragePolicyComplianceCommand.class)));
         } catch (AgentUnavailableException | OperationTimedoutException e) {
             Assert.fail(e.getMessage());
         }
@@ -564,11 +581,11 @@ public class StorageManagerImplTest {
                 .thenReturn(new ArrayList<>()); //new installation
         storageManagerImpl.enableDefaultDatastoreDownloadRedirectionForExistingInstallations();
         Mockito.verify(configurationDao, Mockito.never())
-                .update(StorageManager.DataStoreDownloadFollowRedirects.key(),StorageManager.DataStoreDownloadFollowRedirects.defaultValue());
+                .update(StorageManager.DataStoreDownloadFollowRedirects.key(), StorageManager.DataStoreDownloadFollowRedirects.defaultValue());
     }
 
     @Test
-    public void getStoragePoolNonDestroyedVolumesLogTestNonDestroyedVolumesReturnLog() {
+    public void getStoragePoolNonDestroyedVolumesLogTestNonDestroyedVolumes_VMAttachedLogs() {
         Mockito.doReturn(1L).when(storagePoolVOMock).getId();
         Mockito.doReturn(1L).when(volume1VOMock).getInstanceId();
         Mockito.doReturn("786633d1-a942-4374-9d56-322dd4b0d202").when(volume1VOMock).getUuid();
@@ -576,11 +593,63 @@ public class StorageManagerImplTest {
         Mockito.doReturn("ffb46333-e983-4c21-b5f0-51c5877a3805").when(volume2VOMock).getUuid();
         Mockito.doReturn("58760044-928f-4c4e-9fef-d0e48423595e").when(vmInstanceVOMock).getUuid();
 
-        Mockito.when(_volumeDao.findByPoolId(storagePoolVOMock.getId(), null)).thenReturn(List.of(volume1VOMock, volume2VOMock));
+        Mockito.when(_volumeDao.findNonDestroyedVolumesByPoolId(storagePoolVOMock.getId(), null)).thenReturn(List.of(volume1VOMock, volume2VOMock));
         Mockito.doReturn(vmInstanceVOMock).when(vmInstanceDao).findById(Mockito.anyLong());
 
         String log = storageManagerImpl.getStoragePoolNonDestroyedVolumesLog(storagePoolVOMock.getId());
         String expected = String.format("[Volume [%s] (attached to VM [%s]), Volume [%s] (attached to VM [%s])]", volume1VOMock.getUuid(), vmInstanceVOMock.getUuid(), volume2VOMock.getUuid(), vmInstanceVOMock.getUuid());
+
+        Assert.assertEquals(expected, log);
+    }
+
+    @Test
+    public void getStoragePoolNonDestroyedVolumesLogTestNonDestroyedVolumes_VMLogForOneVolume() {
+        Mockito.doReturn(1L).when(storagePoolVOMock).getId();
+        Mockito.doReturn(null).when(volume1VOMock).getInstanceId();
+        Mockito.doReturn("786633d1-a942-4374-9d56-322dd4b0d202").when(volume1VOMock).getUuid();
+        Mockito.doReturn(1L).when(volume2VOMock).getInstanceId();
+        Mockito.doReturn("ffb46333-e983-4c21-b5f0-51c5877a3805").when(volume2VOMock).getUuid();
+        Mockito.doReturn("58760044-928f-4c4e-9fef-d0e48423595e").when(vmInstanceVOMock).getUuid();
+
+        Mockito.when(_volumeDao.findNonDestroyedVolumesByPoolId(storagePoolVOMock.getId(), null)).thenReturn(List.of(volume1VOMock, volume2VOMock));
+        Mockito.doReturn(vmInstanceVOMock).when(vmInstanceDao).findById(Mockito.anyLong());
+
+        String log = storageManagerImpl.getStoragePoolNonDestroyedVolumesLog(storagePoolVOMock.getId());
+        String expected = String.format("[Volume [%s] (not attached to any VM), Volume [%s] (attached to VM [%s])]", volume1VOMock.getUuid(), volume2VOMock.getUuid(), vmInstanceVOMock.getUuid());
+
+        Assert.assertEquals(expected, log);
+    }
+
+    @Test
+    public void getStoragePoolNonDestroyedVolumesLogTestNonDestroyedVolumes_NotAttachedLogs() {
+        Mockito.doReturn(1L).when(storagePoolVOMock).getId();
+        Mockito.doReturn(null).when(volume1VOMock).getInstanceId();
+        Mockito.doReturn("786633d1-a942-4374-9d56-322dd4b0d202").when(volume1VOMock).getUuid();
+        Mockito.doReturn(null).when(volume2VOMock).getInstanceId();
+        Mockito.doReturn("ffb46333-e983-4c21-b5f0-51c5877a3805").when(volume2VOMock).getUuid();
+
+        Mockito.when(_volumeDao.findNonDestroyedVolumesByPoolId(storagePoolVOMock.getId(), null)).thenReturn(List.of(volume1VOMock, volume2VOMock));
+
+        String log = storageManagerImpl.getStoragePoolNonDestroyedVolumesLog(storagePoolVOMock.getId());
+        String expected = String.format("[Volume [%s] (not attached to any VM), Volume [%s] (not attached to any VM)]", volume1VOMock.getUuid(), volume2VOMock.getUuid());
+
+        Assert.assertEquals(expected, log);
+    }
+
+    @Test
+    public void getStoragePoolNonDestroyedVolumesLogTestNonDestroyedVolumes_VMNotExistsLog() {
+        Mockito.doReturn(1L).when(storagePoolVOMock).getId();
+        Mockito.doReturn(1L).when(volume1VOMock).getInstanceId();
+        Mockito.doReturn("786633d1-a942-4374-9d56-322dd4b0d202").when(volume1VOMock).getUuid();
+        Mockito.doReturn(1L).when(volume2VOMock).getInstanceId();
+        Mockito.doReturn("ffb46333-e983-4c21-b5f0-51c5877a3805").when(volume2VOMock).getUuid();
+
+        Mockito.when(_volumeDao.findNonDestroyedVolumesByPoolId(storagePoolVOMock.getId(), null)).thenReturn(List.of(volume1VOMock, volume2VOMock));
+        Mockito.doReturn(null).when(vmInstanceDao).findById(Mockito.anyLong());
+
+        String log = storageManagerImpl.getStoragePoolNonDestroyedVolumesLog(storagePoolVOMock.getId());
+        String expected = String.format("[Volume [%s] (attached VM with ID [%d] doesn't exists), Volume [%s] (attached VM with ID [%d] doesn't exists)]",
+                volume1VOMock.getUuid(), volume1VOMock.getInstanceId(), volume2VOMock.getUuid(), volume2VOMock.getInstanceId());
 
         Assert.assertEquals(expected, log);
     }
@@ -808,7 +877,7 @@ public class StorageManagerImplTest {
         Long zoneId = 2L;
 
         Long capacityBytes = (long) (allocatedSizeWithTemplate / Double.valueOf(CapacityManager.StorageAllocatedCapacityDisableThreshold.defaultValue())
-                        / Double.valueOf(CapacityManager.StorageOverprovisioningFactor.defaultValue()));
+                / Double.valueOf(CapacityManager.StorageOverprovisioningFactor.defaultValue()));
         Long maxAllocatedSizeForResize = (long) (capacityBytes * Double.valueOf(CapacityManager.StorageOverprovisioningFactor.defaultValue())
                 * Double.valueOf(CapacityManager.StorageAllocatedCapacityDisableThresholdForVolumeSize.defaultValue()));
 
@@ -1753,5 +1822,163 @@ public class StorageManagerImplTest {
         });
 
         assertTrue(thrownException.getMessage().contains("access groups already exist on the cluster: [group4]"));
+    }
+
+    @Test
+    public void testGetObjectStorageUsedStats() {
+        Long zoneId = 1L;
+        List<ObjectStoreVO> objectStores = new ArrayList<>();
+
+        ObjectStoreVO store1 = new ObjectStoreVO();
+        store1.setAllocatedSize(1000L);
+        store1.setTotalSize(2000L);
+        objectStores.add(store1);
+
+        ObjectStoreVO store2 = new ObjectStoreVO();
+        store2.setAllocatedSize(2000L);
+        store2.setTotalSize(4000L);
+        objectStores.add(store2);
+
+        ObjectStoreVO store3 = new ObjectStoreVO();
+        store3.setAllocatedSize(null);
+        store3.setTotalSize(null);
+        objectStores.add(store3);
+
+        Mockito.when(objectStoreDao.listObjectStores()).thenReturn(objectStores);
+
+        CapacityVO result = storageManagerImpl.getObjectStorageUsedStats(zoneId);
+
+        Assert.assertEquals(zoneId, result.getDataCenterId());
+        Assert.assertEquals(Optional.of(3000L), Optional.of(result.getUsedCapacity())); // 1000 + 2000
+        Assert.assertEquals(6000L, result.getTotalCapacity()); // 2000 + 4000
+        Assert.assertEquals(Capacity.CAPACITY_TYPE_OBJECT_STORAGE, result.getCapacityType());
+        Assert.assertNull(result.getPodId());
+        Assert.assertNull(result.getClusterId());
+    }
+
+    @Test
+    public void testGetObjectStorageUsedStatsWithNullSizes() {
+        Long zoneId = 1L;
+        List<ObjectStoreVO> objectStores = new ArrayList<>();
+
+        ObjectStoreVO store1 = new ObjectStoreVO();
+        store1.setAllocatedSize(null);
+        store1.setTotalSize(null);
+        objectStores.add(store1);
+
+        ObjectStoreVO store2 = new ObjectStoreVO();
+        store2.setAllocatedSize(null);
+        store2.setTotalSize(null);
+        objectStores.add(store2);
+
+        Mockito.when(objectStoreDao.listObjectStores()).thenReturn(objectStores);
+
+        CapacityVO result = storageManagerImpl.getObjectStorageUsedStats(zoneId);
+
+        Assert.assertEquals(zoneId, result.getDataCenterId());
+        Assert.assertEquals(Optional.of(0L), Optional.of(result.getUsedCapacity()));
+        Assert.assertEquals(0L, result.getTotalCapacity());
+        Assert.assertEquals(Capacity.CAPACITY_TYPE_OBJECT_STORAGE, result.getCapacityType());
+        Assert.assertNull(result.getPodId());
+        Assert.assertNull(result.getClusterId());
+    }
+
+    @Test
+    public void testDiscoverObjectStore() {
+        Long objectStoreId = 1L;
+
+        String name = "test-store";
+        String url = "http://10.1.1.33:80";
+        Long size = 1000L;
+        String providerName = "test-provider";
+        Map<String, String> details = new HashMap<>();
+        details.put("key1", "value1");
+
+        ObjectStoreVO objectStoreVO = new ObjectStoreVO();
+        ReflectionTestUtils.setField(objectStoreVO, "id", objectStoreId);
+        objectStoreVO.setName(name);
+        objectStoreVO.setUrl(url);
+        objectStoreVO.setProviderName(providerName);
+        objectStoreVO.setTotalSize(size);
+
+        DataStoreProvider storeProvider = Mockito.mock(DataStoreProvider.class);
+        DataStoreLifeCycle lifeCycle = Mockito.mock(DataStoreLifeCycle.class);
+        DataStore store = Mockito.mock(DataStore.class);
+        ObjectStore objectStore = Mockito.mock(ObjectStore.class);
+
+        Mockito.when(dataStoreProviderMgr.getDataStoreProvider(providerName)).thenReturn(storeProvider);
+        Mockito.when(storeProvider.getDataStoreLifeCycle()).thenReturn(lifeCycle);
+        Mockito.when(lifeCycle.initialize(Mockito.any())).thenReturn(store);
+        Mockito.when(store.getId()).thenReturn(1L);
+        Mockito.when(dataStoreMgr.getDataStore(1L, DataStoreRole.Object)).thenReturn(null);
+
+        ObjectStore result = storageManagerImpl.discoverObjectStore(name, url, size, providerName, details);
+
+        Mockito.verify(dataStoreProviderMgr).getDataStoreProvider(providerName);
+        Mockito.verify(lifeCycle).initialize(Mockito.any());
+        Mockito.verify(dataStoreMgr).getDataStore(1L, DataStoreRole.Object);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testDiscoverObjectStoreInvalidProvider() {
+        // Setup
+        String name = "test-store";
+        String url = "http://10.1.1.33:80";
+        Long size = 1000L;
+        String providerName = "invalid-provider";
+        Map<String, String> details = new HashMap<>();
+
+        Mockito.when(dataStoreProviderMgr.getDataStoreProvider(providerName)).thenReturn(null);
+
+        storageManagerImpl.discoverObjectStore(name, url, size, providerName, details);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testDiscoverObjectStoreInvalidUrl() {
+        String name = "test-store";
+        String url = "invalid-url";
+        Long size = 1000L;
+        String providerName = "test-provider";
+        Map<String, String> details = new HashMap<>();
+
+        DataStoreProvider storeProvider = Mockito.mock(DataStoreProvider.class);
+        Mockito.when(dataStoreProviderMgr.getDataStoreProvider(providerName)).thenReturn(storeProvider);
+
+        storageManagerImpl.discoverObjectStore(name, url, size, providerName, details);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testDiscoverObjectStoreDuplicateUrl() {
+        String name = "test-store";
+        String url = "http://10.1.1.33:80";
+        Long size = 1000L;
+        String providerName = "test-provider";
+        Map<String, String> details = new HashMap<>();
+
+        DataStoreProvider storeProvider = Mockito.mock(DataStoreProvider.class);
+        ObjectStoreVO existingStore = new ObjectStoreVO();
+
+        Mockito.when(dataStoreProviderMgr.getDataStoreProvider(providerName)).thenReturn(storeProvider);
+        Mockito.when(objectStoreDao.findByUrl(url)).thenReturn(existingStore);
+
+        storageManagerImpl.discoverObjectStore(name, url, size, providerName, details);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testDiscoverObjectStoreInitializationFailure() {
+        String name = "test-store";
+        String url = "http://10.1.1.33:80";
+        Long size = 1000L;
+        String providerName = "test-provider";
+        Map<String, String> details = new HashMap<>();
+
+        DataStoreProvider storeProvider = Mockito.mock(DataStoreProvider.class);
+        DataStoreLifeCycle lifeCycle = Mockito.mock(DataStoreLifeCycle.class);
+
+        Mockito.when(dataStoreProviderMgr.getDataStoreProvider(providerName)).thenReturn(storeProvider);
+        Mockito.when(storeProvider.getDataStoreLifeCycle()).thenReturn(lifeCycle);
+        Mockito.when(lifeCycle.initialize(Mockito.any())).thenThrow(new RuntimeException("Initialization failed"));
+
+        storageManagerImpl.discoverObjectStore(name, url, size, providerName, details);
     }
 }

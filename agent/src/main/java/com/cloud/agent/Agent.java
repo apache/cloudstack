@@ -97,7 +97,6 @@ import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.NioClient;
 import com.cloud.utils.nio.NioConnection;
 import com.cloud.utils.nio.Task;
-import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
 /**
@@ -453,22 +452,30 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         certExecutor.schedule(new PostCertificateRenewalTask(this), 5, TimeUnit.SECONDS);
     }
 
-    private void scheduleHostLBCheckerTask(final long checkInterval) {
+    private void scheduleHostLBCheckerTask(final String lbAlgorithm, final long checkInterval) {
         String name = "HostLBCheckerTask";
         if (hostLbCheckExecutor != null && !hostLbCheckExecutor.isShutdown()) {
+            logger.info("Shutting down the preferred host checker task {}", name);
             hostLbCheckExecutor.shutdown();
             try {
                 if (!hostLbCheckExecutor.awaitTermination(1, TimeUnit.SECONDS)) {
                     hostLbCheckExecutor.shutdownNow();
                 }
             } catch (InterruptedException e) {
-                logger.debug("Forcing {} shutdown as it did not shutdown in the desired time due to: {}",
+                logger.debug("Forcing the preferred host checker task {} shutdown as it did not shutdown in the desired time due to: {}",
                         name, e.getMessage());
                 hostLbCheckExecutor.shutdownNow();
             }
         }
         if (checkInterval > 0L) {
-            logger.info("Scheduling preferred host task with host.lb.interval={}ms", checkInterval);
+            if ("shuffle".equalsIgnoreCase(lbAlgorithm)) {
+                logger.info("Scheduling the preferred host checker task to trigger once (to apply lb algorithm '{}') after host.lb.interval={} ms", lbAlgorithm, checkInterval);
+                hostLbCheckExecutor = Executors.newSingleThreadScheduledExecutor((new NamedThreadFactory(name)));
+                hostLbCheckExecutor.schedule(new PreferredHostCheckerTask(), checkInterval, TimeUnit.MILLISECONDS);
+                return;
+            }
+
+            logger.info("Scheduling a recurring preferred host checker task with host.lb.interval={} ms", checkInterval);
             hostLbCheckExecutor = Executors.newSingleThreadScheduledExecutor((new NamedThreadFactory(name)));
             hostLbCheckExecutor.scheduleAtFixedRate(new PreferredHostCheckerTask(), checkInterval, checkInterval,
                     TimeUnit.MILLISECONDS);
@@ -606,9 +613,9 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     }
 
     protected String getAgentArch() {
-        final Script command = new Script("/usr/bin/arch", 500, logger);
-        final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
-        return command.execute(parser);
+        String arch = Script.runSimpleBashScript(Script.getExecutableAbsolutePath("arch"), 2000);
+        logger.debug("Arch for agent: {} found: {}", _name, arch);
+        return arch;
     }
 
     @Override
@@ -928,7 +935,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         return new SetupCertificateAnswer(true);
     }
 
-    private void processManagementServerList(final List<String> msList, final List<String> avoidMsList, final String lbAlgorithm, final Long lbCheckInterval) {
+    private void processManagementServerList(final List<String> msList, final List<String> avoidMsList, final String lbAlgorithm, final Long lbCheckInterval, final boolean triggerHostLB) {
         if (CollectionUtils.isNotEmpty(msList) && StringUtils.isNotEmpty(lbAlgorithm)) {
             try {
                 final String newMSHosts = String.format("%s%s%s", com.cloud.utils.StringUtils.toCSVList(msList), IAgentShell.hostLbAlgorithmSeparator, lbAlgorithm);
@@ -941,26 +948,30 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             }
         }
         shell.setAvoidHosts(avoidMsList);
-        if ("shuffle".equals(lbAlgorithm)) {
-            scheduleHostLBCheckerTask(0);
-        } else {
-            scheduleHostLBCheckerTask(shell.getLbCheckerInterval(lbCheckInterval));
+        if (triggerHostLB) {
+            logger.info("Triggering the preferred host checker task now");
+            ScheduledExecutorService hostLbExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("HostLB-Executor"));
+            hostLbExecutor.schedule(new PreferredHostCheckerTask(), 0, TimeUnit.MILLISECONDS);
+            hostLbExecutor.shutdown();
         }
+        scheduleHostLBCheckerTask(lbAlgorithm, shell.getLbCheckerInterval(lbCheckInterval));
     }
 
     private Answer setupManagementServerList(final SetupMSListCommand cmd) {
-        processManagementServerList(cmd.getMsList(), cmd.getAvoidMsList(), cmd.getLbAlgorithm(), cmd.getLbCheckInterval());
+        processManagementServerList(cmd.getMsList(), cmd.getAvoidMsList(), cmd.getLbAlgorithm(), cmd.getLbCheckInterval(), cmd.getTriggerHostLb());
         return new SetupMSListAnswer(true);
     }
 
     private Answer migrateAgentToOtherMS(final MigrateAgentConnectionCommand cmd) {
         try {
             if (CollectionUtils.isNotEmpty(cmd.getMsList())) {
-                processManagementServerList(cmd.getMsList(), cmd.getAvoidMsList(), cmd.getLbAlgorithm(), cmd.getLbCheckInterval());
+                processManagementServerList(cmd.getMsList(), cmd.getAvoidMsList(), cmd.getLbAlgorithm(), cmd.getLbCheckInterval(), false);
             }
-            Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("MigrateAgentConnection-Job")).schedule(() -> {
+            ScheduledExecutorService migrateAgentConnectionService = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("MigrateAgentConnection-Job"));
+            migrateAgentConnectionService.schedule(() -> {
                 migrateAgentConnection(cmd.getAvoidMsList());
             }, 3, TimeUnit.SECONDS);
+            migrateAgentConnectionService.shutdown();
         } catch (Exception e) {
             String errMsg = "Migrate agent connection failed, due to " + e.getMessage();
             logger.debug(errMsg, e);
@@ -1046,7 +1057,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         }
 
         verifyAgentArch(ready.getArch());
-        processManagementServerList(ready.getMsHostList(), ready.getAvoidMsHostList(), ready.getLbAlgorithm(), ready.getLbCheckInterval());
+        processManagementServerList(ready.getMsHostList(), ready.getAvoidMsHostList(), ready.getLbAlgorithm(), ready.getLbCheckInterval(), false);
 
         logger.info("Ready command is processed for agent [id: {}, uuid: {}, name: {}]", getId(), getUuid(), getName());
     }
@@ -1321,13 +1332,14 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                 }
             } else if (task.getType() == Task.Type.DISCONNECT) {
                 try {
-                    // an issue has been found if reconnect immediately after disconnecting. please refer to https://github.com/apache/cloudstack/issues/8517
+                    // an issue has been found if reconnect immediately after disconnecting.
                     // wait 5 seconds before reconnecting
+                    logger.debug("Wait for 5 secs before reconnecting, disconnect task - {}", () -> getLinkLog(task.getLink()));
                     Thread.sleep(5000);
                 } catch (InterruptedException e) {
                 }
                 shell.setConnectionTransfer(false);
-                logger.debug("Executing disconnect task - {}", () -> getLinkLog(task.getLink()));
+                logger.debug("Executing disconnect task - {} and reconnecting", () -> getLinkLog(task.getLink()));
                 reconnect(task.getLink());
             } else if (task.getType() == Task.Type.OTHER) {
                 processOtherTask(task);

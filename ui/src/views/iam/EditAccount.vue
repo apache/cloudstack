@@ -40,7 +40,7 @@
             v-model:value="form.networkdomain"
             :placeholder="apiParams.networkdomain.description" />
         </a-form-item>
-        <a-form-item ref="roleid" name="roleid">
+        <a-form-item ref="roleid" name="roleid" v-if="!resource.isdefault">
           <template #label>
             <tooltip-label :title="$t('label.role')" :tooltip="apiParams.roleid.description"/>
           </template>
@@ -77,7 +77,7 @@
 </template>
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -128,7 +128,7 @@ export default {
       this.roleLoading = true
       const params = {}
       params.state = 'enabled'
-      api('listRoles', params).then(response => {
+      getAPI('listRoles', params).then(response => {
         this.roles = response.listrolesresponse.role || []
         this.form.roleid = this.resource.roleid
       }).finally(() => {
@@ -145,16 +145,18 @@ export default {
         const params = {
           newname: values.newname,
           networkdomain: values.networkdomain,
-          roleid: values.roleid,
           apikeyaccess: values.apikeyaccess,
           account: this.account,
           domainid: this.domainId
+        }
+        if (values.roleid) {
+          params.roleid = values.roleid
         }
         if (this.isValidValueForKey(values, 'networkdomain') && values.networkdomain.length > 0) {
           params.networkdomain = values.networkdomain
         }
 
-        api('updateAccount', params).then(response => {
+        getAPI('updateAccount', params).then(response => {
           this.$emit('refresh-data')
           this.$notification.success({
             message: this.$t('label.edit.account'),

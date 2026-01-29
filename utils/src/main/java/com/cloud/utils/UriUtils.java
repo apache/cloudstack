@@ -431,7 +431,7 @@ public class UriUtils {
         return urls;
     }
 
-    public static final Set<String> COMPRESSION_FORMATS = ImmutableSet.of("zip", "bz2", "gz");
+    public static final Set<String> COMPRESSION_FORMATS = ImmutableSet.of("zip", "bz2", "gz", "xz");
 
     public static final Set<String> buildExtensionSet(boolean metalink, String... baseExtensions) {
         final ImmutableSet.Builder<String> builder = ImmutableSet.builder();
@@ -500,8 +500,12 @@ public class UriUtils {
             if ((user != null) && (password != null)) {
                 httpclient.getParams().setAuthenticationPreemptive(true);
                 Credentials defaultcreds = new UsernamePasswordCredentials(user, password);
-                httpclient.getState().setCredentials(new AuthScope(hostAndPort.first(), hostAndPort.second(), AuthScope.ANY_REALM), defaultcreds);
-                LOGGER.info("Added username=" + user + ", password=" + password + "for host " + hostAndPort.first() + ":" + hostAndPort.second());
+                httpclient.getState().setCredentials(
+                        new AuthScope(hostAndPort.first(), hostAndPort.second(), AuthScope.ANY_REALM), defaultcreds);
+                LOGGER.info("Added username={} along with password for host {}:{}"
+                    , user
+                    , hostAndPort.first()
+                    , hostAndPort.second());
             }
             // Execute the method.
             GetMethod method = new GetMethod(url);

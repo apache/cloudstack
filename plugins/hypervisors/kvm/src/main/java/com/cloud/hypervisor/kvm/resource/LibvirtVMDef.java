@@ -65,7 +65,7 @@ public class LibvirtVMDef {
             }
         }
 
-        enum BootType {
+        public enum BootType {
             UEFI("UEFI"), BIOS("BIOS");
 
             String _type;
@@ -80,7 +80,7 @@ public class LibvirtVMDef {
             }
         }
 
-        enum BootMode {
+        public enum BootMode {
             LEGACY("LEGACY"), SECURE("SECURE");
 
             String _mode;
@@ -249,9 +249,7 @@ public class LibvirtVMDef {
                         guestDef.append("<boot dev='" + bo + "'/>\n");
                     }
                 }
-                if (_arch == null || ! (_arch.equals("aarch64") || _arch.equals("s390x"))) { // simplification of (as ref.) (!(_arch != null && _arch.equals("s390x")) || (_arch == null || !_arch.equals("aarch64")))
-                    guestDef.append("<smbios mode='sysinfo'/>\n");
-                }
+                guestDef.append("<smbios mode='sysinfo'/>\n");
                 guestDef.append("</os>\n");
                 if (iothreads) {
                     guestDef.append(String.format("<iothreads>%s</iothreads>", NUMBER_OF_IOTHREADS));
@@ -709,7 +707,7 @@ public class LibvirtVMDef {
         }
 
         public enum DiskCacheMode {
-            NONE("none"), WRITEBACK("writeback"), WRITETHROUGH("writethrough");
+            NONE("none"), WRITEBACK("writeback"), WRITETHROUGH("writethrough"), HYPERVISOR_DEFAULT("default");
             String _diskCacheMode;
 
             DiskCacheMode(String cacheMode) {
@@ -1342,7 +1340,13 @@ public class LibvirtVMDef {
         @Override
         public String toString() {
             StringBuilder memBalloonBuilder = new StringBuilder();
-            memBalloonBuilder.append("<memballoon model='" + memBalloonModel + "'>\n");
+            memBalloonBuilder.append("<memballoon model='" + memBalloonModel + "'");
+            /* Version integer format: major * 1,000,000 + minor * 1,000 + release.
+             * Require: libvirt 6.9.0, qemu 5.1.0 */
+            if (memBalloonModel != MemBalloonModel.NONE && s_qemuVersion >= 5001000 && s_libvirtVersion >= 6009000) {
+                memBalloonBuilder.append(" autodeflate='on' freePageReporting='on'");
+            }
+            memBalloonBuilder.append(">\n");
             if (StringUtils.isNotBlank(memBalloonStatsPeriod)) {
                 memBalloonBuilder.append("<stats period='" + memBalloonStatsPeriod +"'/>\n");
             }

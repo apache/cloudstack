@@ -193,7 +193,7 @@
   </a-list>
 </template>
 <script>
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
@@ -217,6 +217,10 @@ export default {
     actions: {
       type: Array,
       default: () => []
+    },
+    resource: {
+      type: Object,
+      required: false
     }
   },
   data () {
@@ -254,6 +258,12 @@ export default {
     this.setConfigData()
   },
   watch: {
+    configrecord: {
+      handler () {
+        this.setConfigData()
+      },
+      deep: true
+    }
   },
   methods: {
     setConfigData () {
@@ -280,21 +290,16 @@ export default {
         name: configrecord.name,
         value: newValue
       }
-      api('updateConfiguration', params).then(json => {
+      if (this.scopeKey === 'domainid' && !params[this.scopeKey]) {
+        params[this.scopeKey] = this.resource?.id
+      }
+      postAPI('updateConfiguration', params).then(json => {
         this.editableValue = this.getEditableValue(json.updateconfigurationresponse.configuration)
         this.actualValue = this.editableValue
         this.$emit('change-config', { value: newValue })
         this.$store.dispatch('RefreshFeatures')
         this.$messageConfigSuccess(`${this.$t('message.setting.updated')} ${configrecord.name}`, configrecord)
-        if (json.updateconfigurationresponse &&
-          json.updateconfigurationresponse.configuration &&
-          !json.updateconfigurationresponse.configuration.isdynamic &&
-          ['Admin'].includes(this.$store.getters.userInfo.roletype)) {
-          this.$notification.warning({
-            message: this.$t('label.status'),
-            description: this.$t('message.restart.mgmt.server')
-          })
-        }
+        this.$notifyConfigurationValueChange(json?.updateconfigurationresponse?.configuration || null)
       }).catch(error => {
         this.editableValue = this.actualValue
         console.error(error)
@@ -315,7 +320,10 @@ export default {
         [this.scopeKey]: this.$route.params?.id,
         name: configrecord.name
       }
-      api('resetConfiguration', params).then(json => {
+      if (this.scopeKey === 'domainid' && !params[this.scopeKey]) {
+        params[this.scopeKey] = this.resource?.id
+      }
+      postAPI('resetConfiguration', params).then(json => {
         this.editableValue = this.getEditableValue(json.resetconfigurationresponse.configuration)
         this.actualValue = this.editableValue
         var newValue = this.editableValue
@@ -325,15 +333,7 @@ export default {
         this.$emit('change-config', { value: newValue })
         this.$store.dispatch('RefreshFeatures')
         this.$messageConfigSuccess(`${this.$t('label.setting')} ${configrecord.name} ${this.$t('label.reset.config.value')}`, configrecord)
-        if (json.resetconfigurationresponse &&
-          json.resetconfigurationresponse.configuration &&
-          !json.resetconfigurationresponse.configuration.isdynamic &&
-          ['Admin'].includes(this.$store.getters.userInfo.roletype)) {
-          this.$notification.warning({
-            message: this.$t('label.status'),
-            description: this.$t('message.restart.mgmt.server')
-          })
-        }
+        this.$notifyConfigurationValueChange(json?.resetconfigurationresponse?.configuration || null)
       }).catch(error => {
         this.editableValue = this.actualValue
         console.error(error)

@@ -115,7 +115,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import draggable from 'vuedraggable'
 import PermissionEditable from './PermissionEditable'
 import RuleDelete from './RuleDelete'
@@ -180,7 +180,7 @@ export default {
     },
     fetchData (callback = null) {
       if (!this.resource.id) return
-      api('listRolePermissions', { roleid: this.resource.id }).then(response => {
+      getAPI('listRolePermissions', { roleid: this.resource.id }).then(response => {
         this.rules = response.listrolepermissionsresponse.rolepermission
         this.totalRules = this.rules
       }).catch(error => {
@@ -200,7 +200,7 @@ export default {
     },
     changeOrder () {
       this.updateTable = true
-      api('updateRolePermission', {}, 'POST', {
+      postAPI('updateRolePermission', {
         roleid: this.resource.id,
         ruleorder: this.rules.map(rule => rule.id)
       }).catch(error => {
@@ -212,7 +212,7 @@ export default {
     },
     onRuleDelete (key) {
       this.updateTable = true
-      api('deleteRolePermission', { id: key }).catch(error => {
+      postAPI('deleteRolePermission', { id: key }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.updateTable = false
@@ -225,7 +225,7 @@ export default {
       if (!record) return
 
       this.updateTable = true
-      api('updateRolePermission', {
+      postAPI('updateRolePermission', {
         roleid: this.resource.id,
         ruleid: record.id,
         permission: value
@@ -247,7 +247,7 @@ export default {
       }
 
       this.updateTable = true
-      api('createRolePermission', {
+      postAPI('createRolePermission', {
         rule: this.newRule,
         permission: this.newRulePermission,
         description: this.newRuleDescription,

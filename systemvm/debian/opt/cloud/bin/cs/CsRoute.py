@@ -85,6 +85,9 @@ class CsRoute:
         if not found and method == "add":
             logging.info("Add " + cmd)
             cmd = "ip route add " + cmd
+        elif not found and method == "change":
+            logging.info("Change " + cmd)
+            cmd = "ip route change " + cmd
         elif found and method == "delete":
             logging.info("Delete " + cmd)
             cmd = "ip route delete " + cmd
@@ -112,7 +115,7 @@ class CsRoute:
         """ Return True if a default route is present
         :return: bool
         """
-        logging.info("Checking if default ipv4 route is present")
+        logging.info("Checking if default IPv4 route is present")
         route_found = CsHelper.execute("ip -4 route list 0/0")
 
         if len(route_found) > 0:
@@ -121,6 +124,24 @@ class CsRoute:
         else:
             logging.warn("No default route found!")
             return False
+
+    def add_or_change_defaultroute(self, gateway):
+        """  Add a default route if not found, or change the default route if found
+        :param str gateway
+        :return: bool
+        """
+        if not gateway:
+            raise Exception("Gateway cannot be None.")
+
+        cmd = "default via " + gateway
+        if self.defaultroute_exists():
+            logging.info("Changing default route")
+            self.set_route(cmd, method="change")
+            return True
+        else:
+            logging.info("Adding default route")
+            self.set_route(cmd)
+            return True
 
     def findRule(self, rule):
         for i in CsHelper.execute("ip rule show"):

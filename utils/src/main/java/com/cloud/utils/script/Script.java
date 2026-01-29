@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -29,6 +28,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.Callable;
@@ -39,9 +39,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -158,13 +160,7 @@ public class Script implements Callable<String> {
         boolean obscureParam = false;
         for (int i = 0; i < command.length; i++) {
             String cmd = command[i];
-            if (StringUtils.isNotEmpty(cmd) && cmd.startsWith("vi://")) {
-                String[] tokens = cmd.split("@");
-                if (tokens.length >= 2) {
-                    builder.append("vi://").append("******@").append(tokens[1]).append(" ");
-                } else {
-                    builder.append("vi://").append("******").append(" ");
-                }
+            if (sanitizeViCmdParameter(cmd, builder) || sanitizeRbdFileFormatCmdParameter(cmd, builder)) {
                 continue;
             }
             if (obscureParam) {
@@ -180,6 +176,41 @@ public class Script implements Callable<String> {
             }
         }
         return builder.toString();
+    }
+
+    private boolean sanitizeViCmdParameter(String cmd, StringBuilder builder) {
+        if (StringUtils.isEmpty(cmd) || !cmd.startsWith("vi://")) {
+            return false;
+        }
+
+        String[] tokens = cmd.split("@");
+        if (tokens.length >= 2) {
+            builder.append("vi://").append("******@").append(tokens[1]).append(" ");
+        } else {
+            builder.append("vi://").append("******").append(" ");
+        }
+        return true;
+    }
+
+    private boolean sanitizeRbdFileFormatCmdParameter(String cmd, StringBuilder builder) {
+        if (StringUtils.isEmpty(cmd) || !cmd.startsWith("rbd:") || !cmd.contains("key=")) {
+            return false;
+        }
+
+        String[] tokens = cmd.split("key=");
+        if (tokens.length != 2) {
+            return false;
+        }
+
+        String tokenWithKey = tokens[1];
+        String[] options = tokenWithKey.split(":");
+        if (options.length > 1) {
+            String optionsAfterKey = String.join(":", Arrays.copyOfRange(options, 1, options.length));
+            builder.append(tokens[0]).append("key=").append("******").append(":").append(optionsAfterKey).append(" ");
+        } else {
+            builder.append(tokens[0]).append("key=").append("******").append(" ");
+        }
+        return true;
     }
 
     public long getTimeout() {
@@ -215,6 +246,7 @@ public class Script implements Callable<String> {
 
         try {
             _logger.trace(String.format("Creating process for command [%s].", commandLine));
+
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.redirectErrorStream(true);
             if (_workDir != null)
@@ -671,6 +703,26 @@ public class Script implements Callable<String> {
         return runScript(getScriptForCommandRun(command));
     }
 
+    /**
+     * Execute command and return standard output and standard error.
+     *
+     * @param command OS command to be executed
+     * @return {@link Pair} with standard output as first and standard error as second field
+     */
+    public static Pair<String, String> executeCommand(String command) {
+        // wrap command into bash
+        Script script = new Script("/bin/bash");
+        script.add("-c");
+        script.add(command);
+
+        // parse all lines from the output
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        String stdErr = script.execute(parser);
+        String stdOut = parser.getLines();
+        LOGGER.debug(String.format("Command [%s] result - stdout: [%s], stderr: [%s]", command, stdOut, stdErr));
+        return new Pair<>(stdOut, stdErr);
+    }
+
     public static int executeCommandForExitValue(long timeout, String... command) {
         return runScriptForExitValue(getScriptForCommandRun(timeout, command));
     }
@@ -679,13 +731,31 @@ public class Script implements Callable<String> {
         return executeCommandForExitValue(0, command);
     }
 
+    private static void cleanupProcesses(AtomicReference<List<Process>> processesRef) {
+        List<Process> processes = processesRef.get();
+        if (CollectionUtils.isNotEmpty(processes)) {
+            for (Process process : processes) {
+                if (process == null) {
+                    continue;
+                }
+                LOGGER.trace(String.format("Cleaning up process [%s] from piped commands.", process.pid()));
+                IOUtils.closeQuietly(process.getErrorStream());
+                IOUtils.closeQuietly(process.getOutputStream());
+                IOUtils.closeQuietly(process.getInputStream());
+                process.destroyForcibly();
+            }
+        }
+    }
+
     public static Pair<Integer, String> executePipedCommands(List<String[]> commands, long timeout) {
         if (timeout <= 0) {
             timeout = DEFAULT_TIMEOUT;
         }
+        final AtomicReference<List<Process>> processesRef = new AtomicReference<>();
         Callable<Pair<Integer, String>> commandRunner = () -> {
             List<ProcessBuilder> builders = commands.stream().map(ProcessBuilder::new).collect(Collectors.toList());
             List<Process> processes = ProcessBuilder.startPipeline(builders);
+            processesRef.set(processes);
             Process last = processes.get(processes.size()-1);
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(last.getInputStream()))) {
                 String line;
@@ -712,6 +782,8 @@ public class Script implements Callable<String> {
             result.second(ERR_TIMEOUT);
         } catch (InterruptedException | ExecutionException e) {
             LOGGER.error("Error executing piped commands", e);
+        } finally {
+            cleanupProcesses(processesRef);
         }
         return result;
     }

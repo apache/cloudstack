@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.vm;
 
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.Volume;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -104,6 +106,9 @@ public interface VirtualMachineManager extends Manager {
     ConfigKey<Boolean> VmSyncPowerStateTransitioning = new ConfigKey<>("Advanced", Boolean.class, "vm.sync.power.state.transitioning", "true",
             "Whether to sync power states of the transitioning and stalled VMs while processing VM power reports.", false);
 
+    ConfigKey<Boolean> SystemVmEnableUserData = new ConfigKey<>(Boolean.class, "systemvm.userdata.enabled", "Advanced", "false",
+            "Enable user data for system VMs. When enabled, the CPVM, SSVM, and Router system VMs will use the values from the global settings console.proxy.vm.userdata, secstorage.vm.userdata, and virtual.router.userdata, respectively, to provide cloud-init user data to the VM.",
+            true, ConfigKey.Scope.Zone, null);
 
     interface Topics {
         String VM_POWER_STATE = "vm.powerstate";
@@ -122,6 +127,7 @@ public interface VirtualMachineManager extends Manager {
      * @param defaultNetwork The default network for the VM.
      * @param rootDiskOffering For created VMs not based on templates, root disk offering specifies the root disk.
      * @param dataDiskOfferings Data disks to attach to the VM.
+     * @param dataDiskDeviceIds Device Ids to assign the data disks to.
      * @param auxiliaryNetworks additional networks to attach the VMs to.
      * @param plan How to deploy the VM.
      * @param hyperType Hypervisor type
@@ -129,11 +135,11 @@ public interface VirtualMachineManager extends Manager {
      * @throws InsufficientCapacityException If there are insufficient capacity to deploy this vm.
      */
     void allocate(String vmInstanceName, VirtualMachineTemplate template, ServiceOffering serviceOffering, DiskOfferingInfo rootDiskOfferingInfo,
-        List<DiskOfferingInfo> dataDiskOfferings, LinkedHashMap<? extends Network, List<? extends NicProfile>> auxiliaryNetworks, DeploymentPlan plan,
-        HypervisorType hyperType, Map<String, Map<Integer, String>> extraDhcpOptions, Map<Long, DiskOffering> datadiskTemplateToDiskOfferingMap) throws InsufficientCapacityException;
+                  List<DiskOfferingInfo> dataDiskOfferings, List<Long> dataDiskDeviceIds, LinkedHashMap<? extends Network, List<? extends NicProfile>> auxiliaryNetworks, DeploymentPlan plan,
+                  HypervisorType hyperType, Map<String, Map<Integer, String>> extraDhcpOptions, Map<Long, DiskOffering> datadiskTemplateToDiskOfferingMap, Volume volume, Snapshot snapshot) throws InsufficientCapacityException;
 
     void allocate(String vmInstanceName, VirtualMachineTemplate template, ServiceOffering serviceOffering,
-        LinkedHashMap<? extends Network, List<? extends NicProfile>> networkProfiles, DeploymentPlan plan, HypervisorType hyperType) throws InsufficientCapacityException;
+        LinkedHashMap<? extends Network, List<? extends NicProfile>> networkProfiles, DeploymentPlan plan, HypervisorType hyperType, Volume volume, Snapshot snapshot) throws InsufficientCapacityException;
 
     void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params);
 
@@ -271,7 +277,7 @@ public interface VirtualMachineManager extends Manager {
      * - Remove the references of the VM and its volumes, nics, IPs from database
      * - Keep the VM as it is on the hypervisor
      */
-    boolean unmanage(String vmUuid);
+    Pair<Boolean, String> unmanage(String vmUuid, Long paramHostId);
 
     UserVm restoreVirtualMachine(long vmId, Long newTemplateId, Long rootDiskOfferingId, boolean expunge, Map<String, String> details) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException;
 

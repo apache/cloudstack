@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
@@ -87,6 +88,7 @@ import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
+import org.apache.cloudstack.api.command.user.gui.theme.ListGuiThemesCmd;
 import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
 import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
@@ -201,6 +203,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     private static final String SANITIZATION_REGEX = "[\n\r]";
 
     private static boolean encodeApiResponse = false;
+    private boolean isPostRequestsAndTimestampsEnforced = false;
 
     /**
      * Non-printable ASCII characters - numbers 0 to 31 and 127 decimal
@@ -249,6 +252,12 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     @Inject
     private MessageBus messageBus;
 
+    private static final Set<String> sensitiveFields = new HashSet<>(Arrays.asList(
+        "password", "secretkey", "apikey", "token",
+        "sessionkey", "accesskey", "signature",
+        "authorization", "credential", "secret"
+    ));
+
     private static final ConfigKey<Integer> IntegrationAPIPort = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED
             , Integer.class
             , "integration.api.port"
@@ -284,6 +293,13 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             , "Session cookie is marked as secure if this is enabled. Secure cookies only work when HTTPS is used."
             , false
             , ConfigKey.Scope.Global);
+    static final ConfigKey<Boolean> EnforcePostRequestsAndTimestamps = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED
+            , Boolean.class
+            , "enforce.post.requests.and.timestamps"
+            , "false"
+            , "Enable/Disable whether the ApiServer should only accept POST requests for state-changing APIs and requests with timestamps."
+            , false
+            , ConfigKey.Scope.Global);
     private static final ConfigKey<String> JSONDefaultContentType = new ConfigKey<> (ConfigKey.CATEGORY_ADVANCED
             , String.class
             , "json.content.type"
@@ -306,14 +322,14 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             , "enables/disables checking of ipaddresses from a proxy set header. See \"proxy.header.names\" for the headers to allow."
             , true
             , ConfigKey.Scope.Global);
-    static final ConfigKey<String> listOfForwardHeaders = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK
+    public static final ConfigKey<String> listOfForwardHeaders = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK
             , String.class
             , "proxy.header.names"
             , "X-Forwarded-For,HTTP_CLIENT_IP,HTTP_X_FORWARDED_FOR"
             , "a list of names to check for allowed ipaddresses from a proxy set header. See \"proxy.cidr\" for the proxies allowed to set these headers."
             , true
             , ConfigKey.Scope.Global);
-    static final ConfigKey<String> proxyForwardList = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK
+    public static final ConfigKey<String> proxyForwardList = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK
             , String.class
             , "proxy.cidr"
             , ""
@@ -441,6 +457,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     public boolean start() {
         Security.addProvider(new BouncyCastleProvider());
         Integer apiPort = IntegrationAPIPort.value(); // api port, null by default
+        isPostRequestsAndTimestampsEnforced = EnforcePostRequestsAndTimestamps.value();
 
         final Long snapshotLimit = ConcurrentSnapshotsThresholdPerHost.value();
         if (snapshotLimit == null || snapshotLimit <= 0) {
@@ -614,10 +631,23 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 logger.error("invalid request, no command sent");
                 if (logger.isTraceEnabled()) {
                     logger.trace("dumping request parameters");
-                    for (final  Object key : params.keySet()) {
-                        final String keyStr = (String)key;
-                        final String[] value = (String[])params.get(key);
-                        logger.trace("   key: " + keyStr + ", value: " + ((value == null) ? "'null'" : value[0]));
+
+                    for (final Object key : params.keySet()) {
+                        final String keyStr = (String) key;
+                        final String[] value = (String[]) params.get(key);
+
+                        String lowerKeyStr = keyStr.toLowerCase();
+                        boolean isSensitive = sensitiveFields.stream()
+                            .anyMatch(lowerKeyStr::contains);
+
+                        String logValue;
+                        if (isSensitive) {
+                            logValue = "******"; // mask sensitive values
+                        } else {
+                            logValue = (value == null) ? "'null'" : value[0];
+                        }
+
+                        logger.trace("   key: " + keyStr + ", value: " + logValue);
                     }
                 }
                 throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "Invalid request, no command sent");
@@ -718,6 +748,11 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         }
 
         return response;
+    }
+
+    @Override
+    public boolean isPostRequestsAndTimestampsEnforced() {
+        return isPostRequestsAndTimestampsEnforced;
     }
 
     private String getBaseAsyncResponse(final long jobId, final BaseAsyncCmd cmd) {
@@ -953,6 +988,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 final User user = ApiDBUtils.findUserById(userId);
                 return commandAvailable(remoteAddress, commandName, user);
             } else {
+                if (commandName.equalsIgnoreCase(ListGuiThemesCmd.class.getAnnotation(APICommand.class).name())) {
+                    return true;
+                }
                 // check against every available command to see if the command exists or not
                 if (!s_apiNameCmdClassMap.containsKey(commandName) && !commandName.equals("login") && !commandName.equals("logout")) {
                     final String errorMessage = "The given command " + commandName + " either does not exist, is not available" +
@@ -967,7 +1005,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             // put the name in a list that we'll sort later
             final List<String> parameterNames = new ArrayList<>(requestParameters.keySet());
-
             Collections.sort(parameterNames);
 
             String signatureVersion = null;
@@ -1019,12 +1056,22 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 }
 
                 final Date now = new Date(System.currentTimeMillis());
+                final Date thresholdTime = new Date(now.getTime() + 15 * 60 * 1000);
                 if (expiresTS.before(now)) {
                     signature = signature.replaceAll(SANITIZATION_REGEX, "_");
                     apiKey = apiKey.replaceAll(SANITIZATION_REGEX, "_");
                     logger.debug("Request expired -- ignoring ...sig [{}], apiKey [{}].", signature, apiKey);
                     return false;
+                } else if (isPostRequestsAndTimestampsEnforced && expiresTS.after(thresholdTime)) {
+                    signature = signature.replaceAll(SANITIZATION_REGEX, "_");
+                    apiKey = apiKey.replaceAll(SANITIZATION_REGEX, "_");
+                    logger.debug(String.format("Expiration parameter is set for too long -- ignoring ...sig [%s], apiKey [%s].", signature, apiKey));
+                    return false;
                 }
+            } else if (isPostRequestsAndTimestampsEnforced) {
+                // Force expiration parameter
+                logger.debug("Signature Version must be 3, and should be along with the Expires parameter -- ignoring request.");
+                return false;
             }
 
             final TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
@@ -1648,6 +1695,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {
+                EnforcePostRequestsAndTimestamps,
                 IntegrationAPIPort,
                 ConcurrentSnapshotsThresholdPerHost,
                 EncodeApiResponse,

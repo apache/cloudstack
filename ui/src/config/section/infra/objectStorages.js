@@ -29,7 +29,7 @@ export default {
     return fields
   },
   details: () => {
-    var fields = ['name', 'id', 'url', 'providername']
+    var fields = ['name', 'id', 'url', 'providername', 'storagetotal', 'storageallocated', 'storageused']
     return fields
   },
   resourceType: 'ObjectStorage',

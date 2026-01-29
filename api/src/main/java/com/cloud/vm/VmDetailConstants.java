@@ -41,6 +41,7 @@ public interface VmDetailConstants {
     String KVM_VNC_PORT = "kvm.vnc.port";
     String KVM_VNC_ADDRESS = "kvm.vnc.address";
     String KVM_VNC_PASSWORD = "kvm.vnc.password";
+    String KVM_GUEST_OS_MACHINE_TYPE = "kvm.guest.os.machine.type";
 
     // KVM specific, custom virtual GPU hardware
     String VIDEO_HARDWARE = "video.hardware";
@@ -53,6 +54,9 @@ public interface VmDetailConstants {
     // KVM specific, the number of queues for multiqueue NICs
     String NIC_MULTIQUEUE_NUMBER = "nic.multiqueue.number";
     String NIC_PACKED_VIRTQUEUES_ENABLED = "nic.packed.virtqueues.enabled";
+
+    // KVM specific, disk controllers
+    String KVM_SKIP_FORCE_DISK_CONTROLLER = "skip.force.disk.controller";
 
     // Mac OSX guest specific (internal)
     String SMC_PRESENT = "smc.present";
@@ -89,6 +93,9 @@ public interface VmDetailConstants {
     String DEPLOY_AS_IS_CONFIGURATION = "configurationId";
     String KEY_PAIR_NAMES = "keypairnames";
     String CKS_CONTROL_NODE_LOGIN_USER = "controlNodeLoginUser";
+    String CKS_NODE_TYPE = "node";
+    String OFFERING = "offering";
+    String TEMPLATE = "template";
 
     // VMware to KVM VM migrations specific
     String VMWARE_TO_KVM_PREFIX = "vmware-to-kvm";
@@ -111,7 +118,15 @@ public interface VmDetailConstants {
     String GUEST_CPU_MODE = "guest.cpu.mode";
     String GUEST_CPU_MODEL = "guest.cpu.model";
 
+    // Lease related
     String INSTANCE_LEASE_EXPIRY_DATE = "leaseexpirydate";
     String INSTANCE_LEASE_EXPIRY_ACTION = "leaseexpiryaction";
     String INSTANCE_LEASE_EXECUTION = "leaseactionexecution";
+
+    // External orchestrator related
+    String MAC_ADDRESS = "mac_address";
+    String EXPUNGE_EXTERNAL_VM = "expunge.external.vm";
+    String EXTERNAL_DETAIL_PREFIX = "External:";
+    String CLOUDSTACK_VM_DETAILS = "cloudstack.vm.details";
+    String CLOUDSTACK_VLAN = "cloudstack.vlan";
 }

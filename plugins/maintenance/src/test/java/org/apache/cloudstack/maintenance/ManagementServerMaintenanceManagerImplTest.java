@@ -92,6 +92,8 @@ public class ManagementServerMaintenanceManagerImplTest {
     @Test
     public void prepareForShutdown() {
         Mockito.doNothing().when(jobManagerMock).disableAsyncJobs();
+        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+        Mockito.when(msHostDao.findByMsid(anyLong())).thenReturn(msHost);
         spy.prepareForShutdown();
         Mockito.verify(jobManagerMock).disableAsyncJobs();
 
@@ -106,6 +108,9 @@ public class ManagementServerMaintenanceManagerImplTest {
 
     @Test
     public void cancelShutdown() {
+        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+        Mockito.when(msHost.getState()).thenReturn(ManagementServerHost.State.Up);
+        Mockito.when(msHostDao.findByMsid(anyLong())).thenReturn(msHost);
         Assert.assertThrows(CloudRuntimeException.class, () -> {
             spy.cancelShutdown();
         });
@@ -115,6 +120,8 @@ public class ManagementServerMaintenanceManagerImplTest {
     public void triggerShutdown() {
         Mockito.doNothing().when(jobManagerMock).disableAsyncJobs();
         Mockito.lenient().when(spy.isShutdownTriggered()).thenReturn(false);
+        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+        Mockito.when(msHostDao.findByMsid(anyLong())).thenReturn(msHost);
         spy.triggerShutdown();
         Mockito.verify(jobManagerMock).disableAsyncJobs();
 
@@ -305,43 +312,44 @@ public class ManagementServerMaintenanceManagerImplTest {
     @Test
     public void prepareForMaintenanceAndCancelFromMaintenanceState() {
         Mockito.doNothing().when(jobManagerMock).disableAsyncJobs();
-        spy.prepareForMaintenance("static");
+        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+        Mockito.when(msHostDao.findByMsid(anyLong())).thenReturn(msHost);
+        spy.prepareForMaintenance("static", false);
         Mockito.verify(jobManagerMock).disableAsyncJobs();
 
         Assert.assertThrows(CloudRuntimeException.class, () -> {
-            spy.prepareForMaintenance("static");
+            spy.prepareForMaintenance("static", false);
         });
 
-        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
         Mockito.when(msHost.getState()).thenReturn(ManagementServerHost.State.Maintenance);
-        Mockito.when(msHostDao.findByMsid(anyLong())).thenReturn(msHost);
         Mockito.doNothing().when(jobManagerMock).enableAsyncJobs();
         spy.cancelMaintenance();
         Mockito.verify(jobManagerMock).enableAsyncJobs();
-        Mockito.verify(spy, Mockito.times(1)).onCancelMaintenance();
     }
 
     @Test
     public void prepareForMaintenanceAndCancelFromPreparingForMaintenanceState() {
         Mockito.doNothing().when(jobManagerMock).disableAsyncJobs();
-        spy.prepareForMaintenance("static");
+        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+        Mockito.when(msHostDao.findByMsid(anyLong())).thenReturn(msHost);
+        spy.prepareForMaintenance("static", false);
         Mockito.verify(jobManagerMock).disableAsyncJobs();
 
         Assert.assertThrows(CloudRuntimeException.class, () -> {
-            spy.prepareForMaintenance("static");
+            spy.prepareForMaintenance("static", false);
         });
 
-        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
         Mockito.when(msHost.getState()).thenReturn(ManagementServerHost.State.PreparingForMaintenance);
-        Mockito.when(msHostDao.findByMsid(anyLong())).thenReturn(msHost);
         Mockito.doNothing().when(jobManagerMock).enableAsyncJobs();
         spy.cancelMaintenance();
         Mockito.verify(jobManagerMock).enableAsyncJobs();
-        Mockito.verify(spy, Mockito.times(1)).onCancelPreparingForMaintenance();
     }
 
     @Test
     public void cancelMaintenance() {
+        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+        Mockito.when(msHost.getState()).thenReturn(ManagementServerHost.State.Up);
+        Mockito.when(msHostDao.findByMsid(anyLong())).thenReturn(msHost);
         Assert.assertThrows(CloudRuntimeException.class, () -> {
             spy.cancelMaintenance();
         });
@@ -455,7 +463,7 @@ public class ManagementServerMaintenanceManagerImplTest {
         Mockito.when(msHostDao.listNonUpStateMsIPs()).thenReturn(new ArrayList<>());
         PrepareForMaintenanceCmd cmd = mock(PrepareForMaintenanceCmd.class);
         Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
-        Mockito.when(indirectAgentLBMock.haveAgentBasedHosts(anyLong())).thenReturn(true);
+        Mockito.when(indirectAgentLBMock.haveAgentBasedHosts(anyLong(), anyBoolean())).thenReturn(true);
         Mockito.when(indirectAgentLBMock.getManagementServerList()).thenReturn(new ArrayList<>());
 
         Assert.assertThrows(CloudRuntimeException.class, () -> {
@@ -476,7 +484,7 @@ public class ManagementServerMaintenanceManagerImplTest {
         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost1);
         PrepareForMaintenanceCmd cmd = mock(PrepareForMaintenanceCmd.class);
         Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
-        Mockito.when(indirectAgentLBMock.haveAgentBasedHosts(anyLong())).thenReturn(false);
+        Mockito.when(indirectAgentLBMock.haveAgentBasedHosts(anyLong(), anyBoolean())).thenReturn(false);
         Mockito.when(clusterManagerMock.execute(anyString(), anyLong(), anyString(), anyBoolean())).thenReturn(null);
 
         Assert.assertThrows(CloudRuntimeException.class, () -> {
@@ -497,7 +505,7 @@ public class ManagementServerMaintenanceManagerImplTest {
         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost1);
         PrepareForMaintenanceCmd cmd = mock(PrepareForMaintenanceCmd.class);
         Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
-        Mockito.when(indirectAgentLBMock.haveAgentBasedHosts(anyLong())).thenReturn(false);
+        Mockito.when(indirectAgentLBMock.haveAgentBasedHosts(anyLong(), anyBoolean())).thenReturn(false);
         Mockito.when(clusterManagerMock.execute(anyString(), anyLong(), anyString(), anyBoolean())).thenReturn("Failed");
 
         Assert.assertThrows(CloudRuntimeException.class, () -> {
@@ -518,7 +526,7 @@ public class ManagementServerMaintenanceManagerImplTest {
         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost1);
         PrepareForMaintenanceCmd cmd = mock(PrepareForMaintenanceCmd.class);
         Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
-        Mockito.when(indirectAgentLBMock.haveAgentBasedHosts(anyLong())).thenReturn(false);
+        Mockito.when(indirectAgentLBMock.haveAgentBasedHosts(anyLong(), anyBoolean())).thenReturn(false);
         Mockito.when(hostDao.listByMs(anyLong())).thenReturn(new ArrayList<>());
         Mockito.when(clusterManagerMock.execute(anyString(), anyLong(), anyString(), anyBoolean())).thenReturn("Success");
 

@@ -38,6 +38,8 @@ import infra from '@/config/section/infra'
 import zone from '@/config/section/zone'
 import offering from '@/config/section/offering'
 import config from '@/config/section/config'
+import extension from '@/config/section/extension'
+import customaction from '@/config/section/extension/customaction'
 import tools from '@/config/section/tools'
 import quota from '@/config/section/plugin/quota'
 import cloudian from '@/config/section/plugin/cloudian'
@@ -90,7 +92,7 @@ function generateRouterMap (section) {
         hideChildrenInMenu: true,
         children: [
           {
-            path: '/' + child.name + '/:id',
+            path: '/' + child.name + '/:id(.*)',
             hidden: child.hidden,
             meta: {
               title: child.title,
@@ -145,7 +147,7 @@ function generateRouterMap (section) {
     map.meta.tabs = section.tabs
 
     map.children = [{
-      path: '/' + section.name + '/:id',
+      path: '/' + section.name + '/:id(.*)',
       actions: section.actions ? section.actions : [],
       meta: {
         title: section.title,
@@ -221,6 +223,8 @@ export function asyncRouterMap () {
       generateRouterMap(zone),
       generateRouterMap(offering),
       generateRouterMap(config),
+      generateRouterMap(extension),
+      generateRouterMap(customaction),
       generateRouterMap(tools),
       generateRouterMap(quota),
       generateRouterMap(cloudian),

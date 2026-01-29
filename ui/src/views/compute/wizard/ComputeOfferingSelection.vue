@@ -17,11 +17,17 @@
 
 <template>
   <div>
-    <a-input-search
-      style="width: 25vw;float: right;margin-bottom: 10px; z-index: 8"
-      :placeholder="$t('label.search')"
-      v-model:value="filter"
-      @search="handleSearch" />
+    <div style="margin-bottom: 16px; display: flex; justify-content: right; align-items: center;">
+      <div v-if="showGpuFilter" style="display: flex; align-items: center; margin-right: 16px;">
+        <span>{{ $t('label.show.only.gpu.enabled.offerings') }}</span>
+        <a-switch style="margin-left: 8px;" v-model:checked="showGpu" @change="handleSearch(this.filter)" />
+      </div>
+      <a-input-search
+        style="width: 25vw; margin-right: 16px;"
+        :placeholder="$t('label.search')"
+        v-model:value="filter"
+        @search="handleSearch" />
+    </div>
     <a-table
       :columns="columns"
       :dataSource="tableSource"
@@ -35,6 +41,13 @@
       <template #headerCell="{ column }">
         <template v-if="column.key === 'cpu'"><appstore-outlined /> {{ $t('label.cpu') }}</template>
         <template v-if="column.key === 'ram'"><bulb-outlined /> {{ $t('label.memory') }}</template>
+        <template v-if="column.key === 'gpu'"><font-awesome-icon
+              :icon="['fa-solid', 'fa-microchip']"
+              class="anticon"
+              :style="{
+                color: $store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' },
+                fontSize: '20px'
+              }"/> {{ $t('label.gpu') }}</template>
       </template>
       <template #displayText="{ record }">
         <span>{{ record.name }}</span>
@@ -51,6 +64,12 @@
                 fontSize: '20px'
               }"/>
           </a-tooltip>
+        </span>
+      </template>
+      <template #gpuColumn="{ record }">
+        <span>{{ record.gpu }}</span>
+        <span v-if="record.gpuDetails" style="display: block;">
+          {{ record.gpuDetails }}
         </span>
       </template>
     </a-table>
@@ -126,12 +145,30 @@ export default {
       type: Boolean,
       required: false,
       default: false
+    },
+    showGpuFilter: {
+      type: Boolean,
+      required: false,
+      default: false
     }
   },
   data () {
     return {
+      showGpu: false,
       filter: '',
-      columns: [
+
+      selectedRowKeys: [],
+      oldZoneId: null,
+      options: {
+        page: 1,
+        pageSize: 10,
+        keyword: null
+      }
+    }
+  },
+  computed: {
+    columns () {
+      const baseColumns = [
         {
           key: 'name',
           dataIndex: 'name',
@@ -149,17 +186,19 @@ export default {
           dataIndex: 'ram',
           width: '30%'
         }
-      ],
-      selectedRowKeys: [],
-      oldZoneId: null,
-      options: {
-        page: 1,
-        pageSize: 10,
-        keyword: null
+      ]
+
+      if (this.computeItems.some(item => item.gpucardname !== undefined && item.gpucardname !== null)) {
+        baseColumns.push({
+          key: 'gpu',
+          dataIndex: 'gpu',
+          width: '30%',
+          slots: { customRender: 'gpuColumn' }
+        })
       }
-    }
-  },
-  computed: {
+
+      return baseColumns
+    },
     tableSource () {
       return this.computeItems.map((item) => {
         var maxCpuNumber = item.cpunumber
@@ -204,13 +243,31 @@ export default {
         if (this.allowAllOfferings) {
           disabled = false
         }
+        var gpuEnabledOffering = false
+        var gpuCount = 0
+        var gpuType = ''
+        var gpuValue = ''
+        if (item.gpucardname !== undefined && item.gpucardname !== null) {
+          gpuEnabledOffering = true
+          gpuCount = item.gpucount
+          gpuType = item.gpucardname
+          if (item.vgpuprofilename && item.vgpuprofilename.toLowerCase() !== 'passthrough') {
+            gpuType = item.gpucardname + ' (' + item.vgpuprofilename + ')'
+          }
+          gpuValue = gpuCount + ' x ' + gpuType
+        }
         return {
           key: item.id,
           name: item.name,
           cpu: cpuNumberValue.length > 0 ? `${cpuNumberValue} CPU x ${cpuSpeedValue} Ghz` : '',
           ram: ramValue.length > 0 ? `${ramValue} MB` : '',
           disabled: disabled,
-          leaseduration: item.leaseduration
+          leaseduration: item.leaseduration,
+          gpuEnabledOffering: gpuEnabledOffering,
+          gpuCount: gpuCount,
+          gpuType: gpuType,
+          gpu: gpuValue,
+          gpuDetails: this.getGpuDetails(item)
         }
       })
     },
@@ -266,6 +323,11 @@ export default {
       this.options.page = 1
       this.options.pageSize = 10
       this.options.keyword = this.filter
+      if (this.showGpu) {
+        this.options.gpuenabled = true
+      } else {
+        this.options.gpuenabled = undefined
+      }
       this.$emit('handle-search-filter', this.options)
     },
     onChangePage (page, pageSize) {
@@ -297,6 +359,15 @@ export default {
       } else {
         return 'over'
       }
+    },
+    getGpuDetails (item) {
+      let gpuDetails = ''
+      if (item.videoram || (item.maxresolutionx && item.maxresolutiony)) {
+        gpuDetails = '[' + (item.videoram ? (item.videoram + 'MB') : '') +
+        ((item.videoram && item.maxresolutionx && item.maxresolutiony) ? ', ' : '') +
+        (item.maxresolutionx && item.maxresolutiony ? item.maxresolutionx + 'x' + item.maxresolutiony : '') + ']'
+      }
+      return gpuDetails
     }
   }
 }

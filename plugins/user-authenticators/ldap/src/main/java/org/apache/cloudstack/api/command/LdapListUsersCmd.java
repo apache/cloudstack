@@ -102,7 +102,7 @@ public class LdapListUsersCmd extends BaseListCmd {
                     + " including those that are already in cloudstack, the later will be annotated with their userSource")
     private String userFilter;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = false, entityType = DomainResponse.class, description = "linked domain")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = false, entityType = DomainResponse.class, description = "Linked domain")
     private Long domainId;
 
     public LdapListUsersCmd() {
@@ -140,10 +140,11 @@ public class LdapListUsersCmd extends BaseListCmd {
         try {
             final List<LdapUser> users = _ldapManager.getUsers(domainId);
             ldapResponses = createLdapUserResponse(users);
-//            now filter and annotate
+            // now filter and annotate
             ldapResponses = applyUserFilter(ldapResponses);
         } catch (final NoLdapUserMatchingQueryException ex) {
-            // ok, we'll make do with the empty list ldapResponses = new ArrayList<LdapUserResponse>();
+            logger.debug(ex.getMessage());
+            // ok, we'll make do with the empty list
         } finally {
             response.setResponses(ldapResponses);
             response.setResponseName(getCommandName());

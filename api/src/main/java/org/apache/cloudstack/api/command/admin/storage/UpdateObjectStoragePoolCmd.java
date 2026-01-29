@@ -56,6 +56,8 @@ public class UpdateObjectStoragePoolCmd extends BaseCmd {
                description = "the details for the object store. Example: details[0].key=accesskey&details[0].value=s389ddssaa&details[1].key=secretkey&details[1].value=8dshfsss")
     private Map details;
 
+    @Parameter(name = ApiConstants.SIZE, type = CommandType.LONG, description = "the total size of the object store in GiB. Used for tracking capacity and sending alerts. Set to 0 to stop tracking.", since = "4.21")
+    private Long size;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -89,6 +91,10 @@ public class UpdateObjectStoragePoolCmd extends BaseCmd {
             }
         }
         return detailsMap;
+    }
+  
+    public Long getSize() {
+        return size;
     }
 
     /////////////////////////////////////////////////////

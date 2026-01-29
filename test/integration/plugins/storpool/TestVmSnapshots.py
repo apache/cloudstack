@@ -29,6 +29,7 @@ from marvin.lib.base import (Account,
                              User,
                              Volume,
                              SecurityGroup,
+                             DiskOffering,
                              )
 from marvin.lib.common import (get_zone,
                                get_domain,
@@ -76,6 +77,8 @@ class TestVmSnapshot(cloudstackTestCase):
         cls.testdata = td.testdata
         cls.helper = StorPoolHelper()
 
+        sp_pools = cls.helper.get_pool(zone)
+        assert sp_pools is not None
 
         cls.services = testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
@@ -114,26 +117,29 @@ class TestVmSnapshot(cloudstackTestCase):
         securitygroup = SecurityGroup.list(cls.apiclient, account = cls.account.name, domainid= cls.account.domainid)[0]
         cls.helper.set_securityGroups(cls.apiclient, account = cls.account.name, domainid= cls.account.domainid, id = securitygroup.id)
 
-        primarystorage = cls.testdata[TestData.primaryStorage]
+        primarystorage = sp_pools[0]
 
         serviceOffering = cls.testdata[TestData.serviceOffering]
         storage_pool = list_storage_pools(
             cls.apiclient,
-            name = primarystorage.get("name")
+            name = primarystorage["name"]
             )
         cls.primary_storage = storage_pool[0]
 
         disk_offering = list_disk_offering(
             cls.apiclient,
-            name="ssd"
+            name=primarystorage["name"]
             )
 
-        assert disk_offering is not None
-
+        if disk_offering is None:
+            offering = cls.testdata[TestData.diskOfferingCustom]
+            cls.disk_offering = DiskOffering.create(cls.apiclient, services=offering, custom=True)
+        else:
+            cls.disk_offering = disk_offering[0]
 
         service_offering_only = list_service_offering(
             cls.apiclient,
-            name="ssd"
+            name=primarystorage["name"]
             )
         if service_offering_only is not None:
             cls.service_offering_only = service_offering_only[0]
@@ -142,8 +148,6 @@ class TestVmSnapshot(cloudstackTestCase):
                 cls.apiclient,
                 serviceOffering)
         assert cls.service_offering_only is not None
-
-        cls.disk_offering = disk_offering[0]
 
         # Create 1 data volume_1
         cls.volume = Volume.create(

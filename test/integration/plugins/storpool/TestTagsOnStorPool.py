@@ -44,6 +44,7 @@ from marvin.lib.base import (Account,
                              VmSnapshot,
                              Volume,
                              SecurityGroup,
+                             DiskOffering,
                              )
 from marvin.lib.common import (get_zone,
                                get_domain,
@@ -79,9 +80,15 @@ class TestStoragePool(cloudstackTestCase):
     def setUpCloudStack(cls):
         config = cls.getClsConfig()
         StorPoolHelper.logger = cls
+        td = TestData()
+        cls.testdata = td.testdata
+        cls.helper = StorPoolHelper()
 
         zone = config.zones[0]
         assert zone is not None
+
+        sp_pools = cls.helper.get_pool(zone)
+        assert sp_pools is not None
 
         cls.spapi = spapi.Api(host=zone.spEndpoint, port=zone.spEndpointPort, auth=zone.spAuthToken, multiCluster=True)
         testClient = super(TestStoragePool, cls).getClsTestClient()
@@ -98,15 +105,8 @@ class TestStoragePool(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = list_zones(cls.apiclient, name=zone.name)[0]
-        cls.debug(cls.zone)
-        cls.debug(list_zones(cls.apiclient, name=zone.name))
-        assert cls.zone is not None
 
         assert cls.zone is not None
-
-        td = TestData()
-        cls.testdata = td.testdata
-        cls.helper = StorPoolHelper()
 
         cls.account = cls.helper.create_account(
                             cls.apiclient,
@@ -120,34 +120,39 @@ class TestStoragePool(cloudstackTestCase):
         securitygroup = SecurityGroup.list(cls.apiclient, account = cls.account.name, domainid= cls.account.domainid)[0]
         cls.helper.set_securityGroups(cls.apiclient, account = cls.account.name, domainid= cls.account.domainid, id = securitygroup.id)
 
-        storpool_primary_storage = cls.testdata[TestData.primaryStorage]
-
-        storpool_service_offerings = cls.testdata[TestData.serviceOffering]
-
-        cls.template_name = storpool_primary_storage.get("name")
-
+        storpool_primary_storage = sp_pools[0]
+        cls.template_name = storpool_primary_storage["name"]
         storage_pool = list_storage_pools(
             cls.apiclient,
             name=cls.template_name
             )
+        if storage_pool is None:
+            storage_pool = StoragePool.create(cls.apiclient, storpool_primary_storage)
+        else:
+            storage_pool = storage_pool[0]
+        cls.storage_pool = storage_pool
+        cls.helper.updateStoragePoolTags(cls.apiclient, cls.storage_pool.id, cls.testdata[TestData.sp_template_1]["tags"])
+
+        cls.debug(pprint.pformat(storage_pool))
+
+
+        disk_offerings = list_disk_offering(
+            cls.apiclient,
+            name=cls.template_name
+            )
+        if disk_offerings is None:
+            offering = cls.testdata[TestData.diskOfferingCustom]
+            cls.disk_offerings = DiskOffering.create(cls.apiclient, services=offering, custom=True)
+        else:
+            cls.disk_offerings = disk_offerings[0]
+
+        storpool_service_offerings = cls.testdata[TestData.serviceOffering]
 
         service_offerings = list_service_offering(
             cls.apiclient,
             name=cls.template_name
             )
 
-        disk_offerings = list_disk_offering(
-            cls.apiclient,
-            name="ssd"
-            )
-
-        cls.disk_offerings = disk_offerings[0]
-        if storage_pool is None:
-            storage_pool = StoragePool.create(cls.apiclient, storpool_primary_storage)
-        else:
-            storage_pool = storage_pool[0]
-        cls.storage_pool = storage_pool
-        cls.debug(pprint.pformat(storage_pool))
         if service_offerings is None:
             service_offerings = ServiceOffering.create(cls.apiclient, storpool_service_offerings)
         else:
@@ -283,7 +288,7 @@ class TestStoragePool(cloudstackTestCase):
             virtualmachineid = self.virtual_machine.id, listall=True
             )
 
-        self.vc_policy_tags(volumes, vm_tags, vm, True)
+        self.vc_policy_tags(volumes, vm_tags, vm, should_tags_exists=True)
 
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
@@ -323,7 +328,7 @@ class TestStoragePool(cloudstackTestCase):
         vm = list_virtual_machines(self.apiclient,id = self.virtual_machine.id, listall=True)
         vm_tags =  vm[0].tags
 
-        self.vc_policy_tags(volumes, vm_tags, vm, True)
+        self.vc_policy_tags(volumes, vm_tags, vm, should_tags_exists=True)
 
 
         self.assertEqual(volume_attached.id, self.volume.id, "Is not the same volume ")
@@ -455,7 +460,7 @@ class TestStoragePool(cloudstackTestCase):
         vm = list_virtual_machines(self.apiclient,id = self.virtual_machine.id, listall=True)
         vm_tags =  vm[0].tags
 
-        self.vc_policy_tags(volumes, vm_tags, vm, True)
+        self.vc_policy_tags(volumes, vm_tags, vm, should_tags_exists=True)
 
         self.assertEqual(
             self.random_data_0,
@@ -491,13 +496,11 @@ class TestStoragePool(cloudstackTestCase):
 
         list_snapshot_response = VmSnapshot.list(
             self.apiclient,
-            #vmid=self.virtual_machine.id,
             virtualmachineid=self.virtual_machine.id,
             listall=False)
         self.debug('list_snapshot_response -------------------- %s' % list_snapshot_response)
 
         self.assertIsNone(list_snapshot_response, "snapshot is already deleted")
-
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_06_remove_vcpolicy_tag_when_disk_detached(self):
@@ -513,7 +516,7 @@ class TestStoragePool(cloudstackTestCase):
                 self.apiclient,
                 self.volume_2
                 )
-        self.vc_policy_tags( volumes, vm_tags, vm, False)
+        self.vc_policy_tags( volumes, vm_tags, vm, should_tags_exists=False)
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_07_delete_vcpolicy_tag(self):
@@ -550,7 +553,7 @@ class TestStoragePool(cloudstackTestCase):
             virtualmachineid = self.virtual_machine2.id, listall=True,
             type = "ROOT"
             )
-        self.vc_policy_tags(volume, vm_tags, vm, True)
+        self.vc_policy_tags(volume, vm_tags, vm, should_tags_exists=True)
 
         snapshot = Snapshot.create(
             self.apiclient,
@@ -571,8 +574,8 @@ class TestStoragePool(cloudstackTestCase):
         vm = list_virtual_machines(self.apiclient,id = self.virtual_machine2.id)
         vm_tags = vm[0].tags
 
-        vol = list_volumes(self.apiclient, id = snapshot.volumeid, listall=True)
-        self.vc_policy_tags(vol, vm_tags, vm, True)
+        vol = list_volumes(self.apiclient, id=snapshot.volumeid, listall=True)
+        self.vc_policy_tags(vol, vm_tags, vm, should_tags_exists=True)
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_09_remove_vm_tags_on_datadisks_attached_to_destroyed_vm(self):
@@ -586,38 +589,82 @@ class TestStoragePool(cloudstackTestCase):
         vm_tags = vm[0].tags
         volumes = list_volumes(
             self.apiclient,
-            virtualmachineid = self.virtual_machine3.id, listall=True
+            virtualmachineid=self.virtual_machine3.id, listall=True
             )
 
-        self.vc_policy_tags(volumes, vm_tags, vm, True)
+        self.vc_policy_tags(volumes, vm_tags, vm, should_tags_exists=True)
 
         volumes = list_volumes(
             self.apiclient,
-            virtualmachineid = self.virtual_machine3.id, listall=True, type="DATADISK"
+            virtualmachineid=self.virtual_machine3.id, listall=True, type="DATADISK"
             )
         self.virtual_machine3.delete(self.apiclient, expunge=True)
 
-        self.vc_policy_tags(volumes, vm_tags, vm, False)
+        self.vc_policy_tags(volumes, vm_tags, vm, should_tags_exists=False)
 
-    def vc_policy_tags(self, volumes, vm_tags, vm, should_tags_exists=None):
-        vcPolicyTag = False
-        cvmTag = False
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    def test_10_check_tags_on_deployed_vm_with_data_disk(self):
+        """
+            Check disk and cvm tags are set on all volumes when VM is deployed with additional DATA disk
+            Detach the DATA disk
+        """
+        vm = VirtualMachine.create(
+            self.apiclient,
+            {"name":"StorPool-%s" % uuid.uuid4() },
+            zoneid=self.zone.id,
+            templateid=self.template.id,
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            hypervisor=self.hypervisor,
+            diskofferingid=self.disk_offerings.id,
+            size=2,
+            rootdisksize=10
+        )
+        volumes = list_volumes(
+            self.apiclient,
+            virtualmachineid=vm.id, listall=True
+            )
+        vm1 = list_virtual_machines(self.apiclient,id=vm.id, listall=True)
+        vm_tags = vm1[0].tags
+        self.vc_policy_tags(volumes, vm_tags, vm1, False, True)
+        vm.stop(self.apiclient, forced=True)
+        volumes = list_volumes(
+            self.apiclient,
+            virtualmachineid=vm.id, listall=True, type="DATADISK"
+            )
+
+        self.debug("detaching volume %s" % volumes)
+        VirtualMachine.detach_volume(vm, self.apiclient, volumes[0])
+        self.vc_policy_tags(volumes, vm_tags, vm1, False, False)
+
+    def vc_policy_tags(self, volumes, vm_tags, vm, tag_check=True, should_tags_exists=None,):
+        vc_policy_tag = False
+        cvm_tag = False
+        disk_id_tag = False
         for v in volumes:
             name = v.path.split("/")[3]
-            spvolume = self.spapi.volumeList(volumeName="~" + name)
-            tags = spvolume[0].tags
+            volume = self.spapi.volumeList(volumeName="~" + name)
+            tags = volume[0].tags
+            self.debug("Tags %s" % tags)
             for t in tags:
                 for vm_tag in vm_tags:
                     if t == vm_tag.key:
-                        vcPolicyTag = True
+                        vc_policy_tag = True
                         self.assertEqual(tags[t], vm_tag.value, "Tags are not equal")
-                    if t == 'cvm':
-                        cvmTag = True
-                        self.assertEqual(tags[t], vm[0].id, "CVM tag is not the same as vm UUID")
-            #self.assertEqual(tag.tags., second, msg)
+                if t == 'cvm':
+                    cvm_tag = True
+                    self.assertEqual(tags[t], vm[0].id, "CVM tag is not the same as vm UUID")
+                if t == 'disk':
+                    disk_id_tag = True
+                    self.assertEqual(tags[t], str(v.deviceid), "Disk tag is not equal to the device ID")
         if should_tags_exists:
-            self.assertTrue(vcPolicyTag, "There aren't volumes with vm tags")
-            self.assertTrue(cvmTag, "There aren't volumes with vm tags")
+            if tag_check:
+                self.assertTrue(vc_policy_tag, "There aren't volumes with vc policy tags")
+            self.assertTrue(cvm_tag, "There aren't volumes with vm UUID tags")
+            self.assertTrue(disk_id_tag, "There aren't volumes with vm disk tag")
         else:
-            self.assertFalse(vcPolicyTag, "The tags should be removed")
-            self.assertFalse(cvmTag, "The tags should be removed")
+            if tag_check:
+                self.assertFalse(vc_policy_tag, "The vc policy tag should be removed")
+            self.assertFalse(cvm_tag, "The cvm tag should be removed")
+            self.assertFalse(disk_id_tag, "The disk tag should be removed")

@@ -57,9 +57,17 @@ public class BackupRepositoryResponse extends BaseResponse {
     @Param(description = "backup type")
     private String type;
 
+    @SerializedName(ApiConstants.MOUNT_OPTIONS)
+    @Param(description = "mount options", since = "4.22.1")
+    private String mountOptions;
+
     @SerializedName(ApiConstants.CAPACITY_BYTES)
     @Param(description = "capacity of the backup repository")
     private Long capacityBytes;
+
+    @SerializedName(ApiConstants.CROSS_ZONE_INSTANCE_CREATION)
+    @Param(description = "the backups in this repository can be used to create Instances on all Zones")
+    private Boolean crossZoneInstanceCreation;
 
     @SerializedName("created")
     @Param(description = "the date and time the backup repository was added")
@@ -124,12 +132,28 @@ public class BackupRepositoryResponse extends BaseResponse {
         this.type = type;
     }
 
+    public String getMountOptions() {
+        return mountOptions;
+    }
+
+    public void setMountOptions(String mountOptions) {
+        this.mountOptions = mountOptions;
+    }
+
     public Long getCapacityBytes() {
         return capacityBytes;
     }
 
     public void setCapacityBytes(Long capacityBytes) {
         this.capacityBytes = capacityBytes;
+    }
+
+    public Boolean getCrossZoneInstanceCreation() {
+        return crossZoneInstanceCreation;
+    }
+
+    public void setCrossZoneInstanceCreation(Boolean crossZoneInstanceCreation) {
+        this.crossZoneInstanceCreation = crossZoneInstanceCreation;
     }
 
     public Date getCreated() {

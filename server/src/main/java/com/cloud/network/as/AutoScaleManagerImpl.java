@@ -512,7 +512,6 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
         String apiKey = user.getApiKey();
         String secretKey = user.getSecretKey();
-        String csUrl = ApiServiceConfiguration.ApiServletPath.value();
 
         if (apiKey == null) {
             throw new InvalidParameterValueException("apiKey for user: " + user.getUsername() + " is empty. Please generate it");
@@ -522,9 +521,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             throw new InvalidParameterValueException("secretKey for user: " + user.getUsername() + " is empty. Please generate it");
         }
 
-        if (csUrl == null || csUrl.contains("localhost")) {
-            throw new InvalidParameterValueException(String.format("Global setting %s has to be set to the Management Server's API end point", ApiServiceConfiguration.ApiServletPath.key()));
-        }
+        ApiServiceConfiguration.validateEndpointUrl();
     }
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEVMPROFILE_CREATE, eventDescription = "creating autoscale vm profile", create = true)
@@ -552,6 +549,10 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         VirtualMachineTemplate template = entityMgr.findById(VirtualMachineTemplate.class, cmd.getTemplateId());
         if (template == null) {
             throw new InvalidParameterValueException("Unable to find template by id " + cmd.getTemplateId());
+        }
+        if (HypervisorType.External.equals(template.getHypervisorType())) {
+            logger.error("Cannot create AutoScale Vm Profile with {} as it is an {} hypervisor template", template, HypervisorType.External);
+            throw new InvalidParameterValueException(String.format("Unable to create AutoScale Vm Profile with template: %s", template.getName()));
         }
 
         // validations
@@ -1453,6 +1454,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     public Counter createCounter(CreateCounterCmd cmd) {
         String source = cmd.getSource().toUpperCase();
         String name = cmd.getName();
+        String value = cmd.getValue();
         Counter.Source src;
         // Validate Source
         try {
@@ -1469,11 +1471,21 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
         CounterVO counter = null;
 
+        CounterVO existingCounter = counterDao.findByNameProviderValue(name, value, provider.getName());
+        if (existingCounter != null) {
+            throw new InvalidParameterValueException(String.format("Counter with name %s and value %s already exists. ", name,value));
+        }
         logger.debug("Adding Counter " + name);
-        counter = counterDao.persist(new CounterVO(src, name, cmd.getValue(), provider));
+        counter = counterDao.persist(new CounterVO(src, name, value, provider));
 
         CallContext.current().setEventDetails(" Id: " + counter.getId() + " Name: " + name);
         return counter;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_COUNTER_CREATE, eventDescription = "Creating a counter", async = true)
+    public Counter getCounter(long counterId) {
+        return counterDao.findById(counterId);
     }
 
     @Override
@@ -1718,6 +1730,11 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             logger.warn("number of VM will greater than the maximum in this group if scaling up, so do nothing more");
             return false;
         }
+        int erroredInstanceCount = autoScaleVmGroupVmMapDao.getErroredInstanceCount(asGroup.getId());
+        if (erroredInstanceCount > AutoScaleManager.AutoScaleErroredInstanceThreshold.value()) {
+            logger.warn("Number of Errored Instances are greater than the threshold in this group for scaling up, so do nothing more");
+            return false;
+        }
         return true;
     }
 
@@ -1807,24 +1824,24 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
             if (zone.getNetworkType() == NetworkType.Basic) {
                 vm = userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, null, owner, vmHostName,
-                        vmHostName, diskOfferingId, dataDiskSize, null,
+                        vmHostName, diskOfferingId, dataDiskSize, null, null,
                         hypervisorType, HTTPMethod.GET, userData, userDataId, userDataDetails, sshKeyPairs,
                         null, null, true, null, affinityGroupIdList, customParameters, null, null, null,
-                        null, true, overrideDiskOfferingId);
+                        null, true, overrideDiskOfferingId, null, null);
             } else {
                 if (networkModel.checkSecurityGroupSupportForNetwork(owner, zone, networkIds,
                         Collections.emptyList())) {
                     vm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, networkIds, null,
-                            owner, vmHostName,vmHostName, diskOfferingId, dataDiskSize, null,
+                            owner, vmHostName,vmHostName, diskOfferingId, dataDiskSize, null, null,
                             hypervisorType, HTTPMethod.GET, userData, userDataId, userDataDetails, sshKeyPairs,
                             null, null, true, null, affinityGroupIdList, customParameters, null, null, null,
-                            null, true, overrideDiskOfferingId, null);
+                            null, true, overrideDiskOfferingId, null, null, null);
                 } else {
                     vm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, vmHostName, vmHostName,
-                            diskOfferingId, dataDiskSize, null,
+                            diskOfferingId, dataDiskSize, null, null,
                             hypervisorType, HTTPMethod.GET, userData, userDataId, userDataDetails, sshKeyPairs,
                             null, addrs, true, null, affinityGroupIdList, customParameters, null, null, null,
-                            null, true, null, overrideDiskOfferingId);
+                            null, true, null, overrideDiskOfferingId, null, null);
                 }
             }
 
@@ -1910,7 +1927,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 if (s != null) {
                     sshKeyPairs.add(s.getName());
                 } else {
-                    logger.warn("Cannot find ssh keypair by name in sshkeypairs from otherdeployparams in AutoScale Vm profile");
+                    logger.warn("Cannot find SSH keypair by name in sshkeypairs from otherdeployparams in AutoScale Instance profile");
                 }
             }
         }
@@ -2198,7 +2215,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         return new ConfigKey<?>[] {
                 AutoScaleStatsInterval,
                 AutoScaleStatsCleanupDelay,
-                AutoScaleStatsWorker
+                AutoScaleStatsWorker,
+                AutoScaleErroredInstanceThreshold
         };
     }
 
@@ -2250,8 +2268,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             Network.Provider provider = getLoadBalancerServiceProvider(asGroup.getLoadBalancerId());
             if (Network.Provider.Netscaler.equals(provider)) {
                 checkNetScalerAsGroup(asGroup);
-            } else if (Network.Provider.VirtualRouter.equals(provider) || Network.Provider.VPCVirtualRouter.equals(provider)) {
-                checkVirtualRouterAsGroup(asGroup);
+            } else if (Network.Provider.VirtualRouter.equals(provider) || Network.Provider.VPCVirtualRouter.equals(provider) ||
+                       Network.Provider.Netris.equals(provider)) {
+                checkAutoscalingGroup(asGroup);
             }
         }
     }
@@ -2631,7 +2650,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         countersNumberMap.put(key, countersNumberMap.get(key) + 1);
     }
 
-    protected void monitorVirtualRouterAsGroup(AutoScaleVmGroupVO asGroup) {
+    protected void monitorAutoscalingGroup(AutoScaleVmGroupVO asGroup) {
         if (!checkAsGroupMaxAndMinMembers(asGroup)) {
             return;
         }
@@ -2661,7 +2680,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
     }
 
-    protected void checkVirtualRouterAsGroup(AutoScaleVmGroupVO asGroup) {
+    protected void checkAutoscalingGroup(AutoScaleVmGroupVO asGroup) {
         AutoScaleVmGroupTO groupTO = lbRulesMgr.toAutoScaleVmGroupTO(asGroup);
 
         Map<String, Double> countersMap = new HashMap<>();
@@ -3011,8 +3030,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                     Network.Provider provider = getLoadBalancerServiceProvider(asGroup.getLoadBalancerId());
                     if (Network.Provider.Netscaler.equals(provider)) {
                         logger.debug("Skipping the monitoring on AutoScale VmGroup with Netscaler provider: " + asGroup);
-                    } else if (Network.Provider.VirtualRouter.equals(provider) || Network.Provider.VPCVirtualRouter.equals(provider)) {
-                        monitorVirtualRouterAsGroup(asGroup);
+                    } else if (Network.Provider.VirtualRouter.equals(provider) || Network.Provider.VPCVirtualRouter.equals(provider) ||
+                               Network.Provider.Netris.equals(provider)) {
+                        monitorAutoscalingGroup(asGroup);
                     }
                 }
             } catch (final Exception e) {

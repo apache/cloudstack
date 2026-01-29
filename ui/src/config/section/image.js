@@ -58,16 +58,16 @@ export default {
         return fields
       },
       details: () => {
-        var fields = ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'arch', 'format', 'ostypename', 'size', 'physicalsize', 'isready', 'passwordenabled',
+        var fields = ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'arch', 'format', 'externalprovisioner', 'ostypename', 'size', 'physicalsize', 'isready', 'passwordenabled',
           'crossZones', 'templatetype', 'directdownload', 'deployasis', 'ispublic', 'isfeatured', 'isextractable', 'isdynamicallyscalable', 'crosszones', 'type',
-          'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy']
+          'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy', 'url', 'forcks']
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
-          fields.push('templatetag', 'templatetype', 'url')
+          fields.push('templatetag', 'templatetype')
         }
         return fields
       },
       searchFilters: () => {
-        var filters = ['name', 'zoneid', 'tags', 'arch', 'oscategoryid', 'templatetype']
+        var filters = ['name', 'zoneid', 'tags', 'arch', 'oscategoryid', 'templatetype', 'extensionid']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           filters.push('storageid')
           filters.push('imagestoreid')
@@ -372,7 +372,7 @@ export default {
       permission: ['listKubernetesSupportedVersions'],
       searchFilters: ['zoneid', 'minimumsemanticversion', 'arch'],
       columns: ['name', 'state', 'semanticversion', 'isostate', 'mincpunumber', 'minmemory', 'arch', 'zonename'],
-      details: ['name', 'semanticversion', 'supportsautoscaling', 'zoneid', 'zonename', 'isoid', 'isoname', 'isostate', 'arch', 'mincpunumber', 'minmemory', 'supportsha', 'state', 'created'],
+      details: ['name', 'semanticversion', 'supportsautoscaling', 'zoneid', 'zonename', 'isoid', 'isoname', 'isostate', 'arch', 'mincpunumber', 'minmemory', 'supportsha', 'state', 'created', 'isourl'],
       tabs: [
         {
           name: 'details',
@@ -390,6 +390,15 @@ export default {
           api: 'addKubernetesSupportedVersion',
           icon: 'plus-outlined',
           label: 'label.kubernetes.version.add',
+          listView: true,
+          popup: true,
+          show: isZoneCreated,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/image/AddKubernetesSupportedVersion.vue')))
+        },
+        {
+          api: 'getUploadParamsForKubernetesSupportedVersion',
+          icon: 'cloud-upload-outlined',
+          label: 'label.kubernetes.version.from.local',
           listView: true,
           popup: true,
           show: isZoneCreated,

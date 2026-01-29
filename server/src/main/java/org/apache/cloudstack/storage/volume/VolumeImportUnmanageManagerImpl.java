@@ -452,7 +452,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
                                           Account owner, StoragePoolVO pool, String volumeName) {
         DiskProfile diskProfile = volumeManager.importVolume(Volume.Type.DATADISK, volumeName, diskOffering,
                 volume.getVirtualSize(), null, null, pool.getDataCenterId(), volume.getHypervisorType(), null, null,
-                owner, null, pool.getId(), volume.getPath(), null);
+                owner, null, pool.getId(), pool.getPoolType(), volume.getPath(), null);
         return volumeDao.findById(diskProfile.getVolumeId());
     }
 

@@ -51,6 +51,7 @@ public class ListCapabilitiesCmd extends BaseCmd {
         response.setDiskOffMaxSize((Long)capabilities.get("customDiskOffMaxSize"));
         response.setRegionSecondaryEnabled((Boolean)capabilities.get("regionSecondaryEnabled"));
         response.setKVMSnapshotEnabled((Boolean)capabilities.get("KVMSnapshotEnabled"));
+        response.setSnapshotShowChainSize((Boolean)capabilities.get("SnapshotShowChainSize"));
         response.setAllowUserViewDestroyedVM((Boolean)capabilities.get("allowUserViewDestroyedVM"));
         response.setAllowUserExpungeRecoverVM((Boolean)capabilities.get("allowUserExpungeRecoverVM"));
         response.setAllowUserExpungeRecoverVolume((Boolean)capabilities.get("allowUserExpungeRecoverVolume"));
@@ -73,6 +74,9 @@ public class ListCapabilitiesCmd extends BaseCmd {
         response.setSharedFsVmMinCpuCount((Integer)capabilities.get(ApiConstants.SHAREDFSVM_MIN_CPU_COUNT));
         response.setSharedFsVmMinRamSize((Integer)capabilities.get(ApiConstants.SHAREDFSVM_MIN_RAM_SIZE));
         response.setInstanceLeaseEnabled((Boolean) capabilities.get(ApiConstants.INSTANCE_LEASE_ENABLED));
+        response.setExtensionsPath((String)capabilities.get(ApiConstants.EXTENSIONS_PATH));
+        response.setDynamicScalingEnabled((Boolean) capabilities.get(ApiConstants.DYNAMIC_SCALING_ENABLED));
+        response.setAdditionalConfigEnabled((Boolean) capabilities.get(ApiConstants.ADDITONAL_CONFIG_ENABLED));
         response.setObjectName("capability");
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

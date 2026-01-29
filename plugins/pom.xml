@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.21.0.0-SNAPSHOT</version>
+        <version>4.22.1.0-SNAPSHOT</version>
     </parent>
     <build>
         <plugins>
@@ -87,10 +87,9 @@
         <module>host-allocators/random</module>
 
         <module>hypervisors/baremetal</module>
+        <module>hypervisors/external</module>
         <module>hypervisors/hyperv</module>
         <module>hypervisors/kvm</module>
-        <module>hypervisors/ovm3</module>
-        <module>hypervisors/ovm</module>
         <module>hypervisors/ucs</module>
         <module>hypervisors/xenserver</module>
 
@@ -234,6 +233,7 @@
                 <module>hypervisors/vmware</module>
                 <module>network-elements/cisco-vnmc</module>
                 <module>network-elements/nsx</module>
+                <module>network-elements/netris</module>
                 <module>network-elements/juniper-contrail</module>
                 <module>network-elements/tungsten</module>
             </modules>

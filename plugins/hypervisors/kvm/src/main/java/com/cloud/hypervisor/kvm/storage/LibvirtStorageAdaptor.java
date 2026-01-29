@@ -32,6 +32,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.utils.cryptsetup.KeyFile;
 import org.apache.cloudstack.utils.qemu.QemuImageOptions;
@@ -77,6 +79,7 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
+import com.cloud.utils.storage.TemplateDownloaderUtil;
 
 public class LibvirtStorageAdaptor implements StorageAdaptor {
     protected Logger logger = LogManager.getLogger(getClass());
@@ -171,36 +174,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     }
 
     /**
-     * Checks if downloaded template is extractable
-     * @return true if it should be extracted, false if not
-     */
-    public static boolean isTemplateExtractable(String templatePath) {
-        String type = Script.runSimpleBashScript("file " + templatePath + " | awk -F' ' '{print $2}'");
-        return type.equalsIgnoreCase("bzip2") || type.equalsIgnoreCase("gzip") || type.equalsIgnoreCase("zip");
-    }
-
-    /**
-     * Return extract command to execute given downloaded file
-     * @param downloadedTemplateFile
-     * @param templateUuid
-     */
-    public static String getExtractCommandForDownloadedFile(String downloadedTemplateFile, String templateUuid) {
-        if (downloadedTemplateFile.endsWith(".zip")) {
-            return "unzip -p " + downloadedTemplateFile + " | cat > " + templateUuid;
-        } else if (downloadedTemplateFile.endsWith(".bz2")) {
-            return "bunzip2 -c " + downloadedTemplateFile + " > " + templateUuid;
-        } else if (downloadedTemplateFile.endsWith(".gz")) {
-            return "gunzip -c " + downloadedTemplateFile + " > " + templateUuid;
-        } else {
-            throw new CloudRuntimeException("Unable to extract template " + downloadedTemplateFile);
-        }
-    }
-
-    /**
      * Extract downloaded template into installPath, remove compressed file
      */
     public static void extractDownloadedTemplate(String downloadedTemplateFile, KVMStoragePool destPool, String destinationFile) {
-        String extractCommand = getExtractCommandForDownloadedFile(downloadedTemplateFile, destinationFile);
+        String extractCommand = TemplateDownloaderUtil.getExtractCommandForDownloadedFile(downloadedTemplateFile, destinationFile);
         Script.runSimpleBashScript(extractCommand);
         Script.runSimpleBashScript("rm -f " + downloadedTemplateFile);
     }
@@ -219,13 +196,38 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
         if (destPool.getType() == StoragePoolType.NetworkFilesystem || destPool.getType() == StoragePoolType.Filesystem
             || destPool.getType() == StoragePoolType.SharedMountPoint) {
-            if (!Storage.ImageFormat.ISO.equals(format) && isTemplateExtractable(templateFilePath)) {
+            if (!Storage.ImageFormat.ISO.equals(format) && TemplateDownloaderUtil.isTemplateExtractable(templateFilePath)) {
                 extractDownloadedTemplate(templateFilePath, destPool, destinationFile);
             } else {
                 Script.runSimpleBashScript("mv " + templateFilePath + " " + destinationFile);
             }
+        } else if (destPool.getType() == StoragePoolType.RBD) {
+            String temporaryExtractFilePath = sourceFile.getParent() + File.separator + templateUuid;
+            extractDownloadedTemplate(templateFilePath, destPool, temporaryExtractFilePath);
+            createTemplateOnRBDFromDirectDownloadFile(temporaryExtractFilePath, templateUuid, destPool, timeout);
         }
         return destPool.getPhysicalDisk(templateUuid);
+    }
+
+    private void createTemplateOnRBDFromDirectDownloadFile(String srcTemplateFilePath, String templateUuid, KVMStoragePool destPool, int timeout) {
+        try {
+            QemuImg.PhysicalDiskFormat srcFileFormat = QemuImg.PhysicalDiskFormat.QCOW2;
+            QemuImgFile srcFile = new QemuImgFile(srcTemplateFilePath, srcFileFormat);
+            QemuImg qemu = new QemuImg(timeout);
+            Map<String, String> info = qemu.info(srcFile);
+            Long virtualSize = Long.parseLong(info.get(QemuImg.VIRTUAL_SIZE));
+            KVMPhysicalDisk destDisk = new KVMPhysicalDisk(destPool.getSourceDir() + "/" + templateUuid, templateUuid, destPool);
+            destDisk.setFormat(PhysicalDiskFormat.RAW);
+            destDisk.setSize(virtualSize);
+            destDisk.setVirtualSize(virtualSize);
+            QemuImgFile destFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(destPool, destDisk.getPath()));
+            destFile.setFormat(PhysicalDiskFormat.RAW);
+            qemu.convert(srcFile, destFile);
+        } catch (LibvirtException | QemuImgException e) {
+            String err = String.format("Error creating template from direct download file on pool %s: %s", destPool.getUuid(), e.getMessage());
+            logger.error(err, e);
+            throw new CloudRuntimeException(err, e);
+        }
     }
 
     public StorageVol getVolume(StoragePool pool, String volName) {
@@ -734,10 +736,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
     @Override
     public KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type, Map<String, String> details, boolean isPrimaryStorage) {
-        logger.info("Attempting to create storage pool " + name + " (" + type.toString() + ") in libvirt");
-
-        StoragePool sp = null;
-        Connect conn = null;
+        logger.info("Attempting to create storage pool {} ({}) in libvirt", name, type);
+        StoragePool sp;
+        Connect conn;
         try {
             conn = LibvirtConnection.getConnection();
         } catch (LibvirtException e) {
@@ -1080,7 +1081,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         destFile.setSize(size);
         Map<String, String> options = new HashMap<String, String>();
         if (List.of(StoragePoolType.NetworkFilesystem, StoragePoolType.Filesystem).contains(pool.getType())) {
-            options.put("preallocation", QemuImg.PreallocationType.getPreallocationType(provisioningType).toString());
+            options.put(QemuImg.PREALLOCATION, QemuImg.PreallocationType.getPreallocationType(provisioningType).toString());
         }
 
         try (KeyFile keyFile = new KeyFile(passphrase)) {
@@ -1090,7 +1091,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
                 // make room for encryption header on raw format, use LUKS
                 if (format == PhysicalDiskFormat.RAW) {
-                    destFile.setSize(destFile.getSize() - (16<<20));
+                    destFile.setSize(destFile.getSize() - (16 << 20));
                     destFile.setFormat(PhysicalDiskFormat.LUKS);
                 }
 
@@ -1290,14 +1291,22 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                         passphraseObjects.add(QemuObject.prepareSecretForQemuImg(format, QemuObject.EncryptFormat.LUKS, keyFile.toString(), "sec0", options));
                         disk.setQemuEncryptFormat(QemuObject.EncryptFormat.LUKS);
                     }
+
+                    QemuImgFile srcFile = new QemuImgFile(template.getPath(), template.getFormat());
+                    Boolean createFullClone = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CREATE_FULL_CLONE);
                     switch(provisioningType){
                     case THIN:
-                        QemuImgFile backingFile = new QemuImgFile(template.getPath(), template.getFormat());
-                        qemu.create(destFile, backingFile, options, passphraseObjects);
+                        logger.info("Creating volume [{}] {} backing file [{}] as the property [{}] is [{}].", destFile.getFileName(), createFullClone ? "without" : "with",
+                                template.getPath(), AgentProperties.CREATE_FULL_CLONE.getName(), createFullClone);
+                        if (createFullClone) {
+                            qemu.convert(srcFile, destFile, options, passphraseObjects, null, false);
+                        } else {
+                            qemu.create(destFile, srcFile, options, passphraseObjects);
+                        }
                         break;
                     case SPARSE:
                     case FAT:
-                        QemuImgFile srcFile = new QemuImgFile(template.getPath(), template.getFormat());
+                        srcFile = new QemuImgFile(template.getPath(), template.getFormat());
                         qemu.convert(srcFile, destFile, options, passphraseObjects, null, false);
                         break;
                     }
@@ -1559,7 +1568,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         String sourcePath = disk.getPath();
 
         KVMPhysicalDisk newDisk;
-        logger.debug("copyPhysicalDisk: disk size:" + toHumanReadableSize(disk.getSize()) + ", virtualsize:" + toHumanReadableSize(disk.getVirtualSize())+" format:"+disk.getFormat());
+        logger.debug("copyPhysicalDisk: disk size:{}, virtualsize:{} format:{}", toHumanReadableSize(disk.getSize()), toHumanReadableSize(disk.getVirtualSize()), disk.getFormat());
         if (destPool.getType() != StoragePoolType.RBD) {
             if (disk.getFormat() == PhysicalDiskFormat.TAR) {
                 newDisk = destPool.createPhysicalDisk(name, PhysicalDiskFormat.DIR, Storage.ProvisioningType.THIN, disk.getVirtualSize(), null);
@@ -1680,7 +1689,11 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
              */
             srcFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(srcPool, sourcePath));
             srcFile.setFormat(sourceFormat);
-            destFile = new QemuImgFile(destPath);
+            if (destPool.getType() == StoragePoolType.RBD) {
+                destFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(destPool, destPath));
+            } else {
+                destFile = new QemuImgFile(destPath);
+            }
             destFile.setFormat(destFormat);
 
             try {

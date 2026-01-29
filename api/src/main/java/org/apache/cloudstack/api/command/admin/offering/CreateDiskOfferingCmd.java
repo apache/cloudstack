@@ -52,106 +52,105 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.DISK_SIZE, type = CommandType.LONG, required = false, description = "size of the disk offering in GB (1GB = 1,073,741,824 bytes)")
+    @Parameter(name = ApiConstants.DISK_SIZE, type = CommandType.LONG, required = false, description = "Size of the disk offering in GB (1GB = 1,073,741,824 bytes)")
     private Long diskSize;
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "An alternate display text of the disk offering, defaults to 'name'.", length = 4096)
     private String displayText;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the disk offering")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Name of the disk offering")
     private String offeringName;
 
-    @Parameter(name = ApiConstants.TAGS, type = CommandType.STRING, description = "tags for the disk offering", length = 4096)
+    @Parameter(name = ApiConstants.TAGS, type = CommandType.STRING, description = "Tags for the disk offering", length = 4096)
     private String tags;
 
-    @Parameter(name = ApiConstants.CUSTOMIZED, type = CommandType.BOOLEAN, description = "whether disk offering size is custom or not")
+    @Parameter(name = ApiConstants.CUSTOMIZED, type = CommandType.BOOLEAN, description = "Whether disk offering size is custom or not")
     private Boolean customized;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.LIST,
             collectionType = CommandType.UUID,
             entityType = DomainResponse.class,
-            description = "the ID of the containing domain(s), null for public offerings")
+            description = "The ID of the containing domain(s), null for public offerings")
     private List<Long> domainIds;
 
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.LIST,
             collectionType = CommandType.UUID,
             entityType = ZoneResponse.class,
-            description = "the ID of the containing zone(s), null for public offerings",
+            description = "The ID of the containing zone(s), null for public offerings",
             since = "4.13")
     private List<Long> zoneIds;
 
-    @Parameter(name = ApiConstants.STORAGE_TYPE, type = CommandType.STRING, description = "the storage type of the disk offering. Values are local and shared.")
+    @Parameter(name = ApiConstants.STORAGE_TYPE, type = CommandType.STRING, description = "The storage type of the disk offering. Values are local and shared.")
     private String storageType = ServiceOffering.StorageType.shared.toString();
 
     @Parameter(name = ApiConstants.PROVISIONINGTYPE,
             type = CommandType.STRING,
-            description = "provisioning type used to create volumes. Valid values are thin, sparse, fat.")
+            description = "Provisioning type used to create volumes. Valid values are thin, sparse, fat.")
     private String provisioningType = ProvisioningType.THIN.toString();
 
     @Parameter(name = ApiConstants.DISPLAY_OFFERING,
             type = CommandType.BOOLEAN,
-            description = "an optional field, whether to display the offering to the end user or not.")
+            description = "An optional field, whether to display the offering to the end user or not.")
     private Boolean displayOffering;
 
-    @Parameter(name = ApiConstants.BYTES_READ_RATE, type = CommandType.LONG, required = false, description = "bytes read rate of the disk offering")
+    @Parameter(name = ApiConstants.BYTES_READ_RATE, type = CommandType.LONG, required = false, description = "Bytes read rate of the disk offering")
     private Long bytesReadRate;
 
 
-    @Parameter(name = ApiConstants.BYTES_READ_RATE_MAX, type = CommandType.LONG, required = false, description = "burst bytes read rate of the disk offering")
+    @Parameter(name = ApiConstants.BYTES_READ_RATE_MAX, type = CommandType.LONG, required = false, description = "Burst bytes read rate of the disk offering")
     private Long bytesReadRateMax;
 
-    @Parameter(name = ApiConstants.BYTES_READ_RATE_MAX_LENGTH, type = CommandType.LONG, required = false, description = "length (in seconds) of the burst")
+    @Parameter(name = ApiConstants.BYTES_READ_RATE_MAX_LENGTH, type = CommandType.LONG, required = false, description = "Length (in seconds) of the burst")
     private Long bytesReadRateMaxLength;
 
-    @Parameter(name = ApiConstants.BYTES_WRITE_RATE, type = CommandType.LONG, required = false, description = "bytes write rate of the disk offering")
+    @Parameter(name = ApiConstants.BYTES_WRITE_RATE, type = CommandType.LONG, required = false, description = "Bytes write rate of the disk offering")
     private Long bytesWriteRate;
 
-    @Parameter(name = ApiConstants.BYTES_WRITE_RATE_MAX, type = CommandType.LONG, required = false, description = "burst bytes write rate of the disk offering")
+    @Parameter(name = ApiConstants.BYTES_WRITE_RATE_MAX, type = CommandType.LONG, required = false, description = "Burst bytes write rate of the disk offering")
     private Long bytesWriteRateMax;
 
 
-    @Parameter(name = ApiConstants.BYTES_WRITE_RATE_MAX_LENGTH, type = CommandType.LONG, required = false, description = "length (in seconds) of the burst")
+    @Parameter(name = ApiConstants.BYTES_WRITE_RATE_MAX_LENGTH, type = CommandType.LONG, required = false, description = "Length (in seconds) of the burst")
     private Long bytesWriteRateMaxLength;
 
-    @Parameter(name = ApiConstants.IOPS_READ_RATE, type = CommandType.LONG, required = false, description = "io requests read rate of the disk offering")
+    @Parameter(name = ApiConstants.IOPS_READ_RATE, type = CommandType.LONG, required = false, description = "I/O requests read rate of the disk offering")
     private Long iopsReadRate;
 
-    @Parameter(name = ApiConstants.IOPS_READ_RATE_MAX, type = CommandType.LONG, required = false, description = "burst requests read rate of the disk offering")
+    @Parameter(name = ApiConstants.IOPS_READ_RATE_MAX, type = CommandType.LONG, required = false, description = "Burst requests read rate of the disk offering")
     private Long iopsReadRateMax;
 
-    @Parameter(name = ApiConstants.IOPS_READ_RATE_MAX_LENGTH, type = CommandType.LONG, required = false, description = "length (in seconds) of the burst")
+    @Parameter(name = ApiConstants.IOPS_READ_RATE_MAX_LENGTH, type = CommandType.LONG, required = false, description = "Length (in seconds) of the burst")
     private Long iopsReadRateMaxLength;
 
-    @Parameter(name = ApiConstants.IOPS_WRITE_RATE, type = CommandType.LONG, required = false, description = "io requests write rate of the disk offering")
+    @Parameter(name = ApiConstants.IOPS_WRITE_RATE, type = CommandType.LONG, required = false, description = "I/O requests write rate of the disk offering")
     private Long iopsWriteRate;
 
-    @Parameter(name = ApiConstants.IOPS_WRITE_RATE_MAX, type = CommandType.LONG, required = false, description = "burst io requests write rate of the disk offering")
+    @Parameter(name = ApiConstants.IOPS_WRITE_RATE_MAX, type = CommandType.LONG, required = false, description = "Burst I/O requests write rate of the disk offering")
     private Long iopsWriteRateMax;
 
-    @Parameter(name = ApiConstants.IOPS_WRITE_RATE_MAX_LENGTH, type = CommandType.LONG, required = false, description = "length (in seconds) of the burst")
+    @Parameter(name = ApiConstants.IOPS_WRITE_RATE_MAX_LENGTH, type = CommandType.LONG, required = false, description = "Length (in seconds) of the burst")
     private Long iopsWriteRateMaxLength;
 
-    @Parameter(name = ApiConstants.CUSTOMIZED_IOPS, type = CommandType.BOOLEAN, required = false, description = "whether disk offering iops is custom or not")
+    @Parameter(name = ApiConstants.CUSTOMIZED_IOPS, type = CommandType.BOOLEAN, required = false, description = "Whether disk offering IOPS is custom or not")
     private Boolean customizedIops;
 
-    @Parameter(name = ApiConstants.MIN_IOPS, type = CommandType.LONG, required = false, description = "min iops of the disk offering")
+    @Parameter(name = ApiConstants.MIN_IOPS, type = CommandType.LONG, required = false, description = "Min IOPS of the disk offering")
     private Long minIops;
 
-    @Parameter(name = ApiConstants.MAX_IOPS, type = CommandType.LONG, required = false, description = "max iops of the disk offering")
+    @Parameter(name = ApiConstants.MAX_IOPS, type = CommandType.LONG, required = false, description = "Max IOPS of the disk offering")
     private Long maxIops;
 
     @Parameter(name = ApiConstants.HYPERVISOR_SNAPSHOT_RESERVE,
             type = CommandType.INTEGER,
             required = false,
-            description = "Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware)")
+            description = "Hypervisor Snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware)")
     private Integer hypervisorSnapshotReserve;
 
     @Parameter(name = ApiConstants.CACHE_MODE,
             type = CommandType.STRING,
-            required = false,
-            description = "the cache mode to use for this disk offering. none, writeback or writethrough",
+            description = "The cache mode to use for this disk offering. none, writeback, writethrough or hypervisor default. If the hypervisor default cache mode is used on other hypervisors than KVM, it will fall back to none cache mode",
             since = "4.14")
     private String cacheMode;
 
@@ -164,7 +163,7 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ENCRYPT, type = CommandType.BOOLEAN, required=false, description = "Volumes using this offering should be encrypted", since = "4.18")
     private Boolean encrypt;
 
-    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "details to specify disk offering parameters", since = "4.16")
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "Details to specify disk offering parameters", since = "4.16")
     private Map details;
 
 
