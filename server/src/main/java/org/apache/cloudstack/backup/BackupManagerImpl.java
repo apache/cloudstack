@@ -947,13 +947,13 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return true;
     }
 
-    public boolean isDisabled(final Long zoneId) {
-        return !(BackupFrameworkEnabled.valueIn(zoneId));
+    public boolean isDisabled() {
+        return !(BackupFrameworkEnabled.value());
     }
 
     private void validateForZone(final Long zoneId) {
-        if (zoneId == null || isDisabled(zoneId)) {
-            throw new CloudRuntimeException("Backup and Recovery feature is disabled for the zone");
+        if (zoneId == null || isDisabled()) {
+            throw new CloudRuntimeException("Backup and Recovery feature is disabled");
         }
     }
 
@@ -1128,7 +1128,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 continue;
             }
 
-            if (isDisabled(vm.getDataCenterId())) {
+            if (isDisabled()) {
                 continue;
             }
 
@@ -1237,12 +1237,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 if (logger.isTraceEnabled()) {
                     logger.trace("Backup sync background task is running...");
                 }
+                if (isDisabled()) {
+                    logger.debug("Backup Sync Task is not enabled. Skipping!");
+                    return;
+                }
                 for (final DataCenter dataCenter : dataCenterDao.listAllZones()) {
-                    if (dataCenter == null || isDisabled(dataCenter.getId())) {
-                        logger.debug("Backup Sync Task is not enabled in zone [{}]. Skipping this zone!", dataCenter == null ? "NULL Zone!" : dataCenter);
-                        continue;
-                    }
-
                     final BackupProvider backupProvider = getBackupProvider(dataCenter.getId());
                     if (backupProvider == null) {
                         logger.warn("Backup provider not available or configured for zone {}", dataCenter);
