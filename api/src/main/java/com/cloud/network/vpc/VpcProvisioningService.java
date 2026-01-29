@@ -20,6 +20,7 @@ package com.cloud.network.vpc;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.api.command.admin.vpc.CloneVPCOfferingCmd;
 import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.admin.vpc.UpdateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListVPCOfferingsCmd;
@@ -33,6 +34,8 @@ public interface VpcProvisioningService {
     VpcOffering getVpcOffering(long vpcOfferingId);
 
     VpcOffering createVpcOffering(CreateVPCOfferingCmd cmd);
+
+    VpcOffering cloneVPCOffering(CloneVPCOfferingCmd cmd);
 
     VpcOffering createVpcOffering(String name, String displayText, List<String> supportedServices,
                                   Map<String, List<String>> serviceProviders,

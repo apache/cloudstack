@@ -28,7 +28,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.offering.NetworkOffering;
@@ -179,9 +178,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
     }
 
     public List<String> getSupportedServices() {
-        if (!isExternalNetworkProvider() && CollectionUtils.isEmpty(supportedServices)) {
-            throw new InvalidParameterValueException("Supported services needs to be provided");
-        }
+        // For external network providers, auto-populate services based on network mode
         if (isExternalNetworkProvider()) {
             supportedServices = new ArrayList<>(List.of(
                     Dhcp.getName(),

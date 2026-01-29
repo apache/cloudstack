@@ -22,6 +22,7 @@ import java.util.Map;
 
 import com.cloud.capacity.Capacity;
 import com.cloud.exception.ResourceAllocationException;
+import org.apache.cloudstack.api.command.admin.backup.CloneBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.ImportBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.UpdateBackupOfferingCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupCmd;
@@ -137,6 +138,12 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     BackupOffering importBackupOffering(final ImportBackupOfferingCmd cmd);
 
     List<Long> getBackupOfferingDomains(final Long offeringId);
+
+    /**
+     * Clone an existing backup offering with updated values
+     * @param cmd clone backup offering cmd
+     */
+    BackupOffering cloneBackupOffering(final CloneBackupOfferingCmd cmd);
 
     /**
      * List backup offerings
