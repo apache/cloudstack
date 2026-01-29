@@ -19,6 +19,7 @@ package com.cloud.network;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,26 +29,10 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
-import java.util.Collections;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.dc.VlanDetailsVO;
-import com.cloud.dc.dao.VlanDetailsDao;
-import com.cloud.network.dao.NetrisProviderDao;
-import com.cloud.network.dao.NsxProviderDao;
-import com.cloud.network.dao.PublicIpQuarantineDao;
-import com.cloud.network.dao.RemoteAccessVpnDao;
-import com.cloud.network.dao.Site2SiteVpnGatewayDao;
-import com.cloud.network.element.NetrisProviderVO;
-import com.cloud.network.element.NsxProviderVO;
-import com.cloud.network.vo.PublicIpQuarantineVO;
-import com.cloud.network.vpc.Vpc;
-import com.cloud.network.vpc.VpcOffering;
-import com.cloud.network.vpc.VpcOfferingServiceMapVO;
-import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
-import com.cloud.resourcelimit.CheckedReservation;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -68,6 +53,7 @@ import org.apache.cloudstack.region.PortableIpVO;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
@@ -83,6 +69,7 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -92,6 +79,7 @@ import com.cloud.dc.dao.DomainVlanMapDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
@@ -124,19 +112,26 @@ import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerDao;
+import com.cloud.network.dao.NetrisProviderDao;
 import com.cloud.network.dao.NetworkAccountDao;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
+import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
+import com.cloud.network.dao.PublicIpQuarantineDao;
+import com.cloud.network.dao.RemoteAccessVpnDao;
+import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.IpDeployingRequester;
+import com.cloud.network.element.NetrisProviderVO;
 import com.cloud.network.element.NetworkElement;
+import com.cloud.network.element.NsxProviderVO;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRulesManager;
@@ -147,12 +142,17 @@ import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.network.vo.PublicIpQuarantineVO;
 import com.cloud.network.vpc.NetworkACLManager;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcOffering;
+import com.cloud.network.vpc.VpcOfferingServiceMapVO;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
+import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
@@ -161,6 +161,7 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
+import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
@@ -201,7 +202,6 @@ import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.commons.lang3.ObjectUtils;
 
 public class IpAddressManagerImpl extends ManagerBase implements IpAddressManager, Configurable {
 
@@ -1316,8 +1316,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     public AcquirePodIpCmdResponse allocatePodIp(String zoneId, String podId) throws ConcurrentOperationException, ResourceAllocationException {
 
         DataCenter zone = _entityMgr.findByUuid(DataCenter.class, zoneId);
-        Account caller = CallContext.current().getCallingAccount();
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !CallContext.current().isCallingAccountRootAdmin()) {
             ResourceAllocationException ex = new ResourceAllocationException(
                     generateErrorMessageForOperationOnDisabledZone("allocate Pod IP addresses", zone), ResourceType.network);
             throw ex;
@@ -1331,7 +1330,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         if (podvo == null)
             throw new ResourceAllocationException("No such pod exists", ResourceType.network);
 
-        vo = _privateIPAddressDao.takeIpAddress(zone.getId(), podvo.getId(), 0, caller.getId() + "", false);
+        vo = _privateIPAddressDao.takeIpAddress(zone.getId(), podvo.getId(), 0, CallContext.current().getCallingAccountId() + "", false);
         if(vo == null)
             throw new ResourceAllocationException("Unable to allocate IP from this Pod", ResourceType.network);
         if (vo.getIpAddress() == null)
@@ -1366,8 +1365,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         }
         // Verify permission
         DataCenter zone = _entityMgr.findById(DataCenter.class, ipVO.getDataCenterId());
-        Account caller = CallContext.current().getCallingAccount();
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !CallContext.current().isCallingAccountRootAdmin()) {
             throw new CloudRuntimeException(generateErrorMessageForOperationOnDisabledZone("release Pod IP", zone));
         }
         try {
@@ -1411,7 +1409,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         checkPublicIpOnExternalProviderZone(zone, ipaddress);
 
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller)) {
             // zone is of type DataCenter. See DataCenterVO.java.
             PermissionDeniedException ex = new PermissionDeniedException(generateErrorMessageForOperationOnDisabledZone("allocate IP addresses", zone));
             ex.addProxyObject(zone.getUuid(), "zoneId");

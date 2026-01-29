@@ -85,6 +85,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -472,11 +473,11 @@ public class UserVmManagerTest {
 
         // caller is of type 0
         Account caller = new AccountVO("testaccount", 1, "networkdomain", Account.Type.NORMAL, UUID.randomUUID().toString());
-        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
 
-        CallContext.register(user, caller);
-        try {
-
+        try (MockedStatic<CallContext> callContextMockedStatic = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMockedStatic.when(CallContext::current).thenReturn(callContextMock);
+            when(callContextMock.getCallingAccount()).thenReturn(caller);
             _userVmMgr.moveVmToUser(cmd);
         } finally {
             CallContext.unregister();
@@ -504,7 +505,6 @@ public class UserVmManagerTest {
 
         // caller is of type 0
         Account caller = new AccountVO("testaccount", 1, "networkdomain", Account.Type.ADMIN, UUID.randomUUID().toString());
-        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
 
         AccountVO oldAccount = new AccountVO("testaccount", 1, "networkdomain", Account.Type.NORMAL, UUID.randomUUID().toString());
         oldAccount.setId(1L);
@@ -522,14 +522,12 @@ public class UserVmManagerTest {
 
         doThrow(new PermissionDeniedException("Access check failed")).when(_accountMgr).checkAccess(nullable(Account.class), nullable(AccessType.class), nullable(Boolean.class), nullable(ControlledEntity.class));
 
-        CallContext.register(user, caller);
-
-        when(_accountMgr.isRootAdmin(anyLong())).thenReturn(true);
-
-        try {
+        try (MockedStatic<CallContext> callContextMockedStatic = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMockedStatic.when(CallContext::current).thenReturn(callContextMock);
+            when(callContextMock.getCallingAccount()).thenReturn(caller);
+            when(callContextMock.isCallingAccountRootAdmin()).thenReturn(true);
             _userVmMgr.moveVmToUser(cmd);
-        } finally {
-            CallContext.unregister();
         }
     }
 
