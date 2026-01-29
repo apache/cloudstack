@@ -59,6 +59,10 @@ public class ApiDiscoveryResponse extends BaseResponse {
     @Param(description = "Response field type")
     private String type;
 
+    @SerializedName(ApiConstants.HTTP_REQUEST_TYPE)
+    @Param(description = "Preferred HTTP request type for the API", since = "4.23.0")
+    private String httpRequestType;
+
     public ApiDiscoveryResponse() {
         params = new HashSet<ApiParameterResponse>();
         apiResponse = new HashSet<ApiResponseResponse>();
@@ -74,6 +78,7 @@ public class ApiDiscoveryResponse extends BaseResponse {
         this.params = new HashSet<>(another.getParams());
         this.apiResponse = new HashSet<>(another.getApiResponse());
         this.type = another.getType();
+        this.httpRequestType = another.getHttpRequestType();
         this.setObjectName(another.getObjectName());
     }
 
@@ -139,5 +144,13 @@ public class ApiDiscoveryResponse extends BaseResponse {
 
     public String getType() {
         return type;
+    }
+
+    public String getHttpRequestType() {
+        return httpRequestType;
+    }
+
+    public void setHttpRequestType(String httpRequestType) {
+        this.httpRequestType = httpRequestType;
     }
 }
