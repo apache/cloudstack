@@ -74,6 +74,7 @@ import com.cloud.utils.HttpUtils.ApiSessionKeyCheckOption;
 import com.cloud.utils.HttpUtils.ApiSessionKeySameSite;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 @Component("apiServlet")
@@ -82,9 +83,7 @@ public class ApiServlet extends HttpServlet {
     private static final Logger ACCESSLOGGER = LogManager.getLogger("apiserver." + ApiServlet.class.getName());
     private static final String REPLACEMENT = "_";
     private static final String LOGGER_REPLACEMENTS = "[\n\r\t]";
-    private static final Pattern GET_REQUEST_COMMANDS = Pattern.compile("^(get|list|query|find)(\\w+)+$");
-    private static final HashSet<String> GET_REQUEST_COMMANDS_LIST = new HashSet<>(Set.of("isaccountallowedtocreateofferingswithtags",
-            "readyforshutdown", "cloudianisenabled", "quotabalance", "quotasummary", "quotatarifflist", "quotaisenabled", "quotastatement", "verifyoauthcodeandgetuser"));
+    public static final Pattern GET_REQUEST_COMMANDS = Pattern.compile("^(get|list|query|find)(\\w+)+$");
     private static final HashSet<String> POST_REQUESTS_TO_DISABLE_LOGGING = new HashSet<>(Set.of(
             "login",
             "oauthlogin",
@@ -366,7 +365,7 @@ public class ApiServlet extends HttpServlet {
                 }
             }
 
-            if (apiServer.isPostRequestsAndTimestampsEnforced() && !isStateChangingCommandUsingPOST(command, req.getMethod(), params)) {
+            if (apiServer.isPostRequestsAndTimestampsEnforced() && isStateChangingCommandNotUsingPOST(command, req.getMethod(), params)) {
                 String errorText = String.format("State changing command %s needs to be sent using POST request", command);
                 if (command.equalsIgnoreCase("updateConfiguration") && params.containsKey("name")) {
                     errorText = String.format("Changes for configuration %s needs to be sent using POST request", params.get("name")[0]);
@@ -484,13 +483,32 @@ public class ApiServlet extends HttpServlet {
         return verify2FA;
     }
 
-    private boolean isStateChangingCommandUsingPOST(String command, String method, Map<String, Object[]> params) {
-        if (command == null || (!GET_REQUEST_COMMANDS.matcher(command.toLowerCase()).matches() && !GET_REQUEST_COMMANDS_LIST.contains(command.toLowerCase())
-                && !command.equalsIgnoreCase("updateConfiguration") && !method.equals("POST"))) {
+    protected boolean isStateChangingCommandNotUsingPOST(String command, String method, Map<String, Object[]> params) {
+        if (BaseCmd.HTTPMethod.POST.toString().equalsIgnoreCase(method)) {
             return false;
         }
-        return !command.equalsIgnoreCase("updateConfiguration") || method.equals("POST") || (params.containsKey("name")
-                && params.get("name")[0].toString().equalsIgnoreCase(ApiServer.EnforcePostRequestsAndTimestamps.key()));
+        if (command == null || method == null) {
+            return true;
+        }
+        String commandHttpMethod = null;
+        try {
+            Class<?> cmdClass = apiServer.getCmdClass(command);
+            if (cmdClass != null) {
+                APICommand at = cmdClass.getAnnotation(APICommand.class);
+                if (at != null && org.apache.commons.lang3.StringUtils.isNotBlank(at.httpMethod())) {
+                    commandHttpMethod = at.httpMethod();
+                }
+            }
+        } catch (CloudRuntimeException e) {
+            LOGGER.trace("Command class not found for {}; falling back to pattern match", command, e);
+        }
+        if (BaseCmd.HTTPMethod.GET.toString().equalsIgnoreCase(commandHttpMethod) ||
+                GET_REQUEST_COMMANDS.matcher(command.toLowerCase()).matches()) {
+            return false;
+        }
+        return !command.equalsIgnoreCase("updateConfiguration") ||
+                !params.containsKey("name") ||
+                !ApiServer.EnforcePostRequestsAndTimestamps.key().equalsIgnoreCase(params.get("name")[0].toString());
     }
 
     protected boolean skip2FAcheckForAPIs(String command) {

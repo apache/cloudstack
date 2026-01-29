@@ -63,6 +63,7 @@ public class ListCapabilitiesCmd extends BaseCmd {
         response.setDiskOffMaxSize((Long)capabilities.get("customDiskOffMaxSize"));
         response.setRegionSecondaryEnabled((Boolean)capabilities.get("regionSecondaryEnabled"));
         response.setKVMSnapshotEnabled((Boolean)capabilities.get("KVMSnapshotEnabled"));
+        response.setSnapshotShowChainSize((Boolean)capabilities.get("SnapshotShowChainSize"));
         response.setAllowUserViewDestroyedVM((Boolean)capabilities.get("allowUserViewDestroyedVM"));
         response.setAllowUserExpungeRecoverVM((Boolean)capabilities.get("allowUserExpungeRecoverVM"));
         response.setAllowUserExpungeRecoverVolume((Boolean)capabilities.get("allowUserExpungeRecoverVolume"));

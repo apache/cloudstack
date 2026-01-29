@@ -28,10 +28,16 @@
         {{ $t('label.add.acl.rule') }}
       </a-button>
 
+      <a-button type="dashed" @click="handleImportRules" style="width: 100%;  margin-right: 10px">
+        <template #icon><upload-outlined /></template>
+        {{ $t('label.acl.import') }}
+      </a-button>
+
       <a-button type="dashed" @click="exportAclList" style="width: 100%">
         <template #icon><download-outlined /></template>
         {{ $t('label.acl.export') }}
       </a-button>
+
       <div class="search-bar">
         <a-input-search
           style="width: 25vw;float: right;margin-left: 10px; z-index: 8"
@@ -304,6 +310,21 @@
         </div>
       </a-form>
     </a-modal>
+
+    <a-modal
+      v-if="showImportModal"
+      :visible="showImportModal"
+      :title="$t('label.acl.import')"
+      :closable="true"
+      :maskClosable="false"
+      :footer="null"
+      :width="800"
+      @cancel="closeImportModal">
+      <import-network-a-c-l
+        :resource="resource"
+        @refresh-data="fetchData"
+        @close-action="closeImportModal" />
+    </a-modal>
   </a-spin>
 </template>
 
@@ -313,13 +334,15 @@ import { getAPI, postAPI } from '@/api'
 import draggable from 'vuedraggable'
 import { mixinForm } from '@/utils/mixin'
 import TooltipButton from '@/components/widgets/TooltipButton'
+import ImportNetworkACL from './ImportNetworkACL'
 
 export default {
   name: 'AclListRulesTab',
   mixins: [mixinForm],
   components: {
     draggable,
-    TooltipButton
+    TooltipButton,
+    ImportNetworkACL
   },
   props: {
     resource: {
@@ -344,6 +367,7 @@ export default {
       tagsModalVisible: false,
       tagsLoading: false,
       ruleModalVisible: false,
+      showImportModal: false,
       ruleModalTitle: this.$t('label.edit.rule'),
       ruleFormMode: 'edit'
     }
@@ -788,6 +812,12 @@ export default {
     },
     capitalise (val) {
       return val.toUpperCase()
+    },
+    handleImportRules () {
+      this.showImportModal = true
+    },
+    closeImportModal () {
+      this.showImportModal = false
     }
   }
 }

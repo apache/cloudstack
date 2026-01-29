@@ -55,7 +55,6 @@ import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.util.thread.ScheduledExecutorScheduler;
 import org.eclipse.jetty.webapp.WebAppContext;
 
-import com.cloud.api.ApiServer;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.server.ServerProperties;
@@ -136,10 +135,10 @@ public class ServerDaemon implements Daemon {
             }
             setBindInterface(properties.getProperty(BIND_INTERFACE, null));
             setContextPath(properties.getProperty(CONTEXT_PATH, "/client"));
-            setHttpEnable(Boolean.valueOf(properties.getProperty(ServerPropertiesUtil.KEY_HTTP_ENABLE, "true")));
-            setHttpPort(Integer.valueOf(properties.getProperty(ServerPropertiesUtil.KEY_HTTP_PORT, "8080")));
-            setHttpsEnable(Boolean.valueOf(properties.getProperty(ServerPropertiesUtil.KEY_HTTPS_ENABLE, "false")));
-            setHttpsPort(Integer.valueOf(properties.getProperty(ServerPropertiesUtil.KEY_HTTPS_PORT, "8443")));
+            setHttpEnable(Boolean.parseBoolean(properties.getProperty(ServerPropertiesUtil.KEY_HTTP_ENABLE, "true")));
+            setHttpPort(Integer.parseInt(properties.getProperty(ServerPropertiesUtil.KEY_HTTP_PORT, "8080")));
+            setHttpsEnable(Boolean.parseBoolean(properties.getProperty(ServerPropertiesUtil.KEY_HTTPS_ENABLE, "false")));
+            setHttpsPort(Integer.parseInt(properties.getProperty(ServerPropertiesUtil.KEY_HTTPS_PORT, "8443")));
             setKeystoreFile(properties.getProperty(ServerPropertiesUtil.KEY_KEYSTORE_FILE));
             setKeystorePassword(properties.getProperty(ServerPropertiesUtil.KEY_KEYSTORE_PASSWORD));
             setWebAppLocation(properties.getProperty(WEBAPP_DIR));
