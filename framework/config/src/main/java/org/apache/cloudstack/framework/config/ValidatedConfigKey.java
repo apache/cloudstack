@@ -22,7 +22,7 @@ public class ValidatedConfigKey<T> extends ConfigKey<String> {
     private final Consumer<T> validator;
 
     public ValidatedConfigKey(String category, Class<String> type, String name, String defaultValue, String description, boolean dynamic, Scope scope, String parent, Consumer<T> validator) {
-        super(category, type, name, defaultValue, description, dynamic, scope);
+        super(category, type, name, defaultValue, description, dynamic, scope, parent);
         this.validator = validator;
     }
 

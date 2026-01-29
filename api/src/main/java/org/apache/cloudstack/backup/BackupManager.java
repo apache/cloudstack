@@ -48,7 +48,7 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
             "dummy",
             "The backup and recovery provider plugin. Valid plugin values: dummy, veeam, networker and nas",
             true, ConfigKey.Scope.Zone, BackupFrameworkEnabled.key(),
-            (value) -> {
+            value -> {
                 if (value != null && ((String)value).contains(",") || ((String)value).contains(" ")) {
                     throw new IllegalArgumentException("Multiple backup provider plugins are not supported. Please provide a single plugin value.");
                 }
