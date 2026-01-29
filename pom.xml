@@ -73,7 +73,7 @@
         <cs.spotbugs.version>3.1.12</cs.spotbugs.version>
         <cs.spotbugs-maven-plugin.version>3.1.12.2</cs.spotbugs-maven-plugin.version>
         <cs.jar-plugin.version>3.2.0</cs.jar-plugin.version>
-        <cs.pmd-plugin.version>3.12.0</cs.pmd-plugin.version>
+        <cs.pmd-plugin.version>3.28.0</cs.pmd-plugin.version>
         <cs.project-info-plugin.version>3.0.0</cs.project-info-plugin.version>
         <cs.owasp.dependency-checker-plugin.version>7.4.4</cs.owasp.dependency-checker-plugin.version>
         <cs.release-plugin.version>2.5.3</cs.release-plugin.version>
